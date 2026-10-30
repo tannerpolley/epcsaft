@@ -381,8 +381,8 @@ def chloride_calibration():
 # Investigator-selected identities, issue 501, owner comment 6373385229.
 PROMOTED = {
     "cost": (
-        "2026-release-computational-cost",
-        "409e8e9b52052b320c645281832449ed90bb856a",
+        "2026-main-computational-cost",
+        "3cdc2ded7b832711b646c3336ad48f91e4e44d66",
     ),
     "gross01": ("reproduction/2001-gross", "e75c60ad"),
     "gross02": ("reproduction/2002-gross", "e75c60ad"),
@@ -651,6 +651,7 @@ def computational_cost():
         ("property-bundle", "Fixed-density bundle"),
         ("pressure-state", "Density closure"),
         ("C1-300", "Propane saturation"),
+        ("C1-300-prepared", "Propane saturation (prepared)"),
         ("C2-0.5", "Ethanol–butane bubble"),
         ("C4-298.15", "Water–pentanol split"),
         ("explicit-discovery", "Methane–ethane discovery"),
@@ -659,7 +660,7 @@ def computational_cost():
         ("C2-0.5/actions-on-solved-state", "Ethanol–butane bubble"),
         ("C4-298.15/actions-on-solved-state", "Water–pentanol split"),
     ]
-    fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.1))
+    fig, axes = plt.subplots(1, 2, figsize=(7.1, 3.5))
     for ax, cases, comparisons in [
         (
             axes[0],
@@ -718,7 +719,7 @@ def computational_cost():
     finish(
         fig,
         "F6-computational-cost.pdf",
-        "Warm serial measurements on one host; ranges are observed spread, not confidence intervals. Density closure against Clapeyron.jl is a tie. Actions exclude the central solve and imply no total solve speedup. Electrolyte timings are package-only and excluded.",
+        "Warm serial measurements on one host; ranges are observed spread, not confidence intervals. Prepared propane saturation compiles the declaration before timing. Density closure takes more time than in Clapeyron.jl throughout the observed paired range. Actions exclude the central solve and imply no total solve speedup. Electrolyte timings are package-only and excluded.",
     )
     FIGURES["F6-computational-cost.pdf"]["panels"] = ["F6a", "F6b"]
 
@@ -4292,8 +4293,8 @@ def write_catalog():
         (
             "The script is the single figure owner. It reads CSV and JSON Git objects at the investigator-promoted commits from "
             "[the first owner promotion](https://github.com/tannerpolley/ePC-SAFT/issues/501#issuecomment-6373385229) and "
-            "[the second owner promotion](https://github.com/tannerpolley/ePC-SAFT/issues/501#issuecomment-6376503363) and "
-            "[the cost promotion](https://github.com/tannerpolley/ePC-SAFT/issues/681#issuecomment-6388971415). "
+            "[the second owner promotion](https://github.com/tannerpolley/ePC-SAFT/issues/501#issuecomment-6376503363). "
+            "The computational-cost figure uses the separately investigator-promoted result commit listed in its entry below. "
             "It does not import the Engine or calculate a new thermodynamic state. Every new PDF is vector output at 7.1-inch two-column width; dense galleries use multiple pages. "
             "The four earlier PDFs retain their original drawing functions and dimensions."
         ),

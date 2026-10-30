@@ -3909,9 +3909,9 @@
     "path": "analyses/2026-open-source-equilibrium-comparison/results/issue-224-sliceB/reference/critical-pure.csv",
     "sha256": "b169c57b22c7b29d621b8ee0719b9af2f6cd7531a0c13fb13b8b0ccea070ce0c"
   },
-  "409e8e9b52052b320c645281832449ed90bb856a:analyses/2026-release-computational-cost/results/ratios.csv": {
-    "commit": "409e8e9b52052b320c645281832449ed90bb856a",
-    "path": "analyses/2026-release-computational-cost/results/ratios.csv",
-    "sha256": "8ce71dfb5a2e0409359a8e586a3df7b9999cf461ac3ab22f6805244f0562477c"
+  "3cdc2ded7b832711b646c3336ad48f91e4e44d66:analyses/2026-main-computational-cost/results/ratios.csv": {
+    "commit": "3cdc2ded7b832711b646c3336ad48f91e4e44d66",
+    "path": "analyses/2026-main-computational-cost/results/ratios.csv",
+    "sha256": "fa74dc5238987f9ffbbf5e7e1bd705d7b3783e9360d23b180dbcc3e995f83bde"
   }
 }

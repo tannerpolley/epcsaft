@@ -5,13 +5,15 @@ Every iterative calculation runs natively in C++: association and density closur
 The Python interface declares inputs and reads results; it supplies no callback to a native iteration and performs no thermodynamic arithmetic.
 A caller constructs a model once from a parameter record.
 Construction validates the species, site topology and model selection, admits the records of Section~\ref{sec:references}, and prepares state-independent quantities; support and thermal intervals select reusable recordings of the shared energy equations.
-A state request then gives temperature, composition and exactly one of density or pressure; a pressure request resolves the declared density branch once and reuses that state for every property and derivative asked of it.
+A state request then gives temperature, composition and exactly one of density or pressure; a pressure request resolves the declared density branch once and reuses that state for every property and derivative within that request.
 An equilibrium request is a declaration of phases, supports, pinned amounts, free intensive variables, feed and reactions, compiled once into the rows of Section~\ref{sec:equilibrium}.
 Figure~\ref{fig:workflow} shows how these requests share one calculation.
 
 % P:implementation-02
 Listing~\ref{lst:example} declares a methane/ethane mixture with the parameters of Gross and Sadowski~\citep{Gross2001}, solves a bubble point at 200~K and requests the exact first-order response of the bubble pressure to temperature.
-The same request with feed or parameter directions, or with phase compositions as observables, returns the other columns of $\mathbf{y}_\theta$ for that state.
+Feed or parameter directions give derivatives with respect to those inputs.
+Phase-composition actions transform the logarithmic-composition derivatives in $\mathbf{y}_\theta$ into derivatives of normalized mole fractions.
+The listing divides the pressure action by its temperature increment to report the partial derivative in \si{\pascal\per\kelvin}.
 
 \noindent\begin{minipage}{\linewidth}
 \begin{lstlisting}[caption={A bubble point and its exact temperature derivative.},label={lst:example}]
@@ -22,22 +24,31 @@ record = "data/packets/gross-2001-methane-ethane/3/parameters/parameters.json"
 mix = epcsaft.Mixture(epcsaft.Parameters.from_json(record, components=["methane", "ethane"]))
 feed = eq.MoleFractions({"methane": 0.3, "ethane": 0.7})
 problem = eq.bubble_point(liquid=eq.Phase("L", kind="liquid"), T=200.0, feed=feed)
-bubble = eq.solve_equilibrium(mix, problem)          # pressure is free
+compiled = eq.compile_problem(mix, problem)
+bubble = compiled.solve()                            # pressure is free
+if not (bubble.success and bubble.requested_tolerance_met):
+    raise RuntimeError(bubble.message)
 print(bubble.pressure, bubble.phase_mole_fractions(1))   # Pa; incipient vapor
 
-dT = eq.SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [ ])  # unit temperature direction
+delta_T = 1.0                                         # K
+dT = eq.SolvedStateActionDirection(delta_T, 0.0, [0.0, 0.0], [])
 P = eq.SolvedStateObservable(eq.SolvedStateObservableKind.Pressure)
-batch = eq.solved_state_actions(eq.compile_problem(mix, problem), bubble,
+batch = eq.solved_state_actions(compiled, bubble,
                                 eq.SolvedStateActionRequest([P], [dT]))
-print(batch.results[0].action, batch.results[0].status)       # Pa/K
+result = batch.results[0]
+if result.status != eq.SolvedStateActionStatus.Available:
+    raise RuntimeError(f"{result.status}: {result.diagnostic_message}")
+print(result.action / delta_T)                         # Pa/K; action is in Pa
 \end{lstlisting}
 \end{minipage}
 
 % P:implementation-03
 Equation-oriented process models reach the same calculation through a compiled library that implements external functions of the AMPL Solver Library.
 A model written in Pyomo~\citep{hartPyomoModelingSolving2011}, for example within the IDAES process modeling framework~\citep{leeIDAESProcessModeling2021}, calls these functions and receives values with exact first and second derivatives.
-The functions verified here return the pressure of a neutral fluid with its gradient and Hessian, and the phase compositions and amounts of a declared fixed-temperature, fixed-pressure, nonreactive two-liquid electrolyte split with their first and second feed derivatives.
-It solves each call with the same native driver and adds no phase search.
+The functions verified here include neutral-fluid pressure with its gradient and Hessian.
+For the neutral mixture in Section~\ref{sec:applications}, pressure-specified property functions return density, total enthalpy and component $\ln\phi_i$ with first and second derivatives in temperature, pressure and independent composition coordinates on a selected smooth density branch.
+The equilibrium function returns phase compositions and amounts of a declared fixed-temperature, fixed-pressure, nonreactive two-liquid electrolyte split with their first and second feed derivatives.
+Property calls use the native energy and density calculations, while the equilibrium function uses the declared native equilibrium driver; these calls add no phase search.
 
 % P:implementation-04
 The native code depends on CppAD~20250000.3~\citep{bellCppADPackageAlgorithmic2025} for algorithmic differentiation, Ipopt~3.11.9~\citep{Wachter2006} with the MUMPS sparse linear solver~\citep{amestoyFullyAsynchronousMultifrontal2001,amestoyPerformanceScalabilityBlock2019} for equilibrium and minimax problems, Ceres~2.2~\citep{agarwalCeresSolver2023} for least squares, Eigen~3.4~\citep{guennebaudEigenV32010} for dense linear algebra, and HiGHS~1.15.1~\citep{huangfuParallelizingDualRevised2018} for the conserved-inventory linear programs.

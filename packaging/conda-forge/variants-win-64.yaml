@@ -1,0 +1,18 @@
+c_compiler:
+  - clang
+cxx_compiler:
+  - clangxx
+fortran_compiler:
+  - flang
+c_compiler_version:
+  - '21'
+cxx_compiler_version:
+  - '21'
+fortran_compiler_version:
+  - '5'
+c_stdlib:
+  - vs
+c_stdlib_version:
+  - '2022'
+target_platform:
+  - win-64

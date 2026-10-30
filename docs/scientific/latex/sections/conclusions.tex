@@ -4,17 +4,21 @@
 The package connects a selected electrolyte Helmholtz energy to state properties, phase and reaction equilibrium, exact solved-state derivatives and parameter estimation in one native calculation.
 The physical comparisons span saturation, mixture phase behavior, electrolyte activities, solvation and reacting liquid splits, with calibration and withheld prediction distinguished at the point of use.
 They support useful descriptions in selected domains and also expose unsuccessful mixture transfer and large reactive-amine pressure errors.
-Numerical agreement with independent matched implementations and refined references establishes the bounded correctness of the calculation separately from those physical-model errors.
+Agreement with independent matched implementations and refined references supports numerical consistency on the tested states, quantities and directions, separately from those physical-model comparisons.
 The settler example shows that the solved-state derivatives reach an equation-oriented model without changing their values.
-For serial calls on the measured host and cases, the fixed-density property bundle costs less than in FeOs and Clapeyron.jl, the two declared mixture equilibria take times between those of the two comparators, propane saturation and explicit discovery cost more, and density closure against Clapeyron.jl is a tie within the observed spread (Section~\ref{sec:performance}).
+
+% P:conclusions-01a
+For serial calls on the measured host and cases, the property bundle, density closure and water--pentanol split take less time than in FeOs; all seven matched operations take more time than in Clapeyron.jl, while ordinary and prepared propane saturation, the ethanol--butane bubble point and explicit discovery also take more time than in FeOs (Section~\ref{sec:performance}).
 Exact first-order actions cost less than the package's central differences on the two solved states tested, with the central solve excluded; no overall speed advantage is claimed.
 
 % P:conclusions-02
 Several mathematical limits apply to every use.
-A declared solve returns a stationary state on fixed supports, and a finite phase search supplies no global stability certificate or complete root enumeration.
+A declared solve establishes numerical stationarity on fixed supports only when its defining rows meet the requested tolerance.
+Finite candidates that miss that tolerance retain their achieved residuals and warnings about the missed tolerance.
+A finite phase search supplies no global stability certificate or complete root enumeration.
 Derivatives require a regular branch and cannot cross phase appearance, a singular pressure inverse, or an unavailable ionic insertion at zero ionic strength.
 Local fitting and local covariance do not establish unique physical parameters, and predictive uncertainty has not been validated.
-The corrected Born and ion-suppression values lack an independent same-equation code check, even where derivative and identity checks are available.
+The corrected solvation-shell Born term and ion-suppression relation lack an independent same-equation value check here, even where derivative and identity checks are available.
 Mathematical input admission is independent of the physical applicability of a source parameter set.
 No claim is made for a polar contribution combined with ions.
 
@@ -23,7 +27,8 @@ The physical evidence also leaves specific gaps.
 It does not establish MEA accuracy, full lithium-extraction accuracy, measured solid equilibria or physical caloric accuracy.
 Electrolyte temperature dependence has only bounded source comparisons, and electrolyte vapor--liquid equilibrium with speciation lacks a qualifying physical accuracy demonstration here.
 The MDEA failures, mixed-brine exception, source-line ambiguities and mixed-solvent fitting overlap prevent general transferability claims.
-Within these limits, a user can compute electrolyte phase and reaction equilibria and their exact derivatives from one parameter record, check the numerical solution against the verification of Section~\ref{sec:verification}, and judge the physical accuracy for an intended use from the comparisons of Section~\ref{sec:physical}.
+Within these limits, a user can compute electrolyte phase and reaction equilibria and their exact derivatives using one parameter record, declared phase supports, and the required reaction targets and reference data.
+Numerical solutions can be checked against the verification of Section~\ref{sec:verification}, and physical accuracy for an intended use judged from the comparisons of Section~\ref{sec:physical}.
 
 \section*{Data and code availability}
 % P:statements-01

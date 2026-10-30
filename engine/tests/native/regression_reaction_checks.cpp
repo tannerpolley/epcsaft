@@ -1039,6 +1039,7 @@ void check_ionic_addition_enthalpy() {
         std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
             field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
+#ifndef _WIN32
     using binary128_support::Wide;
     const std::vector<binary128_support::Quantity> enthalpy{{"H", "J", 0.0, {}}};
     for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column) {
@@ -1080,6 +1081,7 @@ void check_ionic_addition_enthalpy() {
             tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
             "one EOS and one source-law column agree with binary128 composed endpoint/feed differences", "addition-ionic");
     }
+#endif
 }
 
 // Issue #225 F6: the same fitting consumer on two referenced free-T endpoints.

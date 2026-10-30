@@ -10,7 +10,8 @@ import math
 import os
 from pathlib import Path
 import platform
-import resource
+if os.name != "nt":
+    import resource
 import statistics
 import subprocess
 import sys
@@ -116,13 +117,13 @@ def frozen_result(case, operation):
     coordinates, observations, thermal = (decode(data[k]) for k in ('coordinates', 'observations', 'thermochemistry'))
     if operation == 'fit':
         controls = _core.FitControls(maximum_iterations=40, maximum_elapsed_time_seconds=120, workers=0)
-        children = resource.getrusage(resource.RUSAGE_CHILDREN)
-        child_cpu = children.ru_utime + children.ru_stime
+        children = resource.getrusage(resource.RUSAGE_CHILDREN) if os.name != "nt" else None
+        child_cpu = (children.ru_utime + children.ru_stime if children else 0.0)
         clock, cpu = time.perf_counter(), time.process_time()
         result = _core.fit(parameters._native, thermal, coordinates, observations, data['weights'], controls)
         seconds = time.perf_counter() - clock
-        children = resource.getrusage(resource.RUSAGE_CHILDREN)
-        cpu_seconds = time.process_time() - cpu + children.ru_utime + children.ru_stime - child_cpu
+        children = resource.getrusage(resource.RUSAGE_CHILDREN) if os.name != "nt" else None
+        cpu_seconds = time.process_time() - cpu + (children.ru_utime + children.ru_stime if children else 0.0) - child_cpu
         if result.status != 'converged' or not result.usable or result.trial_failures or len(result.statuses) != rows or any(
                 s != _core.ObservationStatus.Available for s in result.statuses):
             raise RuntimeError(f'F1 fit: {result.message}; trial failures {result.trial_failures}')
@@ -220,7 +221,7 @@ def worker():
         elif request['case'] in FROZEN:
             try:
                 reply = frozen_result(request['case'], request.get('operation', 'evaluation'))
-                reply.update(nice=os.getpriority(os.PRIO_PROCESS, 0), affinity=sorted(os.sched_getaffinity(0)))
+                reply.update(nice=(os.getpriority(os.PRIO_PROCESS, 0) if os.name != "nt" else None), affinity=(sorted(os.sched_getaffinity(0)) if os.name != "nt" else None))
             except NotComparable as error:
                 reply = {'not_comparable': str(error)}
         elif request['case'] == 'starts':
@@ -264,8 +265,8 @@ def worker():
                 if not all(row[key] and all(map(math.isfinite, row[key])) for key in PHYSICAL):
                     raise RuntimeError(f'{point}: empty or nonfinite physical state')
                 previous = result
-            reply = dict(seconds=elapsed, rows=rows, nice=os.getpriority(os.PRIO_PROCESS, 0),
-                         affinity=sorted(os.sched_getaffinity(0)), engine=str(epcsaft.__file__))
+            reply = dict(seconds=elapsed, rows=rows, nice=(os.getpriority(os.PRIO_PROCESS, 0) if os.name != "nt" else None),
+                         affinity=(sorted(os.sched_getaffinity(0)) if os.name != "nt" else None), engine=str(epcsaft.__file__))
         print(json.dumps(reply, allow_nan=False), file=replies, flush=True)
 
 
@@ -401,6 +402,13 @@ def ceilings(case, evaluations, fits=(), control=False):
     if control and set(evaluations) != set('AB'):
         return [f'{case} A=A control needs both serial evaluations']
     frozen = FROZEN[case]['identity']['frozen']
+    if os.name == 'nt':
+        for label, result in evaluations.items():
+            print(f'{case} {label}: Windows serial CPU {result["cpu_seconds"]:.6f} s; wall {result["seconds"]:.6f} s; desktop CPU ceiling inapplicable', flush=True)
+        for label, result in fits.items():
+            print(f'F1 {label}: Windows fit wall {result["seconds"]:.6f} s; critical CPU {result["critical_cpu_seconds"]:.6f} s', flush=True)
+        return [f'{case} {label} invalid Windows timing sample' for label, result in evaluations.items()
+                if any(not math.isfinite(result[key]) or result[key] <= 0 for key in ('seconds', 'cpu_seconds'))]
     ceiling = 1.25 * frozen['serial_cpu_seconds']
     # A baseline or control arm measures the host only when it does the frozen work; B is always held (#595).
     host = {label for label, result in evaluations.items() if (label == 'A' or control) and result['work'] == frozen['work']}
@@ -437,6 +445,9 @@ def fit_cpu(directory, result):
 
 
 def main():
+    if os.name == 'nt' and not sys.flags.utf8_mode:
+        return subprocess.run([sys.executable, '-X', 'utf8', str(Path(__file__).resolve()), *sys.argv[1:]],
+                              env={**os.environ, 'PYTHONUTF8': '1'}).returncode
     from engine_identity import prepared_python
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
@@ -444,8 +455,8 @@ def main():
         'Exit is nonzero when a case-6 or case-7 work count changes (unless --expect-change) or a state '
         'differs beyond 1e-10 of its quantity scale. F1 work increases and absolute CPU/wall ceilings also fail. '
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
-    parser.add_argument('prepared_A', type=Path, help='prepared interpreter, virtual environment, or build-tree root')
-    parser.add_argument('prepared_B', type=Path)
+    parser.add_argument('prepared_A', nargs='?', type=Path, help='prepared interpreter, virtual environment, or build-tree root')
+    parser.add_argument('prepared_B', nargs='?', type=Path)
     parser.add_argument('--pairs', type=int, default=1, help='counterbalanced pairs per case; more only for timing claims (default: 1)')
     parser.add_argument('--out', type=Path, default=ROOT / time.strftime('build/time-key-solves/%Y%m%dT%H%M%S'),
                         help='new or empty result directory (default: timestamped under build/time-key-solves)')
@@ -453,6 +464,8 @@ def main():
                         help='report intended work changes without failing; numerical values and ceilings still gate')
     parser.add_argument('--cpu', type=int, help='serial-sample CPU; full fits retain controller affinity')
     parser.add_argument('--fit', action='store_true', help='also run one F1 fit per environment with native default workers')
+    parser.add_argument('--collect-only', action='store_true')
+    parser.add_argument('--compare-only', nargs=2, type=Path)
     parser.add_argument('--control', type=Path, help='passing A=A --fit summary from this host and prepared A image')
     args = parser.parse_args()
     if args.pairs < 1:
@@ -461,11 +474,36 @@ def main():
     if out.exists() and any(out.iterdir()):
         parser.error('--out must be new or empty')
     out.mkdir(parents=True, exist_ok=True)
+    if args.compare_only:
+        work_rows, state_rows = [], []
+        summaries = []
+        for label, directory in zip('AB', args.compare_only):
+            summary = json.loads((directory / 'summary.json').read_text())
+            if summary.get('error') or summary['gate_failures']:
+                parser.error(f'invalid collection: {directory}')
+            summaries.append(summary)
+            for filename, rows in (('work.csv', work_rows), ('states.csv', state_rows)):
+                rows.extend(dict(r, wheel=label) for r in csv.DictReader((directory / filename).open()) if r['wheel'] == 'A')
+        if summaries[0]['input_sha256'] != summaries[1]['input_sha256']:
+            parser.error('key-solve input inventories differ')
+        failures = gate(work_rows, state_rows, args.expect_change)
+        if any('fits' in s['cases'][F1] for s in summaries):
+            fits = [s['cases'][F1]['fits']['A'] for s in summaries]
+            if physical_difference(*fits, FIT_VALUES)[0] > STATE_TOLERANCE:
+                failures.append('F1 fit numerical difference')
+        (out / 'comparison.json').write_text(json.dumps(dict(failures=failures, summaries=summaries), indent=2))
+        print(json.dumps(dict(identical_inputs=summaries[0]['input_sha256'], failures=failures,
+                             cases=[s['cases'] for s in summaries]), indent=2))
+        return bool(failures)
+    if args.collect_only:
+        args.prepared_A = args.prepared_B = Path(sys.executable)
+    if args.prepared_A is None or args.prepared_B is None:
+        parser.error('select two prepared environments or --collect-only')
     begun = time.perf_counter()
-    if os.getpriority(os.PRIO_PROCESS, 0) > 10:
+    if os.name != "nt" and os.getpriority(os.PRIO_PROCESS, 0) > 10:
         parser.error('inherited niceness exceeds 10; cannot lower it without new authority')
-    cpu = args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))
-    if cpu not in os.sched_getaffinity(0):
+    cpu = (args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))) if os.name != "nt" else None
+    if os.name != "nt" and cpu not in os.sched_getaffinity(0):
         parser.error('--cpu must be in the controller affinity')
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
@@ -473,8 +511,9 @@ def main():
     interpreters = {}
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
     summary = dict(environments={},
-                   source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
-                   cpu=cpu, nice=10, threads=1, host=platform.node(), pairs=args.pairs, warmups=1,
+                   source_commit=__import__('engine_identity')._source_identity(ROOT)[0],
+                   cpu=cpu, nice=10 if os.name != 'nt' else None, threads=1,
+                   cpu_boundary='parent plus children on Linux; parent only on Windows; fit worker CPU retained separately', host=platform.node(), pairs=args.pairs, warmups=1,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
                    change_percent='100*(B_seconds/A_seconds-1)',
                    state_difference='abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order',
@@ -491,7 +530,7 @@ def main():
         return json.loads(line)
 
     def retain(label, case, sample, result):
-        if result['nice'] != 10 or (sample != 'timer' and result['affinity'] != [cpu]):
+        if os.name != 'nt' and (result['nice'] != 10 or (sample != 'timer' and result['affinity'] != [cpu])):
             raise RuntimeError(f'{label}: timing controls differ: {result}')
         for row in result['rows']:
             work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
@@ -519,19 +558,22 @@ def main():
         if profile is not None:
             profile.mkdir()
             selected_env['EPCSAFT_FIT_CPU_PROFILE'] = str(profile)
-            affinity = sorted(os.sched_getaffinity(0))
-        processes[label] = subprocess.Popen(['taskset', '-c', ','.join(map(str, affinity)), 'nice', '-n',
-            str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0))), str(interpreters[label]),
+            affinity = (sorted(os.sched_getaffinity(0)) if os.name != "nt" else None)
+        command = [] if os.name == 'nt' else ['taskset', '-c', ','.join(map(str, affinity)), 'nice', '-n',
+            str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0)))]
+        processes[label] = subprocess.Popen([*command, str(interpreters[label]),
             str(Path(__file__).resolve()), '--worker'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, cwd=ROOT, env=selected_env)
-        if call(label, '__identity__') != identities[label]:
+        actual = call(label, '__identity__')
+        if actual != identities[label]:
+            (out / f'{label}-worker-identity.json').write_text(json.dumps(actual, indent=2))
             raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
 
     try:
         for label, selected in (('A', args.prepared_A), ('B', args.prepared_B)):
             python, selected_env = prepared_python(selected, env)
             identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
-            if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
+            if not (identity['source_revision'] and (identity['conda_package'] and identity['source_archive_sha256'] or identity['wheel_sha256'] or identity['meson_configuration_sha256'] and identity['lock_sha256'])):
                 parser.error(f'{label} must identify its prepared source, Meson build, and lock')
             identities[label], environments[label] = identity, selected_env
             interpreters[label] = python
@@ -584,7 +626,7 @@ def main():
                 # Alternate which block comes first, even when --pairs is odd.
                 orders = ('AB', 'BA') if pair % 2 else ('BA', 'AB')
                 for order in orders:
-                    load = os.getloadavg()
+                    load = os.getloadavg() if os.name != "nt" else (None, None, None)
                     results = {}
                     for label in order:
                         results[label] = call(label, case, starts)
@@ -687,7 +729,7 @@ def main():
             if rows:
                 write_csv(out / filename, rows)
         summary['runtime_seconds'] = time.perf_counter() - begun
-        summary['input_sha256'] = {str(path.relative_to(ROOT)): digest(path) for path in (
+        summary['input_sha256'] = {path.relative_to(ROOT).as_posix(): digest(path) for path in (
             Path(__file__).resolve(), *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
             ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
             ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',

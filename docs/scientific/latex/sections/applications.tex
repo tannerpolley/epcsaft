@@ -3,8 +3,10 @@
 \subsection{A local two-liquid settler optimization}
 % P:applications-01
 A water/ethanol/isobutanol/NaCl settler connects the equilibrium and action calculations to an equation-oriented process model.
-At 293.15~K and 100~kPa, the external IDAES/Pyomo model~\citep{leeIDAESProcessModeling2021,hartPyomoModelingSolving2011} minimizes normalized isobutanol and salt use subject to at least 96.5\,\% ethanol recovery in the organic outlet.
+At 293.15~K and 100~kPa, the external IDAES/Pyomo model~\citep{leeIDAESProcessModeling2021,hartPyomoModelingSolving2011} minimizes the sum of the isobutanol and salt feed-rate multipliers subject to at least 96.5\,\% ethanol recovery in the organic outlet.
+Recovery is the organic-outlet ethanol molar flow divided by the inlet ethanol molar flow.
 The isobutanol and salt feed rates, as multipliers of their base values, are bounded from 0.85 to 1.15, and every property call stays on a declared local two-liquid branch with Khudaida source parameters~\citep{Khudaida2026}.
+Water and ethanol feed rates remain fixed.
 The compiled external functions return outlet species amounts and exact first and second feed derivatives from the common native equilibrium equations.
 The outer process optimizer therefore receives the response of the full phase split, rather than a derivative at frozen phase composition.
 
@@ -16,7 +18,7 @@ Figure~\ref{fig:engineering} shows the outlets and the stored local stationarity
 Transport equality tests the external-function connection; balance and optimality residuals test the solved model.
 The calculation is nonreactive and fixed in temperature and pressure, so it supplies neither reactive extraction validation nor a global process optimum.
 
-\begin{figure}[pos=H]
+\begin{figure}[pos=htbp]
 \centering
 \includegraphics[width=0.96\linewidth]{F17-settler}\par
 \includegraphics[width=0.96\linewidth]{F18-hda-hydrogen-pairs}
@@ -30,14 +32,15 @@ Bottom: hydrogen/benzene and hydrogen/methane bubble-pressure calibration and wi
 \subsection{Hydrogen binary fits for a two-flash calculation}
 % P:applications-03
 A hydrodealkylation two-flash example uses hydrogen, methane, benzene and toluene to connect fitted pair parameters to an external phase-equilibrium model.
-The external IDAES model owns its flash and smoothing equations, while the package supplies pressure-specified density, total enthalpy and component fugacity coefficients with exact derivatives.
+The external IDAES model owns its flash and smoothing equations, while the package supplies pressure-specified density, total enthalpy and component $\ln\phi_i$ with exact derivatives.
 Before any process result is interpreted, the hydrogen pair interactions must be supported by measured binary states at the conditions used.
-Figure~\ref{fig:engineering} compares hydrogen/benzene and hydrogen/methane bubble pressures under zero and fitted pair interactions, with training and withheld states separated.
+Figure~\ref{fig:engineering} shows fitted hydrogen/benzene and hydrogen/methane bubble pressures against measurements, separating training and withheld states.
 
 % P:applications-04
 The hydrogen/benzene fit uses the measurements of Park et al.~\citep{Park1996}, with 12 training states at 323.2--423.2~K and six withheld states at 373.2~K.
 Their bubble-pressure AARDs after fitting are 6.03\,\% and 1.20\,\%.
 Hydrogen/methane uses Benham--Katz and Sagara training observations~\citep{Benham1957,Sagara1972} and Hong--Kobayashi withheld observations~\citep{Hong1981}: 39 training states at 103.15--173.65~K and 126 withheld states at 108.13--183.12~K, giving 13.9\,\% and 16.8\,\% AARD.
+The fit minimizes mean squared, discrepancy-scaled residuals of pressure and available vapor hydrogen mole fractions; the reported AARDs describe pressure only.
 The fitted interactions improve the declared binary objective, but the remaining methane discrepancy is large.
 The fit's discrepancy allowances and profile bands are not statistical uncertainty intervals.
 Hot process states outside the binary measurement domains remain extrapolations, so numerical process convergence cannot establish their physical accuracy.

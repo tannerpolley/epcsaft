@@ -7,7 +7,14 @@ the 320 K state group is the one the round-robin assignment sends to the worker.
 these columns against rebuilt-model differences.
 """
 
+import json
+from copy import deepcopy
 import math
+from typing import Any, cast
+
+import pytest
+
+from epcsaft.parameters import document_mapping
 
 from epcsaft import ActiveParameter, Mixture, ParameterFamily, Parameters, regression
 
@@ -98,3 +105,91 @@ def test_temperature_law_coefficients_reach_fit_workers() -> None:
         for column in range(30):
             exact = scales[column] * gradient[column] / 100.0
             assert math.isclose(jacobian[row * 30 + column], exact, rel_tol=1e-10, abs_tol=1e-12)
+
+
+def test_document_mapping_round_trip() -> None:
+    source = _document()
+    pairs = cast(list[Any], source['pairs'])
+    pairs[0]['coefficients'][0] = {'identity': 'pair/k', 'family': 'k_ij',
+                                   'value': {'magnitude': -0.052, 'unit': 'dimensionless'}}
+    pairs.append({
+        'component_id_a': 'a', 'component_id_b': 'b', 'coefficients': [{
+            'identity': 'pair/slope', 'family': 'k_ij_reciprocal_temperature_slope',
+            'value': {'magnitude': 2.0, 'unit': 'kelvin'},
+            'reference_temperature': {'magnitude': 310.0, 'unit': 'kelvin'}}]})
+    parameters = Parameters.from_mapping(source)
+    exported = document_mapping(parameters)
+    assert json.dumps(exported) == json.dumps(source)
+    reloaded = Parameters.from_mapping(exported)
+    assert document_mapping(reloaded) == source
+    for T in (300.0, 340.0):
+        assert Mixture(reloaded).state(T, rho=100.0, x=X).pressure == Mixture(parameters).state(T, rho=100.0, x=X).pressure
+
+
+@pytest.mark.parametrize("fitted", [False, True])
+@pytest.mark.parametrize("signed_zero", [False, True])
+def test_repeated_temperature_law_preserves_unfitted_json(fitted: bool, signed_zero: bool) -> None:
+    source = _document()
+    edges = cast(dict[str, Any], source["topology"])["edges"]
+    repeated = edges[3]["volume_correction"]["temperature_law"]
+    repeated["reciprocal_temperature_slope"]["value"]["magnitude"] = -0.0 if signed_zero else 3
+    if signed_zero:
+        edges[2]["volume_correction"]["temperature_law"]["reciprocal_temperature_slope"]["value"]["magnitude"] = 0.0
+    edges[3]["volume_correction"]["temperature_law"] = dict(reversed(list(repeated.items())))
+    parameters = Parameters.from_mapping(source)
+    expected = deepcopy(source)
+    if fitted:
+        coordinate = regression.coordinate(parameters, [("temperature_law_coefficient", "manufactured/c01/a0", 1.0)],
+                                           origin=0.1, scale=0.01, bounds=(0.05, 0.2))
+        observation = regression.density(parameters, 300.0, Mixture(parameters).state(300.0, rho=100.0, x=X).pressure,
+                                         X, phase="vapor", observed=101.0, form="difference", scale=100.0, mass_basis=False)
+        result = regression.fit(parameters, [coordinate], [observation], starts=[[0.0]], controls=regression.FitControls(
+            maximum_iterations=1, maximum_elapsed_time_seconds=30.0, gradient_tolerance=1e6, workers=1))[0]
+        parameters = regression.fitted_parameters(parameters, result)
+        for edge in cast(dict[str, Any], expected["topology"])["edges"][2:]:
+            edge["volume_correction"]["temperature_law"]["terms"][0]["coefficient"]["value"]["magnitude"] = 0.1
+    assert json.dumps(document_mapping(parameters)) == json.dumps(expected)
+
+
+def test_fitted_document_mapping_round_trip() -> None:
+    source = _document()
+    pairs = cast(list[Any], source["pairs"])
+    pairs[0]["coefficients"][0] = {"identity": "pair/k", "family": "k_ij",
+                                    "value": {"magnitude": -0.052, "unit": "dimensionless"}}
+    pairs[0]["coefficients"].append({"identity": "pair/slope", "family": "k_ij_reciprocal_temperature_slope",
+                                      "value": {"magnitude": 2.0, "unit": "kelvin"},
+                                      "reference_temperature": {"magnitude": 310.0, "unit": "kelvin"}})
+    parameters = Parameters.from_mapping(source)
+    model = Mixture(parameters)
+    coordinate = regression.coordinate(parameters, [('temperature_law_coefficient', 'manufactured/c01/a0', 1.0)],
+                                       origin=0.1, scale=0.01, bounds=(0.05, 0.2))
+    observations = [regression.density(parameters, T, model.state(T, rho=100.0, x=X).pressure, X, phase='vapor',
+                                       observed=101.0, form='difference', scale=100.0, mass_basis=False) for T in (300.0, 340.0)]
+    # Pin a changed native endpoint; optimizer convergence is not the serialization invariant.
+    coordinates = [coordinate, regression.coordinate(parameters, [("k_ij", ("a", "b"), 1.0)],
+                                                       origin=-0.061, scale=0.01, bounds=(-0.1, 0.0)),
+                   regression.coordinate(parameters, [("k_ij_reciprocal_temperature_slope", ("a", "b"), 1.0)],
+                                         origin=12.5, scale=10.0, bounds=(0.0, 20.0))]
+    result = regression.fit(parameters, coordinates, observations, starts=[[0.0, 0.0, 0.0]], controls=regression.FitControls(
+        maximum_iterations=1, maximum_elapsed_time_seconds=30.0, gradient_tolerance=1e6, workers=1))[0]
+    fitted = regression.fitted_parameters(parameters, result)
+    exported = document_mapping(fitted)
+    fitted_pairs = cast(list[Any], exported["pairs"])[0]["coefficients"]
+    assert fitted_pairs[0]["value"]["magnitude"] == -0.061
+    assert fitted_pairs[2]["value"]["magnitude"] == 12.5
+    assert exported != source  # a fit which kept the start cannot establish write-back
+    reloaded = Parameters.from_mapping(json.loads(json.dumps(exported)))
+    for T in (300.0, 340.0):
+        expected = Mixture(fitted).state(T, rho=100.0, x=X).pressure
+        assert Mixture(reloaded).state(T, rho=100.0, x=X).pressure == expected
+    assert document_mapping(parameters) == source
+
+
+def test_document_mapping_refusal() -> None:
+    parameters = Parameters.from_mapping(_document())
+    parameters._document = 'the start document cannot represent the fit: missing l_ij slot'
+    with pytest.raises(ValueError, match='missing l_ij slot'):
+        document_mapping(parameters)
+    parameters._document = None
+    with pytest.raises(ValueError, match='no retained source document'):
+        document_mapping(parameters)

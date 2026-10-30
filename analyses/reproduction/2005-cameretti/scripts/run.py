@@ -24,6 +24,9 @@ import water_reference as W
 
 HERE = Path(__file__).resolve().parents[1]
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / "results"
+sys.path.insert(0, str(HERE.parents[2] / "tools"))
+from engine_identity import loaded_identity
+
 MW = M.WATER["M"] * 1e-3
 P_DENSITY = 101325.0  # Pa; Figures 1, 3 and 4 densities at ambient pressure
 VARIANTS = {"corrected/0.88": ("IONS", "0.88"), "corrected/sigma": ("IONS", "sigma"),
@@ -193,7 +196,7 @@ def run():
                                             sides=";".join(sides), **record)
                                        for (kind, v, T, a), record in {**solved, **kcl}.items() if kind == "p" and (sides := unmet(record))])
     (OUT / "run-identity.json").write_text(json.dumps(dict(
-        engine=[str(item) for item in epcsaft.provenance()], processes=os.cpu_count(), native_solves=len(unique) + sum(t[0] == "p" for t in unique) + 2 * len(kcl),
+        engine=loaded_identity(), processes=os.cpu_count(), native_solves=len(unique) + sum(t[0] == "p" for t in unique) + 2 * len(kcl),
         wall_seconds=round(time.time() - start, 1), parallel_solve_seconds=round(solve_seconds, 1)), indent=1) + "\n")
 
 

@@ -261,7 +261,7 @@ def main():
     from engine_identity import loaded_identity
     prepared_environment = loaded_identity()
     identity = dict(**prepared_environment, engine_import=epcsaft.__file__,
-                    source_head=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
+                    source_head=prepared_environment['source_revision'],
                     thread_environment={name: os.environ.get(name) for name in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS')},
                     dependencies={name: prepared_environment['version'] if name == 'epcsaft' else metadata.version(name)
                                   for name in ('epcsaft', 'numpy', 'scipy', 'pyomo', 'idaes-pse')},

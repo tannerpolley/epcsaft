@@ -32,12 +32,13 @@ Electrolyte parameter estimation and equation-oriented process models require pr
 The ePC-SAFT package supplies these calculations in native C++ through a Python interface.
 Published hard-chain, dispersion, association, polar and electrolyte contributions define a selected Helmholtz energy; association and pressure closure, constrained equilibrium and exact derivatives share its mathematical implementation.
 One equilibrium driver handles declared neutral, charged and reacting phase specifications, while explicit tangent-plane searches test additional phases.
-Implicit derivatives of the defining equations supply observation Jacobians, least-squares and guarded minimax parameter estimation, and first and second derivatives for process models.
+Implicit derivatives of the defining equations supply observation Jacobians for least-squares and guarded minimax parameter estimation, and first and second derivatives for process models.
 Comparisons span pure-fluid saturation, neutral and associating mixtures, aqueous and mixed electrolytes, solvent transfer, liquid splits and reacting systems, with calibration, withheld prediction and published-model reproduction identified separately.
-With fixed published parameters, propane saturation pressures and liquid densities deviate from measurements by 2.70\,\% and 0.305\,\% on average; on 19 temperatures withheld from a three-temperature refit, the refit gives 1.00\,\% and 0.180\,\%, against 1.07\,\% and 0.228\,\% for the published parameters.
+With fixed published parameters, propane saturation pressures and liquid densities have average absolute relative deviations of 2.70\,\% and 0.305\,\% from measurements; on 19 temperatures withheld from a three-temperature refit, the refit gives 1.00\,\% and 0.180\,\%, against 1.07\,\% and 0.228\,\% for the published parameters.
 The comparisons also expose failed mixed-salt transfer, large reactive-amine pressure discrepancies and unresolved source conventions.
-Numerical verification gives liquid--liquid mole fractions within $4.62\times10^{-9}$ of an independent matched electrolyte implementation and selected solved-state derivatives within $3.40\times10^{-10}$ relative.
-Settler and hydrogen-mixture examples show how the same calculations enter engineering models, with physical accuracy bounded by the stated parameter domains and data.
+Numerical verification of a matched constant-permittivity electrolyte model gives liquid--liquid mole fractions within $4.62\times10^{-9}$ of an independent implementation.
+Selected first-order solved-state derivatives agree with independent implicit derivatives within $3.40\times10^{-10}$ relative.
+A settler example verifies transport of solved-state derivatives to an engineering model; the hydrogen binary fits leave hot process predictions unvalidated.
 \end{abstract}
 
 \begin{keywords}

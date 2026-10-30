@@ -9,10 +9,18 @@ phase and reaction problems, and ``regression`` declares parameter estimation.
 Native result types and exceptions are re-exported from ``_core``.
 """
 
+import os
+import sys
 from pathlib import Path
 
-from . import _core
-from .eos import (
+_dll_directories: list[object] = []
+if sys.platform == "win32":
+    for _directory in (Path(__file__).resolve().parent, Path(sys.prefix) / "Library" / "bin"):
+        if _directory.is_dir():
+            _dll_directories.append(os.add_dll_directory(str(_directory)))
+
+from . import _core  # noqa: E402 -- Windows DLL directories must be registered before native imports.
+from .eos import (  # noqa: E402
     ActiveParameter,
     DensityActionDirection,
     DensityBranch,
@@ -42,8 +50,8 @@ from .eos import (
     ThermochemistryRecord,
     ThermochemistryStatus,
 )
-from .parameters import ParameterError, Parameters
-from .reference import Activity, Reference, SolventActivity
+from .parameters import ParameterError, Parameters  # noqa: E402
+from .reference import Activity, Reference, SolventActivity  # noqa: E402
 
 ReactionThermochemistry = _core.ReactionThermochemistry
 reaction_thermochemistry_density = _core.reaction_thermochemistry_density

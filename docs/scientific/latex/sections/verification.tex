@@ -1,15 +1,16 @@
 \section{Numerical verification and solution limits}
 \label{sec:verification}
 % P:verification-01
-Numerical verification isolates errors in equations, closures, derivatives and solved-state transport from the physical discrepancies in Section~\ref{sec:physical}.
+Numerical verification checks equations, closures, derivatives and solved-state transport on the stated cases, separately from the physical comparisons in Section~\ref{sec:physical}.
 Table~\ref{tab:verification} summarizes representative checks with their reference and unit.
-Cross-code comparisons use matched parameters, equations and constants; finite-difference comparisons use declared directions and step refinement on the same smooth branch.
+Cross-code comparisons use matched parameters, equations and constants.
+Finite-difference comparisons use declared directions on the same smooth branch, with refined references or the finer of two steps as stated below.
 An observed code difference without an independent reference is not automatically an error of one code.
-Unless stated otherwise, the comparisons use FeOs~0.10.1, Clapeyron.jl~0.6.29 and teqp~0.23.2; the five-code propane comparison uses the surveyed source versions in Table~\ref{tab:software}.
+Unless stated otherwise, the comparisons use FeOs~0.10.1, Clapeyron.jl~0.6.29 and teqp~0.23.2; software versions and source revisions are detailed in Supporting Information Section~\ref{sec:si-sources}.
 
 \begin{table}[pos=htbp]
 \centering\small
-\caption{Numerical verification on the stated populations. Bounds are rounded outward. Ratios to a criterion are dimensionless and do not represent physical model errors.}
+\caption{Numerical verification on the stated populations. Bounds are rounded outward. A ratio divides a numerical error by its own criterion or allowance; unity is the limit. These dimensionless ratios use different scales and tolerances and do not represent physical model errors.}
 \label{tab:verification}
 \begin{tabularx}{\linewidth}{@{}p{0.37\linewidth}p{0.29\linewidth}X@{}}
 \toprule
@@ -74,7 +75,10 @@ The model-convention and derivative probe is described in Supporting Information
 \label{sec:derivative-verification}
 % P:verification-05
 The 36 pressure-specified residual enthalpy, entropy and heat-capacity actions cover orders one to three for four electrolyte records, along declared temperature, pressure and composition directions.
-Their criteria scale with the sum of the magnitudes of directional parts, preserving a meaningful scale when high-order terms cancel.
+For each action, the criterion is $5\times10^{-6}$, $5\times10^{-5}$ or $5\times10^{-4}$ times a term scale for orders one, two or three, respectively.
+This scale sums the magnitudes of the contributions obtained by separating each direction into its temperature, pressure and composition parts.
+It has the action's units and preserves a meaningful scale when high-order terms cancel.
+Agreement also requires the estimated reference uncertainty to remain below the criterion.
 Every error is below 0.34 of its criterion (Fig.~\ref{fig:derivatives}a).
 At third order the errors approach the estimated uncertainty of the refined references, so the observed agreement is reference-limited.
 Independent implicit derivatives from Clapeyron.jl and FeOs test selected solved bubble-point and liquid--liquid responses separately from the package's own central differences (Fig.~\ref{fig:derivatives}b).
@@ -115,12 +119,21 @@ For the equimolar water/hexane liquid at 300~K and 100~kPa (Fig.~\ref{fig:search
 These are finite-point numerical comparisons, not physical validation or a global stability certificate.
 
 % P:verification-07c
-Charged trials check the condensed-phase condition of Section~\ref{sec:stability}: under a density-independent permittivity a charged trial point is admitted only as a mechanically stable density root on the liquid side of its own composition's pressure loop, and every seed and supplied point reported here returns the admission or unavailability that this condition predicts for it.
+Charged trials check the condensed-phase condition of Section~\ref{sec:stability}.
+Under a density-independent permittivity, a charged trial point is admitted only as a mechanically stable density root on the liquid side of its own composition's pressure loop.
+Every seed and supplied point reported here returns the admission or unavailability that this condition predicts for it.
+
+% P:verification-07d
 All four charged seeds are admitted for the water/ethanol/isobutanol/NaCl split at 293.15~K and 100~kPa, and both are admitted for the aqueous NaCl liquid at 298.15~K and 100~kPa.
 For the reacting aqueous MEA/\ce{CO2} declarations at 318.15~K, a bubble at its solved pressure of 7.39816~kPa and a flash and a liquid at 5.9185286 and 8.8777929~kPa, three of four charged seeds are admitted; the remaining seed is unavailable because its only density root lies on the vapor side of its composition's pressure loop.
+
+% P:verification-07e
 Trial points supplied by composition and density, rather than found by minimization, are admitted at the aqueous and salt-rich liquid roots of aqueous NaCl at 298.15~K and 100~kPa, whereas the aqueous vapor root, an off-root salt-rich point and a loop-less MEA point remain unavailable under the same condition, with no reported tangent-plane distance.
 Unavailable points are never reclassified as stable because a distance could not be evaluated.
-Among the reconstructed trial points, the largest normalization and charge defects are $2.64\times10^{-16}$ and $6.94\times10^{-18}$, both against a criterion of $10^{-12}$, and the largest difference between a trial's tangent-plane distance and the value implied by its balance multipliers, divided by $RT$, is $1.95\times10^{-13}$ against $10^{-10}$.
+Among the reconstructed trial points, the largest dimensionless normalization and charge defects are $2.64\times10^{-16}$ and $6.94\times10^{-18}$, both against a criterion of $10^{-12}$.
+The largest difference between a trial's tangent-plane distance and the value implied by its balance multipliers, divided by $RT$, is $1.95\times10^{-13}$ against $10^{-10}$.
+
+% P:verification-07f
 Discovery returns two liquids for the electrolyte split and one liquid each for the aqueous NaCl and reacting liquid declarations, the same phase counts as their declared solves.
 For the MEA flash, whose declared two-phase solve succeeds, the search finds resolved descent but admits no declaration of lower Gibbs energy, so discovery stops explicitly without returning a phase set (Algorithm~\ref{alg:discovery}).
 No discovery is requested for the free-pressure bubble.

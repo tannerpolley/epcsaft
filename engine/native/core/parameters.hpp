@@ -119,8 +119,8 @@ struct FixedParameters {
 // Scalar is supplied by the consuming layer, so Core has no AD dependency.
 template <class Scalar>
 struct ParameterRecord final : FixedParameters {
-    Scalar ionic_region_relative_permittivity = 0.0;
-    Scalar born_c_dielectric = 0.0;
+    Scalar ionic_region_relative_permittivity = Scalar(0.0);
+    Scalar born_c_dielectric = Scalar(0.0);
     std::vector<Scalar> packing_diameter_angstrom;
     std::vector<Scalar> debye_huckel_diameter_angstrom;
     std::vector<Scalar> born_diameter_angstrom;

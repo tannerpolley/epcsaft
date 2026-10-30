@@ -246,7 +246,7 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
 
 // ALG-EQUILIBRIUM: a converged ln P start, otherwise the existing one-step bubble seed.
 double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
-                            const std::vector<std::size_t>& phase_offsets, const PhaseStart& start, core::Scope& scope, bool allow_loop = true) {
+                            const std::vector<std::size_t>& phase_offsets, const PhaseStart& start, core::Scope& scope, bool& corrected, bool correct_dense, const DriverLimits* limits, bool allow_loop = true) {
     const auto& problem = compiled.problem;
     const double seed = compiled.seed_pressure(), fallback = start.pressure > 0.0 ? start.pressure : seed;
     const bool loop = allow_loop && pressure_loop_eligible(compiled);
@@ -277,7 +277,31 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
                     ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
                         side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
             }
-            if (!states[0].log_fugacity_coefficient || !states[1].log_fugacity_coefficient) break;
+            if (correct_dense && states[1].stable_root_count == 1 && liquid_feed(states[1])) {
+                corrected = true;
+                scope.probe("dense_vapor_start", pressure);
+                scope.probe("dense_vapor_roots", static_cast<double>(states[1].stable_root_count.value_or(0)));
+                scope.probe("dense_vapor_witness", states[1].negative_slope_density.value_or(NAN));
+                for (int reduction = 0; reduction < policy::EQUILIBRIUM_START_PRESSURE_PASSES.value; ++reduction) {
+                    if (limits) limits->check();
+                    pressure *= 0.5;
+                    scope.probe("dense_vapor_pressure", pressure);
+                    states[1] = compiled.model->state_at_pressure(temperature, pressure, x[vapor], DensityBranch::Vapor);
+                    scope.probe("dense_vapor_density", states[1].molar_density);
+                    if (states[1].returned_density_branch() == DensityBranch::Vapor) break;
+                    if (!(states[1].stable_root_count == 1 && liquid_feed(states[1])))
+                        throw std::runtime_error("dense vapor start: reduced-pressure root side is unresolved");
+                }
+                if (states[1].returned_density_branch() != DensityBranch::Vapor)
+                    throw std::runtime_error("dense vapor start: eight pressure reductions did not establish vapor");
+                states[0] = compiled.model->state_at_pressure(temperature, pressure, x[1-vapor], DensityBranch::Liquid);
+                if (states[0].returned_density_branch() == DensityBranch::Vapor)
+                    throw std::runtime_error("dense vapor start: reduced-pressure liquid lies on vapor side");
+            }
+            if (!states[0].log_fugacity_coefficient || !states[1].log_fugacity_coefficient) {
+                if (corrected) throw std::runtime_error("dense vapor start: fugacity unavailable");
+                break;
+            }
             if (loop && states[0].stable_root_count == 1 && !liquid_feed(states[0])) break;
             const bool ideal = loop && states[1].stable_root_count == 1 && liquid_feed(states[1]);
             const double dz = (ideal ? 1.0 : states[1].compressibility_factor) - states[0].compressibility_factor;
@@ -292,8 +316,11 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
                 sum += next[k];
             }
             const double step = (zero_v ? std::log(sum) : -std::log(sum)) / dz;
-            const double stepped = loop ? pressure * std::exp(step) : seed * sum;
-            if (!(std::isfinite(stepped) && stepped > 0.0)) break;
+            const double stepped = loop ? pressure * std::exp(step) : (corrected ? pressure : seed) * sum;
+            if (!(std::isfinite(stepped) && stepped > 0.0)) {
+                if (corrected) throw std::runtime_error("dense vapor start: fugacity pressure is invalid");
+                break;
+            }
             for (std::size_t k = 0; k < support.size(); ++k) {
                 next[k] /= sum; change = std::max(change, std::abs(next[k] - x[pinned][support[k]]));
                 x[pinned][support[k]] = next[k];
@@ -310,8 +337,8 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
             }
             pressure = stepped;
         }
-    } catch (const std::exception&) {}  // A failed start leaves the original path unchanged.
-    return loop ? fugacity_pressure_seed(compiled, point, phase_offsets, start, scope, false) : fallback;
+    } catch (const std::exception&) { if (corrected) throw; }  // Uncorrected failures retain the original path.
+    return loop ? fugacity_pressure_seed(compiled, point, phase_offsets, start, scope, corrected, false, limits, false) : fallback;
 }
 
 // Ideal-solution chemical equilibrium with frozen c_j: minimize sum_j n_j (c_j + ln n_j/n) subject to B n = b
@@ -988,7 +1015,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 }  // namespace
 
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages,
-                                   const std::vector<bool>& packed) {
+                                   const std::vector<bool>& packed, bool correct_dense) {
     core::Scope scope("boundary_start");
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
@@ -1116,7 +1143,13 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (speciate && compiled.has_reaction && compiled.problem.phases.size() == 1 && free_phases == 1)
         if (const auto speciated = speciate_single_phase(compiled, point, compositions.front(), scope, 0, stages))
             std::tie(free_amount, speciated_density) = *speciated;
-    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope);
+    bool corrected = false;
+    const auto& problem = compiled.problem;
+    correct_dense = correct_dense && compiled.has_reaction && !compiled.model->parameters().ideal_gas
+        && problem.solids.empty() && !problem.discovery && !problem.enthalpy_j && !problem.entropy_j_per_k
+        && !problem.azeotrope && !problem.critical && !problem.envelope && !problem.loading
+        && problem.phases.size() == 2 && free_phases == 1;
+    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -1149,8 +1182,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             ? DensityBranch::Vapor : DensityBranch::Liquid;
         DensityRoot root;
         try {
-            const auto unanchored = [&] { return solve_density(*compiled.model, t, p, composition, branch, std::nullopt); };
-            if (start->vapor_density > 0.0 && branch == DensityBranch::Vapor) try {  // the phi^V estimate's root continues
+            const auto unanchored = [&] { return corrected && branch == DensityBranch::Vapor
+                ? declared_root(*compiled.model, t, p, composition, compiled.problem.phases[phase].kind) : solve_density(*compiled.model, t, p, composition, branch, std::nullopt); };
+            if (!corrected && start->vapor_density > 0.0 && branch == DensityBranch::Vapor) try {  // the phi^V estimate's root continues
                 root = solve_density(*compiled.model, t, p, composition, branch, start->vapor_density);
             } catch (const DensityStructureError&) { throw;
             } catch (const std::exception& error) { if (stages) retain_density_failure(stages->first_numerical_failure, error, "boundary anchor"); root = unanchored(); }

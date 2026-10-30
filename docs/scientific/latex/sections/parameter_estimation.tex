@@ -1,28 +1,33 @@
 \section{Parameter estimation and measurement models}
 \label{sec:estimation}
 % P:estimation-01
-A parameter fit compares observations $y_k$ with predictions $\hat y_k(\boldsymbol\theta)$ that are values of solved states, through the scaled least-squares objective
+A parameter fit compares observations $y_k$ with model predictions $\hat y_k(\boldsymbol\theta)$ through the scaled least-squares objective
 \begin{equation}
-\min_{\boldsymbol\theta}\ \tfrac12\sum_k r_k(\boldsymbol\theta)^2,
-\qquad r_k=\frac{\hat y_k(\boldsymbol\theta)-y_k}{s_k}\quad\text{or}\quad r_k=\frac{\ln(\hat y_k/y_k)}{s_k},
+\min_{\boldsymbol\theta}\ \tfrac12\sum_k w_k r_k(\boldsymbol\theta)^2,
+\qquad r_k=\frac{\hat y_k(\boldsymbol\theta)-y_k}{s_k}\quad\text{or}\quad r_k=\ln(\hat y_k/y_k),
 \label{eq:fit}
 \end{equation}
-where $s_k$ is a declared scale in the units of the residual.
+where $s_k>0$ is a numerical scale in the observation's units for a difference residual, and $w_k\geq0$ is a dimensionless relative weight.
+The log-ratio residual is dimensionless, has no separate scale and requires positive predicted and observed values.
 The active coordinates $\boldsymbol\theta$ are affine maps of physical parameters: residual equation-of-state parameters such as $k_{ij}$, segment diameters or association energies, a scalar $\ln K$ on a reaction's declared basis, and the coefficients $a$, $b$, $c$ and $d$ of Eq.~\eqref{eq:lnK}; reactions are identified by name rather than by position.
 The package minimizes Eq.~\eqref{eq:fit} within declared bounds with the Levenberg--Marquardt trust-region method of the Ceres solver~\citep{agarwalCeresSolver2023}.
 Every state is solved once per trial point, and a state that fails to solve is a failed evaluation, never a zero residual.
 
 % P:estimation-02
-Each Jacobian column is the exact derivative of a solved observation, $\partial\hat y_k/\partial\theta_j$, assembled from Eq.~\eqref{eq:solved-actions} with $\mathbf{y}_\theta=-\mathbf{F}_\mathbf{y}^{-1}\mathbf{F}_\theta$ evaluated as a linear solve.
+Prediction derivatives of solved observations, $\partial\hat y_k/\partial\theta_j$, are assembled from Eq.~\eqref{eq:solved-actions} with $\mathbf{y}_\theta=-\mathbf{F}_\mathbf{y}^{-1}\mathbf{F}_\theta$ evaluated as a linear solve.
+The optimizer Jacobian multiplies each prediction derivative by $\sqrt{w_k}/s_k$ for a difference residual or $\sqrt{w_k}/\hat y_k$ for a log-ratio residual.
 A reaction-law coordinate enters $\mathbf{F}_\theta$ only through the chemical rows.
 Supporting Information Table~\ref{tab:observations} lists the observations whose columns are verified, with their active coordinates and verified domain.
 Observations also include pressure-specified density, source-basis $\ln K$, phase compositions and fractions, bubble pressures, and the enthalpy of a finite addition between two solved endpoints, including a solvent with exactly zero conserved carbon.
-Reaction references stay fixed during a fit, a referenced fit at free temperature is unavailable, and an available state-derivative order implies no higher fitting order.
+Reaction-reference declarations stay fixed during a fit.
+Qualified finite-addition enthalpy observations admit referenced endpoints with solved temperature, using the reference and caloric derivatives at each endpoint's temperature.
+Other observations retain their stated domain limits, and an available state-derivative order implies no higher fitting order.
 A local parameter covariance is reported from the scaled Jacobian when the fit ends in the interior of the bounds with full rank, and is withheld at an active bound or under rank deficiency.
 
 \subsection{Measurement errors, correlated data and local uncertainty}
 % P:estimation-06
-The residual scale in Eq.~\eqref{eq:fit} can express numerical weighting or a physical standard deviation, and those meanings must be distinguished.
+The numerical scales and relative weights in Eq.~\eqref{eq:fit} do not by themselves specify measurement uncertainty.
+The implemented measurement-error model is Gaussian and uses difference residuals with declared physical standard deviations and unit relative weights for the included observations.
 When physical input uncertainty is declared, standardized corrections to measured temperature, pressure or admitted feed coordinates join the model parameters as unknowns.
 The objective includes both the corrected-output errors and one penalty per shared input measurement.
 A declared known covariance matrix can couple errors across observations and inputs.
@@ -51,15 +56,16 @@ A Born diameter can be held by a declared hydration Gibbs energy: an inner root 
 The least-squares covariance is then conditional on the fixed hydration targets.
 
 % P:estimation-04
-Guarded minimax estimation instead minimizes the largest scaled target residual $t$,
+Guarded minimax estimation instead minimizes the largest absolute decadic target error $t$,
 \begin{equation}
-\min_{\boldsymbol\theta,t}\ t\qquad\text{subject to}\quad \lvert r_k(\boldsymbol\theta)\rvert\le t\ \ (k\in\mathcal{T}),\qquad g_m(\boldsymbol\theta)\le g_m^{\mathrm{base}}\ \ (m\in\mathcal{G}),
+\min_{\boldsymbol\theta,t}\ t\qquad\text{subject to}\quad \lvert e_k(\boldsymbol\theta)\rvert\le t\ \ (k\in\mathcal{T}),\qquad g_m(\boldsymbol\theta)\le g_m^{\mathrm{base}}\ \ (m\in\mathcal{G}),
 \label{eq:minimax}
 \end{equation}
-where the guard functions $g_m$ keep selected properties outside the target set $\mathcal{T}$ no worse than a declared baseline.
-Ipopt solves this epigraph problem with the exact first-derivative columns of Eq.~\eqref{eq:fit} and limited-memory curvature, unlike the exact-curvature equilibrium solves of Section~\ref{sec:driver}.
+where $e_k=\log_{10}(\hat y_k/y_k)$ is the target error in decades and the guard functions $g_m$ constrain error measures for selected properties outside the target set $\mathcal{T}$ relative to a declared baseline.
+Ipopt solves this epigraph problem with exact first derivatives of the target and guard errors, obtained from the prediction columns, and limited-memory curvature, unlike the exact-curvature equilibrium solves of Section~\ref{sec:driver}.
 Several native starts, sharing one iteration and time budget, test for distinct local solutions.
-The result is a local stationary point of Eq.~\eqref{eq:minimax}; it supplies no covariance, no global optimum and no parameter identification.
+If recomputed feasibility and first-order optimality checks pass, the result is a local stationary estimate of Eq.~\eqref{eq:minimax}; optimizer termination alone does not establish stationarity.
+The estimate supplies no covariance or guarantee of global optimality or parameter identification.
 
 % P:estimation-05
 Manufactured parameter recovery and refined-difference observation columns test numerical correctness in Section~\ref{sec:verification}.
@@ -68,13 +74,13 @@ The physical fits below instead report calibration and separated prediction.
 
 
 
-\subsection{A worked propane fit and its withheld temperatures}
+\subsection{Worked propane and chloride fits}
 % P:estimation-08
 Propane provides a short fit that can be followed from observations to prediction.
 Saturation pressures and saturated-liquid mass densities measured by Glos et al.~\citep{Glos2004}, Table~2, supply three training temperatures: 210, 270 and 330~K.
 The active physical parameters are dispersion energy, segment number and segment diameter; the objective uses six natural-log ratios with unit weights.
 Listing~\ref{lst:fit} shows the observation part of that declaration.
-The scales are numerical weights, rather than the measured expanded uncertainties, so a low objective does not imply statistical agreement within those uncertainties.
+These numerical weights do not use the measured expanded uncertainties, so a low objective does not imply statistical agreement within those uncertainties.
 
 \begin{lstlisting}[language={},caption={Observation excerpt of the propane fit declaration; the active physical coordinates are dispersion energy, segment count and diameter.},label={lst:fit}]
 "targets": ["saturation_pressure", "saturated_liquid_mass_density"],

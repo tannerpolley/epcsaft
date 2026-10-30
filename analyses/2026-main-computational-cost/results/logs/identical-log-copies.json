@@ -1,0 +1,7 @@
+{
+  "main-cost-Engine-control.log": "main-cost-Engine-A.log.gz",
+  "preflight-Engine-A.log": "main-cost-Engine-A.log.gz",
+  "preflight-FeOs.log": "main-cost-FeOs.log.gz",
+  "quarto-final.log": "quarto-delivery.log.gz",
+  "quarto.log": "quarto-delivery.log.gz"
+}

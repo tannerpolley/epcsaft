@@ -48,6 +48,27 @@ FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> c
 
 void register_regression(nb::module_& module) {
     FitHost host;
+#ifdef _WIN32
+    if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
+        host.worker = {nb::cast<std::string>(python), "-I", "-c", R"(import ctypes, os, sys, msvcrt, importlib.util as u
+channel, extension, native = map(int, sys.argv[1:4])
+p, n = sys.argv[4:6]
+for handle, path in ((extension, p), (native, n)):
+    fd = msvcrt.open_osfhandle(handle, os.O_RDONLY)
+    a, b = os.stat(path), os.fstat(fd)
+    if (a.st_dev, a.st_ino) != (b.st_dev, b.st_ino):
+        raise RuntimeError('fit worker image identity changed')
+directories = [os.add_dll_directory(os.path.dirname(p))]
+bin = os.path.join(sys.prefix, 'Library', 'bin')
+if os.path.isdir(bin):
+    directories.append(os.add_dll_directory(bin))
+library = ctypes.CDLL(n)
+spec = u.spec_from_file_location('epcsaft._core', p)
+m = u.module_from_spec(spec)
+spec.loader.exec_module(m)
+m._serve_fit(channel)
+)"};
+#else
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
         // The native library loads by its installed path, so its $ORIGIN search path finds bundled libraries; a path that no
         // longer names the held file (an editable relink replaced it) refuses the worker.
@@ -57,6 +78,7 @@ void register_regression(nb::module_& module) {
             "native = ctypes.CDLL(p, mode=ctypes.RTLD_GLOBAL); "
             "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', '/proc/self/fd/3')); "
             "m = u.module_from_spec(s); s.loader.exec_module(m); m._serve_fit()"};
+#endif
     host.interrupted = [] {
         if (PyErr_CheckSignals() == 0) return false;
         interrupted_error.emplace();  // Capture and clear before native worker cleanup.
@@ -71,7 +93,11 @@ void register_regression(nb::module_& module) {
             } else PyErr_SetString(PyExc_RuntimeError, "fit interruption has no saved Python exception");
         }
     });
+#ifdef _WIN32
+    module.def("_serve_fit", [](std::uintptr_t channel) { serve_fit(channel); });
+#else
     module.def("_serve_fit", [] { serve_fit(0); });
+#endif
     module.def("formula_composition", [](const std::vector<double>& solvent, const Parameters& parameters,
         const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry, double molality) {
         core::Scope scope("formula_composition");

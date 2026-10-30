@@ -1,4 +1,5 @@
 #include "equilibrium/problem.hpp"
+#include "surface/parameter_builder.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium_support.hpp"
 #include "recording_support.hpp"
@@ -1220,6 +1221,16 @@ void check_recovery() {
     }
 }
 
+void check_product_residual() {
+    using namespace epcsaft;
+    using Matrix = Eigen::Matrix<WiderScalar, 1, 1>;
+    const WiderScalar delta = std::ldexp(1.0, -40);
+    Matrix a, b, p;
+    a[0] = 1 + delta; b[0] = 1 - delta; p[0] = 1;
+    const Matrix defect = core::compensated_defect(a, b, p);
+    CHECK(defect[0] == WiderScalar(std::ldexp(1.0, -80)));
+}
+
 void check_saturation_refusals() {
     using namespace epcsaft;
     using namespace equilibrium;
@@ -1351,10 +1362,53 @@ void check_saturation_loading() {
         std::abs(alpha - 0.37) <= 1e-8, "saturation-loading", "bubble", "alpha", "T,P", "alpha=0.37", "branch");
 }
 
+void check_kuranov_row_11() {
+#include "fixtures/kuranov_row_11.inc"
+    const auto r = solve_equilibrium(model, p);
+    CHECK(r.success && r.pressure);
+    CHECK(maximum_abs(r.residuals) <= 1e-10 && maximum_abs(r.classified_residuals) <= 1e-10);
+    CHECK(std::abs(*r.pressure / 2225195.79225 - 1) <= 1e-8);
+    CHECK(r.amounts[1] == 0.0);
+    const int elements[8][5] = {{0,2,0,1,0},{5,13,1,2,0},{1,0,0,2,0},{5,14,1,2,1},
+        {1,1,0,3,-1},{1,0,0,3,-2},{0,1,0,0,1},{0,1,0,1,-1}};
+    double balances[5] = {};
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        std::vector<double> x(r.mole_fractions.begin() + phase*8, r.mole_fractions.begin() + (phase+1)*8);
+        double sum = 0;
+        for (std::size_t i = 0; i < 8; ++i) {
+            CHECK(std::isfinite(x[i]) && x[i] >= 0);
+            sum += x[i];
+            for (std::size_t e = 0; e < 5; ++e) balances[e] += elements[i][e] * r.amounts[phase] * x[i];
+        }
+        CHECK(std::abs(sum-1) <= 1e-10);
+        const auto state = model.state(*r.temperature, r.molar_densities[phase], x);
+        CHECK(std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0);
+        CHECK(state.bulk_relative_permittivity > 0);
+        const auto root = declared_root(model, *r.temperature, *r.pressure, x, p.phases[phase].kind);
+        CHECK(root.molar_density > 0);
+        p.phases[phase].composition_guess.clear();
+        for (auto i : p.phases[phase].support) p.phases[phase].composition_guess.push_back(x[i]);
+    }
+    for (std::size_t e = 0; e < 5; ++e) {
+        for (std::size_t i = 0; i < 8; ++i) balances[e] -= elements[i][e] * p.feed.values[i];
+        CHECK(std::abs(balances[e]) <= 1e-10);
+    }
+    p.pressure.value = *r.pressure;
+    const auto replay = solve_equilibrium(model, p);
+    CHECK(replay.success && replay.pressure);
+    CHECK(maximum_abs(replay.residuals) <= 1e-10 && maximum_abs(replay.classified_residuals) <= 1e-10);
+    CHECK(std::abs(*replay.pressure / *r.pressure - 1) <= 1e-8);
+    std::printf("kuranov-row-11 P=%.17g residual=%.17g balance=%.17g replay=%.17g\n",
+        *r.pressure, maximum_abs(r.residuals), *std::max_element(std::begin(balances),std::end(balances)),
+        std::abs(*replay.pressure / *r.pressure-1));
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.boundary.kuranov-row-11", "kuranov-row-11"}, check_kuranov_row_11},
+        {{"native.boundary.product-residual", "product-residual"}, check_product_residual},
         {{"native.boundary.saturation-refusals", "saturation-refusals"}, check_saturation_refusals},
         {{"native.boundary.saturation-loading", "saturation-loading"}, check_saturation_loading},
         {{"native.boundary.s3", "S3"}, check_s3},

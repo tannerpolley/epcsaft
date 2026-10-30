@@ -161,6 +161,17 @@ def leaf_parts(relative: str) -> tuple[str, tuple[str, ...]]:
     return "/".join(parts[:depth]), parts[depth:]
 
 
+# Issue 929 requires these unchanged physical-input snapshots of the frozen release.
+DUPLICATE_INPUT_SNAPSHOTS = {
+    "8a6b52282907e270c7e62d529457ab4c738ba285140866615c2251addd84d66a": (
+        "2026-main-computational-cost/inputs/declared-cases.json",
+        "2026-release-computational-cost/inputs/declared-cases.json"),
+    "4b0c937acc432c4a430af892485e89482cd0332b65b2832d540dfd2b37ea322d": (
+        "2026-main-computational-cost/inputs/electrolyte-model.json",
+        "2026-release-computational-cost/inputs/electrolyte-model.json"),
+}
+
+
 def duplicate_groups(names: list[str], read) -> list[list[str]]:
     """Copies across leaves, or within a leaf's results/ and figures/, by decompressed content."""
     by_hash: dict[str, list[str]] = defaultdict(list)
@@ -172,7 +183,9 @@ def duplicate_groups(names: list[str], read) -> list[list[str]]:
         if len(data) >= DUPLICATE_FLOOR:
             by_hash[hashlib.sha256(data).hexdigest()].append(name)
     groups = []
-    for names in by_hash.values():
+    for digest, names in by_hash.items():
+        if tuple(sorted(names)) == DUPLICATE_INPUT_SNAPSHOTS.get(digest):
+            continue
         located = [leaf_parts(name) for name in names]
         owned = [inner for _, inner in located if inner[0] in ("results", "figures")]
         if len({leaf for leaf, _ in located}) > 1 or len(owned) > 1:
@@ -204,6 +217,15 @@ def check_analysis_files() -> None:
             "a/results/x/run.py", "reproduction/b/inputs/x.py",
             "a/results/x/scripts/run.py", "a/figures/scripts/plot.py"]:
         raise RuntimeError("code-location check missed planted code outside scripts/")
+
+    for digest, pair in DUPLICATE_INPUT_SNAPSHOTS.items():
+        data = (ANALYSES / pair[0]).read_bytes()
+        if hashlib.sha256(data).hexdigest() != digest or data != (ANALYSES / pair[1]).read_bytes():
+            raise RuntimeError("approved input snapshot changed")
+        if (duplicate_groups(list(pair), lambda _: data)
+                or not duplicate_groups([*pair, "other/inputs/copy.json"], lambda _: data)
+                or not duplicate_groups(list(pair), lambda _: data + b"\n")):
+            raise RuntimeError("input snapshot exception escaped its paths or identity")
 
     listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z", "analyses"],
                             cwd=ROOT, check=True, capture_output=True).stdout.decode().split("\0")

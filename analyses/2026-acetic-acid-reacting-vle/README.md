@@ -16,8 +16,8 @@ From this checkout, regenerate with that qualified environment:
 
 ```bash
 nice -n 10 python3 analyses/2026-acetic-acid-reacting-vle/scripts/extract_measurements.py
-nice -n 10 /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/run.py
-nice -n 10 /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/reference_refinement.py
+nice -n 10 build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/run.py
+nice -n 10 build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/reference_refinement.py
 nice -n 10 python3 analyses/2026-acetic-acid-reacting-vle/scripts/summarize.py
 nice -n 10 .venv/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/present.py
 ```

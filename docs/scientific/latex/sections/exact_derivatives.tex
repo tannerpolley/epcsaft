@@ -27,8 +27,8 @@ Finite differences are used only as references to verify exact derivatives.
 \subsection{Derivatives of a solved state}
 % P:derivatives-04
 Let $\mathbf{F}(\mathbf{y},\boldsymbol\theta)=0$ collect the rows of Section~\ref{sec:equilibrium} that define a returned state: balances, electroneutrality, normalization, stationarity, pressure, pinned amounts and any caloric rows.
-For fluid-phase declarations, the state coordinates $\mathbf{y}$ comprise phase amounts, logarithmic compositions and packing fractions, free intensive variables, and balance and charge multipliers.
-The inputs $\boldsymbol\theta$ comprise temperature, pressure, feed amounts, active model parameters and reaction-law coefficients.
+For fluid-phase declarations, the state coordinates $\mathbf{y}$ comprise phase amounts, logarithmic compositions and packing fractions, temperature or pressure when solved, and balance and charge multipliers.
+The inputs $\boldsymbol\theta$ comprise prescribed temperature or pressure, feed amounts, active model parameters and reaction-law coefficients.
 On a smooth branch with fixed supports and nonsingular $\mathbf{F}_\mathbf{y}$, the first and second directional actions along input directions $a$ and $b$ solve~\citep{pirnayOptimalSensitivityBased2012}
 \begin{equation}
 \mathbf{F}_\mathbf{y}\,\mathbf{y}_a=-\mathbf{F}_a,\qquad
@@ -42,7 +42,7 @@ The derivative of an observable adds its direct dependence on $\boldsymbol\theta
 At a given returned state, the actions depend on the shared defining rows and their derivatives, not on the iteration history used to obtain that state.
 
 % P:derivatives-05
-Each derivative order of a solved state needs one more order of the Helmholtz energy than the rows contain (Table~\ref{tab:orders}).
+For defining rows built from first derivatives of the Helmholtz energy, an order-$k$ solved-state action requires energy derivatives through order $k+1$ (Table~\ref{tab:orders}).
 The stationarity rows contain first derivatives of the energy, so a first action needs second energy derivatives and a third action needs fourth.
 Caloric observables add their own order: the enthalpy is a first derivative of the energy and the fixed-composition heat capacity a second.
 The table states mathematical requirements; Section~\ref{sec:verification} states which observables and directions were verified.
@@ -87,7 +87,9 @@ Solved state $\mathbf{y}$ & 1 & 2 & 3 & 4 \\
 Algorithm~\ref{alg:actions} differentiates the defining equations, independently of optimizer history.
 Every highest unknown Taylor coefficient multiplies the same central Jacobian; known lower coefficients form the right-hand side.
 One factorization therefore serves several directions and observables.
-Action units follow the physical direction, and condition-based error estimates accompany the linear residual.
+Each input direction specifies physical increments along a dimensionless path parameter, so an action retains the units of its observable.
+For directions along individual input coordinates, partial derivatives follow by dividing the actions by the product of their physical increments.
+Condition-based error estimates accompany the linear residual.
 
 
 \subsection{Where derivatives are unavailable}
@@ -109,9 +111,11 @@ On declared reacting branches with thermal records, the package returns caloric 
 c_{P,\mathrm{eq}}=\frac{1}{N_{\mathrm{f}}}\left(\frac{\mathrm{d}H}{\mathrm{d}T}\right)_{P},
 \label{eq:cpeq}
 \end{equation}
-where $H$ is the extensive enthalpy of all phases along the solved fixed-pressure path and $N_{\mathrm{f}}$ the feed amount.
+where $H$ is the extensive enthalpy of all phases along the solved path at fixed pressure and feed, and $N_{\mathrm{f}}$ is the total feed amount in moles.
+Thus $c_{P,\mathrm{eq}}$ is expressed in \si{\joule\per\mol\per\kelvin} on the feed basis.
 $c_{P,\mathrm{eq}}$ contains the heat absorbed by the shift of the reactions and phase split with temperature, so it differs from the fixed-composition heat capacity of a phase.
-It is a first-order action of $H$, its first temperature action is the second-order action, and higher actions of $c_{P,\mathrm{eq}}$ are not provided; it requires driven temperature and pressure.
+It uses the first temperature derivative of $H$, divided by $N_{\mathrm{f}}$; its first temperature derivative uses the second temperature derivative of $H$, with the same normalization.
+Temperature and pressure must be prescribed inputs, and second- and higher-order actions of $c_{P,\mathrm{eq}}$ are not provided.
 It is not a reacting constant-volume heat capacity, and no internal-energy--volume specification is provided.
 
 % P:derivatives-08
@@ -121,6 +125,7 @@ Finite-addition enthalpy columns likewise include both solved endpoints and the 
 
 
 % P:derivatives-09
-At fixed pressure and feed, integrating $N_{\mathrm f}c_{P,\mathrm{eq}}$ should recover the independently solved enthalpy increment; integrating its temperature derivative should recover the heat-capacity increment.
+At fixed pressure and feed, integrating $N_{\mathrm f}c_{P,\mathrm{eq}}$ over temperature should recover the independently solved enthalpy increment.
+Integrating the temperature derivative of $c_{P,\mathrm{eq}}$ over temperature should recover the change in $c_{P,\mathrm{eq}}$.
 Section~\ref{sec:derivative-verification} tests these numerical identities.
 Measured calorimetry would be required to establish physical accuracy.

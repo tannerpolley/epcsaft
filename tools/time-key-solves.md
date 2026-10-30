@@ -166,3 +166,20 @@ Both fits used 32 workers and converged. The fixed serial CPU ceiling is **20.34
 The main A=A command with `--fit` took 143.596 s; the default main-versus-candidate command took 39.391 s. Full fitting is explicit because it repeats the fixed-point work throughout the optimizer, while the default command already checks the four work counts and serial ceiling on every runtime change. The Gates table requires full fits for changes that can change this repeated work or worker distribution.
 
 These are performance verification measurements on a shared desktop. The two current fits give an observed range, not a confidence interval. All intervening main changes separate the historical and current values; the difference is not attributed to this observation-only change. The original six-case gate also compared unmodified main with the instrumented baseline, returning identical work counts and states with the timer off.
+
+On Windows the same numerical and work comparisons run without Linux affinity,
+niceness or desktop CPU ceilings. Elapsed and process CPU samples are retained;
+full-fit worker CPU comes from the native profile. Windows process CPU excludes
+child processes, which are reported separately in the fit profile.
+
+Both comparison commands also accept `--collect-only --out <directory>` using
+the current interpreter, then `--compare-only <collection-A> <collection-B>
+--out <directory>` without reopening either environment. Corpus collections
+retain their input hashes and accepted inventories; key-solve collections retain
+the same work, states and input hashes as the two-interpreter command. Add
+`--fit` during key-solve collection to retain the full fit. Comparison refuses
+failed collections and mismatched input inventories. Development identities
+require the source, Meson products and lock; installed identities require the
+source identity plus the conda package record or wheel hash and loaded libraries.
+The Windows production recipe retains independent development and installed
+collections and their A=A controls; these are test inputs, outside the package.

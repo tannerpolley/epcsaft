@@ -1,0 +1,452 @@
+{
+  "components": {
+    "METHANE": {
+      "cid": "methane",
+      "M": 0.016043,
+      "m": 1.0,
+      "sigma": 3.7039,
+      "eps": 150.03
+    },
+    "ETHANE": {
+      "cid": "ethane",
+      "M": 0.03007,
+      "m": 1.6069,
+      "sigma": 3.5206,
+      "eps": 191.42
+    },
+    "PROPANE": {
+      "cid": "propane",
+      "M": 0.044096,
+      "m": 2.002,
+      "sigma": 3.6184,
+      "eps": 208.11
+    },
+    "NBUTANE": {
+      "cid": "n-butane",
+      "M": 0.05812,
+      "m": 2.3316,
+      "sigma": 3.7086,
+      "eps": 222.88
+    },
+    "CO2": {
+      "cid": "carbon-dioxide",
+      "M": 0.04401,
+      "m": 2.0729,
+      "sigma": 2.7852,
+      "eps": 169.21
+    },
+    "METHANOL": {
+      "cid": "methanol",
+      "M": 0.032042,
+      "m": 1.5255,
+      "sigma": 3.23,
+      "eps": 188.9,
+      "assoc": [
+        2899.5,
+        0.035176
+      ]
+    },
+    "ETHANOL": {
+      "cid": "ethanol",
+      "M": 0.04607,
+      "m": 2.3827,
+      "sigma": 3.1771,
+      "eps": 198.24,
+      "assoc": [
+        2653.4,
+        0.032384
+      ]
+    },
+    "NHEXANE": {
+      "cid": "n-hexane",
+      "M": 0.086177,
+      "m": 3.0576,
+      "sigma": 3.7983,
+      "eps": 236.77
+    },
+    "ACETONE_POLAR": {
+      "cid": "acetone",
+      "M": 0.05808,
+      "m": 2.7447,
+      "sigma": 3.2742,
+      "eps": 232.99,
+      "mu": 2.88
+    }
+  },
+  "models": {
+    "propane": [
+      "PROPANE"
+    ],
+    "methanol": [
+      "METHANOL"
+    ],
+    "acetone-polar": [
+      "ACETONE_POLAR"
+    ],
+    "methane-ethane": [
+      "METHANE",
+      "ETHANE"
+    ],
+    "methanol-hexane": [
+      "METHANOL",
+      "NHEXANE"
+    ],
+    "gross-methane-ethane": [
+      "METHANE",
+      "ETHANE"
+    ],
+    "ethane": [
+      "ETHANE"
+    ]
+  },
+  "tolerances": {
+    "action_abs": 2e-08,
+    "action_rel": 2e-05,
+    "helmholtz_scaled": 1e-06,
+    "property_rel": 1e-08,
+    "floors": {
+      "P": 1.0,
+      "h": 1.0,
+      "cv": 1.0,
+      "ar": 1.0,
+      "lnphi": 1.0
+    },
+    "density_rel": 1e-10,
+    "same_image": 1e-10,
+    "equilibrium_rel": 1e-07,
+    "composition_abs": 1e-08
+  },
+  "t1": [
+    {
+      "id": "O-P01/propane-dilute",
+      "model": "propane",
+      "T": 300.0,
+      "rho": 500.0,
+      "x": [
+        1.0
+      ],
+      "directions": {
+        "T": [
+          1.0,
+          0.0,
+          [
+            0.0
+          ]
+        ],
+        "rho": [
+          0.0,
+          1.0,
+          [
+            0.0
+          ]
+        ]
+      },
+      "requests": [
+        {
+          "order": 1,
+          "names": [
+            "T"
+          ],
+          "inadmissible_chart": null,
+          "levels": [
+            {
+              "h": [
+                0.02
+              ],
+              "admissible": true,
+              "points": 2
+            },
+            {
+              "h": [
+                0.01
+              ],
+              "admissible": true,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "order": 1,
+          "names": [
+            "rho"
+          ],
+          "inadmissible_chart": null,
+          "levels": [
+            {
+              "h": [
+                0.05
+              ],
+              "admissible": true,
+              "points": 2
+            },
+            {
+              "h": [
+                0.025
+              ],
+              "admissible": true,
+              "points": 2
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "names": [
+            "T",
+            "T"
+          ],
+          "inadmissible_chart": null,
+          "levels": [
+            {
+              "h": [
+                0.02,
+                0.02
+              ],
+              "admissible": true,
+              "points": 4
+            },
+            {
+              "h": [
+                0.01,
+                0.01
+              ],
+              "admissible": true,
+              "points": 4
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "names": [
+            "T",
+            "rho"
+          ],
+          "inadmissible_chart": null,
+          "levels": [
+            {
+              "h": [
+                0.02,
+                0.05
+              ],
+              "admissible": true,
+              "points": 4
+            },
+            {
+              "h": [
+                0.01,
+                0.025
+              ],
+              "admissible": true,
+              "points": 4
+            }
+          ]
+        },
+        {
+          "order": 2,
+          "names": [
+            "rho",
+            "rho"
+          ],
+          "inadmissible_chart": null,
+          "levels": [
+            {
+              "h": [
+                0.05,
+                0.05
+              ],
+              "admissible": true,
+              "points": 4
+            },
+            {
+              "h": [
+                0.025,
+                0.025
+              ],
+              "admissible": true,
+              "points": 4
+            }
+          ]
+        }
+      ],
+      "comparators": [
+        "FeOs",
+        "Clapeyron"
+      ],
+      "neutral_property": true
+    }
+  ],
+  "t2": {
+    "ordinary": [
+      {
+        "id": "A-propane-liquid",
+        "model": "C1",
+        "T": 300,
+        "x": [
+          1
+        ],
+        "branch": "liquid",
+        "states": [
+          {
+            "index": 0,
+            "P": 1997321.7914793573
+          },
+          {
+            "index": 1,
+            "P": 1997328.2344528781
+          },
+          {
+            "index": 2,
+            "P": 1997334.6774263992
+          },
+          {
+            "index": 3,
+            "P": 1997341.12039992
+          },
+          {
+            "index": 4,
+            "P": 1997347.5633734409
+          },
+          {
+            "index": 5,
+            "P": 1997354.0063469617
+          },
+          {
+            "index": 6,
+            "P": 1997360.4493204828
+          },
+          {
+            "index": 7,
+            "P": 1997366.8922940036
+          },
+          {
+            "index": 8,
+            "P": 1997373.3352675245
+          },
+          {
+            "index": 9,
+            "P": 1997379.7782410453
+          },
+          {
+            "index": 10,
+            "P": 1997386.2212145664
+          },
+          {
+            "index": 11,
+            "P": 1997392.6641880872
+          },
+          {
+            "index": 12,
+            "P": 1997399.107161608
+          },
+          {
+            "index": 13,
+            "P": 1997405.550135129
+          },
+          {
+            "index": 14,
+            "P": 1997411.99310865
+          },
+          {
+            "index": 15,
+            "P": 1997418.4360821708
+          },
+          {
+            "index": 16,
+            "P": 1997424.8790556917
+          },
+          {
+            "index": 17,
+            "P": 1997431.3220292125
+          },
+          {
+            "index": 18,
+            "P": 1997437.7650027336
+          },
+          {
+            "index": 19,
+            "P": 1997444.2079762544
+          },
+          {
+            "index": 20,
+            "P": 1997450.6509497752
+          },
+          {
+            "index": 21,
+            "P": 1997457.0939232963
+          },
+          {
+            "index": 22,
+            "P": 1997463.5368968172
+          },
+          {
+            "index": 23,
+            "P": 1997469.979870338
+          },
+          {
+            "index": 24,
+            "P": 1997476.4228438588
+          },
+          {
+            "index": 25,
+            "P": 1997482.86581738
+          },
+          {
+            "index": 26,
+            "P": 1997489.3087909007
+          },
+          {
+            "index": 27,
+            "P": 1997495.7517644216
+          },
+          {
+            "index": 28,
+            "P": 1997502.1947379424
+          },
+          {
+            "index": 29,
+            "P": 1997508.6377114635
+          },
+          {
+            "index": 30,
+            "P": 1997515.0806849843
+          },
+          {
+            "index": 31,
+            "P": 1997521.5236585052
+          }
+        ]
+      }
+    ],
+    "ethane_loop": []
+  },
+  "t4": {
+    "methane_ethane": {
+      "x": [
+        0.5,
+        0.5
+      ],
+      "points": [
+        [
+          190.0,
+          1000000.0
+        ]
+      ]
+    }
+  },
+  "release": "current-main",
+  "methods": [
+    "analyses/2026-audit-timing-campaign/scripts/campaign.py",
+    "analyses/2026-audit-timing-campaign/scripts/engine_worker.py",
+    "analyses/2026-audit-timing-campaign/scripts/feos_worker.py",
+    "analyses/2026-audit-timing-campaign/scripts/clapeyron_server.jl",
+    "analyses/2026-head-to-head-comparisons/scripts/h2h_engine.py"
+  ],
+  "quiet_host": {
+    "reserved_core": [
+      15,
+      31
+    ],
+    "poll_seconds": 30,
+    "maximum_wait_hours": 8,
+    "authority": "Owner 2026-10-29: reserved user core and compiler exclusion; load recorded only."
+  }
+}

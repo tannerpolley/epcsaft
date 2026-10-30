@@ -1,4 +1,5 @@
 #pragma once
+#include "core/wider_scalar.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -96,7 +97,7 @@ struct Taylor final {
     }
     [[gnu::always_inline]] friend Taylor sqrt(const Taylor& a) {
         Taylor s;
-        s.c[0] = std::sqrt(a.c[0]);
+        s.c[0] = wide_math::sqrt(a.c[0]);
         const Base inverse = 0.5 / s.c[0];
         _Pragma("GCC unroll 8")
         for (std::size_t k = 1; k <= N; ++k) {
@@ -117,16 +118,16 @@ inline constexpr bool is_taylor<Taylor<N, Base>> = true;
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar scalar_log1p(const Scalar& value) {
-    if constexpr (std::is_floating_point_v<Scalar>) return std::log1p(value);
-    else if constexpr (is_taylor<Scalar>) return log_series(value, std::log1p(value.c[0]), 1.0);
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return wide_math::log1p(value);
+    else if constexpr (is_taylor<Scalar>) return log_series(value, wide_math::log1p(value.c[0]), 1.0);
     else return CppAD::log1p(value);
 }
 
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar scalar_expm1(const Scalar& value) {
-    if constexpr (std::is_floating_point_v<Scalar>) return std::expm1(value);
-    else if constexpr (is_taylor<Scalar>) return exp_series(value, std::expm1(value.c[0]), 1.0);
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return wide_math::expm1(value);
+    else if constexpr (is_taylor<Scalar>) return exp_series(value, wide_math::expm1(value.c[0]), 1.0);
     else return CppAD::expm1(value);
 }
 
@@ -134,7 +135,7 @@ template <typename Scalar>
 // EqExclude: scalar utility dispatch; condition remains live on an AD tape
 Scalar scalar_select_less(const Scalar& left, const Scalar& right,
                           const Scalar& yes, const Scalar& no) {
-    if constexpr (std::is_floating_point_v<Scalar>) return left < right ? yes : no;
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return left < right ? yes : no;
     else if constexpr (is_taylor<Scalar>) return left.c[0] < right.c[0] ? yes : no;
     else return CppAD::CondExpLt(left, right, yes, no);
 }
@@ -142,23 +143,23 @@ Scalar scalar_select_less(const Scalar& left, const Scalar& right,
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar scalar_log(const Scalar& value) {
-    if constexpr (std::is_floating_point_v<Scalar>) return std::log(value);
-    else if constexpr (is_taylor<Scalar>) return log_series(value, std::log(value.c[0]), 0.0);
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return wide_math::log(value);
+    else if constexpr (is_taylor<Scalar>) return log_series(value, wide_math::log(value.c[0]), 0.0);
     else return CppAD::log(value);
 }
 
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar scalar_exp(const Scalar& value) {
-    if constexpr (std::is_floating_point_v<Scalar>) return std::exp(value);
-    else if constexpr (is_taylor<Scalar>) return exp_series(value, std::exp(value.c[0]), 0.0);
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return wide_math::exp(value);
+    else if constexpr (is_taylor<Scalar>) return exp_series(value, wide_math::exp(value.c[0]), 0.0);
     else return CppAD::exp(value);
 }
 
 template <typename Scalar>
 // EqExclude: scalar utility dispatch
 Scalar scalar_sqrt(const Scalar& value) {
-    if constexpr (std::is_floating_point_v<Scalar>) return std::sqrt(value);
+    if constexpr ((std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>)) return wide_math::sqrt(value);
     else if constexpr (is_taylor<Scalar>) return sqrt(value);
     else return CppAD::sqrt(value);
 }

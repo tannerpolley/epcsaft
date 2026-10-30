@@ -31,18 +31,24 @@ Unavailable predictions remain identified, with statistics taken over the availa
 Counts of repeated parameter variants or thermodynamically linked coordinates do not increase the number of independent measurements.
 
 % P:physical-02b
-Table~\ref{tab:physical-summary} gives the result by fluid class, and the subsections below explain each entry.
-With published parameters, pure-fluid saturation pressures and liquid densities deviate from measurements or reference correlations by 0.281--2.70\,\% on average, and the zero-interaction methane/ethane prediction places both phase compositions within 0.008 mole fraction on average.
+Table~\ref{tab:physical-summary} summarizes selected populations by fluid class, and the subsections below explain each entry.
+For the pure-fluid saturation-pressure and liquid-density populations in the table, published-parameter AARDs range from 0.281 to 2.70\,\% against measurements or reference correlations.
+The zero-interaction methane/ethane prediction places both phase compositions within 0.008 mole fraction on average.
 For aqueous 1:1 salts at 298.15~K the osmotic and mean ionic activity coefficients deviate by 1.72\,\% and 4.36\,\% from evaluated data that overlap the original parameter fit, and salted water/ethanol/isobutanol tie lines computed with the source parameters differ from the measurements by a mean 0.0111 mole fraction.
-Accuracy is lost where parameters are carried beyond the data they were fitted to: unchanged published parameters fail every comparison range for NaCl--MgCl$_2$ and NaCl--CaCl$_2$ brines, NaCl activity coefficients deviate more in ethanol-rich than in water-rich solvents, the acetic acid partition coefficient deviates by 47.8\,\% although the aqueous pH is predicted within 0.146 unit, and methyldiethanolamine (MDEA) parameters fitted to osmotic coefficients give total pressures with 96.2\,\% and 89.6\,\% AARD.
-Refitting recovers a description within the fitted domain: a joint chloride fit predicts two withheld mixed-brine sources with RMS residuals of 0.00825 in osmotic coefficient and 0.00121 in water activity.
-Section~\ref{sec:verification} shows that independent codes with matched models reproduce the package's state values to better than $10^{-8}$, so deviations of the size reported here belong to the model and its parameters, not to the numerical solution.
+
+Other populations expose limits of the selected parameter sets.
+Unchanged published parameters fail the declared comparison limits in every tested range for NaCl--MgCl$_2$ and NaCl--CaCl$_2$ brines, and NaCl activity coefficients deviate more in ethanol-rich than in water-rich solvents.
+The acetic acid partition coefficient deviates by 47.8\,\% although the aqueous pH has MAE 0.146 unit, and methyldiethanolamine (MDEA) parameters fitted to osmotic coefficients give total pressures with 96.2\,\% and 89.6\,\% AARD.
+A joint chloride fit gives RMS residuals of 0.00825 in osmotic coefficient and 0.00121 in water activity against two withheld mixed-brine sources, under the conditional source-agreement comparison described below.
+Section~\ref{sec:verification} reports differences below $10^{-8}$ for selected matched-model comparisons, using the relative or mole-fraction metrics stated there.
+Those checks assess the numerical solutions of the matched equations.
+The other comparisons retain the numerical limits and unresolved questions about source interpretation or parameter transfer reported for each case.
 
 
 
 \begin{table}[pos=htbp]
 \centering\footnotesize
-\caption{Representative populations from the full comparison table, supplied as a spreadsheet file with the supporting information. $N$ counts the displayed source rows; the methane/ethane comparison includes one unavailable state, and each aqueous 1:1-salt population includes 23 unavailable LiI rows. Their error means use 16 and 184 available comparisons, respectively. PRED denotes fixed-parameter prediction, CAL calibration and REPRO published-model reproduction. Original fitting overlap can remain unknown for inherited parameters. Pressure ranges are reference values; ``sat.'' denotes saturation with no separately reported density-row pressure.}
+\caption{Representative populations from the full comparison table, supplied as a spreadsheet file with the supporting information.}
 \label{tab:physical-summary}
 \begin{tabularx}{\linewidth}{@{}p{0.19\linewidth}p{0.13\linewidth}p{0.13\linewidth}rX@{}}
 \toprule
@@ -67,6 +73,28 @@ Same / acid partition & 298.15 & 0.1 & 19 & Acid--organic calibration family; CA
 MDEA/\ce{CO2} / $P$ & 303 & 0.92--2.45 & 3 & Osmotic-fit S0/S1; PRED, AARD 96.2/89.6\,\% \\
 \bottomrule
 \end{tabularx}
+
+\medskip
+\begin{minipage}{\linewidth}
+\footnotesize\raggedright
+\textbf{Legend}\par\smallskip
+\begin{tabularx}{\linewidth}{@{}p{0.22\linewidth}X@{}}
+PRED; CAL; REPRO & Fixed-parameter prediction; calibration; published-model reproduction. \\
+$P_{\rm sat}$; $\rho_L$, $\rho_V$ & Saturation pressure; saturated-liquid and saturated-vapor densities. \\
+$x_i$, $y_i$ & Liquid and vapor mole fractions of species $i$. \\
+$\gamma_\pm$; $\Phi$; $a_w$ & Mean ionic activity coefficient; practical osmotic coefficient; water activity. \\
+AARD; MAE; RMS & Average absolute relative deviation (\%); mean absolute error; root-mean-square difference. MAE and RMS use the stated property units. \\
+$N$ & Number of displayed source rows. \\
+THF; MDEA & Tetrahydrofuran; methyldiethanolamine. \\
+\end{tabularx}
+\smallskip
+\textbf{Scope notes}\par\smallskip
+\textbf{Available comparisons}: methane/ethane includes one unavailable state, and each aqueous 1:1-salt population includes 23 unavailable LiI rows. Their error means use 16 and 184 available comparisons, respectively.
+\par\smallskip
+\textbf{Parameter history}: original fitting overlap can remain unknown for inherited parameters.
+\par\smallskip
+\textbf{Pressures}: ranges are reference values; ``sat.'' denotes saturation with no separately reported density-row pressure.
+\end{minipage}
 \end{table}
 
 \subsection{Pure nonpolar, dipolar and quadrupolar fluids}
@@ -258,8 +286,8 @@ Independent-source Robinson--Bower NaCl--CaCl$_2$~\citep{robinsonPropertiesAqueo
 These values use the source data as printed.
 
 % P:physical-18
-Above an ionic strength of 3~mol/kg, the Rard--Miller training data, converted to water activity at the Dinane--Mounir compositions, differ from the Dinane--Mounir measurements by more than the original water-activity limit, so no model fitted to Rard--Miller can meet that limit.
-After the fit, the limit for each Dinane--Mounir ionic-strength range was therefore set to the larger of the original limit and the disagreement between the two sources on the same rows, and applied to the existing fit without refitting.
+Above an ionic strength of 3~mol/kg, the Rard--Miller training data, converted to water activity at the Dinane--Mounir compositions, differ from the Dinane--Mounir measurements by more than the original water-activity limit.
+After the fit, the limit for each Dinane--Mounir ionic-strength range was set to the larger of the original limit and the disagreement between the two sources on the same rows, and applied to the existing fit without refitting.
 To test the effect of rounding in the source tables, the comparison used the nominal data and 1466 perturbed versions that shift printed values by half a unit in their last printed digit.
 The fit meets every withheld limit in 1466 of them; in the remaining one, which lowers every printed Dinane--Mounir value, the water-activity RMS for $I\le3$~mol/kg water is 0.001376 against a limit of 0.001352.
 These perturbed data sets are sensitivity cases, not a probability distribution or new measurements.
@@ -283,7 +311,7 @@ Solvent composition changes both the neutral mixture and the electrostatic envir
 Voltage-derived NaCl activity coefficients reported by Esteso et al.~\citep{Esteso1989}, Table~I, test fixed Figiel mixed-solvent parameters at 298.15~K across ethanol--water compositions.
 The 123 comparisons give a pooled AARD of 6.35\,\%, with larger discrepancies in ethanol-rich mixtures than in the water-rich part of the population, although the trend is not monotonic.
 Figure~\ref{fig:solvent-data} displays the composition dependence rather than replacing it by the pooled value.
-The printed-digit comparison criterion is not a complete experimental uncertainty and supplies no claim that all excluded pointwise agreements are experimentally resolved failures.
+Failure of the printed-digit comparison criterion alone does not establish disagreement beyond measurement uncertainty.
 
 \begin{figure}[pos=H]
 \centering

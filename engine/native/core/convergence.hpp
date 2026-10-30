@@ -145,7 +145,7 @@ inline std::string describe(const Convergence& record) {
     return result;
 }
 
-class __attribute__((visibility("default"))) ConvergenceFailure : public std::runtime_error {
+class EPC_EXCEPTION ConvergenceFailure : public std::runtime_error {
 public:
     explicit ConvergenceFailure(const Convergence& record)
         : std::runtime_error(describe(record)), record(record) {}

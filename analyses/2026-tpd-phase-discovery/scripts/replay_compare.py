@@ -65,14 +65,17 @@ def main():
         work, maxima, identical = [], defaultdict(float), 0
         for key in sorted(set(before) | set(after)):
             a, b = before.get(key), after.get(key)
+            if any(r is not None and r['kind'] == 'float' and not math.isfinite(float(r['value'])) for r in (a, b)):
+                failures.append(dict(key=key, reason='non-finite value', before=a and a['value'], after=b and b['value']))
+                continue
             if a is None or b is None:
-                failures.append(dict(key=key, reason='row missing', before=a and a['value'], after=b and b['value']))
+                if base(key[1]) in WORK:
+                    work.append(dict(key=key, before=a and a['value'], after=b and b['value']))
+                else:
+                    failures.append(dict(key=key, reason='row missing', before=a and a['value'], after=b and b['value']))
                 continue
             if a['kind'] != b['kind']:
                 failures.append(dict(key=key, reason='kind changed', before=a['kind'], after=b['kind']))
-                continue
-            if a['kind'] == 'float' and not (math.isfinite(float(a['value'])) and math.isfinite(float(b['value']))):
-                failures.append(dict(key=key, reason='non-finite value', before=a['value'], after=b['value']))
                 continue
             if a['value'] == b['value']:
                 identical += 1

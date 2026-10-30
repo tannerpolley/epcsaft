@@ -1,0 +1,98 @@
+{
+  "models": {
+    "C1": {
+      "components": [
+        {
+          "id": "propane",
+          "m": 2.002,
+          "sigma": 3.6184,
+          "epsilon": 208.11,
+          "epsilon_ab": 0,
+          "kappa_ab": 0,
+          "molar_mass": 0.044096
+        }
+      ],
+      "source": "Gross2001 Table 2"
+    },
+    "C2": {
+      "components": [
+        {
+          "id": "ethanol",
+          "m": 2.3827,
+          "sigma": 3.1771,
+          "epsilon": 198.24,
+          "epsilon_ab": 2653.4,
+          "kappa_ab": 0.032384,
+          "molar_mass": 0.04606844
+        },
+        {
+          "id": "butane",
+          "m": 2.3316,
+          "sigma": 3.7086,
+          "epsilon": 222.88,
+          "epsilon_ab": 0,
+          "kappa_ab": 0,
+          "molar_mass": 0.0581222
+        }
+      ],
+      "k": 0.028,
+      "source": "Gross2002 Table 1 and Fig.7; Gross2001 Table 2 n-butane"
+    },
+    "C4": {
+      "components": [
+        {
+          "id": "water",
+          "m": 1.0656,
+          "sigma": 3.0007,
+          "epsilon": 366.51,
+          "epsilon_ab": 2500.7,
+          "kappa_ab": 0.034868,
+          "molar_mass": 0.01801528
+        },
+        {
+          "id": "pentanol",
+          "m": 3.626,
+          "sigma": 3.4508,
+          "epsilon": 247.28,
+          "epsilon_ab": 2252.1,
+          "kappa_ab": 0.010319,
+          "molar_mass": 0.08814818
+        }
+      ],
+      "k": 0.016,
+      "source": "Gross2002 Table 1 and Fig.10"
+    }
+  },
+  "requests": [
+    {
+      "id": "C1-300",
+      "case": "C1",
+      "operation": "saturation",
+      "T": 300,
+      "timing": "T2"
+    },
+    {
+      "id": "C2-0.5",
+      "case": "C2",
+      "operation": "bubble",
+      "T": 373.15,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T2"
+    },
+    {
+      "id": "C4-298.15",
+      "case": "C4",
+      "operation": "lle",
+      "T": 298.15,
+      "P": 101300,
+      "x": [
+        0.5,
+        0.5
+      ],
+      "timing": "T2"
+    }
+  ]
+}

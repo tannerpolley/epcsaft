@@ -6,6 +6,7 @@
 
 #include <ceres/ceres.h>
 #include <Eigen/Dense>
+#ifndef _WIN32
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -16,6 +17,15 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#else
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0A00
+#endif
+#define NOMINMAX
+#include <windows.h>
+#include <sddl.h>
+#include <atomic>
+#endif
 
 #include <algorithm>
 #include <cerrno>
@@ -315,6 +325,10 @@ struct Failure final {
 FitHost fit_host;
 
 bool interrupted() { return fit_host.interrupted && fit_host.interrupted(); }
+#ifdef _WIN32
+#include "fit_windows.hpp"
+#else
+using Channel = int;
 int extension_image = -1;
 
 // Sources stay above inherited fd 3/4 so the child's descriptor copies cannot overwrite one another.
@@ -330,6 +344,7 @@ int open_image(const void* address) {
 
 // Pin the mapped inode before an incremental link can replace the on-disk file.
 const int native_image = open_image(reinterpret_cast<const void*>(&interrupted));
+#endif
 
 // Every member of a request aggregate in declaration order, named by position: the structured binding stops
 // compiling when a member is added or removed, so a worker's request cannot silently omit one.
@@ -473,6 +488,7 @@ struct Wire final {
 };
 
 // Bytes over a worker socket; a wait polls the fit's cancellation every 0.1 s.
+#ifndef _WIN32
 void transfer(int fd, char* at, std::size_t left, bool out) {
     while (left > 0) {
         pollfd ready{fd, static_cast<short>(out ? POLLOUT : POLLIN), 0};
@@ -487,15 +503,16 @@ void transfer(int fd, char* at, std::size_t left, bool out) {
         left -= static_cast<std::size_t>(moved);
     }
 }
+#endif
 // One message: its byte count, then the values.
-template <class... T> void put(int fd, T... values) {
+template <class... T> void put(Channel fd, T... values) {
     std::string message(sizeof(std::size_t), '\0');
     Wire{message, true}(values...);
     const std::size_t size = message.size() - sizeof(std::size_t);
     std::memcpy(message.data(), &size, sizeof size);
     transfer(fd, message.data(), message.size(), true);
 }
-template <class... T> void get(int fd, T&... values) {
+template <class... T> void get(Channel fd, T&... values) {
     std::size_t size = 0;
     transfer(fd, reinterpret_cast<char*>(&size), sizeof size, false);
     std::string message(size, '\0');
@@ -507,6 +524,7 @@ template <class... T> void get(int fd, T&... values) {
 // states run in worker processes. They start by exec, since fork alone is unsafe in a threaded host, and inherit
 // only their own socket and pinned images after pre-exec descriptor closure. The fit kills and reaps them on every exit,
 // an exception or cancellation included.
+#ifndef _WIN32
 struct Workers final {
     std::vector<int> sockets;
     std::vector<pid_t> processes;
@@ -517,10 +535,16 @@ struct Workers final {
             while (waitpid(process, nullptr, 0) < 0 && errno == EINTR) {}
     }
 };
+#endif
 
 }  // namespace
 
 void set_fit_host(FitHost host, const void* extension) {
+#ifdef _WIN32
+    auto image = open_image(extension);
+    if (!host.worker.empty() && (!image || !native_image)) throw std::runtime_error("fit worker images unavailable");
+    extension_image = std::move(image);
+#else
     const int image = open_image(extension);
     if (!host.worker.empty() && (image < 0 || native_image < 0)) {
         if (image >= 0) close(image);
@@ -528,6 +552,8 @@ void set_fit_host(FitHost host, const void* extension) {
     }
     if (extension_image >= 0) close(extension_image);
     extension_image = image;
+
+#endif
     fit_host = std::move(host);
 }
 
@@ -560,11 +586,19 @@ struct ObservationEvaluator::Impl final {
     void start_workers(int requested) {
         interruptible_ = true;
         const std::size_t count = core::current_trace() || fit_host.worker.empty() ? 1
-            : requested > 0 ? static_cast<std::size_t>(requested) : std::max(1u, std::thread::hardware_concurrency());
+            : requested > 0 ? static_cast<std::size_t>(requested) :
+#ifdef _WIN32
+                std::max(1ul, GetActiveProcessorCount(ALL_PROCESSOR_GROUPS));
+#else
+                std::max(1u, std::thread::hardware_concurrency());
+#endif
         std::size_t rank = 0;
         for (std::size_t i = 0; i < groups_.size(); ++i)
             owner_[i] = groups_[i] != i ? owner_[groups_[i]]
                 : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
+#ifdef _WIN32
+        for (std::size_t k = 1; k < std::min(count, rank); ++k) workers_.start();
+#else
         std::vector<char*> command;
         for (auto& word : fit_host.worker) command.push_back(word.data());
         command.push_back(nullptr);
@@ -616,6 +650,7 @@ struct ObservationEvaluator::Impl final {
             if (error != 0) throw std::runtime_error("fit worker process unavailable");
             workers_.processes.push_back(process);
         }
+#endif
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
                 request_.observations, request_.holds, request_.uncertainty, request_.controls.solver_options.values, measurement_, sqrt_weights_);
@@ -638,7 +673,7 @@ struct ObservationEvaluator::Impl final {
         out.solver_options = request_.controls.solver_options;
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
-        for (const int fd : workers_.sockets) put(fd, optimizer, jacobian);
+        for (const Channel fd : workers_.sockets) put(fd, optimizer, jacobian);
         const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         Trial fresh;
         Trial& trial = same_point ? *cached_ : fresh;
@@ -682,7 +717,7 @@ struct ObservationEvaluator::Impl final {
             if (jacobian) std::fill_n(out.gradient.begin() + i * width, width, 0.0);
         }
         const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged, std::vector<ResidualEnergyAction> actions = {}) {
-            for (const int fd : workers_.sockets) put(fd, false);
+            for (const Channel fd : workers_.sockets) put(fd, false);
             if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
             return fail(index, optimizer, status, std::move(message), flagged, std::move(actions), out.first_numerical_failure);
         };
@@ -731,7 +766,7 @@ struct ObservationEvaluator::Impl final {
                 return reject(n, ObservationStatus::Nonfinite, "whitened residual or Jacobian not finite", jacobian);
             if (jacobian) reconciled.jacobian = out.optimizer_gradient;
         }
-        for (const int fd : workers_.sockets) put(fd, true);
+        for (const Channel fd : workers_.sockets) put(fd, true);
         publish(optimizer, jacobian, out, trial, fresh, same_point);
         return true;
     }
@@ -771,7 +806,7 @@ struct ObservationEvaluator::Impl final {
     }
 
     // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
-    [[noreturn]] void serve(int fd) {
+    [[noreturn]] void serve(Channel fd) {
         for (std::vector<double> optimizer;;) {
             bool jacobian = false, commit = false;
             get(fd, optimizer, jacobian);
@@ -814,12 +849,25 @@ struct ObservationEvaluator::Impl final {
                                    Trial& trial, bool same_point, core::Scope& scope) {
         if (!compute_cpu_directory) return compute_rows(optimizer, jacobian, out, trial, same_point, scope);
         // #405/#498: process CPU inside compute, excluding output setup and writing.
-        std::ofstream file(std::string(compute_cpu_directory) + "/" + std::to_string(getpid()) + ".csv", std::ios::app);
+        std::ofstream file(std::string(compute_cpu_directory) + "/" + std::to_string(
+#ifdef _WIN32
+            GetCurrentProcessId()
+#else
+            getpid()
+#endif
+        ) + ".csv", std::ios::app);
         if (!file) throw std::runtime_error("fit compute CPU output unavailable");
         const auto cpu = [] {
+#ifdef _WIN32
+            FILETIME created, exited, kernel, user;
+            if (!GetProcessTimes(GetCurrentProcess(), &created, &exited, &kernel, &user)) throw std::runtime_error("fit compute CPU clock unavailable");
+            const auto ticks = [](FILETIME t) { return (static_cast<unsigned long long>(t.dwHighDateTime) << 32) | t.dwLowDateTime; };
+            return double(ticks(kernel) + ticks(user)) * 1e-7;
+#else
             timespec value{};
             if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &value)) throw std::runtime_error("fit compute CPU clock unavailable");
             return double(value.tv_sec) + double(value.tv_nsec) * 1e-9;
+#endif
         };
         const double start = cpu();
         auto result = compute_rows(optimizer, jacobian, out, trial, same_point, scope);
@@ -994,11 +1042,16 @@ struct ObservationEvaluator::Impl final {
 // A worker never outlives the thread that started it; it reads its fit's request once, then serves it.
 // The socket names the fit's process (its creator), so a fit that died before the death signal was armed
 // shows as a different parent, including a subreaper's adoption, and the worker leaves without reading.
+#ifdef _WIN32
+void serve_fit(std::uintptr_t channel) {
+    const Channel fd{reinterpret_cast<HANDLE>(channel)};
+#else
 void serve_fit(int fd) {
     ucred fit{};
     socklen_t size = sizeof fit;
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &fit, &size) != 0 || prctl(PR_SET_PDEATHSIG, SIGKILL) != 0
         || getppid() != fit.pid) _exit(1);
+#endif
     FitRequest request;
     MeasurementChart measurement;
     std::vector<double> sqrt_weights;

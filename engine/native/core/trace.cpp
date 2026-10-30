@@ -1,3 +1,6 @@
+#if defined(_WIN32)
+#define EPC_DEFINE_POLICY
+#endif
 #include "core/trace.hpp"
 
 namespace epcsaft::core {

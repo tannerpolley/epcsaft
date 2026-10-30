@@ -1,0 +1,6 @@
+#include "properties/helmholtz_model.hpp"
+#include "properties_support.hpp"
+#include <iostream>
+#include <iomanip>
+using namespace epcsaft;
+int main(){HelmholtzModel model(properties_support::associating_binary());core::Capture capture(true);auto d=model.isothermal(WiderScalar(300.0),WiderScalar(1.0/35000.0),{WiderScalar(0.1),WiderScalar(0.9)});auto p=properties_support::associating_binary();std::fill(p.association_active.begin(),p.association_active.end(),0);HelmholtzModel nonassociating(p);const auto b=nonassociating.isothermal(WiderScalar(300.0),WiderScalar(1.0/35000.0),{WiderScalar(0.1),WiderScalar(0.9)});for(std::size_t k=0;k<d.gradient.size();++k)d.gradient[k]-=b.gradient[k];for(std::size_t k=0;k<d.hessian.size();++k)d.hessian[k]-=b.hessian[k];std::cout<<std::setprecision(35)<<"quantity,value,scale,inner\n";for(std::size_t a=0;a<3;++a){double scale=a?1:1.0/35000;std::cout<<"production_gradient"<<a<<','<<d.gradient[a+1]<<','<<scale<<','<<d.gradient_error[a+1]<<'\n';for(std::size_t b=0;b<=a;++b)std::cout<<"production_hessian"<<a<<b<<','<<d.hessian[(a+1)*d.gradient.size()+b+1]<<','<<scale*(b?1:1.0/35000)<<",unavailable\n";}for(const auto& e:capture.trace().events){std::cerr<<e.name;for(double v:e.values)std::cerr<<','<<v;std::cerr<<'\n';}}

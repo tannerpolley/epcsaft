@@ -25,16 +25,18 @@ P(T,\rho,\mathbf{x})=\rho RT\left[1+\rho\left(\frac{\partial\ares}{\partial\rho}
 Pressure, its slope and, when required for root location, its curvature follow from the same energy~\citep{Gross2001}.
 The density search operates in a bounded packing domain and first inspects the liquid side.
 Resolved pressure brackets with positive slope can then identify a liquid root and a lower-density vapor root.
-The requested branch selects the highest or lowest resolved stable root; an unspecified branch is ambiguous when several stable roots remain.
+A mechanically stable root has $(\partial P/\partial\rho)_{T,\mathbf{x}}>0$.
+The requested branch selects the highest or lowest resolved mechanically stable root; an unspecified branch is ambiguous when several such roots remain.
 An anchor from a neighboring state instead defines a local window in which the root must be unique.
 These choices matter at subcritical conditions because the same temperature, pressure and composition can have several density roots.
 
 % P:state-04
 Slope and curvature samples can shorten root location when they are consistent with a single mechanical loop.
 Unresolved shape information returns the search to a finite logarithmic density scan, with spinodal bisection separating the stable pressure brackets.
-When a sample contradicts that assumed shape, the interval is subdivided, and a root is accepted only if successive finer subdivisions show the same sign changes of $P-P_{\mathrm{target}}$.
+When sampled slopes and curvatures resolve a contradiction of that assumed shape, the affected interval is subdivided into successive nested partitions.
+Acceptance requires agreement in the order and multiplicity of pressure crossings and slope transitions between successive partitions; matching root counts or nearby root densities alone is insufficient.
 Safeguarded Newton refinement remains inside each pressure bracket.
-With $r=(P-P_{\mathrm{target}})/(\rho RT)$ and bracket width $\Delta\rho$, termination requires $|r|\le\tau_\rho$ and $\Delta\rho\,|\mathrm{d}r/\mathrm{d}\rho|\le\tau_\rho$, with a finite nonzero derivative; an exactly zero computed residual is also accepted.
+With $r=(P-P_{\mathrm{target}})/(\rho RT)$, bracket width $\Delta\rho$ and dimensionless tolerance $\tau_\rho$, termination requires $|r|\le\tau_\rho$ and $\Delta\rho\,|\mathrm{d}r/\mathrm{d}\rho|\le\tau_\rho$, with a finite nonzero derivative; an exactly zero computed residual is also accepted.
 An unresolved bracket at the refinement budget is reported as a failure.
 A small reduced residual does not imply the same relative pressure error at low compressibility factor: the latter is the reduced residual divided by $P_{\mathrm{target}}/(\rho RT)$.
 Association failures interrupt the relevant scan and preserve the failed density and cause, so a disconnected set of evaluable points cannot silently become a complete root search.
@@ -51,6 +53,7 @@ Association failures interrupt the relevant scan and preserve the failed density
 \If{pressure is specified}
 \State Locate liquid-side evidence and the requested pressure bracket using analytic slopes and curvature.
 \State Use the logarithmic scan and spinodal subdivision when structured location is unresolved.
+\State After a resolved shape contradiction, subdivide locally and require nested-partition agreement.
 \State Refine stable crossings by safeguarded Newton; require both reduced-residual and bracket-width criteria, or an exactly zero computed residual.
 \State Select the declared extreme root, or the unique root in the supplied anchor window.
 \EndIf
@@ -68,6 +71,7 @@ Gibbs-energy comparisons across compositions belong to Section~\ref{sec:equilibr
 
 \subsection{Property assembly and reuse}
 % P:state-06
-Property requests reuse the converged density, sites and required energy derivatives.
+Within one state evaluation, requested properties reuse the converged density, sites and required energy derivatives.
 Selected quantities compute only their dependencies; total calorics consume thermal records, while residual quantities remain available without them.
-A new support or thermal interval selects a corresponding recording of the same equations and refreshes the numerical state.
+Every newly requested point refreshes the numerical state, whether or not the recording changes.
+A change of support or thermal interval selects a corresponding recording of the same equations.

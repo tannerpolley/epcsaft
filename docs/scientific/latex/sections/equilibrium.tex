@@ -69,13 +69,16 @@ The logarithmic compositions have a lower bound that depends on each species' av
 The balance matrix supplies attainable amounts through linear programs, so a tiny available inventory need not be displaced by a uniform composition bound.
 
 % P:equilibrium-04b
+\begin{samepage}
 Initialization uses the declaration before solving its coupled equations.
-For an eligible neutral two-phase temperature--pressure flash, feed-state fugacity estimates give $K_i=\phi_i^L/\phi_i^V$, and a bracketed Rachford--Rice root supplies
+For an eligible neutral two-phase temperature--pressure flash, feed-state fugacity coefficients $\phi_i^L$ and $\phi_i^V$ give $K_i=\phi_i^L/\phi_i^V$.
+With feed mole fractions $x_i^{\mathrm{feed}}$ and fraction $\beta$ of the total moles in the vapor, a bracketed Rachford--Rice root supplies the liquid and vapor compositions,
 \begin{equation}
-\sum_i\frac{z_i(K_i-1)}{1-\beta+\beta K_i}=0,\qquad
-x_i=\frac{z_i}{1-\beta+\beta K_i},\quad y_i=K_ix_i.
+\sum_i\frac{x_i^{\mathrm{feed}}(K_i-1)}{1-\beta+\beta K_i}=0,\qquad
+x_i=\frac{x_i^{\mathrm{feed}}}{1-\beta+\beta K_i},\quad y_i=K_ix_i.
 \label{eq:rr-start}
 \end{equation}
+\end{samepage}
 These estimates initialize amounts and compositions, after which the actual density roots are resolved.
 Reacting starts first estimate liquid speciation by an ideal-solution element-potential iteration with frozen nonideal terms~\citep{gordonComputerProgramCalculation1994}.
 A cold reacting incipient boundary can solve its finite phases at the pressure seed before forming the boundary start.
@@ -86,6 +89,8 @@ A supplied start overrides the generated quantities it declares.
 One driver solves the rows of Eqs.~\eqref{eq:balances} and~\eqref{eq:stationarity}, with first and second derivatives of the same Helmholtz energy.
 For eligible ordinary calls it first applies an exact Newton iteration, factorized by full-pivot LU, with at most two step halvings.
 This attempt covers neutral, nonreacting liquid/vapor boundaries with one zero-pinned amount and one free intensive variable, and full-positive-support two-phase temperature--pressure flashes.
+For eligible pure-fluid saturation at fixed temperature, with one neutral nonideal component and a zero-pinned incipient phase, exact elimination reduces the Newton system to two equations in the logarithms of the liquid and vapor densities.
+The full defining rows and density-branch checks still determine acceptance.
 Declared-start calls, continuation correctors, stability trials and caloric seed solves use Ipopt alone.
 An admitted Newton result must satisfy the final residual, topology, density-branch and local checks.
 Otherwise Ipopt~\citep{Wachter2006} solves the same rows from the original start using the exact Hessian of the Lagrangian.
@@ -101,27 +106,35 @@ Algorithm~\ref{alg:equilibrium} summarizes the sequence.
 \State Construct a supplied or physical start; use speciation and phase estimates in their admitted domains.
 \If{the ordinary neutral declaration admits the Newton attempt}
 \State Solve the exact row Jacobian; damp within bounds and test the full final admission.
-\State Return only if all requested criteria and branch checks are met.
+\State Apply eligible precision refinement and return only if all requested criteria and branch checks are met.
 \EndIf
 \State Run Ipopt from the original start with exact constraint and Lagrangian derivatives.
 \State Polish the returned positive point with contracting exact-Jacobian corrections.
 \State Recompute balance, charge, normalization, pressure and stationarity defects.
 \State Check distinct phases, density identity and local reduced curvature.
-\If{a neutral, nonreacting liquid/vapor solve without a supplied start has failed}
+\If{an ordinary neutral, nonreacting, nonassociating liquid/vapor solve without a supplied start has a designated recoverable failure}
 \State Seek a lower-temperature source and correct back within the bounded shared work.
 \State Reapply the target declaration's residual and branch checks.
 \EndIf
+\State Apply eligible precision refinement and recheck the returned state.
 \State Return the achieved quantities and unmet criteria, or the complete cause of no finite state.
 \end{algorithmic}
 \end{algorithm}
 
 % P:equilibrium-04d
-Ipopt stops on its own scaled optimality measure, which can leave the recomputed defining rows slightly above the requested tolerance; the polish removes that remainder.
+Ipopt stops on its own scaled optimality measure, which can leave the recomputed defining rows slightly above the requested tolerance; polishing attempts to reduce the remaining defects within the work limits.
 The final polish accepts exact-Jacobian corrections only when raw defining-equation defects decrease and the point remains positive.
 Trace balances are judged relative to their available inventory as well as on the feed scale.
 Polish can extend beyond the ordinary step count while raw defects exceed the requested tolerance and work remains.
 Table~\ref{tab:defaults} distinguishes caller-configurable accuracy criteria from budgets and policy constants.
 A finite candidate that misses the requested accuracy remains explicitly identified.
+
+% P:equilibrium-04f
+For eligible pure-fluid saturation and ordinary neutral, nonreacting mixture bubble/dew pressure calculations, a local forward-error estimate can trigger refinement in extended precision when the platform provides additional significand bits; a pure-fluid density correction can also trigger it.
+The estimates combine the achieved residual, Jacobian conditioning and an estimated residual-evaluation floor.
+Refinement retains the work limits and full admission checks, and the returned coordinates are reevaluated after conversion to double precision.
+Mixture refinement replaces an already admitted state only if the refined state also meets its error target; otherwise the original state and its own estimate are retained.
+Unavailable estimates or additional precision remain explicit limitations, and these local estimates are not rigorous bounds on total state error.
 
 
 \begin{table}[pos=htbp]
@@ -152,6 +165,7 @@ Implicit-action forward-error bound & $10^{-6}$ & Condition estimate combined wi
 
 % P:equilibrium-04e
 After designated ordinary neutral, nonreacting, nonassociating liquid/vapor failures without a supplied start, bounded recovery can seek a lower-temperature source and continue back.
+The designated failures are phase coincidence, local instability, local infeasibility and an optimizer iteration limit.
 Correctors retain phase identity and the target's residual and density-branch checks.
 Recovery consumes its finite work allowance and supplies no phase-search conclusion.
 

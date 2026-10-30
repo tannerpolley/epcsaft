@@ -97,7 +97,7 @@ for N in (1., 100., 10000.):
 (folder / 'rows.json').write_text(json.dumps(rows, indent=2) + '\n')
 (folder / 'original-states.json').write_text(json.dumps(frozen, indent=2) + '\n')
 (folder / 'environment.json').write_text(json.dumps(dict(extension=_core.__file__,
-    nice=os.getpriority(os.PRIO_PROCESS, 0), threads={k: os.getenv(k) for k in
+    nice=os.getpriority(os.PRIO_PROCESS, 0) if os.name != "nt" else None, threads={k: os.getenv(k) for k in
     ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS')}), indent=2) + '\n')
 if args.reference:
     comparisons = []

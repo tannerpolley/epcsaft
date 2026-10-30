@@ -408,12 +408,14 @@ and never enter the wheel.
 
 ## Conda package
 
-`../packaging/conda-forge/` prepares Linux x86-64 / CPython 3.13 with private
+`../packaging/conda-forge/` prepares Linux and Windows x86-64 / CPython 3.13 with private
 Ipopt 3.11.9, MUMPS 5.8.2/OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
 nanobind 2.12.0. It installs the Python package, extension, native and ASL
 libraries, private Ipopt and notices; parameter packets, analyses, manuscript
 sources and Coin-HSL are excluded. Supply parameter declarations explicitly.
-The release version and public archive checksum remain publication placeholders.
+Its package tests are the import, `pip check` and `run_test.py`. The win-64
+qualification is a manual double-check: the `windows-qualification` workflow runs
+`qualification/recipe.py`, which derives `qualification-recipe.yaml` from the recipe.
 
 Corresponding source is available from the distributor as a source-set download
 alongside the matching version at

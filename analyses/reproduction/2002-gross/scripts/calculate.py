@@ -15,6 +15,9 @@ from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equ
 
 CASE = Path(__file__).resolve().parents[1]
 ROOT = CASE.parents[2]
+sys.path.insert(0, str(ROOT / "tools"))
+from engine_identity import loaded_identity
+
 RESULTS = CASE / "results/data"
 ROW_TOLERANCE = 1e-8
 
@@ -242,7 +245,7 @@ def main(out=RESULTS):
     write(out / "declared-states.csv", tasks)
     started, start = datetime.now(timezone.utc).isoformat(), perf_counter()
     # Preload the editable native extension before starting all CPU workers.
-    provenance = epcsaft.provenance()
+    provenance = loaded_identity()
     with ProcessPoolExecutor(max_workers=os.cpu_count()) as pool:
         results = list(pool.map(calculate, tasks))
     write(out / "default-start-comparisons.csv", results)
@@ -291,8 +294,7 @@ def main(out=RESULTS):
     metadata = dict(started_utc=started, calculation_wall_seconds=perf_counter()-start, workers=os.cpu_count(),
                     row_tolerance=ROW_TOLERANCE, overall_water_fraction=.8, default_start_wall_seconds=default_seconds,
                     recovered_default_failures=len(failures), engine=provenance, states=len(tasks),
-                    source_pdf=dict(zotero_parent="2AJYEZS6", zotero_attachment="UGT3UV2L", doi="10.1021/ie010954d",
-                                    sha256=hashlib.sha256(Path('/home/tnnrpolley21/Zotero/storage/UGT3UV2L/Gross and Sadowski - 2002 - Application of the Perturbed-Chain SAFT Equation of State to Associating Systems.pdf').read_bytes()).hexdigest()),
+                    source_pdf=json.loads((RESULTS / 'calculation.json').read_text())['source_pdf'],
                     source_sha256={str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
                                    for p in sorted([*CASE.glob("figures/*/source/*.csv"),
                                                     *CASE.glob("inputs/parameters/**/*.csv"),

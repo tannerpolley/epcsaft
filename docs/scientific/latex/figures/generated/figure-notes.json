@@ -434,6 +434,6 @@
       "F6a",
       "F6b"
     ],
-    "notes": "Warm serial measurements on one host; ranges are observed spread, not confidence intervals. Density closure against Clapeyron.jl is a tie. Actions exclude the central solve and imply no total solve speedup. Electrolyte timings are package-only and excluded."
+    "notes": "Warm serial measurements on one host; ranges are observed spread, not confidence intervals. Prepared propane saturation compiles the declaration before timing. Density closure takes more time than in Clapeyron.jl throughout the observed paired range. Actions exclude the central solve and imply no total solve speedup. Electrolyte timings are package-only and excluded."
   }
 }

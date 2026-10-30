@@ -24,7 +24,8 @@
       "2026-acetic-acid-reacting-vle/notebook.qmd",
       "2026-nacl-solubility/notebook.qmd",
       "2026-nacl-dilution-enthalpy/notebook.qmd",
-      "2026-explicit-discovery-cost/notebook.qmd"
+      "2026-explicit-discovery-cost/notebook.qmd",
+      "2026-main-computational-cost/notebook.qmd"
     ]
   },
   "website": {
@@ -118,6 +119,10 @@
         {
           "href": "2026-explicit-discovery-cost/notebook.qmd",
           "text": "Explicit phase discovery cost"
+        },
+        {
+          "href": "2026-main-computational-cost/notebook.qmd",
+          "text": "Current-main computational cost"
         }
       ]
     }

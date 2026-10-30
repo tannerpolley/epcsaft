@@ -1,6 +1,13 @@
 // E5: solved-state actions against stencils of fresh nonlinear solves.
 #include "equilibrium_checks_shared.hpp"
+#ifdef _WIN32
+// Exercise the same x87 control word with the selected Microsoft-targeting Clang.
+using fpu_control_t = unsigned short;
+#define _FPU_GETCW(word) __asm__ volatile("fnstcw %0" : "=m" (word))
+#define _FPU_SETCW(word) __asm__ volatile("fldcw %0" : : "m" (word))
+#else
 #include <fpu_control.h>
+#endif
 
 namespace equilibrium_checks {
 

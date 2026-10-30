@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "equilibrium/ipopt.hpp"
 #include "equilibrium/problem.hpp"
@@ -57,21 +58,21 @@ EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<E
     std::shared_ptr<const EquilibriumResult> rejected = {}, bool select_endpoint = false);
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
-std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
-                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {});
+EPC_API std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
+                                   StageWork* stages = nullptr, const std::vector<bool>& packed = {}, bool correct_dense = false);
 struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
 };
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
+EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
 bool one_component_two_density_eligible(const CompiledSystem&);
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
-EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
+EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool discovery_newton_eligible(const CompiledSystem&);
-EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
+EPC_API EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
     const EquilibriumResult& structural, const DriverLimits* limits = nullptr, std::vector<double>* attempt = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
@@ -92,7 +93,7 @@ struct TopologyCheck final {
     double distance = 0.0;
 };
 
-TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& coordinates);
+EPC_API TopologyCheck check_topology(const CompiledSystem& compiled, const std::vector<double>& coordinates);
 
 // One density-branch admission owner for public solves and anchored continuation.
 struct BranchCheck final {
@@ -107,7 +108,7 @@ BranchCheck check_density_branches(
     const PhasePoint* prepared = nullptr
 );
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
-DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
+EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
 
 struct DriverLimits final {
     std::size_t iterations;
@@ -133,14 +134,14 @@ struct DriverLimits final {
 };
 // ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
 // source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
-EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
-EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
+EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
+EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
-std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr);
-EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
-EquilibriumResult run_driver(
+EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr);
+EPC_API EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
+EPC_API EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false,
@@ -155,7 +156,7 @@ EquilibriumResult recover_physical_amounts(
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
-EquilibriumResult solve_equilibrium_from_coordinates(
+EPC_API EquilibriumResult solve_equilibrium_from_coordinates(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
     const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr,
@@ -183,7 +184,7 @@ struct EquilibriumStartsResult final {
     double seconds = 0.0, overrun_seconds = 0.0;
     bool budget_exhausted = false;
 };
-EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
+EPC_API EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     const EquilibriumProblem& problem, const std::vector<EquilibriumStart>& starts,
     const EquilibriumWorkLimits& limits);
 
@@ -195,7 +196,7 @@ enum class ContinuationStop {
     step_too_small, budget_exhausted, critical_endpoint
 };
 
-const char* continuation_stop_name(ContinuationStop stop) noexcept;
+EPC_API const char* continuation_stop_name(ContinuationStop stop) noexcept;
 
 struct ContinuationOptions final {
     double initial_step = 0.0;
@@ -242,7 +243,7 @@ struct ContinuationResult final {
 // Declared-branch continuation along a straight path in fixed intensives and resolved feed
 // amounts, with a tangent predictor and the one Ipopt driver as corrector. A start problem with an
 // envelope condition traces that envelope instead (ALG-EQUILIBRIUM); its target problem is unused.
-ContinuationResult continue_equilibrium(
+EPC_API ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
@@ -253,7 +254,7 @@ std::vector<double> solve_implicit(
     const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr
 );
 
-std::vector<double> sensitivity(
+EPC_API std::vector<double> sensitivity(
     const CompiledSystem& compiled,
     const std::vector<double>& point,
     const std::vector<double>& lever, std::optional<core::Convergence>* failure = nullptr
@@ -266,17 +267,17 @@ struct SensitivityInfo final {
     bool nonsingular = false;
 };
 
-SensitivityInfo inspect_sensitivity(
+EPC_API SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
     const std::vector<double>& point
 );
 
 class GibbsMinimizer final : public Ipopt::TNLP {
 public:
-    GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
+    EPC_API GibbsMinimizer(const CompiledSystem& compiled, std::vector<double> start,
                    core::Scope* scope = nullptr, const DriverLimits* limits = nullptr, bool physical_amounts = false);
-    ~GibbsMinimizer() override;
-    bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
+    EPC_API ~GibbsMinimizer() override;
+    EPC_API bool get_nlp_info(Ipopt::Index& n, Ipopt::Index& m,
                       Ipopt::Index& nnz_jac_g, Ipopt::Index& nnz_h_lag,
                       IndexStyleEnum& index_style) override;
     bool get_bounds_info(Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
@@ -284,16 +285,16 @@ public:
     bool get_starting_point(Ipopt::Index n, bool init_x, Ipopt::Number* x,
                             bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
                             Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda) override;
-    bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Number& value) override;
-    bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_grad_f(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                      Ipopt::Number* grad_f) override;
-    bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Index m, Ipopt::Number* g) override;
-    bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_jac_g(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                     Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow,
                     Ipopt::Index* jCol, Ipopt::Number* values) override;
-    bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
+    EPC_API bool eval_h(Ipopt::Index n, const Ipopt::Number* x, bool new_x,
                 Ipopt::Number obj_factor, Ipopt::Index m, const Ipopt::Number* lambda,
                 bool new_lambda, Ipopt::Index nele_hess, Ipopt::Index* iRow,
                 Ipopt::Index* jCol, Ipopt::Number* values) override;

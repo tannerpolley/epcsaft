@@ -97,6 +97,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-29, #938 (lead allowance; fix r1): Regression +255, Bindings +27, total +282 for Windows fitting processes (291 gross additions, 9 removals). Merged after #939, the summed layer ceilings reach 32,381, so the total stays at the owner's allowance of **32,344** (count 32,189).
+- 2026-10-29, #937 (lead allocation within the owner’s +650 raise, fix r1): Core +34, Properties +7, Equilibrium +13, Regression +8, Python +7; total +69. The approved fix allowance is 430 gross / +70 net; final ceilings follow measured growth.
 - 2026-10-29, #864 integration with `da73ef241`: retained both amendment histories and measured the combined tree with `tools/diffstat.py --budgets`. Core 1,329, Properties 6,512 and main’s Regression, Bindings and Python ceilings remain sufficient. Equilibrium ceiling 13,006 combines the two changes; measured count 12,893. Total ceiling 31,728 combines main with #864; measured count 31,666. Integration accounting is reported separately from the previously approved task allowance; no numerical criterion changes.
 
 - 2026-10-28, #864 r5: merged main `fb27d881f`; 1,158 gross / 593 removed / +565 net against that base, within the unchanged 1,450 gross / +565 net allowance. Core **1,323 → 1,329**, its measured count. Combined ceilings retain main’s Contributions 1,289, Surface 815 and Python 2,287, and #864’s Properties 6,512 and Equilibrium 12,391. Measured Properties 6,475, Equilibrium 12,329 and total 30,742 fit; total ceiling 30,897 is the combined layer-ceiling sum before the six-line Core correction and remains within its band. No equation or numerical criterion changes.
@@ -105,6 +107,8 @@ Budget changes must not silently change scientific scope.
 - #864 Equilibrium **11,950 → 12,391**, count 12,268 plus band 123, for selected-endpoint precision refinement and returned-point estimates in the shared driver.
 - #864 total **30,025 → 30,810**, count 30,544 plus band 306 capped by the layer-ceiling sum 30,810; the scope and numerical criteria are unchanged.
 - 2026-10-29, #886 integration with `94b4de381`: retain both amendment histories. Bindings **2,420 → 2,457** combines the route’s existing ceiling with main’s 37-line #906 increase; the measured combined count is 2,433 (band 25). Main’s other layer ceilings and total 31,163 suffice for the integrated count 31,078. This combines the existing approved allowances; no new runtime capability or numerical rule is added. The #886 allowance remains 750 gross / +610 net.
+
+- 2026-10-29, owner raise: total **31,728 → 31,927** for now, which is the layer-ceiling sum. The allowance is 650 net over the measured 31,694 at `217026ab6`, so up to 32,344. It covers the dense-root vapor seed correction (+41 net) and the native win-64 port (designed at +410–590 net). Each port slice raises its layer ceiling, and the total with it, only after independent readiness, up to 32,344.
 
 - 2026-10-28, #886 after merging `fb27d881f`: total **30,372 → 30,394**, the measured formatted runtime count. Main contributes 30,177 lines and the saturation work contributes 217 net Engine runtime lines. Main’s Contributions, Properties, Surface and Python ceilings and the saturation work’s Equilibrium and Bindings ceilings remain sufficient. This increase uses the existing owner allowance of at most 750 gross / +610 net, including campaign support. The final count is 666 gross / 75 removed / +591 net; 34 added lines prepare the stricter campaign by reusing the existing runner. No numerical rule changes.
 
@@ -369,6 +373,8 @@ their approval assertions were not reverified in the #221 reconciliation.
 
 Pre-envelope changes without an entry are listed in the #221 reconstruction
 comment (5942662477).
+
+#939 raises Core by 67, Properties by 15, equilibrium by 21 and total by 103 formatted runtime lines for Windows wider arithmetic.
 
 ## Duplication constraints
 

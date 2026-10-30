@@ -13,6 +13,9 @@ from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / 'tools'))
+from engine_identity import loaded_identity
+
 sys.path.insert(0, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'))
 import baseline as b  # noqa: E402
 import epcsaft  # noqa: E402
@@ -49,10 +52,11 @@ def solve(index):
 
 def main():
     label, out = sys.argv[1], Path(sys.argv[2])
-    wheel, wheel_sha256 = epcsaft.provenance()
+    identity = loaded_identity()
+    provenance = {key: identity[key] for key in ('wheel', 'wheel_sha256', 'source_revision', 'source_archive_sha256', 'extension_sha256', 'native_library_sha256')}
     with ProcessPoolExecutor(os.cpu_count()) as pool:
         rows = list(pool.map(solve, range(len(POINTS))))
-    out.write_text(''.join(json.dumps(dict(label=label, engine_provenance=[str(wheel), wheel_sha256], wheel_sha256=wheel_sha256, **row)) + '\n'
+    out.write_text(''.join(json.dumps(dict(label=label, engine_provenance=provenance, wheel_sha256=identity['wheel_sha256'], **row)) + '\n'
                            for row in rows))
 
 

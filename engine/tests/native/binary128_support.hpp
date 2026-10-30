@@ -14,7 +14,7 @@
 namespace binary128_support {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
-using Wide = CppAD::Quad;
+
 
 struct Quantity { std::string name, unit; double atol; SolvedStateObservable observable; };
 struct NamedDirection {
@@ -24,6 +24,9 @@ struct NamedDirection {
     std::vector<SolvedStateActionDirection> chart; // Feasible chart sub-directions, including both tied EOS slots.
     bool parameter = false;
 };
+
+#ifndef _WIN32
+using Wide = CppAD::Quad;
 
 // Manufactured electroneutral water/Na/Cl value oracle. The two symmetric
 // water sites have the exact mass-action root X=2/(1+sqrt(1+4 rho_N xw Delta)).
@@ -230,4 +233,5 @@ public:
         return out;
     }
 };
+#endif
 } // namespace binary128_support

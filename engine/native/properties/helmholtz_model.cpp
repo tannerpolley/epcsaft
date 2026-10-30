@@ -1445,9 +1445,9 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
 
 // Fixed-input replay uses the same contribution and stationary-association owners as the tape.
 template<std::size_t D>
-static Taylor<D, long double> reference_coefficients(const Parameters& p, const std::vector<ActiveParameter>& active,
+static Taylor<D, WiderScalar> reference_coefficients(const Parameters& p, const std::vector<ActiveParameter>& active,
     const std::vector<std::vector<double>>& path, const std::vector<double>& sites) {
-    using S = Taylor<D, long double>;
+    using S = Taylor<D, WiderScalar>;
     const auto ns = p.site_component.size(), width = path.front().size(), nc = p.component_count();
     std::vector<S> q(width), x(nc), xs(ns);
     for (std::size_t k = 0; k <= D; ++k) {
@@ -1473,16 +1473,16 @@ static Taylor<D, long double> reference_coefficients(const Parameters& p, const 
     return result;
 }
 
-static double precision_estimate(double center, long double wide, long double scale, std::size_t count) {
-    if (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits)
-        throw std::runtime_error("source-reference estimate unavailable: long double is not wider than double");
-    const long double nu = count * (std::numeric_limits<long double>::epsilon() / 2);
-    if (!(nu < 1) || !std::isfinite(wide) || !std::isfinite(scale) || scale < 0)
+static double precision_estimate(double center, WiderScalar wide, WiderScalar scale, std::size_t count) {
+    if (std::numeric_limits<WiderScalar>::digits <= std::numeric_limits<double>::digits)
+        throw std::runtime_error("source-reference estimate unavailable: WiderScalar is not wider than double");
+    const WiderScalar nu = count * (std::numeric_limits<WiderScalar>::epsilon() / 2);
+    if (!(nu < 1) || !wide_math::isfinite(wide) || !wide_math::isfinite(scale) || scale < 0)
         throw std::runtime_error("nonfinite wider reference estimate");
-    const long double estimate = std::abs(static_cast<long double>(center) - wide) + nu / (1 - nu) * scale
-        + count * std::numeric_limits<long double>::denorm_min();
+    const WiderScalar estimate = wide_math::abs(static_cast<WiderScalar>(center) - wide) + nu / (1 - nu) * scale
+        + count * std::numeric_limits<WiderScalar>::denorm_min();
     const double error = std::nextafter(static_cast<double>(estimate), INFINITY);
-    if (!std::isfinite(error)) throw std::runtime_error("nonfinite wider reference estimate");
+    if (!wide_math::isfinite(error)) throw std::runtime_error("nonfinite wider reference estimate");
     return error;
 }
 
@@ -1492,7 +1492,7 @@ static auto inverse_log_series(const std::vector<std::vector<double>>& path, std
     std::pair<std::vector<Base>, std::vector<Base>> out;
     auto& [inverse, logarithm] = out;
     inverse.assign(order + 1, 0.0); logarithm.assign(order + 1, 0.0);
-    inverse[0] = Base(1.0) / volume; logarithm[0] = std::log(volume);
+    inverse[0] = Base(1.0) / volume; logarithm[0] = wide_math::log(volume);
     for (std::size_t k = 1; k <= order; ++k) {
         logarithm[k] = Base(k) * Base(path[k][1]);
         for (std::size_t j = 1; j <= k; ++j) inverse[k] -= Base(path[j][1]) * inverse[k-j] / volume;
@@ -1508,8 +1508,8 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     validate_point(temperature, volume, composition);
     validate_composition(composition);
     require(order <= 4 && stoichiometry.size() == composition.size()
-        && finite_vector(stoichiometry) && std::isfinite(direction.temperature)
-        && std::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
+        && finite_vector(stoichiometry) && wide_math::isfinite(direction.temperature)
+        && wide_math::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
     if (error && order > 1) throw std::invalid_argument("reference error order");
     ReferenceTaylor result;
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
@@ -1531,7 +1531,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::vector<double> motion(width, 0.0);
     motion[0] = direction.temperature;
     for (const auto& parameter : direction.parameter) {
-        require(std::isfinite(parameter.value), "reference parameter direction");
+        require(wide_math::isfinite(parameter.value), "reference parameter direction");
         const auto found = std::find_if(active_.begin(), active_.end(), [&](const auto& a) {
             return a.family == parameter.family && a.indices == parameter.indices;
         });
@@ -1542,12 +1542,12 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     const double pressure = gas * temperature * (1.0 / volume - central.gradient[1]);
     const double pv = gas * temperature * (-1.0 / (volume * volume) - central.hessian[width + 1]);
     result.diagnostics.pressure_density_derivative = -pv * volume * volume;
-    if (!std::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return result; }
-    double norm = std::abs(direction.pressure) / (-pv * volume);
+    if (!wide_math::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return result; }
+    double norm = wide_math::abs(direction.pressure) / (-pv * volume);
     for (std::size_t i = 0; i < width; ++i) {
         const double scale = i == 0 ? temperature : i == 1 ? volume
-            : i < 2 + components ? 1.0 : std::max(1.0, std::abs(point[i]));
-        norm = std::max(norm, std::abs(motion[i]) / scale);
+            : i < 2 + components ? 1.0 : std::max(1.0, wide_math::abs(point[i]));
+        norm = std::max(norm, wide_math::abs(motion[i]) / scale);
     }
     if (norm == 0.0) norm = 1.0;
     for (double& v : motion) v /= norm;
@@ -1574,7 +1574,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
     path[0] = point; path[1] = motion;
     // EqID: reference_single_insertion_taylor. Only one insertion reaches degree 2r+1.
-    std::vector<long double> paired_wide, paired_scale;
+    std::vector<WiderScalar> paired_wide, paired_scale;
     std::vector<double> paired_site;
     // Recurrence count for the consumed pressure (degree 3), value (1), and thermal (3) extractions.
     const std::size_t operation_count = 32 + 2 * tape.function.size_op() * 4 * (4 * 4 + 2 * 2 + 4 * 4);
@@ -1593,14 +1593,14 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
                 &result.diagnostics.association_residual, &outputs, capture_error ? &sites : nullptr, capture_error ? &known : nullptr);
             if (capture_error) {
-                std::vector<long double> wide;
+                std::vector<WiderScalar> wide;
                 if (degree == 1) { const auto v = reference_coefficients<1>(parameters_, active_, inserted, sites); wide.assign(v.c.begin(), v.c.end()); }
                 else { const auto v = reference_coefficients<3>(parameters_, active_, inserted, sites); wide.assign(v.c.begin(), v.c.end()); }
                 const auto association = central.site_fractions.empty() ? std::vector<double>(inserted.size(), 0.0)
                     : coefficient_errors(parameters_, tape, inserted, central.site_fractions, sites, known, *factorization);
                 for (std::size_t k = 0; k <= last; ++k) {
                     paired_wide[k] += 0.5L * sign * wide[insertion_degree + k];
-                    paired_scale[k] += 0.5L * std::abs(wide[insertion_degree + k]);
+                    paired_scale[k] += 0.5L * wide_math::abs(wide[insertion_degree + k]);
                     paired_site[k] += 0.5 * association[insertion_degree + k];
                 }
             }
@@ -1624,44 +1624,48 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     capture_error = error != nullptr;
     const auto g = gradient_series(u, order);
     const auto [inverse, logarithm] = inverse_log();
-    const auto wide_series = error ? inverse_log_series<long double>(path, order)
-        : std::pair<std::vector<long double>, std::vector<long double>>{};
+    const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
+        : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};
     if (error) {
         error->temperature_coefficient = motion[0];
         for (std::size_t k = 0; k <= order; ++k) {
-            const long double r = gas, t = temperature, v = volume, t1 = motion[0];
+            const WiderScalar r = gas, t = temperature, v = volume, t1 = motion[0];
             const auto& wi = wide_series.first;
-            const long double pressure_wide = k ? r * (t * (wi[k] - paired_wide[k] / v)
+            const WiderScalar pressure_wide = k ? r * (t * (wi[k] - paired_wide[k] / v)
                 + t1 * (wi[k-1] - paired_wide[k-1] / v)) : r * t * (wi[0] - paired_wide[0] / v);
-            const long double scale = std::abs(r * t) * (std::abs(wi[k]) + paired_scale[k] / v)
-                + (k ? std::abs(r * t1) * (std::abs(wi[k-1]) + paired_scale[k-1] / v) : 0.0L);
+            const WiderScalar scale = wide_math::abs(r * t) * (wide_math::abs(wi[k]) + paired_scale[k] / v)
+                + (k ? wide_math::abs(r * t1) * (wide_math::abs(wi[k-1]) + paired_scale[k-1] / v) : 0.0L);
             error->pressure[k] = k ? gas * (temperature * (inverse[k] - g[k] / volume)
                 + motion[0] * (inverse[k-1] - g[k-1] / volume)) : gas * temperature * (inverse[0] - g[0] / volume);
             error->pressure_floor[k] = precision_estimate(error->pressure[k], pressure_wide, scale, operation_count)
-                + std::abs(gas * temperature / volume) * paired_site[k]
-                + (k ? std::abs(gas * motion[0] / volume) * paired_site[k-1] : 0.0);
+                + wide_math::abs(gas * temperature / volume) * paired_site[k]
+                + (k ? wide_math::abs(gas * motion[0] / volume) * paired_site[k-1] : 0.0);
         }
     }
     for (std::size_t k = 1; k <= order; ++k) {
         const double residual = gas * (temperature * (inverse[k] - g[k] / volume)
             + motion[0] * (inverse[k-1] - g[k-1] / volume)) - (k == 1 ? direction.pressure / norm : 0.0);
         result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual,
-            std::abs(residual) / std::max(pressure, std::abs(pv * path[k][1])));
+            wide_math::abs(residual) / std::max(pressure, wide_math::abs(pv * path[k][1])));
     }
     u.assign(width, 0.0);
     std::copy(stoichiometry.begin(), stoichiometry.end(), u.begin() + 2);
     result.contraction = gradient_series(u, order);
     const double delta = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
-    const long double wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0L) : 0.0L;
+#ifdef _WIN32
+    const WiderScalar wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), WiderScalar(0)) : WiderScalar(0);
+#else
+    const WiderScalar wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0L) : 0.0L;
+#endif
     result.volume.resize(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
         result.contraction[k] = (result.contraction[k] - delta * logarithm[k]) * std::pow(norm, int(k));
         result.volume[k] = path[k][1] * std::pow(norm, int(k));
         if (error) {
-            const long double scale = std::pow(static_cast<long double>(norm), int(k));
+            const WiderScalar scale = wide_math::pow(static_cast<WiderScalar>(norm), int(k));
             error->fixed[k] = precision_estimate(result.contraction[k],
                 (paired_wide[k] - wide_delta * wide_series.second[k]) * scale,
-                (paired_scale[k] + std::abs(wide_delta * wide_series.second[k])) * scale, operation_count)
+                (paired_scale[k] + wide_math::abs(wide_delta * wide_series.second[k])) * scale, operation_count)
                 + paired_site[k] * std::pow(norm, int(k));
         }
     }

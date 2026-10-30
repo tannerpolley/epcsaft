@@ -1,0 +1,28 @@
+{
+  "initial": {
+    "raw": "preflight-initial.json",
+    "derived": {
+      "checks-initial.csv": {
+        "file": "checks.csv",
+        "sha256": "d2fe62750195fab875f45c4f1aca45eb5f38a8ec08a82996497dd4e270254c07"
+      },
+      "preflight-values-initial.json": {
+        "file": "preflight-values.json",
+        "sha256": "090d09a3aaf78dc9d68b5500f96f546a040cbf22d82adc4ab6d1951fe37615e1"
+      }
+    }
+  },
+  "replacement": {
+    "raw": "preflight.json",
+    "derived": {
+      "checks.csv": {
+        "file": "checks.csv",
+        "sha256": "d2fe62750195fab875f45c4f1aca45eb5f38a8ec08a82996497dd4e270254c07"
+      },
+      "preflight-values.json": {
+        "file": "preflight-values.json",
+        "sha256": "090d09a3aaf78dc9d68b5500f96f546a040cbf22d82adc4ab6d1951fe37615e1"
+      }
+    }
+  }
+}

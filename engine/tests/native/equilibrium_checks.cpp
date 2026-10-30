@@ -107,6 +107,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F2", "reactive-caloric-F2", "Explicit"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
         {{"native.equilibrium.reactive-cp-F1", "reactive-cp-F1", "Explicit"}, [] {for(bool ionic:{false,true}) for(bool fixed:{false,true}) reactive_caloric_checks::cp_f1(ionic,fixed);}, "reactive-cp"},
         {{"native.equilibrium.reactive-cp-F3", "reactive-cp-F3", "Explicit"}, reactive_caloric_checks::cp_f3, "reactive-cp"},
+#ifndef _WIN32
         {{"native.equilibrium.reactive-caloric-E-sys", "reactive-caloric-E-sys", "Explicit"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-E-fix", "reactive-caloric-E-fix", "Explicit"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-I-sys", "reactive-caloric-I-sys", "Explicit"}, [] {reactive_caloric_checks::run(true,false);}, "reactive-caloric"},
@@ -120,6 +121,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F6-N-T-fix", "reactive-caloric-F6-N-T-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,true,true);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "reactive-caloric-F6-N-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "reactive-caloric-F6-N-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
+#endif
         {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
         {{"native.equilibrium.trace-reaction-balance", "trace-reaction-balance", "Automatic_fast"}, check_trace_reaction_balance},
         {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},

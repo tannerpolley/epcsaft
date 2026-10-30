@@ -1,0 +1,2711 @@
+{
+  "host": {
+    "system": {
+      "system": "Linux",
+      "node": "tnnrpolley21-MS-7C95",
+      "release": "7.0.0-42-generic",
+      "version": "#42~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon Oct 19 14:43:01 UTC 2",
+      "machine": "x86_64",
+      "processor": "x86_64"
+    },
+    "lscpu": "{\n   \"lscpu\": [\n      {\n         \"field\": \"Architecture:\",\n         \"data\": \"x86_64\"\n      },{\n         \"field\": \"CPU op-mode(s):\",\n         \"data\": \"32-bit, 64-bit\"\n      },{\n         \"field\": \"Address sizes:\",\n         \"data\": \"48 bits physical, 48 bits virtual\"\n      },{\n         \"field\": \"Byte Order:\",\n         \"data\": \"Little Endian\"\n      },{\n         \"field\": \"CPU(s):\",\n         \"data\": \"32\"\n      },{\n         \"field\": \"On-line CPU(s) list:\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vendor ID:\",\n         \"data\": \"AuthenticAMD\"\n      },{\n         \"field\": \"Model name:\",\n         \"data\": \"AMD Ryzen 9 5900XT 16-Core Processor\"\n      },{\n         \"field\": \"CPU family:\",\n         \"data\": \"25\"\n      },{\n         \"field\": \"Model:\",\n         \"data\": \"33\"\n      },{\n         \"field\": \"Thread(s) per core:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Core(s) per socket:\",\n         \"data\": \"16\"\n      },{\n         \"field\": \"Socket(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"Stepping:\",\n         \"data\": \"2\"\n      },{\n         \"field\": \"Frequency boost:\",\n         \"data\": \"enabled\"\n      },{\n         \"field\": \"CPU(s) scaling MHz:\",\n         \"data\": \"88%\"\n      },{\n         \"field\": \"CPU max MHz:\",\n         \"data\": \"4981.5098\"\n      },{\n         \"field\": \"CPU min MHz:\",\n         \"data\": \"570.1730\"\n      },{\n         \"field\": \"BogoMIPS:\",\n         \"data\": \"6599.55\"\n      },{\n         \"field\": \"Flags:\",\n         \"data\": \"fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a rdseed adx smap clflushopt clwb sha_ni xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk clzero irperf xsaveerptr rdpru wbnoinvd arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif v_spec_ctrl umip pku ospke vaes vpclmulqdq rdpid overflow_recov succor smca fsrm debug_swap\"\n      },{\n         \"field\": \"Virtualization:\",\n         \"data\": \"AMD-V\"\n      },{\n         \"field\": \"L1d cache:\",\n         \"data\": \"512 KiB (16 instances)\"\n      },{\n         \"field\": \"L1i cache:\",\n         \"data\": \"512 KiB (16 instances)\"\n      },{\n         \"field\": \"L2 cache:\",\n         \"data\": \"8 MiB (16 instances)\"\n      },{\n         \"field\": \"L3 cache:\",\n         \"data\": \"64 MiB (2 instances)\"\n      },{\n         \"field\": \"NUMA node(s):\",\n         \"data\": \"1\"\n      },{\n         \"field\": \"NUMA node0 CPU(s):\",\n         \"data\": \"0-31\"\n      },{\n         \"field\": \"Vulnerability Gather data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Ghostwrite:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Indirect target selection:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Itlb multihit:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability L1tf:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Meltdown:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Mmio stale data:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Old microcode:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Reg file data sampling:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Retbleed:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Spec rstack overflow:\",\n         \"data\": \"Mitigation; Safe RET\"\n      },{\n         \"field\": \"Vulnerability Spec store bypass:\",\n         \"data\": \"Mitigation; Speculative Store Bypass disabled via prctl\"\n      },{\n         \"field\": \"Vulnerability Spectre v1:\",\n         \"data\": \"Mitigation; usercopy/swapgs barriers and __user pointer sanitization\"\n      },{\n         \"field\": \"Vulnerability Spectre v2:\",\n         \"data\": \"Mitigation; Retpolines; IBPB conditional; IBRS_FW; STIBP always-on; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected\"\n      },{\n         \"field\": \"Vulnerability Srbds:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Tsa:\",\n         \"data\": \"Mitigation; Clear CPU buffers\"\n      },{\n         \"field\": \"Vulnerability Tsx async abort:\",\n         \"data\": \"Not affected\"\n      },{\n         \"field\": \"Vulnerability Vmscape:\",\n         \"data\": \"Mitigation; IBPB before exit to userspace\"\n      }\n   ]\n}\n",
+    "numerical_threads": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "BLIS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    },
+    "nice": 10,
+    "cpu": 31,
+    "methods_sha256": {
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/analyses/2026-audit-timing-campaign/scripts/campaign.py": "9089c47e3907f624435d65a7386f60712c702c486c13e4ac0d7ea60bbf61b05c",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/analyses/2026-audit-timing-campaign/scripts/engine_worker.py": "9dda03e9fdd1a490b8b55136d62d206c2ece10042c7a2d1d0a0b6ed9a7d4a9de",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/analyses/2026-audit-timing-campaign/scripts/feos_worker.py": "8846dce5442a53243894065a3384bf2f299591aee0dd3dc246c6c70e2a65c34d",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/analyses/2026-audit-timing-campaign/scripts/clapeyron_server.jl": "bf512691e2330e07ef9150b6a0115e5d051e883899222e125b4a6c1696993f27",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/analyses/2026-main-computational-cost/scripts/definitions.jl": "9fcbfb1e1df36513f20ce6070dedcafe17dd5b368616aa039a60d044fba3a040"
+    },
+    "host": {
+      "utc": "2026-10-29T20:31:53.587051+00:00",
+      "load": [
+        11.92,
+        12.06,
+        13.98
+      ],
+      "runnable_total": "5/4531",
+      "outside_fits": [],
+      "compilers": [],
+      "mem_available_kb": 17669584,
+      "swap_free_kb": 1887580,
+      "compile_processes": [],
+      "cpu": 31,
+      "affinity": [
+        31
+      ],
+      "nice": 10,
+      "core_reserved": true
+    }
+  },
+  "identities": {
+    "Engine-A": {
+      "pid": 2822435,
+      "ppid": 2822060,
+      "interpreter": "/home/tnnrpolley21/.local/share/uv/python/cpython-3.13.14-linux-x86_64-gnu",
+      "executable": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/build/issue-929/main/.venv/bin/python",
+      "guard_sha256": "1a5af64518663d6f3bfae10c38331d97d4636c75a293add89b6895a1d6aef173",
+      "image_sha256": "b09a677634d4ce58f1aa9e2b9a45390946a48670ec1077c4b05cdec657aa71d5",
+      "epcsaft": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/build/issue-929/main/engine/src/epcsaft/__init__.py",
+      "extension": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/build/issue-929/main/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so",
+      "maps": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/build/issue-929/main/build/engine-meson/shared/libepcsaft_native.so": [
+          66306,
+          56017091
+        ],
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-929-remeasure-value-matched-computational/build/issue-929/main/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": [
+          66306,
+          56017093
+        ]
+      },
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "FeOs": {
+      "pid": 2822438,
+      "library": "FeOs",
+      "version": "0.10.1",
+      "python": "/home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python",
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    },
+    "Clapeyron": {
+      "blas_threads": 1,
+      "julia": "1.13.1",
+      "pid": 2822081,
+      "threads": 1,
+      "version": "0.6.29",
+      "affinity": [
+        31
+      ],
+      "nice": 10
+    }
+  },
+  "operations": {
+    "property-bundle": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "P": 1027555.346013367,
+              "h_res": -1244.955786583384,
+              "cv_res": 1.2861592273215545,
+              "lnphi": [
+                -0.1630483442503253
+              ],
+              "a_res": -0.18065232059197256
+            },
+            "seconds": 1.795e-05,
+            "cpu_seconds": 1.668e-05,
+            "counters": {
+              "forward": 2,
+              "reverse": 2,
+              "hessian_calls": 1,
+              "recordings": 0
+            }
+          }
+        ],
+        "prepare_seconds": 0.000300369
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 1027555.3460099576,
+              "h_res": -1244.9557866026082,
+              "cv_res": 1.2861592273570663,
+              "lnphi": [
+                -0.16304834425255887
+              ],
+              "a_res": -0.18065232059479033
+            },
+            "seconds": 0.000101709,
+            "cpu_seconds": 0.00010188
+          }
+        ],
+        "prepare_seconds": 0.0001724
+      },
+      "Clapeyron": {
+        "prepare_seconds": 3.405927104,
+        "samples": [
+          {
+            "seconds": 0.000123489,
+            "value": {
+              "P": 1027555.346013367,
+              "a_res": -0.1806523205919726,
+              "cv_res": 1.2861592273215532,
+              "h_res": -1244.955786583384,
+              "lnphi": [
+                -0.1630483442503251
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "pressure-state": {
+      "Engine": {
+        "samples": [
+          {
+            "seconds": 0.000375048,
+            "per_call": 32,
+            "value": [
+              {
+                "rho": 11175.524689692525,
+                "P": 1997321.7914792474,
+                "dPdrho": 13654.705984605487,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.4849232954361469e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.52516154248,
+                "P": 1997328.2344528802,
+                "dPdrho": 13654.710901269764,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.2351231148954867e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.525633392255,
+                "P": 1997334.6774264176,
+                "dPdrho": 13654.715817933291,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.1379786002407855e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.526105241874,
+                "P": 1997341.1203999594,
+                "dPdrho": 13654.720734596174,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 5.551115123125783e-17,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.52657709131,
+                "P": 1997347.5633733019,
+                "dPdrho": 13654.72565125825,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.2490009027033011e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.527048940585,
+                "P": 1997354.0063469207,
+                "dPdrho": 13654.730567919742,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.609024107869118e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.527520789685,
+                "P": 1997360.4493204174,
+                "dPdrho": 13654.735484580498,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 3.982925100842749e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.52799263862,
+                "P": 1997366.8922939503,
+                "dPdrho": 13654.740401240642,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.915134717478395e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.528464487383,
+                "P": 1997373.3352674968,
+                "dPdrho": 13654.745317900057,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.4849232954361469e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.528936335975,
+                "P": 1997379.7782410614,
+                "dPdrho": 13654.750234558805,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.3739009929736312e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.529408184397,
+                "P": 1997386.221214626,
+                "dPdrho": 13654.755151216854,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 3.469446951953614e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.529880032647,
+                "P": 1997392.6641880681,
+                "dPdrho": 13654.760067874176,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.4988010832439613e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.530351880732,
+                "P": 1997399.1071615827,
+                "dPdrho": 13654.764984530868,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 7.077671781985373e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.53082372865,
+                "P": 1997405.5501352607,
+                "dPdrho": 13654.769901186948,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.942091015256665e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.531295576391,
+                "P": 1997411.9931086937,
+                "dPdrho": 13654.774817842195,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 3.70536934468646e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.531767423961,
+                "P": 1997418.4360821268,
+                "dPdrho": 13654.77973449679,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 4.3021142204224816e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.532239271362,
+                "P": 1997424.879055637,
+                "dPdrho": 13654.784651150692,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.6653345369377348e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.532711118603,
+                "P": 1997431.3220292425,
+                "dPdrho": 13654.789567803993,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.706168622523819e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.533182965659,
+                "P": 1997437.765002689,
+                "dPdrho": 13654.794484456466,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 3.219646771412954e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.533654812562,
+                "P": 1997444.2079762856,
+                "dPdrho": 13654.799401108425,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 6.800116025829084e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.53412665928,
+                "P": 1997450.6509498183,
+                "dPdrho": 13654.80431775959,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.5543122344752192e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.534598505821,
+                "P": 1997457.0939231743,
+                "dPdrho": 13654.809234409968,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 6.661338147750939e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.535070352224,
+                "P": 1997463.5368968705,
+                "dPdrho": 13654.814151059945,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.5673907444456745e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.535542198428,
+                "P": 1997469.9798703126,
+                "dPdrho": 13654.819067708988,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 5.551115123125783e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.536014044472,
+                "P": 1997476.422843841,
+                "dPdrho": 13654.823984357436,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.457167719820518e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.536485890345,
+                "P": 1997482.8658172693,
+                "dPdrho": 13654.828901005163,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 5.412337245047638e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.536957736054,
+                "P": 1997489.3087908975,
+                "dPdrho": 13654.833817652288,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 5.967448757360216e-16,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.537429581585,
+                "P": 1997495.7517643895,
+                "dPdrho": 13654.838734298644,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.2898349882893854e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.537901426957,
+                "P": 1997502.1947380223,
+                "dPdrho": 13654.84365094443,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 4.4825254619240695e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.538373272155,
+                "P": 1997508.6377116004,
+                "dPdrho": 13654.848567589499,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 6.217248937900877e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.53884511717,
+                "P": 1997515.0806848973,
+                "dPdrho": 13654.853484233672,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 2.7755575615628914e-17,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              },
+              {
+                "rho": 11175.539316962024,
+                "P": 1997521.5236584346,
+                "dPdrho": 13654.858400877312,
+                "branch": "Liquid",
+                "roots": 2,
+                "convergence": {
+                  "residual": 1.7208456881689926e-15,
+                  "iterations": 1,
+                  "evaluations": 9,
+                  "stop": "converged"
+                }
+              }
+            ],
+            "cpu_seconds": 0.000420701
+          }
+        ],
+        "prepare_seconds": 0.000220179
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "seconds": 0.004428915,
+            "per_call": 32,
+            "value": [
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 0,
+                "elapsed_us": 41.76,
+                "rho_mol_m3": 11175.524690654727,
+                "oracle_rho_mol_m3": 11175.52468969248,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610312463019909e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 1,
+                "elapsed_us": 48.989,
+                "rho_mol_m3": 11175.525162504693,
+                "oracle_rho_mol_m3": 11175.525161542424,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610512303164342e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 2,
+                "elapsed_us": 45.36,
+                "rho_mol_m3": 11175.52563435446,
+                "oracle_rho_mol_m3": 11175.525633392263,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609868373810059e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 3,
+                "elapsed_us": 41.95,
+                "rho_mol_m3": 11175.526106204083,
+                "oracle_rho_mol_m3": 11175.526105241846,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610201440717447e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 4,
+                "elapsed_us": 40.86,
+                "rho_mol_m3": 11175.526578053525,
+                "oracle_rho_mol_m3": 11175.526577091285,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610245849638432e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 5,
+                "elapsed_us": 41.89,
+                "rho_mol_m3": 11175.527049902808,
+                "oracle_rho_mol_m3": 11175.527048940552,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610379076401387e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 6,
+                "elapsed_us": 41.04,
+                "rho_mol_m3": 11175.527521751897,
+                "oracle_rho_mol_m3": 11175.527520789688,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609957191652029e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 7,
+                "elapsed_us": 40.51,
+                "rho_mol_m3": 11175.527993600825,
+                "oracle_rho_mol_m3": 11175.527992638625,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609890578270551e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 8,
+                "elapsed_us": 40.649,
+                "rho_mol_m3": 11175.528465449586,
+                "oracle_rho_mol_m3": 11175.528464487434,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609468693521194e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 9,
+                "elapsed_us": 41.86,
+                "rho_mol_m3": 11175.528937298193,
+                "oracle_rho_mol_m3": 11175.52893633594,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610356871940894e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 10,
+                "elapsed_us": 43.0,
+                "rho_mol_m3": 11175.529409146604,
+                "oracle_rho_mol_m3": 11175.529408184451,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609468693521194e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 11,
+                "elapsed_us": 41.8,
+                "rho_mol_m3": 11175.529880994869,
+                "oracle_rho_mol_m3": 11175.529880032704,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609579715823656e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 12,
+                "elapsed_us": 47.21,
+                "rho_mol_m3": 11175.530352842938,
+                "oracle_rho_mol_m3": 11175.530351880781,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609490897981686e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 13,
+                "elapsed_us": 42.79,
+                "rho_mol_m3": 11175.530824690837,
+                "oracle_rho_mol_m3": 11175.530823728655,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609712942586611e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 14,
+                "elapsed_us": 41.899,
+                "rho_mol_m3": 11175.531296538607,
+                "oracle_rho_mol_m3": 11175.53129557637,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610223645177939e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 15,
+                "elapsed_us": 41.6,
+                "rho_mol_m3": 11175.531768386167,
+                "oracle_rho_mol_m3": 11175.531767423941,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610112622875477e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 16,
+                "elapsed_us": 41.94,
+                "rho_mol_m3": 11175.532240233573,
+                "oracle_rho_mol_m3": 11175.53223927139,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609735147047104e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 17,
+                "elapsed_us": 41.55,
+                "rho_mol_m3": 11175.532712080807,
+                "oracle_rho_mol_m3": 11175.532711118602,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609934987191536e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 18,
+                "elapsed_us": 40.55,
+                "rho_mol_m3": 11175.533183927857,
+                "oracle_rho_mol_m3": 11175.533182965704,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609446489060701e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 19,
+                "elapsed_us": 40.98,
+                "rho_mol_m3": 11175.533655774758,
+                "oracle_rho_mol_m3": 11175.533654812534,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610090418414984e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 20,
+                "elapsed_us": 40.32,
+                "rho_mol_m3": 11175.534127621477,
+                "oracle_rho_mol_m3": 11175.534126659259,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610046009493999e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 21,
+                "elapsed_us": 39.879,
+                "rho_mol_m3": 11175.534599468045,
+                "oracle_rho_mol_m3": 11175.534598505881,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609557511363164e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 22,
+                "elapsed_us": 40.95,
+                "rho_mol_m3": 11175.53507131442,
+                "oracle_rho_mol_m3": 11175.53507035218,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610245849638432e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 23,
+                "elapsed_us": 3054.831,
+                "rho_mol_m3": 11175.535543160637,
+                "oracle_rho_mol_m3": 11175.53554219842,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610023805033507e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 24,
+                "elapsed_us": 78.209,
+                "rho_mol_m3": 11175.536015006683,
+                "oracle_rho_mol_m3": 11175.53601404453,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609446489060701e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 25,
+                "elapsed_us": 56.01,
+                "rho_mol_m3": 11175.536486852556,
+                "oracle_rho_mol_m3": 11175.536485890341,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610001600573014e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 26,
+                "elapsed_us": 49.04,
+                "rho_mol_m3": 11175.536958698252,
+                "oracle_rho_mol_m3": 11175.536957736094,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609513102442179e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 27,
+                "elapsed_us": 46.59,
+                "rho_mol_m3": 11175.537430543794,
+                "oracle_rho_mol_m3": 11175.537429581549,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610290258559417e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 28,
+                "elapsed_us": 44.77,
+                "rho_mol_m3": 11175.53790238915,
+                "oracle_rho_mol_m3": 11175.537901426978,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609624124744641e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 29,
+                "elapsed_us": 45.049,
+                "rho_mol_m3": 11175.538374234355,
+                "oracle_rho_mol_m3": 11175.53837327216,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609823964889074e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 30,
+                "elapsed_us": 43.05,
+                "rho_mol_m3": 11175.538846079382,
+                "oracle_rho_mol_m3": 11175.53884511712,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.610423485322372e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              },
+              {
+                "mode": "unique states (one pass)",
+                "sample_index": 0,
+                "state_index": 31,
+                "elapsed_us": 42.03,
+                "rho_mol_m3": 11175.539317924235,
+                "oracle_rho_mol_m3": 11175.539316962064,
+                "oracle_branch": "liquid",
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 8.609624124744641e-11,
+                "accuracy_within_1e10": true,
+                "status": "represented",
+                "note": ""
+              }
+            ],
+            "cpu_seconds": 0.003739891
+          }
+        ],
+        "prepare_seconds": 6.62e-06
+      },
+      "Clapeyron": {
+        "prepare_seconds": 0.034456179,
+        "samples": [
+          {
+            "per_call": 32,
+            "seconds": 0.000130209,
+            "value": [
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.99,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.52468969248,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.884981308350689e-15,
+                "rho_mol_m3": 11175.524689692535,
+                "sample_index": 0,
+                "state_index": 0,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.08,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.525161542424,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.218847493575595e-15,
+                "rho_mol_m3": 11175.525161542471,
+                "sample_index": 0,
+                "state_index": 1,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.96,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.525633392263,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 1.1102230246251565e-15,
+                "rho_mol_m3": 11175.52563339225,
+                "sample_index": 0,
+                "state_index": 2,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.91,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.526105241846,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.220446049250313e-15,
+                "rho_mol_m3": 11175.52610524187,
+                "sample_index": 0,
+                "state_index": 3,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.98,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.526577091285,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.4424906541753444e-15,
+                "rho_mol_m3": 11175.526577091312,
+                "sample_index": 0,
+                "state_index": 4,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.01,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.527048940552,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.220446049250313e-15,
+                "rho_mol_m3": 11175.527048940576,
+                "sample_index": 0,
+                "state_index": 5,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.96,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.527520789688,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 6.661338147750939e-16,
+                "rho_mol_m3": 11175.527520789681,
+                "sample_index": 0,
+                "state_index": 6,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.02,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.527992638625,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.220446049250313e-16,
+                "rho_mol_m3": 11175.527992638627,
+                "sample_index": 0,
+                "state_index": 7,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.96,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.528464487434,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 3.552713678800501e-15,
+                "rho_mol_m3": 11175.528464487394,
+                "sample_index": 0,
+                "state_index": 8,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.9,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.52893633594,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 3.552713678800501e-15,
+                "rho_mol_m3": 11175.52893633598,
+                "sample_index": 0,
+                "state_index": 9,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.9,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.529408184451,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 5.329070518200751e-15,
+                "rho_mol_m3": 11175.529408184391,
+                "sample_index": 0,
+                "state_index": 10,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.88,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.529880032704,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 3.774758283725532e-15,
+                "rho_mol_m3": 11175.529880032662,
+                "sample_index": 0,
+                "state_index": 11,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.01,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.530351880781,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 5.995204332975845e-15,
+                "rho_mol_m3": 11175.530351880714,
+                "sample_index": 0,
+                "state_index": 12,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.97,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.530823728655,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 6.661338147750939e-16,
+                "rho_mol_m3": 11175.530823728648,
+                "sample_index": 0,
+                "state_index": 13,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.97,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53129557637,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 1.3322676295501878e-15,
+                "rho_mol_m3": 11175.531295576384,
+                "sample_index": 0,
+                "state_index": 14,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.51,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.531767423941,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 1.5543122344752192e-15,
+                "rho_mol_m3": 11175.53176742396,
+                "sample_index": 0,
+                "state_index": 15,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.04,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53223927139,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.886579864025407e-15,
+                "rho_mol_m3": 11175.532239271357,
+                "sample_index": 0,
+                "state_index": 16,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.08,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.532711118602,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.440892098500626e-16,
+                "rho_mol_m3": 11175.532711118596,
+                "sample_index": 0,
+                "state_index": 17,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.33,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.533182965704,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.218847493575595e-15,
+                "rho_mol_m3": 11175.533182965657,
+                "sample_index": 0,
+                "state_index": 18,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.9,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.533654812534,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.220446049250313e-15,
+                "rho_mol_m3": 11175.533654812558,
+                "sample_index": 0,
+                "state_index": 19,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.98,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.534126659259,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.220446049250313e-15,
+                "rho_mol_m3": 11175.534126659282,
+                "sample_index": 0,
+                "state_index": 20,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.98,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.534598505881,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.884981308350689e-15,
+                "rho_mol_m3": 11175.534598505827,
+                "sample_index": 0,
+                "state_index": 21,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 5.9,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53507035218,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.886579864025407e-15,
+                "rho_mol_m3": 11175.535070352213,
+                "sample_index": 0,
+                "state_index": 22,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.049,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53554219842,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 1.5543122344752192e-15,
+                "rho_mol_m3": 11175.535542198439,
+                "sample_index": 0,
+                "state_index": 23,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.91,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53601404453,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 5.551115123125783e-15,
+                "rho_mol_m3": 11175.536014044468,
+                "sample_index": 0,
+                "state_index": 24,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.96,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.536485890341,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 1.5543122344752192e-15,
+                "rho_mol_m3": 11175.536485890358,
+                "sample_index": 0,
+                "state_index": 25,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.88,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.536957736094,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 4.107825191113079e-15,
+                "rho_mol_m3": 11175.536957736049,
+                "sample_index": 0,
+                "state_index": 26,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.97,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.537429581549,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.6645352591003757e-15,
+                "rho_mol_m3": 11175.53742958158,
+                "sample_index": 0,
+                "state_index": 27,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 4.39,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.537901426978,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 2.3314683517128287e-15,
+                "rho_mol_m3": 11175.537901426953,
+                "sample_index": 0,
+                "state_index": 28,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.89,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53837327216,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 9.992007221626409e-16,
+                "rho_mol_m3": 11175.53837327215,
+                "sample_index": 0,
+                "state_index": 29,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.99,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.53884511712,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 3.9968028886505635e-15,
+                "rho_mol_m3": 11175.538845117166,
+                "sample_index": 0,
+                "state_index": 30,
+                "status": "represented"
+              },
+              {
+                "accuracy_within_1e10": true,
+                "elapsed_us": 3.95,
+                "mode": "unique states (one pass)",
+                "note": "",
+                "oracle_branch": "liquid",
+                "oracle_rho_mol_m3": 11175.539316962064,
+                "oracle_stable_root_count": 2,
+                "relative_density_difference": 3.552713678800501e-15,
+                "rho_mol_m3": 11175.539316962024,
+                "sample_index": 0,
+                "state_index": 31,
+                "status": "represented"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "C1-300": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8957399128,
+              "success": true,
+              "requested_tolerance_met": true,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2
+            },
+            "seconds": 0.000140589,
+            "cpu_seconds": 0.00013989
+          }
+        ],
+        "prepare_seconds": 0.008851302
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8955479692,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251234176576,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955481574
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.51212670173845,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955479692
+                }
+              ]
+            },
+            "seconds": 4.8619e-05,
+            "cpu_seconds": 4.886e-05
+          }
+        ],
+        "prepare_seconds": 0.000103179
+      },
+      "Clapeyron": {
+        "prepare_seconds": 0.187225448,
+        "samples": [
+          {
+            "seconds": 0.000130219,
+            "value": {
+              "P": 998660.895739916,
+              "compositions": [
+                [
+                  1.0
+                ],
+                [
+                  1.0
+                ]
+              ],
+              "densities": [
+                11100.251233209623,
+                482.51212681503665
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "C2-0.5": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "P": 1414326.665544729,
+              "success": true,
+              "requested_tolerance_met": true,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 10841.806748043731,
+                  "x": [
+                    0.5,
+                    0.5
+                  ]
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 581.0840261067516,
+                  "x": [
+                    0.13347906744642343,
+                    0.8665209325535767
+                  ]
+                }
+              ],
+              "beta": 1.0,
+              "convergence": {
+                "residual": 3.552713678800501e-15,
+                "floor": 4.338579870330432e-12,
+                "amplification": 0.0,
+                "contraction": null,
+                "iterations": 0,
+                "evaluations": 6,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 3.552713678800501e-15,
+              "iterations": 0,
+              "evaluations": 6
+            },
+            "seconds": 0.000847657,
+            "cpu_seconds": 0.00084705
+          }
+        ],
+        "prepare_seconds": 0.000486989
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 1414326.6653261185,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 10841.806748901787,
+                  "x": [
+                    0.5,
+                    0.5
+                  ],
+                  "pressure": 1414326.6653257944
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 581.0840259890864,
+                  "x": [
+                    0.13347906743585775,
+                    0.8665209325641422
+                  ],
+                  "pressure": 1414326.6653261185
+                }
+              ]
+            },
+            "seconds": 0.000429308,
+            "cpu_seconds": 0.00043557
+          }
+        ],
+        "prepare_seconds": 0.000489028
+      },
+      "Clapeyron": {
+        "prepare_seconds": 0.076582484,
+        "samples": [
+          {
+            "seconds": 0.000414958,
+            "value": {
+              "P": 1414326.6655442857,
+              "compositions": [
+                [
+                  0.5,
+                  0.5
+                ],
+                [
+                  0.13347906744642632,
+                  0.8665209325535737
+                ]
+              ],
+              "densities": [
+                10841.806748043704,
+                581.0840261065543
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "C4-298.15": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "P": 101300.0,
+              "success": true,
+              "requested_tolerance_met": true,
+              "phases": [
+                {
+                  "phase": "water-rich",
+                  "rho": 51031.595366008434,
+                  "x": [
+                    0.9993566483864802,
+                    0.0006433516135197952
+                  ]
+                },
+                {
+                  "phase": "water-poor",
+                  "rho": 12519.772604220409,
+                  "x": [
+                    0.31959730095095323,
+                    0.6804026990490468
+                  ]
+                }
+              ],
+              "beta": 0.26539200928922485,
+              "convergence": {
+                "residual": 1.10984390482873e-14,
+                "floor": 2.830002919013427e-10,
+                "amplification": 0.0,
+                "contraction": null,
+                "iterations": 16,
+                "evaluations": 22,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "max_residual": 6.838973831690964e-14,
+              "iterations": 16,
+              "evaluations": 23
+            },
+            "seconds": 0.005059173,
+            "cpu_seconds": 0.004990601
+          }
+        ],
+        "prepare_seconds": 0.000544048
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 101300.00000090897,
+              "beta": 0.26539200936020746,
+              "phases": [
+                {
+                  "phase": "water-rich",
+                  "rho": 51031.59536997205,
+                  "x": [
+                    0.9993566483869841,
+                    0.0006433516130158985
+                  ],
+                  "pressure": 101300.00000183284
+                },
+                {
+                  "phase": "water-poor",
+                  "rho": 12519.772604487865,
+                  "x": [
+                    0.31959730088508836,
+                    0.6804026991149116
+                  ],
+                  "pressure": 101300.00000090897
+                }
+              ]
+            },
+            "seconds": 0.017026665,
+            "cpu_seconds": 0.017027395
+          }
+        ],
+        "prepare_seconds": 0.000123779
+      },
+      "Clapeyron": {
+        "prepare_seconds": 0.000907097,
+        "samples": [
+          {
+            "seconds": 0.000704417,
+            "value": {
+              "P": 101300,
+              "beta": 0.2653920092872975,
+              "compositions": [
+                [
+                  0.9993566483862732,
+                  0.0006433516137267205
+                ],
+                [
+                  0.3195973009528114,
+                  0.6804026990471886
+                ]
+              ],
+              "densities": [
+                51031.59536596115,
+                12519.772604243333
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "C1-300-prepared": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "convergence": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12
+              },
+              "P": 998660.8957399128,
+              "T": 300.0,
+              "success": true,
+              "requested_tolerance_met": true,
+              "message": "converged: residual 4.4408920985006262e-15 against EQUILIBRIUM_ROW_RESIDUAL 9.9999999999999998e-13 after 1 iterations, contraction absent, floor absent, amplification absent",
+              "solver_status": "NEWTON_CONVERGED",
+              "max_residual": 4.440892098500626e-15,
+              "iterations": 1,
+              "evaluations": 2,
+              "hessian_calls": 0,
+              "first_numerical_failure": null,
+              "terminal_numerical_failure": null,
+              "last_full_evaluation": {
+                "residual": 4.440892098500626e-15,
+                "floor": null,
+                "amplification": null,
+                "contraction": null,
+                "iterations": 1,
+                "evaluations": 2,
+                "stop": "converged",
+                "criterion": 1e-12,
+                "cause": "",
+                "rank": null,
+                "backward_error": null
+              },
+              "rank": {
+                "basis": "reduced",
+                "dimension": 2,
+                "rank": 2,
+                "threshold": 4.440892098500626e-16
+              },
+              "linear": {
+                "method": "one_component_two_density_reduction",
+                "reason": "",
+                "residual": 3.000421092136385e-15,
+                "evaluation_floor": 1.5456264227826464e-15,
+                "inverse_norm": 3.1302809547658565,
+                "condition_estimate": 18.25978333324076,
+                "forward_error_estimate": 1.4230405955411697e-14,
+                "working_precision_bits": 53,
+                "refinement_iterations": 0
+              },
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.25123320961,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957398143
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.5121268150347,
+                  "x": [
+                    1.0
+                  ],
+                  "P": 998660.8957399128
+                }
+              ],
+              "rejected_reduction": null
+            },
+            "seconds": 6.398e-05,
+            "cpu_seconds": 6.33e-05
+          }
+        ],
+        "prepare_seconds": 0.000669457
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "P": 998660.8955479692,
+              "phases": [
+                {
+                  "phase": "liquid",
+                  "rho": 11100.251234176576,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955481574
+                },
+                {
+                  "phase": "vapor",
+                  "rho": 482.51212670173845,
+                  "x": [
+                    1.0
+                  ],
+                  "pressure": 998660.8955479692
+                }
+              ]
+            },
+            "seconds": 3.92e-05,
+            "cpu_seconds": 3.909e-05
+          }
+        ],
+        "prepare_seconds": null
+      },
+      "Clapeyron": {
+        "prepare_seconds": null,
+        "samples": [
+          {
+            "seconds": 3.5309e-05,
+            "value": {
+              "P": 998660.895739916,
+              "compositions": [
+                [
+                  1.0
+                ],
+                [
+                  1.0
+                ]
+              ],
+              "densities": [
+                11100.251233209623,
+                482.51212681503665
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "electrolyte-eight-feeds": {
+      "Engine": {
+        "samples": [
+          {
+            "value": [
+              {
+                "point": 1,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.6395045911286241,
+                  0.36049540887137593
+                ],
+                "mole_fractions": [
+                  0.9198936620246715,
+                  0.0013516087794150655,
+                  0.0018836490862421682,
+                  0.0384355400548356,
+                  0.0384355400548356,
+                  0.3919108724949141,
+                  0.034596433885391034,
+                  0.565190227805977,
+                  0.004151232906858934,
+                  0.004151232906858934
+                ],
+                "molar_densities": [
+                  56576.99116184837,
+                  16372.963459994555
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 17,
+                "evaluations": 21,
+                "hessian_calls": 18,
+                "max_residual": 1.5432100042289676e-13,
+                "message": "converged: residual 2.9096398191456941e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 17 iterations, contraction absent, floor 2.1938571697816789e-10, amplification 0"
+              },
+              {
+                "point": 2,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.6239659462654795,
+                  0.3760340537345204
+                ],
+                "mole_fractions": [
+                  0.9169644994241511,
+                  0.0018814717668598974,
+                  0.0018118798790289696,
+                  0.03967107446497999,
+                  0.03967107446497999,
+                  0.3938831613887299,
+                  0.04968071402686866,
+                  0.5479705505377646,
+                  0.00423278702331845,
+                  0.00423278702331845
+                ],
+                "molar_densities": [
+                  56587.349210663866,
+                  16558.56308712483
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 21,
+                "evaluations": 44,
+                "hessian_calls": 22,
+                "max_residual": 1.9317880628477724e-13,
+                "message": "converged: residual 1.9993525406463663e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 21 iterations, contraction absent, floor 2.1877725878877446e-10, amplification 0"
+              },
+              {
+                "point": 3,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.6065319553063752,
+                  0.3934680446936245
+                ],
+                "mole_fractions": [
+                  0.9136702730681315,
+                  0.0021841731549059845,
+                  0.0017327042831051672,
+                  0.04120642474692871,
+                  0.04120642474692871,
+                  0.3940519498188753,
+                  0.06033539628829544,
+                  0.536825966415212,
+                  0.004393343738808662,
+                  0.004393343738808662
+                ],
+                "molar_densities": [
+                  56639.64029440964,
+                  16671.09790152829
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 12,
+                "evaluations": 15,
+                "hessian_calls": 13,
+                "max_residual": 1.1168843627729075e-13,
+                "message": "converged: residual 1.4027757791833052e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 2.182020558378923e-10, amplification 0"
+              },
+              {
+                "point": 4,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.5912892969953613,
+                  0.40871070300463874
+                ],
+                "mole_fractions": [
+                  0.910704468571999,
+                  0.0026839418641336613,
+                  0.0016597512365782645,
+                  0.04247591916364457,
+                  0.04247591916364457,
+                  0.39640173217606217,
+                  0.07653699186646447,
+                  0.5181521436851901,
+                  0.0044545661361415564,
+                  0.0044545661361415564
+                ],
+                "molar_densities": [
+                  56655.05988050985,
+                  16881.8682162105
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 16,
+                "evaluations": 22,
+                "hessian_calls": 17,
+                "max_residual": 5.5566662382489085e-14,
+                "message": "converged: residual 4.8434047154311587e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 16 iterations, contraction absent, floor 2.1759692742129978e-10, amplification 0"
+              },
+              {
+                "point": 5,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.57605434177873,
+                  0.42394565822127
+                ],
+                "mole_fractions": [
+                  0.9077036349984919,
+                  0.00310674211618308,
+                  0.0015863937497423413,
+                  0.04380161456779129,
+                  0.04380161456779129,
+                  0.3984270323006616,
+                  0.09172137624349574,
+                  0.5008023840944474,
+                  0.0045246036806975976,
+                  0.0045246036806975976
+                ],
+                "molar_densities": [
+                  56682.069898358204,
+                  17081.05471544586
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 24,
+                "evaluations": 63,
+                "hessian_calls": 25,
+                "max_residual": 5.684341886080802e-14,
+                "message": "converged: residual 9.1972222188954318e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 24 iterations, contraction absent, floor 2.1701424516889697e-10, amplification 0"
+              },
+              {
+                "point": 6,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.541016483658985,
+                  0.4589835163410149
+                ],
+                "mole_fractions": [
+                  0.9005150801604721,
+                  0.003528821819715844,
+                  0.0014238692128288866,
+                  0.04726611440349163,
+                  0.04726611440349163,
+                  0.3988314112197865,
+                  0.11553226635373214,
+                  0.4759570973661738,
+                  0.0048396125301537,
+                  0.0048396125301537
+                ],
+                "molar_densities": [
+                  56826.52819516867,
+                  17349.803884867637
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 24,
+                "evaluations": 52,
+                "hessian_calls": 25,
+                "max_residual": 1.2678746941219288e-13,
+                "message": "converged: residual 1.1226722903851255e-14 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 24 iterations, contraction absent, floor 2.1582355498167813e-10, amplification 0"
+              },
+              {
+                "point": 7,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.5041225448955685,
+                  0.49587745510443154
+                ],
+                "mole_fractions": [
+                  0.8923293186654008,
+                  0.0037234020309212185,
+                  0.0012572983117324816,
+                  0.051344990495972714,
+                  0.051344990495972714,
+                  0.39744054662778955,
+                  0.13829305289851895,
+                  0.4537681242549227,
+                  0.005249138109384465,
+                  0.005249138109384465
+                ],
+                "molar_densities": [
+                  57027.07633254416,
+                  17578.52870661613
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 12,
+                "evaluations": 17,
+                "hessian_calls": 13,
+                "max_residual": 7.260858581048524e-14,
+                "message": "converged: residual 8.9397329022672368e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 12 iterations, contraction absent, floor 2.1454515121805215e-10, amplification 0"
+              },
+              {
+                "point": 8,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.4701899408433142,
+                  0.5298100591566859
+                ],
+                "mole_fractions": [
+                  0.8840833063654149,
+                  0.0037508509142609096,
+                  0.001109529140051592,
+                  0.05552815679013633,
+                  0.05552815679013633,
+                  0.3948064669519062,
+                  0.15887001838819567,
+                  0.43493455220607785,
+                  0.0056944812269101985,
+                  0.0056944812269101985
+                ],
+                "molar_densities": [
+                  57248.66919705238,
+                  17761.425813380596
+                ],
+                "pressure": [
+                  100000.0
+                ],
+                "temperature": [
+                  293.15
+                ],
+                "iterations": 52,
+                "evaluations": 230,
+                "hessian_calls": 53,
+                "max_residual": 8.593126210598712e-14,
+                "message": "converged: residual 7.7980492525204673e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 52 iterations, contraction absent, floor 2.1328716585285951e-10, amplification 0"
+              }
+            ],
+            "seconds": 0.153531314,
+            "cpu_seconds": 0.153516897
+          }
+        ],
+        "prepare_seconds": 0.013683496
+      }
+    },
+    "explicit-discovery": {
+      "Engine": {
+        "samples": [
+          {
+            "seconds": 0.003042181,
+            "per_call": 1,
+            "value": [
+              {
+                "T": 190.0,
+                "P": 1000000.0,
+                "success": true,
+                "criterion_met": true,
+                "phases": 2,
+                "amounts": [
+                  0.5617149328889464,
+                  0.4382850671110536
+                ],
+                "mole_fractions": [
+                  0.21537559277379345,
+                  0.7846244072262065,
+                  0.8647803491400143,
+                  0.13521965085998572
+                ],
+                "molar_densities": [
+                  18534.052764709064,
+                  704.5546642306404
+                ],
+                "pressure": [
+                  1000000.0
+                ],
+                "temperature": [
+                  190.0
+                ],
+                "iterations": 0,
+                "evaluations": 7,
+                "hessian_calls": 0,
+                "max_residual": 2.5823903324552586e-15,
+                "message": "converged: residual 1.4505672122881695e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 0 iterations, contraction absent, floor absent, amplification 0",
+                "discovery": {
+                  "work": {
+                    "declaration_newton_attempts": 3.0,
+                    "energy_evaluations": 1299.0,
+                    "evaluations": 13.0,
+                    "finite_split_evaluations": 5.0,
+                    "hessian_calls": 0.0,
+                    "iterations": 0.0,
+                    "reconstruction_evaluations": 28.0,
+                    "root_calls": 108.0,
+                    "root_evaluations": 1128.0,
+                    "trial_invocations": 14.0,
+                    "trial_tangent_plane_hessian_evaluations": 12.0,
+                    "trial_tangent_plane_invocations": 14.0,
+                    "trial_tangent_plane_iterations": 77.0,
+                    "trial_tangent_plane_newton_steps": 11.0
+                  },
+                  "rounds": [
+                    {
+                      "energy_evaluations": 634.0,
+                      "finite_split_evaluations": 5.0,
+                      "reconstruction_evaluations": 14.0,
+                      "root_calls": 45.0,
+                      "root_evaluations": 577.0,
+                      "trial_invocations": 7.0,
+                      "trial_tangent_plane_hessian_evaluations": 3.0,
+                      "trial_tangent_plane_invocations": 7.0,
+                      "trial_tangent_plane_iterations": 33.0,
+                      "trial_tangent_plane_newton_steps": 3.0
+                    },
+                    {
+                      "energy_evaluations": 548.0,
+                      "reconstruction_evaluations": 14.0,
+                      "root_calls": 52.0,
+                      "root_evaluations": 476.0,
+                      "trial_invocations": 7.0,
+                      "trial_tangent_plane_hessian_evaluations": 9.0,
+                      "trial_tangent_plane_invocations": 7.0,
+                      "trial_tangent_plane_iterations": 44.0,
+                      "trial_tangent_plane_newton_steps": 8.0
+                    }
+                  ],
+                  "declarations": 3,
+                  "roles": [
+                    "initial",
+                    "initial",
+                    "addition"
+                  ],
+                  "attempts": 3
+                }
+              }
+            ],
+            "cpu_seconds": 0.003087381
+          }
+        ],
+        "prepare_seconds": 0.014364933
+      },
+      "FeOs": {
+        "samples": [
+          {
+            "value": {
+              "phases": 2,
+              "compositions": [
+                [
+                  0.2153755927785505,
+                  0.7846244072214494
+                ],
+                [
+                  0.8647803491880447,
+                  0.13521965081195533
+                ]
+              ],
+              "densities": [
+                18534.052766171197,
+                704.5546642269405
+              ],
+              "vapor_fraction": 0.43828506707452314
+            },
+            "seconds": 0.000216919,
+            "cpu_seconds": 0.00021642
+          }
+        ],
+        "prepare_seconds": 9.045e-05
+      },
+      "Clapeyron": {
+        "prepare_seconds": 0.000205639,
+        "samples": [
+          {
+            "seconds": 0.000272959,
+            "value": {
+              "compositions": [
+                [
+                  0.21537559276304116,
+                  0.7846244072369588
+                ],
+                [
+                  0.8647803491399874,
+                  0.13521965086001272
+                ]
+              ],
+              "fractions": [
+                0.5617149328796277,
+                0.4382850671203723
+              ],
+              "phases": 2,
+              "volumes": [
+                5.395474010495138e-05,
+                0.0014193362854132213
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "C2-0.5/actions-exact": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "T": [
+                27257.210483901617,
+                0.002127934252112716
+              ],
+              "k_ij": [
+                3780568.4123655194,
+                0.1656661448053576
+              ],
+              "association_energy_over_k": [
+                -147.20820466695181,
+                -0.00027368973407226
+              ],
+              "association_volume": [
+                -1694846.3872873439,
+                -3.151061165914373
+              ]
+            },
+            "diagnostics": [
+              {
+                "actions": [
+                  27257.210483901617,
+                  0.002127934252112716
+                ],
+                "status": [
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 1,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 27.717740803071116,
+                  "maximum_linear_residual": 3.0597835945347806e-17,
+                  "central_residual": 3.552713678800501e-15,
+                  "central_floor": 4.338579870330432e-12
+                }
+              },
+              {
+                "actions": [
+                  3780568.4123655194,
+                  0.1656661448053576
+                ],
+                "status": [
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 0,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 27.717740803071116,
+                  "maximum_linear_residual": 2.0128848804560462e-17,
+                  "central_residual": 3.552713678800501e-15,
+                  "central_floor": 4.338579870330432e-12
+                }
+              },
+              {
+                "actions": [
+                  -147.20820466695181,
+                  -0.00027368973407226
+                ],
+                "status": [
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 0,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 27.717740803071116,
+                  "maximum_linear_residual": 1.507267351304365e-17,
+                  "central_residual": 3.552713678800501e-15,
+                  "central_floor": 4.338579870330432e-12
+                }
+              },
+              {
+                "actions": [
+                  -1694846.3872873439,
+                  -3.151061165914373
+                ],
+                "status": [
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 0,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 27.717740803071116,
+                  "maximum_linear_residual": 6.256028288203898e-18,
+                  "central_residual": 3.552713678800501e-15,
+                  "central_floor": 4.338579870330432e-12
+                }
+              }
+            ],
+            "central": [
+              1414326.665544729,
+              0.13347906744642343
+            ],
+            "steps": {
+              "T": 0.001,
+              "k_ij": 1e-05,
+              "association_energy_over_k": 0.026534000000000002,
+              "association_volume": 3.2384000000000007e-07
+            },
+            "seconds": 0.00021415,
+            "cpu_seconds": 0.00021348
+          }
+        ],
+        "prepare_seconds": 0.007314966
+      }
+    },
+    "C2-0.5/actions-fd": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "T": [
+                27257.210483658127,
+                0.0021279342518054634
+              ],
+              "k_ij": [
+                3780568.4131802986,
+                0.16566614474966546
+              ],
+              "association_energy_over_k": [
+                -147.20820485343063,
+                -0.00027368973407859926
+              ],
+              "association_volume": [
+                -1694846.3777268832,
+                -3.1510611671311
+              ]
+            },
+            "seconds": 0.007825485,
+            "cpu_seconds": 0.007825352
+          }
+        ],
+        "prepare_seconds": 5.98e-06
+      }
+    },
+    "C4-298.15/actions-exact": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "T": [
+                -1.8798033552320443e-05,
+                0.002122485851384997,
+                -0.0022864065416184015
+              ],
+              "k_ij": [
+                0.03625819915923824,
+                -3.907078928047281,
+                4.208178637550043
+              ]
+            },
+            "diagnostics": [
+              {
+                "actions": [
+                  -1.8798033552320443e-05,
+                  0.002122485851384997,
+                  -0.0022864065416184015
+                ],
+                "status": [
+                  "Available",
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 1,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 77.32009754569343,
+                  "maximum_linear_residual": 1.0028881921305504e-16,
+                  "central_residual": 1.10984390482873e-14,
+                  "central_floor": 2.830002919013427e-10
+                }
+              },
+              {
+                "actions": [
+                  0.03625819915923824,
+                  -3.907078928047281,
+                  4.208178637550043
+                ],
+                "status": [
+                  "Available",
+                  "Available",
+                  "Available"
+                ],
+                "order": [
+                  1,
+                  1,
+                  1
+                ],
+                "diagnostics": {
+                  "equation_count": 10,
+                  "state_dimension": 10,
+                  "maximum_energy_order": 0,
+                  "state_factorizations": 0,
+                  "linear_solves": 1,
+                  "rank": 10,
+                  "condition_estimate": 77.32009754569343,
+                  "maximum_linear_residual": 1.8342593791592903e-16,
+                  "central_residual": 1.10984390482873e-14,
+                  "central_floor": 2.830002919013427e-10
+                }
+              }
+            ],
+            "central": [
+              0.9993566483864802,
+              0.31959730095095323,
+              0.26539200928922485
+            ],
+            "steps": {
+              "T": 0.001,
+              "k_ij": 1e-05,
+              "association_energy_over_k": 0.025007,
+              "association_volume": 3.486800000000001e-07
+            },
+            "seconds": 0.000186839,
+            "cpu_seconds": 0.00018668
+          }
+        ],
+        "prepare_seconds": 0.010052858
+      }
+    },
+    "C4-298.15/actions-fd": {
+      "Engine": {
+        "samples": [
+          {
+            "value": {
+              "T": [
+                -1.8798033574185524e-05,
+                0.0021224858486046383,
+                -0.002286406538626329
+              ],
+              "k_ij": [
+                0.03625820116925915,
+                -3.907078943551911,
+                4.20817870210588
+              ]
+            },
+            "seconds": 0.020256335,
+            "cpu_seconds": 0.020256686
+          }
+        ],
+        "prepare_seconds": 4.75e-06
+      }
+    }
+  }
+}

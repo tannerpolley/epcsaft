@@ -98,7 +98,7 @@ nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/figures/figure-10
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/figures/figure-14/scripts/generate_data.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/scripts/reference_pressure.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/scripts/neutral_engine.py
-nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 /home/tnnrpolley21/.cache/epcsaft-comparators/222/feos/bin/python analyses/reproduction/2018-wangler/scripts/neutral_feos.py
+nice -n 10 env OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 ~/.cache/epcsaft-comparators/222/feos/bin/python analyses/reproduction/2018-wangler/scripts/neutral_feos.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/scripts/compare_neutral.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/scripts/present.py
 nice -n 10 .venv/bin/python analyses/reproduction/2018-wangler/figures/figure-10/scripts/render.py

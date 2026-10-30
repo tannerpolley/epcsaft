@@ -9,6 +9,7 @@ remain explicit. Selecting components does not fit or validate parameters.
 from __future__ import annotations
 
 import json
+from copy import deepcopy
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
@@ -56,8 +57,25 @@ def _entry(identity: object, field: str, index: Sequence[int], value: object, na
     return result
 
 
+class _Entries(list[_core.ParameterEntry]):
+    """Keep each parsed scalar beside its source value for inverse mapping."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.values: list[list[Any]] = []
+        self.scalars: list[tuple[int, Any, str]] = []
+
+    def add(self, identity: object, field: str, index: Sequence[int], value: object, name: str, *, repeat_of: str | None = None) -> None:
+        if repeat_of is not None:
+            slot = next(i for i, entry in enumerate(self) if entry.identity == repeat_of and entry.field == field)
+            self.values[slot].append(value)
+        else:
+            self.append(_entry(identity, field, index, value, name))
+            self.values.append([value])
+
+
 def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: dict[str, tuple[int, Mapping[str, object]]],
-            entries: list[_core.ParameterEntry]) -> None:
+            entries: _Entries) -> None:
     """One scalar record: exactly one of value or temperature_law; laws and volume corrections are numbered by identity."""
     identity = item.get("identity")
     if not isinstance(identity, str):
@@ -65,29 +83,27 @@ def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: 
     if ("value" in item) == ("temperature_law" in item):
         raise _core.ParameterError(f"{identity} needs exactly one of value or temperature_law")
     if "value" in item and field != "association_volume_correction":
-        entries.append(_entry(identity, field, index, item["value"], identity))
+        entries.add(identity, field, index, item["value"], identity)
         return
     number, first = laws.setdefault(identity, (len(laws), item))
     if first != item:
         raise _core.ParameterError(f"conflicting declarations of {identity}")
     if "value" in item:
-        entries.append(_entry(identity, field, (number, *index), item["value"], identity))
+        entries.add(identity, field, (number, *index), item["value"], identity)
         return
     law = _mapping(item["temperature_law"], f"{identity}.temperature_law")
     if law.get("form") != "polynomial-plus-reciprocal-temperature":
         raise _core.ParameterError(f"unknown temperature law form {law.get('form')} for {identity}")
-    entries.append(_entry(identity, f"{field}_temperature_law", (number, *index), law.get("reference_temperature"), identity))
-    if first is not item:
-        return
+    entries.add(identity, f"{field}_temperature_law", (number, *index), law.get("reference_temperature"), identity)
     for term_value in _array(law.get("terms", ()), f"{identity} terms"):
         term = _mapping(term_value, f"{identity} term")
         power, coefficient = term.get("power"), _mapping(term.get("coefficient"), f"{identity} coefficient")
         if not isinstance(power, int) or isinstance(power, bool) or not 0 <= power <= 3:
             raise _core.ParameterError(f"invalid temperature law power {power} for {identity}")
-        entries.append(_entry(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity))
+        entries.add(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity, repeat_of=cast(str, coefficient.get("identity")) if first is not item else None)
     if "reciprocal_temperature_slope" in law:
         slope = _mapping(law["reciprocal_temperature_slope"], f"{identity} reciprocal slope")
-        entries.append(_entry(slope.get("identity"), "temperature_law_reciprocal_slope", (number,), slope.get("value"), identity))
+        entries.add(slope.get("identity"), "temperature_law_reciprocal_slope", (number,), slope.get("value"), identity, repeat_of=cast(str, slope.get("identity")) if first is not item else None)
 
 
 def _choice(families: Sequence[object], kind: str, default: str | None = None) -> str:
@@ -254,7 +270,7 @@ class Parameters:
     existing native record; it does not read a source document.
     """
 
-    __slots__ = ("component_ids", "site_ids", "_native", "_document")
+    __slots__ = ("component_ids", "site_ids", "_native", "_document", "_source")
 
     component_ids: tuple[str, ...]
     site_ids: tuple[tuple[str, str], ...]
@@ -284,6 +300,7 @@ class Parameters:
         """
         self._native = native
         self._document: _core.ParameterDocument | str | None = None
+        self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
 
@@ -400,7 +417,7 @@ class Parameters:
         edges retain named identities. Native ``build_parameters`` owns the
         physical domain, units and admitted model families (ALG-PARAMETERS).
         """
-        document = _mapping(mapping, "parameter document")
+        document = deepcopy(_mapping(mapping, "parameter document"))
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1:
             raise _core.ParameterError("unsupported parameter document schema")
         if unread := sorted(set(document) - _KEYS):
@@ -427,7 +444,7 @@ class Parameters:
             raise _core.ParameterError(f"unknown component_id {missing}")
         selected_ids = tuple(selected)
         positions = {item: index for index, item in enumerate(selected_ids)}
-        entries: list[_core.ParameterEntry] = []
+        entries = _Entries()
         laws: dict[str, tuple[int, Mapping[str, object]]] = {}
         if mixing := _cation_mixing(document, selected):
             indices = [positions[name] for name in (mixing["solvent"], *mixing["cations"], mixing["anion"])]
@@ -435,7 +452,7 @@ class Parameters:
                 item = _mapping(value, "cation_mixing coefficient")
                 if set(item) != {"identity", "family", "value"} or item.get("family") not in ("cation_pair_mixing", "cation_triple_mixing") or set(_mapping(item.get("value"), "cation_mixing value")) != {"magnitude", "unit"}:
                     raise ParameterError("cation_mixing needs pair and triple coefficients")
-                entries.append(_entry(item["identity"], cast(str, item["family"]), indices, item["value"], "cation_mixing"))
+                entries.add(item["identity"], cast(str, item["family"]), indices, item["value"], "cation_mixing")
         # Document families keep their native field name unless renamed here.
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
         coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",
@@ -448,7 +465,7 @@ class Parameters:
             for family in ("molar_mass", "charge_number", "charged_molecule_ion"):
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
-                    entries.append(_entry(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}"))
+                    entries.add(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}")
             coefficients = _array(record.get("coefficients", ()), f"component/{component_id}/coefficients")
             for item_value in coefficients:
                 item = _mapping(item_value, f"component/{component_id}/coefficients")
@@ -458,7 +475,7 @@ class Parameters:
                 identity = item.get("identity")
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"component/{component_id}/coefficients has no identity")
-                entries.append(_entry(identity, renamed.get(family_value, family_value), (positions[component_id],), item["value"], identity))
+                entries.add(identity, renamed.get(family_value, family_value), (positions[component_id],), item["value"], identity)
 
         raw_correlations = _array(document.get("correlations", ()), "correlations")
         sigma_term = 0
@@ -486,19 +503,19 @@ class Parameters:
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
             base = "sigma_constant" if family == "segment_diameter" else "relative_permittivity"
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
-            entries.append(_entry(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id)))
+            entries.add(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id))
             if form == "constant-plus-sum-of-exponentials":
                 terms = _array(item.get("terms", ()), f"{correlation_id} terms")
                 for term in terms:
                     term_map = _mapping(term, cast(str, correlation_id))
                     amplitude = _mapping(term_map.get("amplitude"), "sigma amplitude")
                     exponent = _mapping(term_map.get("exponent_coefficient"), "sigma exponent")
-                    entries.append(_entry(amplitude.get("identity"), "sigma_term_amplitude", (sigma_term, positions[component_id]), amplitude["value"], cast(str, correlation_id)))
-                    entries.append(_entry(exponent.get("identity"), "sigma_term_exponent", (sigma_term, positions[component_id]), exponent["value"], cast(str, correlation_id)))
+                    entries.add(amplitude.get("identity"), "sigma_term_amplitude", (sigma_term, positions[component_id]), amplitude["value"], cast(str, correlation_id))
+                    entries.add(exponent.get("identity"), "sigma_term_exponent", (sigma_term, positions[component_id]), exponent["value"], cast(str, correlation_id))
                     sigma_term += 1
             elif form == "constant-plus-polynomial-in-temperature":
                 reference = _mapping(item.get("reference_temperature"), "permittivity reference")
-                entries.append(_entry(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", correlation_position, reference, cast(str, correlation_id)))
+                entries.add(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", correlation_position, reference, cast(str, correlation_id))
                 terms = _array(item.get("terms", ()), f"{correlation_id} terms")
                 for term in terms:
                     term_map = _mapping(term, cast(str, correlation_id))
@@ -506,7 +523,7 @@ class Parameters:
                     if not isinstance(power, int):
                         raise _core.ParameterError(f"invalid polynomial power for {correlation_id}")
                     coefficient = _mapping(term_map.get("coefficient"), "permittivity coefficient")
-                    entries.append(_entry(coefficient.get("identity"), "permittivity_term_coefficient", (permittivity_term, positions[component_id], power), coefficient["value"], cast(str, correlation_id)))
+                    entries.add(coefficient.get("identity"), "permittivity_term_coefficient", (permittivity_term, positions[component_id], power), coefficient["value"], cast(str, correlation_id))
                     permittivity_term += 1
 
         raw_pairs = _array(document.get("pairs", ()), "pairs")
@@ -535,11 +552,11 @@ class Parameters:
                 if family != "k_ij_reciprocal_temperature_slope":
                     _scalar(item, family, pair_index, laws, entries)
                 else:
-                    entries.append(_entry(identity, family, pair_index, item["value"], identity))
+                    entries.add(identity, family, pair_index, item["value"], identity)
                     if "reference_temperature" not in item:
                         raise _core.ParameterError(f"missing reference temperature for {item.get('identity')}")
                     reference = _mapping(item["reference_temperature"], "pair reference temperature")
-                    entries.append(_entry(f"{identity}/reference_temperature", "k_ij_reference_temperature", pair_index, reference, identity))
+                    entries.add(f"{identity}/reference_temperature", "k_ij_reference_temperature", pair_index, reference, identity)
 
         families = _array(document.get("model_families", ()), "model_families")
         for item in families:
@@ -565,10 +582,10 @@ class Parameters:
                     raise ParameterError("permittivity solvent must be neutral")
             for name in selected_ids:
                 if name in solvents:
-                    entries.append(_entry(f"permittivity/solvent/{name}", "permittivity_solvent", (positions[name],),
-                                          {"magnitude": 1, "unit": "dimensionless"}, "permittivity"))
-            entries.append(_entry("permittivity/normalization", "permittivity_normalization", (),
-                                  {"magnitude": int(mode == "solvent-normalized"), "unit": "dimensionless"}, "permittivity"))
+                    entries.add(f"permittivity/solvent/{name}", "permittivity_solvent", (positions[name],),
+                                          {"magnitude": 1, "unit": "dimensionless"}, "permittivity")
+            entries.add("permittivity/normalization", "permittivity_normalization", (),
+                                  {"magnitude": int(mode == "solvent-normalized"), "unit": "dimensionless"}, "permittivity")
         base = _choice(families, "base")
         association = _choice(families, "association")
         polar = _choice(families, "polar", "none")  # optional family (ADR 0011)
@@ -577,7 +594,8 @@ class Parameters:
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
                 if name not in electrolyte_record:
                     raise _core.ParameterError(f"missing electrolyte/{name}")
-                entries.append(_entry(f"model/electrolyte/{name}", field, (), {"magnitude": electrolyte_record[name], "unit": "dimensionless"}, "model/electrolyte"))
+                entries.add(f"model/electrolyte/{name}", field, (), {"magnitude": electrolyte_record[name], "unit": "dimensionless"}, "model/electrolyte")
+                entries.scalars.append((len(entries) - 1, electrolyte_record, name))
         model_coefficients = _array(document.get("model_coefficients", ()), "model_coefficients")
         for item_value in model_coefficients:
             item = _mapping(item_value, "model coefficient")
@@ -588,7 +606,7 @@ class Parameters:
                 field = "ion_suppression_coefficient"
             else:
                 raise _core.ParameterError(f"unknown model coefficient {item.get('identity')}")
-            entries.append(_entry(item.get("identity"), field, (), item["value"], cast(str, item.get("identity"))))
+            entries.add(item.get("identity"), field, (), item["value"], cast(str, item.get("identity")))
 
         topology = _mapping(document.get("topology", {}), "topology")
         presets = topology.get("presets", ())
@@ -681,8 +699,8 @@ class Parameters:
                 self_volume = resolve_inputs(volume_inputs, "volume")
                 if self_energy != self_volume:
                     raise _core.ParameterError(f"association inputs disagree for {source.get('rule_id')}")
-                entries.append(_entry(source.get("rule_id"), "association_combining_rule", [*edge_index, *self_energy[0], *self_energy[1]],
-                                      {"magnitude": 0.0, "unit": "dimensionless"}, "association combining rule"))
+                entries.add(source.get("rule_id"), "association_combining_rule", [*edge_index, *self_energy[0], *self_energy[1]],
+                                      {"magnitude": 0.0, "unit": "dimensionless"}, "association combining rule")
                 if "volume_correction" in edge:
                     _scalar(_mapping(edge["volume_correction"], "volume correction"), "association_volume_correction", edge_index, laws, entries)
             else:
@@ -698,7 +716,7 @@ class Parameters:
             declared.add(frozenset((a, b)))
             if a in positions and b in positions:
                 ab, zero = (positions[a], positions[b]), {"magnitude": 0.0, "unit": "dimensionless"}
-                entries.append(_entry(f"no_cross_association/{a}/{b}", "no_cross_association", ab, zero, a))
+                entries.add(f"no_cross_association/{a}/{b}", "no_cross_association", ab, zero, a)
 
         native_document = _core.ParameterDocument()
         native_document.component_ids = list(selected_ids)
@@ -713,4 +731,46 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         result._document = native_document
+        result._source = (document, entries.values, entries.scalars)
         return result
+
+
+def document_mapping(parameters: Parameters) -> Mapping[str, object]:
+    """Return the retained parameter document in unit-bearing JSON form.
+
+    Source units, metadata and unfitted values are preserved. Fitted magnitudes
+    come from the native retained document, whose rebuild is checked by
+    ``fitted_document``. Component selections are not part of the document: they
+    travel as an ordered species list and must be reapplied with ``components=``
+    on reload.
+
+    Parameters
+    ----------
+    parameters : Parameters
+        Original or fitted parameters with a retained source document.
+
+    Returns
+    -------
+    mapping : Mapping[str, object]
+        Independent copy accepted by ``Parameters.from_mapping``.
+
+    Raises
+    ------
+    ValueError
+        The document has a stored refusal cause, or no source mapping exists.
+    """
+    if isinstance(parameters._document, str):
+        raise ValueError(parameters._document)
+    if parameters._document is None or parameters._source is None:
+        raise ValueError("parameters have no retained source document")
+    document, values, scalars = deepcopy(parameters._source)
+    for entry, declarations in zip(parameters._document.entries, values, strict=True):
+        if float(declarations[0]["magnitude"]).hex() == entry.magnitude.hex():
+            continue
+        for value in declarations:
+            value["magnitude"] = entry.magnitude
+            if value["unit"] != entry.unit:
+                value["unit"] = entry.unit
+    for index, record, key in scalars:
+        record[key] = values[index][0]["magnitude"]
+    return document
