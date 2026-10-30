@@ -7,6 +7,8 @@ engine_verbose=
 if [[ $target_platform == osx-* ]]; then
     # Round every ordinary expression as written, as on Linux and Windows: arm64 would otherwise fuse a*b + c.
     export CFLAGS="$CFLAGS -fno-fast-math -ffp-contract=off" CXXFLAGS="$CXXFLAGS -fno-fast-math -ffp-contract=off"
+    # Ipopt 3.11.9 writes "..."IPOPT_VERSION, an error under clang's C++11 rules; the Windows build passes the same flag.
+    export CXXFLAGS="$CXXFLAGS -Wno-reserved-user-defined-literal"
     # The 2007 Ipopt scripts predate current Darwin hosts; the compile commands are printed for the contraction gate.
     find "$SRC_DIR/ipopt-source" \( -name config.guess -o -name config.sub \) -exec sh -c 'cp "$BUILD_PREFIX/share/gnuconfig/$(basename "$1")" "$1"' _ {} \;
     engine_verbose=--config-settings=compile-args=-v
