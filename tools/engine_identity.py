@@ -172,7 +172,7 @@ def _windows_modules():
         if not psapi.GetModuleFileNameExW(process, handle, name, len(name)):
             raise ctypes.WinError(ctypes.get_last_error())
         paths.append(Path(name.value).resolve(strict=True))
-    return paths
+    return sorted(paths)
 
 
 def loaded_identity():
