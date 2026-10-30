@@ -38,7 +38,7 @@ for name in ['source-binary128.csv','source-reference-compare.py']:
 for name in ['association-binary128.csv','association-compare.py']:
  shutil.copy2(Path('packaging/conda-forge/qualification')/name,r/name)
 
-(r/'candidate.txt').write_text(__import__('os').environ.get('EPCSAFT_SOURCE_IDENTITY', 'unreleased source'))
+(r/'candidate.txt').write_text(__import__('os').environ['EPCSAFT_SOURCE_REVISION']+'\n'+__import__('os').environ['EPCSAFT_SOURCE_SHA256']+'\n')
 
 # Keep test declarations and development numbers outside the installed package.
 import os, sys
