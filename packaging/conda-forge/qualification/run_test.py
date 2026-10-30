@@ -33,17 +33,11 @@ run('engine-iterate-bounds',[r/'qualification-iterate-bounds.exe'])
 for case in ['F8','F9','M4']:run('properties-'+case,[r/'properties_checks.exe',case])
 run('association-independent',[sys.executable,r/'association-compare.py',out])
 run('product',[r/'qualification-product.exe'])
-for mode in ['qualify','frozen']:
- run('software-'+mode,[r/f'qualification-939-r2-{mode}.exe',r/'near-inputs.txt',out/f'{mode}-events.csv'])
- shutil.copy2(out/f'software-{mode}.log',out/f'software-{mode}.csv')
-shutil.copy2(r/'compare-endpoints.py',out/'compare-endpoints.py')
-run('endpoints',[sys.executable,out/'compare-endpoints.py'])
-for mode in ['qualify','frozen']:
- run('timing-'+mode,[r/f'qualification-939-timing-{mode}.exe',r/'near-inputs.txt',out/f'timing-{mode}-events.csv'])
-run('timing-pure-reference',[r/'qualification-939-timing-pure-reference.exe'])
+run('installed-additional',[sys.executable,r/'collect-additional.py',r,out/'installed-additional'])
+for file in (out/'installed-additional').iterdir():
+ if file.is_file():shutil.copy2(file,out/file.name)
 run('source-reference-comparison',[sys.executable,r/'source-reference-compare.py',out])
 run('timing-summary',[sys.executable,r/'summarize-timing.py',out])
-run('installed-additional',[sys.executable,r/'collect-additional.py',r,out/'installed-additional'])
 shutil.copytree(r/'comparison-source/build/development-additional',out/'development-additional')
 source=r/'comparison-source'
 os.environ['EPCSAFT_SOURCE_ROOT']=str(source)

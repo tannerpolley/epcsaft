@@ -5,7 +5,7 @@ q=Path(__file__).resolve().parent
 # Executables sit outside either DLL directory, so PATH selects only this interpreter's Engine.
 from epcsaft import _core
 native=Path(_core.__file__).resolve().parent
-os.environ['EPCSAFT_QUALIFICATION_IDENTITY']='1'
+os.environ.update(EPCSAFT_QUALIFICATION_IDENTITY='1',OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1')
 os.environ['PATH']=str(native)+os.pathsep+os.environ['PATH']
 import hashlib
 (out/'implementation.json').write_text(json.dumps(dict(native=str(native/'epcsaft_native.dll'),sha256=hashlib.sha256((native/'epcsaft_native.dll').read_bytes()).hexdigest()),indent=2))
