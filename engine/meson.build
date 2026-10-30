@@ -184,7 +184,7 @@ epcsaft_private = static_library(
   install: false,
 )
 
-asl_export_options = windows ? {'vs_module_defs': files('build/subprojects/packagefiles/asl/asl.def')[0]} : {}
+asl_export_options = windows ? {'vs_module_defs': files('native/bindings/asl.def')[0]} : {}
 asl_library = shared_library(
   'epcsaft_asl',
   'native/bindings/asl_adapter.cpp',
