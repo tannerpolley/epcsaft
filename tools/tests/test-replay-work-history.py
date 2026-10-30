@@ -24,7 +24,13 @@ with tempfile.TemporaryDirectory(dir=ROOT / 'build') as directory:
     report = json.loads((root / 'comparison.json').read_text())
     assert all(len(section['work']) == 1 and not section['failures'] for section in report.values())
     path = root / 'B/fitting.csv'
-    path.write_text(path.read_text().splitlines()[0] + '\n')
+    original = path.read_text()
+    path.write_text(original.splitlines()[0] + '\n')
     assert subprocess.run(command, stdout=subprocess.DEVNULL).returncode == 0
     assert json.loads((root / 'comparison.json').read_text())['fitting']['failures']
+    path.write_text(original)
+    path = root / 'A/fitting.csv'
+    path.write_text(path.read_text().replace('3.196e-23', 'nan'))
+    assert subprocess.run(command, stdout=subprocess.DEVNULL).returncode == 0
+    assert any(r['reason'] == 'non-finite value' for r in json.loads((root / 'comparison.json').read_text())['fitting']['failures'])
 print('Variable work history accepted; missing fitted coordinate refused: pass')
