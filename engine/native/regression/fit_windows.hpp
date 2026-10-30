@@ -63,7 +63,9 @@ void transfer(Channel fd, char* at, std::size_t left, bool out) {
                     const HANDLE waiting[] = {event.handle, fd.process};
                     const DWORD wait = WaitForMultipleObjects(fd.process ? 2 : 1, waiting, FALSE, 100);
                     if (wait == WAIT_OBJECT_0) break;
-                    windows_require(wait == WAIT_TIMEOUT);
+                    if (wait == WAIT_OBJECT_0 + 1) throw std::runtime_error("fit worker exited during pipe transfer");
+                    windows_require(wait != WAIT_FAILED);
+                    if (wait != WAIT_TIMEOUT) throw std::runtime_error("fit worker unexpected pipe wait result");
                     if (interrupted()) throw FitInterrupted{};
                 }
                 windows_require(GetOverlappedResult(fd.pipe, &operation, &moved, FALSE));
@@ -73,7 +75,7 @@ void transfer(Channel fd, char* at, std::size_t left, bool out) {
                 throw;
             }
         }
-        windows_require(moved > 0);
+        if (moved == 0) throw std::runtime_error("fit worker pipe closed");
         at += moved;
         left -= moved;
     }

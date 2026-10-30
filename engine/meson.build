@@ -409,3 +409,10 @@ executable('reaction_reference_e3', '../analyses/2026-reaction-reference-associa
 executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
+
+if host_machine.system() == 'windows'
+  fit_windows_checks = executable('fit_windows_checks', 'tests/native/fit_windows_checks.cpp',
+    cpp_args: native_warnings, include_directories: native_inc, dependencies: cpp.find_library('advapi32'),
+    install: false, build_by_default: false)
+  test('fit_windows_processes', fit_windows_checks, timeout: 60)
+endif

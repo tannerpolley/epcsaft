@@ -96,17 +96,45 @@ def _running(pid: int) -> bool:
         return False
 
 
+def _handle_count() -> int:
+    if sys.platform != 'win32':
+        return len(list(Path('/proc/self/fd').iterdir()))
+    from ctypes import wintypes as w
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.GetCurrentProcess.restype = w.HANDLE
+    kernel.GetProcessHandleCount.argtypes = [w.HANDLE, ctypes.POINTER(w.DWORD)]
+    count = w.DWORD()
+    assert kernel.GetProcessHandleCount(kernel.GetCurrentProcess(), ctypes.byref(count))
+    return count.value
+
+
+def _cleanup_host() -> None:
+    signal.signal(getattr(signal, 'SIGBREAK', signal.SIGINT), signal.default_int_handler)
+    fit(1)  # Warm imports and numerical-library initialization before counting owned handles.
+    before = _handle_count()
+    print('ready', flush=True)
+    try:
+        while True:
+            fit(2, 1000)
+    except (KeyboardInterrupt, RuntimeError) as error:
+        print(json.dumps([type(error).__name__, before, _handle_count()]), flush=True)
+        sys.stdin.readline()  # Observer must establish cleanup while this host stays alive.
+
+
 @pytest.mark.parametrize('outcome', ['parent-death', 'cancellation', 'worker-crash'])
 def test_worker_cleanup(outcome: str) -> None:
-    # A long sequence of real fits lets the observer catch a live worker without a native test switch.
-    command = ("import signal; from tests.regression.test_worker_processes import fit; "
-               "signal.signal(getattr(signal, 'SIGBREAK', signal.SIGINT), signal.default_int_handler); "
-               "exec('while True: fit(2, 1000)')")
+    from concurrent.futures import ThreadPoolExecutor
+    command = 'from tests.regression.test_worker_processes import _cleanup_host; _cleanup_host()'
     flags = getattr(subprocess, 'CREATE_NEW_PROCESS_GROUP') if sys.platform == 'win32' else 0
-    process = subprocess.Popen([sys.executable, '-c', command], stdout=subprocess.DEVNULL,
-                               stderr=subprocess.PIPE, creationflags=flags, cwd=Path(__file__).resolve().parents[2])
-    owned: list[int] = []
+    process = subprocess.Popen([sys.executable, '-c', command], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, text=True, creationflags=flags,
+                               cwd=Path(__file__).resolve().parents[2])
+    unrelated = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdin.read()'], stdin=subprocess.PIPE)
+    handles = []
+    readers = ThreadPoolExecutor(1)
     try:
+        assert readers.submit(process.stdout.readline).result(timeout=30).strip() == 'ready'
+        owned = []
         deadline = time.monotonic() + 30
         while not owned and time.monotonic() < deadline and process.poll() is None:
             owned = children(process.pid)
@@ -120,36 +148,57 @@ def test_worker_cleanup(outcome: str) -> None:
             kernel.WaitForSingleObject.argtypes = [w.HANDLE, w.DWORD]
             kernel.TerminateProcess.argtypes = [w.HANDLE, w.UINT]
             kernel.CloseHandle.argtypes = [w.HANDLE]
-            handles = [kernel.OpenProcess(0x100001, False, pid) for pid in owned]
-            assert all(handles)
+            for pid in owned:
+                handle = kernel.OpenProcess(0x100001, False, pid)
+                if handle:
+                    handles.append(handle)
+                assert handle
         if outcome == 'parent-death':
             process.kill()
+            process.wait(timeout=30)
         elif outcome == 'cancellation':
             process.send_signal(getattr(signal, 'CTRL_BREAK_EVENT') if sys.platform == 'win32' else signal.SIGINT)
         elif sys.platform == 'win32':
             assert kernel.TerminateProcess(handles[0], 17)
         else:
             os.kill(owned[0], signal.SIGKILL)
-        process.communicate(timeout=30)
+        if outcome != 'parent-death':
+            report = readers.submit(process.stdout.readline).result(timeout=30)
+            kind, before, after = json.loads(report)
+            assert kind == ('KeyboardInterrupt' if outcome == 'cancellation' else 'RuntimeError')
+            assert after == before, (before, after)
+            assert process.poll() is None, 'host exited before cleanup observation'
         if sys.platform == 'win32':
-            try:
-                assert all(kernel.WaitForSingleObject(h, 30000) == 0 for h in handles)
-            finally:
-                for h in handles:
-                    kernel.CloseHandle(h)
+            assert all(kernel.WaitForSingleObject(h, 30000) == 0 for h in handles)
         else:
             deadline = time.monotonic() + 5
             while time.monotonic() < deadline:
-                # A zombie is terminated; only its new parent can reap it after parent death.
                 if all(not _running(pid) for pid in owned):
                     break
                 time.sleep(.01)
             else:
                 pytest.fail(f'workers survived {outcome}: {owned}')
+        assert unrelated.poll() is None
+        if outcome != 'parent-death':
+            assert process.poll() is None
+            process.stdin.write('observed\n')
+            process.stdin.flush()
+        process.communicate(timeout=30)
     finally:
         if process.poll() is None:
             process.kill()
+        try:
             process.communicate(timeout=30)
+        finally:
+            for handle in handles:
+                kernel.CloseHandle(handle)
+            try:
+                unrelated.communicate(timeout=30)
+            finally:
+                if unrelated.poll() is None:
+                    unrelated.kill()
+                    unrelated.wait(timeout=30)
+                readers.shutdown(wait=True)
 
 
 @pytest.mark.skipif(sys.platform != 'win32', reason='Windows image sharing locks')
@@ -160,6 +209,59 @@ def test_worker_images_refuse_writes() -> None:
         with pytest.raises(PermissionError):
             fd = os.open(path, os.O_RDWR)
             os.close(fd)
+
+
+@pytest.mark.skipif(sys.platform != 'win32', reason='Windows locked-image bootstrap')
+@pytest.mark.parametrize('image', [0, 1])
+@pytest.mark.parametrize('mismatch', ['path', 'identity'])
+def test_worker_image_refusal(tmp_path: Path, image: int, mismatch: str) -> None:
+    # Execute the exact production bootstrap; refusal precedes DLL loading.
+    import msvcrt
+    source = Path(__file__).resolve().parents[2] / 'native/bindings/regression_bindings.cpp'
+    bootstrap = source.read_text().split('R"(', 1)[1].split(')"', 1)[0]
+    paths = [tmp_path / 'extension.pyd', tmp_path / 'native.dll']
+    for path in paths:
+        path.write_bytes(b'image identity fixture')
+    files = [path.open('rb') for path in paths]
+    try:
+        handles = [msvcrt.get_osfhandle(file.fileno()) for file in files]
+        for handle in handles:
+            os.set_handle_inheritable(handle, True)
+        replacement = tmp_path / 'replacement'
+        if mismatch == 'identity':
+            replacement.write_bytes(paths[image].read_bytes())
+        paths[image] = replacement
+        startup = subprocess.STARTUPINFO()
+        startup.lpAttributeList = {'handle_list': handles}
+        result = subprocess.run([sys.executable, '-I', '-c', bootstrap, '0', *map(str, handles),
+                                 *map(str, paths)], startupinfo=startup, close_fds=True,
+                                capture_output=True, text=True, timeout=30)
+        assert result.returncode != 0
+        assert ('image identity changed' if mismatch == 'identity' else 'FileNotFoundError') in result.stderr
+        assert 'CDLL' not in result.stderr, result.stderr
+    finally:
+        for file in files:
+            file.close()
+
+
+@pytest.mark.skipif(sys.platform != 'win32', reason='Windows image sharing locks')
+def test_worker_images_refuse_delete_and_rename(tmp_path: Path) -> None:
+    from ctypes import wintypes as w
+    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    kernel.CreateFileW.argtypes = [w.LPCWSTR, w.DWORD, w.DWORD, ctypes.c_void_p, w.DWORD, w.DWORD, w.HANDLE]
+    kernel.CreateFileW.restype = w.HANDLE
+    kernel.CloseHandle.argtypes = [w.HANDLE]
+    path = tmp_path / 'image.dll'
+    path.write_bytes(b'locked image')
+    handle = kernel.CreateFileW(str(path), 0x80000000, 1, None, 3, 0x80, None)
+    assert handle != w.HANDLE(-1).value
+    try:
+        with pytest.raises(PermissionError):
+            path.unlink()
+        with pytest.raises(PermissionError):
+            path.rename(tmp_path / 'renamed.dll')
+    finally:
+        kernel.CloseHandle(handle)
 
 
 if __name__ == '__main__':
