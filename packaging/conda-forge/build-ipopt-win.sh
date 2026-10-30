@@ -41,7 +41,7 @@ retain_configuration() {
     cd "$build_dir"
     while IFS= read -r path; do
         cp --parents "$path" "$evidence"
-    done < <(find . \( -name config.log -o -name 'config*.h' -o -name libtool -o -name '*.def' \) -print)
+    done < <(find . \( -name config.log -o -name 'config*.h' -o -name libtool -o -name '*.def' -o -name '*.exp' \) -print)
 }
 trap retain_configuration EXIT
 # Native Windows make cannot resolve MSYS absolute /d source paths.
@@ -57,6 +57,11 @@ printf '%s\n' 'extern "C" __declspec(dllexport) int link_probe() { return 0; }' 
 # shellcheck disable=SC2086
 nice -n 10 "$CXX" $CXXFLAGS "$evidence/link-probe.cpp" -o "$evidence/link-probe.dll" -Wl,-DLL 2>&1 | tee "$evidence/link-probe.txt"
 test -s "$evidence/link-probe.dll"
+# The wrapper recognizes .lib archives; this libtool uses .a convenience archives.
+# Fail export generation immediately instead of allowing an empty DLL export list.
+sed -i '2i set -e' "$source_dir/../create_def.sh"
+# shellcheck disable=SC2016
+sed -i 's/"$arg" == \*\.lib/"$arg" == *.lib || "$arg" == *.a/' "$source_dir/../create_def.sh"
 # The conda wrapper supplies COFF C++ exports. Rename the DLL before linking:
 # renaming an installed DLL alone leaves its old identity in the import library.
 while IFS= read -r libtool; do
