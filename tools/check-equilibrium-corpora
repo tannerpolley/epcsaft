@@ -277,7 +277,7 @@ def main():
             selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
         inventories = {label: runpy.run_path(str(ROOT / 'tools/check-equilibrium-corpora'))['ACCEPTED']
                        for label, identity in identities.items()}
-        if os.name == 'nt':
+        if sys.platform != 'linux':
             for inventory in inventories.values():
                 inventory['replay_work_histories'] = 'reported'
                 for section, expected in REPLAY_RESULT_INVENTORIES.items():
