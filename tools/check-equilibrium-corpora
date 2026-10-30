@@ -67,6 +67,17 @@ ACCEPTED = dict(
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 
+RETAINED_INPUTS = (
+    'analyses/reproduction/2001-gross/results/tables/table-002/source/table-002.csv',
+    'analyses/reproduction/2002-gross/results/tables/table-001/source/table-001.csv',
+    'analyses/reproduction/2002-gross/results/tables/table-002/source/table-002.csv',
+    'analyses/reproduction/2002-gross/results/data/calculation.json',
+    'analyses/reproduction/2005-cameretti/results/tables/table-005/source/table-005.csv',
+    'analyses/reproduction/2005-cameretti/results/digitized-lines.csv',
+    'analyses/reproduction/2005-cameretti/results/digitized-points.csv',
+)
+
+
 def values(text):
     """A CSV cell or JSON value as a flat list of floats, or None for text."""
     if isinstance(text, str):
@@ -311,6 +322,7 @@ def main():
                       for p in (ROOT / directory).rglob('*') if p.is_file()
                       and not any(part in ('results', '__pycache__', '.venv') for part in p.relative_to(ROOT).parts)
                       and p.suffix in ('.py', '.json', '.csv', '.gz')}
+            inputs.update({name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in RETAINED_INPUTS})
             (out / 'input-inventory.json').write_text(json.dumps(inputs, sort_keys=True, indent=2))
             (out / 'collection-failures.json').write_text(json.dumps(failures))
             print(json.dumps(dict(inputs=inputs, identities=identities, failures=failures), indent=2))

@@ -46,6 +46,11 @@ source = r/'comparison-source'
 source.mkdir()
 for directory in ['tools','analyses','data','engine']:
  shutil.copytree(directory,source/directory,ignore=shutil.ignore_patterns('results','__pycache__','build','build-win','qualification-939','*.png','*.pdf','*.svg','*.ipynb'))
+import runpy
+for name in runpy.run_path('tools/check-equilibrium-corpora')['RETAINED_INPUTS']:
+ target=source/name
+ target.parent.mkdir(parents=True,exist_ok=True)
+ shutil.copy2(name,target)
 shutil.copy2('uv.lock',source/'uv.lock')
 identity=dict(revision=os.environ['EPCSAFT_SOURCE_REVISION'],sha256=os.environ['EPCSAFT_SOURCE_SHA256'])
 Path('source-identity.json').write_text(json.dumps(identity))
