@@ -60,9 +60,12 @@ dev=Path('development/Scripts/python.exe').resolve()
 subprocess.run([str(dev),'-m','pip','install','-e','./engine','--no-deps','--no-build-isolation',
  '--config-settings=build-dir='+str(Path('engine/dev-win').resolve()),
  '--config-settings=setup-args=--wrap-mode=nodownload','--config-settings=compile-args=-j6'],check=True)
+collections=[]
 for command in ['check-equilibrium-corpora','time-key-solves']:
  args=['--fit'] if command=='time-key-solves' else []
  for suffix in ['', '-repeat'] if command == 'check-equilibrium-corpora' else ['']:
   collected=Path('build/qualification')/('development-'+command+suffix)
-  subprocess.run([str(dev),'tools/'+command,'--collect-only','--out',str(collected),*args],check=True)
-  shutil.copytree(collected,source/'build'/collected.name)
+  code=subprocess.run([str(dev),'tools/'+command,'--collect-only','--out',str(collected),*args]).returncode
+  collections.append(dict(command=command,suffix=suffix,returncode=code))
+  if collected.exists():shutil.copytree(collected,source/'build'/collected.name)
+(r/'development-collections.json').write_text(json.dumps(collections,indent=2))

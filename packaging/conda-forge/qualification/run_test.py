@@ -9,6 +9,7 @@ frequency=ctypes.c_longlong();assert ctypes.windll.kernel32.QueryPerformanceFreq
 print((out/'runner.json').read_text(),flush=True)
 status=json.loads((r/'build-status.json').read_text());print(json.dumps(status),flush=True)
 failures=[] if status['returncode']==0 else [('qualification compilation',status['returncode'])]
+failures += [(v['command']+v['suffix'],v['returncode']) for v in json.loads((r/'development-collections.json').read_text()) if v['returncode']]
 def run(name,args,cwd=r):
  print('Running',name,flush=True)
  with (out/(name+'.log')).open('w') as f:

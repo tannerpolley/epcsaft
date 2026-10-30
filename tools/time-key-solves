@@ -564,7 +564,9 @@ def main():
         processes[label] = subprocess.Popen([*command, str(interpreters[label]),
             str(Path(__file__).resolve()), '--worker'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, cwd=ROOT, env=selected_env)
-        if call(label, '__identity__') != identities[label]:
+        actual = call(label, '__identity__')
+        if actual != identities[label]:
+            (out / f'{label}-worker-identity.json').write_text(json.dumps(actual, indent=2))
             raise RuntimeError(f'{label} worker loaded a different Engine image than its prepared identity')
 
     try:
