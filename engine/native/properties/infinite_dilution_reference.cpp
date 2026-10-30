@@ -185,7 +185,7 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
         if (!diagnostic.trace) throw std::runtime_error("reference state unavailable");
         const auto& trace = *diagnostic.trace;
         diagnostic.numerical_error = {0.0, 0.0};
-        std::array<long double, 2> replayed_sum{};
+        std::array<WiderScalar, 2> replayed_sum{};
         const auto accumulate = [&](const State& state, const std::vector<double>& composition,
             const std::vector<double>& insertion, bool dilute) {
             ReferenceTaylorError constant_error, error;
@@ -197,16 +197,16 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
             const auto cp = reference_partial_from_state(model, temperature, composition, insertion, 0, 1, {}, state, dilute);
             const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
             if (!cp.action || !ctp.action) throw std::runtime_error("reference pressure sensitivity unavailable");
-            double b0 = std::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
-                + std::numeric_limits<double>::epsilon() * std::abs(trace.pressure);
+            double b0 = wide_math::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
+                + std::numeric_limits<double>::epsilon() * wide_math::abs(trace.pressure);
             if (state.density_convergence && state.density_convergence->floor)
                 b0 += *state.density_convergence->floor * GAS_CONSTANT_J_PER_MOL_K * temperature * state.molar_density;
-            const double b1 = std::abs(error.pressure[1]) + error.pressure_floor[1];
-            diagnostic.numerical_error[0] += constant_error.fixed[0] + std::abs(*cp.action) * b0;
-            diagnostic.numerical_error[1] += (error.fixed[1] + std::abs(*cp.action) * b1) / std::abs(error.temperature_coefficient)
-                + std::abs(*ctp.action) * b0;
+            const double b1 = wide_math::abs(error.pressure[1]) + error.pressure_floor[1];
+            diagnostic.numerical_error[0] += constant_error.fixed[0] + wide_math::abs(*cp.action) * b0;
+            diagnostic.numerical_error[1] += (error.fixed[1] + wide_math::abs(*cp.action) * b1) / wide_math::abs(error.temperature_coefficient)
+                + wide_math::abs(*ctp.action) * b0;
             replayed_sum[0] += constant.contraction[0];
-            replayed_sum[1] += static_cast<long double>(value.contraction[1]) / temperature;
+            replayed_sum[1] += static_cast<WiderScalar>(value.contraction[1]) / temperature;
         };
         auto dilute = nu;
         for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i]) dilute[i] = 0;
@@ -219,11 +219,11 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
         }
         if (!diagnostic.terminal_contraction || !diagnostic.terminal_contraction_temperature_derivative)
             throw std::runtime_error("reference consumed center unavailable");
-        diagnostic.numerical_error[0] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction) - replayed_sum[0]);
-        diagnostic.numerical_error[1] += std::abs(static_cast<long double>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]);
-        if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += std::abs(*diagnostic.observed_terminal_change);
-        if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += std::abs(*diagnostic.observed_temperature_derivative_change);
-        for (double e : diagnostic.numerical_error) if (!std::isfinite(e) || e < 0) throw std::runtime_error("nonfinite reference error");
+        diagnostic.numerical_error[0] = static_cast<double>(diagnostic.numerical_error[0] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction) - replayed_sum[0]));
+        diagnostic.numerical_error[1] = static_cast<double>(diagnostic.numerical_error[1] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]));
+        if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += wide_math::abs(*diagnostic.observed_terminal_change);
+        if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += wide_math::abs(*diagnostic.observed_temperature_derivative_change);
+        for (double e : diagnostic.numerical_error) if (!wide_math::isfinite(e) || e < 0) throw std::runtime_error("nonfinite reference error");
         diagnostic.numerical_error_cause.clear();
     } catch (const std::exception& error) {
         diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = error.what();
@@ -927,17 +927,17 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         result.status = PropertyActionStatus::DensityUnavailable; result.cause = "DensityUnavailable: mixture regularity"; return result;
     }
     // EqID: practical_osmotic_coefficient; extensive Helmholtz Euler identity at common pressure.
-    long double chemical_difference = static_cast<long double>(state.residual_helmholtz) - pure.residual_helmholtz;
+    WiderScalar chemical_difference = static_cast<WiderScalar>(state.residual_helmholtz) - pure.residual_helmholtz;
     chemical_difference += pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature)
-        * ((static_cast<long double>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<long double>(pure.molar_density)));
+        * ((static_cast<WiderScalar>(pure.molar_density) - state.molar_density) / (state.molar_density * static_cast<WiderScalar>(pure.molar_density)));
     for (std::size_t i = 0; i < composition.size(); ++i) if (i != solvent && composition[i] > 0.0)
-        chemical_difference -= composition[i] * (static_cast<long double>(require_component_property(state.residual_chemical_potential_over_rt[i]))
+        chemical_difference -= composition[i] * (static_cast<WiderScalar>(require_component_property(state.residual_chemical_potential_over_rt[i]))
             - require_component_property(pure.residual_chemical_potential_over_rt[solvent]));
     chemical_difference /= composition[solvent];
-    const double L = -std::log1p(D) + static_cast<double>(chemical_difference)
-        + std::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
-    const double activity = std::exp(L);
-    if (!std::isfinite(L) || !std::isfinite(activity)) { result.status = PropertyActionStatus::Nonfinite; result.cause = "Nonfinite: solvent activity"; return result; }
+    const double L = -wide_math::log1p(D) + static_cast<double>(chemical_difference)
+        + wide_math::log1p((state.molar_density - pure.molar_density) / pure.molar_density);
+    const double activity = wide_math::exp(L);
+    if (!wide_math::isfinite(L) || !wide_math::isfinite(activity)) { result.status = PropertyActionStatus::Nonfinite; result.cause = "Nonfinite: solvent activity"; return result; }
     result.solvent_activity = activity; result.status = PropertyActionStatus::Available;
     result.parameter_status.assign(columns, PropertyActionStatus::Available);
     const bool admitted = D / model.parameters().molar_mass_kg_per_mol[solvent] >= policy::OSMOTIC_MOLALITY_FLOOR.value;

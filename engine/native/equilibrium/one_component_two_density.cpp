@@ -20,16 +20,16 @@ Reduction<Base> reduction(const std::vector<PureIsothermalValues<Base>>& phase,
     const auto vapor = 1 - liquid;
     const auto& l = phase[liquid]; const auto& v = phase[vapor];
     const auto& dl = l.derivative; const auto& dv = v.derivative;
-    const Base rt = Base(GAS_CONSTANT_J_PER_MOL_K) * temperature, ratio = std::exp(u[vapor] - u[liquid]);
+    const Base rt = Base(GAS_CONSTANT_J_PER_MOL_K) * temperature, ratio = wide_math::exp(u[vapor] - u[liquid]);
     const Base fp = (l.pressure - v.pressure) * volume[liquid] / rt;
-    using Sum = std::conditional_t<std::is_same_v<Base, double>, long double, Base>;
+    using Sum = std::conditional_t<std::is_same_v<Base, double>, WiderScalar, Base>;
     const Base fm = static_cast<Base>((Sum(u[liquid]) - u[vapor]) + (Sum(dl.value) - dv.value)
         - (Sum(volume[liquid]) * dl.gradient[1] - Sum(volume[vapor]) * dv.gradient[1]));
     const Base kl = l.pressure_density_derivative / rt, kv = v.pressure_density_derivative / rt;
     const Base vl = volume[liquid], vv = volume[vapor];
-    const Base scale = std::max(1 + std::abs(vl * dl.gradient[1]) + ratio * (1 + std::abs(vv * dv.gradient[1])),
-        std::abs(u[liquid] - u[vapor]) + std::abs(dl.value) + std::abs(dv.value)
-            + std::abs(vl * dl.gradient[1]) + std::abs(vv * dv.gradient[1]));
+    const Base scale = std::max(1 + wide_math::abs(vl * dl.gradient[1]) + ratio * (1 + wide_math::abs(vv * dv.gradient[1])),
+        wide_math::abs(u[liquid] - u[vapor]) + wide_math::abs(dl.value) + wide_math::abs(dv.value)
+            + wide_math::abs(vl * dl.gradient[1]) + wide_math::abs(vv * dv.gradient[1]));
     Reduction<Base> out{{fp, fm}, {kl - fp, -ratio * kv, kl, -kv},
         std::numeric_limits<Base>::epsilon() * scale + std::max(vl * dl.gradient_floor + ratio * vv * dv.gradient_floor,
             vl * dl.gradient_floor + vv * dv.gradient_floor)};
@@ -64,7 +64,7 @@ struct ReducedCorrection final {
 
 template <typename Base>
 LinearSolveDiagnostics diagnostics(const Reduction<Base>& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
-    const Base norm = std::max(std::abs(at.rows[0]), std::abs(at.rows[1]));
+    const Base norm = std::max(wide_math::abs(at.rows[0]), wide_math::abs(at.rows[1]));
     return {"one_component_two_density_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
         double(core::reduced_error_envelope(step.inverse, norm, at.floor, displacement)), std::numeric_limits<Base>::digits, 0};
 }
@@ -219,10 +219,10 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                 && achieved > reduced.floor && contracting) continue;
             if (result.linear_solve_diagnostics->forward_error_estimate > policy::TWO_DENSITY_FORWARD_ERROR.value
                 || estimate.delta.lpNorm<Eigen::Infinity>() > policy::TWO_DENSITY_FORWARD_ERROR.value) {
-                if constexpr (std::numeric_limits<long double>::digits <= std::numeric_limits<double>::digits) {
-                    result.linear_solve_diagnostics->reason = "long double has no additional significand bits";
+                if constexpr (std::numeric_limits<WiderScalar>::digits <= std::numeric_limits<double>::digits) {
+                    result.linear_solve_diagnostics->reason = "WiderScalar has no additional significand bits";
                 } else {
-                    using Wide = long double;
+                    using Wide = WiderScalar;
                     std::vector<Wide> logs{Wide(u[0]), Wide(u[1])};
                     const Wide temperature = c.problem.temperature.value;
                     const auto wide_evaluate = [&](const std::vector<Wide>& values) {
@@ -233,7 +233,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         ++result.evaluations;
                         std::vector<Wide> volume; std::vector<PureIsothermalValues<Wide>> phases;
                         for (Wide value : values) {
-                            volume.push_back(1 / std::exp(value));
+                            volume.push_back(1 / wide_math::exp(value));
                             phases.push_back(c.model->pure_isothermal(temperature, volume.back()));
                             core::retain_first(result.first_numerical_failure, phases.back().derivative.first_numerical_failure);
                         }
@@ -254,7 +254,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                             || (limits && (limits->expired() || limits->consumed >= limits->iterations)))
                             throw std::runtime_error("one-component two-density extended iteration/elapsed budget");
                         const ReducedCorrection<Wide> correction(wide.jacobian, wide.rows, result.last_rank);
-                        const Wide norm = std::max(std::abs(wide.rows[0]), std::abs(wide.rows[1]));
+                        const Wide norm = std::max(wide_math::abs(wide.rows[0]), wide_math::abs(wide.rows[1]));
                         const bool final_wide = norm <= Wide(tolerance);
                         bool accepted_wide = false;
                         ++result.iterations; ++refinements; if (limits) ++limits->consumed;
@@ -263,14 +263,14 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                             const std::vector<Wide> trial{logs[0] + damping * correction.delta[0], logs[1] + damping * correction.delta[1]};
                             auto [next, next_vapor] = wide_evaluate(trial);
                             if (!inside(lift(trial, next_vapor))) continue;
-                            if (!final_wide && !(std::max(std::abs(next.rows[0]), std::abs(next.rows[1])) < norm)) continue;
+                            if (!final_wide && !(std::max(wide_math::abs(next.rows[0]), wide_math::abs(next.rows[1])) < norm)) continue;
                             logs = trial; wide = std::move(next); vapor = std::move(next_vapor); accepted_wide = true; break;
                         }
                         if (!accepted_wide) throw std::runtime_error("one-component two-density extended contraction/bounds");
                         const ReducedCorrection<Wide> next(wide.jacobian, wide.rows, result.last_rank);
                         auto record = diagnostics(wide, next); record.refinement_iterations = refinements;
                         result.linear_solve_diagnostics = record;
-                        const Wide achieved = std::max(std::abs(wide.rows[0]), std::abs(wide.rows[1]));
+                        const Wide achieved = std::max(wide_math::abs(wide.rows[0]), wide_math::abs(wide.rows[1]));
                         const Wide error = core::reduced_error_envelope(next.inverse, achieved, wide.floor), correction_norm = next.delta.template lpNorm<Eigen::Infinity>();
                         if (!final_wide || achieved > Wide(tolerance)
                             || !((correction_norm <= policy::EQUILIBRIUM_POLISH_CORRECTION.value && error <= policy::EQUILIBRIUM_POLISH_CORRECTION.value)
@@ -281,8 +281,8 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure);
                         std::vector<Wide> exported; Wide displacement = 0;
                         for (std::size_t p = 0; p < 2; ++p) {
-                            exported.push_back(std::log(Wide(1.0 / at.phase.volume[p])));
-                            displacement = std::max(displacement, std::abs(exported.back() - logs[p]));
+                            exported.push_back(wide_math::log(Wide(1.0 / at.phase.volume[p])));
+                            displacement = std::max(displacement, wide_math::abs(exported.back() - logs[p]));
                         }
                         const auto [output, output_vapor] = wide_evaluate(exported);
                         const ReducedCorrection<Wide> output_step(output.jacobian, output.rows, result.last_rank);

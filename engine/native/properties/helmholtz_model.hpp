@@ -1,4 +1,5 @@
 #pragma once
+#include "core/wider_scalar.hpp"
 #include "core/export.hpp"
 #include "core/trace.hpp"
 
@@ -464,8 +465,8 @@ public:
     const policy::SolverOptions& solver_options() const { return solver_options_; }
     template <typename Base>
     PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
-    HelmholtzDerivativeValues<long double> isothermal(long double temperature, long double volume,
-        const std::vector<long double>& amounts) const;
+    HelmholtzDerivativeValues<WiderScalar> isothermal(WiderScalar temperature, WiderScalar volume,
+        const std::vector<WiderScalar>& amounts) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;

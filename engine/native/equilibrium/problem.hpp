@@ -235,8 +235,8 @@ template <typename Base>
 Base maximum_abs(const std::vector<Base>& values) noexcept {
     Base result = 0.0;
     for (const Base value : values) {
-        const Base magnitude = std::abs(value);
-        if (!std::isfinite(magnitude)) return std::numeric_limits<Base>::infinity();
+        const Base magnitude = wide_math::abs(value);
+        if (!wide_math::isfinite(magnitude)) return std::numeric_limits<Base>::infinity();
         result = std::max(result, magnitude);
     }
     return result;
@@ -552,7 +552,7 @@ struct PhysicalProjection final {
 template <typename Base> PhysicalProjection<Base> physical_projection(const CompiledSystem&, const PhasePointValues<Base>&);
 template <typename Base, typename Vector>
 Base physical_radius(const CompiledSystem& c, const PhasePointValues<Base>& at, const Vector& error) {
-    Base radius = error[1] / std::max(std::abs(at.pressure), Base(1));
+    Base radius = error[1] / std::max(wide_math::abs(at.pressure), Base(1));
     for (Eigen::Index i = 2; i < error.size(); ++i)
         radius = std::max(radius, error[i] / ((i - 2) % (3 + c.n_feed.size()) == 2 ? Base(c.feed_total) : Base(1)));
     return radius;
@@ -662,7 +662,7 @@ struct EquilibriumResult final {
 
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);
 struct DriverLimits;
-EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<long double>&, const DriverLimits* = nullptr);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction&, const EquilibriumResult&);
 

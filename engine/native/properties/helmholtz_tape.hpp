@@ -119,7 +119,7 @@ inline ParameterRecord<Scalar> make_tape_parameters(
         const auto item = static_cast<ParameterFamily>(family);
         const auto source = family_values(parameters, item);
         const auto target = family_values(result, item, source.second);
-        std::copy_n(source.first, source.second, target.first);
+        for (std::size_t i = 0; i < source.second; ++i) target.first[i] = Scalar(source.first[i]);
     }
     for (std::size_t i = 0; i < active.size(); ++i)
         for (const auto index : active[i].indices) family_values(result, active[i].family).first[index] = coordinates[i];

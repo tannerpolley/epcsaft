@@ -148,7 +148,7 @@ std::vector<Base> product(const std::vector<Base>& left, const std::vector<Base>
 
 template <typename Base>
 std::vector<Base> inverse(const std::vector<Base>& value) {
-    if (value.empty() || !std::isfinite(value.front()) || value.front() == 0.0)
+    if (value.empty() || !wide_math::isfinite(value.front()) || value.front() == 0.0)
         throw std::domain_error("series inverse has a zero or nonfinite center");
     std::vector<Base> result(value.size(), 0.0);
     result.front() = 1.0 / value.front();
@@ -168,7 +168,7 @@ std::vector<Base> combine(const std::vector<Base>& left, const std::vector<Base>
 
 // Logarithm of a series with a positive centre: k s_0 L_k = k s_k - sum_{j<k} j L_j s_{k-j}.
 Series logarithm(const Series& value) {
-    if (value.empty() || !std::isfinite(value.front()) || !(value.front() > 0.0))
+    if (value.empty() || !wide_math::isfinite(value.front()) || !(value.front() > 0.0))
         throw std::domain_error("series logarithm has a nonpositive or nonfinite center");
     Series result(value.size(), 0.0);
     result.front() = std::log(value.front());
@@ -1309,8 +1309,8 @@ PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const Phas
     const auto pressure = c.primal_size - 1, temperature = c.primal_size - c.free_intensive_count;
     out.values[0] = at.temperature; out.values[1] = at.pressure;
     if (c.problem.loading) { out.values[outputs - 1] = at.point[c.loading_column()]; out.gradient(outputs - 1, c.loading_column()) = 1; }
-    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = std::max(std::abs(at.pressure), Base(1)); }
-    if (c.problem.temperature.free) { out.gradient(0, temperature) = 1; out.scale[temperature] = std::max(std::abs(at.temperature), Base(1)); }
+    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = std::max(wide_math::abs(at.pressure), Base(1)); }
+    if (c.problem.temperature.free) { out.gradient(0, temperature) = 1; out.scale[temperature] = std::max(wide_math::abs(at.temperature), Base(1)); }
     for (const auto& solid : c.solids) if (solid.column) out.scale[*solid.column] = c.feed_total;
     for (std::size_t p = 0; p < at.shape.size(); ++p) {
         const auto& shape = at.shape[p]; const auto o = 2 + p * per_phase;
@@ -1343,7 +1343,7 @@ PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const Phas
     return out;
 }
 template PhysicalProjection<double> physical_projection(const CompiledSystem&, const PhasePoint&);
-template PhysicalProjection<long double> physical_projection(const CompiledSystem&, const PhasePointValues<long double>&);
+template PhysicalProjection<WiderScalar> physical_projection(const CompiledSystem&, const PhasePointValues<WiderScalar>&);
 
 template <typename Base>
 EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr) {
@@ -1368,12 +1368,12 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
                 ? std::vector<Base>(d.gradient.size(), d.gradient_floor) : d.gradient_error);
             return c.row_uncertainty_at(at, errors);
         }();
-        out.residuals.assign(evaluation.values.begin(), evaluation.values.end());
-        out.row_terms.assign(uncertainty.terms.begin(), uncertainty.terms.end()); out.row_inner.assign(uncertainty.inner.begin(), uncertainty.inner.end());
+        out.residuals = narrow_values(evaluation.values.begin(), evaluation.values.end());
+        out.row_terms = narrow_values(uncertainty.terms.begin(), uncertainty.terms.end()); out.row_inner = narrow_values(uncertainty.inner.begin(), uncertainty.inner.end());
         if (!c.reference_diagnostics.empty() || !c.solids.empty()) out.source_reference_method =
             "local higher-precision re-evaluation plus first-order pressure/site propagation; "
             "can underestimate shared errors and internal cancellation; fixed-input arithmetic excludes supplied operand uncertainty; "
-            "reference replay precision: " + std::to_string(std::numeric_limits<long double>::digits) + " bits";
+            "reference replay precision: " + std::to_string(std::numeric_limits<WiderScalar>::digits) + " bits";
         if (!uncertainty.cause.empty()) {
             out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
         }
@@ -1399,7 +1399,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
             for (std::size_t i = 0; i < components; ++i) mapped[5 + i] = at.composition[0][i];
             for (std::size_t j = 0; j < n; ++j) {
                 const auto species = c.problem.phases[0].support[j];
-                const double x = at.composition[0][species];
+                const double x = static_cast<double>(at.composition[0][species]);
                 g(4, j) = at.amount[0] * x;
                 for (std::size_t i = 0; i < components; ++i)
                     g(5 + i, j) = at.composition[0][i] * (double(i == species) - x);
@@ -1416,10 +1416,10 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         const Vector terms = Eigen::Map<const Vector>(uncertainty.terms.data(), n);
         const Vector inner = Eigen::Map<const Vector>(uncertainty.inner.data(), n);
         const Vector eta = core::canonical_row_floor(j, h, terms, inner);
-        out.physical_scale = {h.data(), h.data() + n}; out.row_floor = {eta.data(), eta.data() + n};
+        out.physical_scale = narrow_values(h.data(), h.data() + n); out.row_floor = narrow_values(eta.data(), eta.data() + n);
         const auto e = core::linear_error(j, f, g, eta, Vector::Ones(n), h);
-        out.rank = e.rank; out.threshold = e.threshold; out.condition = e.condition;
-        out.inverse_norm = e.inverse_norm; out.backward_error = e.backward;
+        out.rank = e.rank; out.threshold = static_cast<double>(e.threshold); out.condition = static_cast<double>(e.condition);
+        out.inverse_norm = static_cast<double>(e.inverse_norm); out.backward_error = static_cast<double>(e.backward);
         if (!e.cause.empty()) { out.cause = e.cause; return out; }
         if (c.problem.loading) mapped.back() = values[outputs - 1];
         const auto internal_map = internal.empty() ? std::vector<Base>{} : [&] {
@@ -1429,7 +1429,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         Vector radius = e.radius;
         const auto project = [&](std::size_t i, bool positive) {
             const Base displacement = internal.empty() ? Base(0) : positive
-                ? std::abs(std::log1p((mapped[i] - internal_map[i]) / internal_map[i])) : std::abs(mapped[i] - internal_map[i]);
+                ? wide_math::abs(wide_math::log1p((mapped[i] - internal_map[i]) / internal_map[i])) : wide_math::abs(mapped[i] - internal_map[i]);
             const auto estimate = core::project_numerical_estimate(double(values[i]), mapped[i], e.radius[i] + displacement, positive, g.row(i).isZero(0.0));
             radius[i] = positive ? estimate.chart : estimate.absolute;
             return estimate;
@@ -1442,8 +1442,8 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
             if (!c.ideal) { out.densities.push_back(project(o, true)); out.packing.push_back(project(o + 1, !c.model->parameters().ideal_gas)); }
             out.amounts.push_back(project(o + 2, false));
             domain = domain && values[o + 2] - out.amounts.back().absolute >= 0;
-            domain = domain && (c.ideal || c.model->parameters().ideal_gas || (values[o + 1] * std::exp(-out.packing.back().chart) >= policy::PACKING_FRACTION_FLOOR.value
-                && values[o + 1] * std::exp(out.packing.back().chart) <= policy::PACKING_FRACTION_CEILING.value));
+            domain = domain && (c.ideal || c.model->parameters().ideal_gas || (values[o + 1] * wide_math::exp(-out.packing.back().chart) >= policy::PACKING_FRACTION_FLOOR.value
+                && values[o + 1] * wide_math::exp(out.packing.back().chart) <= policy::PACKING_FRACTION_CEILING.value));
             for (std::size_t i = 0; i < components; ++i) {
                 out.composition.push_back(project(o + 3 + i, false));
                 domain = domain && values[o + 3 + i] - out.composition.back().absolute >= 0
@@ -1452,10 +1452,10 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         }
         for (std::size_t p = 0; p < phases; ++p) for (std::size_t q = p + 1; q < phases; ++q)
             if (c.problem.phases[p].kind != c.problem.phases[q].kind)
-                domain = domain && std::abs(result.molar_densities[p] - result.molar_densities[q])
+                domain = domain && wide_math::abs(result.molar_densities[p] - result.molar_densities[q])
                     > out.densities[p].absolute + out.densities[q].absolute;
         if (limits) limits->check();
-        out.physical_radius = physical_radius(c, at, radius);
+        out.physical_radius = static_cast<double>(physical_radius(c, at, radius));
         out.cause = domain ? "" : "unresolved_domain";
         if (!domain) {
             out.loading.resolved = out.temperature.resolved = out.pressure.resolved = false;
@@ -1470,8 +1470,8 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
     if (result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
     return numerical_estimates<double>(c, result, {}, prepared, !prepared);
 }
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<long double>& internal, const DriverLimits* limits) {
-    return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<long double>*>(nullptr), false, limits);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
+    return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits);
 }
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel& model, const EquilibriumResult& result) {
