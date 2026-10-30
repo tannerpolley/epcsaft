@@ -1,23 +1,6 @@
 name: Documentation
 
 on:
-  push:
-    branches: [main]
-    paths: &docs-paths
-      - 'docs/**'
-      - 'engine/**'
-      - 'data/packets/**'
-      - 'data/packet-locks.json'
-      - 'analyses/**/inputs/**'
-      - 'tools/**'
-      - '.codex/environments/**'
-      - '.github/workflows/docs.yml'
-      - 'pyproject.toml'
-      - 'uv.lock'
-      - 'README.md'
-  pull_request:
-    branches: [main]
-    paths: *docs-paths
   workflow_dispatch:
 
 permissions:
@@ -45,9 +28,7 @@ jobs:
           version: '0.11.28'
           python-version: '3.13'
           enable-cache: false
-      # Only the on-demand executed build needs the notebook solvers.
       - name: Provision external IDAES build tools
-        if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -68,13 +49,11 @@ jobs:
           nice -n 10 tar -xzf idaes-lib-ubuntu2204-x86_64.tar.gz -C "$IDAES_DATA/bin"
       - name: Build site
         env:
-          EPCSAFT_NOTEBOOK_EXECUTION: ${{ github.event_name == 'workflow_dispatch' && 'force' || 'off' }}
+          EPCSAFT_NOTEBOOK_EXECUTION: force
         run: nice -n 10 bash tools/build-docs.sh
-      # Publish only the executed build; keep records only after a failure.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: >-
           github.ref == 'refs/heads/main' &&
-          github.event_name == 'workflow_dispatch' &&
           github.event.repository.private == false &&
           vars.DOCS_PAGES_ENABLED == 'true'
         with:
@@ -101,7 +80,6 @@ jobs:
     needs: build
     if: >-
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'workflow_dispatch' &&
       github.event.repository.private == false &&
       vars.DOCS_PAGES_ENABLED == 'true'
     runs-on: ubuntu-24.04

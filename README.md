@@ -101,6 +101,12 @@ and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when thei
 changes; request them with
 `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
 
+Pull requests and pushes to `main` run only `.github/workflows/ci.yml`: build,
+import, the conda-forge smoke case and Ruff. Every other check, including the
+documentation build with notebook execution, runs on demand; the
+[contributing guide](docs/site/contributing.md#automatic-and-on-demand-checks)
+lists which.
+
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
 Python. New studies can be small C++ drivers that write

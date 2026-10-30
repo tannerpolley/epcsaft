@@ -30,6 +30,17 @@ Logs, rendered pages and timing are under `build/docs/`; the HTML home is
 `build/docs/html/index.html`. `EPCSAFT_NOTEBOOK_EXECUTION=force` executes every
 gallery notebook afresh, and then notebook execution errors fail the build.
 
+## Automatic and on-demand checks
+
+Every pull request and push to `main` runs one quick GitHub Actions job,
+`.github/workflows/ci.yml`, on Ubuntu 24.04: it builds the Engine with
+`tools/setup.sh`, imports it, runs the methane/ethane bubble-point smoke case
+`packaging/conda-forge/run_test.py` and Ruff over `engine/src` and
+`engine/tests`. Everything else runs on demand. The documentation workflow,
+`.github/workflows/docs.yml`, runs only when dispatched by hand; it executes
+every gallery notebook. The gates above, native qualification, corpora,
+timing and analysis reproductions run locally.
+
 ## Document the source-owned meaning
 
 Write NumPy-style docstrings beside Python definitions and native declaration
