@@ -1,15 +1,15 @@
 schema_version: 1
 
 context:
-  version: 1.1.3
-  release_sha256: ffe0bf5a35f715bc055bdff6c6b46d12bbc2d41165719c145fd6ea4cfb14da16
+  version: 1.2.0
+  release_sha256: 959bfc2a8ca97b35fc74be03aede5381a2e440baafcfbb51c6b3c7892b05f12e
 
 package:
   name: epcsaft
   version: ${{ version }}
 
 source:
-  - url: https://github.com/tannerpolley/epcsaft/archive/refs/tags/v${{ version }}.tar.gz
+  - url: https://github.com/tannerpolley/epcsaft/releases/download/v${{ version }}/epcsaft-${{ version }}.tar.gz
     sha256: ${{ release_sha256 }}
   - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
     sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
@@ -68,12 +68,6 @@ requirements:
       then: mumps-seq ==5.8.2
     - if: win
       then:
-        - pytest
-        - numpy
-        - scipy
-        - pandas
-        - pyomo
-        - idaes-pse
         - libboost-headers ==1.89.0
         - openblas * openmp_*
         - mumps-seq ==5.8.2 flang_*
@@ -100,18 +94,6 @@ tests:
       pip_check: true
   - script:
       file: run_test.py
-
-  - if: win
-    then:
-      script:
-        file: qualification/run_test.py
-        env:
-          IPOPT_PROBE_EVIDENCE: ${{ env.get("IPOPT_PROBE_EVIDENCE", default="qualification-evidence") }}
-      requirements:
-        run: [pytest, pyomo, numpy, scipy, pandas, idaes-pse]
-      files:
-        source:
-          - qualification-runtime/
 
 about:
   homepage: https://github.com/tannerpolley/epcsaft

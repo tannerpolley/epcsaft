@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
+# Sourced by run_autotools_clang_conda_build after the private Ipopt build.
 set -eo pipefail
-(source packaging/conda-forge/build-ipopt-win.sh)
 private_prefix=$(cygpath -m "$PREFIX")
 cd "$(cygpath -u "$SRC_DIR")"
 "$BUILD_PREFIX/python.exe" packaging/conda-forge/qualification/ipopt-prepare.py
