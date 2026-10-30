@@ -1,6 +1,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/declared.hpp"
 #include "equilibrium/problem.hpp"
+#include "core/trace.hpp"
 #include <iostream>
 #ifdef _WIN32
 #include <windows.h>
@@ -16,8 +17,9 @@ int main() {
         std::cout << "loaded_module=" << path << "\n";
     }
 #else
-    // The image defining one exported symbol each: the native library, the bundled Ipopt, MUMPS and BLAS.
-    const void* symbols[] = {&epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL, dlsym(RTLD_DEFAULT, "CreateIpoptProblem"),
+    // The image defining one exported function each: the native library, the bundled Ipopt, MUMPS and BLAS.
+    // A function, not data: an executable may hold a copy of the library's data.
+    const void* symbols[] = {reinterpret_cast<const void*>(&epcsaft::core::current_trace), dlsym(RTLD_DEFAULT, "CreateIpoptProblem"),
                              dlsym(RTLD_DEFAULT, "dmumps_c"), dlsym(RTLD_DEFAULT, "dgemm_")};
     for (const void* symbol : symbols) {
         Dl_info image{};
