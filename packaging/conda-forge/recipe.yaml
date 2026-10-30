@@ -28,11 +28,17 @@ source:
 build:
   number: 0
   skip:
-    - target_platform != "linux-64"
+    - target_platform not in ["linux-64", "win-64"]
     - not match(python, "3.13.*")
-  script: build.sh
+  script:
+    env:
+      EPCSAFT_SOURCE_REVISION: v${{ version }}
+      EPCSAFT_SOURCE_SHA256: ${{ release_sha256 }}
+    file: ${{ "build.bat" if win else "build.sh" }}
 
 requirements:
+  ignore_run_exports:
+    by_name: [libflang]
   build:
     - ${{ compiler('c') }}
     - ${{ compiler('cxx') }}
@@ -42,24 +48,47 @@ requirements:
     - cmake
     - ninja
     - pkg-config
-    - patchelf
+    - if: linux
+      then: patchelf
+    - if: win
+      then:
+        - autotools_clang_conda
+        - python 3.13.*
   host:
-    - python
+    - python 3.13.*
     - pip
     - meson >=1.8
     - meson-python >=0.18
     - nanobind ==2.12.0
     - eigen ==3.4.0
     - ceres-solver >=2.2.0,<2.3.0 cpu*
-    - mumps-seq ==5.8.2
-    - libblas
-    - liblapack
+    - if: linux
+      then: mumps-seq ==5.8.2
+    - if: win
+      then:
+        - numpy
+        - scipy
+        - pandas
+        - pyomo
+        - idaes-pse
+        - libboost-headers ==1.89.0
+        - openblas * openmp_*
+        - mumps-seq ==5.8.2 flang_*
+    - if: linux
+      then: [libblas, liblapack]
+    - if: win
+      then: [libblas * *openblas, liblapack * *openblas]
   run:
     - python
     - ceres-solver >=2.2.0,<2.3.0 cpu*
-    - mumps-seq >=5.8.2,<5.8.3.0a0
-    - libblas
-    - liblapack
+    - if: linux
+      then: mumps-seq >=5.8.2,<5.8.3.0a0
+    - if: win
+      then: mumps-seq ==5.8.2 flang_*
+    - if: linux
+      then: [libblas, liblapack]
+    - if: win
+      then: [libblas * *openblas, liblapack * *openblas]
 
 tests:
   - python:
@@ -69,12 +98,24 @@ tests:
   - script:
       file: run_test.py
 
+  - if: win
+    then:
+      script:
+        file: qualification/run_test.py
+        env:
+          IPOPT_PROBE_EVIDENCE: ${{ env.get("IPOPT_PROBE_EVIDENCE", default="qualification-evidence") }}
+      requirements:
+        run: [pytest, pyomo, numpy, scipy, pandas, idaes-pse]
+      files:
+        source:
+          - qualification-runtime/
+
 about:
   homepage: https://github.com/tannerpolley/epcsaft
   repository: https://github.com/tannerpolley/epcsaft
   summary: Electrolyte PC-SAFT properties, equilibrium and exact derivative actions
   description: |
-    Linux x86-64 / CPython 3.13 package, with private Ipopt 3.11.9 and MUMPS.
+    Linux and Windows x86-64 / CPython 3.13 package, with private Ipopt 3.11.9 and MUMPS.
     Corresponding source is available from the distributor in the source-set
     download alongside the matching version at
     https://github.com/tannerpolley/epcsaft/releases. It contains the exact
