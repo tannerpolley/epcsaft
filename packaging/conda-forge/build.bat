@@ -15,5 +15,7 @@ if errorlevel 1 exit /b 1
 %PYTHON% -m pip install ./engine -vv --no-deps --no-build-isolation --config-settings=build-dir=%SRC_DIR%\engine\build-win --config-settings=setup-args=--wrap-mode=nodownload --config-settings=compile-args=-j6
 if errorlevel 1 exit /b 1
 copy %LIBRARY_PREFIX%\bin\epcsaft_ipopt_3119.dll %SP_DIR%\epcsaft\
+"%PYTHON%" "%RECIPE_DIR%\licenses.py"
+if errorlevel 1 exit /b 1
 %PYTHON% packaging/conda-forge/qualification/retain.py
 if errorlevel 1 exit /b 1
