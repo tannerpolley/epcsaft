@@ -404,9 +404,9 @@ public:
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
         const std::vector<double>& sites) const;
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
-    EPC_API ReferenceTaylor reference_taylor(double, double,
+    EPC_API ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-        const PressureActionDirection& direction, std::size_t order, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
+        const PressureActionDirection&, std::size_t, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
     EPC_API NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
