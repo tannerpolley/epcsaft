@@ -133,6 +133,11 @@ regression_sources = files(
   'native/regression/minimax.cpp',
 )
 
+worker_platform_dep = []
+if windows
+  worker_platform_dep = [cpp.find_library('advapi32')]
+endif
+
 epcsaft_native = shared_library(
   'epcsaft_native',
   'native/core/trace.cpp',
@@ -151,6 +156,7 @@ epcsaft_native = shared_library(
     ceres_dep,
     highs_dep,
     cppad_headers_dep,
+    worker_platform_dep,
   ],
   include_directories: native_inc,
   install: true,
@@ -166,7 +172,7 @@ if windows
     surface_sources, equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
   private_options = {
     'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
-    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
+    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep, worker_platform_dep],
     'include_directories': native_inc,
   }
 else
@@ -403,3 +409,10 @@ executable('reaction_reference_e3', '../analyses/2026-reaction-reference-associa
 executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
+
+if host_machine.system() == 'windows'
+  fit_windows_checks = executable('fit_windows_checks', 'tests/native/fit_windows_checks.cpp',
+    cpp_args: native_warnings, include_directories: native_inc, dependencies: cpp.find_library('advapi32'),
+    install: false, build_by_default: false)
+  test('fit_windows_processes', fit_windows_checks, timeout: 60)
+endif
