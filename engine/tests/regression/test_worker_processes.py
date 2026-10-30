@@ -117,7 +117,8 @@ def _cleanup_host() -> None:
         while True:
             fit(2, 1000)
     except (KeyboardInterrupt, RuntimeError) as error:
-        print(json.dumps([type(error).__name__, before, _handle_count()]), flush=True)
+        kind = 'KeyboardInterrupt' if isinstance(error, KeyboardInterrupt) else 'RuntimeError'  # EosError on a crash
+        print(json.dumps([kind, before, _handle_count()]), flush=True)
         sys.stdin.readline()  # Observer must establish cleanup while this host stays alive.
 
 
