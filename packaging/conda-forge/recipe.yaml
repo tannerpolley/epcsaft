@@ -14,6 +14,8 @@ source:
   - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
     sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
     target_directory: ipopt-source
+    patches:
+      - ipopt-ma28.patch
   - url: https://github.com/coin-or/CppAD/archive/refs/tags/20250000.3.tar.gz
     sha256: a3a4030ae49719e88e5057e923c4c97c5ba8910e22471f22661420ce65747fbe
     target_directory: engine/build/subprojects/CppAD-20250000.3
