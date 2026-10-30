@@ -1,4 +1,5 @@
 // Included inside the fit implementation's anonymous namespace; Windows process facilities only.
+#undef near // Windows' legacy qualifier must not erase shared C++ identifiers.
 struct Channel { HANDLE pipe; HANDLE process = nullptr; };
 struct Handle final {
     HANDLE handle = nullptr;
@@ -81,7 +82,7 @@ void transfer(Channel fd, char* at, std::size_t left, bool out) {
     }
 }
 // CommandLineToArgvW/CRT quoting, including backslashes immediately before a closing quote.
-std::wstring quoted(const std::wstring& word) {
+std::wstring quote_argument(const std::wstring& word) {
     std::wstring out = L"\"";
     std::size_t slashes = 0;
     for (const auto c : word) {
@@ -142,9 +143,9 @@ struct Workers final {
             inherited[i] = Handle(list[i]);
         }
         std::wstring command;
-        for (const auto& word : fit_host.worker) command += quoted(wide(word)) + L' ';
-        for (int i = 0; i < 3; ++i) command += quoted(std::to_wstring(reinterpret_cast<std::uintptr_t>(list[i]))) + L' ';
-        command += quoted(extension_image.path) + L' ' + quoted(native_image.path);
+        for (const auto& word : fit_host.worker) command += quote_argument(wide(word)) + L' ';
+        for (int i = 0; i < 3; ++i) command += quote_argument(std::to_wstring(reinterpret_cast<std::uintptr_t>(list[i]))) + L' ';
+        command += quote_argument(extension_image.path) + L' ' + quote_argument(native_image.path);
         SIZE_T bytes = 0;
         InitializeProcThreadAttributeList(nullptr, 2, 0, &bytes);
         std::vector<unsigned char> storage(bytes);
