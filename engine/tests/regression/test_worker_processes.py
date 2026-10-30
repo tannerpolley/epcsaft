@@ -131,11 +131,13 @@ def test_worker_cleanup(outcome: str) -> None:
                                stderr=subprocess.PIPE, text=True, creationflags=flags,
                                cwd=Path(__file__).resolve().parents[2])
     unrelated = subprocess.Popen([sys.executable, '-c', 'import sys; sys.stdin.read()'], stdin=subprocess.PIPE)
-    handles = []
+    assert process.stdin and process.stdout
+    handles: list[Any] = []
+    kernel: Any = None
     readers = ThreadPoolExecutor(1)
     try:
         assert readers.submit(process.stdout.readline).result(timeout=30).strip() == 'ready'
-        owned = []
+        owned: list[int] = []
         deadline = time.monotonic() + 30
         while not owned and time.monotonic() < deadline and process.poll() is None:
             owned = children(process.pid)
@@ -225,14 +227,14 @@ def test_worker_image_refusal(tmp_path: Path, image: int, mismatch: str) -> None
         path.write_bytes(b'image identity fixture')
     files = [path.open('rb') for path in paths]
     try:
-        handles = [msvcrt.get_osfhandle(file.fileno()) for file in files]
+        handles = [getattr(msvcrt, 'get_osfhandle')(file.fileno()) for file in files]
         for handle in handles:
-            os.set_handle_inheritable(handle, True)
+            getattr(os, 'set_handle_inheritable')(handle, True)
         replacement = tmp_path / 'replacement'
         if mismatch == 'identity':
             replacement.write_bytes(paths[image].read_bytes())
         paths[image] = replacement
-        startup = subprocess.STARTUPINFO()
+        startup = getattr(subprocess, 'STARTUPINFO')()
         startup.lpAttributeList = {'handle_list': handles}
         result = subprocess.run([sys.executable, '-I', '-c', bootstrap, '0', *map(str, handles),
                                  *map(str, paths)], startupinfo=startup, close_fds=True,
