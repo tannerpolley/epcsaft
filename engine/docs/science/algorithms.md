@@ -2266,11 +2266,21 @@ its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
 first-order pressure/site propagation (#869). Named retained machine constants,
 supplied parameters and captured path/site coefficients are fixed inputs;
 computed reciprocals, products and sums are evaluated within the common scalar
-expressions. The existing `long double` Taylor evaluator replays captured sites;
+expressions. The shared wider Taylor evaluator replays captured sites;
 the selected-tape association-error owner propagates their coefficient errors
 through degree five. It adds no second association or density solve for the replay.
 The existing diagnostic cache owns the solvent and selected pure-reference states.
 Only explicit error requests and detailed endpoint capture run this calculation.
+
+The internal wider scalar is native `long double` on Linux. Windows uses Boost
+1.89 `cpp_bin_float_double_extended` with expression templates disabled, 64
+binary significand bits and its extended exponent range. Its `denorm_min()` is
+the smallest normal value: the existing absolute underflow allowance uses that
+actual trait. Its representation and underflow behavior differ from x87, and
+its elementary functions are not promised correctly rounded. The Windows
+compensated product residual uses a binary temporary with 128 significand bits
+before one narrowing; Linux and ordinary double retain native `std::fma`.
+
 
 For a returned coefficient, wider result $x_w$ and absolute extraction/assembly
 scale $S_x$, the arithmetic estimate is
