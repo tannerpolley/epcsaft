@@ -24,7 +24,6 @@ autoapi_generate_api_docs = False
 autoapi_options = ["members", "undoc-members", "private-members", "show-inheritance"]
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
-nb_execution_mode = "force"
 nb_execution_allow_errors = False
 nb_execution_raise_on_error = True
 nb_execution_timeout = 120
