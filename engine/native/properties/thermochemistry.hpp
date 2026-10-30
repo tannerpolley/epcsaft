@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "contributions/ideal.hpp"
 
@@ -63,8 +64,8 @@ IdealMixtureValue<Scalar> evaluate_ideal_mixture(
     return result;
 }
 
-void validate_thermochemistry(const ThermochemistryRecord&, std::size_t component_count);
-IdealPropertiesEvaluation evaluate_ideal_properties(
+EPC_API void validate_thermochemistry(const ThermochemistryRecord&, std::size_t component_count);
+EPC_API IdealPropertiesEvaluation evaluate_ideal_properties(
     const ThermochemistryRecord&, double temperature, double molar_density,
     const std::vector<double>& mole_fractions
 );
@@ -121,9 +122,9 @@ struct ReactionThermochemistry final {
     ThermochemistryStatus status = ThermochemistryStatus::MissingRecord;
     std::string cause;
 };
-ReactionThermochemistry reaction_thermochemistry_density(
+EPC_API ReactionThermochemistry reaction_thermochemistry_density(
     const ThermochemistryRecord&, const std::vector<double>& stoichiometry, double temperature
 );
 
-ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial&, double temperature);
+EPC_API ReactionProperties evaluate_reaction_properties(const ReactionLogPolynomial&, double temperature);
 }  // namespace epcsaft

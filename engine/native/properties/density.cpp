@@ -84,14 +84,14 @@ public:
         for (Base amount : amounts) total_ += amount;
         for (Base amount : amounts) composition_.push_back(amount / total_);
         sigma_ = segment_sigma(temperature, parameters_);
-        if (!std::all_of(sigma_.begin(), sigma_.end(), [](Base v) { return std::isfinite(v) && v > 0.0; }))
+        if (!std::all_of(sigma_.begin(), sigma_.end(), [](Base v) { return wide_math::isfinite(v) && v > 0.0; }))
             throw std::invalid_argument("invalid sigma correlation");
         diameter_ = segment_diameter(temperature, parameters_, sigma_);
-        if (!std::all_of(diameter_.begin(), diameter_.end(), [](Base v) { return std::isfinite(v) && v > 0.0; }))
+        if (!std::all_of(diameter_.begin(), diameter_.end(), [](Base v) { return wide_math::isfinite(v) && v > 0.0; }))
             throw std::invalid_argument("invalid segment diameter");
         if constexpr (!std::is_same_v<Base, double>) {
             const auto laws = temperature_law_values(temperature_, parameters_);
-            const std::vector<double> checked(laws.begin(), laws.end());
+            const auto checked = narrow_values(laws.begin(), laws.end());
             for (const auto& [target, slot, law] : parameters_.temperature_law_slot)
                 (void)temperature_law_value(static_cast<double>(temperature_), model.parameters(), checked,
                     static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
@@ -152,30 +152,31 @@ public:
                 std::vector<Series>(parameters_.association_volume.begin(), parameters_.association_volume.end()));
             for (const auto& d : delta) {
                 if constexpr (!std::is_same_v<Base, double>)
-                    if (!(d.c[0] >= 0) || !std::isfinite(d.c[0])) throw std::invalid_argument("invalid extended association strength");
+                    if (!(d.c[0] >= 0) || !wide_math::isfinite(d.c[0])) throw std::invalid_argument("invalid extended association strength");
                 strength.push_back(static_cast<double>(d.c[0]));
             }
         }
         core::Convergence record;
         const auto sites = [&]() -> std::vector<double> { try {
             if (strength.empty()) return std::vector<double>{};
-            if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return {central_sites_.begin(), central_sites_.end()};
+            if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
             const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
             if constexpr (std::is_same_v<Base, double>)
                 return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
             else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
-                {composition_.begin(), composition_.end()}, model_.parameters(), {sigma_.begin(), sigma_.end()},
-                {diameter_.begin(), diameter_.end()}, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+                narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
+                narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure);
         } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
         }();
-        site_series.assign(sites.begin(), sites.end());
+        site_series.clear();
+        for (double site : sites) site_series.emplace_back(Base(site));
         for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
         floor = 0.0;
         if (!sites.empty()) {
             static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
             if constexpr (std::is_same_v<Base, double>)
                 properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
-            else if (central_sites_.empty()) properties::site_factorization(factorization, sites, {composition_.begin(), composition_.end()}, model_.parameters(),
+            else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
                 static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
             const auto count = static_cast<Eigen::Index>(sites.size());
             rows.resize(count); cross.resize(count);
@@ -190,8 +191,8 @@ public:
                         Base norm = 0.0, scale = 1.0;
                         for (Eigen::Index i = 0; i < count; ++i) {
                             const auto site = static_cast<std::size_t>(i);
-                            norm = std::max(norm, std::abs(residuals[site].c[k] * normalization));
-                            scale = std::max(scale, std::abs(site_series[site].c[k] * normalization / site_series[site].c[0]));
+                            norm = std::max(norm, wide_math::abs(residuals[site].c[k] * normalization));
+                            scale = std::max(scale, wide_math::abs(site_series[site].c[k] * normalization / site_series[site].c[0]));
                             rows(i) = static_cast<double>(-residuals[site].c[k]);
                         }
                         entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
@@ -203,7 +204,7 @@ public:
                         for (Eigen::Index i = 0; i < count; ++i) {
                             auto& x = site_series[static_cast<std::size_t>(i)].c[k];
                             const Base next = x + Base(coefficient(i));
-                            if (!std::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
+                            if (!wide_math::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
                                 throw std::runtime_error("extended association site domain");
                             changed = changed || next != x; x = next;
                         }
@@ -233,14 +234,14 @@ public:
                         Base r = residuals[a].c[k];
                         for (std::size_t l = 0; l <= k; ++l) for (std::size_t b = 0; b < sites.size(); ++b)
                             r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
-                        defect = std::max(defect, std::abs(r));
+                        defect = std::max(defect, wide_math::abs(r));
                     }
                     entry.probe("association_linear_defect", {double(k), double(defect)});
                 }
                 for (std::size_t a = 0; a < sites.size(); ++a) {
                     central_sites_[a] = site_series[a].c[0];
                     const auto b = total * composition[parameters_.site_component[a]] * Base(parameters_.site_multiplicity[a]) * residuals[a] / site_series[a];
-                    floor += std::abs(b.c[1] * error[a].c[0]) + std::abs(b.c[0] * error[a].c[1]);
+                    floor += wide_math::abs(b.c[1] * error[a].c[0]) + wide_math::abs(b.c[0] * error[a].c[1]);
                 }
             } else {
             // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order.
@@ -256,14 +257,14 @@ public:
                         * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
                 }
                 unit = factorization.solve(Eigen::VectorXd::Ones(count));
-                floor = std::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
+                floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
             }
             }
             residuals = association_residuals(rho, composition, parameters_, site_series, delta);
         }
         const auto electrostatics = [&] {
             if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
-            else return detail::supported_electrostatics(Series(temperature_), rho, composition, {composition_.begin(), composition_.end()}, parameters_);
+            else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
         }();
         const auto contributions = [&] {
             if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
@@ -1448,7 +1449,7 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     const PressureSeries<Base> series(*this, temperature, {amount});
     const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
     core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
-    if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return std::isfinite(v); }))
+    if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
     const std::size_t width = 3 + active_.size();
     d.value = energy.c[0];
@@ -1459,18 +1460,20 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     d.hessian[width + 1] = d.volume_second_derivative;
     d.hessian[width + 2] = d.hessian[2 * width + 1] = -volume * d.volume_second_derivative / amount;
     d.hessian[2 * width + 2] = volume * volume * d.volume_second_derivative / (amount * amount);
-    for (std::size_t i = 0; i < sites.size(); i += 2) d.site_fractions.push_back(sites[i]);
+    for (std::size_t i = 0; i < sites.size(); i += 2) d.site_fractions.push_back(static_cast<double>(sites[i]));
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     result.pressure = rt * (amount / volume - d.gradient[1]);
-    result.chemical_potential_over_rt = std::log(amount / volume) + d.gradient[2];
+    result.chemical_potential_over_rt = wide_math::log(amount / volume) + d.gradient[2];
     result.pressure_density_derivative = rt * (1.0 + volume * volume * d.volume_second_derivative / amount);
     return result;
 }
 
-HelmholtzDerivativeValues<long double> HelmholtzModel::isothermal(long double temperature, long double volume,
-    const std::vector<long double>& amounts) const {
-    using Base = long double;
-    validate_point(double(temperature), double(volume), {amounts.begin(), amounts.end()});
+HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar temperature, WiderScalar volume,
+    const std::vector<WiderScalar>& amounts) const {
+    using Base = WiderScalar;
+    std::vector<double> declared;
+    for (const auto& amount : amounts) declared.push_back(static_cast<double>(amount));
+    validate_point(double(temperature), double(volume), declared);
     HelmholtzDerivativeValues<Base> out;
     const PressureSeries<Base> series(*this, temperature, amounts);
     const auto count = amounts.size() + 1, width = count + 1 + active_.size();
@@ -1498,8 +1501,8 @@ HelmholtzDerivativeValues<long double> HelmholtzModel::isothermal(long double te
     return out;
 }
 
-template PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
-template PureIsothermalValues<long double> HelmholtzModel::pure_isothermal(long double, long double, long double) const;
+template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
+template PureIsothermalValues<WiderScalar> HelmholtzModel::pure_isothermal(WiderScalar, WiderScalar, WiderScalar) const;
 
 Taylor<3> properties::density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
     const std::vector<double>& composition, double& gradient_floor) {

@@ -1,4 +1,5 @@
 #pragma once
+#ifndef _WIN32
 // Verification-only binary128 Base; include before cppad.hpp. No Engine ABI change.
 #include <quadmath.h>
 #include <array>
@@ -60,3 +61,5 @@ template<> class numeric_limits<Quad>{public:
 template<> struct to_string_struct<Quad>{std::string operator()(const Quad& v){char b[128];quadmath_snprintf(b,sizeof b,"%.36Qg",v.raw());return b;}};
 }
 #include <cppad/cppad.hpp>
+
+#endif

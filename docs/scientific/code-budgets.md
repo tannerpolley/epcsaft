@@ -97,6 +97,8 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-10-29, #938 (lead allowance; fix r1): Regression +255, Bindings +27, total +282 for Windows fitting processes (291 gross additions, 9 removals). Merged after #939, the summed layer ceilings reach 32,381, so the total stays at the owner's allowance of **32,344** (count 32,189).
+- 2026-10-29, #937 (lead allocation within the owner’s +650 raise, fix r1): Core +34, Properties +7, Equilibrium +13, Regression +8, Python +7; total +69. The approved fix allowance is 430 gross / +70 net; final ceilings follow measured growth.
 - 2026-10-29, #864 integration with `da73ef241`: retained both amendment histories and measured the combined tree with `tools/diffstat.py --budgets`. Core 1,329, Properties 6,512 and main’s Regression, Bindings and Python ceilings remain sufficient. Equilibrium ceiling 13,006 combines the two changes; measured count 12,893. Total ceiling 31,728 combines main with #864; measured count 31,666. Integration accounting is reported separately from the previously approved task allowance; no numerical criterion changes.
 
 - 2026-10-28, #864 r5: merged main `fb27d881f`; 1,158 gross / 593 removed / +565 net against that base, within the unchanged 1,450 gross / +565 net allowance. Core **1,323 → 1,329**, its measured count. Combined ceilings retain main’s Contributions 1,289, Surface 815 and Python 2,287, and #864’s Properties 6,512 and Equilibrium 12,391. Measured Properties 6,475, Equilibrium 12,329 and total 30,742 fit; total ceiling 30,897 is the combined layer-ceiling sum before the six-line Core correction and remains within its band. No equation or numerical criterion changes.
@@ -371,6 +373,8 @@ their approval assertions were not reverified in the #221 reconciliation.
 
 Pre-envelope changes without an entry are listed in the #221 reconstruction
 comment (5942662477).
+
+#939 raises Core by 67, Properties by 15, equilibrium by 21 and total by 103 formatted runtime lines for Windows wider arithmetic.
 
 ## Duplication constraints
 

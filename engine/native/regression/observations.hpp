@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "equilibrium/problem.hpp"
 #include "regression/coordinates.hpp"
@@ -33,7 +34,7 @@ enum class ObservationStatus {
     NotEvaluated, Available, ReferenceUnavailable, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
     ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
 };
-const char* observation_status_name(ObservationStatus status) noexcept;
+EPC_API const char* observation_status_name(ObservationStatus status) noexcept;
 
 struct Observation final {
     ObservationKind kind = ObservationKind::Density;
@@ -90,7 +91,7 @@ struct EvaluatedCoordinates final {
     std::vector<HoldResult> holds;
     std::map<std::string, ReactionLogPolynomial> reaction_laws;
 };
-EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
+EPC_API EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const CoordinateSet& set,
     const std::vector<double>& optimizer, const std::vector<HydrationHold>& holds,
     const std::optional<ThermochemistryRecord>& thermochemistry = {}, const policy::SolverOptions& solver_options = {});
 
@@ -140,11 +141,11 @@ struct ObservationInputDirection final {
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
 using equilibrium::same_reaction;
 bool same_state(const Observation& left, const Observation& right);
-void validate(const Observation& observation, const HelmholtzModel& model,
+EPC_API void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);
-void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
+EPC_API void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
 using ReferenceCache = std::vector<std::pair<Observation, InfiniteDilutionReference>>;
-Prediction predict(
+EPC_API Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,
     std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr,
@@ -152,16 +153,16 @@ Prediction predict(
     bool same_parameters = false,
     std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max()
 );
-PredictionGradient differentiate(
+EPC_API PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 );
-std::vector<PredictionGradient> differentiate_group(
+EPC_API std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction,
     const CoordinateSet& coordinates = {},
     const std::vector<ObservationInputDirection>& inputs = {}
 );
 // r = (y - y_obs) / scale, or ln(y / y_obs) for positive y and y_obs; dr/dy = 1/scale or 1/y.
-std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);
-double residual_slope(const Observation& observation, double value);
+EPC_API std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);
+EPC_API double residual_slope(const Observation& observation, double value);
 
 }  // namespace epcsaft::regression

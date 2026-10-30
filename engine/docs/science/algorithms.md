@@ -721,7 +721,8 @@ error; a tiny inner estimate is not the total floating-point error.
 
 Refinement engages once when the double estimate or its actual correction
 exceeds `TWO_DENSITY_FORWARD_ERROR`, the 1e-10 log-density target. It repeats the shared Helmholtz,
-temperature/geometry, polar and association arithmetic in long double, using
+temperature/geometry, polar and association arithmetic in the selected wider scalar
+(defined in `engine/native/core/wider_scalar.hpp`; see ALG-REFERENCE), using
 the existing Newton damping and bounds and remaining work limits. No fluid or
 temperature selector is used. After a fresh full correction, the reduced rows
 must meet the unchanged criterion and either both correction and estimate meet
@@ -740,8 +741,8 @@ The result's linear_solve_diagnostics reports the row norm, floor, inverse norm,
 condition estimate, coordinate forward-error estimate, working significand bits
 and extended correction count. A rejected attempt is identified explicitly on
 failure and is retained in trace evidence; its estimate is absent from a
-successful fallback state's diagnostics. If long double has no more bits than
-double, the admitted double result remains, with its actual estimate, 53 bits,
+successful fallback state's diagnostics. If the selected wider scalar has no more
+significand bits than `double`, the admitted double result remains, with its actual estimate, 53 bits,
 zero extended corrections and the reason additional precision was unavailable.
 An estimate above 1e-10 does not claim that density accuracy.
 
@@ -2266,11 +2267,22 @@ its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
 first-order pressure/site propagation (#869). Named retained machine constants,
 supplied parameters and captured path/site coefficients are fixed inputs;
 computed reciprocals, products and sums are evaluated within the common scalar
-expressions. The existing `long double` Taylor evaluator replays captured sites;
+expressions. The shared wider Taylor evaluator replays captured sites;
 the selected-tape association-error owner propagates their coefficient errors
 through degree five. It adds no second association or density solve for the replay.
 The existing diagnostic cache owns the solvent and selected pure-reference states.
 Only explicit error requests and detailed endpoint capture run this calculation.
+
+The internal wider scalar is selected once in `engine/native/core/wider_scalar.hpp`.
+It is native `long double` on Linux. Windows uses Boost
+1.89 `cpp_bin_float_double_extended` with expression templates disabled, 64
+binary significand bits and its extended exponent range. Its `denorm_min()` is
+the smallest normal value: the existing absolute underflow allowance uses that
+actual trait. Its representation and underflow behavior differ from x87, and
+its elementary functions are not promised correctly rounded. The Windows
+compensated product residual uses a binary temporary with 128 significand bits
+before one narrowing; Linux and ordinary double retain native `std::fma`.
+
 
 For a returned coefficient, wider result $x_w$ and absolute extraction/assembly
 scale $S_x$, the arithmetic estimate is
@@ -2317,9 +2329,9 @@ Pressure/site propagation omits second-order sensitivity-error products and
 requires the existing admitted regular branch. The result annotation states
 these limits separately from failure causes and labels wider precision only as
 the reference replay's precision. The endpoint/Jacobian precision and shared
-`estimated_error` eligibility and judgment are unchanged. Where `long double`
+`estimated_error` eligibility and judgment are unchanged. Where the selected `WiderScalar`
 is not wider than `double`, preserve ordinary values and return the explicit
-cause `source-reference estimate unavailable: long double is not wider than double`.
+cause `source-reference estimate unavailable: WiderScalar is not wider than double`.
 Missing states, unavailable sensitivities and nonfinite estimates retain their
 actual causes; error production never changes physical admission.
 

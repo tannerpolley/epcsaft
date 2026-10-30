@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 #include "regression/coordinates.hpp"
 #include "regression/observations.hpp"
 
@@ -195,14 +197,14 @@ struct ObservationEvaluation final {
 class ObservationEvaluator final {
 public:
     struct Impl;
-    ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows);
-    bool evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out);
+    EPC_API ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows);
+    EPC_API bool evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out);
 private:
     std::shared_ptr<Impl> impl_;
 };
-std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr,
+EPC_API std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr,
     const std::vector<Observation>* reconciled = nullptr);
-std::vector<Observation> observations_at(const FitRequest& request, const std::vector<double>& optimizer,
+EPC_API std::vector<Observation> observations_at(const FitRequest& request, const std::vector<double>& optimizer,
     const std::vector<double>& errors);  // signed native differences or decades, for manufactured recovery
 // The Python host's worker command (empty: a fit evaluates every row itself) and cancellation poll; a true
 // poll stops a least-squares fit by throwing FitInterrupted (#380).
@@ -210,21 +212,25 @@ struct FitHost final {
     std::vector<std::string> worker;
     bool (*interrupted)() = nullptr;
 };
-void set_fit_host(FitHost host, const void* extension);
-struct __attribute__((visibility("default"))) FitInterrupted final {};
-[[noreturn]] void serve_fit(int fd);  // a worker process: its rows of every evaluation, over fd
-FitResult fit(const FitRequest& request);
-std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
+EPC_API void set_fit_host(FitHost host, const void* extension);
+struct EPC_EXCEPTION FitInterrupted final {};
+#ifdef _WIN32
+[[noreturn]] EPC_API void serve_fit(std::uintptr_t channel);
+#else
+[[noreturn]] EPC_API void serve_fit(int fd);
+#endif  // a worker process: its rows of every evaluation, over fd
+EPC_API FitResult fit(const FitRequest& request);
+EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent
 
 // Shared unweighted check algebra and final publication, used by both native estimators.
-std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);
+EPC_API std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);
 void publish_candidate(FitResult& result, ObservationEvaluation evaluation, const std::vector<double>& point);
 void finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled = nullptr);
 using ObservationFunction = std::function<bool(const std::vector<double>&, bool, ObservationEvaluation&)>;
-FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
+EPC_API FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);
-FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& point = {});
+EPC_API FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& point = {});
 void validate_fit_request(const FitRequest& request, bool optimizing = true);
 
 }  // namespace epcsaft::regression

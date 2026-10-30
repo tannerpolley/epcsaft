@@ -1,4 +1,5 @@
 #pragma once
+#include "core/export.hpp"
 
 #include "equilibrium/problem.hpp"
 
@@ -10,22 +11,22 @@
 
 namespace epcsaft::equilibrium {
 
-bool exact_zero_dot(const std::vector<double>& left, const std::vector<double>& right);
+EPC_API bool exact_zero_dot(const std::vector<double>& left, const std::vector<double>& right);
 std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
     const std::vector<ReactionSpec>& reactions);
 void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active);
 
-std::vector<double> resolve_feed(
+EPC_API std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed
 );
 
-std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
+EPC_API std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
 
-std::vector<std::vector<double>> balance_basis(
+EPC_API std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions, CompiledSystem* observations = nullptr
 );
 
-std::vector<double> standard_state(
+EPC_API std::vector<double> standard_state(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
     const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr, CompiledSystem* observations = nullptr
@@ -43,7 +44,7 @@ std::vector<std::vector<double>> standard_state_series(
 
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
 // affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
-std::vector<std::vector<double>> reaction_target_series(
+EPC_API std::vector<std::vector<double>> reaction_target_series(
     double temperature, const std::vector<ReactionSpec>& reactions, std::size_t order,
     const ThermochemistryRecord* thermochemistry = nullptr, const std::string& standard_state_id = EOS_STANDARD_STATE_ID
 );
@@ -67,7 +68,7 @@ std::vector<bool> reaction_participants(std::size_t components, const std::vecto
 std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vector<std::size_t>& candidates,
     const std::vector<int>& z, const Parameters* parameters = nullptr);
 
-std::vector<double> matvec(
+EPC_API std::vector<double> matvec(
     const std::vector<std::vector<double>>& matrix,
     const std::vector<double>& vector
 );
@@ -77,7 +78,7 @@ Base sum(const std::vector<Base>& values) {
     return std::accumulate(values.begin(), values.end(), Base(0));
 }
 
-std::size_t reaction_rank(
+EPC_API std::size_t reaction_rank(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 );
 

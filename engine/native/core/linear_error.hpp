@@ -1,4 +1,5 @@
 #pragma once
+#include "core/wider_scalar.hpp"
 
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
@@ -29,6 +30,17 @@ Real backward_error(Real residual, Real jacobian_norm, Real solution, Real right
     return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
 }
 
+#ifdef _WIN32
+inline WiderScalar product_residual(WiderScalar a, WiderScalar b, WiderScalar p) {
+    using Product = boost::multiprecision::number<boost::multiprecision::cpp_bin_float<128,
+        boost::multiprecision::digit_base_2, void, int, -32766, 32767>, boost::multiprecision::et_off>;
+    const Product residual = Product(a) * Product(b) - Product(p);
+    if (!wide_math::isfinite(residual) || wide_math::abs(residual) > Product(std::numeric_limits<WiderScalar>::max()))
+        throw std::runtime_error("product residual outside wider scalar range");
+    return static_cast<WiderScalar>(residual);
+}
+#endif
+
 // Ogita-Rump-Oishi Dot2: FMA TwoProduct and TwoSum preserve the cancellation defect.
 template <typename Matrix, typename Solution, typename Right>
 typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solution& solution, const Right& right) {
@@ -38,6 +50,11 @@ typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solut
         Real sum = right(row), error = 0.0;
         for (std::ptrdiff_t column = 0; column < solution.size(); ++column) {
             const Real term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
+#ifdef _WIN32
+            if constexpr (std::is_same_v<Real, WiderScalar>)
+                error += (sum - (next - part)) + (term - part) + product_residual(-matrix(row, column), solution(column), term);
+            else
+#endif
             error += (sum - (next - part)) + (term - part) + std::fma(-matrix(row, column), solution(column), -term);
             sum = next;
         }
@@ -116,8 +133,8 @@ LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, cons
         const Vector unit = lu.solve(Vector::Unit(a.cols(), i));
         sums += unit.cwiseAbs();
         const Vector action = (gc * unit).cwiseAbs();
-        out.floor += action * (std::abs(row[i]) * eta[i]);
-        out.defect += action * std::abs(defect[i]);
+        out.floor += action * (wide_math::abs(row[i]) * eta[i]);
+        out.defect += action * wide_math::abs(defect[i]);
     }
     out.inverse_norm = sums.maxCoeff(); out.condition = out.matrix_norm * out.inverse_norm;
     out.backward = backward_error(defect.cwiseAbs().maxCoeff(), out.matrix_norm, d.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff());
@@ -145,14 +162,14 @@ struct EquilibriumComparison final {
 template <typename Base>
 Base log_difference(Base a, Base b) {
     const Base relative = (a - b) / b;
-    return std::abs(std::isfinite(relative) && std::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? std::log1p(relative) : std::log(a) - std::log(b));
+    return wide_math::abs(wide_math::isfinite(relative) && wide_math::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? wide_math::log1p(relative) : wide_math::log(a) - wide_math::log(b));
 }
 template <typename Base>
 NumericalEstimate project_numerical_estimate(double value, Base mapped, Base radius, bool positive, bool constant) {
     core::Scope scope("project_numerical_estimate");
-    const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : std::abs(value));
-    const Base displacement = positive ? log_difference(Base(value), mapped) : std::abs(Base(value) - mapped);
-    const double chart = radius + displacement + rounding;
+    const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : wide_math::abs(value));
+    const Base displacement = positive ? log_difference(Base(value), mapped) : wide_math::abs(Base(value) - mapped);
+    const double chart = static_cast<double>(radius + displacement + rounding);
     const double absolute = positive ? value * std::expm1(chart) : chart;
     const bool available = std::isfinite(absolute) && std::isfinite(chart);
     return {absolute, chart, available, available, available ? "" : "nonfinite_projection"};
