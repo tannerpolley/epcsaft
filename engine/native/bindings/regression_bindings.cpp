@@ -74,7 +74,7 @@ m._serve_fit(channel)
         // No /proc on macOS: F_GETPATH names each held image, whose identity must match before and after loading.
         host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, fcntl, os, importlib.machinery as i, importlib.util as u; "
             "p, n = (os.fsdecode(fcntl.fcntl(fd, fcntl.F_GETPATH, bytes(1024)).split(b'\\0')[0]) for fd in (3, 4)); "
-            "same = lambda: all((s.st_dev, s.st_ino) == (f.st_dev, f.st_ino) for s, f in ((os.stat(p), os.fstat(3)), (os.stat(n), os.fstat(4)))); "
+            "same = lambda: [os.stat(x)[1:3] for x in (p, n)] == [os.fstat(fd)[1:3] for fd in (3, 4)]; "
             "same() or os._exit(1); native = ctypes.CDLL(n, mode=ctypes.RTLD_GLOBAL); "
             "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', p)); "
             "m = u.module_from_spec(s); s.loader.exec_module(m); same() or os._exit(1); m._serve_fit()"};

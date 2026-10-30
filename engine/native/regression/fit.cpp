@@ -618,16 +618,15 @@ struct ObservationEvaluator::Impl final {
             if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
             workers_.sockets.push_back(pair[0]);
             const int on = 1;
-            bool ready = true;
-            for (const int fd : pair)
-                ready = ready && fcntl(fd, F_SETFD, FD_CLOEXEC) == 0 && setsockopt(fd, SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on) == 0;
             // As on Linux: socket end as fd 0, images as fd 3/4, the standard streams, its own process group.
             posix_spawn_file_actions_t actions;
             posix_spawnattr_t attributes;
             posix_spawn_file_actions_init(&actions);
             posix_spawnattr_init(&attributes);
             pid_t process = 0;
-            const int error = !ready || posix_spawn_file_actions_adddup2(&actions, pair[1], 0) || posix_spawn_file_actions_adddup2(&actions, extension_image, 3)
+            const int error = fcntl(pair[0], F_SETFD, FD_CLOEXEC) || fcntl(pair[1], F_SETFD, FD_CLOEXEC)
+                || setsockopt(pair[0], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on) || setsockopt(pair[1], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on)
+                || posix_spawn_file_actions_adddup2(&actions, pair[1], 0) || posix_spawn_file_actions_adddup2(&actions, extension_image, 3)
                 || posix_spawn_file_actions_adddup2(&actions, native_image, 4) || posix_spawn_file_actions_addinherit_np(&actions, 1)
                 || posix_spawn_file_actions_addinherit_np(&actions, 2) || posix_spawnattr_setflags(&attributes, POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP)
                 || posix_spawnattr_setpgroup(&attributes, 0) || posix_spawn(&process, arguments[0], &actions, &attributes, arguments, *_NSGetEnviron());
