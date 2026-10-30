@@ -1,0 +1,13 @@
+# Qualification-only: append after epcsaft_private in engine/meson.build
+# in the cumulative source copy. Copy this directory to engine/qualification-939.
+foreach driver : ['r2-qualify', 'r2-frozen', 'timing-qualify', 'timing-frozen', 'timing-pure-reference']
+  executable('qualification-939-' + driver,
+    'qualification-939/' + driver + '.cpp',
+    cpp_args: native_warnings,
+    include_directories: [native_inc, include_directories('tests/native')],
+    dependencies: [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
+    link_with: epcsaft_native,
+    install: false,
+    build_by_default: false,
+  )
+endforeach

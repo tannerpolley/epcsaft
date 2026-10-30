@@ -26,6 +26,7 @@ import json
 import math
 import os
 import runpy
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -38,7 +39,7 @@ TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
-            'wall_seconds', 'parallel_solve_seconds', 'numerical_operands'}
+            'wall_seconds', 'parallel_solve_seconds', 'numerical_operands', 'numerical_estimates'}
 # value - reference, 100|value/reference - 1| and, for liquid volume, 100|reference/value - 1|
 # (2002-gross calculate.py:217-223); `value` itself is compared.
 GROSS_REPORTED = REPORTED | {'deviation', 'absolute_relative_percent', 'pressure_aad_percent',
@@ -64,6 +65,23 @@ ACCEPTED = dict(
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
                 fitting=dict(rows=210, cases=3, success=0, requested_tolerance_met=0, keys='6bf548d8e98db3f9'),  # #823: the reference correction changes Held NaCl recovery from 25 to 20 iterations at the objective floor.
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
+
+
+REPLAY_RESULT_INVENTORIES = dict(
+    declared=dict(rows=1793, keys='ae2df993e9d3bc6d'),
+    continuation=dict(rows=810, keys='68f377a1da110661'),
+    fitting=dict(rows=185, keys='4f81bfcf199d5293'),
+    asl=dict(rows=1471, keys='5612f9e7334cedd8'),)
+
+RETAINED_INPUTS = (
+    'analyses/reproduction/2001-gross/results/tables/table-002/source/table-002.csv',
+    'analyses/reproduction/2002-gross/results/tables/table-001/source/table-001.csv',
+    'analyses/reproduction/2002-gross/results/tables/table-002/source/table-002.csv',
+    'analyses/reproduction/2002-gross/results/data/calculation.json',
+    'analyses/reproduction/2005-cameretti/results/tables/table-005/source/table-005.csv',
+    'analyses/reproduction/2005-cameretti/results/digitized-lines.csv',
+    'analyses/reproduction/2005-cameretti/results/digitized-points.csv',
+)
 
 
 def values(text):
@@ -126,19 +144,14 @@ def differences(a_rows, b_rows, reported=REPORTED, operands=None, comparisons=No
 
 
 def neutral_comparison_operands(a_rows, b_rows):
-    from epcsaft.equilibrium import ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity, compile_problem
-    declaration = runpy.run_path(str(TPD / 'neutral.py'))
-    model, problem = declaration['model'], declaration['problem']
+    from epcsaft.equilibrium import ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity
     operands = {}
     # #861 authority covers the original #853 rows 49-62; other comparisons remain strict.
     for i in range(49, min(63, len(a_rows), len(b_rows))):
         a, b = a_rows[i], b_rows[i]
-        estimates = []
-        for r in (a, b):
-            frozen = r.get('numerical_operands')
-            estimates.append(compile_problem(model, problem(r['T'], r['P0'])).numerical_estimates(
-                frozen['coordinates'], r['T'], r['P'][0], frozen['amounts'], r['x'], r['rho'], frozen['packing'])
-                if frozen and r['success'] else None)
+        estimates = [r.get('numerical_estimates') for r in (a, b)]
+        if any(r['success'] and e is None for r, e in zip((a, b), estimates)):
+            raise ValueError('neutral collection lacks error estimates from its originating Engine')
         eligibility = ComparisonEligibility()
         eligibility.declaration = all(a[k] == b[k] for k in ('T', 'P0'))
         eligibility.phase_matching = len(a.get('rho', [])) == len(b.get('rho', [])) == 2 and len(a.get('x', [])) == len(b.get('x', [])) == 4
@@ -153,13 +166,9 @@ def neutral_comparison_operands(a_rows, b_rows):
                 errors = []
                 for e in estimates:
                     error = NumericalEstimate()
-                    if e is not None:
-                        error.cause = e.cause
-                        values = getattr(e, field)
-                        if key == 'P':
-                            error = values
-                        elif j < len(values):
-                            error = values[j]
+                    if e is not None and j < len(e[field]):
+                        for name, value in e[field][j].items():
+                            setattr(error, name, value)
                     errors.append(error)
                 operands[i,key,j] = quantity, *errors, eligibility, ComparisonMode.EstimatedError
     return operands
@@ -223,13 +232,19 @@ def unmet(name, rows, success, residual, criterion):
 def main():
     from engine_identity import prepared_python
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('prepared_a', help='prepared interpreter, virtual environment, or build-tree root')
-    parser.add_argument('prepared_b')
+    parser.add_argument('prepared_a', nargs='?', help='prepared interpreter, virtual environment, or build-tree root')
+    parser.add_argument('prepared_b', nargs='?')
+    parser.add_argument('--collect-only', action='store_true')
+    parser.add_argument('--compare-only', nargs=2, type=Path)
     parser.add_argument('--out', type=Path, default=ROOT / f'build/equilibrium-corpora/{time.strftime("%Y%m%dT%H%M%S")}')
     args = parser.parse_args()
-    comparison_python, comparison_env = prepared_python(args.prepared_b)
-    if Path(os.path.abspath(sys.executable)) != comparison_python:
-        os.execve(str(comparison_python), [str(comparison_python), str(Path(__file__).resolve()), *sys.argv[1:]], comparison_env)
+    if args.collect_only and args.compare_only:
+        parser.error('collection and comparison are separate operations')
+    if not args.compare_only and not args.prepared_a:
+        args.prepared_a = sys.executable
+    comparison_python, comparison_env = prepared_python(args.prepared_b or args.prepared_a or sys.executable)
+    if Path(os.path.abspath(sys.executable)) != comparison_python or os.name == "nt" and not sys.flags.utf8_mode:
+        return subprocess.run([str(comparison_python), str(Path(__file__).resolve()), *sys.argv[1:]], env=comparison_env).returncode
     out = args.out.resolve()
     if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):
         parser.error('--out must be outside the tracked tree (use build/)')
@@ -238,51 +253,82 @@ def main():
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     selections, interpreters, environments, identities = {}, {}, {}, {}
-    for label, value in (('A', args.prepared_a), ('B', args.prepared_b)):
-        (out / label).mkdir()
-        python, selected_env = prepared_python(value, env)
-        identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
-        if not identity['source_revision'] or not identity['meson_configuration_sha256'] or not identity['lock_sha256']:
-            parser.error(f'{label} must identify its prepared source, Meson build, and lock')
-        selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
-    inventories = {label: runpy.run_path(str(Path(identity['source_root']) / 'tools/check-equilibrium-corpora'))['ACCEPTED']
-                   for label, identity in identities.items()}
-    (out / 'accepted-inventories.json').write_text(json.dumps(inventories, indent=2) + '\n')
-    (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
+    if args.compare_only:
+        failures, inventories = [], {}
+        for label, directory in zip('AB', args.compare_only):
+            directory = directory.resolve()
+            failures.extend(json.loads((directory / 'collection-failures.json').read_text()))
+            shutil.copytree(directory / 'A', out / label)
+            identities[label] = json.loads((directory / 'environment-identities.json').read_text())['A']
+            inventories[label] = json.loads((directory / 'accepted-inventories.json').read_text())['A']
+            selections[label] = str(directory)
+        if (json.loads((args.compare_only[0] / 'input-inventory.json').read_text()) !=
+                json.loads((args.compare_only[1] / 'input-inventory.json').read_text())):
+            parser.error('collected input inventories differ')
+        print('Identical input inventories', flush=True)
+        print(json.dumps(identities, indent=2), flush=True)
+    else:
+        for label, value in ([('A', args.prepared_a)] if args.collect_only else [('A', args.prepared_a), ('B', args.prepared_b)]):
+            (out / label).mkdir()
+            python, selected_env = prepared_python(value, env)
+            identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
+            if not (identity['source_revision'] and (identity['conda_package'] and identity['source_archive_sha256'] or identity['wheel_sha256'] or identity['meson_configuration_sha256'] and identity['lock_sha256'])):
+                parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+            selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
+        inventories = {label: runpy.run_path(str(ROOT / 'tools/check-equilibrium-corpora'))['ACCEPTED']
+                       for label, identity in identities.items()}
+        if os.name == 'nt':
+            for inventory in inventories.values():
+                inventory['replay_work_histories'] = 'reported'
+                for section, expected in REPLAY_RESULT_INVENTORIES.items():
+                    inventory['replay'][section].update(expected)
+        (out / 'accepted-inventories.json').write_text(json.dumps(inventories, indent=2) + '\n')
+        (out / 'environment-identities.json').write_text(json.dumps(identities, indent=2) + '\n')
 
-    # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
-    parallel = threading.Lock()
+        # Cameretti and Gross each use every CPU; run them one at a time beside the single-process jobs.
+        parallel = threading.Lock()
 
-    def run(label, name, *command):
-        with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
-            code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=environments[label],
-                                  stdout=log, stderr=subprocess.STDOUT).returncode
-        return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
+        def run(label, name, *command):
+            with (out / label / f'{name}.log').open('w') as log, (parallel if name in ('cameretti', 'gross') else nullcontext()):
+                code = subprocess.run([str(interpreters[label]), *map(str, command)], cwd=ROOT, env=environments[label],
+                                      stdout=log, stderr=subprocess.STDOUT).returncode
+            return None if code == 0 else f'{label} {name} exit {code} ({out / label / name}.log)'
 
-    reference = out / 'A/matrix-reference'
-    jobs = []
-    for label in selections:
-        d = out / label
-        jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
-                 (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
-                 (label, 'neutral', TPD / 'neutral.py', d / 'neutral.json')]
-        jobs += [(label, f'replay-{s}', TPD / 'baseline.py', '--section', s, '--output', d / 'replay') for s in SECTIONS]
-        jobs += [(label, 'mea-family', ROOT / 'analyses/2026-mea-flash-family-seed/scripts/family.py', label, d / 'mea-family.jsonl')]
-    with ThreadPoolExecutor(len(jobs) + 1) as pool:
-        matrix = pool.submit(run, 'A', 'matrix-reference', TPD / 'physical_comparison.py', reference)
-        futures = [pool.submit(run, *job) for job in jobs]
-        failures = [f.result() for f in [matrix, *futures]]
-        if matrix.result() is None:
-            failures += pool.map(lambda label: run(label, 'matrix', TPD / 'physical_comparison.py', out / label / 'matrix',
-                                                   '--reference', reference / 'original-states.json'), selections)
-    failures = [f for f in failures if f]
-    for label in selections:
-        current = json.loads(subprocess.check_output(
-            [str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=environments[label]
-        ))
-        if current != identities[label]:
-            failures.append(f'{label} Engine identity changed during corpora runs')
+        reference = out / 'A/matrix-reference'
+        jobs = []
+        for label in selections:
+            d = out / label
+            jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
+                     (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
+                     (label, 'neutral', TPD / 'neutral.py', d / 'neutral.json')]
+            jobs += [(label, f'replay-{s}', TPD / 'baseline.py', '--section', s, '--output', d / 'replay') for s in SECTIONS]
+            jobs += [(label, 'mea-family', ROOT / 'analyses/2026-mea-flash-family-seed/scripts/family.py', label, d / 'mea-family.jsonl')]
+        with ThreadPoolExecutor(len(jobs) + 1) as pool:
+            matrix = pool.submit(run, 'A', 'matrix-reference', TPD / 'physical_comparison.py', reference)
+            futures = [pool.submit(run, *job) for job in jobs]
+            failures = [f.result() for f in [matrix, *futures]]
+            if matrix.result() is None:
+                failures += pool.map(lambda label: run(label, 'matrix', TPD / 'physical_comparison.py', out / label / 'matrix',
+                                                       '--reference', reference / 'original-states.json'), selections)
+        failures = [f for f in failures if f]
+        for label in selections:
+            current = json.loads(subprocess.check_output(
+                [str(interpreters[label]), str(ROOT / 'tools/engine_identity.py')], env=environments[label]
+            ))
+            if current != identities[label]:
+                failures.append(f'{label} Engine identity changed during corpora runs')
 
+        if args.collect_only:
+            inputs = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
+                      for directory in ('tools', 'data/packets', 'engine/data/reference', 'analyses')
+                      for p in (ROOT / directory).rglob('*') if p.is_file()
+                      and not any(part in ('results', '__pycache__', '.venv') for part in p.relative_to(ROOT).parts)
+                      and p.suffix in ('.py', '.json', '.csv', '.gz')}
+            inputs.update({name: hashlib.sha256((ROOT / name).read_bytes()).hexdigest() for name in RETAINED_INPUTS})
+            (out / 'input-inventory.json').write_text(json.dumps(inputs, sort_keys=True, indent=2))
+            (out / 'collection-failures.json').write_text(json.dumps(failures))
+            print(json.dumps(dict(inputs=inputs, identities=identities, failures=failures), indent=2))
+            return bool(failures)
     rows, found = [], {}
 
     def corpus(name, count, compare):
@@ -369,6 +415,7 @@ def main():
     corpus('#243 matrix', lambda d: f"{sum(r['passes'] == 'True' for r in matrix(d))}/{len(matrix(d))}", matrix_problems)
 
     def replay():
+        rules = runpy.run_path(str(TPD / 'replay_compare.py'))
         if subprocess.run([sys.executable, TPD / 'replay_compare.py', out / 'A/replay', out / 'B/replay',
                            out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
             raise ValueError('replay_compare.py failed')
@@ -376,6 +423,8 @@ def main():
         for label in selections:
             for s in SECTIONS:
                 rows = table(out / label / f'replay/{s}.csv')
+                if inventories[label].get('replay_work_histories') == 'reported':
+                    rows = [r for r in rows if rules['base'](r['quantity']) not in rules['WORK']]
                 true = lambda q: sum(r['quantity'] == q and r['value'] == 'True' for r in rows)
                 keys = '\n'.join(sorted(f"{r['case']},{r['quantity']}" for r in rows))
                 found += accepted(f'{label} replay {s}', dict(

@@ -8,6 +8,7 @@ import sys
 from importlib import metadata
 from pathlib import Path
 from urllib.parse import unquote, urlparse
+from urllib.request import url2pathname
 
 
 def digest(path):
@@ -18,6 +19,8 @@ def digest(path):
 def prepared_python(value, environment=None):
     """Resolve a Python path, venv, or prepared root without creating an environment."""
     env = dict(os.environ if environment is None else environment)
+    if os.name == "nt":
+        env["PYTHONUTF8"] = "1"
     path = Path(value).expanduser().absolute()
     if path.is_dir():
         root = path
@@ -26,7 +29,7 @@ def prepared_python(value, environment=None):
             target = Path(marker.read_text().strip())
             path = target if target.is_absolute() else root / target
         else:
-            path = next((p for p in (root / "venv/bin/python", root / "bin/python") if p.is_file()), path)
+            path = next((p for p in (root / "python.exe", root / "Scripts/python.exe", root / "venv/Scripts/python.exe", root / "venv/bin/python", root / "bin/python") if p.is_file()), path)
     path = Path(os.path.abspath(path))
     if not path.is_file() or not os.access(path, os.X_OK):
         raise ValueError(f"prepared input must name a Python interpreter or root: {value}")
@@ -39,7 +42,7 @@ def _source_root(direct):
         return Path(selected).expanduser().resolve(strict=True)
     url = urlparse(direct.get("url", ""))
     if direct.get("dir_info", {}).get("editable") and url.scheme == "file":
-        path = Path(unquote(url.path)).resolve(strict=True)
+        path = Path(url2pathname(url.path)).resolve(strict=True)
         return path.parent if path.name == "engine" else path
     return None
 
@@ -47,6 +50,9 @@ def _source_root(direct):
 def _source_identity(root):
     if root is None:
         return None, None
+    if not (root / '.git').exists():
+        record = json.loads((root / 'source-identity.json').read_text())
+        return record['revision'], None
     revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
     diff = subprocess.check_output(["git", "diff", "--binary", "HEAD"], cwd=root)
     untracked = subprocess.check_output(
@@ -88,7 +94,7 @@ def _build_identity(build, source):
     files = {name: digest(build / name) for name in names if (build / name).is_file()}
     configuration = hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest()
     objects = [entry["output"] for entry in json.loads((build / "compile_commands.json").read_text())
-               if "engine/native/" in entry["file"]]
+               if "engine/native/" in entry["file"].replace("\\", "/")]
     dependencies = subprocess.check_output(["ninja", "-C", str(build), "-t", "deps", *objects], text=True)
     object_time = None
     for line in dependencies.splitlines():
@@ -108,14 +114,14 @@ def _verify_products(core, native, asl, build):
     for target in json.loads((build / "meson-info/intro-targets.json").read_text()):
         for filename in target.get("filename", []):
             name = Path(filename).name
-            if name.startswith("_core") or name in ("libepcsaft_native.so", "libepcsaft_asl.so"):
+            if name.startswith("_core") or name in ("libepcsaft_native.so", "libepcsaft_asl.so", "epcsaft_native.dll", "epcsaft_asl.dll"):
                 path = Path(filename).resolve(strict=True)
-                products[path.name.split(".")[0]] = path
-    for actual, name in ((core, "_core"), (native, "libepcsaft_native"), (asl, "libepcsaft_asl")):
+                products[path.name.split(".")[0].removeprefix("lib")] = path
+    for actual, name in ((core, "_core"), (native, "epcsaft_native"), (asl, "epcsaft_asl")):
         expected = products.get(name)
         if expected and (actual.resolve(strict=True) != expected or digest(actual) != digest(expected)):
             raise RuntimeError(f"loaded Engine image does not match selected Meson product: {actual}")
-        if name in ("_core", "libepcsaft_asl") and not expected:
+        if name in ("_core", "epcsaft_asl") and not expected:
             raise RuntimeError(f"selected Meson build has no {name} product: {build}")
 
 
@@ -140,10 +146,33 @@ def _mapped(path, mappings):
 
 
 def _asl_path(core, build):
-    path = Path(os.environ.get("EPCSAFT_ASL_LIBRARY", core.parent / "libepcsaft_asl.so")).expanduser().resolve(strict=True)
+    path = Path(os.environ.get("EPCSAFT_ASL_LIBRARY", core.parent / ("epcsaft_asl.dll" if os.name == "nt" else "libepcsaft_asl.so"))).expanduser().resolve(strict=True)
     if not (path.is_relative_to(core.parent) or build and path.is_relative_to(build)):
         raise RuntimeError(f"selected ASL library is outside the loaded install or Meson build: {path}")
     return path
+
+
+def _windows_modules():
+    import ctypes
+    from ctypes import wintypes as w
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    psapi = ctypes.WinDLL("psapi", use_last_error=True)
+    kernel.GetCurrentProcess.restype = w.HANDLE
+    psapi.EnumProcessModules.argtypes = [w.HANDLE, ctypes.POINTER(w.HMODULE), w.DWORD, ctypes.POINTER(w.DWORD)]
+    psapi.GetModuleFileNameExW.argtypes = [w.HANDLE, w.HMODULE, w.LPWSTR, w.DWORD]
+    handles, needed = (w.HMODULE * 2048)(), w.DWORD()
+    process = kernel.GetCurrentProcess()
+    if not psapi.EnumProcessModules(process, handles, ctypes.sizeof(handles), ctypes.byref(needed)):
+        raise ctypes.WinError(ctypes.get_last_error())
+    if needed.value > ctypes.sizeof(handles):
+        raise RuntimeError("loaded module inventory exceeds buffer")
+    paths = []
+    for handle in handles[:needed.value // ctypes.sizeof(w.HMODULE)]:
+        name = ctypes.create_unicode_buffer(32768)
+        if not psapi.GetModuleFileNameExW(process, handle, name, len(name)):
+            raise ctypes.WinError(ctypes.get_last_error())
+        paths.append(Path(name.value).resolve(strict=True))
+    return sorted(paths)
 
 
 def loaded_identity():
@@ -164,26 +193,42 @@ def loaded_identity():
         raise RuntimeError("selected Meson build was configured from a different source tree")
     revision, source_diff = _source_identity(source)
     build, build_hash, lock_hash = _build_identity(build, source)
-    mappings = Path("/proc/self/maps").read_text().splitlines()
-    core = _mapped(core, mappings)
-    native = {Path(line.split(maxsplit=5)[5]).resolve() for line in mappings
-              if len(line.split(maxsplit=5)) == 6 and line.split(maxsplit=5)[5].endswith("/libepcsaft_native.so")}
-    if len(native) > 1:
-        raise RuntimeError(f"multiple loaded native libraries: {native}")
-    numerical = _mapped(next(iter(native), core), mappings)
+    if os.name == "nt":
+        modules = _windows_modules()
+        if core not in modules:
+            raise RuntimeError(f"extension absent from loaded modules: {core}")
+        native = {p for p in modules if p.name == "epcsaft_native.dll"}
+        if len(native) != 1:
+            raise RuntimeError(f"expected one loaded native DLL: {native}")
+        numerical = native.pop()
+    else:
+        mappings = Path("/proc/self/maps").read_text().splitlines()
+        core = _mapped(core, mappings)
+        native = {Path(line.split(maxsplit=5)[5]).resolve() for line in mappings
+                  if len(line.split(maxsplit=5)) == 6 and line.split(maxsplit=5)[5].endswith("/libepcsaft_native.so")}
+        if len(native) > 1:
+            raise RuntimeError(f"multiple loaded native libraries: {native}")
+        numerical = _mapped(next(iter(native), core), mappings)
     asl = _asl_path(core, build)
     if build:
         _verify_products(core, numerical, asl, build)
     options = build / "meson-info/intro-buildoptions.json" if build else None
     if version is None and build:
         version = json.loads((build / "meson-info/intro-projectinfo.json").read_text()).get("version")
-    return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct else "prepared"),
+    return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct.get("dir_info", {}).get("editable") else "prepared"),
+            "linear_solver": _core.linear_solver(),
             "interpreter": sys.executable, "python": sys.version, "version": version, "direct_url": direct,
             "wheel": unquote(urlparse(direct.get("url", "")).path) if direct.get("url", "").endswith(".whl") else None,
             "wheel_sha256": digest(unquote(urlparse(direct.get("url", "")).path))
             if direct.get("url", "").endswith(".whl") and Path(unquote(urlparse(direct["url"]).path)).is_file() else None,
+            "conda_package": [json.loads(p.read_text()) for p in (Path(sys.prefix) / "conda-meta").glob("epcsaft-*.json")],
+            "loaded_dlls": [{"path": str(p), "sha256": digest(p), "file_id": [p.stat().st_dev, p.stat().st_ino]}
+                            for p in modules if any(n in p.name.lower() for n in ("epcsaft", "ipopt", "mumps", "openblas"))]
+                            if os.name == "nt" else [],
             "source_root": str(source) if source else None, "source_revision": revision,
             "source_diff_sha256": source_diff,
+            "source_archive_sha256": json.loads((source / 'source-identity.json').read_text())['sha256']
+                                     if source and not (source / '.git').exists() else None,
             "lock_sha256": lock_hash, "meson_build_dir": str(build) if build else None,
             "meson_configuration_sha256": build_hash,
             "build_configuration": str(options) if options and options.is_file() else None,
