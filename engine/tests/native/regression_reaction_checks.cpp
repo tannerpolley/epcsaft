@@ -1039,7 +1039,7 @@ void check_ionic_addition_enthalpy() {
         std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
             field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
-#ifndef _WIN32
+#if defined(__linux__)
     using binary128_support::Wide;
     const std::vector<binary128_support::Quantity> enthalpy{{"H", "J", 0.0, {}}};
     for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column) {

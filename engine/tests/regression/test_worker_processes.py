@@ -52,7 +52,14 @@ def test_worker_numerical_agreement(failure: bool) -> None:
         assert struct.pack(f"{len(a[name])}d", *a[name]) == struct.pack(f"{len(b[name])}d", *b[name])
 
 
+def _ps() -> dict[int, tuple[int, str]]:
+    rows = subprocess.run(['ps', '-A', '-o', 'pid=,ppid=,stat='], capture_output=True, text=True, check=True).stdout
+    return {int(pid): (int(parent), stat) for pid, parent, stat in map(str.split, rows.splitlines())}
+
+
 def children(pid: int) -> list[int]:
+    if sys.platform == "darwin":
+        return [child for child, (parent, _) in _ps().items() if parent == pid]
     if sys.platform != "win32":
         return [int(p.name) for p in Path('/proc').iterdir() if p.name.isdigit()
                 and (p / 'stat').exists() and _parent(p) == pid]
@@ -90,6 +97,8 @@ def _parent(path: Path) -> int:
 
 
 def _running(pid: int) -> bool:
+    if sys.platform == 'darwin':
+        return pid in (rows := _ps()) and not rows[pid][1].startswith('Z')
     try:
         return Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[0] != 'Z'
     except (FileNotFoundError, ProcessLookupError):
@@ -98,7 +107,7 @@ def _running(pid: int) -> bool:
 
 def _handle_count() -> int:
     if sys.platform != 'win32':
-        return len(list(Path('/proc/self/fd').iterdir()))
+        return len(os.listdir('/dev/fd' if sys.platform == 'darwin' else '/proc/self/fd'))
     from ctypes import wintypes as w
     kernel = ctypes.WinDLL('kernel32', use_last_error=True)
     kernel.GetCurrentProcess.restype = w.HANDLE

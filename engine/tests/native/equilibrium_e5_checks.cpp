@@ -1,12 +1,18 @@
 // E5: solved-state actions against stencils of fresh nonlinear solves.
 #include "equilibrium_checks_shared.hpp"
-#ifdef _WIN32
-// Exercise the same x87 control word with the selected Microsoft-targeting Clang.
+#if defined(__GLIBC__)
+#include <fpu_control.h>
+#elif defined(__x86_64__)
+// Exercise the same x87 control word without glibc (Windows Clang, osx-64).
 using fpu_control_t = unsigned short;
 #define _FPU_GETCW(word) __asm__ volatile("fnstcw %0" : "=m" (word))
 #define _FPU_SETCW(word) __asm__ volatile("fldcw %0" : : "m" (word))
 #else
-#include <fpu_control.h>
+#include <cstdio>
+// No x87 control word (Apple arm64): AMPL's fpinit has nothing to set, so the ASL-host run repeats the clean one.
+using fpu_control_t = unsigned short;
+#define _FPU_GETCW(word) (std::puts("E5 ASL-host x87 sub-check skipped: no x87 control word"), (word) = 0x27f)
+#define _FPU_SETCW(word) static_cast<void>(word)
 #endif
 
 namespace equilibrium_checks {

@@ -1890,7 +1890,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         Base ideal = ideal_mechanical_helmholtz(x[phase], volume[phase], Base(1));
         result.objective += amount[phase] * (
             derivative.value + ideal + prepared.pressure * volume[phase] / rt
-            #ifdef _WIN32
+            #ifdef EPCSAFT_SOFTWARE_WIDER
             + std::inner_product(standard.begin(), standard.end(), x[phase].begin(), 0.0,
                 [](double sum, Base product) { return static_cast<double>(sum + product); }, std::multiplies<Base>{})
 #else

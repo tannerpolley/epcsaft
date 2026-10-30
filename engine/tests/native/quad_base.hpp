@@ -1,5 +1,5 @@
 #pragma once
-#ifndef _WIN32
+#if defined(__linux__)
 // Verification-only binary128 Base; include before cppad.hpp. No Engine ABI change.
 #include <quadmath.h>
 #include <array>

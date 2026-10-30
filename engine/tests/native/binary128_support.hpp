@@ -25,7 +25,7 @@ struct NamedDirection {
     bool parameter = false;
 };
 
-#ifndef _WIN32
+#if defined(__linux__)
 using Wide = CppAD::Quad;
 
 // Manufactured electroneutral water/Na/Cl value oracle. The two symmetric

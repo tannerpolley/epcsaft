@@ -10,8 +10,8 @@ text = recipe.read_text()
 for old, new in [
     ('file: ${{ "build.bat" if win else "build.sh" }}',
      'file: ${{ "qualification/build.bat" if win else "build.sh" }}'),
-    ('        - libboost-headers ==1.89.0\n',
-     '        - libboost-headers ==1.89.0\n' + ''.join(f'        - {name}\n' for name in ('pytest', 'numpy', 'scipy', 'pandas', 'pyomo', 'idaes-pse'))),
+    ('        - openblas * openmp_*\n',
+     '        - openblas * openmp_*\n' + ''.join(f'        - {name}\n' for name in ('pytest', 'numpy', 'scipy', 'pandas', 'pyomo', 'idaes-pse'))),
     ('  - script:\n      file: run_test.py\n',
      '''  - script:
       file: run_test.py

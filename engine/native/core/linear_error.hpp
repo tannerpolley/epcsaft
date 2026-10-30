@@ -30,7 +30,7 @@ Real backward_error(Real residual, Real jacobian_norm, Real solution, Real right
     return residual == 0.0 ? 0.0 : denominator > 0.0 ? residual / denominator : std::numeric_limits<double>::infinity();
 }
 
-#ifdef _WIN32
+#ifdef EPCSAFT_SOFTWARE_WIDER
 inline WiderScalar product_residual(WiderScalar a, WiderScalar b, WiderScalar p) {
     using Product = boost::multiprecision::number<boost::multiprecision::cpp_bin_float<128,
         boost::multiprecision::digit_base_2, void, int, -32766, 32767>, boost::multiprecision::et_off>;
@@ -50,7 +50,7 @@ typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solut
         Real sum = right(row), error = 0.0;
         for (std::ptrdiff_t column = 0; column < solution.size(); ++column) {
             const Real term = -matrix(row, column) * solution(column), next = sum + term, part = next - sum;
-#ifdef _WIN32
+#ifdef EPCSAFT_SOFTWARE_WIDER
             if constexpr (std::is_same_v<Real, WiderScalar>)
                 error += (sum - (next - part)) + (term - part) + product_residual(-matrix(row, column), solution(column), term);
             else
