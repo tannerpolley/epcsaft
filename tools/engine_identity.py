@@ -213,7 +213,7 @@ def loaded_identity():
     options = build / "meson-info/intro-buildoptions.json" if build else None
     if version is None and build:
         version = json.loads((build / "meson-info/intro-projectinfo.json").read_text()).get("version")
-    return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct else "prepared"),
+    return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct.get("dir_info", {}).get("editable") else "prepared"),
             "interpreter": sys.executable, "python": sys.version, "version": version, "direct_url": direct,
             "wheel": unquote(urlparse(direct.get("url", "")).path) if direct.get("url", "").endswith(".whl") else None,
             "wheel_sha256": digest(unquote(urlparse(direct.get("url", "")).path))
