@@ -373,6 +373,8 @@ their approval assertions were not reverified in the #221 reconciliation.
 Pre-envelope changes without an entry are listed in the #221 reconstruction
 comment (5942662477).
 
+#939 raises Core by 67, Properties by 15, equilibrium by 21 and total by 103 formatted runtime lines for Windows wider arithmetic.
+
 ## Duplication constraints
 
 One common Helmholtz definition supplies properties and their derivatives.

@@ -1221,6 +1221,16 @@ void check_recovery() {
     }
 }
 
+void check_product_residual() {
+    using namespace epcsaft;
+    using Matrix = Eigen::Matrix<WiderScalar, 1, 1>;
+    const WiderScalar delta = std::ldexp(1.0, -40);
+    Matrix a, b, p;
+    a[0] = 1 + delta; b[0] = 1 - delta; p[0] = 1;
+    const Matrix defect = core::compensated_defect(a, b, p);
+    CHECK(defect[0] == WiderScalar(std::ldexp(1.0, -80)));
+}
+
 void check_saturation_refusals() {
     using namespace epcsaft;
     using namespace equilibrium;
@@ -1398,6 +1408,7 @@ void check_kuranov_row_11() {
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.boundary.kuranov-row-11", "kuranov-row-11"}, check_kuranov_row_11},
+        {{"native.boundary.product-residual", "product-residual"}, check_product_residual},
         {{"native.boundary.saturation-refusals", "saturation-refusals"}, check_saturation_refusals},
         {{"native.boundary.saturation-loading", "saturation-loading"}, check_saturation_loading},
         {{"native.boundary.s3", "S3"}, check_s3},
