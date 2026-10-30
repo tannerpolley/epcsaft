@@ -63,4 +63,6 @@ subprocess.run([str(dev),'-m','pip','install','-e','./engine','--no-deps','--no-
 for command in ['check-equilibrium-corpora','time-key-solves']:
  args=['--fit'] if command=='time-key-solves' else []
  for suffix in ['', '-repeat'] if command == 'check-equilibrium-corpora' else ['']:
-  subprocess.run([str(dev),'tools/'+command,'--collect-only','--out',str(source/'build'/('development-'+command+suffix)),*args],check=True)
+  collected=Path('build/qualification')/('development-'+command+suffix)
+  subprocess.run([str(dev),'tools/'+command,'--collect-only','--out',str(collected),*args],check=True)
+  shutil.copytree(collected,source/'build'/collected.name)
