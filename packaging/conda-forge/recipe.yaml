@@ -2,7 +2,7 @@ schema_version: 1
 
 context:
   version: 1.2.0
-  release_sha256: 5d37f1d554137dc08f6b9bc03836e7b3c2797b2edba8e2ad74777ee949b92d21
+  release_sha256: 959bfc2a8ca97b35fc74be03aede5381a2e440baafcfbb51c6b3c7892b05f12e
 
 package:
   name: epcsaft
