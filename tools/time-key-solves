@@ -445,6 +445,9 @@ def fit_cpu(directory, result):
 
 
 def main():
+    if os.name == 'nt' and not sys.flags.utf8_mode:
+        return subprocess.run([sys.executable, '-X', 'utf8', str(Path(__file__).resolve()), *sys.argv[1:]],
+                              env={**os.environ, 'PYTHONUTF8': '1'}).returncode
     from engine_identity import prepared_python
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '

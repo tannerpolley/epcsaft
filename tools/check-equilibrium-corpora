@@ -237,7 +237,7 @@ def main():
     if not args.compare_only and not args.prepared_a:
         args.prepared_a = sys.executable
     comparison_python, comparison_env = prepared_python(args.prepared_b or args.prepared_a or sys.executable)
-    if Path(os.path.abspath(sys.executable)) != comparison_python:
+    if Path(os.path.abspath(sys.executable)) != comparison_python or os.name == "nt" and not sys.flags.utf8_mode:
         return subprocess.run([str(comparison_python), str(Path(__file__).resolve()), *sys.argv[1:]], env=comparison_env).returncode
     out = args.out.resolve()
     if out.is_relative_to(ROOT) and not out.is_relative_to(ROOT / 'build'):

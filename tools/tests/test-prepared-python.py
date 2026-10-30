@@ -1,6 +1,7 @@
 """Prepared Windows interpreter roots must resolve without creating an environment."""
 from pathlib import Path
 import sys
+import os
 import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -15,7 +16,7 @@ with tempfile.TemporaryDirectory() as directory:
         interpreter.chmod(0o755)
         selected, environment = prepared_python(root, {'PATH': 'selected-only'})
         assert selected == interpreter
-        assert environment == {'PATH': 'selected-only'}
+        assert environment == {'PATH': 'selected-only', **({'PYTHONUTF8': '1'} if os.name == 'nt' else {})}
         interpreter.unlink()
     try:
         prepared_python(root)

@@ -19,6 +19,8 @@ def digest(path):
 def prepared_python(value, environment=None):
     """Resolve a Python path, venv, or prepared root without creating an environment."""
     env = dict(os.environ if environment is None else environment)
+    if os.name == "nt":
+        env["PYTHONUTF8"] = "1"
     path = Path(value).expanduser().absolute()
     if path.is_dir():
         root = path
@@ -214,6 +216,7 @@ def loaded_identity():
     if version is None and build:
         version = json.loads((build / "meson-info/intro-projectinfo.json").read_text()).get("version")
     return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct.get("dir_info", {}).get("editable") else "prepared"),
+            "linear_solver": _core.linear_solver(),
             "interpreter": sys.executable, "python": sys.version, "version": version, "direct_url": direct,
             "wheel": unquote(urlparse(direct.get("url", "")).path) if direct.get("url", "").endswith(".whl") else None,
             "wheel_sha256": digest(unquote(urlparse(direct.get("url", "")).path))
