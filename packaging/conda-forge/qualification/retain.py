@@ -60,7 +60,8 @@ identity=dict(revision=os.environ['EPCSAFT_SOURCE_REVISION'],sha256=os.environ['
 Path('source-identity.json').write_text(json.dumps(identity))
 (source/'source-identity.json').write_text(json.dumps(identity))
 subprocess.run([sys.executable,'-m','venv','--system-site-packages','development'],check=True)
-dev=(Path('development')/VENV_PYTHON).resolve()
+# absolute, not resolved: a Unix venv interpreter is a symlink to the base interpreter.
+dev=(Path('development')/VENV_PYTHON).absolute()
 subprocess.run([str(dev),'-m','pip','install','-e','./engine','--no-deps','--no-build-isolation',
  '--config-settings=build-dir='+str(Path('engine/build-development').resolve()),
  '--config-settings=setup-args=--wrap-mode=nodownload','--config-settings=compile-args=-j6'],check=True)
