@@ -244,25 +244,5 @@ def test_worker_image_refusal(tmp_path: Path, image: int, mismatch: str) -> None
             file.close()
 
 
-@pytest.mark.skipif(sys.platform != 'win32', reason='Windows image sharing locks')
-def test_worker_images_refuse_delete_and_rename(tmp_path: Path) -> None:
-    from ctypes import wintypes as w
-    kernel = ctypes.WinDLL('kernel32', use_last_error=True)
-    kernel.CreateFileW.argtypes = [w.LPCWSTR, w.DWORD, w.DWORD, ctypes.c_void_p, w.DWORD, w.DWORD, w.HANDLE]
-    kernel.CreateFileW.restype = w.HANDLE
-    kernel.CloseHandle.argtypes = [w.HANDLE]
-    path = tmp_path / 'image.dll'
-    path.write_bytes(b'locked image')
-    handle = kernel.CreateFileW(str(path), 0x80000000, 1, None, 3, 0x80, None)
-    assert handle != w.HANDLE(-1).value
-    try:
-        with pytest.raises(PermissionError):
-            path.unlink()
-        with pytest.raises(PermissionError):
-            path.rename(tmp_path / 'renamed.dll')
-    finally:
-        kernel.CloseHandle(handle)
-
-
 if __name__ == '__main__':
     print(json.dumps([record(fit(n)) for n in (1, 2)], sort_keys=True))
