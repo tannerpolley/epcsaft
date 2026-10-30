@@ -3,10 +3,10 @@
 foreach driver : ['r2-qualify', 'r2-frozen', 'timing-qualify', 'timing-frozen', 'timing-pure-reference']
   executable('qualification-939-' + driver,
     'qualification-939/' + driver + '.cpp',
-    cpp_args: native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
+    cpp_args: native_warnings,
     include_directories: [native_inc, include_directories('tests/native')],
     dependencies: [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep],
-    link_with: epcsaft_private,
+    link_with: epcsaft_native,
     install: false,
     build_by_default: false,
   )

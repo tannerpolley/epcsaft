@@ -43,6 +43,8 @@ for mode in ['qualify','frozen']:
 run('timing-pure-reference',[r/'qualification-939-timing-pure-reference.exe'])
 run('source-reference-comparison',[sys.executable,r/'source-reference-compare.py',out])
 run('timing-summary',[sys.executable,r/'summarize-timing.py',out])
+run('installed-additional',[sys.executable,r/'collect-additional.py',r,out/'installed-additional'])
+shutil.copytree(r/'comparison-source/build/development-additional',out/'development-additional')
 source=r/'comparison-source'
 os.environ['EPCSAFT_SOURCE_ROOT']=str(source)
 for command in ['check-equilibrium-corpora','time-key-solves']:

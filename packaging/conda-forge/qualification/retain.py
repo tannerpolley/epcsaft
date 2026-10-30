@@ -69,3 +69,8 @@ for command in ['check-equilibrium-corpora','time-key-solves']:
   collections.append(dict(command=command,suffix=suffix,returncode=code))
   if collected.exists():shutil.copytree(collected,source/'build'/collected.name)
 (r/'development-collections.json').write_text(json.dumps(collections,indent=2))
+
+subprocess.run(['ninja','-C','engine/dev-win','-j','6', 'qualification-939-r2-qualify.exe','qualification-939-r2-frozen.exe','qualification-939-timing-qualify.exe','qualification-939-timing-frozen.exe','qualification-939-timing-pure-reference.exe'],check=True)
+subprocess.run([str(dev),'packaging/conda-forge/qualification/collect-additional.py',str(Path('engine/dev-win').resolve()),str(Path('build/qualification/development-additional').resolve())],check=True)
+shutil.copytree('build/qualification/development-additional',source/'build/development-additional')
+shutil.copy2('packaging/conda-forge/qualification/collect-additional.py',r/'collect-additional.py')

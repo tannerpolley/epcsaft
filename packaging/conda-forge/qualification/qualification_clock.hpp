@@ -1,5 +1,7 @@
 #pragma once
 #include <chrono>
+#include <iostream>
+#include <cstdlib>
 #ifdef _WIN32
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
@@ -8,6 +10,12 @@
 #include <time.h>
 #endif
 struct QualificationClock {
+    QualificationClock() {
+#ifdef _WIN32
+        static const bool identified = [] { wchar_t path[32768]; auto module=GetModuleHandleW(L"epcsaft_native.dll"); if(!module || !GetModuleFileNameW(module,path,32768)) throw std::runtime_error("native DLL identity unavailable"); if(std::getenv("EPCSAFT_QUALIFICATION_IDENTITY")) std::wcerr << L"native DLL: " << path << L"\n"; return true; }();
+        (void)identified;
+#endif
+    }
     std::chrono::steady_clock::time_point elapsed = std::chrono::steady_clock::now();
     double cpu = process_cpu();
     static double process_cpu() {
