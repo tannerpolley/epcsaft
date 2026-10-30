@@ -68,11 +68,11 @@ EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const Compil
 bool one_component_two_density_eligible(const CompiledSystem&);
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
-EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
+EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool discovery_newton_eligible(const CompiledSystem&);
-EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
+EPC_API EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
     const EquilibriumResult& structural, const DriverLimits* limits = nullptr, std::vector<double>* attempt = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
@@ -135,7 +135,7 @@ struct DriverLimits final {
 // ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
 // source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
-EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
+EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);

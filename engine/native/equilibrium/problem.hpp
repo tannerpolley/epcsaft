@@ -413,7 +413,7 @@ struct CompiledSystem final {
     // conditions of the constrained Gibbs minimum in the solved chart; a pinned
     // (feasibility) cell classifies its rows unscaled. Trace moiety rows are relative to their
     // size in both routes (trace_moiety_relative); charged Vapor also retains the log-charge criterion.
-    std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
+    EPC_API std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
     // Moiety rows (Jacobian rows for width n) divided by their size, the larger of the feed inventory and the
     // row's term magnitude per mol of feed, when it is at most EQUILIBRIUM_TRACE_MOIETY_FRACTION (#633).
     template <typename Base> std::vector<Base> trace_moiety_relative(const PhasePointValues<Base>&, std::vector<Base>, std::size_t = 1) const;
