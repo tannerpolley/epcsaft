@@ -24,10 +24,11 @@ nice -n 10 bash tools/build-docs.sh
 ```
 
 The documentation command installs the locked optional documentation packages,
-uses the checkout's Engine with MUMPS, executes every gallery notebook afresh,
-and builds HTML and cheap doctests with warnings treated as errors. Logs,
-rendered pages and timing are under `build/docs/`; the HTML home is
-`build/docs/html/index.html`. Notebook execution errors fail the build.
+uses the checkout's Engine with MUMPS, renders the gallery notebooks' stored
+outputs, and builds HTML and cheap doctests with warnings treated as errors.
+Logs, rendered pages and timing are under `build/docs/`; the HTML home is
+`build/docs/html/index.html`. `EPCSAFT_NOTEBOOK_EXECUTION=force` executes every
+gallery notebook afresh, and then notebook execution errors fail the build.
 
 ## Document the source-owned meaning
 

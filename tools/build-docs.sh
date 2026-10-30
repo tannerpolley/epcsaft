@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Build the site with the checkout's installed Engine and fresh notebook execution.
+# Build the site with the checkout's installed Engine.
+# Notebooks render their stored outputs; EPCSAFT_NOTEBOOK_EXECUTION=force re-runs them.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 unset EPCSAFT_HSL_LIBRARY EPCSAFT_IPOPT_OPTIONS_FILE
 export EPCSAFT_IPOPT_LINEAR_SOLVER=mumps MPLBACKEND=Agg
+export EPCSAFT_NOTEBOOK_EXECUTION="${EPCSAFT_NOTEBOOK_EXECUTION:-off}"
 started="$EPOCHREALTIME"
 mkdir -p build/docs
 rm -f build/docs/timing.json
@@ -46,21 +48,21 @@ export JUPYTER_PATH="$PWD/build/docs/jupyter/share/jupyter${JUPYTER_PATH:+:$JUPY
 .venv/bin/python -m ipykernel install --prefix "$PWD/build/docs/jupyter" --name python3 --display-name 'ePC-SAFT docs'
 html_started="$EPOCHREALTIME"
 .venv/bin/python -m sphinx -E -W --keep-going -b html \
-    -D nb_execution_mode=force -d build/docs/doctrees -w build/docs/html-warnings.log \
+    -D nb_execution_mode="$EPCSAFT_NOTEBOOK_EXECUTION" -d build/docs/doctrees -w build/docs/html-warnings.log \
     docs/site build/docs/html 2>&1 | tee build/docs/html-build.log
 html_finished="$EPOCHREALTIME"
 .venv/bin/python -m sphinx -E -W --keep-going -b doctest \
     -D nb_execution_mode=off -d build/docs/doctest-doctrees -w build/docs/doctest-warnings.log \
     docs/site build/docs/doctest 2>&1 | tee build/docs/doctest-build.log
 .venv/bin/python - "$started" "$html_started" "$html_finished" "$EPOCHREALTIME" <<'PY'
-import json, subprocess, sys
+import json, os, subprocess, sys
 from pathlib import Path
 start, html_start, html_end, end = map(float, sys.argv[1:])
 record = {"commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
           "build_seconds": end - start, "html_seconds": html_end - html_start,
           "doctest_seconds": end - html_end, "sphinx_warnings": 0,
           "notebooks": len(list(Path("docs/site/examples").glob("*.ipynb"))),
-          "notebook_execution": "force", "engine_linear_solver": "mumps"}
+          "notebook_execution": os.environ["EPCSAFT_NOTEBOOK_EXECUTION"], "engine_linear_solver": "mumps"}
 Path("build/docs/timing.json").write_text(json.dumps(record, indent=2) + "\n")
 print(json.dumps(record, indent=2))
 PY

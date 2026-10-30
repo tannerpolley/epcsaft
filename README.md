@@ -169,13 +169,15 @@ checkout's editable Engine:
 nice -n 10 bash tools/build-docs.sh
 ```
 
-The command reuses `tools/build-engine.sh`, forces every example notebook to
-execute in this checkout's `.venv`, and runs Sphinx HTML and cheap doctests with
-warnings treated as errors. It selects MUMPS with `EPCSAFT_HSL_LIBRARY` and
+The command reuses `tools/build-engine.sh`, renders each example notebook's
+stored outputs, and runs Sphinx HTML and cheap doctests with warnings treated as
+errors. `EPCSAFT_NOTEBOOK_EXECUTION=force` re-executes every notebook in this
+checkout's `.venv` as the on-demand double-check; the Documentation workflow's
+manual run does the same. It selects MUMPS with `EPCSAFT_HSL_LIBRARY` and
 `EPCSAFT_IPOPT_OPTIONS_FILE` unset. Outputs, logs and timing are under
 `build/docs/`; open `build/docs/html/index.html`. The gallery is initially an
 index; the notebook part of #695 supplies its eleven examples. No notebook
-execution cache substitutes for this gate.
+execution cache substitutes for the forced run.
 
 For process examples, the root environment already pins IDAES and Pyomo. Obtain
 the optional IDAES extensions 3.4.2 solver/library archives directly from
