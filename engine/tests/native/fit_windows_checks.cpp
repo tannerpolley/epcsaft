@@ -86,6 +86,8 @@ int main(int argc, char** argv) {
         Handle unrelated(CreateEventW(&security, TRUE, FALSE, nullptr));
         windows_require(unrelated.handle != nullptr);
         fit_host.worker = {path, "hold", std::to_string(reinterpret_cast<std::uintptr_t>(unrelated.handle))};
+        // Initialize Windows process-launch facilities before counting per-fit resources.
+        { Workers warm; warm.start(); marker(warm); }
         const auto before = handles();
         for (bool out : {false, true}) {
             {

@@ -111,6 +111,8 @@ def _handle_count() -> int:
 def _cleanup_host() -> None:
     signal.signal(getattr(signal, 'SIGBREAK', signal.SIGINT), signal.default_int_handler)
     fit(1)  # Warm imports and numerical-library initialization before counting owned handles.
+    if sys.platform == 'win32':
+        fit(2)  # Initialize Windows process-launch facilities before counting per-fit resources.
     before = _handle_count()
     print('ready', flush=True)
     try:
