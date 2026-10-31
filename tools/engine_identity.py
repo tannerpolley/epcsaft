@@ -235,7 +235,7 @@ def loaded_identity():
             if direct.get("url", "").endswith(".whl") and Path(unquote(urlparse(direct["url"]).path)).is_file() else None,
             "conda_package": [json.loads(p.read_text()) for p in (Path(sys.prefix) / "conda-meta").glob("epcsaft-*.json")],
             "loaded_dlls": [{"path": str(p), "sha256": digest(p), "file_id": [p.stat().st_dev, p.stat().st_ino]}
-                            for p in modules if p.is_file() and any(n in p.name.lower() for n in ("epcsaft", "ipopt", "mumps", "blas"))]
+                            for p in modules if p.is_file() and any(n in p.name.lower() for n in ("epcsaft", "ipopt", "mumps", "openblas"))]
                             if os.name == "nt" or sys.platform == "darwin" else [],
             "source_root": str(source) if source else None, "source_revision": revision,
             "source_diff_sha256": source_diff,
