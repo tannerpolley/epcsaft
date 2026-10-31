@@ -10,6 +10,9 @@ from pathlib import Path
 from urllib.parse import unquote, urlparse
 from urllib.request import url2pathname
 
+NATIVE, ASL = (('{}.dll' if os.name == 'nt' else 'lib{}.dylib' if sys.platform == 'darwin' else 'lib{}.so').format(name)
+               for name in ('epcsaft_native', 'epcsaft_asl'))
+
 
 def digest(path):
     with Path(path).open("rb") as stream:
@@ -114,7 +117,7 @@ def _verify_products(core, native, asl, build):
     for target in json.loads((build / "meson-info/intro-targets.json").read_text()):
         for filename in target.get("filename", []):
             name = Path(filename).name
-            if name.startswith("_core") or name in ("libepcsaft_native.so", "libepcsaft_asl.so", "epcsaft_native.dll", "epcsaft_asl.dll"):
+            if name.startswith("_core") or name in (NATIVE, ASL):
                 path = Path(filename).resolve(strict=True)
                 products[path.name.split(".")[0].removeprefix("lib")] = path
     for actual, name in ((core, "_core"), (native, "epcsaft_native"), (asl, "epcsaft_asl")):
@@ -146,14 +149,22 @@ def _mapped(path, mappings):
 
 
 def _asl_path(core, build):
-    path = Path(os.environ.get("EPCSAFT_ASL_LIBRARY", core.parent / ("epcsaft_asl.dll" if os.name == "nt" else "libepcsaft_asl.so"))).expanduser().resolve(strict=True)
+    path = Path(os.environ.get("EPCSAFT_ASL_LIBRARY", core.parent / ASL)).expanduser().resolve(strict=True)
     if not (path.is_relative_to(core.parent) or build and path.is_relative_to(build)):
         raise RuntimeError(f"selected ASL library is outside the loaded install or Meson build: {path}")
     return path
 
 
-def _windows_modules():
+def loaded_images():
+    """Resolved paths of the images loaded in this process."""
     import ctypes
+    if sys.platform == "darwin":
+        dyld = ctypes.CDLL(None)
+        dyld._dyld_get_image_name.restype = ctypes.c_char_p
+        return sorted({Path(os.fsdecode(dyld._dyld_get_image_name(i))).resolve() for i in range(dyld._dyld_image_count())})
+    if os.name != "nt":
+        fields = (line.split(maxsplit=5) for line in Path("/proc/self/maps").read_text().splitlines())
+        return sorted({Path(f[5]).resolve() for f in fields if len(f) == 6 and f[5].startswith("/")})
     from ctypes import wintypes as w
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)
     psapi = ctypes.WinDLL("psapi", use_last_error=True)
@@ -193,19 +204,20 @@ def loaded_identity():
         raise RuntimeError("selected Meson build was configured from a different source tree")
     revision, source_diff = _source_identity(source)
     build, build_hash, lock_hash = _build_identity(build, source)
-    if os.name == "nt":
-        modules = _windows_modules()
+    # dyld names images by path only, so on macOS a replaced image is not detected as on Linux.
+    if os.name == "nt" or sys.platform == "darwin":
+        modules = loaded_images()
         if core not in modules:
             raise RuntimeError(f"extension absent from loaded modules: {core}")
-        native = {p for p in modules if p.name == "epcsaft_native.dll"}
+        native = {p for p in modules if p.name == NATIVE}
         if len(native) != 1:
-            raise RuntimeError(f"expected one loaded native DLL: {native}")
+            raise RuntimeError(f"expected one loaded native library: {native}")
         numerical = native.pop()
     else:
         mappings = Path("/proc/self/maps").read_text().splitlines()
         core = _mapped(core, mappings)
         native = {Path(line.split(maxsplit=5)[5]).resolve() for line in mappings
-                  if len(line.split(maxsplit=5)) == 6 and line.split(maxsplit=5)[5].endswith("/libepcsaft_native.so")}
+                  if len(line.split(maxsplit=5)) == 6 and line.split(maxsplit=5)[5].endswith("/" + NATIVE)}
         if len(native) > 1:
             raise RuntimeError(f"multiple loaded native libraries: {native}")
         numerical = _mapped(next(iter(native), core), mappings)
@@ -223,8 +235,8 @@ def loaded_identity():
             if direct.get("url", "").endswith(".whl") and Path(unquote(urlparse(direct["url"]).path)).is_file() else None,
             "conda_package": [json.loads(p.read_text()) for p in (Path(sys.prefix) / "conda-meta").glob("epcsaft-*.json")],
             "loaded_dlls": [{"path": str(p), "sha256": digest(p), "file_id": [p.stat().st_dev, p.stat().st_ino]}
-                            for p in modules if any(n in p.name.lower() for n in ("epcsaft", "ipopt", "mumps", "openblas"))]
-                            if os.name == "nt" else [],
+                            for p in modules if p.is_file() and any(n in p.name.lower() for n in ("epcsaft", "ipopt", "mumps", "openblas"))]
+                            if os.name == "nt" or sys.platform == "darwin" else [],
             "source_root": str(source) if source else None, "source_revision": revision,
             "source_diff_sha256": source_diff,
             "source_archive_sha256": json.loads((source / 'source-identity.json').read_text())['sha256']

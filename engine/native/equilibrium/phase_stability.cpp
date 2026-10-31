@@ -961,13 +961,15 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 invoked = true;
                 bool eligible = false;
                 result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, false, {}, false, false, &eligible);
-                auto retried = audit;
-                (void)recover_physical_amounts(c, result, eligible, scope, &seed, nullptr,
+                auto retried = audit, primary = result;
+                primary.iterations = primary.evaluations = primary.hessian_calls = 0;  // each record keeps its own work
+                (void)recover_physical_amounts(c, std::move(primary), eligible, scope, &seed, nullptr,
                     &retry_attempt, &retried, true, &calls, budget, &invoked);
                 if (calls != before) {
+                    count_driver(record->work, result, "declaration_invocations");
+                    newton_work.report(result);
                     record->declarations.push_back(result); record->declaration_roles.push_back(role);
                     record->declaration_attempt_coordinates.push_back(attempt);
-                    count_driver(record->work, result, "declaration_invocations");
                     result = std::move(retried);
                     if (!retry_attempt.empty()) attempt = retry_attempt;
                 }
@@ -982,7 +984,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         record->work["hessian_calls"] += newton_work.hessian_calls;
         if (invoked) count_driver(record->work, result, "declaration_invocations");
         else if (!newton_accepted) ++record->work["declaration_initialization_failures"];
-        if (!newton_accepted) newton_work.report(result);
+        if (!newton_accepted && calls == before) newton_work.report(result);
         record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
         record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
         return result;

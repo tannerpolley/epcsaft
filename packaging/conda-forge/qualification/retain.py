@@ -1,7 +1,8 @@
 from pathlib import Path
-import shutil,subprocess,json
+import shutil,subprocess,json,sys
+from platform_names import EXE,VENV_PYTHON
 r=Path('qualification-runtime');r.mkdir(exist_ok=True)
-b=Path('engine/build-win')
+b=Path(sys.argv[1] if len(sys.argv)>1 else 'engine/build-win')
 targets=json.loads(subprocess.check_output(['meson','introspect','--targets',str(b)]))
 selected=[x for x in targets if x['name'].startswith('qualification-') or x['name'] in ['equilibrium_checks','surface_example','fit_windows_checks','properties_checks']]
 with (r/'compile.log').open('w') as log:
@@ -9,14 +10,17 @@ with (r/'compile.log').open('w') as log:
 (r/'build-status.json').write_text(json.dumps(dict(returncode=result.returncode,targets=[x['name'] for x in selected]),indent=2))
 print((r/'compile.log').read_text(),flush=True)
 
-for p in b.glob('*.exe'):shutil.copy2(p,r/p.name)
+for x in selected:
+ p=Path(x['filename'][0])
+ if p.exists():shutil.copy2(p,r/p.name)
 for name in ['inputs.txt','near-inputs.txt','compare-endpoints.py']:
  shutil.copy2(Path('packaging/conda-forge/qualification')/name,r/name)
 shutil.copytree('engine/tests',r/'tests',ignore=shutil.ignore_patterns('__pycache__'))
 shutil.copytree('engine/native/bindings',r/'native/bindings')
 shutil.copy2('packaging/conda-forge/run_test.py',r/'conda-test.py')
 
-shutil.copy2('packaging/conda-forge/qualification/python-callers.py',r/'python-callers.py')
+for name in ['python-callers.py','platform_names.py']:
+ shutil.copy2(Path('packaging/conda-forge/qualification')/name,r/name)
 
 p=r/'tests/regression/test_worker_processes.py'
 s=p.read_text().replace('    assert a == b', '    print("serial", json.dumps(a), "parallel", json.dumps(b), flush=True)\n    assert a == b')
@@ -41,11 +45,11 @@ for name in ['association-binary128.csv','association-compare.py']:
 (r/'candidate.txt').write_text(__import__('os').environ['EPCSAFT_SOURCE_REVISION']+'\n'+__import__('os').environ['EPCSAFT_SOURCE_SHA256']+'\n')
 
 # Keep test declarations and development numbers outside the installed package.
-import os, sys
+import os
 source = r/'comparison-source'
 source.mkdir()
 for directory in ['tools','analyses','data','engine']:
- shutil.copytree(directory,source/directory,ignore=shutil.ignore_patterns('results','__pycache__','build','build-win','qualification-939','*.png','*.pdf','*.svg','*.ipynb'))
+ shutil.copytree(directory,source/directory,ignore=shutil.ignore_patterns('results','__pycache__','build','build-win','build-unix','qualification-939','*.png','*.pdf','*.svg','*.ipynb'))
 import runpy
 for name in runpy.run_path('tools/check-equilibrium-corpora')['RETAINED_INPUTS']:
  target=source/name
@@ -56,9 +60,10 @@ identity=dict(revision=os.environ['EPCSAFT_SOURCE_REVISION'],sha256=os.environ['
 Path('source-identity.json').write_text(json.dumps(identity))
 (source/'source-identity.json').write_text(json.dumps(identity))
 subprocess.run([sys.executable,'-m','venv','--system-site-packages','development'],check=True)
-dev=Path('development/Scripts/python.exe').resolve()
+# absolute, not resolved: a Unix venv interpreter is a symlink to the base interpreter.
+dev=(Path('development')/VENV_PYTHON).absolute()
 subprocess.run([str(dev),'-m','pip','install','-e','./engine','--no-deps','--no-build-isolation',
- '--config-settings=build-dir='+str(Path('engine/dev-win').resolve()),
+ '--config-settings=build-dir='+str(Path('engine/build-development').resolve()),
  '--config-settings=setup-args=--wrap-mode=nodownload','--config-settings=compile-args=-j6'],check=True)
 collections=[]
 for command in ['check-equilibrium-corpora','time-key-solves']:
@@ -70,7 +75,7 @@ for command in ['check-equilibrium-corpora','time-key-solves']:
   if collected.exists():shutil.copytree(collected,source/'build'/collected.name)
 (r/'development-collections.json').write_text(json.dumps(collections,indent=2))
 
-subprocess.run(['ninja','-C','engine/dev-win','-j','6', 'qualification-939-r2-qualify.exe','qualification-939-r2-frozen.exe','qualification-939-timing-qualify.exe','qualification-939-timing-frozen.exe','qualification-939-timing-pure-reference.exe'],check=True)
-subprocess.run([str(dev),'packaging/conda-forge/qualification/collect-additional.py',str(Path('engine/dev-win').resolve()),str(Path('build/qualification/development-additional').resolve())],check=True)
+subprocess.run(['ninja','-C','engine/build-development','-j','6', *['qualification-939-'+driver+EXE for driver in ['r2-qualify','r2-frozen','timing-qualify','timing-frozen','timing-pure-reference']]],check=True)
+subprocess.run([str(dev),'packaging/conda-forge/qualification/collect-additional.py',str(Path('engine/build-development').resolve()),str(Path('build/qualification/development-additional').resolve())],check=True)
 shutil.copytree('build/qualification/development-additional',source/'build/development-additional')
 shutil.copy2('packaging/conda-forge/qualification/collect-additional.py',r/'collect-additional.py')

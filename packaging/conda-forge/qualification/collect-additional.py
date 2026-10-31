@@ -2,16 +2,18 @@ from pathlib import Path
 import json, os, subprocess, sys
 b,out=map(lambda x:Path(x).resolve(),sys.argv[1:3]);out.mkdir(parents=True)
 q=Path(__file__).resolve().parent
-# Executables sit outside either DLL directory, so PATH selects only this interpreter's Engine.
+sys.path.insert(0,str(q))
+from platform_names import EXE,NATIVE,library_environment
+# Executables sit outside the Engine directory, so the library search path selects only this interpreter's Engine.
 from epcsaft import _core
 native=Path(_core.__file__).resolve().parent
 os.environ.update(EPCSAFT_QUALIFICATION_IDENTITY='1',OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1')
-os.environ['PATH']=str(native)+os.pathsep+os.environ['PATH']
+os.environ.update(library_environment(native))
 import hashlib
-(out/'implementation.json').write_text(json.dumps(dict(native=str(native/'epcsaft_native.dll'),sha256=hashlib.sha256((native/'epcsaft_native.dll').read_bytes()).hexdigest()),indent=2))
+(out/'implementation.json').write_text(json.dumps(dict(native=str(native/NATIVE),sha256=hashlib.sha256((native/NATIVE).read_bytes()).hexdigest()),indent=2))
 import shutil
 for driver in ['r2-qualify','r2-frozen','timing-qualify','timing-frozen','timing-pure-reference']:
- exe=out/('qualification-939-'+driver+'.exe');shutil.copy2(b/exe.name,exe)
+ exe=out/('qualification-939-'+driver+EXE);shutil.copy2(b/exe.name,exe)
  name='software-'+driver[3:] if driver.startswith('r2-') else driver
  args=[exe] if driver.endswith('pure-reference') else [exe,q/'near-inputs.txt',out/(driver+'-events.csv')]
  with (out/(name+'.log')).open('w') as log, (out/(name+'-identity.log')).open('w') as identity:
