@@ -2206,6 +2206,10 @@ class SolidSpec:
         """
         ...
 
+class DiscoveryMode:
+    Full: DiscoveryMode
+    Fast: DiscoveryMode
+
 class StabilityOptions:
     """Finite declared trial search for a tangent-plane descent witness.
 
@@ -2213,6 +2217,8 @@ class StabilityOptions:
     -----
     A finite search with no resolved descent is not a global stability certificate. See ALG-STABILITY in engine/docs/science/algorithms.md.
     """
+    mode: DiscoveryMode
+    """Discovery only: full default or explicitly limited fast search."""
     evaluate_supplied_trials: bool
     """Evaluate supplied trial points directly rather than optimizing their compositions."""
     trials: Optional[list[PhaseSpec]]
@@ -2314,6 +2320,9 @@ class DiscoveryRecord:
     -----
     Discovery changes declared topology only through admitted finite witnesses and work limits. It does not supply a global equilibrium certificate.
     """
+    mode: DiscoveryMode
+    termination: str
+    unsearched: list[str]
     declaration: EquilibriumProblem
     """Final phase declaration; its phase order owns the returned candidate arrays."""
     candidate: EquilibriumResult

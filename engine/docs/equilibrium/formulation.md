@@ -433,6 +433,18 @@ only for diagnosing Gibbs descent at their solved fixed T/P; it says nothing
 about feasibility along the original pinned path. Zero-amount phases cannot
 supply a donor. Discovery with free T/P remains excluded.
 
+Full discovery remains the default. Explicit `Discover(mode="fast")` is a
+nonreacting, at-most-two-phase finite search on neutral or electrolyte fluids.
+An admitted split establishes local admission and resolved finite descent from
+the selected parent, without testing that endpoint for another phase. A
+completed fast schedule can report only **no admitted split in the fast trial
+set**. Unavailable trials, unresolved finite descent, exhausted budgets or a
+refused flash give an incomplete result with diagnostic candidates and no
+usable public state arrays. The returned omissions include unexecuted starts,
+post-flash stability and three-or-more-phase topologies; salt-rich or remote
+minima may remain undiscovered. Neither outcome certifies global stability.
+[ALG-STABILITY](../science/algorithms.md#explicit-fast-discovery) owns the schedule.
+
 The native test compiles a one-free-phase unit-amount trial through the shared
 exact-curvature driver, without reactions or feed-moiety proportions. Its
 internal reduced balance space spans normalization and charge, retaining the
