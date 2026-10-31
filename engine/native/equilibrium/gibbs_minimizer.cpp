@@ -1622,7 +1622,9 @@ static EquilibriumResult run_driver_once(
     if (!result.success) {
         result.message += ipopt_failure;
         if (result.first_numerical_failure) result.message += "; trial preparation failed: " + core::describe(*result.first_numerical_failure);
-        if (retry_eligible) *retry_eligible = non_error && result.topology_event == TopologyEvent::PhaseDisappeared;
+        // An exhausted attempt qualifies without a vanished phase (ALG-EQUILIBRIUM physical-mol recovery, #959).
+        if (retry_eligible) *retry_eligible = non_error && (result.topology_event == TopologyEvent::PhaseDisappeared
+            || convergence.stop == core::Stop::budget_exhausted);
     } else if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
     return result;
 } catch (const std::exception& error) {
