@@ -4,21 +4,24 @@ r=Path('qualification-runtime').resolve();out=Path(os.environ['IPOPT_PROBE_EVIDE
 os.environ.update(OPENBLAS_NUM_THREADS='1',OMP_NUM_THREADS='1',EPCSAFT_HSL_LIBRARY='',EPCSAFT_IPOPT_OPTIONS_FILE='')
 sys.path.insert(0,str(r))
 from platform_names import DARWIN,EXCLUDED,EXE,PACKAGE,WINDOWS,library_environment
-os.environ.update(library_environment(PACKAGE))
+programs=library_environment(PACKAGE)
+# Unix images carry their own search path, so only the retained programs get one (N4); Windows has none.
+if WINDOWS:os.environ.update(programs)
 import platform,ctypes,time
 if WINDOWS:
  frequency=ctypes.c_longlong();assert ctypes.windll.kernel32.QueryPerformanceFrequency(ctypes.byref(frequency))
  clock=dict(qpc_hz=frequency.value,cpu_timer_unit_seconds=1e-7)
 else:clock=dict(perf_counter=vars(time.get_clock_info('perf_counter')),process_time=vars(time.get_clock_info('process_time')))
-(out/'runner.json').write_text(json.dumps(dict(platform=platform.platform(),machine=platform.machine(),processors=os.cpu_count(),**clock,excluded=EXCLUDED,library_environment=library_environment(PACKAGE),environment={k:os.environ.get(k) for k in ['ImageOS','ImageVersion','RUNNER_NAME','GITHUB_RUN_ID','GITHUB_SHA','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','PATH','DYLD_LIBRARY_PATH','DYLD_FALLBACK_LIBRARY_PATH','LD_LIBRARY_PATH']},candidate=(r/'candidate.txt').read_text()),indent=2))
+(out/'runner.json').write_text(json.dumps(dict(platform=platform.platform(),machine=platform.machine(),processors=os.cpu_count(),**clock,excluded=EXCLUDED,library_environment=programs,environment={k:os.environ.get(k) for k in ['ImageOS','ImageVersion','RUNNER_NAME','GITHUB_RUN_ID','GITHUB_SHA','OPENBLAS_NUM_THREADS','OMP_NUM_THREADS','PATH','DYLD_LIBRARY_PATH','DYLD_FALLBACK_LIBRARY_PATH','LD_LIBRARY_PATH']},candidate=(r/'candidate.txt').read_text()),indent=2))
 print((out/'runner.json').read_text(),flush=True)
 status=json.loads((r/'build-status.json').read_text());print(json.dumps(status),flush=True)
 failures=[] if status['returncode']==0 else [('qualification compilation',status['returncode'])]
 failures += [(v['command']+v['suffix'],v['returncode']) for v in json.loads((r/'development-collections.json').read_text()) if v['returncode']]
-def run(name,args,cwd=r):
+def run(name,args,cwd=r,env=None):
  print('Running',name,flush=True)
+ if args[0]!=sys.executable:env=programs
  with (out/(name+'.log')).open('w') as f:
-  try:code=subprocess.run([str(x) for x in args],cwd=cwd,stdout=f,stderr=subprocess.STDOUT).returncode
+  try:code=subprocess.run([str(x) for x in args],cwd=cwd,env=env and {**os.environ,**env},stdout=f,stderr=subprocess.STDOUT).returncode
   except OSError as error:f.write(str(error));code=-1
  print((out/(name+'.log')).read_text(),flush=True)
  if code:failures.append((name,code))
@@ -34,11 +37,11 @@ run('workers',[sys.executable,'-m','pytest','-s','-vv','tests/regression/test_wo
 run('e2-solve',[r/('equilibrium_checks'+EXE),'E2-6'])
 run('source-reference',[sys.executable,'-m','pytest','-s','-vv','tests/equilibrium/test_neutral_reference.py::test_source_reference_numerical_error'])
 run('asl-python',[sys.executable,r/'python-callers.py',r,out/'python-callers'])
-run('pure-independent',[sys.executable,r/'pure-reference.py',out])
+run('pure-independent',[sys.executable,r/'pure-reference.py',out],env=programs)
 run('traits',[r/('qualification-traits'+EXE)])
 run('engine-iterate-bounds',[r/('qualification-iterate-bounds'+EXE)])
 for case in ['F8','F9','M4']:run('properties-'+case,[r/('properties_checks'+EXE),case])
-run('association-independent',[sys.executable,r/'association-compare.py',out])
+run('association-independent',[sys.executable,r/'association-compare.py',out],env=programs)
 run('product',[r/('qualification-product'+EXE)])
 run('installed-additional',[sys.executable,r/'collect-additional.py',r,out/'installed-additional'])
 for file in (out/'installed-additional').iterdir():
