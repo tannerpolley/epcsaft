@@ -1046,7 +1046,10 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!success) { result.success = false; if (!fast) result.message = message; clear_state(result); }
         return result;
     };
-    if (!best.success) return finish(false, "discovery has no accepted initial candidate");
+    if (!best.success) {
+        if (fast) record->unsearched.push_back("entire trial search (positive-neutral-base, near-pure Liquid/Vapor, ideal-gas Vapor starts)");
+        return finish(false, fast && budget == 0 ? "declaration budget exhausted" : "discovery has no accepted initial candidate");
+    }
     for (std::size_t round = 0; round < 2 * rank + 1; ++round) {
         auto trial_options = options;
         if (options.trial_budget) {

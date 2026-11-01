@@ -1651,7 +1651,10 @@ count all actual work; no numerical limits are reset.
 is `admitted_two_phase` for an admitted split, `no_admitted_split` only for
 an exhausted, available schedule without a resolved split, or `incomplete`.
 An incomplete result has no usable public state arrays; the candidate and
-attempts retain their diagnostics. Unavailable trials or unresolved finite
+attempts retain their diagnostics. Without an admitted initial parent, the
+entire trial search and its start families are recorded as unsearched; a zero
+declaration budget retains its exhaustion cause without counting an attempt.
+Unavailable trials or unresolved finite
 descent prevent a successful parent result, but do not invalidate a later
 independently admitted split. `StabilityReport.completed` is false on early
 stopping. `unsearched` records omitted start families, remaining scheduled

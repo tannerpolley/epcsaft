@@ -511,13 +511,21 @@ def test_ideal_molarity_carbonate_reference(case: int) -> None:
         assert outputs[1][key] == pytest.approx(outputs[0][key], rel=1e-8, abs=0)
 
 
-@pytest.mark.parametrize("limits", [{"declaration_budget": 2}, {"trial_budget": 0}])
+@pytest.mark.parametrize("limits", [{"declaration_budget": 0}, {"declaration_budget": 2}, {"trial_budget": 0}])
 def test_fast_discovery_budget_cannot_publish_the_methane_ethane_parent(limits: dict[str, int]) -> None:
     found = solve_equilibrium(mixture(), Problem(T=190.0, P=1e6,
         feed=Amounts({"methane": 0.5, "ethane": 0.5}), phases=equilibrium.Discover(mode="fast", declaration_budget=limits.get("declaration_budget"),
             trial_budget=limits.get("trial_budget"))))
     assert not found.success and not found.amounts and not found.mole_fractions and not found.molar_densities
     record = found.discovery
+    if limits.get("declaration_budget") == 0:
+        assert record is not None and record.termination == "incomplete" and not record.candidate.success
+        assert "declaration budget exhausted" in found.message
+        assert not record.declarations and not record.rounds and not found.packing_fractions
+        assert all(record.work.get(key, 0) == 0 for key in ("declaration_invocations", "declaration_newton_attempts", "trial_invocations"))
+        assert any("entire trial search" in item and "positive-neutral-base" in item and "near-pure" in item
+                   and "ideal-gas" in item for item in record.unsearched)
+        return
     assert record is not None and record.termination == "incomplete" and record.candidate.success
     assert record.declaration_roles == ["initial", "initial"] and record.unsearched
     assert len(record.rounds) == 1 and not record.rounds[0].completed
