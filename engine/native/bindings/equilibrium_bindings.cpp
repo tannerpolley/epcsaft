@@ -209,9 +209,11 @@ void register_equilibrium(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(SolidSpec, name, stoichiometry, equilibrium_constant, correlation, reference,
             molar_volume_m3_per_mol, amount);
+    nb::enum_<DiscoveryMode>(module, "DiscoveryMode")
+        EPCSAFT_VALUES(DiscoveryMode, Full, Fast);
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(StabilityOptions, evaluate_supplied_trials, trials, declaration_budget, trial_budget,
+        EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, trials, declaration_budget, trial_budget,
             standard_uncertainty_over_rt);
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(nb::init<>())
@@ -316,7 +318,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,
             plane_over_rt, present_phases, work);
     nb::class_<DiscoveryRecord>(module, "DiscoveryRecord")
-        EPCSAFT_READONLY(DiscoveryRecord, declaration, candidate, rounds, declarations, declaration_roles,
+        EPCSAFT_READONLY(DiscoveryRecord, mode, termination, unsearched, declaration, candidate, rounds, declarations, declaration_roles,
             declaration_attempt_coordinates, work);
     module.def("cooling_onset", &cooling_onset, nb::arg("compiled"));
     module.def("stability_test", &stability_test, nb::arg("compiled"), nb::arg("central"),

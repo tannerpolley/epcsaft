@@ -142,7 +142,9 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
 }
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
+enum class DiscoveryMode { Full, Fast };
 struct StabilityOptions final {
+    DiscoveryMode mode = DiscoveryMode::Full;
     bool evaluate_supplied_trials = false;
     std::optional<std::vector<PhaseSpec>> trials;
     std::optional<std::size_t> declaration_budget;
@@ -699,6 +701,9 @@ struct StabilityReport final {
     std::map<std::string, double> work;
 };
 struct DiscoveryRecord final {
+    DiscoveryMode mode = DiscoveryMode::Full;
+    std::string termination;
+    std::vector<std::string> unsearched;
     EquilibriumProblem declaration;
     EquilibriumResult candidate;
     std::vector<StabilityReport> rounds;
