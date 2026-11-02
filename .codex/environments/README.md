@@ -1,6 +1,6 @@
 # Root Codex environment
 
-[`../../README.md`](../../README.md) owns the setup and validation commands.
+[`../../engine/README.md`](../../engine/README.md) "Build and installation" and "Checks" own the setup and validation commands.
 This is the sole project environment. It performs an inexact synchronization (extra packages are kept) of
 all workspace package dependencies selected by the committed root `uv.lock`,
 without installing the workspace packages themselves. `uv.lock` is the only

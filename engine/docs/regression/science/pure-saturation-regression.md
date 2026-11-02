@@ -1,8 +1,7 @@
 # Parameter regression formulation
 
 Required general fitting mathematics; pure saturation is one observation
-construction. Installed availability is recorded in the
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones).
+construction.
 
 Use the plan's adoption gate to adapt justified existing native fitting and
 evaluator logic. Implement only observation forms consumed by current scope;
@@ -119,7 +118,7 @@ A direct source-basis ln K row uses `ObservationKind.LogEquilibriumConstant`,
 problem. Its problem supplies the same reaction/source declarations as the
 other observations; phase, pressure and feed data are not consumed for a direct
 prediction. EqID: `source_log_equilibrium_constant_observation` gives its value,
-exact coefficient columns and zero EOS columns. The same #187 naming, tying and
+exact coefficient columns and zero EOS columns. The same naming, tying and
 fixed-target rejections apply. Use Difference: ln K is already logarithmic.
 For absolute standard uncertainty σ in ln K, choose scale=1 and weight=1/σ².
 
@@ -268,7 +267,7 @@ clamp spoils a step computed as if a bound could be crossed): a step leaving the
 box is shortened along its direction to the first bound. The trust-region ratio
 keeps the full step's predicted decrease while the evaluated step may be shortened
 or clamped, and is not shown to be conservative: in the 149-row reacting MEA fit
-(#455) it rejected five shortened steps that lowered the cost (full-step ratio at
+it rejected five shortened steps that lowered the cost (full-step ratio at
 most $5.6\times10^{-4}$, shortened-step ratio above 0.9997, threshold $10^{-3}$)
 under the earlier release rule, and no such step under the current one. Bounds form an
 active set in optimizer space, against the physical bounds mapped by the affine
@@ -527,7 +526,7 @@ Singular vectors label independent optimizer and objective-row orders. SVD,
 rank, bounds and projected gradient are local diagnostics. Gamma and Phi are
 related by Gibbs-Duhem, so independent-error covariance is conditional sensitivity,
 not measurement uncertainty or structural identifiability. Profiles and native
-constrained minimax estimation remain outside this slice's delivered capability.
+constrained minimax estimation remain outside the delivered capability.
 
 ## Native constrained estimation
 
