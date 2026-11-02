@@ -269,7 +269,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     const auto factor = weighted.completeOrthogonalDecomposition();
     report.last_rank = core::numerical_rank(factor, "weighted_amount_correction");
     const auto refuse = [&](const char* cause, double defect) {
-        core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; r.rank = report.last_rank;
+        core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; if (report.last_rank) r.rank = std::make_shared<core::NumericalRank>(*report.last_rank);
         core::retain_first(report.first_numerical_failure, r);
         throw core::DeclarationError(cause, r);
     };

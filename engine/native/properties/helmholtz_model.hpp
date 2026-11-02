@@ -153,7 +153,7 @@ struct PropertyActionDiagnostics final {
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<core::Convergence> first_numerical_failure;
-    std::optional<core::NumericalRank> site_conditioning;
+    std::shared_ptr<core::NumericalRank> site_conditioning;
 };
 struct PropertyActionBatch final {
     policy::SolverOptions solver_options;

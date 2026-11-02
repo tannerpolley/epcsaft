@@ -2716,6 +2716,14 @@ The native evaluator marks this internal context in inherited SolverOptions;
 it is not a caller tolerance or an exposed per-case switch. Direct top-level
 property calls keep their existing-factor endpoint estimates. Rank/pivot
 admission and existing physical-error/refusal warnings run in both contexts.
+The owner's storage amendment retires the uncalled projected-error
+`estimated_linear_error` utility from design r2. The called supplied-factor
+condition estimator and existing exact `linear_error` owner remain; manufactured
+rank-first checks use those actual owners. An unavailable physical-error operand
+does not select the deferred projected-error calculation. Nullable rank records
+in convergence and property diagnostics are stored out of line, allocated only
+when present; copies retain their snapshot lifetime without embedding the full
+record in every trace span or property-action result.
 A sparse nested warning
 is attributed to its `refused_linearization`; it does not report rank or
 conditioning for a later recovered endpoint. Full-pivot supplied-factor

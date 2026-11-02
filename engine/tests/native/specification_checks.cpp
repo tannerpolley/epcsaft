@@ -1395,33 +1395,29 @@ void check_conditioning() {
         const Vector eta = Vector::Zero(2), scale = Vector::Ones(2);
         const CountedConditionFactor exact_factor(j);
         const auto exact = core::linear_error(j, f, g, eta, scale, scale, &exact_factor);
-        // R=C=G=I: reuse the correction computed by the actual Core solve, not the analytic oracle.
-        const Vector d = exact.correction.size() ? exact.correction : Vector::Zero(2).eval();
         const auto solves_before = exact_factor.inverse_calls;
-        const auto cheap = core::estimated_linear_error(j, f, g, eta, scale, exact_factor, d);
+        const auto observed = core::conditioning(exact_factor, "manufactured_dimensionless_rows");
         if (diagonal == 0) {
             if (exact_factor.inverse_calls || exact_factor.condition_calls
-                || exact.radius.size() || cheap.radius.size() || cheap.cause != "rank_deficient")
+                || exact.radius.size() || observed.observation.available || observed.observation.cause != "rank_deficient")
                 throw std::runtime_error("singular inverse work or fabricated radius");
         } else {
             if (exact_factor.inverse_calls != solves_before || exact_factor.condition_calls != 1)
-                throw std::runtime_error("cached correction replayed or conditioning omitted");
+                throw std::runtime_error("conditioning added inverse solves or estimate omitted");
             const double expected = diagonal == 1 ? 1e-12 : 0.01;
             if (std::abs(exact.radius[1] - expected) > expected * 1e-12
-                || std::abs(cheap.radius[1] - expected) > expected * 1e-12
-                || std::abs(cheap.condition * diagonal - 1) > 1e-12)
+                || std::abs(observed.observation.condition * diagonal - 1) > 1e-12)
                 throw std::runtime_error("manufactured diagonal perturbation mismatch");
         }
-        std::cout << "conditioning," << diagonal << ',' << cheap.rank << ',' << cheap.condition << ','
-            << (cheap.radius.size() ? cheap.radius[1] : NAN) << ',' << exact_factor.condition_calls << '\n';
+        std::cout << "conditioning," << diagonal << ',' << observed.rank << ',' << observed.observation.condition << ','
+            << (exact.radius.size() ? exact.radius[1] : NAN) << ',' << exact_factor.condition_calls << '\n';
     }
     for (bool wrong_shape : {true, false}) {
         Matrix j = Matrix::Identity(2, 2); const CountedConditionFactor factor(j);
-        Vector f = Vector::Zero(wrong_shape ? 3 : 2), eta = Vector::Zero(2), scale = Vector::Ones(2), d = Vector::Zero(2);
+        Vector f = Vector::Zero(wrong_shape ? 3 : 2), eta = Vector::Zero(2), scale = Vector::Ones(2);
         if (!wrong_shape) j(0, 0) = NAN;
         const auto exact = core::linear_error(j, f, Matrix::Identity(2, 2).eval(), eta, scale, scale, &factor);
-        const auto cheap = core::estimated_linear_error(j, f, Matrix::Identity(2, 2).eval(), eta, scale, factor, d);
-        if (factor.inverse_calls || factor.condition_calls || exact.radius.size() || cheap.radius.size())
+        if (factor.inverse_calls || factor.condition_calls || exact.radius.size())
             throw std::runtime_error("invalid operands reached inverse work");
     }
     const Matrix wide = Matrix::Ones(1, 16);
@@ -1433,7 +1429,7 @@ void check_conditioning() {
         r.stop = core::Stop::left_domain; r.iterations = 7; r.evaluations = 11; r.residual = 2;
         r.floor = 0.4; r.amplification = 3.2; r.contraction = 0.8; r.backward_error = 1e-8;
         r.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
-        r.rank = core::NumericalRank{"unrelated basis", 3, 2, 1e-14}; return r; }();
+        r.rank = std::make_shared<core::NumericalRank>(core::NumericalRank{"unrelated basis", 3, 2, 1e-14}); return r; }();
     {
         std::optional<core::NumericalRank> warning;
         std::optional<core::Convergence> first = refusal;

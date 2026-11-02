@@ -1322,7 +1322,7 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     if (cov.rank < point.size()) core::retain_first(result.first_numerical_failure, [&] {
         core::Convergence record; record.residual = NAN; record.stop = core::Stop::singular;
         record.cause = "parameter Jacobian rank deficient; normal inverse unavailable";
-        record.rank = result.rank_records.back(); return record;
+        record.rank = std::make_shared<core::NumericalRank>(result.rank_records.back()); return record;
     });
     if (auto scope = core::Scope::detailed("fit_rank")) {
         scope->probe("singular_values", cov.singular_values);

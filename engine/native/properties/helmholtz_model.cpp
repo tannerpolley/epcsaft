@@ -118,7 +118,7 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
-    if (!options.nested_solve) diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions", 0, "endpoint");
+    if (!options.nested_solve) diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(core::conditioning(*result, "implicit_site_fractions", 0, "endpoint"));
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;

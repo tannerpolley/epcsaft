@@ -194,7 +194,7 @@ inline std::vector<double> solve_linear(
             const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
             r.residual = Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()).cwiseAbs().maxCoeff();
             r.amplification = pivots.maxCoeff() / pivots.minCoeff();
-            r.rank = core::numerical_rank(factorization, "mass_action_site_fractions");
+            r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(factorization, "mass_action_site_fractions"));
             r.cause = "association Jacobian is ill-conditioned; largest " + core::optional_number(pivots.maxCoeff())
                 + "; smallest " + core::optional_number(pivots.minCoeff()) + "; relative pivot cutoff "
                 + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
@@ -259,7 +259,7 @@ inline std::vector<double> solve_site_fractions(
                            core::Stop stop, bool classify) {
         core::Convergence result;
         result.residual = residual;
-        result.rank = conditioning;
+        if (conditioning) result.rank = std::make_shared<core::NumericalRank>(*conditioning);
         if (result.rank) if (auto& warning = result.rank->first_conditioning_warning) {
             warning->controls = {temperature, molar_density};
             warning->controls.insert(warning->controls.end(), mole_fractions.begin(), mole_fractions.end());

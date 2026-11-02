@@ -1110,7 +1110,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             if (stopped) return;
             stopped = true;
             if (std::string_view(reason) == "Jacobian rank") core::retain_first(result.first_numerical_failure, [&] {
-                core::Convergence refusal; refusal.stop = core::Stop::singular; refusal.rank = result.last_rank;
+                core::Convergence refusal; refusal.stop = core::Stop::singular; if (result.last_rank) refusal.rank = std::make_shared<core::NumericalRank>(*result.last_rank);
                 refusal.residual = static_cast<double>(maximum_abs(numerical(at, rows_before)));
                 refusal.cause = reason; return refusal;
             });

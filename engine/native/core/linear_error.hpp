@@ -199,32 +199,7 @@ inline void density_conditioning(Convergence& record, double density, double der
     observation.iteration = record.iterations;
     observe_conditioning(rank, std::move(observation));
     if (rank.first_conditioning_warning) rank.first_conditioning_warning->coordinates = {density};
-    record.rank = std::move(rank);
-}
-
-// Cheap physical projection, distinct from the componentwise inverse-action estimate.
-template <typename Matrix, typename Vector, typename Projection, typename Factor>
-LinearError<Vector> estimated_linear_error(const Matrix& a, const Vector& f, const Projection& gc,
-    const Vector& eta, const Vector& row, const Factor& factor, const Vector& d) {
-    LinearError<Vector> out;
-    if (a.rows() == 0 || a.rows() != a.cols() || f.size() != a.rows() || eta.size() != a.rows()
-        || row.size() != a.rows() || d.size() != a.cols() || gc.cols() != a.cols()
-        || !a.allFinite() || !f.allFinite() || !eta.allFinite() || !row.allFinite() || !d.allFinite()
-        || !gc.allFinite() || (eta.array() < 0).any()
-        || factor.rows() != a.rows() || factor.cols() != a.cols()) { out.cause = "nonfinite_or_unavailable_rows"; return out; }
-    const auto record = conditioning(factor, "scaled_defining_rows");
-    out.rank = record.rank; out.threshold = record.threshold; out.condition = record.observation.condition;
-    if (!record.observation.available) { out.cause = record.observation.cause; return out; }
-    out.matrix_norm = a.cwiseAbs().colwise().sum().maxCoeff();
-    out.inverse_norm = out.condition / out.matrix_norm;
-    const Vector right = -row.cwiseProduct(f), defect = compensated_defect(a, d, right);
-    out.correction = gc * d;
-    const Vector projection = gc.cwiseAbs().rowwise().maxCoeff();
-    out.floor = projection * (out.inverse_norm * row.cwiseProduct(eta).cwiseAbs().sum());
-    out.defect = projection * (out.inverse_norm * defect.cwiseAbs().sum());
-    out.radius = out.correction.cwiseAbs() + out.floor + out.defect;
-    if (!out.radius.allFinite()) out.cause = "nonfinite_projection";
-    return out;
+    record.rank = std::make_shared<NumericalRank>(std::move(rank));
 }
 
 enum class Quantity { Linear, Positive, LogPositive };

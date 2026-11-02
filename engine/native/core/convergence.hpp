@@ -64,7 +64,7 @@ struct Convergence final {
     // Owns a caller-valued criterion; static policy producers leave it empty.
     std::shared_ptr<const policy::Tolerance> criterion_owner;
     std::string cause;
-    std::optional<NumericalRank> rank;
+    std::shared_ptr<NumericalRank> rank;
     std::optional<double> backward_error;
 };
 

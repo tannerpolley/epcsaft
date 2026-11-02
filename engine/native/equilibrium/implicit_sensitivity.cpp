@@ -89,7 +89,7 @@ std::vector<double> solve_implicit(
     const auto jacobian = compiled.jacobian_at(prepared);
     const auto refuse = [&](const char* cause, core::Stop stop, const auto* factor, std::optional<double> backward = std::nullopt) {
         if (failure) { core::Convergence r; r.cause = cause;
-            if (factor) r.rank = core::numerical_rank(*factor, "implicit defining rows");
+            if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "implicit defining rows"));
             r.residual = backward.value_or(NAN); r.backward_error = backward; r.stop = stop;
             if (backward) r.criterion = &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR;
             core::retain_first(*failure, r);
