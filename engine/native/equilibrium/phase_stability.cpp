@@ -114,14 +114,6 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                     return r;
                 });
                 if (factor.info() == Eigen::Success) {
-                    core::NumericalRank record{"tangent_plane_hessian"};
-                    core::ConditioningObservation observation{"tangent_plane_newton", "", "1", "Eigen LLT supplied-factor estimate"};
-                    observation.iteration = o.iterations; observation.controls = {T, P, p.density};
-                    observation.condition = 1.0 / factor.rcond(); observation.available = std::isfinite(observation.condition);
-                    observation.cause = observation.available ? "" : "nonfinite_inverse";
-                    core::observe_conditioning(record, std::move(observation));
-                    if (record.first_conditioning_warning) record.first_conditioning_warning->coordinates.assign(p.W.data(), p.W.data() + n);
-                    core::retain_rank(o.rank_records, record);
                     const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
                     if ((alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
                 }

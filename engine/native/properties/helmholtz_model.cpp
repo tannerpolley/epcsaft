@@ -118,7 +118,7 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
-    diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions");
+    diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions", 0, "endpoint");
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;
@@ -1071,7 +1071,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         temperature, density, composition, parameters_, sigma, diameter);
     auto factorization = properties::site_factorization(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
-    if (sites_count) core::retain_rank(result.rank_records, core::conditioning(factorization, "implicit_site_fractions"));
     if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
         // Density closure consumes the reduced gradient, a_VV and the floor only: one adjoint for
         // the site multipliers and one volume tangent replace the full site Jacobian.

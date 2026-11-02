@@ -180,7 +180,6 @@ public:
                 properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
             else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
                 static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
-            if constexpr (std::is_same_v<Base, double>) core::retain_rank(rank_records, core::conditioning(factorization, "implicit_site_fractions"));
             const auto count = static_cast<Eigen::Index>(sites.size());
             rows.resize(count); cross.resize(count);
             if constexpr (!std::is_same_v<Base, double>) {
@@ -1160,8 +1159,9 @@ DensityRoot anchor(
                 ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
             history.contraction(), iteration + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
         };
-        core::density_conditioning(anchor_record, density, derivative, anchor_record.residual <= anchor_record.criterion->value);
-        core::retain_rank(model.rank_records, *anchor_record.rank);
+        if (anchor_record.residual <= anchor_record.criterion->value || derivative == 0 || !std::isfinite(derivative))
+            core::density_conditioning(anchor_record, density, derivative, anchor_record.residual <= anchor_record.criterion->value);
+        if (anchor_record.rank) core::retain_rank(model.rank_records, *anchor_record.rank);
         if (model.partition || (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0)) {
             // A positive edge slope certifies the local window only under the single slope minimum.

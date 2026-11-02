@@ -2706,7 +2706,13 @@ most one `first_conditioning_warning`. The warning survives later regular or
 unavailable observations through `StageWork`; it is separate from the first
 numerical refusal. Read the observation's operation, basis, norm, method,
 precision and point attribution together with its condition and error.
-Full-pivot supplied-factor estimates use the 1-norm after rank admission;
+The owner amendment of 2026-11-02 restricts full condition estimation to
+already-computed factors for the top-level returned state. Nested iterations
+retain cheap rank/pivot checks and existing physical-error/refusal warnings,
+without constructing ordinary condition observations. A sparse nested warning
+is attributed to its `refused_linearization`; it does not report rank or
+conditioning for a later recovered endpoint. Full-pivot supplied-factor
+estimates use the 1-norm after rank admission;
 the reduced pure-fluid estimate retains its infinity-norm operands.
 A condition estimate can underestimate the mathematical condition number.
 A missing physical-error operand remains unavailable rather than zero.
@@ -2717,7 +2723,11 @@ adding an identifier, preserving the originating record.
 
 `LinearSolveDiagnostics.point_kind` distinguishes endpoint evidence from a
 last linearization. No terminal factorization is added to fill diagnostics.
-An earlier linearization does not establish endpoint accuracy. The scalar
+An earlier linearization does not establish endpoint accuracy. Rank records
+with `endpoint_factor_unavailable` explicitly lack a current endpoint factor;
+generic-point and last-linearization evidence stays separately labelled.
+No terminal factorization is added. Pure-fluid saturation retains its existing
+returned-state estimate and originating warning; fits retain their final SVD. The scalar
 density error is in log density, conditional on the supplied association
 floor; it does not include a complete equation-of-state roundoff model.
 Final fit conditioning reuses the weighted optimizer-Jacobian SVD, and requires

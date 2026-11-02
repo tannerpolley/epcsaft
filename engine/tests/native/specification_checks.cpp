@@ -1,4 +1,5 @@
 #include "equilibrium/problem.hpp"
+#include "contributions/association.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "core/physical_constants.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
@@ -1411,6 +1412,17 @@ void check_conditioning() {
         r.floor = 0.4; r.amplification = 3.2; r.contraction = 0.8; r.backward_error = 1e-8;
         r.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
         r.rank = core::NumericalRank{"unrelated basis", 3, 2, 1e-14}; return r; }();
+    {
+        std::optional<core::NumericalRank> warning;
+        std::optional<core::Convergence> first = refusal;
+        Matrix singular = Matrix::Identity(2, 2); singular(1, 1) = 0;
+        try { solve_linear(singular, {0, 1}, nullptr, &first, &warning, {0.5, 0.5}, 3); }
+        catch (const std::runtime_error&) {}
+        if (!warning || !warning->first_conditioning_warning || warning->first_conditioning_warning->available
+            || warning->first_conditioning_warning->coordinates != std::vector<double>({0.5, 0.5})
+            || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))
+            throw std::runtime_error("nested rank/pivot warning lost or first refusal overwritten");
+    }
     for (bool singular : {true, false}) {
         equilibrium::EquilibriumResult early, recovered;
         early.first_numerical_failure = refusal;

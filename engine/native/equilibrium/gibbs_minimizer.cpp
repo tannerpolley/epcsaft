@@ -904,8 +904,8 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
         const auto physical_rank = raw.rank();
-        core::retain_rank(result.rank_records, core::conditioning(raw, "raw_charge_endpoint"), full);
-        result.last_rank = core::conditioning(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
+        core::retain_rank(result.rank_records, core::conditioning(raw, "raw_charge_endpoint", 0, "endpoint"), full);
+        result.last_rank = core::conditioning(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge", 0, "endpoint");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
         if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
@@ -1147,7 +1147,12 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             if constexpr (!std::is_same_v<Base, double>) column = physical_projection(compiled, at).scale;
             const auto a = [&]() -> decltype(auto) { if constexpr (std::is_same_v<Base, double>) return (j); else return Matrix(j * column.asDiagonal()); }();
             const auto lu = a.fullPivLu();
-            result.last_rank = core::conditioning(lu, "numerical", step, "last_linearization", {double(at.temperature), double(at.pressure)});
+            result.last_rank = core::numerical_rank(lu, "numerical");
+            core::ConditioningObservation observation{"Newton", "", "", "LU rank",
+                result.last_rank->rank == result.last_rank->dimension ? "endpoint_factor_unavailable" : "rank_deficient"};
+            observation.iteration = step; observation.precision_bits = std::numeric_limits<Base>::digits;
+            observation.controls = {double(at.temperature), double(at.pressure)};
+            core::observe_conditioning(*result.last_rank, std::move(observation));
             for (Eigen::Index i = 0; i < n; ++i) result.last_rank->observation.column_scale.push_back(double(column[i]));
             if (auto& warning = result.last_rank->first_conditioning_warning) warning->column_scale = result.last_rank->observation.column_scale;
             if (result.last_rank->first_conditioning_warning)
@@ -1171,9 +1176,12 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 const auto e = physical_error(compiled, at, j, f, lu, d, column);
                 if (!e.cause.empty()) { stop(e.cause.c_str()); break; }
                 const Base radius = physical_radius(compiled, at, e.radius);
-                if (e.cause.empty()) result.linear_solve_diagnostics = LinearSolveDiagnostics{
+                result.linear_solve_diagnostics = LinearSolveDiagnostics{
                     "canonical_defining_rows", "", double(defect), double(e.floor.maxCoeff()), double(e.inverse_norm),
                     double(e.condition), double(radius), std::numeric_limits<Base>::digits, step};
+                auto& observation = result.last_rank->observation;
+                observation.condition = double(e.condition); observation.available = std::isfinite(observation.condition);
+                observation.norm = "infinity"; observation.method = "inverse_action";
                 retain_error(radius, policy::MIXTURE_FORWARD_ERROR, "");
                 const bool floor = e.cause.empty() && (right.cwiseAbs().array() <= e.row_floor.array()).all();
                 if (defect <= row_tolerance && radius <= policy::MIXTURE_FORWARD_ERROR.value
