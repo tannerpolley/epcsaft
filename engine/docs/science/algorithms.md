@@ -1007,7 +1007,7 @@ global stability test.
 Otherwise, including on admission failure or exception, unchanged Ipopt runs
 from the original start and retains attempted work and the shared budget.
 A stationarity Newton return keeps `solver_status` `SUCCESS`; the existing
-`newton_fast_path` trace and its accepted outcome identify Newton. The fast path retains
+`newton_fast_path` trace and its accepted outcome identify Newton. The feasibility Newton path retains
 `NEWTON_CONVERGED`. Both have zero optimizer iterations, optimizer Hessian
 callbacks and regularization amplification.
 Zero constraint multipliers of row-count length apply only to feasibility
@@ -1975,8 +1975,8 @@ phase limit makes discovery unsuccessful, retaining its candidate separately
 for diagnosis. Rank-limit replacement and generalized multi-donor/reactive
 withdrawal remain outside this algorithm. Completed enumeration without resolved
 descent returns the declaration with the finite-search statement and unresolved
-limits. Every failed/refused/indeterminate qualification follows ALG-TERMINATION's
-fix-before-negative requirement; honest failure reporting alone is not completion.
+limits. A failed, refused or indeterminate result reports its cause; a typed
+refusal is final only under the conditions of ALG-TERMINATION.
 Neutral qualification precedes ionic/reacting qualification. Same-wheel declared
 comparisons establish integration/topology evidence; refined FeOs neutral
 comparisons establish cross-implementation agreement, not physical validation.
@@ -2866,11 +2866,9 @@ A verification check whose error exceeds its criterion but not an attainable
 floor derived from reported quantities (condition estimate times rounding,
 finite-difference noise over step, propagated inner residual) is *tolerance
 gated*: a diagnosis recorded with the floor, its inputs and the ratio, not an
-acceptable end state. The owning issue attempts the root-cause fix that lowers
-the floor below the criterion (Jacobian scaling or equilibration, higher working
-precision, iterative refinement, a better-resolved reference); the check stays
-gated only while that fix is open or after retained evidence shows it
-impossible. The floor is never a hand-picked looser tolerance, and an error
+acceptable end state. Remedies that lower the floor below the criterion are
+Jacobian scaling or equilibration, higher working precision, iterative
+refinement and a better-resolved reference. The floor is never a hand-picked looser tolerance, and an error
 above it fails. A criterion for a near-zero multilinear action scales with
 the sum of the magnitudes of its fixed chart-coordinate sub-direction actions
 (temperature, pressure or density, composition), and a reaction affinity's with
@@ -2920,16 +2918,13 @@ result retains the same convergence record alongside its state. The pre-solve
 and absent criterion; it is neither a solver residual nor a physical
 nonexistence claim. `requested_tolerance_met` is absent for that record.
 
-## Verification obligations
+## Verification meaning
 
-Before a scientific behavior change is accepted, update or explicitly revalidate
-the affected equation/algorithm IDs and execute the smallest independent
-falsifier identified in the owning issue. Important examples are caloric
-identities, association support boundaries, full weighted-Hessian directional
-checks with nonzero multipliers, implicit action ladders and independent
-reference-state transformations. Finite checks establish bounded evidence,
-not universal symbolic correctness. Documentation readiness checks cannot
-replace them. Expensive application/reproduction sweeps remain explicit.
+Numerical checks of the equations and algorithms include caloric identities,
+association support boundaries, full weighted-Hessian directional checks with
+nonzero multipliers, implicit action ladders and independent reference-state
+transformations. Finite checks establish bounded evidence, not universal
+symbolic correctness.
 
 ## Appendix: Special cases and numerical qualification
 

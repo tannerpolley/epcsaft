@@ -846,7 +846,7 @@ $$
 - Status: Exact derivation
 - Source: Exact Jacobian of Eqs.~`phase_mole_fraction`--`phase_molar_density`
 - Description: State-coordinate Jacobian used to transform electrolyte Helmholtz gradients.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification is linked from its GitHub issue; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Kept as the explicit coordinate transformation; the generic EOS derivative tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial\rho_m}{\partial n_j}=\frac{1}{V},
@@ -864,7 +864,7 @@ $$
 - Status: Exact derivation
 - Source: Exact second-order multivariable chain rule
 - Description: Transform state Helmholtz Hessians into explicit amount-volume coordinates.
-- Change note: Retained by the Equilibrium EOS workflow historical CAP-07 proposal; current qualification is linked from its GitHub issue; the generic EOS tape differentiates amount-volume coordinates directly.
+- Change note: Kept as the explicit coordinate transformation; the generic EOS derivative tape differentiates amount-volume coordinates directly.
 
 $$
 \frac{\partial^2(na^r)}{\partial q_\alpha\partial q_\beta}

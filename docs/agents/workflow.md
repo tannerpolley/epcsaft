@@ -47,6 +47,22 @@ needs no wheel or binding management. Builds use explicit `-j` parallelism sized
 from CPUs and available memory; `EPCSAFT_BUILD_JOBS` can select it for a measured
 run. Use one-thread numerical pools only for timing measurements.
 
+Adapt justified existing native fitting and evaluator logic through the plan's
+adoption gate, and implement only observation forms consumed by current scope;
+the parameter regression formulation's broader algebra defines meaning rather
+than requiring unused nodes.
+
+A tolerance-gated check (ALG-TERMINATION) is a diagnosis, not an end state: the
+owning issue attempts the root-cause fix that lowers the floor below the
+criterion, and the check stays gated only while that fix is open or after
+retained evidence shows it impossible.
+
+Before a scientific behavior change is accepted, update or explicitly revalidate
+the affected equation/algorithm IDs and execute the smallest independent
+falsifier identified in the owning issue (examples in ALG-TERMINATION
+"Verification meaning"). Documentation readiness checks cannot replace them.
+Expensive application/reproduction sweeps remain explicit.
+
 ## Gates
 
 This is the only gate list. Comparisons select prepared Python interpreters or

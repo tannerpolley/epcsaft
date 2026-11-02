@@ -7,10 +7,12 @@ parameter estimates. Python supplies the physical declarations and reads
 values and diagnostics; every iterative calculation runs in the Engine.
 
 The residual Helmholtz energy follows PC-SAFT (Gross and Sadowski, 2001) with
-association, optional polar terms and, for electrolytes, the Debye–Hückel and
-Born contributions of ePC-SAFT (Cameretti, Sadowski and Mollerup, 2005; Held,
-Cameretti and Sadowski, 2008; Held et al., 2014) and later permittivity and
-Born revisions. The [EOS specification](theory/eos.md) lists every source and
+association and optional polar terms. For electrolytes, ePC-SAFT adds a
+Debye–Hückel term (Cameretti, Sadowski and Mollerup, 2005; Held, Cameretti and
+Sadowski, 2008) with cation–anion dispersion (Held et al., 2014). Optional
+later extensions add composition-dependent permittivity (Bülow, Ji and Held,
+2019) and a Born term (Bülow, Ascani and Held, 2021; Figiel, Yu and Held,
+2025). The [EOS specification](theory/eos.md) lists every source and
 the [equation registry](theory/equations.md) gives each implemented equation
 with its source equation number.
 

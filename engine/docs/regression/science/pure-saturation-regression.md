@@ -3,9 +3,8 @@
 Required general fitting mathematics; pure saturation is one observation
 construction.
 
-Use the plan's adoption gate to adapt justified existing native fitting and
-evaluator logic. Implement only observation forms consumed by current scope;
-the broader algebra below defines meaning rather than requiring unused nodes.
+The algebra below defines the meaning of an observation; it does not imply
+that every expression it allows is implemented.
 
 An observation combines a state/equilibrium specification, an expression, a
 reported value and an explicit discrepancy/uncertainty model. Expressions use
@@ -525,8 +524,10 @@ verification input generation, not a calibrated parameter dataset.
 Singular vectors label independent optimizer and objective-row orders. SVD,
 rank, bounds and projected gradient are local diagnostics. Gamma and Phi are
 related by Gibbs-Duhem, so independent-error covariance is conditional sensitivity,
-not measurement uncertainty or structural identifiability. Profiles and native
-constrained minimax estimation remain outside the delivered capability.
+not measurement uncertainty or structural identifiability. This electrolyte
+least-squares construction provides no likelihood profiles; constrained minimax
+estimation is the separate request below, with its own feasibility and
+stationarity diagnostics and no covariance.
 
 ## Native constrained estimation
 
