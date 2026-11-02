@@ -10,6 +10,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <mutex>
 #include <numeric>
 #include <stdexcept>
@@ -326,8 +327,25 @@ struct EquilibriumContext final {
     int order = -1;
 };
 
+std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank>& records) {
+    std::ostringstream out; out.precision(17);
+    for (const auto& record : records) if (record.first_conditioning_warning) {
+        const auto& w = *record.first_conditioning_warning;
+        out << "; conditioning warning: " << w.operation << "; basis " << w.basis << "; norm " << w.norm
+            << "; method " << w.method << "; cause " << w.cause << "; rank " << w.rank << '/' << w.dimension
+            << "; cutoff " << w.threshold << "; condition " << w.condition << "; error " << w.error
+            << "; criterion " << w.criterion << ' ' << w.criterion_value << "; bits " << w.precision_bits
+            << "; attempt/stage/iteration=" << epcsaft::core::optional_number(w.attempt) << '/' << epcsaft::core::optional_number(w.stage) << '/' << w.iteration << "; point " << w.point_kind;
+        for (const auto& [name, values] : {std::pair{"coordinates", &w.coordinates}, {"controls", &w.controls},
+            {"row_scale", &w.row_scale}, {"column_scale", &w.column_scale}}) {
+            out << "; " << name << '='; for (double value : *values) out << value << ',';
+        }
+    }
+    return out.str();
+}
+
 void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
-    const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message
+    const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message + conditioning_warnings(result.rank_records)
         + (result.first_numerical_failure ? "; first refusal: " + epcsaft::core::describe(*result.first_numerical_failure) : "")); };
     const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)

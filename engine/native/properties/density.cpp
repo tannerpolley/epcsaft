@@ -105,6 +105,7 @@ public:
     }
     mutable std::optional<DensityPartition> partition;
     mutable std::optional<core::Convergence> first_numerical_failure;
+    mutable std::vector<core::NumericalRank> rank_records;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
@@ -168,6 +169,7 @@ public:
                 narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure);
         } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
         }();
+        if (record.rank) core::retain_rank(rank_records, *record.rank);
         site_series.clear();
         for (double site : sites) site_series.emplace_back(Base(site));
         for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
@@ -178,6 +180,7 @@ public:
                 properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
             else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
                 static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
+            if constexpr (std::is_same_v<Base, double>) core::retain_rank(rank_records, core::conditioning(factorization, "implicit_site_fractions"));
             const auto count = static_cast<Eigen::Index>(sites.size());
             rows.resize(count); cross.resize(count);
             if constexpr (!std::is_same_v<Base, double>) {
@@ -407,6 +410,8 @@ DensityRoot refine(
             ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
         history.contraction(), iterations + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
     };
+    core::density_conditioning(record, density, derivative, true);
+    record.rank->observation.point_kind = "endpoint";
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
@@ -1155,6 +1160,8 @@ DensityRoot anchor(
                 ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
             history.contraction(), iteration + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
         };
+        core::density_conditioning(anchor_record, density, derivative, anchor_record.residual <= anchor_record.criterion->value);
+        core::retain_rank(model.rank_records, *anchor_record.rank);
         if (model.partition || (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0)) {
             // A positive edge slope certifies the local window only under the single slope minimum.
@@ -1449,6 +1456,7 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     const PressureSeries<Base> series(*this, temperature, {amount});
     const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
     core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
+    d.rank_records = series.rank_records;
     if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
     const std::size_t width = 3 + active_.size();
@@ -1498,6 +1506,7 @@ HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar te
     }
     out.volume_second_derivative = out.hessian[width + 1];
     core::retain_first(out.first_numerical_failure, series.first_numerical_failure);
+    out.rank_records = series.rank_records;
     return out;
 }
 
@@ -1558,6 +1567,10 @@ DensityRoot solve_density(
         root.branch = DensityBranch::Vapor;
         core::stopping_criterion(root.convergence, model.solver_options(), policy::density);
         root.convergence.residual = 0.0;
+        root.convergence.floor = 0.0;
+        core::density_conditioning(root.convergence, ideal_density, 1.0 / ideal_density, true);
+        root.convergence.rank->observation.point_kind = "endpoint";
+        root.rank_records = {*root.convergence.rank};
         root.convergence.stop = core::classify(root.convergence.residual, *root.convergence.criterion, std::nullopt, std::nullopt, false);
         scope.finish(root.convergence);
         if (sibling_root) *sibling_root = root;
@@ -1669,6 +1682,15 @@ DensityRoot solve_density(
         result.convergence.evaluations = evaluations;
         if (sibling_root) sibling_root->convergence.evaluations = evaluations;
     }
+    auto publish_conditioning = [&](DensityRoot& root) {
+        root.rank_records = series.rank_records;
+        if (root.convergence.rank) {
+            core::retain_rank(root.rank_records, *root.convergence.rank);
+            for (const auto& rank : root.rank_records) if (rank.basis == root.convergence.rank->basis) root.convergence.rank = rank;
+        }
+    };
+    publish_conditioning(result);
+    if (sibling_root) publish_conditioning(*sibling_root);
     scope.probe("density_root", result.molar_density);
     core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
     if (sibling_root) core::retain_first(sibling_root->first_numerical_failure, series.first_numerical_failure);

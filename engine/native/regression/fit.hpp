@@ -141,6 +141,7 @@ struct FitCovariance final {
 };
 
 struct FitResult final {
+    std::string internal_factor_conditioning = "unavailable_internal_LM_or_KKT";
     policy::SolverOptions solver_options;
     // Ceres: converged | limit_reached | initial_evaluation_failed | failed | invalid_setup;
     // minimax: converged | limit_or_failure | point_evaluated | invalid_setup.

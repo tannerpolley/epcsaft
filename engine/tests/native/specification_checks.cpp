@@ -1,6 +1,7 @@
 #include "equilibrium/problem.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "core/physical_constants.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium_support.hpp"
 #include "recording_support.hpp"
 #include "surface/parameter_builder.hpp"
@@ -1266,7 +1267,14 @@ void check_reference_mapping() {
 namespace {
 void check_polish_solve_admission() {
     // A zero computed correction and tiny backward residual can hide a 1e-6 forward correction.
-    const auto bound = epcsaft::equilibrium::polish_forward_bound;
+    const auto bound = [](const std::vector<double>& jacobian, const std::vector<double>& rows,
+        const std::vector<double>& delta, const std::vector<double>& scale) {
+        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        const auto n = static_cast<Eigen::Index>(delta.size());
+        return epcsaft::core::polish_forward_bound(Eigen::Map<const Matrix>(jacobian.data(), n, n),
+            Eigen::Map<const Eigen::VectorXd>(rows.data(), n), Eigen::Map<const Eigen::VectorXd>(delta.data(), n),
+            Eigen::Map<const Eigen::VectorXd>(scale.data(), n));
+    };
     const double ill_conditioned = bound({1.0, 0.0, 0.0, 1e-14}, {0.0, 1e-20}, {0.0, 0.0}, {1.0, 1.0});
     const double singular = bound({1.0, 0.0, 0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {1.0, 1.0});
     const double admitted = bound({1.0, 0.0, 0.0, 1.0}, {-1e-14, 0.0}, {1e-14, 0.0}, {1.0, 1.0});
@@ -1345,8 +1353,105 @@ void check_trace_inventory_witness() {
     }
 }
 }
+namespace {
+struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
+    using Eigen::FullPivLU<Eigen::MatrixXd>::FullPivLU;
+    mutable std::size_t inverse_calls = 0, condition_calls = 0;
+    template<class Right> Eigen::VectorXd solve(const Right& right) const {
+        ++inverse_calls; return Eigen::FullPivLU<Eigen::MatrixXd>::solve(right);
+    }
+    double rcond() const { ++condition_calls; return Eigen::FullPivLU<Eigen::MatrixXd>::rcond(); }
+};
+void check_conditioning() {
+    using namespace epcsaft;
+    using Matrix = Eigen::MatrixXd; using Vector = Eigen::VectorXd;
+    for (double diagonal : {1.0, 1e-10, 0.0}) {
+        Matrix j = Matrix::Identity(2, 2); j(1, 1) = diagonal;
+        const Matrix g = Matrix::Identity(2, 2);
+        Vector f(2); f << 0, 1e-12;
+        const Vector eta = Vector::Zero(2), scale = Vector::Ones(2);
+        const CountedConditionFactor exact_factor(j);
+        const auto exact = core::linear_error(j, f, g, eta, scale, scale, &exact_factor);
+        // R=C=G=I: reuse the correction computed by the actual Core solve, not the analytic oracle.
+        const Vector d = exact.correction.size() ? exact.correction : Vector::Zero(2).eval();
+        const auto solves_before = exact_factor.inverse_calls;
+        const auto cheap = core::estimated_linear_error(j, f, g, eta, scale, exact_factor, d);
+        if (diagonal == 0) {
+            if (exact_factor.inverse_calls || exact_factor.condition_calls
+                || exact.radius.size() || cheap.radius.size() || cheap.cause != "rank_deficient")
+                throw std::runtime_error("singular inverse work or fabricated radius");
+        } else {
+            if (exact_factor.inverse_calls != solves_before || exact_factor.condition_calls != 1)
+                throw std::runtime_error("cached correction replayed or conditioning omitted");
+            const double expected = diagonal == 1 ? 1e-12 : 0.01;
+            if (std::abs(exact.radius[1] - expected) > expected * 1e-12
+                || std::abs(cheap.radius[1] - expected) > expected * 1e-12
+                || std::abs(cheap.condition * diagonal - 1) > 1e-12)
+                throw std::runtime_error("manufactured diagonal perturbation mismatch");
+        }
+        std::cout << "conditioning," << diagonal << ',' << cheap.rank << ',' << cheap.condition << ','
+            << (cheap.radius.size() ? cheap.radius[1] : NAN) << ',' << exact_factor.condition_calls << '\n';
+    }
+    for (bool wrong_shape : {true, false}) {
+        Matrix j = Matrix::Identity(2, 2); const CountedConditionFactor factor(j);
+        Vector f = Vector::Zero(wrong_shape ? 3 : 2), eta = Vector::Zero(2), scale = Vector::Ones(2), d = Vector::Zero(2);
+        if (!wrong_shape) j(0, 0) = NAN;
+        const auto exact = core::linear_error(j, f, Matrix::Identity(2, 2).eval(), eta, scale, scale, &factor);
+        const auto cheap = core::estimated_linear_error(j, f, Matrix::Identity(2, 2).eval(), eta, scale, factor, d);
+        if (factor.inverse_calls || factor.condition_calls || exact.radius.size() || cheap.radius.size())
+            throw std::runtime_error("invalid operands reached inverse work");
+    }
+    const Matrix wide = Matrix::Ones(1, 16);
+    auto spectrum = wide.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    spectrum.setThreshold(policy::FIT_RANK_RECIPROCAL_CONDITION.value);
+    const auto wide_rank = core::numerical_rank(spectrum, "weighted optimizer observation Jacobian");
+    if (wide_rank.rank != 1 || wide_rank.dimension != 16) throw std::runtime_error("implicit SVD null directions lost");
+    const auto refusal = [] { core::Convergence r; r.cause = "unrelated numerical refusal";
+        r.stop = core::Stop::left_domain; r.iterations = 7; r.evaluations = 11; r.residual = 2;
+        r.floor = 0.4; r.amplification = 3.2; r.contraction = 0.8; r.backward_error = 1e-8;
+        r.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+        r.rank = core::NumericalRank{"unrelated basis", 3, 2, 1e-14}; return r; }();
+    for (bool singular : {true, false}) {
+        equilibrium::EquilibriumResult early, recovered;
+        early.first_numerical_failure = refusal;
+        core::NumericalRank bad{"manufactured_dimensionless_rows", 2, singular ? 1u : 2u, 1e-14};
+        core::ConditioningObservation observation{"Newton", "", "1", "supplied_factor"};
+        observation.available = !singular;
+        observation.cause = singular ? "rank_deficient" : ""; observation.condition = singular ? INFINITY : 1e10;
+        observation.error = singular ? NAN : 0.01; observation.criterion = "declared_quantity";
+        observation.criterion_value = 1e-10; observation.iteration = 3;
+        core::observe_conditioning(bad, observation);
+        core::retain_rank(early.rank_records, bad, {1, 2});
+        core::NumericalRank good{"manufactured_dimensionless_rows", 2, 2, 1e-14};
+        observation.available = true; observation.cause.clear(); observation.condition = 1; observation.error = 1e-12;
+        observation.point_kind = "endpoint"; core::observe_conditioning(good, observation);
+        core::retain_rank(recovered.rank_records, good);
+        equilibrium::StageWork stages; stages.observe(early);
+        for (int i = 0; i < 10000; ++i) stages.observe(recovered);
+        std::move(stages).publish_observations(recovered);
+        const auto& kept = recovered.rank_records.at(0);
+        if (recovered.rank_records.size() != 1 || !kept.first_conditioning_warning
+            || kept.first_conditioning_warning->coordinates != std::vector<double>({1, 2})
+            || early.rank_records[0].first_conditioning_warning->stage.has_value()
+            || kept.first_conditioning_warning->iteration != 3 || kept.first_conditioning_warning->stage != 0
+            || kept.observation.condition != 1
+            || kept.first_conditioning_warning->basis != bad.basis || kept.first_conditioning_warning->norm != "1"
+            || kept.first_conditioning_warning->method != "supplied_factor"
+            || kept.first_conditioning_warning->criterion != "declared_quantity"
+            || kept.first_conditioning_warning->criterion_value != 1e-10 || !kept.observation.available
+            || kept.observation.point_kind != "endpoint" || !recovered.first_numerical_failure
+            || core::describe(*recovered.first_numerical_failure) != core::describe(refusal)
+            || recovered.first_numerical_failure->iterations != refusal.iterations
+            || recovered.first_numerical_failure->evaluations != refusal.evaluations
+            || recovered.first_numerical_failure->criterion != refusal.criterion
+            || recovered.first_numerical_failure->criterion_owner != refusal.criterion_owner)
+            throw std::runtime_error("conditioning warning lost through recovery");
+    }
+}
+}
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.specification.conditioning", "conditioning"}, check_conditioning},
         {{"native.specification.polish-solve", "Newton-solve"}, check_polish_solve_admission},
         {{"native.specification.inventory", "Inventory"}, check_inventory_support},
         {{"native.specification.trace-inventory-witness", "trace-inventory-witness"}, check_trace_inventory_witness},

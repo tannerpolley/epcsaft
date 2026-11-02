@@ -27,21 +27,6 @@
 namespace epcsaft::equilibrium {
 namespace { constexpr double bound_infinity = 1.0e19; }
 
-// Infinity-norm forward-error estimate in the scaled physical correction chart.
-// Eigen estimates the 1-norm condition of the transpose, hence the infinity norm of J D.
-double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
-    const std::vector<double>& delta, const std::vector<double>& scale) {
-    const auto n = static_cast<Eigen::Index>(delta.size());
-    const double unavailable = std::numeric_limits<double>::infinity();
-    const Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> J(jacobian.data(), n, n);
-    const Eigen::Map<const Eigen::VectorXd> d(delta.data(), n), r(rows.data(), n), D(scale.data(), n);
-    if (!J.allFinite() || !d.allFinite() || !r.allFinite() || !D.allFinite() || !(D.minCoeff() > 0.0)) return unavailable;
-    const Eigen::MatrixXd scaled = J * D.asDiagonal();
-    const Eigen::FullPivLU<Eigen::MatrixXd> lu(scaled.transpose());
-    const double denominator = lu.rcond() * scaled.cwiseAbs().rowwise().sum().maxCoeff();
-    if (lu.rank() != n || !(denominator > 0.0) || !std::isfinite(denominator)) return unavailable;
-    return d.cwiseQuotient(D).lpNorm<Eigen::Infinity>() + (J * d + r).lpNorm<Eigen::Infinity>() / denominator;
-}
 namespace {
 
 // EqID reduced_hessian_stability on the balance nullspace. `minimum` is the smallest eigenvalue in the solved
@@ -850,6 +835,9 @@ static bool mixture_precision_eligible(const CompiledSystem& c) {
 
 EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
     EquilibriumResult result, core::Scope& scope, const DriverLimits* limits) {
+    for (const auto& derivative : prepared.derivative)
+        for (const auto& rank : derivative.rank_records) core::retain_rank(result.rank_records, rank);
+
     const auto* model = compiled.model;
     const auto& full = prepared.point;
     const double row_tolerance = compiled.problem.solver_options.value(policy::row);
@@ -916,8 +904,8 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
         const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
         const auto physical_rank = raw.rank();
-        core::retain_rank(result.rank_records, raw, "raw_charge_endpoint");
-        result.last_rank = core::numerical_rank(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
+        core::retain_rank(result.rank_records, core::conditioning(raw, "raw_charge_endpoint"), full);
+        result.last_rank = core::conditioning(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
         if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
@@ -1159,11 +1147,22 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             if constexpr (!std::is_same_v<Base, double>) column = physical_projection(compiled, at).scale;
             const auto a = [&]() -> decltype(auto) { if constexpr (std::is_same_v<Base, double>) return (j); else return Matrix(j * column.asDiagonal()); }();
             const auto lu = a.fullPivLu();
-            result.last_rank = core::numerical_rank(lu, "numerical");
+            result.last_rank = core::conditioning(lu, "numerical", step, "last_linearization", {double(at.temperature), double(at.pressure)});
+            for (Eigen::Index i = 0; i < n; ++i) result.last_rank->observation.column_scale.push_back(double(column[i]));
+            if (auto& warning = result.last_rank->first_conditioning_warning) warning->column_scale = result.last_rank->observation.column_scale;
+            if (result.last_rank->first_conditioning_warning)
+                core::retain_rank(result.rank_records, *result.last_rank, narrow_values(full.begin(), full.end()));
+            else core::retain_rank(result.rank_records, *result.last_rank);
             if (scope.diagnostics_on()) scope.probe("numerical_rank", {double(result.last_rank->rank), double(result.last_rank->dimension), result.last_rank->threshold}, 0, "numerical");
-            if (guarded_newton || !compiled.log_charge_rows.empty()) {
-                if (lu.rank() != n) { stop("Jacobian rank"); break; }
-            }
+            if (lu.rank() != n) { stop("Jacobian rank"); break; }
+            const auto retain_error = [&](Base error, const policy::Tolerance& criterion, const char* cause) {
+                auto observation = result.last_rank->observation;
+                observation.error = double(error); observation.criterion = criterion.name;
+                observation.criterion_value = criterion.value; observation.cause = cause;
+                core::observe_conditioning(*result.last_rank, std::move(observation));
+                core::retain_rank(result.rank_records, *result.last_rank,
+                    result.last_rank->first_conditioning_warning ? narrow_values(full.begin(), full.end()) : std::vector<double>{});
+            };
             const Vector right = -Eigen::Map<const Vector>(rows_scaled.data(), n), d = lu.solve(right);
             const Vector delta = [&]() -> Vector { if constexpr (std::is_same_v<Base, double>) return d; else return column.asDiagonal() * d; }();
             if ((guarded_newton || refine_trial) && !delta.allFinite()) { stop("nonfinite direction"); break; }
@@ -1175,6 +1174,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 if (e.cause.empty()) result.linear_solve_diagnostics = LinearSolveDiagnostics{
                     "canonical_defining_rows", "", double(defect), double(e.floor.maxCoeff()), double(e.inverse_norm),
                     double(e.condition), double(radius), std::numeric_limits<Base>::digits, step};
+                retain_error(radius, policy::MIXTURE_FORWARD_ERROR, "");
                 const bool floor = e.cause.empty() && (right.cwiseAbs().array() <= e.row_floor.array()).all();
                 if (defect <= row_tolerance && radius <= policy::MIXTURE_FORWARD_ERROR.value
                     && (delta.cwiseQuotient(column).cwiseAbs().maxCoeff() <= policy::EQUILIBRIUM_POLISH_CORRECTION.value
@@ -1208,9 +1208,10 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             Base bound = std::numeric_limits<double>::infinity();
             const bool size_admitted = positive && full == best && classified_before <= row_tolerance
                 && scaled_correction <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
-            if constexpr (std::is_same_v<Base, double>) if (size_admitted && lu.rank() == n && !final_correction)
-                bound = polish_forward_bound(jacobian, rows_scaled, {delta.data(), delta.data() + n},
-                    {scale.data(), scale.data() + n});
+            if constexpr (std::is_same_v<Base, double>) if (size_admitted && lu.rank() == n && !final_correction) {
+                bound = core::polish_forward_bound(j, Eigen::Map<const Vector>(rows_scaled.data(), n), delta, scale);
+                retain_error(bound, policy::EQUILIBRIUM_POLISH_CORRECTION, "inner_floor_unavailable");
+            }
             const bool correction_stop = size_admitted && bound <= policy::EQUILIBRIUM_POLISH_CORRECTION.value;
             if constexpr (std::is_same_v<Base, double>) if (corrected || (extension && defect <= row_tolerance && !final_correction)) { stop("raw criterion"); break; }
             if (detailed) scope.observe([&] {
@@ -2341,6 +2342,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     if (work.expired()) reject_elapsed(*audit, scope); else clear_state(*audit);
                     out.results[i] = std::move(audit); }
             }
+            if (out.results[i]) for (auto& rank : out.results[i]->rank_records)
+                if (rank.first_conditioning_warning && !rank.first_conditioning_warning->attempt) (rank.first_conditioning_warning = std::make_shared<core::ConditioningObservation>(*rank.first_conditioning_warning))->attempt = i;
             out.iterations += work.consumed;
             out.attempt_seconds[i] = std::chrono::duration<double>(Clock::now() - attempt_begun).count();
             if (out.selected) break;

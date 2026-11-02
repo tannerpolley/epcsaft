@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <string>
 #include <cstdint>
+#include <vector>
 
 namespace epcsaft::core {
 
@@ -25,11 +26,35 @@ enum class Stop : std::uint8_t {
     nonfinite,
 };
 
+struct ConditioningObservation {
+    std::string operation{}, basis{}, norm{}, method{}, cause = "not_evaluated", point_kind = "last_linearization", criterion{};
+    std::size_t dimension = 0, rank = 0, precision_bits = std::numeric_limits<double>::digits, iteration = 0;
+    std::optional<std::size_t> attempt{}, stage{};
+    double threshold = 0, condition = INFINITY, matrix_norm = NAN, error = NAN, criterion_value = NAN;
+    std::vector<double> coordinates{}, row_scale{}, column_scale{}, controls{};
+    std::optional<std::size_t> phase{}, component{};
+    double export_displacement = NAN;
+    bool available = false;
+};
 struct NumericalRank final {
     std::string basis;
     std::size_t dimension = 0, rank = 0;
     double threshold = 0;
+    ConditioningObservation observation{};
+    std::shared_ptr<ConditioningObservation> first_conditioning_warning{};
 };
+inline void observe_conditioning(NumericalRank& record, ConditioningObservation incoming,
+    const std::vector<double>& point = {}) {
+    incoming.basis = record.basis; incoming.rank = record.rank; incoming.dimension = record.dimension;
+    incoming.threshold = record.threshold;
+    if (!record.first_conditioning_warning && (incoming.cause == "rank_deficient"
+        || incoming.cause == "nonfinite_inverse" || incoming.cause == "association_pivot_refusal"
+        || (std::isfinite(incoming.error) && std::isfinite(incoming.criterion_value) && incoming.error > incoming.criterion_value))) {
+        record.first_conditioning_warning = std::make_shared<ConditioningObservation>(incoming);
+        record.first_conditioning_warning->coordinates = point;
+    }
+    record.observation = std::move(incoming);
+}
 
 struct Convergence final {
     double residual = 0.0;

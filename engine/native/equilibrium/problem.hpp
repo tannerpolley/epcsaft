@@ -23,10 +23,6 @@
 namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
-// ALG-EQUILIBRIUM: scaled fresh-Newton solve admission, infinity if unresolved.
-EPC_API double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
-    const std::vector<double>& delta, const std::vector<double>& scale);
-
 enum class PhaseKind { Liquid, Vapor };
 enum class AmountKind { Free, Pinned };
 enum class FeedKind { MoleFractions, Amounts, MassFractions, Molalities };
@@ -579,6 +575,7 @@ struct LinearSolveDiagnostics final {
     double jacobian_inverse_norm = std::numeric_limits<double>::infinity(), condition_estimate = std::numeric_limits<double>::infinity();
     double forward_error_estimate = std::numeric_limits<double>::infinity();
     std::size_t precision_bits = std::numeric_limits<double>::digits, refinement_iterations = 0;
+    std::string point_kind = "last_linearization";
 };
 
 struct IpoptIteration final {

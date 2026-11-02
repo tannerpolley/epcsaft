@@ -50,6 +50,7 @@ struct HelmholtzDerivativeValues final {
     Base gradient_floor = 0.0;
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
+    std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
 };
 
@@ -152,6 +153,7 @@ struct PropertyActionDiagnostics final {
     DensityBranch branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::NumericalRank> site_conditioning;
 };
 struct PropertyActionBatch final {
     policy::SolverOptions solver_options;
@@ -234,6 +236,7 @@ struct State final {
     std::optional<std::vector<std::optional<double>>> partial_molar_volume, partial_molar_enthalpy,
         partial_molar_entropy;  // component order
     std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
 };
 
 EPC_API std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
@@ -248,6 +251,7 @@ struct DensityRoot final {
     core::Convergence convergence;
     std::optional<double> negative_slope_density;  // no new EOS evaluation
     std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).

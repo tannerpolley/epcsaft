@@ -39,3 +39,25 @@ def test_azeotrope_declaration_reaches_the_native_rows() -> None:
     assert rows.count("material_balance") == 1 and rows[-1] == "azeotrope_condition", rows
     with pytest.raises(ValueError, match="azeotrope cell requires"):
         compile_problem(model, Problem(T=Free(200.0), P=Free(), feed=feed, phases=phases, azeotrope=True))
+
+
+@pytest.mark.parametrize("temperature", [300.0, 375.139])
+def test_saturation_conditioning_transport(temperature: float) -> None:
+    """A retained double warning remains distinct from the returned wider estimate through Python."""
+    model = Pure(Parameters.from_json(parameters_json("gross-2001-propane", 3), components=("propane",)))
+    problem = Problem(T=temperature, P=Free(1e5), feed=Amounts({"propane": 1}),
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0))])
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    record = next(r for r in result.rank_records if r.basis == "log_density")
+    assert record.observation.point_kind == "endpoint"
+    warning = record.first_conditioning_warning
+    if temperature == 300:
+        assert warning is None
+    else:
+        assert warning is not None
+        assert warning.precision_bits == 53 and warning.error >= 9.5e-9
+        assert warning.point_kind == "last_linearization" and len(warning.coordinates) == 2
+        assert warning.controls[0] == temperature
+        assert record.observation.precision_bits > 53
+        assert record.observation.error < warning.criterion_value

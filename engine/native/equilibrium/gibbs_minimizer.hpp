@@ -20,15 +20,16 @@ namespace Ipopt { class TNLPAdapter; }
 namespace epcsaft::equilibrium {
 
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
-    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
+    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0, stage = 0;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
     template<class R> void observe(const R& r) {
         core::retain_first(first_numerical_failure, r.first_numerical_failure);
-        for (const auto& rank : r.rank_records) core::retain_rank(rank_records, rank);
+        for (const auto& rank : r.rank_records) core::retain_rank(rank_records, rank, {}, stage);
         if constexpr (std::is_same_v<R, EquilibriumResult>)
-            if (r.last_rank) core::retain_rank(rank_records, *r.last_rank);
+            if (r.last_rank) core::retain_rank(rank_records, *r.last_rank, {}, stage);
+        ++stage;
         if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
             recovered_ipopt_diagnostics = ipopt_diagnostics;
         if (!recovered_ipopt_diagnostics) recovered_ipopt_diagnostics = r.recovered_ipopt_diagnostics;

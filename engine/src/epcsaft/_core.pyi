@@ -1186,6 +1186,7 @@ class ThermochemistryStatus:
     """A required caloric evaluation is nonfinite."""
 
 class PropertyActionDiagnostics:
+    site_conditioning: Optional[NumericalRank]
     """Numerical work and conditioning for one property-action batch."""
     site_rank: int
     """Rank of the association-site Jacobian, a count."""
@@ -1263,6 +1264,7 @@ class PropertyActionBatch:
     for successful pressure closure and for failures without that record."""
 
 class State:
+    rank_records: list[NumericalRank]
     """One homogeneous state with SI molar quantities.
 
     Notes
@@ -2450,12 +2452,43 @@ class CriticalRecord:
     rank: int
     """Numerical rank of the augmented defining Jacobian, a count."""
 
+class ConditioningObservation:
+    """Condition and local error evidence at the attributed numerical point."""
+    operation: str
+    basis: str
+    norm: str
+    method: str
+    cause: str
+    point_kind: str
+    criterion: str
+    dimension: int
+    rank: int
+    precision_bits: int
+    attempt: int | None
+    stage: int | None
+    iteration: int
+    threshold: float
+    condition: float
+    matrix_norm: float
+    error: float
+    criterion_value: float
+    export_displacement: float
+    coordinates: list[float]
+    row_scale: list[float]
+    column_scale: list[float]
+    controls: list[float]
+    phase: Optional[int]
+    component: Optional[int]
+    available: bool
+
 class NumericalRank:
     """Most recent existing factorization's rank decision and relative threshold."""
     basis: str
     dimension: int
     rank: int
     threshold: float
+    observation: ConditioningObservation
+    first_conditioning_warning: Optional[ConditioningObservation]
 
 class Quantity:
     """Comparison chart: linear, positive physical quantity, or stored logarithm."""
@@ -2911,6 +2944,7 @@ class CompiledSystem:
 
 
 class LinearSolveDiagnostics:
+    point_kind: str
     """Local first-order error estimates in the named system's unscaled coordinates.
 
     Attributes
@@ -4844,6 +4878,7 @@ class InputReconciliation:
     on the outputs.
     """
 class FitResult:
+    internal_factor_conditioning: str
     """Native parameter-estimation candidate, objective and local evidence.
 
     Notes

@@ -118,6 +118,7 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
+    diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions");
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;
@@ -1050,6 +1051,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     HelmholtzDerivatives result;
     core::retain_first(result.first_numerical_failure, first);
     result.site_fractions = sites;
+    if (site_record.rank) core::retain_rank(result.rank_records, *site_record.rank);
     result.value = values.front();
     scope.probe("residual_helmholtz_extensive", result.value);
     if (order == DerivativeOrder::Value) return result;
@@ -1069,6 +1071,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         temperature, density, composition, parameters_, sigma, diameter);
     auto factorization = properties::site_factorization(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
+    if (sites_count) core::retain_rank(result.rank_records, core::conditioning(factorization, "implicit_site_fractions"));
     if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
         // Density closure consumes the reduced gradient, a_VV and the floor only: one adjoint for
         // the site multipliers and one volume tangent replace the full site Jacobian.
@@ -2186,6 +2189,7 @@ State HelmholtzModel::state(
         - temperature * temperature * derivatives.hessian[0];
     State result;
     core::retain_first(result.first_numerical_failure, derivatives.first_numerical_failure);
+    result.rank_records = derivatives.rank_records;
     result.solver_options = solver_options_;
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
@@ -2378,6 +2382,7 @@ State HelmholtzModel::state_at_pressure(
             (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
     result.density_convergence = root.convergence;
+    for (const auto& rank : root.rank_records) core::retain_rank(result.rank_records, rank);
     core::retain_first(result.first_numerical_failure, root.first_numerical_failure, true);
     result.density_branch = root.branch;
     result.requested_density_branch = branch;

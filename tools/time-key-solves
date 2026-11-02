@@ -131,16 +131,19 @@ def frozen_result(case, operation):
             raise RuntimeError(f'F1 fit: {result.message}; trial failures {result.trial_failures}')
         reply = {k: getattr(result, k) for k in ('iterations', 'residual_evaluations', 'jacobian_evaluations',
                                                'initial_cost', 'final_cost', 'status', 'message')}
+        reply['fit_rank'] = [dict(basis=r.basis, rank=r.rank, dimension=r.dimension, threshold=r.threshold,
+            condition=(r.observation.condition if hasattr(r, 'observation') and math.isfinite(r.observation.condition) else None))
+            for r in result.rank_records]
         reply.update(seconds=seconds, cpu_seconds=cpu_seconds, workers=os.cpu_count(),
                      rows=[dict(point=F1, **{k: getattr(result, k) for k in FIT_VALUES})])
         return reply
     chart = _core.CoordinateSet()
     chart.coordinates = coordinates
     point = chart.start(parameters._native, observations, thermal)
-    clock, cpu = time.perf_counter(), time.process_time()
     with epcsaft.trace(diagnostics=False) as capture:
+        clock, cpu = time.perf_counter(), time.process_time()
         result = _core.evaluate_observations(parameters._native, coordinates, point, [], observations, thermal)
-    cpu_seconds, seconds = time.process_time() - cpu, time.perf_counter() - clock
+        cpu_seconds, seconds = time.process_time() - cpu, time.perf_counter() - clock
     trace = capture.trace
     if trace.incomplete or any(s != _core.ObservationStatus.Available for s in result.statuses):
         raise RuntimeError(f'{case} evaluation incomplete or unavailable')
@@ -207,15 +210,16 @@ def worker():
     replies = os.fdopen(os.dup(1), 'w')
     os.dup2(2, 1)
     import epcsaft
-    from epcsaft import equilibrium as eq
+    from epcsaft import equilibrium as eq, _core
     from engine_identity import loaded_identity
     sys.path.insert(0, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'))
     import baseline as b
-    declarations = {name: (model, problem) for name, model, problem in b.declared_cases() if name in ORDINARY}
+    declarations = {name: (model, problem._native(model)) for name, model, problem in b.declared_cases() if name in ORDINARY}
     fixed = sys.modules['run_fixed_settler']
     kh_model = epcsaft.Mixture(epcsaft.Parameters.from_json(b.KH_PACKET, components=fixed.COMPONENTS))
-    sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])) for i in range(1, 9)]
-    unloaded = unloaded_declaration()
+    sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])._native(kh_model)) for i in range(1, 9)]
+    unloaded_model, unloaded_problem = unloaded_declaration()
+    unloaded = unloaded_model, unloaded_problem._native(unloaded_model)
     for line in sys.stdin:
         request = json.loads(line)
         if request['case'] == '__identity__':
@@ -248,17 +252,22 @@ def worker():
                 if name.endswith('/accepted'):
                     seed = eq.EquilibriumStart()
                     seed.coordinates = request['starts'][base]
+                native_model, limits, seeds = model._model, eq.EquilibriumWorkLimits(), [seed]
                 begun = time.perf_counter_ns()
+                cpu_begun = time.process_time_ns()
                 if seed is not None:
-                    attempts = eq.solve_equilibrium_starts(model, problem, [seed], eq.EquilibriumWorkLimits())
-                    result = attempts.results[0]
+                    attempts = _core.solve_equilibrium_starts(native_model, problem, seeds, limits)
                 else:
-                    result = eq.solve_equilibrium(model, problem, previous)
+                    result = _core.solve_equilibrium(native_model, problem, previous)
+                cpu_seconds = (time.process_time_ns() - cpu_begun) / 1e9
                 elapsed += (time.perf_counter_ns() - begun) / 1e9
+                if seed is not None:
+                    result = attempts.results[0]
                 if result is None:
                     raise RuntimeError(f'{point}: no state returned: {attempts.causes}')
                 row = {key: getattr(result, key) for key in (*COUNTS, *PHYSICAL)} | {key: v if isinstance(v := getattr(result, key), list) else [v] for key in ('temperature', 'pressure')}
-                row.update(point=point, success=result.success, criterion_met=result.requested_tolerance_met,
+                row['conditioning_warnings'] = sum(getattr(r, 'first_conditioning_warning', None) is not None for r in result.rank_records)
+                row.update(cpu_seconds=cpu_seconds, point=point, success=result.success, criterion_met=result.requested_tolerance_met,
                            raw_rows=max(map(abs, result.residuals)), classified_rows=max(map(abs, result.classified_residuals)),
                            message=result.message)
                 rows.append(row)
@@ -334,6 +343,8 @@ def gate(work_rows, state_rows, expect_change=False):
     """
     counts, failures = {}, []
     for row in work_rows:
+        if int(row.get('conditioning_warnings', 0)):
+            failures.append(f"CONDITIONING WARNING {row['point']}: {row['wheel']} {row['sample']}")
         counts.setdefault((row['case'], row['point']), {'A': set(), 'B': set()})[row['wheel']].add(
             tuple(int(row[k]) for k in count_keys(row['case'])))
     for (case, point), seen in counts.items():
@@ -465,11 +476,15 @@ def main():
     parser.add_argument('--expect-change', action='store_true',
                         help='report intended work changes without failing; numerical values and ceilings still gate')
     parser.add_argument('--cpu', type=int, help='serial-sample CPU; full fits retain controller affinity')
+    parser.add_argument('--cpu-overhead', action='store_true', help='run the 15-case, before/AB/after CPU uncertainty gate')
+    parser.add_argument('--cpu-blocks', type=int, default=20)
     parser.add_argument('--fit', action='store_true', help='also run one F1 fit per environment with native default workers')
     parser.add_argument('--collect-only', action='store_true')
     parser.add_argument('--compare-only', nargs=2, type=Path)
     parser.add_argument('--control', type=Path, help='passing A=A --fit summary from this host and prepared A image')
     args = parser.parse_args()
+    if args.cpu_overhead and (not LINUX or args.cpu_blocks != 20):
+        parser.error('CPU overhead acceptance requires Linux and exactly 20 balanced blocks')
     if args.pairs < 1:
         parser.error('--pairs must be positive')
     out = args.out.resolve()
@@ -538,7 +553,7 @@ def main():
             work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
                                   **{key: row[key] for key in count_keys(case)}, raw_rows=row['raw_rows'],
                                   classified_rows=row['classified_rows'], success=row['success'],
-                                  criterion_met=row['criterion_met']))
+                                  criterion_met=row['criterion_met'], conditioning_warnings=row.get('conditioning_warnings', 0)))
             for key in quantities(case):
                 state_rows.extend(dict(wheel=label, case=case, sample=sample, point=row['point'],
                                        quantity=key, index=i, value=value) for i, value in enumerate(row[key]))
@@ -675,6 +690,77 @@ def main():
                                      median_B_seconds=baseline[case]['B']['seconds'],
                                      evaluations={label: evaluation(result) for label, result in baseline[case].items()})
             summary['gate_failures'].extend(ceilings(case, comparisons[case]['evaluations'], control=same_prepared))
+        if args.cpu_overhead:
+            # This third process loads exactly A's prepared image for both A=A phases.
+            environments['C'], interpreters['C'], identities['C'] = environments['A'], interpreters['A'], identities['A']
+            launch('C')
+            tick = time.get_clock_info('process_time').resolution
+            counts = {}
+            raw = (out / 'cpu-samples.txt').open('w')
+            evidence = (out / 'cpu-call-evidence.jsonl').open('w')
+            def batch(label, case, count, phase, block):
+                totals = {}
+                for repetition in range(count):
+                    result = call(label, case, starts)
+                    if result['nice'] != 10 or result['affinity'] != [cpu]:
+                        raise RuntimeError('CPU sample topology differs')
+                    if any(row.get('conditioning_warnings', 0) for row in result['rows']):
+                        raise RuntimeError(f'Ordinary CPU case has a conditioning warning: {case}')
+                    reference = baseline[case]['A']
+                    difference = physical_difference(result, reference, quantities(case))[0]
+                    if difference > STATE_TOLERANCE or work(result) != work(reference):
+                        raise RuntimeError(f'CPU sample changed numerical state or work: {case}')
+                    if case in FROZEN and (failures := ceilings(case, {'A': evaluation(result)})):
+                        raise RuntimeError(f'CPU sample exceeded frozen ceilings: {failures}')
+                    evidence.write(json.dumps(dict(phase=phase, block=block, repetition=repetition,
+                        image=label, case=case, difference=difference, result=result), allow_nan=False) + '\n')
+                    for row in result['rows']:
+                        duration = result['cpu_seconds'] if case in FROZEN else row['cpu_seconds']
+                        totals[row['point']] = totals.get(row['point'], 0) + duration
+                return totals
+            try:
+                for case in CASES:
+                    count = 1
+                    if case not in FROZEN:
+                        while min(batch('A', case, count, 'pilot', -1).values()) < 0.25:
+                            count *= 2
+                    counts[case] = count
+                for phase, labels in (('aa_pre', ('A', 'C')), ('ab', ('A', 'B')), ('aa_post', ('A', 'C'))):
+                    for label in labels:
+                        for case in CASES:
+                            batch(label, case, 1, phase + '_warmup', -1)
+                    for case in CASES:
+                        for block in range(20):
+                            samples = {'A': [], 'B': []}
+                            order = 'ABBA' if block % 2 == 0 else 'BAAB'
+                            for arm in order:
+                                samples[arm].append(batch(labels[arm == 'B'], case, counts[case], phase, block))
+                            for point in samples['A'][0]:
+                                # AB and BA are positions, even in a BAAB block.
+                                indices = (0, 1) if order == 'ABBA' else (1, 0)
+                                a, b = samples['A'], samples['B']
+                                left, right = indices
+                                raw.write(f"{phase} {point} {block} {counts[case]} {tick:.17g} "
+                                    f"{a[left][point]:.17g} {b[left][point]:.17g} "
+                                    f"{a[right][point]:.17g} {b[right][point]:.17g}\n")
+                            raw.flush(); evidence.flush()
+                        print(f'CPU {phase}: {case}, K={counts[case]}', flush=True)
+                for label in ('A', 'B', 'C'):
+                    if call(label, '__identity__') != identities[label]:
+                        raise RuntimeError(f'CPU image changed: {label}')
+            finally:
+                raw.close(); evidence.close()
+            reducer = out / 'cpu-reducer'
+            subprocess.run(['c++', '-std=c++17', '-O2', str(ROOT / 'tools/key-solve-cpu.cpp'), '-o', str(reducer)], check=True)
+            subprocess.run([str(reducer), '--selfcheck'], check=True, stdout=(out / 'cpu-arithmetic.txt').open('w'))
+            with (out / 'cpu-decision.csv').open('w') as decision:
+                reduced = subprocess.run([str(reducer), str(out / 'cpu-samples.txt')], stdout=decision)
+            summary['cpu_overhead'] = dict(exit_code=reduced.returncode, batches=counts, blocks=20,
+                clock_tick_seconds=tick, interval_order_statistics=[3, 18], control_image=identities['C'],
+                block_order='even ABBA, odd BAAB',
+                assumptions='independent stationary balanced blocks; simultaneous median coverage at least 95 percent')
+            if reduced.returncode:
+                summary['gate_failures'].append(f'CPU overhead did not pass: reducer exit {reduced.returncode}')
         if args.fit and F1 not in summary.get('not_comparable', {}):
             f1 = comparisons[F1]
             control = json.loads(args.control.read_text()) if args.control else None
@@ -732,7 +818,7 @@ def main():
                 write_csv(out / filename, rows)
         summary['runtime_seconds'] = time.perf_counter() - begun
         summary['input_sha256'] = {path.relative_to(ROOT).as_posix(): digest(path) for path in (
-            Path(__file__).resolve(), *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
+            Path(__file__).resolve(), ROOT / 'tools/key-solve-cpu.cpp', *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
             ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
             ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',
             ROOT / 'analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv',

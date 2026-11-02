@@ -361,8 +361,11 @@ const int native_image = open_image(reinterpret_cast<const void*>(&interrupted))
 FIELDS(ResidualEnergyAction, action, status, diagnostics)
 FIELDS(PropertyActionDiagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio, association_residual,
     pressure_density_derivative, pressure_residual, stability_determinant, pressure_factorizations, pressure_solves, thermal_evaluations,
-    recordings, directional_paths, forward_sweeps, branch, stable_root_count, first_numerical_failure)
-FIELDS(core::NumericalRank, basis, dimension, rank, threshold)
+    recordings, directional_paths, forward_sweeps, branch, stable_root_count, first_numerical_failure, site_conditioning)
+FIELDS(core::ConditioningObservation, operation, basis, norm, method, cause, point_kind, criterion, dimension, rank,
+    precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error, criterion_value, coordinates,
+    row_scale, column_scale, controls, phase, component, export_displacement, available)
+FIELDS(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning)
 FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
@@ -1310,6 +1313,11 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     cov.rank = static_cast<std::size_t>(std::count_if(cov.singular_values.begin(), cov.singular_values.end(),
         [&](double value) { return value > floor && value > 0.0; }));
     result.rank_records.push_back({"weighted optimizer observation Jacobian", point.size(), cov.rank, floor});
+    core::ConditioningObservation determination{"final_weighted_jacobian", "", "2", "final_SVD",
+        cov.rank == point.size() ? "" : "rank_deficient", "endpoint"};
+    determination.available = cov.rank == point.size();
+    determination.condition = determination.available ? singular(0) / singular(singular.size() - 1) : INFINITY;
+    core::observe_conditioning(result.rank_records.back(), std::move(determination), point);
     if (cov.rank < point.size()) core::retain_first(result.first_numerical_failure, [&] {
         core::Convergence record; record.residual = NAN; record.stop = core::Stop::singular;
         record.cause = "parameter Jacobian rank deficient; normal inverse unavailable";

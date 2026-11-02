@@ -168,7 +168,7 @@ void register_eos(nb::module_& module) {
         .def("__int__", [](epcsaft::DensityBranch value) { return static_cast<int>(value); });
     using Diagnostics = epcsaft::PropertyActionDiagnostics;
     nb::class_<Diagnostics>(module, "PropertyActionDiagnostics")
-        EPCSAFT_READONLY(Diagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio,
+        EPCSAFT_READONLY(Diagnostics, site_conditioning, site_rank, site_factorizations, site_solves, site_pivot_ratio,
             association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
             forward_sweeps, branch, stable_root_count, first_numerical_failure);
@@ -202,7 +202,7 @@ void register_eos(nb::module_& module) {
             density_convergence, first_numerical_failure, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
             density_branch, stable_root_count)
-        EPCSAFT_READONLY(epcsaft::State, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
+        EPCSAFT_READONLY(epcsaft::State, rank_records, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
             isentropic_compressibility, speed_of_sound, joule_thomson_coefficient, partial_molar_volume,
             partial_molar_enthalpy, partial_molar_entropy);
     nb::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")

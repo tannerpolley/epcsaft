@@ -1506,7 +1506,9 @@ static CompiledSystem compile_with_basis(
         const double norm = matrix.col(column).cwiseAbs().maxCoeff();
         if (norm > 0.0) matrix.col(column) /= norm;
     }
-    compiled.last_rank = core::numerical_rank(matrix.fullPivLu(), "column_scaled");
+    compiled.last_rank = core::conditioning(matrix.fullPivLu(), "column_scaled", 0, "generic_point",
+        {compiled.problem.temperature.value, compiled.problem.pressure.value});
+    if (compiled.last_rank->first_conditioning_warning) compiled.last_rank->first_conditioning_warning->coordinates = point;
     compiled.jacobian_rank = compiled.last_rank->rank;
     compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
     compiled.feasible = compiled.generic_nullity == 0;

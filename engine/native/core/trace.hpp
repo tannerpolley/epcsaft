@@ -71,9 +71,16 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
 inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) {
     if (!first) retain_failure(first, std::runtime_error(std::string(cause)), operation);
 }
-inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank) {
-    for (auto& r : records) if (r.basis == rank.basis) { r = rank; return; }
-    records.push_back(rank);
+inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank,
+    const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
+    auto assign = [&](NumericalRank& target) {
+        auto warning = target.first_conditioning_warning; target = rank;
+        if (warning) target.first_conditioning_warning = std::move(warning);
+        else if (target.first_conditioning_warning && target.first_conditioning_warning->coordinates.empty()) target.first_conditioning_warning->coordinates = point;
+        if (target.first_conditioning_warning && !target.first_conditioning_warning->stage) (target.first_conditioning_warning = std::make_shared<ConditioningObservation>(*target.first_conditioning_warning))->stage = stage;
+    };
+    for (auto& r : records) if (r.basis == rank.basis) { assign(r); return; }
+    records.emplace_back(); assign(records.back());
 }
 
 template <typename Observation>

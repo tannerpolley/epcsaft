@@ -232,7 +232,7 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(FitResult, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure, internal_factor_conditioning);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);

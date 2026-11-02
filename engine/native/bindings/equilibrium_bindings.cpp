@@ -98,8 +98,12 @@ static nb::dict saturation_values(const EquilibriumResult& r) {
 }
 
 void register_equilibrium(nb::module_& module) {
+    nb::class_<core::ConditioningObservation>(module, "ConditioningObservation")
+        EPCSAFT_READONLY(core::ConditioningObservation, operation, basis, norm, method, cause, point_kind, criterion,
+            dimension, rank, precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error,
+            criterion_value, coordinates, row_scale, column_scale, controls, phase, component, export_displacement, available);
     nb::class_<core::NumericalRank>(module, "NumericalRank")
-        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold);
+        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning);
     using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
     using core::ComparisonEligibility; using core::EquilibriumComparison;
     using core::compare_equilibrium_quantity;
@@ -275,7 +279,7 @@ void register_equilibrium(nb::module_& module) {
             return system.hessian(point, multipliers); },
             nb::arg("point"), nb::arg("constraint_multipliers") = std::vector<double>{});
     nb::class_<LinearSolveDiagnostics>(module, "LinearSolveDiagnostics")
-        EPCSAFT_READONLY(LinearSolveDiagnostics, system, reason, residual_norm, evaluation_floor, jacobian_inverse_norm,
+        EPCSAFT_READONLY(LinearSolveDiagnostics, point_kind, system, reason, residual_norm, evaluation_floor, jacobian_inverse_norm,
             condition_estimate, forward_error_estimate, precision_bits, refinement_iterations);
     nb::class_<IpoptIteration>(module, "IpoptIteration")
         EPCSAFT_READONLY(IpoptIteration, mode, iteration, line_search_trials, objective, inf_pr, inf_du, mu, step_norm, regularization, alpha_du, alpha_pr);

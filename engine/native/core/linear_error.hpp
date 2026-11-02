@@ -23,6 +23,27 @@ void retain_rank(std::vector<NumericalRank>& records, const Factor& factor, cons
     if (scope.diagnostics_on()) scope.probe("rank", {double(rank.rank), double(rank.dimension), rank.threshold}, 0, basis);
 }
 
+// Eigen's supplied-factor estimator observes the 1-norm after rank admission.
+template <typename Factor>
+NumericalRank conditioning(const Factor& factor, const char* basis, std::size_t iteration = 0,
+    const char* point_kind = "last_linearization", const std::vector<double>& controls = {}) {
+    auto record = numerical_rank(factor, basis);
+    ConditioningObservation observation{basis, "", "1", "Eigen supplied-factor estimate", "not_evaluated", point_kind};
+    observation.iteration = iteration; observation.controls = controls;
+    observation.precision_bits = std::numeric_limits<typename Factor::MatrixType::Scalar>::digits;
+    if (factor.rows() == 0 || factor.rows() != factor.cols() || !factor.matrixLU().allFinite())
+        observation.cause = "nonfinite_or_unavailable_rows";
+    else if (record.rank != record.dimension) observation.cause = "rank_deficient";
+    else {
+        const auto reciprocal = factor.rcond();
+        observation.condition = double(1 / reciprocal);
+        observation.available = std::isfinite(observation.condition) && reciprocal > 0;
+        observation.cause = observation.available ? "physical_error_operands_unavailable" : "nonfinite_inverse";
+    }
+    observe_conditioning(record, std::move(observation));
+    return record;
+}
+
 // Rigal-Gaches normwise backward error; the zero right-hand side needs no unit floor.
 template <typename Real>
 Real backward_error(Real residual, Real jacobian_norm, Real solution, Real right) {
@@ -115,11 +136,17 @@ LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, cons
     using Matrix = typename Jacobian::PlainObject;
     using Vector = typename Residual::PlainObject;
     LinearError<Vector> out; out.row_floor = eta;
+    if (j.rows() == 0 || j.rows() != j.cols() || f.size() != j.rows() || eta.size() != j.rows()
+        || row.size() != j.rows() || column.size() != j.cols() || g.cols() != j.cols()
+        || !row.allFinite() || !column.allFinite() || (correction && (correction->size() != j.cols() || !correction->allFinite()))) {
+        out.cause = "nonfinite_or_unavailable_rows"; return out;
+    }
     const Matrix a = row.asDiagonal() * j * column.asDiagonal();
     if (a.rows() != a.cols() || !a.allFinite() || !f.allFinite() || !eta.allFinite()
         || !g.allFinite() || (eta.array() < 0).any()) { out.cause = "nonfinite_or_unavailable_rows"; return out; }
     std::optional<Factor> owned;
     const auto& lu = supplied ? *supplied : owned.emplace(a);
+    if (lu.rows() != a.rows() || lu.cols() != a.cols()) { out.cause = "factor_shape"; return out; }
     out.rank = static_cast<std::size_t>(lu.rank()); out.threshold = lu.threshold();
     out.matrix_norm = a.cwiseAbs().rowwise().sum().maxCoeff();
     if (out.rank != static_cast<std::size_t>(a.cols())) { out.cause = "rank_deficient"; return out; }
@@ -138,6 +165,63 @@ LinearError<typename Residual::PlainObject> linear_error(const Jacobian& j, cons
     }
     out.inverse_norm = sums.maxCoeff(); out.condition = out.matrix_norm * out.inverse_norm;
     out.backward = backward_error(defect.cwiseAbs().maxCoeff(), out.matrix_norm, d.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff());
+    out.radius = out.correction.cwiseAbs() + out.floor + out.defect;
+    if (!out.radius.allFinite()) out.cause = "nonfinite_projection";
+    return out;
+}
+
+// Preserve the polish admission operand: infinity-norm estimation uses the transpose.
+template <typename Matrix, typename Residual, typename Correction, typename Scale>
+double polish_forward_bound(const Matrix& j, const Residual& r, const Correction& d, const Scale& scale) {
+    const double unavailable = std::numeric_limits<double>::infinity();
+    if (j.rows() == 0 || j.rows() != j.cols() || r.size() != j.rows() || d.size() != j.cols()
+        || scale.size() != j.cols() || !j.allFinite() || !d.allFinite() || !r.allFinite()
+        || !scale.allFinite() || !(scale.minCoeff() > 0.0)) return unavailable;
+    const typename Matrix::PlainObject scaled = j * scale.asDiagonal();
+    const auto lu = scaled.transpose().eval().fullPivLu();
+    if (lu.rank() != j.cols()) return unavailable;
+    const double denominator = lu.rcond() * scaled.cwiseAbs().rowwise().sum().maxCoeff();
+    if (!(denominator > 0.0) || !std::isfinite(denominator)) return unavailable;
+    return d.cwiseQuotient(scale).cwiseAbs().maxCoeff()
+        + (j * d + r).cwiseAbs().maxCoeff() / denominator;
+}
+
+inline void density_conditioning(Convergence& record, double density, double derivative, bool final = false) {
+    NumericalRank rank{"scalar_density", 1, std::isfinite(derivative) && derivative != 0.0 ? 1u : 0u, 0};
+    ConditioningObservation observation{"density_closure", "", "scalar", "inverse_derivative"};
+    observation.available = rank.rank == 1;
+    observation.condition = observation.available ? 1.0 : INFINITY;
+    observation.cause = observation.available ? "" : std::isfinite(derivative) ? "rank_deficient" : "nonfinite_inverse";
+    if (observation.available && record.floor)
+        observation.error = (record.residual + *record.floor) / std::abs(derivative) / density + std::numeric_limits<double>::epsilon();
+    observation.criterion = policy::DENSITY_ANCHOR_REGULARITY.name;
+    observation.criterion_value = final ? policy::DENSITY_ANCHOR_REGULARITY.value : NAN;
+    observation.iteration = record.iterations;
+    observe_conditioning(rank, std::move(observation));
+    if (rank.first_conditioning_warning) rank.first_conditioning_warning->coordinates = {density};
+    record.rank = std::move(rank);
+}
+
+// Cheap physical projection, distinct from the componentwise inverse-action estimate.
+template <typename Matrix, typename Vector, typename Projection, typename Factor>
+LinearError<Vector> estimated_linear_error(const Matrix& a, const Vector& f, const Projection& gc,
+    const Vector& eta, const Vector& row, const Factor& factor, const Vector& d) {
+    LinearError<Vector> out;
+    if (a.rows() == 0 || a.rows() != a.cols() || f.size() != a.rows() || eta.size() != a.rows()
+        || row.size() != a.rows() || d.size() != a.cols() || gc.cols() != a.cols()
+        || !a.allFinite() || !f.allFinite() || !eta.allFinite() || !row.allFinite() || !d.allFinite()
+        || !gc.allFinite() || (eta.array() < 0).any()
+        || factor.rows() != a.rows() || factor.cols() != a.cols()) { out.cause = "nonfinite_or_unavailable_rows"; return out; }
+    const auto record = conditioning(factor, "scaled_defining_rows");
+    out.rank = record.rank; out.threshold = record.threshold; out.condition = record.observation.condition;
+    if (!record.observation.available) { out.cause = record.observation.cause; return out; }
+    out.matrix_norm = a.cwiseAbs().colwise().sum().maxCoeff();
+    out.inverse_norm = out.condition / out.matrix_norm;
+    const Vector right = -row.cwiseProduct(f), defect = compensated_defect(a, d, right);
+    out.correction = gc * d;
+    const Vector projection = gc.cwiseAbs().rowwise().maxCoeff();
+    out.floor = projection * (out.inverse_norm * row.cwiseProduct(eta).cwiseAbs().sum());
+    out.defect = projection * (out.inverse_norm * defect.cwiseAbs().sum());
     out.radius = out.correction.cwiseAbs() + out.floor + out.defect;
     if (!out.radius.allFinite()) out.cause = "nonfinite_projection";
     return out;

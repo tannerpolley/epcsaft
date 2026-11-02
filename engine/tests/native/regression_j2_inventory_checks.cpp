@@ -374,6 +374,7 @@ void check_r3() {
     CHECK(deficient.rank_records.size() == 1);
     const auto& rank = deficient.rank_records.front();
     CHECK(rank.rank == 1 && rank.dimension == 2);
+    CHECK(!std::isfinite(rank.observation.condition) && !rank.observation.available);
     agree("r3/rank_cutoff", "absolute_singular_value_cutoff", "optimizer_J", rank.threshold,
         5.47456335865895e-15, 1e-29, 0.0, summary(deficient), "the existing singular spectrum determines the absolute cutoff", "r3");
     CHECK(deficient.first_numerical_failure && deficient.first_numerical_failure->stop == core::Stop::singular);

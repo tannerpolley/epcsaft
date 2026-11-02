@@ -2649,6 +2649,30 @@ observations. Inspect `capture.trace.ipopt_log_error` and
 `capture.trace.incomplete` for a failed log destination. Diagnostic retention
 does not handle out-of-memory failure specially.
 
+Each `NumericalRank` also carries its latest conditioning `observation` and at
+most one `first_conditioning_warning`. The warning survives later regular or
+unavailable observations through `StageWork`; it is separate from the first
+numerical refusal. Read the observation's operation, basis, norm, method,
+precision and point attribution together with its condition and error.
+Full-pivot supplied-factor estimates use the 1-norm after rank admission;
+the reduced pure-fluid estimate retains its infinity-norm operands.
+A condition estimate can underestimate the mathematical condition number.
+A missing physical-error operand remains unavailable rather than zero.
+An empty row-scale vector denotes identity scaling. Warning snapshots allocate
+only when a warning occurs; copying an observation does not allocate an absent
+warning. Enclosing stage and attempt annotation copies a shared warning before
+adding an identifier, preserving the originating record.
+
+`LinearSolveDiagnostics.point_kind` distinguishes endpoint evidence from a
+last linearization. No terminal factorization is added to fill diagnostics.
+An earlier linearization does not establish endpoint accuracy. The scalar
+density error is in log density, conditional on the supplied association
+floor; it does not include a complete equation-of-state roundoff model.
+Final fit conditioning reuses the weighted optimizer-Jacobian SVD, and requires
+rank equal to every fitted column. Internal LM and Ipopt KKT conditioning is
+unavailable. Ipopt callbacks, restoration observations and failed-point
+records retain their existing meanings.
+
 ASL replay uses the same real controls and requested derivative order. Its
 density errors format the existing first cause, falling back to density
 convergence; solved-state action errors retain rank/dimension and present
@@ -2884,6 +2908,14 @@ result retains the same convergence record alongside its state. The pre-solve
 `NOT_RUN` record is a structural diagnostic with an unmeasured (NaN) residual
 and absent criterion; it is neither a solver residual nor a physical
 nonexistence claim. `requested_tolerance_met` is absent for that record.
+
+The retained polish correction operand keeps its existing
+`EQUILIBRIUM_POLISH_CORRECTION` criterion. Its `inner_floor_unavailable`
+cause distinguishes that admission operand from a physical error estimate
+including inner-source floors. Optional attempt and stage identifiers are
+absent when the owning operation does not provide them; chronological stage
+merges fill only absent identifiers and preserve a nested warning's origin.
+
 
 ## Verification obligations
 
