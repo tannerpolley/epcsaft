@@ -2610,8 +2610,8 @@ process-global. A Python KeyboardInterrupt stops the fit between rows only
 when it runs on Python's main thread, which alone receives signals; elsewhere it runs to its end (#380). Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
 coordinates. Every matching observation must declare the same reaction,
-coefficients and source basis. Rebuild each trial with those values, preserving
-reference transfers. Optimizer columns follow declaration order; physical rows
+coefficients and source basis; temperature bounds may differ. Rebuild each trial with those values, preserving
+each declaration’s bounds and reference transfers. Optimizer columns follow declaration order; physical rows
 are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
 The native point reader returns prediction columns in `optimizer_gradient` and
@@ -2629,9 +2629,9 @@ reaction. Plain assignments precede shift additions, independently of declaratio
 order. Duplicate plain coefficients and two shifts on one reaction are refused.
 The existing named and species-reference admission remains in point readers.
 The fitted chart publishes the native law by reaction name, alongside the
-existing physical shift row and any plain coordinate values. To replay, attach
-the completed native laws and fitted EOS parameters without applying coordinates
-again. The native `reaction_log10_reciprocal` helper
+existing physical shift row and any plain coordinate values. To replay, copy the completed native law coefficients a–f into each original
+declaration, retaining its bounds and source metadata, and use the fitted EOS
+parameters without applying coordinates again. The native `reaction_log10_reciprocal` helper
 returns its decadic coefficients and refuses $c\ne0$.
 Sequence starts and minimax explicitly refuse this coordinate; their existing
 coefficient and EOS charts retain their behavior.

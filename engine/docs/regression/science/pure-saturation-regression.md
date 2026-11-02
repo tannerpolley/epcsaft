@@ -197,7 +197,8 @@ A reaction coordinate is a named scalar ln K (coefficient a) or a stored
 `ReactionLogPolynomial` coefficient a, b, c, d, in units 1, K, 1, K⁻¹. It uses
 the same affine map and inclusive bounds. Name tying requires identical
 stoichiometry, constant representation and starts, correlation coefficients,
-Tref, interval and standard-state identity, and source basis/pressure. Referenced
+Tref and standard-state identity, and source basis/pressure. Each declaration
+retains its own temperature interval. Referenced
 matches also share the solvent, the common-molality standard and the effective
 species reference of every reacting species, since no conversion between
 conventions is declared (EqID: `neutral_reaction_reference_transfer`); their
