@@ -1381,6 +1381,13 @@ void check_conditioning() {
         CHECK(outside.action && inside.action && std::abs(*outside.action - *inside.action)
             <= 1e-10 * std::max(std::abs(*outside.action), 1.0));
     }
+    {
+        core::Convergence earlier; earlier.floor = 0.0;
+        core::density_conditioning(earlier, 1.0, 1.0, true);
+        CHECK(earlier.rank->observation.point_kind == "last_linearization");
+        core::density_conditioning(earlier, 1.0, 1.0, true, "endpoint");
+        CHECK(earlier.rank->observation.point_kind == "endpoint");
+    }
     for (double diagonal : {1.0, 1e-10, 0.0}) {
         Matrix j = Matrix::Identity(2, 2); j(1, 1) = diagonal;
         const Matrix g = Matrix::Identity(2, 2);

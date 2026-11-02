@@ -186,9 +186,9 @@ double polish_forward_bound(const Matrix& j, const Residual& r, const Correction
         + (j * d + r).cwiseAbs().maxCoeff() / denominator;
 }
 
-inline void density_conditioning(Convergence& record, double density, double derivative, bool final = false) {
+inline void density_conditioning(Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization") {
     NumericalRank rank{"scalar_density", 1, std::isfinite(derivative) && derivative != 0.0 ? 1u : 0u, 0};
-    ConditioningObservation observation{"density_closure", "", "scalar", "inverse_derivative", "", final ? "endpoint" : "last_linearization"};
+    ConditioningObservation observation{"density_closure", "", "scalar", "inverse_derivative", "", point_kind};
     observation.available = rank.rank == 1;
     observation.condition = observation.available ? 1.0 : INFINITY;
     observation.cause = observation.available ? "" : std::isfinite(derivative) ? "rank_deficient" : "nonfinite_inverse";
