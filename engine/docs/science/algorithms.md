@@ -1610,6 +1610,58 @@ Explicit native searches own their work capture and pass its trace to the
 counting code. The trace reports work only; no solver decision reads the ambient
 trace. Declared calls retain their existing scopes and perform no trial work.
 
+### Explicit fast discovery
+
+`Discover(mode="full")` is the default, including `phases="discover"`.
+`Discover(mode="fast")` selects one reduced round at fixed positive T/P,
+without reactions, solids, supplied-point evaluation or explicit trial supports.
+Ordinary `stability_test` rejects this mode. Selection is native and applies
+identically to ordinary and prepared requests.
+
+Keep the full initial declarations: Liquid then Vapor for a neutral union,
+Liquid only for a charged union, retaining the admitted lower-G parent.
+For an all-neutral union use one near-pure Liquid start per positive-feed
+species in native order, then one ideal-Vapor start. Each near-pure start
+assigns 0.99 to its selected species and distributes 0.01 over the other
+species in proportion to the parent feed; a singleton is exactly one.
+The Vapor composition uses the existing shifted exponential of the frozen
+chemical plane minus the standard term. This finite family follows FeOs
+0.10.1 `stability_analysis` and Michelsen (1982), Part I, Eqs. 13–19, 25–27.
+
+For a charged union keep the charge-neutral positive base and one near-pure
+start per neutral species on the union Liquid support, near-pure Liquid
+starts on the neutral-only support, and one ideal-Vapor neutral-only start.
+There are at most 2n₀+2 starts before deduplication, where n₀ is the number
+of fed neutral species. Use the existing reconstruction and constrained trial
+driver for every support in an ionic system, retaining normalization, charge
+and the complete transformed multiplier contraction. Perdomo (2025), §3.1
+Eq. 22 and §3.3 Eqs. 37–40, supplies the constrained criterion; these starts
+do not establish coverage of the constrained space.
+
+Retain root/seed deduplication, failed trials and every existing finite
+conserved-descent and uncertainty check. Stop at the first resolved descent,
+then attempt one added declaration from its conserved split using the shared
+solver, exact Newton eligibility, original-start driver fallback, branch and
+local-state admission, and extensive uncertainty-qualified Gibbs decrease.
+Do not recover through another declaration, remove phases, retry an alternate
+addition or test the flashed endpoint. Declaration and trial budgets still
+count all actual work; no numerical limits are reset.
+
+`DiscoveryRecord.mode` records the selection. For fast results, `termination`
+is `admitted_two_phase` for an admitted split, `no_admitted_split` only for
+an exhausted, available schedule without a resolved split, or `incomplete`.
+An incomplete result has no usable public state arrays; the candidate and
+attempts retain their diagnostics. Without an admitted initial parent, the
+entire trial search and its start families are recorded as unsearched; a zero
+declaration budget retains its exhaustion cause without counting an attempt.
+Unavailable trials or unresolved finite
+descent prevent a successful parent result, but do not invalidate a later
+independently admitted split. `StabilityReport.completed` is false on early
+stopping. `unsearched` records omitted start families, remaining scheduled
+seed identities, alternate additions, post-flash stability and three-or-more
+phase topologies. Salt-rich minima, remote splits and a third phase may be
+missed. No component-order invariance or global stability follows.
+
 ### Unfinished optimized trials
 
 An ordinary explicit trial passes an internal refinement permission to the shared
