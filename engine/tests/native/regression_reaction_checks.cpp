@@ -1534,7 +1534,7 @@ void check_reaction_enthalpy_shift() {
             }
         }
         auto rows = mixed.observations;
-        const auto laws = mixed.coordinates.apply(rows, mixed.coordinates.start(mixed.parameters, rows));
+        const auto laws = mixed.coordinates.apply(rows, {0.2, 1.1});
         CHECK(rows[0].problem.reactions[0].correlation->temperature_max == 393.15);
         CHECK(rows[1].problem.reactions[0].correlation->temperature_max == 436.85);
         (void)evaluate_reaction_properties(*rows[1].problem.reactions[0].correlation, 415.0);
@@ -1549,12 +1549,26 @@ void check_reaction_enthalpy_shift() {
             target.a = law.a; target.b = law.b; target.c = law.c;
             target.d = law.d; target.e = law.e; target.f = law.f;
         }
-        for (std::size_t i = 0; i < rows.size(); ++i) {
-            CHECK(replay[i].problem.reactions[0].correlation->temperature_max
-                == mixed.observations[i].problem.reactions[0].correlation->temperature_max);
-            const HelmholtzModel model(mixed.parameters);
-            const auto a = predict(model, rows[i]), b = predict(model, replay[i]);
-            CHECK(a.value && b.value && std::memcmp(&*a.value, &*b.value, sizeof(double)) == 0);
+        for (const auto* candidate : {&mixed, &minimum}) {
+            auto applied = candidate->observations;
+            const auto completed = candidate->coordinates.apply(applied, {0.2, 1.1});
+            auto restored = candidate->observations;
+            for (auto& row : restored) {
+                auto& target = *row.problem.reactions[0].correlation;
+                const auto& law = completed.at("reaction_a");
+                target.a = law.a; target.b = law.b; target.c = law.c;
+                target.d = law.d; target.e = law.e; target.f = law.f;
+            }
+            for (std::size_t i = 0; i < applied.size(); ++i) {
+                const auto& original = *candidate->observations[i].problem.reactions[0].correlation;
+                for (const auto* result : {&applied[i], &restored[i]}) {
+                    const auto& law = *result->problem.reactions[0].correlation;
+                    CHECK(law.temperature_min == original.temperature_min && law.temperature_max == original.temperature_max);
+                }
+                const HelmholtzModel model(candidate->parameters);
+                const auto a = predict(model, applied[i]), b = predict(model, restored[i]);
+                CHECK(a.value && b.value && std::memcmp(&*a.value, &*b.value, sizeof(double)) == 0);
+            }
         }
         for (auto* collection : {&rows, &replay}) {
             auto wider = (*collection)[3], narrower = (*collection)[2];
@@ -1579,6 +1593,8 @@ void check_reaction_enthalpy_shift() {
         }
         auto pivot = mixed;
         pivot.coordinates.coordinates[0].reaction->pivot_temperature = 415.0;
+        CHECK(fit(pivot).message.find("enthalpy shift pivot outside correlation interval") != std::string::npos);
+        std::swap(pivot.observations[0], pivot.observations[1]);
         CHECK(fit(pivot).message.find("enthalpy shift pivot outside correlation interval") != std::string::npos);
         for (int field = 0; field < 8; ++field) {
             auto different = mixed;
