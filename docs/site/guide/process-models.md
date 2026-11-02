@@ -36,15 +36,15 @@ the record and its controls. Keep the qualified phase-identity conditions;
 coalescence or a changed support can make a derivative unavailable rather
 than returning a meaningful zero.
 
-## Preserve the calculation ownership
+## What runs in Pyomo and what runs in the Engine
 
 Python may declare the external process equations in Pyomo/IDAES and invoke
-the outer process solver. This is the explicit process-model exception to
-the native calculation rule. It does not authorize Python implementations of
-Engine density, equilibrium, fitting or continuation calculations.
+the outer process solver. This is the only place where equations outside the
+Engine are solved; density, equilibrium, fitting and continuation
+calculations still run in the Engine.
 
-A property-based external phase-equilibrium model owns its own process rows
-and their claims. Do not describe its result as an Engine equilibrium solve
+A property-based external phase-equilibrium model is responsible for its own
+process equations and their claims. Do not describe its result as an Engine equilibrium solve
 unless it actually consumes the Engine's declared-equilibrium mapping.
 
 ## Optional tools and numerical limits
