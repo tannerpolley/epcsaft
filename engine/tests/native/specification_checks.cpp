@@ -1366,6 +1366,21 @@ struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
 void check_conditioning() {
     using namespace epcsaft;
     using Matrix = Eigen::MatrixXd; using Vector = Eigen::VectorXd;
+    {
+        policy::SolverOptions nested; nested.nested_solve = true;
+        CHECK(nested.resolved({}).nested_solve && policy::SolverOptions{}.resolved(nested).nested_solve);
+        const auto parameters = properties_support::associating_binary();
+        const HelmholtzModel direct(parameters), inner(parameters, {}, std::nullopt, nested);
+        const std::vector<std::vector<double>> directions(3, {1, 0, 0, 0});
+        const auto outside = direct.residual_energy_action(313.15, 1.0 / 42441.09427799721, {0.25, 0.75}, directions);
+        const auto inside = inner.residual_energy_action(313.15, 1.0 / 42441.09427799721, {0.25, 0.75}, directions);
+        CHECK(outside.status == PropertyActionStatus::Available && inside.status == outside.status);
+        CHECK(outside.diagnostics.site_conditioning && outside.diagnostics.site_conditioning->observation.available);
+        CHECK(!inside.diagnostics.site_conditioning && inside.diagnostics.site_rank == outside.diagnostics.site_rank);
+        CHECK(inside.diagnostics.site_pivot_ratio == outside.diagnostics.site_pivot_ratio);
+        CHECK(outside.action && inside.action && std::abs(*outside.action - *inside.action)
+            <= 1e-10 * std::max(std::abs(*outside.action), 1.0));
+    }
     for (double diagonal : {1.0, 1e-10, 0.0}) {
         Matrix j = Matrix::Identity(2, 2); j(1, 1) = diagonal;
         const Matrix g = Matrix::Identity(2, 2);

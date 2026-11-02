@@ -410,7 +410,6 @@ DensityRoot refine(
         history.contraction(), iterations + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
     };
     core::density_conditioning(record, density, derivative, true);
-    record.rank->observation.point_kind = "endpoint";
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
@@ -1569,7 +1568,6 @@ DensityRoot solve_density(
         root.convergence.residual = 0.0;
         root.convergence.floor = 0.0;
         core::density_conditioning(root.convergence, ideal_density, 1.0 / ideal_density, true);
-        root.convergence.rank->observation.point_kind = "endpoint";
         root.rank_records = {*root.convergence.rank};
         root.convergence.stop = core::classify(root.convergence.residual, *root.convergence.criterion, std::nullopt, std::nullopt, false);
         scope.finish(root.convergence);

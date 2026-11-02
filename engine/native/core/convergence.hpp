@@ -29,11 +29,9 @@ enum class Stop : std::uint8_t {
 struct ConditioningObservation {
     std::string operation{}, basis{}, norm{}, method{}, cause = "not_evaluated", point_kind = "last_linearization", criterion{};
     std::size_t dimension = 0, rank = 0, precision_bits = std::numeric_limits<double>::digits, iteration = 0;
-    std::optional<std::size_t> attempt{}, stage{};
-    double threshold = 0, condition = INFINITY, matrix_norm = NAN, error = NAN, criterion_value = NAN;
+    std::optional<std::size_t> attempt{}, stage{}, phase{}, component{};
+    double threshold = 0, condition = INFINITY, matrix_norm = NAN, error = NAN, criterion_value = NAN, export_displacement = NAN;
     std::vector<double> coordinates{}, row_scale{}, column_scale{}, controls{};
-    std::optional<std::size_t> phase{}, component{};
-    double export_displacement = NAN;
     bool available = false;
 };
 struct NumericalRank final {
@@ -59,9 +57,7 @@ inline void observe_conditioning(NumericalRank& record, ConditioningObservation 
 struct Convergence final {
     double residual = 0.0;
     const policy::Tolerance* criterion = nullptr;
-    std::optional<double> floor;
-    std::optional<double> amplification;
-    std::optional<double> contraction;
+    std::optional<double> floor, amplification, contraction;
     std::size_t iterations = 0;
     std::size_t evaluations = 0;
     Stop stop = Stop::stalled;

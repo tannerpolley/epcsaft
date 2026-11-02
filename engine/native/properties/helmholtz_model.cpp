@@ -109,7 +109,7 @@ namespace {
 // is reported through `status` and the factorization is still returned.
 std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
     const Parameters& parameters, double temperature, double density, const std::vector<double>& sites,
-    const std::vector<double>& composition, PropertyActionStatus& status, PropertyActionDiagnostics& diagnostics
+    const std::vector<double>& composition, PropertyActionStatus& status, PropertyActionDiagnostics& diagnostics, const policy::SolverOptions& options
 ) {
     if (sites.empty()) return nullptr;
     const auto sigma = segment_sigma(temperature, parameters), diameter = segment_diameter(temperature, parameters, sigma);
@@ -118,7 +118,7 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
-    diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions", 0, "endpoint");
+    if (!options.nested_solve) diagnostics.site_conditioning = core::conditioning(*result, "implicit_site_fractions", 0, "endpoint");
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;
@@ -1393,7 +1393,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     result.status = PropertyActionStatus::Available;
     const auto factorization = association_factorization(parameters_, temperature, density,
-        refreshed.site_fractions, composition, result.status, result.diagnostics);
+        refreshed.site_fractions, composition, result.status, result.diagnostics, solver_options_);
     if (result.status != PropertyActionStatus::Available) return result;
     if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return result; }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;
@@ -1570,7 +1570,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     auto& tape = infinite_dilution ? *reference_tape_ : *tape_;
     tape.site_values = central.site_fractions;
     const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
-        central.site_fractions, composition, result.status, result.diagnostics);
+        central.site_fractions, composition, result.status, result.diagnostics, solver_options_);
     if (result.status != PropertyActionStatus::Available) return result;
     const std::size_t insertion_degree = order + 1, degree = 2 * order + 1;
     std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
@@ -1775,7 +1775,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
     tape_->site_values = sites;
     const auto factorization = need_residual ? association_factorization(parameters_, temperature, molar_density,
-        tape_->site_values, mole_fractions, association_status, result.diagnostics) : nullptr;
+        tape_->site_values, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
     context.maximum_order = directions.size()

@@ -576,6 +576,7 @@ struct ObservationEvaluator::Impl final {
     Impl(FitRequest request, FitResult& result, const std::vector<std::size_t>& groups,
               const std::vector<double>& sqrt_weights, std::optional<MeasurementChart> measurement = {})
         : request_([&] { request.controls.solver_options = request.controls.solver_options.resolved({});
+            request.controls.solver_options.nested_solve = true;
             for (auto& o : request.observations) {
                 o.problem.solver_options = o.problem.solver_options.resolved(request.controls.solver_options);
                 o.final_problem.solver_options = o.final_problem.solver_options.resolved(request.controls.solver_options);

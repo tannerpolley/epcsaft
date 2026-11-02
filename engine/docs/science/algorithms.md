@@ -2709,7 +2709,14 @@ precision and point attribution together with its condition and error.
 The owner amendment of 2026-11-02 restricts full condition estimation to
 already-computed factors for the top-level returned state. Nested iterations
 retain cheap rank/pivot checks and existing physical-error/refusal warnings,
-without constructing ordinary condition observations. A sparse nested warning
+without constructing ordinary condition observations. Property and association
+solves inside fit residual/Jacobian evaluations are nested: the returned fit
+result is its parameter state, whose existing final SVD supplies determination.
+The native evaluator marks this internal context in inherited SolverOptions;
+it is not a caller tolerance or an exposed per-case switch. Direct top-level
+property calls keep their existing-factor endpoint estimates. Rank/pivot
+admission and existing physical-error/refusal warnings run in both contexts.
+A sparse nested warning
 is attributed to its `refused_linearization`; it does not report rank or
 conditioning for a later recovered endpoint. Full-pivot supplied-factor
 estimates use the 1-norm after rank admission;
