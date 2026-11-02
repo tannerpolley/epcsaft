@@ -298,7 +298,8 @@ def test_supplied_charged_trials_count_only_on_their_liquid_side() -> None:
         assert refused.message.endswith("charged trial outside the condensed domain of density-independent permittivity")
 
 
-def test_ionic_discovery_reproduces_the_declared_split() -> None:
+@pytest.mark.parametrize("mode", ["full", "fast"])
+def test_ionic_discovery_reproduces_the_declared_split(mode: str) -> None:
     # #568 F1: Khudaida Figure 2 point 7, Discover() from the feed against the declared cold two-liquid solve
     # (case-6 comparison, 1e-9); its ion partition lowers G below the neutral-only value -8.662995081104183.
     names = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
@@ -309,13 +310,23 @@ def test_ionic_discovery_reproduces_the_declared_split() -> None:
     declared = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10, phases=[
         Phase("Lw", kind="liquid", composition_guess=(0.80, 0.05, 0.05, 0.05, 0.05)),
         Phase("Lo", kind="liquid", composition_guess=(0.20, 0.10, 0.6998, 0.0001, 0.0001))]))
-    found = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10, phases=equilibrium.Discover()))
+    found = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10, phases=equilibrium.Discover(mode=mode)))
     assert declared.success and found.success and found.requested_tolerance_met and found.phase_count == 2
     pairs = [found.mole_fractions[5 * order[p] + i] - declared.mole_fractions[5 * p + i]
              for order in ((0, 1), (1, 0)) for p in range(2) for i in range(5)]
     assert min(max(abs(d) for d in pairs[:10]), max(abs(d) for d in pairs[10:])) <= 1e-9
     assert abs(found.objective - declared.objective) <= 1e-9 * max(1.0, abs(declared.objective))
     assert found.objective < -8.662995081104183
+    if mode == "fast":
+        exhausted = solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=feed, row_tolerance=1e-10,
+            phases=equilibrium.Discover(mode="fast", declaration_budget=1)))
+        assert not exhausted.success and not exhausted.amounts and not exhausted.mole_fractions
+        record = exhausted.discovery
+        assert record is not None and record.termination == "incomplete" and record.candidate.success
+        assert record.declaration_roles == ["initial"]
+        trial = record.rounds[0].trials[0]
+        assert trial.resolved_descent and abs(trial.quantities["charge_residual"]) <= 1e-12
+        assert trial.quantities["tpd_over_rt"] < -trial.quantities["descent_error_estimate_over_rt"]
 
 
 @pytest.mark.parametrize("delta", [3e-11, 1e-10])
@@ -498,3 +509,28 @@ def test_ideal_molarity_carbonate_reference(case: int) -> None:
               "minimum_positive_mol": min(v for v in amounts.values() if v > 0), "rank": result.jacobian_rank}))
     for key in outputs[0]:
         assert outputs[1][key] == pytest.approx(outputs[0][key], rel=1e-8, abs=0)
+
+
+@pytest.mark.parametrize("limits", [{"declaration_budget": 0}, {"declaration_budget": 2}, {"trial_budget": 0}])
+def test_fast_discovery_budget_cannot_publish_the_methane_ethane_parent(limits: dict[str, int]) -> None:
+    found = solve_equilibrium(mixture(), Problem(T=190.0, P=1e6,
+        feed=Amounts({"methane": 0.5, "ethane": 0.5}), phases=equilibrium.Discover(mode="fast", declaration_budget=limits.get("declaration_budget"),
+            trial_budget=limits.get("trial_budget"))))
+    assert not found.success and not found.amounts and not found.mole_fractions and not found.molar_densities
+    record = found.discovery
+    if limits.get("declaration_budget") == 0:
+        assert record is not None and record.termination == "incomplete" and not record.candidate.success
+        assert "declaration budget exhausted" in found.message
+        assert not record.declarations and not record.rounds and not found.packing_fractions
+        assert all(record.work.get(key, 0) == 0 for key in ("declaration_invocations", "declaration_newton_attempts", "trial_invocations"))
+        assert any("entire trial search" in item and "positive-neutral-base" in item and "near-pure" in item
+                   and "ideal-gas" in item for item in record.unsearched)
+        return
+    assert record is not None and record.termination == "incomplete" and record.candidate.success
+    assert record.declaration_roles == ["initial", "initial"] and record.unsearched
+    assert len(record.rounds) == 1 and not record.rounds[0].completed
+    if "trial_budget" in limits:
+        assert not record.rounds[0].trials and record.work.get("trial_invocations", 0) == 0
+    else:
+        assert any(t.resolved_descent for t in record.rounds[0].trials)
+        assert "declaration budget" in found.message

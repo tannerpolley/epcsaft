@@ -1,14 +1,18 @@
 #pragma once
+#include <cfloat>
 #include <cmath>
 #include <limits>
 #include <vector>
-#ifdef _WIN32
+#if LDBL_MANT_DIG != 64 // no native 64-bit-significand long double: MSVC, Apple arm64
+#define EPCSAFT_SOFTWARE_WIDER
+#endif
+#ifdef EPCSAFT_SOFTWARE_WIDER
 #include <boost/multiprecision/cpp_bin_float.hpp>
 #include <boost/multiprecision/eigen.hpp>
 #endif
 
 namespace epcsaft {
-#ifdef _WIN32
+#ifdef EPCSAFT_SOFTWARE_WIDER
 static_assert(BOOST_VERSION == 108900);
 using WiderScalar = boost::multiprecision::cpp_bin_float_double_extended;
 static_assert(std::numeric_limits<WiderScalar>::radix == 2 && std::numeric_limits<WiderScalar>::digits == 64);
@@ -37,7 +41,7 @@ namespace wide_math = std;
 #endif
 template <typename Iterator>
 std::vector<double> narrow_values(Iterator first, Iterator last) {
-#ifdef _WIN32
+#ifdef EPCSAFT_SOFTWARE_WIDER
     std::vector<double> result;
     for (; first != last; ++first) result.push_back(static_cast<double>(*first));
     return result;

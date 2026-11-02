@@ -1,9 +1,10 @@
 from pathlib import Path
 import csv,subprocess,sys,json
 from decimal import Decimal as D
+from platform_names import EXE
 r=Path(__file__).resolve().parent;out=Path(sys.argv[1])
 with (r/'endpoints.txt').open() as inputs,(out/'pure-estimates.csv').open('w') as values:
- subprocess.run([r/'qualification-forward-error.exe',out/'row-floors.csv',out/'packing.csv',out/'snapshot-coordinates.csv'],stdin=inputs,stdout=values,check=True)
+ subprocess.run([r/('qualification-forward-error'+EXE),out/'row-floors.csv',out/'packing.csv',out/'snapshot-coordinates.csv'],stdin=inputs,stdout=values,check=True)
 ref={float(x['T_K']):[D(x[k]) for k in ['rho_L','rho_V']] for x in csv.DictReader((r/'binary128-roots.csv').open()) if x['method']=='binary128'}
 results=[]
 for x in csv.DictReader((out/'pure-estimates.csv').open()):
@@ -12,7 +13,7 @@ for x in csv.DictReader((out/'pure-estimates.csv').open()):
  error=abs((v/target).ln());radius=D(x['estimate_chart']);results.append(dict(row=x['row'],arm=x['arm'],temperature=x['T'],phase=x['index'],value=x['value'],reference=str(target),log_error=str(error),radius=str(radius),enclosed=error<=radius))
 print(json.dumps(results,indent=2));(out/'pure-reference.json').write_text(json.dumps(results,indent=2))
 assert results and all(x['enclosed'] for x in results)
-with (out/'pure-complete.csv').open('w') as f:subprocess.run([r/'qualification-pure-complete.exe'],stdout=f,check=True)
+with (out/'pure-complete.csv').open('w') as f:subprocess.run([r/('qualification-pure-complete'+EXE)],stdout=f,check=True)
 complete=[]
 for x in csv.DictReader((out/'pure-complete.csv').open()):
  for phase,name in enumerate(['rhoL','rhoV']):

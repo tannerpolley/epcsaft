@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      EPCSAFT_IPOPT_LINEAR_SOLVER: mumps
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install native prerequisites
+        run: |
+          nice -n 10 sudo apt-get update -qq
+          nice -n 10 sudo apt-get install -y --no-install-recommends build-essential ca-certificates \
+            clang-format-18 cmake coinor-libipopt-dev file git libceres-dev libeigen3-dev \
+            ninja-build pkg-config time
+          test "$(pkg-config --modversion ipopt)" = 3.11.9
+          dpkg-query -W -f='${Version}\n' libceres-dev | grep -E '^2\.2\.'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.11.28'
+          python-version: '3.13'
+          enable-cache: false
+      # The runner image variables are not in the env context, so read them in a step.
+      - id: image
+        run: echo "id=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+      # tools/build-engine.sh keys the HiGHS prefix on the compilers, flags and Meson version and
+      # rebuilds on a mismatch, so a stale restore costs time, never correctness.
+      - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ~/.cache/epcsaft/highs-*
+          key: highs-${{ runner.os }}-${{ steps.image.outputs.id }}-${{ hashFiles('engine/build/subprojects/highs.wrap', 'tools/build-engine.sh') }}
+      - name: Build Engine
+        run: bash tools/setup.sh
+      - name: Import
+        run: .venv/bin/python -c 'import epcsaft; print(epcsaft.provenance())'
+      - name: Smoke case
+        run: .venv/bin/python packaging/conda-forge/run_test.py
+      - name: Ruff
+        run: env -C engine ../.venv/bin/ruff check --select E4,E7,E9,F src tests

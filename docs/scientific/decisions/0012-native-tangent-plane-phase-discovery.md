@@ -189,3 +189,17 @@ condensed-domain rule, discovery initial candidates and its charged-vapor additi
 veto are unchanged. The scope is explicit declared calculations and supplied-point
 branch evaluation only, with no charged-vapor discovery or physical vapor-validation
 claim.
+
+## Explicit fast discovery (#868)
+
+The owner adopted `Discover(mode="fast")` on 2026-10-31 for nonreacting
+neutral and electrolyte fluids at fixed positive T/P with default trial supports.
+Full discovery remains the default. This scoped amendment to D3/D4 permits
+one reduced trial round, stopping at its first resolved conserved descent,
+and at most one added two-phase declaration through the existing solver.
+It omits the final stability round required by full discovery.
+[ALG-STABILITY](../../../engine/docs/science/algorithms.md#explicit-fast-discovery)
+owns the schedule and reporting. All finite-descent, uncertainty, charge,
+density-branch and local-state admission criteria remain in force.
+An admitted fast split is a local result; no admitted split in the fast trial
+set establishes neither physical absence nor global stability.

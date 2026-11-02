@@ -1,0 +1,138 @@
+{
+  "base": "6337ae1b41896f68ae1ea0cccb1c3c6749d9ebff",
+  "runtime_head": "e83a95058ac1ee92c1a404dfc85839ec6df2278e",
+  "images": {
+    "A": {
+      "commit": "6337ae1b41896f68ae1ea0cccb1c3c6749d9ebff",
+      "engine_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-868/build-r1/base/build/engine-meson/shared",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-868/build-r1/base/.venv/bin/python",
+      "loader": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-868/build-r1/base/.venv/lib/python3.13/site-packages/_epcsaft_editable_loader.py",
+      "loader_sha256": "118f1b38e551f5f74f1f4d5e9d4644a16c03127d3b5bb4439e77aed72ebeca1a",
+      "install_plan_sha256": "658465a97f5dee9960fe4bf160f7dad346c25988f7dd0b983597d4dbd71f59d4",
+      "buildoptions_sha256": "74bf865231b65d93e877b5235ed38277ea0bef41e7f28189dcca7368a876ce93",
+      "build_ninja_sha256": "98d68bd93bcb3f1a690a55cfc56cfc885d041b73e6cd14d52f39c61d31020dde",
+      "uv_lock_sha256": "bff4a917656c388aa71f420e52d2010f3ea809ee55655416ccb109be7f633592",
+      "extension": "_core.cpython-313-x86_64-linux-gnu.so",
+      "libraries_sha256": {
+        "_core.cpython-313-x86_64-linux-gnu.so": "8ef981b442c1ef481119e8e9bf77781eb239f386ed19dbec80c5f4d3dad8408e",
+        "libepcsaft_native.so": "934302880554e12cb8766374f355f45273259dc14d92bd9bc0e2096ec7afad15",
+        "libepcsaft_asl.so": "b02e7eb4272dc976b0974b98950daebb74bd0cb931b881646dd3fb0aa932fffb"
+      },
+      "package_sha256": {
+        "__init__.py": "da187a1a88a123a1255e4b720d092d764dc6ac213ef58766c5e2bfe37859f796",
+        "_core.cpython-313-x86_64-linux-gnu.so": "8ef981b442c1ef481119e8e9bf77781eb239f386ed19dbec80c5f4d3dad8408e",
+        "_core.pyi": "b920018e5e44625650e14d12e1a45cb8f6a011e793b98c6f34305c94b25b0e30",
+        "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+        "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+        "equilibrium/problem.py": "e018429a699d944b35783b5ecf1ba08e5885d7f8790d09e802a414a4d92b239f",
+        "libepcsaft_asl.so": "b02e7eb4272dc976b0974b98950daebb74bd0cb931b881646dd3fb0aa932fffb",
+        "libepcsaft_native.so": "934302880554e12cb8766374f355f45273259dc14d92bd9bc0e2096ec7afad15",
+        "parameters.py": "5bb6c9943dc4302cfeb5274446d24c4b0d118defd2e08f98c0bb1e2dc9799fcd",
+        "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+        "regression.py": "dfb56815318dccb08b1dd12af5b152c1f839aa4480e1010afe5ca6f2404e2308"
+      }
+    },
+    "B": {
+      "commit": "c62ec885d3dde5d4cb67fa68a87e4a6b2251f849",
+      "engine_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "build_dir": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared",
+      "python": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/.venv/bin/python",
+      "loader": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/.venv/lib/python3.13/site-packages/_epcsaft_editable_loader.py",
+      "loader_sha256": "8844ff69343c2dfed8a28694853a7224f492a3e8c59a17b382e76f49a14cb3d9",
+      "install_plan_sha256": "57fb8589e76eec655ad798784f536f9d626e5dfd1b4af880ef34bca843cc8972",
+      "buildoptions_sha256": "186be6bd948f4efea42e9a34b38e0a1ca4f374935879793927105c5c7094c4c1",
+      "build_ninja_sha256": "0f098a594d9e86f09159e6fa02d4a7fe3b61c83c2cc0edbc27c87dc0ba50de95",
+      "uv_lock_sha256": "bff4a917656c388aa71f420e52d2010f3ea809ee55655416ccb109be7f633592",
+      "extension": "_core.cpython-313-x86_64-linux-gnu.so",
+      "libraries_sha256": {
+        "_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d",
+        "libepcsaft_native.so": "7c57bd39b199f69424b305be6ef913c5846b4f90ffa256b476e665b6c1ca1a71",
+        "libepcsaft_asl.so": "89f08db8b735cd61349e412c3159378e8cebf3ccf8768f939d4d19bbc8570bcd"
+      },
+      "package_sha256": {
+        "__init__.py": "da187a1a88a123a1255e4b720d092d764dc6ac213ef58766c5e2bfe37859f796",
+        "_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d",
+        "_core.pyi": "5253e30023945b17a922fc3fa09fdd5e4424514761c56ab7a3b06bcb62800408",
+        "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+        "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+        "equilibrium/problem.py": "2c1203a85d2fccdf3b46429927ff48e53d481cbe4f6227a71e9baff8a255f6ba",
+        "libepcsaft_asl.so": "89f08db8b735cd61349e412c3159378e8cebf3ccf8768f939d4d19bbc8570bcd",
+        "libepcsaft_native.so": "7c57bd39b199f69424b305be6ef913c5846b4f90ffa256b476e665b6c1ca1a71",
+        "parameters.py": "5bb6c9943dc4302cfeb5274446d24c4b0d118defd2e08f98c0bb1e2dc9799fcd",
+        "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+        "regression.py": "dfb56815318dccb08b1dd12af5b152c1f839aa4480e1010afe5ca6f2404e2308"
+      }
+    }
+  },
+  "input_sha256": "8c0150d2e850e16deb16c1342d5a95b10d1732a617eae5035f09e89fd2d57aae",
+  "numerical_allowance": {
+    "absolute": 1e-12,
+    "relative": 1e-10
+  },
+  "source": "build/issue-868/design-r2.md and readiness-r2.md; owner decisions in #868 implementation assignment, 2026-10-31",
+  "owner_amendments": [
+    "Full A collected from an immutable detached exact-base worktree after candidate source preparation.",
+    "Only paired NaN at first_numerical_failure.residual compares as the same unavailable diagnostic; one-sided NaN and causes unchanged.",
+    "2026-10-31: revise only methane/ethane fast/Clapeyron median ceiling 10\u219210.5 and water_np/hexane fast/full median ceiling 0.50\u21920.65 at ordinary and prepared boundaries."
+  ],
+  "review": "Delivered review r1 found an early-budget reporting defect, corrected in fix round 1; lead disposed of the timing-method finding as disclosure only. Final correction awaits independent review; manuscript promotion remains unapproved.",
+  "physical_validation": false,
+  "work_budget": {
+    "net": 210,
+    "gross": 260,
+    "equilibrium_gross": 230,
+    "bindings_gross": 12,
+    "python_gross": 18
+  },
+  "measured_budget": {
+    "net": 69,
+    "gross": 91,
+    "equilibrium": {
+      "net": 64,
+      "gross": 82
+    },
+    "bindings": {
+      "net": 1,
+      "gross": 5
+    },
+    "python": {
+      "net": 4,
+      "gross": 4
+    }
+  },
+  "timing_qualification": "Passed under owner decision 2026-10-31: fast/Clapeyron median ceiling 10.5 and water_np/hexane fast/full median ceiling 0.65, both boundaries; every other condition unchanged.",
+  "fix_round_1": {
+    "runtime_head": "e83a95058ac1ee92c1a404dfc85839ec6df2278e",
+    "reviewed_head": "ae52237acdd5739a7f376a1c0cc1afb3c371de77",
+    "scope": "Only unsuccessful initial-parent fast reporting. Zero declaration budget retains exhaustion cause; all unsuccessful initial-parent fast exits record the whole unentered trial search and start families.",
+    "full_A": "Reuse immutable A operands from exact original detached baseline; no new worktree or A recalculation.",
+    "image": {
+      "build": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared",
+      "images": {
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared/libepcsaft_native.so": "adfe404b567ea08a9c06232832d59dff9b0493157bcb609cf344c147d6619ed8",
+        "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d"
+      },
+      "package": {
+        "__init__.py": "da187a1a88a123a1255e4b720d092d764dc6ac213ef58766c5e2bfe37859f796",
+        "_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d",
+        "_core.pyi": "5253e30023945b17a922fc3fa09fdd5e4424514761c56ab7a3b06bcb62800408",
+        "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+        "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+        "equilibrium/problem.py": "2c1203a85d2fccdf3b46429927ff48e53d481cbe4f6227a71e9baff8a255f6ba",
+        "libepcsaft_asl.so": "cb5e2e61b6a3d45f3fde72cd4941dc0cbb58ad1935115687e61eb6362c8238ab",
+        "libepcsaft_native.so": "adfe404b567ea08a9c06232832d59dff9b0493157bcb609cf344c147d6619ed8",
+        "parameters.py": "5bb6c9943dc4302cfeb5274446d24c4b0d118defd2e08f98c0bb1e2dc9799fcd",
+        "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+        "regression.py": "dfb56815318dccb08b1dd12af5b152c1f839aa4480e1010afe5ca6f2404e2308"
+      }
+    },
+    "timing": "No retained timed call enters the corrected exit; recorded timings stand under the lead-accepted CPU31/one-thread/agent-heavy measurement conditions.",
+    "evidence": "fix-r1.json"
+  },
+  "original_runtime_head": "c62ec885d3dde5d4cb67fa68a87e4a6b2251f849",
+  "images_scope": "Original A/B images used for retained timing and qualification. All B/fast raw values revalidated at the fix-round image below."
+}

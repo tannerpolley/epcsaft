@@ -12,11 +12,20 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/resource.h>
+#ifndef __APPLE__
 #include <sys/syscall.h>
 #include <sys/prctl.h>
+#endif
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#ifdef __APPLE__
+#include <crt_externs.h>
+#include <spawn.h>
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0  // SO_NOSIGPIPE on each worker socket
+#endif
+#endif
 #else
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0A00
@@ -603,6 +612,31 @@ struct ObservationEvaluator::Impl final {
         for (auto& word : fit_host.worker) command.push_back(word.data());
         command.push_back(nullptr);
         char** arguments = command.data();
+#ifdef __APPLE__
+        for (std::size_t k = 1; k < std::min(count, rank); ++k) {
+            int pair[2];
+            if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
+            workers_.sockets.push_back(pair[0]);
+            const int on = 1;
+            // As on Linux: socket end as fd 0, images as fd 3/4, the standard streams, its own process group.
+            posix_spawn_file_actions_t actions;
+            posix_spawnattr_t attributes;
+            posix_spawn_file_actions_init(&actions);
+            posix_spawnattr_init(&attributes);
+            pid_t process = 0;
+            const int error = fcntl(pair[0], F_SETFD, FD_CLOEXEC) || fcntl(pair[1], F_SETFD, FD_CLOEXEC)
+                || setsockopt(pair[0], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on) || setsockopt(pair[1], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on)
+                || posix_spawn_file_actions_adddup2(&actions, pair[1], 0) || posix_spawn_file_actions_adddup2(&actions, extension_image, 3)
+                || posix_spawn_file_actions_adddup2(&actions, native_image, 4) || posix_spawn_file_actions_addinherit_np(&actions, 1)
+                || posix_spawn_file_actions_addinherit_np(&actions, 2) || posix_spawnattr_setflags(&attributes, POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP)
+                || posix_spawnattr_setpgroup(&attributes, 0) || posix_spawn(&process, arguments[0], &actions, &attributes, arguments, *_NSGetEnviron());
+            posix_spawn_file_actions_destroy(&actions);
+            posix_spawnattr_destroy(&attributes);
+            close(pair[1]);
+            if (error != 0) throw std::runtime_error("fit worker process unavailable");
+            workers_.processes.push_back(process);
+        }
+#else
         rlimit descriptors;
         if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
         // linux-64: nr_open bounds descriptor allocation, even when the soft limit was lowered.
@@ -650,6 +684,7 @@ struct ObservationEvaluator::Impl final {
             if (error != 0) throw std::runtime_error("fit worker process unavailable");
             workers_.processes.push_back(process);
         }
+#endif
 #endif
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
@@ -1047,10 +1082,16 @@ void serve_fit(std::uintptr_t channel) {
     const Channel fd{reinterpret_cast<HANDLE>(channel)};
 #else
 void serve_fit(int fd) {
+#ifdef __APPLE__
+    // No death signal on macOS: launchd (pid 1) adopts an orphan, so the worker leaves at entry or within 0.1 s.
+    if (getppid() == 1) _exit(1);
+    std::thread([] { while (getppid() != 1) std::this_thread::sleep_for(std::chrono::milliseconds(100)); _exit(1); }).detach();
+#else
     ucred fit{};
     socklen_t size = sizeof fit;
     if (getsockopt(fd, SOL_SOCKET, SO_PEERCRED, &fit, &size) != 0 || prctl(PR_SET_PDEATHSIG, SIGKILL) != 0
         || getppid() != fit.pid) _exit(1);
+#endif
 #endif
     FitRequest request;
     MeasurementChart measurement;

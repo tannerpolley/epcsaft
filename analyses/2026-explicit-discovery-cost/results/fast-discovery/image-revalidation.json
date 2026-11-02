@@ -1,0 +1,16 @@
+[
+  {
+    "population": "B",
+    "same_image_after_identifier_rename": {
+      "libepcsaft_native.so": true,
+      "_core.cpython-313-x86_64-linux-gnu.so": true
+    }
+  },
+  {
+    "population": "fast",
+    "same_image_after_identifier_rename": {
+      "libepcsaft_native.so": true,
+      "_core.cpython-313-x86_64-linux-gnu.so": true
+    }
+  }
+]

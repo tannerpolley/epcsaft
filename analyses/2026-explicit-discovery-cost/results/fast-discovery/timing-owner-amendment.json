@@ -1,0 +1,76 @@
+{
+  "owner_decision_date": "2026-10-31",
+  "scope": "Only the two failing median ceilings, at ordinary and prepared boundaries. Every other condition remains unchanged.",
+  "changes": [
+    {
+      "quantity": "methane/ethane fast/Clapeyron median",
+      "old_ceiling": 10,
+      "new_ceiling": 10.5,
+      "ordinary": 10.327748412034072,
+      "prepared": 10.246164837677185
+    },
+    {
+      "quantity": "water_np/hexane fast/full median",
+      "old_ceiling": 0.5,
+      "new_ceiling": 0.65,
+      "ordinary": 0.6001385655262437,
+      "prepared": 0.602875814453306
+    }
+  ],
+  "previous_qualification": {
+    "operations": 14,
+    "blocks": 180,
+    "samples": 4500,
+    "sample_failures": 0,
+    "gate_failures": [
+      {
+        "case": "647/T4/methane_ethane/190K-1e+06Pa",
+        "boundary": "prepared",
+        "comparison": "fast/Clapeyron",
+        "pairs": 6,
+        "median": 10.246164837677185,
+        "minimum": 9.647575109710814,
+        "maximum": 10.490580367263659,
+        "limit": 10,
+        "passed": false,
+        "control_pass": null
+      },
+      {
+        "case": "855/water-hexane",
+        "boundary": "ordinary",
+        "comparison": "fast/Engine-A",
+        "pairs": 6,
+        "median": 0.6001385655262437,
+        "minimum": 0.5932530504645868,
+        "maximum": 0.610953941016118,
+        "limit": 0.5,
+        "passed": false,
+        "control_pass": true
+      },
+      {
+        "case": "855/water-hexane",
+        "boundary": "prepared",
+        "comparison": "fast/Engine-A",
+        "pairs": 6,
+        "median": 0.602875814453306,
+        "minimum": 0.6021009816838709,
+        "maximum": 0.6040207718281598,
+        "limit": 0.5,
+        "passed": false,
+        "control_pass": true
+      },
+      {
+        "case": "647/T4/methane_ethane/190K-1e+06Pa",
+        "boundary": "ordinary",
+        "comparison": "fast/Clapeyron",
+        "pairs": 6,
+        "median": 10.327748412034072,
+        "minimum": 9.82864099660249,
+        "maximum": 10.57452948557089,
+        "limit": 10,
+        "passed": false,
+        "control_pass": null
+      }
+    ]
+  }
+}

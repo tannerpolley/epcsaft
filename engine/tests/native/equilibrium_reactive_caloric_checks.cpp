@@ -18,7 +18,7 @@ using Observable = SolvedStateObservable;
 constexpr double R = GAS_CONSTANT_J_PER_MOL_K;
 using binary128_support::NamedDirection;
 using binary128_support::Quantity;
-#ifndef _WIN32
+#if defined(__linux__)
 using binary128_support::Wide;
 using binary128_support::WideIonic;
 #endif
@@ -365,7 +365,7 @@ inline Sample shifted(const Case& c,const Direction& delta,const std::vector<Qua
     if(first_action) {Actions actions(compiled,solved,q);sample.values=actions.get({*first_action});}
     return sample;
 }
-#ifndef _WIN32
+#if defined(__linux__)
 #include "reactive_caloric_wide.hpp"
 struct Difference {
     std::vector<Wide> value;
@@ -718,7 +718,7 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
     return result;
 }
 
-#ifndef _WIN32
+#if defined(__linux__)
 void run(bool ionic,bool fixed) {
     const auto c=input(ionic,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
@@ -972,7 +972,7 @@ inline void isothermal_row_columns() {
         }
     }
 }
-#ifndef _WIN32
+#if defined(__linux__)
 inline Case boundary_input(bool nonidentical,bool free_temperature,bool fixed) {
     auto c=input(false,fixed);
     c.name=std::string(nonidentical?"N":"E")+"-bubble-"+(free_temperature?"T":"P")+(fixed?"-fix":"-sys");

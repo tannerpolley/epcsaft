@@ -1,9 +1,10 @@
 # Examples
 
-These notebooks read canonical inputs from a repository checkout and execute
-with its prepared Engine environment. The wheel alone does not contain the
-packet inputs. Run `nice -n 10 bash tools/build-docs.sh` from the repository root
-to execute every example freshly and build this site. See the
+Every notebook on this site was executed when the site was built. To run one
+yourself, open it from `docs/site/examples/` in the unpacked source archive:
+each notebook locates the archive root from its own directory and reads
+parameter packets and observations under `data/` and `analyses/`, which the
+conda package does not contain. See the
 [installation guide](../installation.md) for setup and the
 [optional process tools](../contributing.md#optional-process-example-tools)
 for the IDAES settler.
@@ -43,10 +44,11 @@ idaes-two-liquid-settler
 - {download}`Methane ASL properties <methane-asl-properties.ipynb>`
 - {download}`IDAES two-liquid settler <idaes-two-liquid-settler.ipynb>`
 
-## Special-case appendix
+## Notes on individual examples
 
-Case-specific declarations and interpretation accompany their executed notebooks
-below. General methods remain in the guides and canonical theory sources.
+Case-specific declarations and interpretation for the notebooks above. General
+methods are in the [user guide](../guide/index.md) and the
+[theory pages](../theory/index.md).
 
 ## Ammonia parameter combination
 
@@ -111,8 +113,10 @@ measurement uncertainty.
 
 The water/isobutanol notebook uses the neutral binary subset at 293.15 K and
 100,000 Pa. It compares the returned phases without relying on their output
-order and checks feed conservation. This is numerical verification for that
-case, not a measured tie-line validation or a universal search guarantee.
+order and checks feed conservation, then repeats the discovery with
+`Discover(mode="fast")` and requires the same split. This is numerical
+verification for that case, not a measured tie-line validation or a universal
+search guarantee.
 
 ## Methane property transport
 

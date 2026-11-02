@@ -37,7 +37,7 @@ Ion pairing and the solid–liquid solve are Engine capability gaps.
 | `results/` | Engine values, comparisons, `run-identity.json`, `figures/` |
 | `results/tables/`, `figures/*/source/` | Source table transcriptions and figure crops from the paper |
 
-Run from the checkout root with the per-checkout `.venv` (README "Checks"):
+Run from the checkout root with the per-checkout `.venv` (`engine/README.md` "Checks"):
 `.venv/bin/python analyses/reproduction/2021-bulow/scripts/run.py`, then
 `scripts/plot.py`. All evaluations are native Engine states at 298.15 K and
 1 bar. The Python declares inputs and reads results. Its only arithmetic on model

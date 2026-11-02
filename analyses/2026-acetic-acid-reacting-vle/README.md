@@ -44,7 +44,7 @@ Sources and extracts are in `inputs/source/`, numerical outputs and generated
 tables in `results/pressure-diagnosis/`.
 The earlier executable identity is retained alongside the fresh-run identity.
 
-Prepare this checkout's own `.venv` using the root README Checks, then run from
+Prepare this checkout's own `.venv` using `engine/README.md` "Checks", then run from
 this study directory:
 
 ```bash

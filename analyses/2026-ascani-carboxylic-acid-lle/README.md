@@ -33,7 +33,7 @@ and S12 are transcribed in `inputs/`.
 
 ## Run
 
-From the repository root, with the checkout's `.venv` (README "Checks"):
+From the repository root, with the checkout's `.venv` (`engine/README.md` "Checks"):
 
 ```bash
 .venv/bin/python analyses/2026-ascani-carboxylic-acid-lle/scripts/parameters.py              # ESI Tables S1-S5 -> inputs/parameters-*.json

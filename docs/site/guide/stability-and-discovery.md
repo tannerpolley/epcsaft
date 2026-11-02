@@ -33,6 +33,11 @@ declarations restrict the starts and supports examined. The search uses the
 shared equilibrium driver for admitted subproblems and retains its work and
 stopping causes.
 
+`Discover(mode="fast")` runs a smaller search: it stops at the first resolved
+split and solves one two-phase declaration, without a final stability search.
+Its record lists the start families and topologies it left unsearched. Use the
+default full mode when a fast result must be checked for a further split.
+
 See [water/isobutanol discovery](../examples/index.md#waterisobutanol-discovery)
 for the bounded numerical comparison.
 

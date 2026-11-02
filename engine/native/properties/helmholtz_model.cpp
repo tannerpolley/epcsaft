@@ -1652,11 +1652,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     std::copy(stoichiometry.begin(), stoichiometry.end(), u.begin() + 2);
     result.contraction = gradient_series(u, order);
     const double delta = std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0);
-#ifdef _WIN32
     const WiderScalar wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), WiderScalar(0)) : WiderScalar(0);
-#else
-    const WiderScalar wide_delta = error ? std::accumulate(stoichiometry.begin(), stoichiometry.end(), 0.0L) : 0.0L;
-#endif
     result.volume.resize(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
         result.contraction[k] = (result.contraction[k] - delta * logarithm[k]) * std::pow(norm, int(k));

@@ -14,7 +14,7 @@ validation. Independent delivered review and investigator promotion for
 manuscript use remain outstanding.
 
 From the checkout root, with its own editable Engine environment prepared by
-[the root Checks instructions](../../../README.md#checks):
+[the Engine Checks instructions](../../../engine/README.md#checks):
 
 ```bash
 env -u EPCSAFT_HSL_LIBRARY nice -n 10 env EPCSAFT_BUILD_JOBS=6 .venv/bin/python analyses/reproduction/2025-figiel-engine-crosswalk/scripts/crosswalk.py

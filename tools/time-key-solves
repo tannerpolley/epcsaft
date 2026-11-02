@@ -24,6 +24,8 @@ COUNTS = ('iterations', 'evaluations', 'hessian_calls')
 PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
 STATE_TOLERANCE = 1e-10
 F1 = 'mea-f1/residual-jacobian'
+# Affinity, niceness and the desktop CPU ceilings belong to the Linux timing host.
+LINUX = sys.platform == 'linux'
 CP = 'mea-cp/hilliard-353.15-K-0.358'
 F1_COUNTS = ('reference_computations', 'reference_columns', 'density_solves', 'equilibrium_iterations')
 F1_VALUES = ('predictions', 'gradient', 'optimizer_gradient', 'residual_optimizer_gradient')
@@ -221,7 +223,7 @@ def worker():
         elif request['case'] in FROZEN:
             try:
                 reply = frozen_result(request['case'], request.get('operation', 'evaluation'))
-                reply.update(nice=(os.getpriority(os.PRIO_PROCESS, 0) if os.name != "nt" else None), affinity=(sorted(os.sched_getaffinity(0)) if os.name != "nt" else None))
+                reply.update(nice=(os.getpriority(os.PRIO_PROCESS, 0) if LINUX else None), affinity=(sorted(os.sched_getaffinity(0)) if LINUX else None))
             except NotComparable as error:
                 reply = {'not_comparable': str(error)}
         elif request['case'] == 'starts':
@@ -265,8 +267,8 @@ def worker():
                 if not all(row[key] and all(map(math.isfinite, row[key])) for key in PHYSICAL):
                     raise RuntimeError(f'{point}: empty or nonfinite physical state')
                 previous = result
-            reply = dict(seconds=elapsed, rows=rows, nice=(os.getpriority(os.PRIO_PROCESS, 0) if os.name != "nt" else None),
-                         affinity=(sorted(os.sched_getaffinity(0)) if os.name != "nt" else None), engine=str(epcsaft.__file__))
+            reply = dict(seconds=elapsed, rows=rows, nice=(os.getpriority(os.PRIO_PROCESS, 0) if LINUX else None),
+                         affinity=(sorted(os.sched_getaffinity(0)) if LINUX else None), engine=str(epcsaft.__file__))
         print(json.dumps(reply, allow_nan=False), file=replies, flush=True)
 
 
@@ -402,12 +404,12 @@ def ceilings(case, evaluations, fits=(), control=False):
     if control and set(evaluations) != set('AB'):
         return [f'{case} A=A control needs both serial evaluations']
     frozen = FROZEN[case]['identity']['frozen']
-    if os.name == 'nt':
+    if not LINUX:
         for label, result in evaluations.items():
-            print(f'{case} {label}: Windows serial CPU {result["cpu_seconds"]:.6f} s; wall {result["seconds"]:.6f} s; desktop CPU ceiling inapplicable', flush=True)
+            print(f'{case} {label}: {platform.system()} serial CPU {result["cpu_seconds"]:.6f} s; wall {result["seconds"]:.6f} s; desktop CPU ceiling inapplicable', flush=True)
         for label, result in fits.items():
-            print(f'F1 {label}: Windows fit wall {result["seconds"]:.6f} s; critical CPU {result["critical_cpu_seconds"]:.6f} s', flush=True)
-        return [f'{case} {label} invalid Windows timing sample' for label, result in evaluations.items()
+            print(f'F1 {label}: {platform.system()} fit wall {result["seconds"]:.6f} s; critical CPU {result["critical_cpu_seconds"]:.6f} s', flush=True)
+        return [f'{case} {label} invalid {platform.system()} timing sample' for label, result in evaluations.items()
                 if any(not math.isfinite(result[key]) or result[key] <= 0 for key in ('seconds', 'cpu_seconds'))]
     ceiling = 1.25 * frozen['serial_cpu_seconds']
     # A baseline or control arm measures the host only when it does the frozen work; B is always held (#595).
@@ -502,8 +504,8 @@ def main():
     begun = time.perf_counter()
     if os.name != "nt" and os.getpriority(os.PRIO_PROCESS, 0) > 10:
         parser.error('inherited niceness exceeds 10; cannot lower it without new authority')
-    cpu = (args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))) if os.name != "nt" else None
-    if os.name != "nt" and cpu not in os.sched_getaffinity(0):
+    cpu = (args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))) if LINUX else None
+    if LINUX and cpu not in os.sched_getaffinity(0):
         parser.error('--cpu must be in the controller affinity')
     env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
            'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
@@ -512,8 +514,8 @@ def main():
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
     summary = dict(environments={},
                    source_commit=__import__('engine_identity')._source_identity(ROOT)[0],
-                   cpu=cpu, nice=10 if os.name != 'nt' else None, threads=1,
-                   cpu_boundary='parent plus children on Linux; parent only on Windows; fit worker CPU retained separately', host=platform.node(), pairs=args.pairs, warmups=1,
+                   cpu=cpu, nice=10 if LINUX else None, threads=1,
+                   cpu_boundary='parent plus children on Linux and macOS; parent only on Windows; fit worker CPU retained separately', host=platform.node(), pairs=args.pairs, warmups=1,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
                    change_percent='100*(B_seconds/A_seconds-1)',
                    state_difference='abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order',
@@ -530,7 +532,7 @@ def main():
         return json.loads(line)
 
     def retain(label, case, sample, result):
-        if os.name != 'nt' and (result['nice'] != 10 or (sample != 'timer' and result['affinity'] != [cpu])):
+        if LINUX and (result['nice'] != 10 or (sample != 'timer' and result['affinity'] != [cpu])):
             raise RuntimeError(f'{label}: timing controls differ: {result}')
         for row in result['rows']:
             work_rows.append(dict(wheel=label, case=case, sample=sample, point=row['point'],
@@ -558,8 +560,8 @@ def main():
         if profile is not None:
             profile.mkdir()
             selected_env['EPCSAFT_FIT_CPU_PROFILE'] = str(profile)
-            affinity = (sorted(os.sched_getaffinity(0)) if os.name != "nt" else None)
-        command = [] if os.name == 'nt' else ['taskset', '-c', ','.join(map(str, affinity)), 'nice', '-n',
+            affinity = (sorted(os.sched_getaffinity(0)) if LINUX else None)
+        command = [] if not LINUX else ['taskset', '-c', ','.join(map(str, affinity)), 'nice', '-n',
             str(max(0, 10 - os.getpriority(os.PRIO_PROCESS, 0)))]
         processes[label] = subprocess.Popen([*command, str(interpreters[label]),
             str(Path(__file__).resolve()), '--worker'], stdin=subprocess.PIPE, stdout=subprocess.PIPE,

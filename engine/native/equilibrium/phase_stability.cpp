@@ -545,8 +545,10 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
 
 StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
-    const core::Trace& trace) {
+    const core::Trace& trace, std::vector<std::string>* unsearched = nullptr) {
     StabilityReport report;
+    const bool fast = options.mode == DiscoveryMode::Fast;
+    bool stopped = false;
     const auto begin = trace.spans.size();
     if (options.evaluate_supplied_trials && !options.trials)
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
@@ -563,6 +565,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
     std::vector<double> shift = report.standard_over_rt;
     for (std::size_t i = 0; i < shift.size(); ++i) shift[i] -= report.plane_over_rt[i];
     for (const auto& phase : supports) {
+        std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
+        for (auto i : phase.support) identity += std::to_string(i) + ",";
         const bool condensed = !form.is(PermittivityForm::DensityTemperature) && !form.is(PermittivityForm::DipolarPerturbation)
             && std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
         std::vector<std::pair<std::string, std::vector<double>>> seeds;
@@ -579,8 +583,15 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     remainder = reconstruct_trial_composition(std::move(restriction), phase.support, z, phase.kind); break;
                 }
             }
-            seeds.emplace_back("positive-neutral-base", base);
+            const bool has_charge = std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
+            if (!fast || has_charge) seeds.emplace_back("positive-neutral-base", base);
+            else if (phase.support.size() > 1) unsearched->push_back(identity + "/positive-neutral-base");
+            if (fast && phase.kind == PhaseKind::Liquid && phase.support.size() == 1)
+                seeds.emplace_back("near-pure-" + std::to_string(phase.support.front()), base);
             if (phase.support.size() > 1) for (auto j : phase.support) if (z[j] == 0.0) {
+                if (fast && phase.kind == PhaseKind::Vapor) {
+                    unsearched->push_back(identity + "/near-pure-" + std::to_string(j)); continue;
+                }
                 auto seed = remainder;
                 double sum = 0.0; for (auto i : phase.support) if (i != j) sum += seed[i];
                 for (auto i : phase.support) seed[i] = i == j ? 0.99 : 0.01 * seed[i] / sum;
@@ -599,6 +610,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
         }
         std::vector<std::pair<std::vector<double>, double>> rooted;
         for (auto& [seed_name, seed] : seeds) {
+            if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             try {
                 if (options.evaluate_supplied_trials) {
@@ -625,8 +637,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 rooted.emplace_back(seed, eta);
                 if (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget) {
                     report.message = "search-incomplete: trial budget exhausted";
-                    count_stability_work(report.work, trace, begin);
-                    return report;
+                    if (!fast) { count_stability_work(report.work, trace, begin); return report; }
+                    stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
                 const bool native = !c.has_ions && !c.has_reaction && !options.evaluate_supplied_trials;
                 CompiledSystem compiled;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
@@ -704,15 +716,19 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 }
                 trial.evidence = "no_resolved_descent";
                 if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options);
-            } catch (const std::exception& error) { trial.message += "; " + std::string(error.what()); }
+            } catch (const std::exception& error) {
+                trial.message += "; " + std::string(error.what());
+                if (fast) trial.evidence = "unresolved";
+            }
             report.trials.push_back(std::move(trial));
+            if (fast && report.trials.back().resolved_descent) stopped = true;
         }
     }
-    report.completed = true;
+    report.completed = !stopped;
     const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
         return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"; });
     const auto descending = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; });
-    report.message = descending ? "numerically resolved descending split with estimated uncertainty"
+    if (report.message.empty()) report.message = descending ? "numerically resolved descending split with estimated uncertainty"
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
     if (options.evaluate_supplied_trials) report.message = "supplied trial evaluation; unavailable trials " + std::to_string(unresolved);
@@ -725,6 +741,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
 
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
     core::Scope scope("stability_test");
+    if (options.mode != DiscoveryMode::Full) throw std::invalid_argument("discovery mode is only admitted in Discover");
     if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability testing is deferred");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
@@ -910,6 +927,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     core::Capture capture;
     const double row_tolerance = request.solver_options.resolved(model.solver_options()).value(policy::row);
     const auto& options = *request.discovery;
+    const bool fast = options.mode == DiscoveryMode::Fast;
+    if (fast && (!request.reactions.empty() || options.trials))
+        throw std::invalid_argument("fast discovery requires no reactions and default trial supports");
     if (options.evaluate_supplied_trials) throw std::invalid_argument("supplied trial evaluation is not phase discovery");
     const auto feed = resolve_feed(model, request.feed);
     const auto& z = model.parameters().charge_number;
@@ -919,6 +939,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     for (std::size_t i = 0; i < feed.size(); ++i)
         if (feed[i] > 0.0 || participant[i]) { united.push_back(i); has_charge |= z[i] != 0.0; }
     auto record = std::make_shared<DiscoveryRecord>();
+    record->mode = options.mode;
+    if (fast) record->unsearched = {"removed-phase starts and retries", "alternative descending additions", "post-flash stability",
+        "three-or-more-phase topologies"};
     EquilibriumProblem declaration = request;
     declaration.discovery.reset(); declaration.topology_declared = true;
     PhaseSpec initial; initial.name = "L1"; initial.support = united; initial.support_declared = true;
@@ -961,13 +984,15 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 invoked = true;
                 bool eligible = false;
                 result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, false, {}, false, false, &eligible);
-                auto retried = audit;
-                (void)recover_physical_amounts(c, result, eligible, scope, &seed, nullptr,
+                auto retried = audit, primary = result;
+                primary.iterations = primary.evaluations = primary.hessian_calls = 0;  // each record keeps its own work
+                if (!fast) (void)recover_physical_amounts(c, std::move(primary), eligible, scope, &seed, nullptr,
                     &retry_attempt, &retried, true, &calls, budget, &invoked);
                 if (calls != before) {
+                    count_driver(record->work, result, "declaration_invocations");
+                    newton_work.report(result);
                     record->declarations.push_back(result); record->declaration_roles.push_back(role);
                     record->declaration_attempt_coordinates.push_back(attempt);
-                    count_driver(record->work, result, "declaration_invocations");
                     result = std::move(retried);
                     if (!retry_attempt.empty()) attempt = retry_attempt;
                 }
@@ -982,7 +1007,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         record->work["hessian_calls"] += newton_work.hessian_calls;
         if (invoked) count_driver(record->work, result, "declaration_invocations");
         else if (!newton_accepted) ++record->work["declaration_initialization_failures"];
-        if (!newton_accepted) newton_work.report(result);
+        if (!newton_accepted && calls == before) newton_work.report(result);
         record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
         record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
         return result;
@@ -1013,21 +1038,29 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         }
         count_stability_work(record->work, capture.trace());
         EquilibriumResult result = best; result.discovery = record;
-        if (!success) { result.success = false; result.message = message; clear_state(result); }
+        if (fast) {
+            record->termination = success ? (best.phase_count == 2 ? "admitted_two_phase" : "no_admitted_split") : "incomplete";
+            result.message = success ? (best.phase_count == 2 ? "locally admitted two-phase state; post-flash stability unsearched"
+                : "no admitted split in the fast trial set") : "no admitted split: " + message;
+        }
+        if (!success) { result.success = false; if (!fast) result.message = message; clear_state(result); }
         return result;
     };
-    if (!best.success) return finish(false, "discovery has no accepted initial candidate");
+    if (!best.success) {
+        if (fast) record->unsearched.push_back("entire trial search (positive-neutral-base, near-pure Liquid/Vapor, ideal-gas Vapor starts)");
+        return finish(false, fast && budget == 0 ? "declaration budget exhausted" : "discovery has no accepted initial candidate");
+    }
     for (std::size_t round = 0; round < 2 * rank + 1; ++round) {
         auto trial_options = options;
         if (options.trial_budget) {
             const auto used = static_cast<std::size_t>(record->work["trial_invocations"]);
             trial_options.trial_budget = used < *options.trial_budget ? *options.trial_budget - used : 0;
         }
-        auto report = test_snapshot(best_compiled, best, trial_options, removed, capture.trace());
+        auto report = test_snapshot(best_compiled, best, trial_options, removed, capture.trace(), fast ? &record->unsearched : nullptr);
         for (const auto& [name, value] : report.work) record->work[name] += value;
         record->rounds.push_back(std::move(report));
         auto& current = record->rounds.back();
-        if (!current.completed) return finish(false, current.message);
+        if (!fast && !current.completed) return finish(false, current.message);
         std::vector<std::size_t> descending;
         for (std::size_t i = 0; i < current.trials.size(); ++i) if (current.trials[i].resolved_descent) {
             const auto& trial = current.trials[i];
@@ -1041,13 +1074,18 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             if (!duplicate) descending.push_back(i);
         }
         if (descending.empty()) {
+            if (fast) {
+                const bool available = current.completed && std::all_of(current.trials.begin(), current.trials.end(),
+                    [](const auto& t) { return t.evidence == "no_resolved_descent"; });
+                return finish(available, current.message);
+            }
             const bool unresolved = std::any_of(current.trials.begin(), current.trials.end(), [](const auto& t) {
                 return t.quantities.count("donor_slope_over_rt") && descent_resolved(t.quantities.at("tpd_over_rt"),
                     t.quantities.at("donor_slope_over_rt"), t.quantities.at("descent_error_estimate_over_rt")); });
             return finish(!unresolved, unresolved ? "negative tangent plane with unresolved finite descent" : current.message);
         }
         if (best.phase_count >= rank) return finish(false, "resolved descent at balance-rank phase limit; replacement deferred");
-        std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
+        if (!fast) std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
             return current.trials[i].quantities.at("donor_slope_over_rt") < current.trials[j].quantities.at("donor_slope_over_rt"); });
         bool added = false;
         for (auto i : descending) {
@@ -1072,7 +1110,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             auto system = compile_problem(model, next);
             std::vector<double> attempt;
             auto result = invoke(system, current.trials[i].split_coordinates, "addition", attempt);
-            while (!result.success && result.topology_event != TopologyEvent::None && !attempt.empty() && calls < budget) {
+            while (!fast && !result.success && result.topology_event != TopologyEvent::None && !attempt.empty() && calls < budget) {
                 const auto before = system.prepare(attempt, true);
                 const auto event = check_topology(system, attempt);
                 const auto dropped = event.phase.value_or(event.pair ? event.pair->second : 0);
@@ -1092,6 +1130,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             if (!(result.objective < best.objective - error_estimate)) continue;
             best = std::move(result); best_compiled = std::move(system); added = true; break;
         }
+        if (fast && added) return finish(true, "");
         if (!added) return finish(false, calls >= budget ? "resolved descent with exhausted declaration budget"
             : "resolved descent without an admitted lower-G declaration");
     }

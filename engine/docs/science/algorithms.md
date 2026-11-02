@@ -1,17 +1,15 @@
 # Scientific algorithms
 
-Accepted requirements, reconciled against the 2026-09-06 transfer audit.
 These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
-Algorithm IDs below are stable references. Current implementation and required
-numerical falsifiers are mapped in the owning [GitHub issues](https://github.com/tannerpolley/ePC-SAFT/issues).
-No section claims that all required actions currently exist. The implementation
-plan owns current versus deferred scope. PH/PS uses the neutral caloric specifications below; neutral critical-equation
+Algorithm IDs below are stable references.
+Sections state required methods; not every required action is available yet.
+The [limits page](https://tannerpolley.github.io/epcsaft/limits.html) lists what the installed package supports.
+PH/PS uses the neutral caloric specifications below; neutral critical-equation
 candidates and phase envelopes use ALG-EQUILIBRIUM; UV remains future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
-admitted ionic/reacting cases, supported by the independent delivered review
-within the retained limits. Reuse accepted numerical owners and independent cases.
+admitted ionic/reacting cases, within the retained limits.
 Declared-branch continuation and mechanical/local checks remain required.
 
 See [ideal mole-fraction and molarity specifications](#ideal-mole-fraction-and-molarity-specifications)
@@ -132,7 +130,7 @@ slots in the existing affine chart. `DielectricVolume` (m^3/mol) and
 `DielectricTemperature` (K) own one neutral-component slot each and are admitted
 only under the density-temperature permittivity (EqID:
 `density_correlated_bulk_permittivity`); an L/mol coordinate takes target
-coefficient 1e-3 (#441). Their values use `ParameterRecord<Scalar>`
+coefficient 1e-3. Their values use `ParameterRecord<Scalar>`
 with the other active families. Charges, masses, formulation choices and Born
 correction/solvation factors remain fixed. No cross-family factor tie is added.
 
@@ -297,7 +295,7 @@ sides exist; the unrefined liquid bracket is private existence evidence.
 If vapor is absent, liquid location resumes fully before publishing its sole
 root. Selected-liquid, unspecified and actual-sibling requests retain full
 liquid location. Anchored requests retain their independent local search.
-The [#512 retained evaluation counts](../../../build/issue-512/pressure-evaluations.csv)
+Retained evaluation counts
 qualify reduced work; quiet-host timing remains open. Removing refinement
 samples does not guarantee detection of every otherwise observable shape
 contradiction or evaluation failure. Sampled curvature and slope order test consistency with
@@ -337,8 +335,8 @@ The rounding-factor count reserves nine for conversion, five for replacing and
 evaluating norms, and two for comparison. The arithmetic model and product
 bound $\gamma_n=nu/(1-nu)$ follow
 [Higham (1993), pp. 784–785, Eq. (1.2) and the bound preceding Eq. (2.3)](https://nhigham.com/wp-content/uploads/2023/10/high93s.pdf);
-these norm inequalities and their application here are the #513 derivation.
-The lead's 2026-10-15 build amendment permits one `Sample` boolean, set from the
+these norm inequalities and their application here are a derivation.
+One `Sample` boolean is set from the
 existing conversion intermediates only when all are finite and normal. Only
 order-exit classification reads it; false keeps the recoverable scan fallback.
 No coefficients are reconstructed and no additional pressure evaluation occurs.
@@ -466,7 +464,7 @@ select by declared branch policy and return the stable-root count
 Outside a resolved contradicted interval, the inherited scan assumes one mechanical loop per isotherm, with one interior
 minimum of `P_rho`. A second high-density loop can leave the stable liquid
 interval inside one cell whose end slopes are both negative, as for cold
-propylene (#391). When that cell's pressure rises through the target, the mean
+propylene. When that cell's pressure rises through the target, the mean
 value theorem requires a positive slope somewhere inside it, not one stable
 interval. Midpoint bisection toward the crossing, stopping at floating-point
 adjacency, exposes a positive slope or fails the search rather than returning
@@ -529,7 +527,7 @@ global stability or complete root enumeration is claimed.
 
 An unspecified request with multiple resolved stable roots is ambiguous.
 A genuine sole root remains unlabelled. Its side is read from the stored
-negative-slope sample of the same scan (single-loop case, #423): below the sample
+negative-slope sample of the same scan (single-loop case): below the sample
 it is vapor-side, above it liquid-side, and with no sample it stays unlabelled; no
 evaluation, density cutoff or tolerance is added. Liquid references (the
 neutral trace, the ion-free ionic solvent reference, its pure solvent and the finite
@@ -580,8 +578,7 @@ All admitted specifications use the one equilibrium driver required by the
 pins and free intensives from data. An omitted phase support is every component,
 restricted in a vapor to the zero-charge components. Explicit charged Vapor support
 is admitted only under `DensityTemperature`, retaining its kind, ionic coordinates
-and intensive electroneutrality even at zero pinned amount (#771's scoped amendment
-to #438). `DipolarPerturbation` charged Vapor is refused pending separate numerical
+and intensive electroneutrality even at zero pinned amount. `DipolarPerturbation` charged Vapor is refused pending separate numerical
 qualification despite its vacuum limit; density-independent forms retain their
 condensed-domain refusal. This is a numerical declaration capability, with physical
 vapor applicability unvalidated. Supports are admitted
@@ -589,7 +586,7 @@ before any reference calculation; an omitted support keeps its full declared wid
 supplied guesses and starts. A compile-time declaration error propagates to the caller
 from every entry, including declared starts and continuation endpoints. The balance basis $B$ spans the left null space
 of the reaction stoichiometry in echelon form (unit pivots, coefficients below
-$\sqrt{\epsilon}$ set to zero), so each row counts one conserved moiety (#172). The pivots
+$\sqrt{\epsilon}$ set to zero), so each row counts one conserved moiety. The pivots
 are the species taking part in the most reactions, ties by declaration index, each accepted
 while the remaining species keep the full reaction rank on the exact stoichiometry: shared species ($\mathrm{H^+}$, a carrier) become pivots and each reaction's
 peripheral species stays off them, so a trace moiety such as $\mathrm{Li^+}+\mathrm{LiA}$
@@ -747,7 +744,7 @@ zero extended corrections and the reason additional precision was unavailable.
 An estimate above 1e-10 does not claim that density accuracy.
 
 For neutral, nonreacting mixtures, the selected ordinary target endpoint has a
-separate precision decision (issue #864, amendment r2). Eligibility requires a
+separate precision decision. Eligibility requires a
 square two-phase liquid/vapor feasibility cell at fixed temperature and free
 pressure, one free phase amount and one exactly zero-pinned phase, more than
 one component, and no caloric, critical, envelope, azeotrope, discovery, source
@@ -802,7 +799,7 @@ speed claim.
 Repeated public solves and accepted continuation/envelope correctors may reuse the
 previous Ipopt endpoint's primal coordinates and equality/bound multipliers when
 the ordered model, phase, support, balance-basis, row and coordinate layout is
-unchanged (#505). The tuple belongs to the equilibrium driver and is separate
+unchanged. The tuple belongs to the equilibrium driver and is separate
 from any Newton-polished returned state. Correctors retain their tangent-predicted
 primal point. With $a=1/N_{feed}$ and amount chart $S_i$, equality multipliers
 are stored as $a\lambda$ and bound multipliers as $a u_i z_i/S_i$, where
@@ -840,7 +837,7 @@ intensive are used as given. Otherwise the start runs the plain solve's [cold st
 and then replaces every supplied coordinate. A supplied composition is
 not speciated over and skips the finite-phase sub-solve. The problem's own guesses
 act exactly as in the plain solve. Work limits bound the work but never select the start, so
-an empty start under limits that are not exhausted returns the plain solve's state and work (#350).
+an empty start under limits that are not exhausted returns the plain solve's state and work.
 Invalid initialization is an individual attempt cause. The first available state
 meeting the native row, topology and density-branch checks is selected; subsequent
 starts remain unattempted. No best-residual or Gibbs comparison selects another root.
@@ -866,7 +863,7 @@ qualify the bounded inputs stated there.
 Public solves also apply the continuation owner's density-branch admission to
 each returned phase. A cold pressure closure selects its declared liquid or vapor
 root and refuses a sole root that ALG-DENSITY's stored negative-slope sample places
-on the other side (#423), an anchored closure establishes local uniqueness, and the corrected density
+on the other side, an anchored closure establishes local uniqueness, and the corrected density
 must lie in that anchor's window with positive pressure slope. Failure clears the
 state and retains the optimizer and row diagnostics. Continuation uses the same
 predicate with its own anchors and retains its `branch_lost` cause; its internal
@@ -881,30 +878,29 @@ iteration-budget or time-budget stop, `EQUILIBRIUM_POLISH_STEPS` Newton steps on
 the unweighted rows with the exact Jacobian close that gap. Further steps continue
 only while the raw row maximum exceeds the caller's row criterion and each step's raw
 contraction ratio (after/before) is strictly below the previous accepted step's,
-under a separate polish cap of `EQUILIBRIUM_MAX_ITERATIONS` steps (#261,
-2026-10-05). In Newton's quadratic region the ratio falls toward zero; a constant or
+under a separate polish cap of `EQUILIBRIUM_MAX_ITERATIONS` steps. In Newton's quadratic region the ratio falls toward zero; a constant or
 rising ratio means the iterate lies outside it, so polishing stops. From a
 box-limited start with raw rows near 10, the nominally unloaded MEA liquid (CO₂
 4.9e-13, H₃O⁺ 1.6e-12) needs four steps, and three left every ionic row near
 −1.8e-9 z_i² under a 7.6e-12 classified residual. Raw rows that meet the criterion
 need no further polishing. A strictly raw-residual-decreasing proposal that reaches
-the caller's raw-row criterion is admitted without the decreasing-ratio test (#670).
+the caller's raw-row criterion is admitted without the decreasing-ratio test.
 Best-point selection, freshly classified rows and the solved-state action criterion
 remain independent checks. Unfinished explicit stability trials alone may continue
 with the bounded adaptive damping in ALG-STABILITY; declared solves retain the
 contraction-ratio policy above. Each step must reduce the raw row maximum at a
 positive finite composition of every supported species; exact absence is the
-compiled support (#231). No composition cutoff applies, so the polish reaches
+compiled support. No composition cutoff applies, so the polish reaches
 positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
-(#87, 2026-09-21; #266, 2026-10-07: MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
+(for example MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
 A trace moiety row is taken relative to its own size in the polish's progress
-measure, admission, stops, Newton system and #272 forward-error bound, and in the
-classified residual (#633). Its size $s_k$ is the larger of the moiety's feed
+measure, admission, stops, Newton system and forward-error bound, and in the
+classified residual. Its size $s_k$ is the larger of the moiety's feed
 inventory $\sum_i |B_{ki}| n^{\mathrm{feed}}_i$ and the magnitude
 $\sum_p N_p \sum_i |B_{ki}| x_{pi} + \sum_s |\beta_{sk}| n_s$ of the terms the row
 sums at the current point, both divided by $N_{\mathrm{feed}}$. When
 $0 < s_k \le$ `EQUILIBRIUM_TRACE_MOIETY_FRACTION` $=10^{-6}$, the threshold of
-#272's trace-species definition, the row and its Jacobian row are divided by
+The trace-species definition, the row and its Jacobian row are divided by
 $s_k$. A feed-normalized trace row (9.86e-18 at 1e-13 mol) otherwise lies below
 the rounding of the O(1) rows, so the raw maximum cannot fall and an available
 correction is discarded. Row equilibration leaves the Newton direction unchanged
@@ -914,7 +910,7 @@ solution-side amounts, such as carbon in a loaded MEA liquid, at the size its
 rounding allows.
 Before evaluating a trial, a fresh undamped correction may terminate polishing
 when the current point is the stored best point, its classified maximum is within
-the unchanged caller criterion, and every free phase amount is positive (#272).
+the unchanged caller criterion, and every free phase amount is positive.
 Let $D$ be diagonal with positive free phase amounts in mol, free $T$ in K,
 free $P$ in Pa, and unity for log compositions, log packing fractions and
 multipliers in RT units. The numerical-policy owner sets
@@ -953,7 +949,7 @@ If any guard fails, the existing polish trials and best-point selection continue
 Try fractions 1, 1/2 and 1/4 of each Newton direction, stopping at the first
 admissible raw contraction; a rejected direction ends polishing. Among the
 optimizer start and accepted physical iterates, return the point with the lowest
-classified residual, breaking ties by lower raw residual (#66, 2026-09-22).
+classified residual, breaking ties by lower raw residual.
 The classified residual may rise at an intermediate step through nonlinear
 curvature; requiring it to decrease at every step can reject a direction that
 resolves trace chemical equilibrium within the step budget.
@@ -961,17 +957,17 @@ Selecting the best classified point prevents degradation of the optimizer
 result or loss of a stricter caller tolerance attained along the path.
 For eligible calls entering `solve_compiled`, the [ADR 0009 amendments](../../../docs/scientific/decisions/0009-general-platform-one-driver.md)
 apply the same exact-Jacobian Newton iteration from the existing start before
-constructing Ipopt. #476 retains square feasibility cells with one liquid and
+constructing Ipopt. The fast path retains square feasibility cells with one liquid and
 one vapor, one zero-pinned and one free amount, exactly one free intensive,
 and no discovery, reaction, ion, caloric, critical or envelope condition.
-#545 adds square stationarity systems at fixed positive T/P with two free
+It adds square stationarity systems at fixed positive T/P with two free
 amounts, liquid/liquid or liquid/vapor phases, and identical supports equal to
 the retained positive-feed support of at least two components. Every model
 charge must be zero. Source-reference conversion, diagnostic options and
-optimizer-state transfer exclude this added domain, as do the other #476
+optimizer-state transfer exclude this added domain, as do the other
 exclusions.
 
-For discovery declarations, #828 extends the same free-amount attempt to one
+For discovery declarations, the same free-amount attempt extends to one
 free fluid phase on exactly the positive-feed support and to the existing
 admitted two-phase support structure. Non-ideal square fixed-positive-T/P
 systems alone qualify; ions, reactions, source-reference conversion, solids,
@@ -988,7 +984,7 @@ Jacobians/corrections and full numerical LU rank. Finite amount bounds from
 `GibbsMinimizer::get_bounds_info` are multiplied by the existing amount chart;
 infinite bounds retain their meaning. Candidate boxes precede preparation.
 The free-amount attempts permit a trial whose raw rows already meet the caller criterion
-past the falling-contraction-ratio test. #476's iteration remains unchanged.
+past the falling-contraction-ratio test. The feasibility iteration remains unchanged.
 In both domains, once the raw criterion is met, one compulsory full exact
 correction uses a fresh Jacobian and solve. The corrected point must meet the
 fresh classified criterion. At Newton box checks, log-composition overshoots
@@ -1009,18 +1005,18 @@ global stability test.
 
 Otherwise, including on admission failure or exception, unchanged Ipopt runs
 from the original start and retains attempted work and the shared budget.
-A #545 Newton return keeps `solver_status` `SUCCESS`; the existing
-`newton_fast_path` trace and its accepted outcome identify Newton. #476 retains
+A stationarity Newton return keeps `solver_status` `SUCCESS`; the existing
+`newton_fast_path` trace and its accepted outcome identify Newton. The feasibility Newton path retains
 `NEWTON_CONVERGED`. Both have zero optimizer iterations, optimizer Hessian
 callbacks and regularization amplification.
-Zero constraint multipliers of row-count length apply only to #476 feasibility
-cells. #545 still evaluates exact final Gibbs curvature. Evaluations count
+Zero constraint multipliers of row-count length apply only to feasibility
+cells. Stationarity cells still evaluate exact final Gibbs curvature. Evaluations count
 Newton prepared points, while trace steps separately report Newton work.
 Solved-state actions consume the same coordinates and rows. Declared starts,
 continuation correctors, stability trials and caloric seed sub-solves retain
 Ipopt alone.
 
-The #771 explicit charged density-temperature Vapor correction uses the log
+The explicit charged density-temperature Vapor correction uses the log
 charge row and exact log-coordinate Jacobian in EqID `tangent_plane_trial_balance`.
 The same pair governs Newton correction, contraction, damping, best-point
 selection, stopping and the local forward estimate. Classification retains
@@ -1051,18 +1047,18 @@ initialization, a fatal application return (invalid problem or option, exception
 memory, internal error) or an unassigned status is not a stop: it leaves no
 candidate to classify and is recorded `infeasible` like an unrun structural solve
 (or `left_domain` when the fallback start's reference is unavailable), even when the
-fallback start's rows meet the criterion (#180). Its `solver_status`
+fallback start's rows meet the criterion. Its `solver_status`
 carries both exact Ipopt names, e.g. `UNASSIGNED; Initialize returned Invalid_Option`,
 so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A feasibility cell carries chemical and pressure rows as optimizer equality
 constraints. Its log-composition lower bound is therefore the representability limit,
-the smallest normal double (#322): the all-free optimizer box or a composition cutoff would exclude valid
+the smallest normal double: the all-free optimizer box or a composition cutoff would exclude valid
 trace roots before a successful optimizer stop can reach polishing (a reactive bubble point
 whose trace root lies at 2.4e-24 stopped `infeasible` under the former 1e-20 bound). That bound
 moves feasibility-cell values at rounding level with no work change, except conditioning-limited
-near-critical solves; the measured moves are retained with #322 (PR #332). In all-free cells a warm start below the box
+near-critical solves; the measured moves are retained. In all-free cells a warm start below the box
 is pulled back into it by the optimizer's bound push and re-recovered by the polish.
 The retained MEA 050 case exercises rejection of a full step and acceptance of
 a half step without relaxing the requested tolerance. The returned extensive-objective constraint multipliers are
@@ -1072,8 +1068,7 @@ reconstructed at the returned point from the row multipliers: a material row
 objective and material rows obey joint extensive homogeneity in the phase's
 amount, composition and volume. Together with stationarity in its free amount,
 this gives zero normalization multiplier; the reduced-Hessian certificate uses these values at the returned
-point, and the optimizer's own multipliers remain a trace probe (#87 review,
-2026-09-21). A feasibility problem keeps the optimizer's constraint multipliers
+point, and the optimizer's own multipliers remain a trace probe. A feasibility problem keeps the optimizer's constraint multipliers
 over every row; its equality-root qualification does not assert a Gibbs minimum.
 The reconstruction assumes no active
 variable bound at the returned point and residual potentials that depend on
@@ -1089,7 +1084,7 @@ rows fix, are determined: for example the mean-ionic pair. Individual ion amount
 single-ion quantities of such a phase (single-ion activity, phase pH) are then undetermined
 and are not results. In the Ascani 2022 acetic acid + water + toluene reproduction, the toluene
 liquid returned Ac⁻ at a mole fraction of about 1e-21 and H⁺ at about 1e-36, while the mean-ionic
-balance held to 2.2e-10 (#374, #375). The Ipopt driver
+balance held to 2.2e-10. The Ipopt driver
 scales its extensive Gibbs objective by `1 / feed_total` internally; this
 preserves the minimizer while keeping objective derivatives on the same
 numerical scale as the normalized material-balance rows. It accepts Ipopt's
@@ -1104,7 +1099,7 @@ The compiled preparation enforces each phase's packing domain
 [`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so Ipopt cuts back a step
 that leaves it. A Gibbs minimization of exactly one declared phase leaves ln η
 unbounded in the optimizer, because the barrier of bounds on ln η pushes a
-near-spinodal liquid off its branch (#314); for such a solve the packing domain
+near-spinodal liquid off its branch; for such a solve the packing domain
 is a hard refusal that names the phase, so a state outside it (for example a
 dilute vapor below the floor) is refused rather than returned. Every multi-phase
 solve and every feasibility cell keeps the ln η bounds: their barrier acts as a
@@ -1116,14 +1111,14 @@ liquid inside a multi-phase declaration is not covered. Removing the barrier
 changes some single-phase outcomes: identical-isomer isomerisation started at its
 symmetric stationary point (a Gibbs maximum along the reaction) now refuses as not
 positive definite instead of escaping to a minimum through the barrier's
-perturbation, the outcome the #159 test already designates.
+perturbation, the outcome the retained test already designates.
 
 <a id="equilibrium-amount-step-retention"></a>
 
 Phase amounts enter the Gibbs objective linearly. At fixed composition and density
 the amount–amount second derivative is zero, so only the amount–composition,
 amount–density and constraint couplings of the full Newton system limit how much
-material one step moves between phases. At the #356 MEA point (loading 0.2556,
+material one step moves between phases. At the retained MEA point (loading 0.2556,
 318.15 K, 3699.08 Pa) one step from the feed start moved 140 mol into the vapor
 against an 86.7 mol feed. Ipopt's own fraction-to-boundary rule ($\tau\ge0.99$;
 Wächter and Biegler, 2006) left 1% of the liquid, its composition drained to an
@@ -1164,7 +1159,7 @@ callbacks. Over the 58 MEA family points accepted by both starts, 12 need more o
 some work component (worst 49/69/50 to 145/446/144) while the sums fall from
 2778/4388/2835 to 1866/3479/1922. The qualification trace found the identified base
 and active bound at all 16,161 admissions over 2,540 callbacks, including restoration
-and watchdog rollback. The value 0.1 is provisional (#356). The rule reads Ipopt
+and watchdog rollback. The value 0.1 is provisional. The rule reads Ipopt
 3.11.9 internals (the TNLP adapter's ordering, the current iterate and the active
 problem's bounds; IpBacktrackingLineSearch.cpp, IpRestoIpoptNLP.cpp). A missing
 mapping or Ipopt's own variable scaling, which would put its iterate and bounds outside the
@@ -1174,14 +1169,14 @@ check refuses another Ipopt release, which must requalify the rule (3.14's
 Only `gibbs_minimizer.cpp` includes the private algorithm headers and dereferences
 these objects. Its declaration keeps opaque types; destruction is defined in
 the implementation so the reference-counted live iterate owner remains intact.
-The #821 qualification rejected 3.14.20 on the unchanged near-critical
+The qualification rejected 3.14.20 on the unchanged near-critical
 methane/ethane comparisons with MUMPS and MA57. The deployed dependency remains
 exactly 3.11.9; confinement does not remove the private dependency or qualify
 another release.
 
 <a id="equilibrium-start-amount-scaling"></a>
 
-The primary Ipopt attempt measures each free phase amount of a Gibbs minimization in units of its own start amount (#243): it works in $y_p=n_p/S_p$ with
+The primary Ipopt attempt measures each free phase amount of a Gibbs minimization in units of its own start amount: it works in $y_p=n_p/S_p$ with
 $S_p=\max(n_p^0,\epsilon_N N_{\mathrm{feed}})$, $\epsilon_N=$`PHASE_DISAPPEARANCE_AMOUNT`$=10^{-8}$,
 fixed for one solve after every start owner has run; every other coordinate keeps unit one,
 and feasibility cells keep physical coordinates. The callbacks return $S\nabla f$, $J S$ and
@@ -1192,8 +1187,8 @@ constant `bound_mult_init_val` 1, so in feed-relative units $q=n/N$ the initial 
 multiplier is $z_q=N z_n=N$, while composition and packing multipliers do not depend on $N$.
 This mismatch is demonstrated but no experiment has isolated it as the sole cause; what matched
 across feeds was the normalized iteration-0 start, not the iteration-1 point. In start-amount
-units the #312 feed-scaled declaration matrix passes at 1, 100 and 10,000 mol with feed-independent
-optimizer iterations (PR #400). The unit was chosen empirically, as the only qualified candidate
+units the feed-scaled declaration matrix passes at 1, 100 and 10,000 mol with feed-independent
+optimizer iterations. The unit was chosen empirically, as the only qualified candidate
 that also adds no key-solve iterations: feed-relative $n/N$ passes the matrix but raises the
 MEA flash iterations; other order-one multiples of the
 start add key-solve iterations or swap the neutral phase labels; Ipopt's gradient-based
@@ -1207,7 +1202,7 @@ under positive feed scaling except for the $\max(1,N_{\mathrm{feed}})$ dual-tole
 below 1 mol and Ipopt's absolute `compl_inf_tol`. C3 still refuses its vanished vapor; its
 convergence category is now `stalled` instead of `converged_to_floor`.
 
-For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work and both causes on failure, including exceptions; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
+For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, or stops non-error with its iteration budget exhausted, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. An exhausted attempt qualifies without it: whether its last, unconverged iterate classifies a phase as vanished depends on last-bit arithmetic (one retained MEA case classified a vanished phase on some platform builds and not on another). Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work, each counted once, and both causes on failure, including exceptions: an ordinary result reports their sum, while each discovery declaration record keeps its own invocation's work and the discovery total sums the records; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
@@ -1236,8 +1231,8 @@ the driver's solver options, including iteration limits; unset the variable afte
 the experiment. Iterate logging can use `output_file <log-path>` and
 `file_print_level 12` in that file.
 
-The same owner chooses Ipopt's linear solver once per loaded native library
-(owner decisions 2026-10-16, 2026-10-17 and 2026-10-18). `EPCSAFT_IPOPT_LINEAR_SOLVER=mumps`
+The same owner chooses Ipopt's linear solver once per loaded native library.
+`EPCSAFT_IPOPT_LINEAR_SOLVER=mumps`
 or `ma57` forces a solver; any other nonempty value, or a forced `ma57` that
 cannot load, is an error at the first Ipopt solve or `_core.linear_solver()`
 call, before that solve starts; a solve the free-amount Newton path finishes
@@ -1262,10 +1257,9 @@ times `EQUILIBRIUM_INNER_TOLERANCE_FACTOR`, because the
 recomputed row maximum tracks the optimizer tolerance and overshoots it by a
 hair when both coincide. A feasibility cell (pinned amount, caloric or critical
 condition: constant objective, followed by the exact Newton polish) stops at the criterion itself; the polish, not an
-inner decade, removes the overshoot (owner decision 2026-09-23).
+inner decade, removes the overshoot.
 The shared Ipopt option owner sets the absolute unscaled `dual_inf_tol` to
-that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol
-(owner decision 2026-10-06, #243). It computes this factor once from the
+that inner tolerance times $\max(1,N_{\mathrm{feed}})$, with feed total in mol. It computes this factor once from the
 existing objective factor $1/N_{\mathrm{feed}}$; the scaled overall `tol`
 and material-row tolerance retain their values. The parameter-fitting call's
 objective factor is one, so its dual stop retains its value. Ipopt's
@@ -1300,7 +1294,7 @@ certified floor and reduced-Hessian certificate keep every coordinate.
 That fresh final preparation also supplies the reduced-Hessian certificate;
 only the coordinate width is reduced to the primal chart, without reevaluating
 the same phase energies separately for its Jacobian and Hessian.
-The certificate decides on inertia, not on the raw eigenvalue (#159). In the log
+The certificate decides on inertia, not on the raw eigenvalue. In the log
 chart a trace species' direction has curvature of order its amount `n x_i`, so
 on a trace state the smallest eigenvalue of `Z^T H Z` falls below the Hessian's
 own rounding: in the packet-3 MEA liquid with CO2 at `x ≈ 1e-15` it is about
@@ -1354,7 +1348,7 @@ multipliers, so their unscaled residual is bounded only by the dual tolerance
 divided by `N x_i` and diverges where a phase or a fraction vanishes. The driver
 therefore classifies the free-amount route by the KKT-scaled stationarity
 residuals `N_p x_i mu_i / N_feed` and `N_p / N_feed` times the pressure row (the
-first-order conditions in the solved chart; owner decision 2026-09-16), keeps
+first-order conditions in the solved chart), keeps
 the unscaled rows in `residuals` as diagnostics, and classifies a feasibility cell by
 its unscaled rows, which are its constraints. In both routes a trace moiety row is
 classified relative to its size $s_k$ (polish, above). Species thermochemistry attached to a
@@ -1364,7 +1358,7 @@ and the comparison is skipped where the temperature leaves a species interval.
 A converged state carries no certificate that each phase is locally stable.
 For a neutral nonreacting liquid/vapor pair with an incipient phase pinned at
 zero amount, the driver applies each phase's necessary local stability
-condition to a state it would otherwise accept (#352). This is the Gibbs
+condition to a state it would otherwise accept. This is the Gibbs
 criterion in the Helmholtz form of the `critical_equations` sources
 (Heidemann–Khalil 1980; Michelsen 1980). The bulk and incipient phases are both
 checked, each at unit amount, so the pinned zero amount never weights the
@@ -1389,8 +1383,8 @@ and explicit starts and continuation correctors. Charged and reacting cells need
 admissible perturbation subspaces first and are not checked. Positive curvature
 certifies neither global stability nor another solution's absence, and a
 refusal does not say that no bubble point exists. On the equimolar neutral
-`bubble_at` returns of the #352 design review, near-trivial states have negative `lambda_min`
-and genuine bubbles positive by orders of magnitude beyond the band (PR #363).
+`bubble_at` returns of a retained design review, near-trivial states have negative `lambda_min`
+and genuine bubbles positive by orders of magnitude beyond the band.
 E4-D pins the 260 K, 2.02606 MPa guess, which returned the trivial state as a success.
 
 PH/PS adds one extensive caloric row to the same feasibility driver (k + e > 0).
@@ -1413,13 +1407,13 @@ alone stops after `EQUILIBRIUM_CALORIC_SEED_ITERATIONS` (20) Ipopt iterations, w
 any caller limits; one without a state by then is discarded like any failed seed.
 A discarded mixture seed whose feed at $(T_\mathrm{seed}, P)$ has no liquid-side density root (two stable roots,
 or a sole root denser than its negative-slope density) would start both phases near the feed at vapor
-density, and the caloric row is then met by sensible cooling onto the trivial solution (#592). The start
+density, and the caloric row is then met by sensible cooling onto the trivial solution. The start
 instead is the fixed-$T$ generic start at the first $T_j=0.95^j\,T_\mathrm{seed}$ (`COOLING_RATIO`) whose
-feed has a liquid side and which every caloric record admits, with no second seed (#610). No such $T_j$,
+feed has a liquid side and which every caloric record admits, with no second seed. No such $T_j$,
 or a feed density solve that fails during the scan, keeps the start at $T_\mathrm{seed}$. Pure fluids keep
 their saturation seed.
 A start outside the declared phases' coexistence region otherwise spends 48–200
-iterations on a seed that cannot succeed; converged seeds took 4–14 (#579).
+iterations on a seed that cannot succeed; converged seeds took 4–14.
 
 Regular PH/PS qualification restricts the returned coordinates to a diagnostic
 fixed-TP Gibbs chart, recovers its physical chemical duals and computes the
@@ -1467,7 +1461,7 @@ are terminal. Passage through a critical point between consecutive accepted
 states, where every nonzero component of a pair's inter-phase difference vector
 (delta ln eta and each delta x_i) changes sign, is that pair's coalescence:
 terminal `phases_coalesced` with the pair named and the swapped state retained
-as the last result, never a relabeled continuation (owner decision 2026-09-16).
+as the last result, never a relabeled continuation.
 A partial prefix is never target success, a step or budget limit
 is never a topology event, and every attempt is retained by the existing Core
 trace scopes. Reusing only an initial seed is not continuation. The result is
@@ -1550,7 +1544,7 @@ See the specification appendix for [cooling-onset dew](#cooling-onset-dew),
 [critical-equation candidates and phase envelopes](#critical-equation-candidates-and-phase-envelopes),
 and [pure stoichiometric solids](#pure-stoichiometric-solids).
 
-The #906 saturation-loading search declares a positive increasing grid with
+The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then mapping the preceding admitted current-vector state.
 Native pressure estimates resolve signs; native exact feed actions and the
@@ -1573,11 +1567,10 @@ owns the heat, moving denominator and switch derivative.
 
 ## ALG-STABILITY
 
-The explicit native tangent-plane test and fixed-T/P discovery adopted in
-[#223](https://github.com/tannerpolley/ePC-SAFT/issues/223) reuse `CompiledSystem`,
+The explicit native tangent-plane test and fixed-T/P discovery
+reuse `CompiledSystem`,
 `run_driver`, density/association owners and exact CppAD value/derivative chains.
-No production finite differences or Python search loop is admitted. One second minimizer is admitted (owner,
-2026-10-19, #647): the native Michelsen trial minimizer below, for all-neutral, non-reacting systems only. It
+No production finite differences or Python search loop is admitted. One second minimizer is admitted: the native Michelsen trial minimizer below, for all-neutral, non-reacting systems only. It
 changes no acceptance check. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
 owns physical admission and claim meaning; EqID: `tangent_plane_distance` owns
 the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-discovery/)
@@ -1610,13 +1603,65 @@ Explicit native searches own their work capture and pass its trace to the
 counting code. The trace reports work only; no solver decision reads the ambient
 trace. Declared calls retain their existing scopes and perform no trial work.
 
+### Explicit fast discovery
+
+`Discover(mode="full")` is the default, including `phases="discover"`.
+`Discover(mode="fast")` selects one reduced round at fixed positive T/P,
+without reactions, solids, supplied-point evaluation or explicit trial supports.
+Ordinary `stability_test` rejects this mode. Selection is native and applies
+identically to ordinary and prepared requests.
+
+Keep the full initial declarations: Liquid then Vapor for a neutral union,
+Liquid only for a charged union, retaining the admitted lower-G parent.
+For an all-neutral union use one near-pure Liquid start per positive-feed
+species in native order, then one ideal-Vapor start. Each near-pure start
+assigns 0.99 to its selected species and distributes 0.01 over the other
+species in proportion to the parent feed; a singleton is exactly one.
+The Vapor composition uses the existing shifted exponential of the frozen
+chemical plane minus the standard term. This finite family follows FeOs
+0.10.1 `stability_analysis` and Michelsen (1982), Part I, Eqs. 13–19, 25–27.
+
+For a charged union keep the charge-neutral positive base and one near-pure
+start per neutral species on the union Liquid support, near-pure Liquid
+starts on the neutral-only support, and one ideal-Vapor neutral-only start.
+There are at most 2n₀+2 starts before deduplication, where n₀ is the number
+of fed neutral species. Use the existing reconstruction and constrained trial
+driver for every support in an ionic system, retaining normalization, charge
+and the complete transformed multiplier contraction. Perdomo (2025), §3.1
+Eq. 22 and §3.3 Eqs. 37–40, supplies the constrained criterion; these starts
+do not establish coverage of the constrained space.
+
+Retain root/seed deduplication, failed trials and every existing finite
+conserved-descent and uncertainty check. Stop at the first resolved descent,
+then attempt one added declaration from its conserved split using the shared
+solver, exact Newton eligibility, original-start driver fallback, branch and
+local-state admission, and extensive uncertainty-qualified Gibbs decrease.
+Do not recover through another declaration, remove phases, retry an alternate
+addition or test the flashed endpoint. Declaration and trial budgets still
+count all actual work; no numerical limits are reset.
+
+`DiscoveryRecord.mode` records the selection. For fast results, `termination`
+is `admitted_two_phase` for an admitted split, `no_admitted_split` only for
+an exhausted, available schedule without a resolved split, or `incomplete`.
+An incomplete result has no usable public state arrays; the candidate and
+attempts retain their diagnostics. Without an admitted initial parent, the
+entire trial search and its start families are recorded as unsearched; a zero
+declaration budget retains its exhaustion cause without counting an attempt.
+Unavailable trials or unresolved finite
+descent prevent a successful parent result, but do not invalidate a later
+independently admitted split. `StabilityReport.completed` is false on early
+stopping. `unsearched` records omitted start families, remaining scheduled
+seed identities, alternate additions, post-flash stability and three-or-more
+phase topologies. Salt-rich minima, remote splits and a third phase may be
+missed. No component-order invariance or global stability follows.
+
 ### Unfinished optimized trials
 
 An ordinary explicit trial passes an internal refinement permission to the shared
 driver. Every proposal of this polish, ordinary or recovery, limits its damping to
 $\alpha \leftarrow \min(\alpha, L/\max|\Delta|)$ over the supported log mole fractions
 and log packing fraction. Here $L$ = `EQUILIBRIUM_TRIAL_LOG_STEP` = $\ln 101$ is an
-empirical retention policy (#811), equal to $\ln(1+f/\tau)$ for the $10^{-8}$
+empirical retention policy, equal to $\ln(1+f/\tau)$ for the $10^{-8}$
 composition box and $10^{-10}$ row criterion; no accuracy bound follows from
 that identity. At a rejected correction, recovery
 starts only if the best classified point still exceeds the existing row criterion.
@@ -1697,7 +1742,7 @@ charge-neutral base on U, then run the unchanged ideal-solution speciation
 sweeps. A zero-fed reaction participant remains on the required support; its
 feed fraction is not an admissible log-chart seed. Record all initial attempts
 and retain the accepted lower-G candidate; shared branch admission refuses a
-candidate whose sole root lies on the other side (#423). This preparation belongs only to
+candidate whose sole root lies on the other side. This preparation belongs only to
 discovery; declared initialization remains unchanged.
 Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
 pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
@@ -1719,10 +1764,10 @@ evidence retains `Unspecified` admission. The generic sibling-root fallback is
 unchanged for existing callers. Default trial families, discovery initial
 candidates and its charged-Vapor addition veto are unchanged: no charged-Vapor
 discovery is qualified. Density-independent `IonSuppression` (all choices) and
-`ComponentMixing` are condensed-liquid correlations (#568). Under them a charged
+`ComponentMixing` are condensed-liquid correlations. Under them a charged
 trial point counts only when it coincides, within `DENSITY_ANCHOR_LOG_WINDOW`,
 with a stable density root of its own composition at the test T and P, and the
-density owner's side classification (`density_side`, #423) of that root is
+density owner's side classification (`density_side`) of that root is
 Liquid. The seed applies the classification to its already-solved Liquid root.
 The end point solves one Liquid-branch root with its sibling before the trial
 energy, through the same root match that discovery addition uses; a supplied
@@ -1839,12 +1884,12 @@ Negative plane and slope beyond the complete estimate require a finite split
 eight halvings. Preserve every component, hence every moiety and phase charge;
 reconstruct arithmetic composition/charge, reclose the withdrawn donor at the
 request pressure on its declared density branch through the shared density
-owner (a sole root established on the other side fails the check, #423), recompute packing and shared energy, and verify matching conserved
+owner (a sole root established on the other side fails the check), recompute packing and shared energy, and verify matching conserved
 totals before comparing Gibbs energies. The trial keeps its own molar volume,
 and the donor's reclosed volume seeds any added declaration. A fixed donor
 volume is admissible for the minimized A+PV, but its mechanical penalty
 (g_vv>0 on a stable root) blocked useful finite descent within this bounded
-search (#390). With exact closure on a smoothly continuing root the first-order
+search. With exact closure on a smoothly continuing root the first-order
 slope is unchanged; no smooth path is claimed across a root-selection change. A
 failed donor density search is a failed finite check.
 Retain each failed check and count energy/density evaluations. Admit numerical
@@ -1880,7 +1925,7 @@ first, ties by enumeration. This is deterministic, not a claim of the best
 possible addition start. Seed the full added declaration with the admitted
 finite split; preserve feed, reactions, standards and exact selected support.
 Reuse shared density-branch admission. A unique unlabelled root takes the side
-its stored negative-slope sample establishes (ALG-DENSITY, #423), keeping the
+its stored negative-slope sample establishes (ALG-DENSITY), keeping the
 split and its Gibbs decrease: water(0.87)/1-pentanol at 150 K and 101,300 Pa with
 a vapor trial family adds a second liquid. Without a sample it retains the source
 declaration label without asserting a physical phase theorem; an ionic phase
@@ -1903,7 +1948,7 @@ Coalescence merges both component inventories and extensive volumes into the
 first phase. Disappearance transfers its complete small inventory and volume
 to the first remaining phase whose support contains it, ties by index. No
 recipient means unresolved removal. Normalize merged amounts, reclose recipient
-density on its declared branch (refusing a sole root established on the other side, #423), verify packing/association and balances/charges,
+density on its declared branch (refusing a sole root established on the other side), verify packing/association and balances/charges,
 then solve the reduced declaration. Dropping a phase never drops its inventory.
 The public unavailable-state meaning is unchanged.
 
@@ -1927,10 +1972,10 @@ Partial enumeration is search-incomplete. Remaining resolved descent without
 an admitted next declaration, exhausted budgets or descent at the balance-rank
 phase limit makes discovery unsuccessful, retaining its candidate separately
 for diagnosis. Rank-limit replacement and generalized multi-donor/reactive
-withdrawal remain outside this slice. Completed enumeration without resolved
+withdrawal remain outside this algorithm. Completed enumeration without resolved
 descent returns the declaration with the finite-search statement and unresolved
-limits. Every failed/refused/indeterminate qualification follows ALG-TERMINATION's
-fix-before-negative requirement; honest failure reporting alone is not completion.
+limits. A failed, refused or indeterminate result reports its cause; a typed
+refusal is final only under the conditions of ALG-TERMINATION.
 Neutral qualification precedes ionic/reacting qualification. Same-wheel declared
 comparisons establish integration/topology evidence; refined FeOs neutral
 comparisons establish cross-implementation agreement, not physical validation.
@@ -1984,12 +2029,11 @@ For the P4 native caloric action surface, each of Ideal, Residual and Total
 `h`, `u`, `s`, `cp`, and `cv` admits mixed directional orders one through three
 in `(T,rho,x;theta)` or `(T,P,x;theta)` on one accepted density branch.
 Composition directions preserve normalization and charge balance; known fixed
-parameter slots project to zero, while unknown slots are input errors. The
-[accepted P4 design](https://github.com/tannerpolley/ePC-SAFT/issues/19)
-specifies the qualification cases and numerical limits.
+parameter slots project to zero, while unknown slots are input errors. A separate
+retained design specifies the qualification cases and numerical limits.
 
 A direction entering a zero-fraction neutral component follows the exact
-infinite-dilution limit (owner decision 2026-09-26, #73), with three exceptions
+infinite-dilution limit, with three exceptions
 that report their cause and no action. The Ideal and Total entropy are singular
 through `x ln x` (`support_change`). In a model with the dipolar term every result
 keeps `support_change`: with every dipole absent the term's A2-only branch omits
@@ -2014,7 +2058,7 @@ identity holds to rounding.
 | `cp`, `cv` | 2 | 3 | 4 | 5 |
 | `ln(phi_i)` | 1 | 2 | 3 | 4 |
 
-Component `ln(phi_i)` (EqID: `log_fugacity_coefficient`, #73) is a residual
+Component `ln(phi_i)` (EqID: `log_fugacity_coefficient`) is a residual
 pressure-chart request that returns one result per component, tagged by its
 index; a density-chart request is an input error. Its jet is `d(A_res/RT)/dn_i`
 at fixed `T`, total `V` and other amounts, the polarized path over the requested
@@ -2077,7 +2121,7 @@ At fixed density and composition, Ideal thermal fields have no explicit residual
 parameter dependence. Total actions use the corresponding Ideal and Residual
 actions, preserving the Ideal temperature and composition terms.
 
-A pressure-chart request with no observables is a density-only request (#86): the
+A pressure-chart request with no observables is a density-only request: the
 batch carries the resolved root and, per direction, the first-order derivative of that
 density along the full control direction at fixed pressure closure, with a density
 status that follows the support, association-residual, root and finiteness gates of
@@ -2105,9 +2149,8 @@ absorber route only needing A1 does not define the new application's requirement
 Solved-state actions are evaluated by one native owner,
 `solved_state_actions(compiled, central, request)`, at an accepted result; the
 owner never re-solves, compiles or mutates. Admission requires the central
-classified residual, the quantity the driver certifies (owner decision
-2026-09-16), at or below `min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL)`; no
-candidate-topology event. No composition cutoff applies (#322): in log coordinates a trace
+classified residual, the quantity the driver certifies, at or below `min(row_tolerance, EQUILIBRIUM_ROW_RESIDUAL)`; no
+candidate-topology event. No composition cutoff applies: in log coordinates a trace
 species' column has a unit entry in its own stationarity row and O(x) entries elsewhere,
 so rank, conditioning and actions do not depend on x (identical-ethane isomer actions
 match the analytic values within 9e-14 for K = 1e-21 to 1e-100, condition 11.94 at every K).
@@ -2136,7 +2179,7 @@ and the correctly rounded `fma`, so the x87 precision control cannot change it (
 assumes round-to-nearest without flush-to-zero, like all double arithmetic): AMPL's
 ASL (`fpinit`, loaded by pynumero and ASL-hosted solvers) sets the x87 precision
 control to 53 bits, which reduced the former `long double` defect to double and
-cost the Lithium capacity-state action three digits (#173). Saving and restoring
+cost the Lithium capacity-state action three digits. Saving and restoring
 the x87 control word instead would be x86- and glibc-specific. Each solved coefficient is
 re-evaluated; its normwise backward error
 eta_k = |R r_k| / (|A| |z_k| + |R b_k|) (infinity norms, Rigal–Gaches) must meet
@@ -2147,8 +2190,7 @@ jet mismatch. The first-order forward bound
 cond_inf(A) = |A| |A^-1| from the central factorization (the reported action
 condition estimate is this equilibrated value, not the raw cond_inf(J) that
 `inspect_sensitivity` reports), refuses a coefficient above
-`EQUILIBRIUM_ACTION_FORWARD_ERROR` as `ill_conditioned` (owner decision
-2026-09-23); the first refused coefficient names the status. Equilibration
+`EQUILIBRIUM_ACTION_FORWARD_ERROR` as `ill_conditioned`; the first refused coefficient names the status. Equilibration
 removes diagonal unit scales such as the raw-Pa pressure column, leaving the
 refusal to states that stay ill-conditioned after scaling. Refinement is not
 credited by the certificate: eta is re-measured from the re-evaluated series. For k >= 2 the
@@ -2216,7 +2258,7 @@ including second row derivatives and requested T/P–parameter columns. The
 existing point-local parameter cache contains both mixed columns consumed by
 its free-intensive chart; driven intensive directions rebuild their selected
 jet. A solved intensive cannot also have an external control. Free-intensive
-F6 and apparent-Cp qualification are bounded by their separate retained #225 evidence.
+F6 and apparent-Cp qualification are bounded by their separate retained evidence.
 
 For frozen c_v,G, Properties supplies the mechanical raw v_T and v_P from the
 same pressure-temperature/pressure-volume jets used by its c_p calculation.
@@ -2264,7 +2306,7 @@ cannot contain two such insertions. No ionic-concentration Hessian is required.
 
 Requested source-reference errors for the dimensionless contraction $C$ and
 its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
-first-order pressure/site propagation (#869). Named retained machine constants,
+first-order pressure/site propagation. Named retained machine constants,
 supplied parameters and captured path/site coefficients are fixed inputs;
 computed reciprocals, products and sums are evaluated within the common scalar
 expressions. The shared wider Taylor evaluator replays captured sites;
@@ -2344,7 +2386,7 @@ record-anchored caloric completion consume the same returned columns and causes.
 A model keeps its last 256 `reaction_references` results by exact inputs (temperature,
 system pressure, declaration, reactions, solvent anchor, orders and jets); a repeated call,
 such as each endpoint of the finite-addition rows at one (T, P), returns the stored
-diagnostics unchanged (#380).
+diagnostics unchanged.
 
 Pressure-closed fugacity evaluates ln Z from the prescribed P and resolved
 density; the returned EOS pressure still records the density-root residual.
@@ -2382,7 +2424,7 @@ existing density closure and ionic reference ladder. Below the provisional
 `OSMOTIC_MOLALITY_FLOOR`, return `Stop::converged_to_floor` in the osmotic
 quantity (precision unresolved), retaining ionic results; no admitted
 single-solvent reference still means absence. The scalar remedy is applied
-before this reporting restriction. Qualification in #214 is limited to the
+before this reporting restriction. Qualification is limited to the
 retained aqueous chloride packets at 298.15 K and 1 bar; neither the floor nor
 the observed trace error is a universal accuracy guarantee.
 
@@ -2408,7 +2450,7 @@ dilution insertion and adds their pure-state insertions through the existing
 single-insertion Taylor owner, reusing the resolved States. Fixed-source
 system-pressure columns remain analytic zeros. Nondefault mixed declarations
 with `CommonMolalityInfiniteDilution` are refused with a source-basis cause;
-raw mole fractions are the qualified mixed basis in issue #274.
+raw mole fractions are the qualified mixed basis.
 
 Convert the correlation to the density target through the existing reaction/SVD
 owner. Common-molality inputs
@@ -2485,8 +2527,8 @@ An unavailable outer action preserves an independently available Cp value.
 
 ## ALG-FIT
 
-Fits use exact Engine derivatives under the
-[native calculation rule](../../../AGENTS.md#native-calculation-rule).
+Fits use exact Engine derivatives, and every fit iteration runs natively in
+the Engine; finite differences only verify derivatives.
 Ceres remains the primary least-squares owner. An explicit `MinimaxRequest`
 selects native constrained estimation; a failed least-squares check never selects
 it automatically. The same native sequence owns declared starts and shared
@@ -2555,11 +2597,11 @@ one-process sweep's first failure, and every process publishes starts and its ca
 the whole evaluation succeeds, so the worker count does not change the evaluation. Processes,
 not threads: Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are
 process-global. A Python KeyboardInterrupt stops the fit between rows only
-when it runs on Python's main thread, which alone receives signals; elsewhere it runs to its end (#380). Named scalar ln K and stored
+when it runs on Python's main thread, which alone receives signals; elsewhere it runs to its end. Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
 coordinates. Every matching observation must declare the same reaction,
-coefficients and source basis. Rebuild each trial with those values, preserving
-reference transfers. Optimizer columns follow declaration order; physical rows
+coefficients and source basis; temperature bounds may differ. Rebuild each trial with those values, preserving
+each declaration’s bounds and reference transfers. Optimizer columns follow declaration order; physical rows
 are independent EOS targets, held Born diameters, then reaction coordinates. Both direction families use one
 solved-state first-action batch and one defining-Jacobian factorization per state.
 The native point reader returns prediction columns in `optimizer_gradient` and
@@ -2577,9 +2619,9 @@ reaction. Plain assignments precede shift additions, independently of declaratio
 order. Duplicate plain coefficients and two shifts on one reaction are refused.
 The existing named and species-reference admission remains in point readers.
 The fitted chart publishes the native law by reaction name, alongside the
-existing physical shift row and any plain coordinate values. To replay, attach
-the completed native laws and fitted EOS parameters without applying coordinates
-again. The native `reaction_log10_reciprocal` helper
+existing physical shift row and any plain coordinate values. To replay, copy the completed native law coefficients a–f into each original
+declaration, retaining its bounds and source metadata, and use the fitted EOS
+parameters without applying coordinates again. The native `reaction_log10_reciprocal` helper
 returns its decadic coefficients and refuses $c\ne0$.
 Sequence starts and minimax explicitly refuse this coordinate; their existing
 coefficient and EOS charts retain their behavior.
@@ -2738,7 +2780,7 @@ $n_{\mathrm{H^+}}-n_{\mathrm{LiA}}-n_{\mathrm{NaA}}$), so no single row ratio bo
 unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution domain whenever
 $\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem
 is infeasible, and just above that the optimum sits on the box beyond the polish's reach
-(#172: 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
+(for example 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
 
 `inventory_bounds(compiled, species, fraction, floor)` shares this HiGHS owner
 with the optimizer box. The amount program uses $n/N_{\mathrm{feed}}$ and returns
@@ -2797,9 +2839,8 @@ use the smallest normal double for every species, so chemical equalities can rea
 $x_{\mathrm{cut}}$ is only the finite lower bound of the all-free box. It binds below an
 attainable inventory of 1e-18 $N_{\mathrm{feed}}$, where trace values are already unresolved
 (below about 1e-15 $N_{\mathrm{feed}}$); lowering it changes those values, so it stays. The
-Newton polish carries a trace solution below the box to any positive root (#87,
-2026-09-21; #266, 2026-10-07). No composition cutoff applies to actions, continuation or
-declared seeds (#322): continuation from $K$ = 1e-16 to 9.3e-28 follows $K/(1+K)$ within 4.2e-14,
+Newton polish carries a trace solution below the box to any positive root. No composition cutoff applies to actions, continuation or
+declared seeds: continuation from $K$ = 1e-16 to 9.3e-28 follows $K/(1+K)$ within 4.2e-14,
 19 states below 1e-20. A declared seed needs positive finite compositions; its log
 coordinates have no upper test, since the solver's own majority $\ln x$ returns up to 2.6e-13
 above zero within the normalization residual. Grossly invalid declared log coordinates are
@@ -2824,11 +2865,9 @@ A verification check whose error exceeds its criterion but not an attainable
 floor derived from reported quantities (condition estimate times rounding,
 finite-difference noise over step, propagated inner residual) is *tolerance
 gated*: a diagnosis recorded with the floor, its inputs and the ratio, not an
-acceptable end state. The owning issue attempts the root-cause fix that lowers
-the floor below the criterion (Jacobian scaling or equilibration, higher working
-precision, iterative refinement, a better-resolved reference); the check stays
-gated only while that fix is open or after retained evidence shows it
-impossible. The floor is never a hand-picked looser tolerance, and an error
+acceptable end state. Remedies that lower the floor below the criterion are
+Jacobian scaling or equilibration, higher working precision, iterative
+refinement and a better-resolved reference. The floor is never a hand-picked looser tolerance, and an error
 above it fails. A criterion for a near-zero multilinear action scales with
 the sum of the magnitudes of its fixed chart-coordinate sub-direction actions
 (temperature, pressure or density, composition), and a reaction affinity's with
@@ -2851,29 +2890,22 @@ optional diagnostics before publishing a criterion-meeting root; nonfinite
 floor, contraction or amplification is unavailable and throws the existing
 convergence failure.
 
-Fix before a negative disposition (owner decision 2026-09-23): no analysis,
-qualification or issue closes on a result that is refused, failed, unavailable,
-reference unresolved, tolerance gated or a supported negative until its cause
-is diagnosed and a root-cause fix has been attempted and shown impossible, or
-the state is shown outside the stated physical domain, with evidence.
 Conditioning, precision, solver and reference-resolution failures are defects
-to fix. A typed refusal is a final state only for genuinely singular or
+to fix, not final results. A typed refusal is a final state only for genuinely singular or
 undefined mathematics, such as zero-support insertion, a Jacobian that stays
 singular after equilibration or a reduced Hessian whose equilibrated minimum
 stays inside its rounding band, and it states why. A state outside the stated
 physical domain (e.g. packing at or above close packing) may also close,
 stating the boundary. A model that still misses data after diagnosis and
 attempted fixes is a physical finding that carries both. No value is ever
-invented to avoid a refusal. Reviews ask whether the outcome could be fixed,
-not only whether its label is honest.
+invented to avoid a refusal.
 
 Propagate inner-solve/input error into an outer accuracy estimate using the
 applicable local conditioning and scale. A first-order estimate or pivot ratio
 is not a rigorous error bound or a general condition number. Do not claim more
 accuracy than supplied inputs support, and do not loosen accepted thresholds
 to force convergence. Source rounding, numerical error, experimental uncertainty
-and model discrepancy are distinct. Missing accuracy/runtime thresholds stay
-owner decisions; historical microbenchmarks are not universal limits.
+and model discrepancy are distinct. Historical microbenchmarks are not universal limits.
 `Stop::nonfinite` is unavailable and has precedence over finite convergence and
 floor predicates whenever the residual or an optional diagnostic is non-finite.
 For equilibrium, `success` requires optimizer success or classified rows meeting
@@ -2885,16 +2917,13 @@ result retains the same convergence record alongside its state. The pre-solve
 and absent criterion; it is neither a solver residual nor a physical
 nonexistence claim. `requested_tolerance_met` is absent for that record.
 
-## Verification obligations
+## Verification meaning
 
-Before a scientific behavior change is accepted, update or explicitly revalidate
-the affected equation/algorithm IDs and execute the smallest independent
-falsifier identified in the owning issue. Important examples are caloric
-identities, association support boundaries, full weighted-Hessian directional
-checks with nonzero multipliers, implicit action ladders and independent
-reference-state transformations. Finite checks establish bounded evidence,
-not universal symbolic correctness. Documentation readiness checks cannot
-replace them. Expensive application/reproduction sweeps remain explicit.
+Numerical checks of the equations and algorithms include caloric identities,
+association support boundaries, full weighted-Hessian directional checks with
+nonzero multipliers, implicit action ladders and independent reference-state
+transformations. Finite checks establish bounded evidence, not universal
+symbolic correctness.
 
 ## Appendix: Special cases and numerical qualification
 
@@ -2924,13 +2953,13 @@ fraction when $B=I$, otherwise the positive compiled attainable amount divided b
 feed total. A zero compiled bound stays uncapped. Let $R$ be the sum removed by
 $\min(g_i,U_i)$ over selected species and $M$ the original normalized weight
 outside that set. Only if $R>0$ and $M>0$, cap selected entries and add $R g_i/M$
-to each recipient, then log the completed fractions without another normalization
-(#652, R-a). Otherwise preserve the original seeding arithmetic, including when
+to each recipient, then log the completed fractions without another normalization.
+Otherwise preserve the original seeding arithmetic, including when
 no recipient exists. Calculated speciation, discovery and stability starts,
 supplied multistart compositions, coordinates and previous states retain their
 provenance and are excluded. A partially guessed fallback that discards the
 guesses is excluded too. This changes only initialization: phase enrichment,
-the optimizer box, stopping criteria and #407 phase amounts are unchanged.
+the optimizer box, stopping criteria and phase amounts are unchanged.
 
 #### Feed fugacity and support starts
 
@@ -2942,10 +2971,10 @@ $\mu_i^r\to0$, $Z\to1$). The resulting compositions still receive actual EOS
 density closure on their declared branches; this estimate changes neither
 the equations nor final admission. Two-root estimates and caller-guessed
 compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
-retains the sole dense feed root and the recovered incipient vapor (#204).
+retains the sole dense feed root and the recovered incipient vapor.
 Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
 weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
-an insertion property. This does not remove species from reactive supports (#265).
+an insertion property. This does not remove species from reactive supports.
 A nonreacting unguessed boundary of one liquid and one vapor, with the finite phase
 F free and the incipient phase I pinned at exactly zero amount, starts F at $x_F=z$
 instead of the normalized $z/K$ (liquid) or $zK$ (vapor) when
@@ -2961,7 +2990,7 @@ elsewhere. Under ALG-DENSITY's single-loop assumption $\mathcal L$ is evidence t
 mechanically stable feed root lies on the liquid side of the scanned loop; it does not
 show that the equilibrium phase is liquid. Near-critical methane/ethane feeds with one
 unlabelled root and no witness keep $z/K$, which retains their solutions. The incipient
-estimate, the pressure step and the density closures are unchanged (#391, #410).
+estimate, the pressure step and the density closures are unchanged.
 Default-start results: [Cameretti 2005](../../../analyses/reproduction/2005-cameretti/README.md) and
 [Gross 2002](../../../analyses/reproduction/2002-gross/README.md); `tools/check-equilibrium-corpora` pins them.
 Some water/1-pentanol dews have two dew branches, one of them water-rich, so no single
@@ -2985,7 +3014,7 @@ and default amounts below. No new phase search or equilibrium driver is introduc
 
 A reacting fixed-TP declaration of one liquid and one vapor, identified by kind in
 either order, with both amounts free and no composition guess, starts instead from a
-true-species split (#350). Its predicates use the compiled effective supports, which
+true-species split. Its predicates use the compiled effective supports, which
 keep zero-feed reaction products and drop absent and unfed nonreacting species, and
 compilation refuses a fed or reacting species on no support: the vapor support
 lies inside the liquid support, so every potentially present species is on the
@@ -3009,7 +3038,7 @@ below `PHASE_DISAPPEARANCE_AMOUNT` of the feed or a nonpositive fraction, the
 apparent-species start above follows before the one solve; an exhausted budget
 propagates and nothing retries after the solve. Supplied compositions skip the
 split; supplied amounts and packings replace its coordinates. Without the [amount step rule](#equilibrium-amount-step-retention) the split loses accepted MEA states, each ending on a vanished phase; the
-qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md) (#350, #356; PR #370).
+qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md).
 
 #### Superancillary start
 
@@ -3091,13 +3120,13 @@ with the same reactions and references; at the boundary those phases are the
 solution's phases up to their pressure dependence, so their speciated compositions
 replace the caller's guesses and an unguessed incipient phase takes the first
 finite phase's composition on its support; the start then follows the
-all-guessed rule above (#152: an unspeciated MEA liquid otherwise sends the
+all-guessed rule above (an unspeciated MEA liquid otherwise sends the
 fugacity step to the wrong liquid's bubble pressure and the solve into feasibility
 restoration). A caller start skips this seed. If the sub-solve, the seeding, the
 seeded solve or its density-branch admission fails or throws, the caller's own
 start runs unchanged; only the final attempt's diagnostics are returned. The
 reported iterations, evaluations and Hessian calls add the work of the sub-solves
-and of a failed seeded attempt, including the caloric seed's sub-solve, to the final solve's (#350).
+and of a failed seeded attempt, including the caloric seed's sub-solve, to the final solve's.
 Work that ends in an exception is not counted: a seeded attempt or a speciation sub-solve
 that throws. Nor are the seed solves of the starts inside continuation, the stability
 search and the no-solution fallback. A reacting
@@ -3122,13 +3151,13 @@ Without it, an unspeciated start (absent species at $1/|support|$, water ions at
 caller's zero) leaves under-populated species of the log-composition chart without
 restoring force: their objective gradient scales with $x_i$, the Lagrangian Hessian
 is indefinite there, and Ipopt cycled through restoration to the iteration budget
-(#154, #157; [evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
+([evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
 
 #### Pure-fluid witness
 
 Other declarations retain their original initialization, including the pure-fluid
 coexistence check. A pure fluid's unguessed fixed-temperature, free-pressure
-liquid/vapor start whose seed pressure $P_0$ gives one stable density root (#391)
+liquid/vapor start whose seed pressure $P_0$ gives one stable density root
 instead takes $P_w=P(T,\rho_w)$ at the cold scan's negative-slope node $\rho_w$
 (ALG-DENSITY), when $P_w$ is finite and positive, for its pressure coordinate and
 both density seeds. Under the scan's single-loop shape $P_w$ lies between the
@@ -3141,15 +3170,15 @@ witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
 No pressure is invented and nothing retries; the rule was qualified on the near-critical
 alcohol saturation states of the [Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md)
-(PR #414). Final residual and stability checks are unchanged.
+. Final residual and stability checks are unchanged.
 
 #### Default amounts
 
 With more than one free phase, every free amount that no start owner estimates (no
 Rachford–Rice or true-species split, speciated total, or caller or previous amount)
-starts at the feed amount $N$ instead of $N/k$ for $k$ free phases (#407). This is an
+starts at the feed amount $N$ instead of $N/k$ for $k$ free phases. This is an
 infeasible default starting amount, not a material allocation: the starts hold $kN$ and
-do not satisfy $Bn=b$, and Ipopt restores the balance. #243's [start-amount scale definition](#equilibrium-start-amount-scaling) is
+do not satisfy $Bn=b$, and Ipopt restores the balance. The [start-amount scale definition](#equilibrium-start-amount-scaling) is
 unchanged, so these phases take $S_p=N$. Ipopt starts each bound multiplier at $z_y=1$,
 and the feed-relative amount bound multiplier is $z_q=(N/S_p)z_y$: $k$ from the old
 default, 1 from the new. That argument holds only for default-started free amounts of a
@@ -3159,12 +3188,12 @@ $\kappa_N$ first-step retention in the [amount step rule](#equilibrium-amount-st
 recomputed at every iterate, so it is no permanent floor. From $N/k$ the declared
 esterification liquid pairs of the [Ascani 2023 reproduction](../../../analyses/reproduction/2023-ascani/README.md)
 lost their minor liquid at 1, 100 and 10,000 mol; from $N$ they return the lower-G distinct
-liquids (PR #421). This is an empirically qualified initialization convention, not a
+liquids. This is an empirically qualified initialization convention, not a
 convergence guarantee.
 
 ### Neutral recovery
 
-<a id="neutral-recovery"></a>**Neutral recovery (#565).** An ordinary neutral, nonreacting, non-associating
+<a id="neutral-recovery"></a>**Neutral recovery.** An ordinary neutral, nonreacting, non-associating
 declared L+V solve may perform one bounded continuation recovery only after coincidence, local phase
 instability, local infeasibility or an optimizer iteration limit. A successful ordinary result returns
 unchanged. Recovery uses the existing driver, start mapper, exact predictor/corrector and anchored phase
@@ -3188,7 +3217,7 @@ and cold density-branch admission. Added optimizer iterations and continuation a
 `EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations four times and Hessian callbacks twice
 that, within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
 with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
-This replaces, for this domain only, #352's rule that a no-start fallback is decided before the target
+This replaces, for this domain only, the earlier rule that a no-start fallback is decided before the target
 solve; the reacting and caloric no-retry rules are unchanged.
 
 ### Cooling-onset dew
@@ -3211,12 +3240,12 @@ sample $\rho_-$ (the converse of the liquid-side feed test). A sole root above $
 with no negative-slope sample, is unconfirmed, and the operation refuses before that
 sample confirms an endpoint or sets a bracket (1-propanol(0.413)/ethylbenzene at
 10,132,000 Pa from 392.05 K otherwise confirms a 227.63 K "dew" whose two phases are
-both liquid-like; since #423 the ordinary solve's branch admission already refuses that vapor). The rule is sufficient, not a
+both liquid-like; the ordinary solve's branch admission already refuses that vapor). The rule is sufficient, not a
 necessary physical condition: without a fixed-composition mechanical loop the scan cannot
 establish vapor-side identity, so valid mixture dew boundaries, for example near the
 mixture critical region, can stay unconfirmed and be refused (the Gross 2002 row 173, 496
 and 522 declarations raised to 6.0792, 3.039 and 10.132 MPa have dews at 563.390284,
-625.552224 and 543.914200 K). #423 tracks broader reference admission. Each admitted reference then
+625.552224 and 543.914200 K). Each admitted reference then
 runs the complete liquid trial family of `stability_test(...)` (at most $m+1$ trials). An ordinary success is sampled at its
 own temperature and returned, with that report, when no trial resolves a descent; a
 resolved descent marks a metastable root (row 722 from 475 K otherwise returns
@@ -3234,12 +3263,12 @@ descent at the corrected dew. All reference, density-scan, trial and corrector w
 including work before a refusal.
 Finite coverage: a narrow negative-distance interval between samples or a missed
 composition minimum is not excluded, and a refusal means unresolved selection, not an
-absent dew. PR #424 qualifies it on the water/1-pentanol dews of the
+absent dew. It is qualified on the water/1-pentanol dews of the
 [Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md) from several start temperatures.
 
 ### Critical-equation candidates and phase envelopes
 
-A critical cell (EqID: `critical_equations`, issue #224 B) declares one free
+A critical cell (EqID: `critical_equations`) declares one free
 neutral phase on a positive full support, free T and P, a density seed and an
 optional mode seed; reactions, ions, source references, discovery and caloric
 rows are refused. Its unknowns add u between the phase block and the free
@@ -3265,7 +3294,7 @@ certificate. Its first solved-state actions use E4 and its second-order actions 
 order-two critical rows (E5); third order needs order three of the critical rows (E6) and is
 refused as `energy_order_unavailable` with central values kept. Second actions of T, P and
 density along a feed direction match Richardson-refined central differences of first actions
-at re-solved critical points within 4.1e-11 relative (C3 binary, #341). A one-species candidate's
+at re-solved critical points within 4.1e-11 relative (C3 binary). A one-species candidate's
 isobaric heat capacities divide by its zero P_rho and are unavailable
 (`pressure_singular`); a mixture candidate's follow the ordinary pressure-slope
 admission.
@@ -3288,7 +3317,7 @@ anchored window W = `DENSITY_ANCHOR_LOG_WINDOW` around them. The first step is
 at most 0.9 W / max_p |d ln rho_p/ds| and the caller's maximum log step. After
 each accepted step of size h, e = max_p |ln rho_p − ln rhô_p| is the measured
 predictor error, and the next step is h min(2, sqrt(W/(2e))), capped by the
-maximum log step: the Euler error grows as h², so this targets e ≈ W/2 (#571).
+maximum log step: the Euler error grows as h², so this targets e ≈ W/2.
 A rejected ordinary step halves from the attempted step down to the caller's
 minimum step and retry allowance, including a corrected density outside the
 anchored window (`branch_lost`) and a corrector that returns no state because
@@ -3334,7 +3363,7 @@ the declared feed composition is only the seed, and the solved feed-phase
 composition is the azeotrope. Published multipliers are in the B' basis. The
 cell is regular at a simple x = y crossing (by Gibbs–Duhem the free T or P
 column lies outside the composition columns' range, Δs_vap or Δv_vap ≠ 0) and
-Ipopt solves it alone (ADR 0009, #571). A refusal means no azeotrope was
+Ipopt solves it alone (ADR 0009). A refusal means no azeotrope was
 reached from this start, not that none exists. Every critical point and
 same-root state also satisfies x = y: the topology predicate refuses
 coincident phases, and local phase stability refuses the near-pseudo-critical
@@ -3353,7 +3382,7 @@ g_s/RT; row g_s/RT − λ·Bν_s = 0), absent otherwise (n_s = 0). This replaced
 affinity test, present when A_s/RT ≥ −ε against the caller row criterion: the
 barrier leaves a stable solid at −A_s/RT ≈ N_feed μ/n_s, above ε for small excess
 feeds (6.29891–6.5 mol/kg halite), so the stable solid started absent and, with a
-second free solid, both flipped and the round failed (#573 review r1). The
+second free solid, both flipped and the round failed. The
 existing polish runs on that square classified declaration. Afterwards a present
 solid must keep n_s > 0 and an absent one A_s/RT ≤ ε; every violating solid
 flips in one round and the declaration is polished once more. Near onset
@@ -3432,7 +3461,7 @@ recomputed. A caught optional-anchor failure is recorded before exactly one cold
 retry; a final cold refusal keeps its complete cause and publishes no trial seed.
 The witness identifies the physical extreme in the admitted single-loop domain;
 agreement with the bounded cold search is a qualification result, not a proof.
-Since #275 a cold scan with a failed grid node refuses a sole root, while a
+A cold scan with a failed grid node refuses a sole root, while a
 witnessed anchor can still close; such a seeded state has no cold comparator.
 Qualification compares matched returned observables, densities, sites and exact
 columns within 1e-10 relative, with an absolute floor of 1e-12 near zero. The
@@ -3444,7 +3473,7 @@ adds neither a per-trial nor an endpoint-only cold comparison.
 Seeded residuals differ from cold ones within these floors and depend on which
 trial seeded them. Once a fit's cost reaches that level, seeded and cold fits
 can accept different steps and stop at different points; tighter stopping
-tolerances do not remove this endpoint difference (#245 round 4).
+tolerances do not remove this endpoint difference.
 
 ### Guarded minimax
 

@@ -1,0 +1,45 @@
+# Manual double-check of the conda package (owner, 2026-10-30). It never runs on push,
+# pull requests or conda-forge; the shipped recipe keeps only the quick mandatory tests.
+name: qualification
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        type: choice
+        options: [win-64, osx-64, osx-arm64]
+jobs:
+  qualification:
+    runs-on: ${{ fromJSON('{"win-64":"windows-2022","osx-64":"macos-15-intel","osx-arm64":"macos-15"}')[inputs.platform] }}
+    timeout-minutes: 150
+    env:
+      IPOPT_PROBE_EVIDENCE: ${{ github.workspace }}${{ inputs.platform == 'win-64' && '\' || '/' }}evidence
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and qualify
+        if: inputs.platform == 'win-64'
+        shell: pwsh
+        run: |
+          Invoke-WebRequest https://github.com/prefix-dev/rattler-build/releases/download/v0.79.0/rattler-build-x86_64-pc-windows-msvc.exe -OutFile rattler-build.exe
+          python packaging/conda-forge/qualification/recipe.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ./rattler-build.exe build --recipe packaging/conda-forge/qualification-recipe.yaml --target-platform win-64 --variant-config packaging/conda-forge/variants-win-64.yaml -c conda-forge --output-dir out
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build and qualify
+        if: inputs.platform != 'win-64'
+        shell: bash
+        run: |
+          set -o pipefail
+          curl -fsSL -o rattler-build https://github.com/prefix-dev/rattler-build/releases/download/v0.79.0/rattler-build-$(uname -m | sed s/arm64/aarch64/)-apple-darwin
+          chmod +x rattler-build
+          python3 packaging/conda-forge/qualification/recipe.py
+          mkdir -p evidence
+          ./rattler-build build --recipe packaging/conda-forge/qualification-recipe.yaml --target-platform ${{ inputs.platform }} \
+            --variant-config packaging/conda-forge/variants-${{ inputs.platform }}.yaml -c conda-forge --output-dir out 2>&1 | tee evidence/build.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qualification-${{ inputs.platform }}
+          path: |
+            evidence
+            out/**/*.conda
+          retention-days: 14

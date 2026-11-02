@@ -24,7 +24,6 @@ autoapi_generate_api_docs = False
 autoapi_options = ["members", "undoc-members", "private-members", "show-inheritance"]
 napoleon_google_docstring = False
 napoleon_numpy_docstring = True
-nb_execution_mode = "force"
 nb_execution_allow_errors = False
 nb_execution_raise_on_error = True
 nb_execution_timeout = 120
@@ -72,11 +71,9 @@ def include_source(app, relative_path, parent_docname, content):
             relative = resolved.relative_to(REPO).as_posix()
             tracked = relative in TRACKED or any(p.startswith(relative + "/") for p in TRACKED)
             if not tracked:
-                issue = re.search(r"issue-(\d+)", relative)
-                number = issue[1] if issue else "695"
-                return f"[{label} — retained local evidence: `{relative}`](https://github.com/tannerpolley/ePC-SAFT/issues/{number})"
+                return label
             kind = "tree" if resolved.is_dir() else "blob"
-            url = f"https://github.com/tannerpolley/ePC-SAFT/{kind}/{COMMIT}/" + quote(relative)
+            url = f"https://github.com/tannerpolley/epcsaft/{kind}/{COMMIT}/" + quote(relative)
         return f"[{label}]({url}{separator}{fragment})"
 
     def prose(text):

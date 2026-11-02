@@ -1,0 +1,235 @@
+{
+  "base": "6337ae1b41896f68ae1ea0cccb1c3c6749d9ebff",
+  "head": "c62ec885d3dde5d4cb67fa68a87e4a6b2251f849",
+  "scripts": {
+    "timing.py": "5fb6237047142abcc8d800a5448b9bdbbf3e3d4b7e83d2a8edbc099f9461cbf4",
+    "timing-worker.py": "5cd9fa8ea296111d35e39f3d812908b8d9c419a1f8bc361409f878e289e4d034"
+  },
+  "quiet": {
+    "maximum_load1_exclusive": 4.0,
+    "poll_seconds": 30,
+    "maximum_wait_hours": 8,
+    "authority": "Owner response in this task on 2026-10-24: one-minute load below 4 on 32 logical CPUs and no compiler processes owned by other tasks, immediately before and after each block; retain, discard and retry disturbed blocks."
+  },
+  "plan": [
+    [
+      "647/T4/methane_ethane/190K-1e+06Pa/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/T4/methane_ethane/190K-1e+06Pa",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        },
+        "FeOs": {
+          "op": "t4",
+          "system": "methane_ethane",
+          "T": 190.0,
+          "P": 1000000.0,
+          "samples": 25,
+          "warmups": 5
+        },
+        "Clapeyron": {
+          "op": "t4",
+          "system": "methane_ethane",
+          "T": 190.0,
+          "P": 1000000.0,
+          "method": "default",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/T4/methane_ethane/190K-1e+06Pa/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/T4/methane_ethane/190K-1e+06Pa",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        },
+        "FeOs": {
+          "op": "t4",
+          "system": "methane_ethane",
+          "T": 190.0,
+          "P": 1000000.0,
+          "samples": 25,
+          "warmups": 5
+        },
+        "Clapeyron": {
+          "op": "t4",
+          "system": "methane_ethane",
+          "T": 190.0,
+          "P": 1000000.0,
+          "method": "default",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-1/two-liquid/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-1/two-liquid",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-1/two-liquid/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-1/two-liquid",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-2/water-ethanol/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-2/water-ethanol",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-2/water-ethanol/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-2/water-ethanol",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-2/dilute-isobutanol/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-2/dilute-isobutanol",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "647/case-2/dilute-isobutanol/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "647/case-2/dilute-isobutanol",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "855/water-hexane/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "855/water-hexane",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "855/water-hexane/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "855/water-hexane",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "855/case-6/figure-2-point-7/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "855/case-6/figure-2-point-7",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "855/case-6/figure-2-point-7/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "855/case-6/figure-2-point-7",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "qualify/case-6/aqueous-salt-one-liquid/ordinary",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "qualify/case-6/aqueous-salt-one-liquid",
+          "boundary": "ordinary",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ],
+    [
+      "qualify/case-6/aqueous-salt-one-liquid/prepared",
+      {
+        "Engine": {
+          "op": "868-discovery",
+          "case": "qualify/case-6/aqueous-salt-one-liquid",
+          "boundary": "prepared",
+          "samples": 25,
+          "warmups": 5
+        }
+      }
+    ]
+  ],
+  "measurement_conditions": {
+    "cpu": 31,
+    "launcher": "agent-heavy",
+    "thread_environment": {
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "BLIS_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "VECLIB_MAXIMUM_THREADS": "1",
+      "RAYON_NUM_THREADS": "1",
+      "JULIA_NUM_THREADS": "1"
+    },
+    "clapeyron_blas_threads": 1,
+    "lead_disposition": "Fix round 1: standard repository timing measurement conditions, as in tools/time-key-solves; Engine numerical code is serial. No campaign rerun requested.",
+    "fix_timed_path": "The correction only executes without an admitted initial parent. No retained timed call enters it; timings stand."
+  }
+}

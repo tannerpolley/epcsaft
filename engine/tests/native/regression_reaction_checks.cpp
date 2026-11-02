@@ -1039,7 +1039,7 @@ void check_ionic_addition_enthalpy() {
         std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
             field("allowance_J_per_mol", allowance)}), "addition-ionic");
     const auto start = coordinates.start(parameters, {row}, record);
-#ifndef _WIN32
+#if defined(__linux__)
     using binary128_support::Wide;
     const std::vector<binary128_support::Quantity> enthalpy{{"H", "J", 0.0, {}}};
     for (std::size_t column = 0; column < coordinates.coordinates.size(); ++column) {
@@ -1500,6 +1500,121 @@ void check_reaction_enthalpy_shift() {
         for (const double t : {293.15, 313.15, 353.15, 393.15}) {
             auto p = problem; p.temperature = FreeValue::fixed(t);
             request.observations.push_back(log_constant(p, reaction.name.c_str()));
+        }
+    }
+    // Tied coordinates retain each observation's own temperature interval (#962).
+    {
+        auto equal = request;
+        equal.coordinates.coordinates.resize(1);
+        equal.coordinates.coordinates.push_back(reaction_coordinate("reaction_a", ReactionCoefficient::B, 80.0));
+        equal.observations.resize(2);
+        for (auto& row : equal.observations) row.problem.reactions[0].correlation->temperature_max = 393.15;
+        for (const auto& row : std::vector<Observation>(equal.observations))
+            equal.observations.push_back(solved(ObservationKind::PhaseMoleFraction, row.problem, 0, {1}));
+        auto mixed = equal;
+        for (const std::size_t i : {1, 3}) mixed.observations[i].problem.reactions[0].correlation->temperature_max = 436.85;
+        CHECK(!same_reaction(equal.observations[1].problem.reactions[0], mixed.observations[1].problem.reactions[0]));
+        CHECK(!same_state(equal.observations[1], mixed.observations[1]));
+        auto minimum = equal;
+        for (const std::size_t i : {1, 3}) minimum.observations[i].problem.reactions[0].correlation->temperature_min = 275.0;
+        for (const auto* candidate : {&mixed, &minimum})
+        for (const auto& point : {std::vector<double>{-0.1, 1.0}, std::vector<double>{0.2, 1.1}}) {
+            FitResult errors_a, errors_b;
+            ObservationEvaluation a, b;
+            CHECK(ObservationEvaluator(equal, errors_a, {0, 1, 2, 3}).evaluate(point, true, a));
+            CHECK(ObservationEvaluator(*candidate, errors_b, {0, 1, 2, 3}).evaluate(point, true, b));
+            for (const auto vectors : {std::pair{&a.predictions, &b.predictions}, std::pair{&a.residuals, &b.residuals},
+                                       std::pair{&a.optimizer_gradient, &b.optimizer_gradient},
+                                       std::pair{&a.residual_optimizer_gradient, &b.residual_optimizer_gradient}}) {
+                CHECK(vectors.first->size() == vectors.second->size());
+                for (std::size_t i = 0; i < vectors.first->size(); ++i) {
+                    CHECK(std::isfinite((*vectors.first)[i]));
+                    CHECK(std::memcmp(&(*vectors.first)[i], &(*vectors.second)[i], sizeof(double)) == 0);
+                }
+            }
+        }
+        auto rows = mixed.observations;
+        const auto laws = mixed.coordinates.apply(rows, {0.2, 1.1});
+        CHECK(rows[0].problem.reactions[0].correlation->temperature_max == 393.15);
+        CHECK(rows[1].problem.reactions[0].correlation->temperature_max == 436.85);
+        (void)evaluate_reaction_properties(*rows[1].problem.reactions[0].correlation, 415.0);
+        bool outside = false;
+        try { (void)evaluate_reaction_properties(*rows[0].problem.reactions[0].correlation, 415.0); }
+        catch (const std::exception& e) { outside = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
+        CHECK(outside);
+        auto replay = mixed.observations;
+        for (auto& row : replay) {
+            auto& target = *row.problem.reactions[0].correlation;
+            const auto& law = laws.at("reaction_a");
+            target.a = law.a; target.b = law.b; target.c = law.c;
+            target.d = law.d; target.e = law.e; target.f = law.f;
+        }
+        for (const auto* candidate : {&mixed, &minimum}) {
+            auto applied = candidate->observations;
+            const auto completed = candidate->coordinates.apply(applied, {0.2, 1.1});
+            auto restored = candidate->observations;
+            for (auto& row : restored) {
+                auto& target = *row.problem.reactions[0].correlation;
+                const auto& law = completed.at("reaction_a");
+                target.a = law.a; target.b = law.b; target.c = law.c;
+                target.d = law.d; target.e = law.e; target.f = law.f;
+            }
+            for (std::size_t i = 0; i < applied.size(); ++i) {
+                const auto& original = *candidate->observations[i].problem.reactions[0].correlation;
+                for (const auto* result : {&applied[i], &restored[i]}) {
+                    const auto& law = *result->problem.reactions[0].correlation;
+                    CHECK(law.temperature_min == original.temperature_min && law.temperature_max == original.temperature_max);
+                }
+                const HelmholtzModel model(candidate->parameters);
+                const auto a = predict(model, applied[i]), b = predict(model, restored[i]);
+                CHECK(a.value && b.value && std::memcmp(&*a.value, &*b.value, sizeof(double)) == 0);
+            }
+        }
+        for (auto* collection : {&rows, &replay}) {
+            auto wider = (*collection)[3], narrower = (*collection)[2];
+            for (auto* row : {&wider, &narrower}) {
+                row->problem.temperature = FreeValue::fixed(415.0);
+                row->problem.reactions[1].correlation->temperature_max = 436.85;
+            }
+            const HelmholtzModel model(mixed.parameters);
+            CHECK(predict(model, wider).status == ObservationStatus::Available);
+            bool refused = false;
+            try { (void)predict(model, narrower); }
+            catch (const std::exception& e) { refused = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
+            CHECK(refused);
+            auto pair = mixed;
+            pair.observations = {wider, narrower};
+            FitResult failures;
+            ObservationEvaluation evaluation;
+            refused = false;
+            try { (void)ObservationEvaluator(pair, failures, {0, 1}).evaluate({-0.1, 1.0}, true, evaluation); }
+            catch (const std::exception& e) { refused = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
+            CHECK(refused || (evaluation.first_numerical_failure && evaluation.first_numerical_failure->cause.find("temperature outside reaction correlation") != std::string::npos));
+        }
+        auto pivot = mixed;
+        pivot.coordinates.coordinates[0].reaction->pivot_temperature = 415.0;
+        CHECK(fit(pivot).message.find("enthalpy shift pivot outside correlation interval") != std::string::npos);
+        std::swap(pivot.observations[0], pivot.observations[1]);
+        CHECK(fit(pivot).message.find("enthalpy shift pivot outside correlation interval") != std::string::npos);
+        for (int field = 0; field < 8; ++field) {
+            auto different = mixed;
+            if (field >= 6) for (auto& row : different.observations)
+                row.problem.reactions[0].reference = ReactionReference{1e5, ReferenceSourceBasis::CommonMolalityInfiniteDilution};
+            auto& reaction = different.observations[1].problem.reactions[0];
+            switch (field) {
+                case 0: reaction.correlation->b += 1.0; break;
+                case 1: reaction.correlation->e = 1.0; break;
+                case 2: reaction.correlation->f = 1.0; break;
+                case 3: reaction.correlation->standard_state_id = "different"; break;
+                case 4: reaction.stoichiometry[0] += 1.0; break;
+                case 5: reaction.correlation->reference_temperature += 1.0; break;
+                case 6: reaction.reference->reference_pressure_pa = 2e5; break;
+                case 7: reaction.reference->source_basis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution; break;
+            }
+            bool refused = false;
+            try { (void)different.coordinates.start(different.parameters, different.observations); }
+            catch (const std::exception& e) { refused = std::string(e.what()).find("tied declarations or starts disagree") != std::string::npos; }
+            CHECK(refused);
         }
     }
     const auto start = request.coordinates.start(request.parameters, request.observations);

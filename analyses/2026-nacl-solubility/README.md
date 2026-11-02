@@ -51,7 +51,7 @@ Ion-parameter covariance and model-form uncertainty remain unquantified.
 The predicted interval is a one-standard-error thermochemical input sensitivity,
 not a complete prediction interval or a 95% confidence interval.
 
-With this checkout's own environment prepared by README "Checks", reproduce
+With this checkout's own environment prepared by `engine/README.md` "Checks", reproduce
 calculation and presentation separately from the study directory:
 
 ```bash

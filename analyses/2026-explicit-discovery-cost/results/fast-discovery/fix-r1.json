@@ -1,0 +1,130 @@
+{
+  "full": {
+    "population": "primary",
+    "mode": "full",
+    "entries": 71,
+    "retained_limited_outcomes": 0,
+    "comparisons": 73574,
+    "differences": 0
+  },
+  "fast": {
+    "population": "primary",
+    "mode": "fast",
+    "entries": 7,
+    "retained_limited_outcomes": 24,
+    "comparisons": 189,
+    "differences": 0
+  },
+  "native": {
+    "population": "native",
+    "mode": "full",
+    "entries": 15,
+    "retained_limited_outcomes": 0,
+    "comparisons": 2801,
+    "differences": 0
+  },
+  "pairs": {
+    "population": "pairs",
+    "mode": "full",
+    "entries": 12,
+    "retained_limited_outcomes": 0,
+    "comparisons": 11334,
+    "differences": 0
+  },
+  "runtime_head": "e83a95058ac1ee92c1a404dfc85839ec6df2278e",
+  "baseline": "6337ae1b41896f68ae1ea0cccb1c3c6749d9ebff",
+  "full_A": "Original immutable full A reused; fresh B and fast generated, no new worktree.",
+  "refresh": {
+    "B": {
+      "operations": 71,
+      "comparisons": 73574,
+      "identical_raw_records": 71,
+      "unchanged_work": true
+    },
+    "fast": {
+      "operations": 31,
+      "comparisons": 25807,
+      "identical_raw_records": 31,
+      "unchanged_work": true
+    },
+    "differences": 0
+  },
+  "image": {
+    "build": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared",
+    "images": {
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared/libepcsaft_native.so": "adfe404b567ea08a9c06232832d59dff9b0493157bcb609cf344c147d6619ed8",
+      "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-868-explicit-fast-aa5868f25f612068/build/engine-meson/shared/_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d"
+    },
+    "package": {
+      "__init__.py": "da187a1a88a123a1255e4b720d092d764dc6ac213ef58766c5e2bfe37859f796",
+      "_core.cpython-313-x86_64-linux-gnu.so": "0093b13810d413db34eb871d6c6c750a568b9879744a1bc956cffc92aca9289d",
+      "_core.pyi": "5253e30023945b17a922fc3fa09fdd5e4424514761c56ab7a3b06bcb62800408",
+      "eos.py": "5387d2eb3d2ea609119ff314bf68d5690fbc60ef3429cd3ce0ba2dfe36bdb357",
+      "equilibrium/__init__.py": "b58ac4a487f36cd695559f93c1c873efe226ec329bf0f44db2a1ab2d11d2bc15",
+      "equilibrium/problem.py": "2c1203a85d2fccdf3b46429927ff48e53d481cbe4f6227a71e9baff8a255f6ba",
+      "libepcsaft_asl.so": "cb5e2e61b6a3d45f3fde72cd4941dc0cbb58ad1935115687e61eb6362c8238ab",
+      "libepcsaft_native.so": "adfe404b567ea08a9c06232832d59dff9b0493157bcb609cf344c147d6619ed8",
+      "parameters.py": "5bb6c9943dc4302cfeb5274446d24c4b0d118defd2e08f98c0bb1e2dc9799fcd",
+      "py.typed": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reference.py": "89d1386ac707bb4205b8bd1ccc6a060e83bd7f29432a343d394d896b0b4f49b0",
+      "regression.py": "dfb56815318dccb08b1dd12af5b152c1f839aa4480e1010afe5ca6f2404e2308"
+    }
+  },
+  "falsifiers": {
+    "count": 4,
+    "operands": "budget-outcomes.json.gz",
+    "zero_declaration_budget": {
+      "message": "no admitted split: declaration budget exhausted",
+      "termination": "incomplete",
+      "unsearched": "entire trial search (positive-neutral-base, near-pure Liquid/Vapor, ideal-gas Vapor starts)",
+      "physical_state_arrays": "empty",
+      "declarations": 0,
+      "rounds": 0,
+      "declaration_invocations": 0,
+      "trial_invocations": 0,
+      "energy_evaluations": 2,
+      "density_solves": 0
+    }
+  },
+  "timing": "Standard CPU31/one-thread/agent-heavy measurement conditions accepted by lead. Correction only executes without an admitted initial parent; no retained timed path changed. Campaign not rerun; timings stand.",
+  "affected_checks": {
+    "base": "main (6337ae1b4)",
+    "python_passed": 261,
+    "python_skipped": 5,
+    "native_slow_passed": 70,
+    "native_slow_failed": 0,
+    "ruff": "passed",
+    "strict_mypy_files": 55,
+    "notebook_render": "quarto --to html --no-execute passed"
+  },
+  "runtime_counts": {
+    "net": 69,
+    "gross": 91,
+    "equilibrium": {
+      "net": 64,
+      "gross": 82,
+      "count": 13048,
+      "ceiling": 13173
+    },
+    "bindings": {
+      "net": 1,
+      "gross": 5
+    },
+    "python": {
+      "net": 4,
+      "gross": 4
+    },
+    "other_runtime": 0,
+    "total_count": 32323,
+    "total_ceiling": 32344
+  },
+  "check_all": {
+    "result": "passed",
+    "python_passed": 261,
+    "python_skipped": 5,
+    "native_programs_passed": 6,
+    "native_programs_failed": 0,
+    "architecture_rules_failed": 0,
+    "strict_mypy_files": 55
+  }
+}

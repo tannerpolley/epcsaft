@@ -1,0 +1,68 @@
+{
+  "authority": "Owner 2026-10-31: paired NaN only at first_numerical_failure.residual; one-sided NaN, causes and physical-state tolerances unchanged.",
+  "affected_rows": [
+    {
+      "family": "primary",
+      "quantity": "647/T4/methane_ethane/200K-3e+06Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "647/T4/methane_ethane/220K-4e+06Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "647/T4/methane_ethane/240K-5e+06Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "647/T4/methane_ethane/250K-6.2e+06Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "647/T4/methane_ethane/250K-6.5e+06Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "647/case-4/three-liquid-1e+07-Pa/discover/result/discovery/declarations/1/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "qualify/permittivity/component-mixing/declared-test/explicit-test/trials/2/optimizer/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "qualify/permittivity/component-mixing/discover/result/discovery/rounds/0/trials/2/optimizer/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    },
+    {
+      "family": "primary",
+      "quantity": "qualify/permittivity/component-mixing/discover/returned-test/trials/2/optimizer/first_numerical_failure/residual",
+      "A": NaN,
+      "B": NaN,
+      "error_over_allowance": NaN
+    }
+  ]
+}

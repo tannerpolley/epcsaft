@@ -70,6 +70,15 @@ m._serve_fit(channel)
 )"};
 #else
     if (const nb::object python = nb::module_::import_("sys").attr("executable"); !python.is_none() && nb::len(python) > 0)
+#ifdef __APPLE__
+        // No /proc on macOS: F_GETPATH names each held image, whose identity must match before and after loading.
+        host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, fcntl, os, importlib.machinery as i, importlib.util as u; "
+            "p, n = (os.fsdecode(fcntl.fcntl(fd, fcntl.F_GETPATH, bytes(1024)).split(b'\\0')[0]) for fd in (3, 4)); "
+            "same = lambda: [os.stat(x)[1:3] for x in (p, n)] == [os.fstat(fd)[1:3] for fd in (3, 4)]; "
+            "same() or os._exit(1); native = ctypes.CDLL(n, mode=ctypes.RTLD_GLOBAL); "
+            "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', p)); "
+            "m = u.module_from_spec(s); s.loader.exec_module(m); same() or os._exit(1); m._serve_fit()"};
+#else
         // The native library loads by its installed path, so its $ORIGIN search path finds bundled libraries; a path that no
         // longer names the held file (an editable relink replaced it) refuses the worker.
         host.worker = {nb::cast<std::string>(python), "-I", "-c", "import ctypes, os, importlib.machinery as i, importlib.util as u; "
@@ -78,6 +87,7 @@ m._serve_fit(channel)
             "native = ctypes.CDLL(p, mode=ctypes.RTLD_GLOBAL); "
             "s = u.spec_from_loader('epcsaft._core', i.ExtensionFileLoader('epcsaft._core', '/proc/self/fd/3')); "
             "m = u.module_from_spec(s); s.loader.exec_module(m); m._serve_fit()"};
+#endif
 #endif
     host.interrupted = [] {
         if (PyErr_CheckSignals() == 0) return false;

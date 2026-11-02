@@ -3,12 +3,11 @@
 This document specifies required phase, reaction and reactive-phase mathematics.
 [Equation definitions](../equations.md) own the displayed relations;
 [algorithms](../science/algorithms.md) own their numerical solution.
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) records implementation gaps.
 A proposed or registered equation is not a capability claim. Declared-phase
 specifications and the explicit native tangent-plane test/fixed-T/P discovery
-path adopted in #223 have retained numerical qualification for the stated
-neutral and admitted ionic/reacting cases. The independent delivered review
-supports these retained cases and stated limits; PH/PS use the bounded neutral formulation below; UV remains deferred.
+path have retained numerical qualification for the stated
+neutral and admitted ionic/reacting cases. These
+retained cases have stated limits; PH/PS use the bounded neutral formulation below; UV remains deferred.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
@@ -280,7 +279,7 @@ For an explicit supported fraction floor $f\ge0$, $S f\le1$, fraction bounds use
 $y=n/N$, $\tau=N_{\mathrm{feed}}/N$: $By=(b/N_{\mathrm{feed}})\tau$,
 $\sum y_i=1$, $y_i\ge f$ on support, $y_i=0$ outside, $\tau\ge0$.
 These are aggregate inventory fractions. They bound an individual liquid fraction
-only for a sole finite liquid with a zero-amount vapor, as in the #237 Born cases.
+only for a sole finite liquid with a zero-amount vapor, as in the retained Born cases.
 They establish neither thermodynamic equilibrium nor stability, and no derivative
 of the potentially nonsmooth maximum is supplied.
 
@@ -313,7 +312,7 @@ thermochemistry is compared with each target through Gibbs, enthalpy and heat
 capacity on the density basis; a mismatch is a reference inconsistency, not a
 preference for either input.
 
-The implemented neutral-reference slice uses one pure neutral solvent and a
+The implemented neutral reference uses one pure neutral solvent and a
 positive charge-neutral all-solute dilution path. An explicit source-basis enum
 selects common-molality or raw mole-fraction correlations; a nonempty source ID
 records provenance. EqID: `neutral_reaction_reference_transfer` converts each
@@ -433,6 +432,18 @@ only for diagnosing Gibbs descent at their solved fixed T/P; it says nothing
 about feasibility along the original pinned path. Zero-amount phases cannot
 supply a donor. Discovery with free T/P remains excluded.
 
+Full discovery remains the default. Explicit `Discover(mode="fast")` is a
+nonreacting, at-most-two-phase finite search on neutral or electrolyte fluids.
+An admitted split establishes local admission and resolved finite descent from
+the selected parent, without testing that endpoint for another phase. A
+completed fast schedule can report only **no admitted split in the fast trial
+set**. Unavailable trials, unresolved finite descent, exhausted budgets or a
+refused flash give an incomplete result with diagnostic candidates and no
+usable public state arrays. The returned omissions include unexecuted starts,
+post-flash stability and three-or-more-phase topologies; salt-rich or remote
+minima may remain undiscovered. Neither outcome certifies global stability.
+[ALG-STABILITY](../science/algorithms.md#explicit-fast-discovery) owns the schedule.
+
 The native test compiles a one-free-phase unit-amount trial through the shared
 exact-curvature driver, without reactions or feed-moiety proportions. Its
 internal reduced balance space spans normalization and charge, retaining the
@@ -521,9 +532,9 @@ electrolyte terms are defined for condensed phases, and a free-volume trial
 search cannot infer that domain from a Liquid label or mechanical pressure-root
 admission alone. Under these forms a charged trial point counts only when it is
 a stable density root of its own composition at the test T and P that the
-density owner's side classification (#423) places on the liquid side of that
+density owner's side classification places on the liquid side of that
 composition's own mechanical loop, the classification declared Liquid phases
-already satisfy (#568).
+already satisfy.
 
 [ALG-STABILITY](../science/algorithms.md#supports-seeds-and-trial-solves) owns
 the seed and end-point checks. A vapor-side root, a sole root without a loop
@@ -554,10 +565,9 @@ These are numerical verification; physical validation and a global certificate
 do not follow from this doctrine.
 
 Reuse of discovered declarations is numerically qualified for the retained
-owner-enumerated cases. It is not a guarantee for every amount scale or initial
+enumerated cases. It is not a guarantee for every amount scale or initial
 point. A 100 mol neutral discovery reproduces the one-mol intensive split and
-extensive Gibbs scaling. Since [#243](https://github.com/tannerpolley/ePC-SAFT/issues/243)
-(PR #400) cold declared solving and supplied-result public reuse at that scale
+extensive Gibbs scaling. Cold declared solving and supplied-result public reuse at that scale
 also keep the split.
 
 ## Sensitivity and validity

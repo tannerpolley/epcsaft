@@ -63,7 +63,10 @@ def compare(a, b, path, family):
         for i, (x, y) in enumerate(zip(a, b)):
             compare(x, y, path+'/'+str(i), family)
     elif type(a) in (float, int) and type(b) in (float, int):
-        scalar(a, b, path, family)
+        if path.endswith('/first_numerical_failure/residual') and math.isnan(a) and math.isnan(b):
+            rows.append(dict(family=family, quantity=path, A=a, B=b, allowance=0.0, error_over_allowance=0.0, passed=True))
+        else:
+            scalar(a, b, path, family)
     elif a != b:
         if path.endswith('/message') and isinstance(a, str) and isinstance(b, str):
             # Successful iteration counts are diagnostic; retain every other causal operand.

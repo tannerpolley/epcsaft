@@ -102,7 +102,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
                           reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
                     if (prior) {
-                        check(same_reaction(*prior, reaction), "tied declarations or starts disagree");
+                        check(same_reaction(*prior, reaction, false), "tied declarations or starts disagree");
                         if (reaction.reference) {
                             check(problem.source_reference && prior_problem->source_reference, "missing source declaration");
                             const auto& x = *problem.source_reference;

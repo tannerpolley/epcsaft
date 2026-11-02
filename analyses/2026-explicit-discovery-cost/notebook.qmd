@@ -1,5 +1,5 @@
 ---
-title: "Explicit phase discovery: equivalent searches at lower cost"
+title: "Explicit phase discovery: full and reduced search costs"
 format:
   html:
     toc: true
@@ -7,6 +7,139 @@ format:
 execute:
   enabled: false
 ---
+
+## Explicit fast discovery
+
+The prescribed smaller native tangent-plane search reproduces the required
+full-discovery states on the retained neutral and NaCl references. It meets
+the adopted absolute work and wall-time limits, including the owner's
+explicit revision of the two initially missed median ceilings.
+The default full search is preserved. This is numerical
+verification at the declared temperature, pressure, feed, parameters and
+numerical policy. It establishes no new physical validation or global stability.
+
+`Discover(mode="fast")` retains the full initial parent admission, then tests
+near-pure Liquid and ideal-Vapor starts. Ionic systems retain a positive
+charge-neutral base, neutral-enriched Liquid starts and a neutral-only Vapor
+start through the existing constrained driver. The first resolved conserved
+finite descent seeds at most one two-phase declaration. The shared uncertainty,
+charge, density-branch and local-state checks still decide admission.
+[ALG-STABILITY](../../engine/docs/science/algorithms.md#explicit-fast-discovery)
+owns this reduced schedule and its source-backed equations.
+
+The [frozen declarations](inputs/fast-discovery.json.gz) retain component order,
+parameters, units, phase guesses, standards and feed basis. The required states
+are equimolar methane/ethane, water/isobutanol, water/ethanol, dilute
+isobutanol, nonpolar-water/hexane, ionic Figure 2 point 7 and aqueous NaCl.
+Amount feeds below are in mol; mole-fraction feeds are dimensionless. Displayed
+feeds are rounded; the frozen declarations retain their exact values.
+
+{{< include figures/fast-inputs.md >}}
+
+The [provenance](results/fast-discovery/provenance.json) identifies the exact
+source revisions, detached baseline, loaded images, owner limits and amendments.
+
+{{< include figures/fast-verification.md >}}
+
+The fast-state comparison uses the existing absolute floor and relative
+allowance. Phase supports, density, composition, amounts, extensive $G/RT$
+and available defining rows agree within those limits. The
+[retained comparisons](results/fast-discovery/fast-comparisons.csv.gz) include
+ion partition; all other fast outcomes and their causes are retained rather
+than counted as additional full-state qualification.
+
+{{< include figures/fast-work.md >}}
+
+Here H counts all native Helmholtz evaluations, including density closure;
+R counts density solves. The density-evaluation subset is not added to H.
+The complete [operation records](results/fast-discovery/operations.json.gz)
+retain failed attempts, trial work and unsearched starts. The
+[budget-exhaustion cases](results/fast-discovery/budget-outcomes.json.gz)
+retain resolved neutral and electrolyte descent with no declaration budget
+left: neither publishes its diagnostic parent as equilibrium. A zero
+declaration budget retains `declaration budget exhausted`, records the entire
+trial search and its start families as unsearched, and returns empty physical
+state arrays without counting unperformed declarations or trials. A zero trial
+budget likewise returns no usable physical state. The existing uncertain-slope,
+NaN-error and infinite-error falsifiers admit no resolved descent.
+
+Full discovery preserves the primary operations, native references, solver
+pairs and Linux corpora. The key-solve controls and A/B preserve the required
+state and work comparisons and meet their frozen serial CPU ceilings; these
+are preservation checks, separate from a discovery speed claim.
+The owner approved one comparison amendment: paired NaN values compare as the
+same unavailable diagnostic only at `first_numerical_failure.residual`.
+One-sided NaNs, causes and physical-state tolerances are unchanged. The
+[amendment record](results/fast-discovery/comparator-amendment.json) retains
+every originally rejected diagnostic row.
+
+A locally admitted fast split has no post-flash stability test. A completed
+small search can establish only **no admitted split in the fast trial set**.
+Unavailable trials or unresolved finite descent prevent a successful parent
+result, while an independently admitted later split remains admissible.
+Remote solvent or salt-rich minima, alternative additions and a third phase
+may remain unsearched. Reactions, solids, free intensives and custom trial
+families are outside this fast selection. No component-order invariance,
+charged-vapor discovery or salt-precipitation claim follows.
+
+### Reduced-search cost and its limits
+
+The [quiet timing reduction](results/fast-discovery/timing-summary.json)
+checks every retained timed sample against the existing state comparisons.
+Five warmups precede each block of measured calls; the release-owned loop
+interleaves independent full/full and fast/fast workers across repetitions.
+Ordinary timing includes physical request mapping; prepared timing places
+that mapping outside the native solve. Each solve starts afresh. Wall and
+process CPU remain separate; the Clapeyron worker exposes wall time only.
+All arms were pinned to CPU 31 and launched through `agent-heavy`. The
+recorded settings were `OMP_NUM_THREADS=1`, `OPENBLAS_NUM_THREADS=1`,
+`MKL_NUM_THREADS=1`, `BLIS_NUM_THREADS=1`, `NUMEXPR_NUM_THREADS=1`,
+`VECLIB_MAXIMUM_THREADS=1`, `RAYON_NUM_THREADS=1` and `JULIA_NUM_THREADS=1`;
+Clapeyron also reported one BLAS thread. The lead's fix-round disposition
+accepts these as the repository's standard timing measurement conditions,
+as used by `tools/time-key-solves`. The Engine numerical code is serial.
+The zero-declaration-budget reporting correction executes only when no
+initial parent is admitted, outside every timed call retained here. These
+timings stand without a new campaign.
+The [raw blocks](results/fast-discovery/raw/) retain disturbed measurements,
+loaded identities and host conditions. Only complete quiet operation sets
+enter the reduction; observed paired ranges are not confidence intervals.
+
+![The reduced search meets the adopted wall-time ceilings on the qualified references. Points are medians; intervals are observed paired ranges. Crosses are owner-selected ceilings. Aqueous salt has no selected speed ceiling.](figures/fast-discovery-cost.png)
+
+{{< include figures/fast-ratios.md >}}
+
+The methane/ethane fast/full and fast/FeOs limits pass. The owner decision of
+2026-10-31 revises only its fast/Clapeyron median ceiling and the
+water_np/hexane fast/full median ceiling at both boundaries. The
+[amendment](results/fast-discovery/timing-owner-amendment.json) retains the
+original failed comparisons, exact measured ratios and revised ceilings;
+every other condition remains unchanged. Both revised median limits pass.
+Clapeyron's default flash
+has a different preliminary-test population; its ratio is retained as that
+specified workload, without implying identical search coverage. The
+water_np/hexane fast/full ratios pass the explicitly revised ceiling. The
+other selected case limits and the full/full control rule pass. Aqueous salt is
+report-only and shows essentially unchanged cost.
+
+A bounded native-trace diagnosis preserves the inputs, accepted method and
+numerical criteria. Water/hexane takes the same shared addition-driver
+iterations and evaluations in full and fast discovery. Its addition dominates
+the smaller search's measured stages, explaining why the large reduction in
+Helmholtz calls does not imply the requested wall-time reduction. The
+[diagnostic stage rows](results/fast-discovery/diagnostic-stage-times.csv)
+include trace overhead and are not substituted for quiet acceptance timings.
+No changed seed, stopping tolerance, density method, solver or retry was
+introduced. The method has supported state/work results and meets the owner's revised
+timing qualification. The original misses remain part of the evidence;
+meeting a revised threshold does not change the measured cost or establish
+new search coverage.
+
+Delivered review r1 identified the early-budget reporting defect corrected
+above. The lead disposed of its timing-method finding as disclosure only;
+the final correction awaits independent review. These results have not been
+promoted for manuscript use. The following sections retain the separate, earlier study of
+coverage-preserving work reductions.
 
 ## Question and thermodynamic basis
 
@@ -39,7 +172,7 @@ reuse of a seed density at an exactly identical first objective composition,
 and the repeated initial Liquid compilation. Every later trial point retains
 its unanchored branch-root solve. Substitutions, exact second-order proposals,
 fallback initialization, stopping criteria, supports and seed populations retain
-their original owners. Fast discovery is outside this comparison.
+their original owners. This earlier comparison concerns full discovery; the explicit fast-mode comparison above uses a smaller start population.
 
 The cost request is the release worker's equimolar methane/ethane discovery at
 190 K and 1 MPa, on its original one-mol feed basis. Parameters come from the

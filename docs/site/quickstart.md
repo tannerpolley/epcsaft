@@ -1,6 +1,6 @@
 # Quickstart
 
-Start Python in the repository root after [installation](installation.md).
+Start Python in the root of the source archive after [installation](installation.md).
 This sequence loads published water parameters, constructs a reusable model,
 and asks the native Engine for a liquid state at 298.15 K and 100,000 Pa.
 The [complete water notebook](examples/parameters-and-water-state.ipynb)

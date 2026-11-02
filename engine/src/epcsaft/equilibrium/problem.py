@@ -196,6 +196,9 @@ class Discover:
 
     Attributes
     ----------
+    mode : {"full", "fast"}
+        Full searches all default starts. Fast stops at the first resolved
+        split and attempts one two-phase declaration, without a final search.
     trials : sequence of Phase or None
         Trial phase declarations. ``None`` selects native defaults;
         a supplied sequence is copied and retains its support/branch choices.
@@ -214,6 +217,7 @@ class Discover:
     certificate; inspect diagnostics and exhausted budgets (ALG-STABILITY).
     """
 
+    mode: str = "full"
     trials: Sequence[Phase] | None = None
     declaration_budget: int | None = None
     trial_budget: int | None = None
@@ -720,7 +724,10 @@ class Problem:
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
         if isinstance(self.phases, Discover):
+            if self.phases.mode not in ("full", "fast"):
+                raise ValueError("Discover mode must be full or fast")
             options = _core.StabilityOptions()
+            options.mode = _core.DiscoveryMode.Fast if self.phases.mode == "fast" else _core.DiscoveryMode.Full
             options.trials = None if self.phases.trials is None else native_phases
             options.declaration_budget = self.phases.declaration_budget
             options.trial_budget = self.phases.trial_budget

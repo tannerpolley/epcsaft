@@ -1,0 +1,34 @@
+[
+  {
+    "case": "647/T4/methane_ethane/190K-1e+06Pa",
+    "mode": "full",
+    "total_trace_median_us": 3378.654,
+    "declaration_trace_median_us": 634.739,
+    "addition_trace_median_us": 364.124,
+    "trial_trace_median_us": 1401.689
+  },
+  {
+    "case": "647/T4/methane_ethane/190K-1e+06Pa",
+    "mode": "fast",
+    "total_trace_median_us": 1078.554,
+    "declaration_trace_median_us": 610.288,
+    "addition_trace_median_us": 348.775,
+    "trial_trace_median_us": 104.271
+  },
+  {
+    "case": "855/water-hexane",
+    "mode": "full",
+    "total_trace_median_us": 11755.971,
+    "declaration_trace_median_us": 5714.413,
+    "addition_trace_median_us": 5222.267,
+    "trial_trace_median_us": 3952.721
+  },
+  {
+    "case": "855/water-hexane",
+    "mode": "fast",
+    "total_trace_median_us": 6798.047,
+    "declaration_trace_median_us": 5616.142,
+    "addition_trace_median_us": 5144.986,
+    "trial_trace_median_us": 277.694
+  }
+]

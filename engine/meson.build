@@ -2,7 +2,7 @@ project(
   'epcsaft',
   'c',
   'cpp',
-  version: '1.2.0',
+  version: '1.2.1',
   meson_version: '>=1.8',
   subproject_dir: 'build/subprojects',
   default_options: [
@@ -16,18 +16,20 @@ project(
 py = import('python').find_installation('python3', pure: false)
 cpp = meson.get_compiler('cpp')
 windows = host_machine.system() == 'windows'
-native_rpath = windows ? '' : '$ORIGIN'
+linux = host_machine.system() == 'linux'
+native_rpath = {'windows': '', 'darwin': '@loader_path'}.get(host_machine.system(), '$ORIGIN')
 native_export_args = windows ? ['-DEPCSAFT_NATIVE_BUILD'] : []
-quadmath_dep = windows ? [] : [cpp.find_library('quadmath')]
-asl_link_args = windows ? [] : [
+quadmath_dep = linux ? [cpp.find_library('quadmath')] : []
+# One exported symbol hides the statically linked Engine, as the version script does on Linux.
+asl_link_args = {'windows': [], 'darwin': ['-Wl,-exported_symbol,_funcadd_ASL']}.get(host_machine.system(), [
   '-Wl,--exclude-libs,ALL',
   '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
-]
+])
 native_warnings = windows ? ['/W4', '/EHsc'] : cpp.get_supported_arguments('-Wall', '-Wextra', '-Wpedantic')
 # Pinned alignment makes key-solve timing less sensitive to code placement on the measured host, at no measurable cost
 # and +1.2% .text (#356; build/issue-356/alignment).
 add_project_arguments(windows ? [] : cpp.get_supported_arguments('-falign-functions=64'), language: 'cpp')
-release_link_args = not windows and get_option('buildtype') == 'release' \
+release_link_args = linux and get_option('buildtype') == 'release' \
   ? cpp.get_supported_link_arguments('-s') \
   : []
 
@@ -308,7 +310,7 @@ equilibrium_cases = import('fs').read('tests/native/equilibrium_checks.cpp').spl
 foreach index : range(1, equilibrium_cases.length())
   fields = equilibrium_cases[index].split('"')
   assert(fields[4] in ['Automatic_fast', 'Explicit'], 'bad execution_policy for ' + fields[0])
-  if windows and (fields[0].startswith('reactive-caloric-E-') or fields[0].startswith('reactive-caloric-I-') or fields[0] == 'reactive-caloric-U' or fields[0].startswith('reactive-caloric-F6-'))
+  if not linux and (fields[0].startswith('reactive-caloric-E-') or fields[0].startswith('reactive-caloric-I-') or fields[0] == 'reactive-caloric-U' or fields[0].startswith('reactive-caloric-F6-'))
     continue
   endif
   test('equilibrium/' + fields[4] + '/' + fields[0], equilibrium_checks,

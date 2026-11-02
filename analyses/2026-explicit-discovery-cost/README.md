@@ -47,3 +47,11 @@ Presentation performs no thermodynamic calculation:
 nice -n 10 .venv/bin/python analyses/2026-explicit-discovery-cost/scripts/present.py
 quarto render analyses/2026-explicit-discovery-cost/notebook.qmd --no-execute
 ```
+
+The explicit fast-mode section of the notebook uses the separately retained
+`results/fast-discovery/` operations, comparisons, work and budget-exhaustion
+operands, with frozen inputs in `inputs/fast-discovery.json.gz`. It distinguishes
+local two-phase admission from complete search. Full/default preservation and
+fast/full state agreement are numerical verification, not physical validation.
+The scoped paired-NaN diagnostic amendment and its affected rows are retained
+there. Fast-mode delivered review and manuscript promotion remain open.

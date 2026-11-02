@@ -1,0 +1,22 @@
+{
+  "full": {
+    "comparisons": 73574,
+    "maximum_error_over_allowance": 0.0,
+    "nonzero_errors": 0
+  },
+  "fast": {
+    "comparisons": 189,
+    "maximum_error_over_allowance": 0.0,
+    "nonzero_errors": 0
+  },
+  "native": {
+    "comparisons": 2801,
+    "maximum_error_over_allowance": 0.0,
+    "nonzero_errors": 0
+  },
+  "pairs": {
+    "comparisons": 11334,
+    "maximum_error_over_allowance": 0.0,
+    "nonzero_errors": 0
+  }
+}

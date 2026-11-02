@@ -4,4 +4,4 @@ from epcsaft import _core
 
 ROOT = Path(__file__).resolve().parents[3]
 LIB = Path(_core.__file__).resolve()
-assert ROOT in LIB.parents, "Prepare this checkout's .venv with README Checks"
+assert ROOT in LIB.parents, "Prepare this checkout's .venv with engine/README.md Checks"

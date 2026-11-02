@@ -3,8 +3,8 @@
 Keep each calculation's equations, source inputs, units, numerical comparisons
 and limitations visible. Implement thermodynamics in the native Engine;
 Python declares inputs and reads results. Follow the
-[scientific ownership map](https://github.com/tannerpolley/ePC-SAFT/blob/main/docs/scientific/CONTEXT.md)
-and [coding standards](https://github.com/tannerpolley/ePC-SAFT/blob/main/CODING_STANDARDS.md)
+[scientific ownership map](https://github.com/tannerpolley/epcsaft/blob/main/docs/scientific/CONTEXT.md)
+and [coding standards](https://github.com/tannerpolley/epcsaft/blob/main/CODING_STANDARDS.md)
 when proposing a change.
 
 ## Prepare and check a checkout
@@ -12,10 +12,8 @@ when proposing a change.
 Use [installation](installation.md) for prerequisites and source setup. Each
 checkout has its own `.venv` with an editable Engine. Run commands from the
 repository root. The
-[README Checks](https://github.com/tannerpolley/ePC-SAFT/blob/main/README.md#checks)
-describes the commands; the
-[scientific gates](https://github.com/tannerpolley/ePC-SAFT/blob/main/docs/agents/workflow.md#gates)
-own which checks a change requires.
+[Engine checks](https://github.com/tannerpolley/epcsaft/blob/main/engine/README.md#checks)
+describe the commands and what each covers.
 
 ```bash
 nice -n 10 bash tools/check-affected.sh origin/main
@@ -24,10 +22,23 @@ nice -n 10 bash tools/build-docs.sh
 ```
 
 The documentation command installs the locked optional documentation packages,
-uses the checkout's Engine with MUMPS, executes every gallery notebook afresh,
-and builds HTML and cheap doctests with warnings treated as errors. Logs,
-rendered pages and timing are under `build/docs/`; the HTML home is
-`build/docs/html/index.html`. Notebook execution errors fail the build.
+uses the checkout's Engine with MUMPS, renders the gallery notebooks' stored
+outputs, and builds HTML and cheap doctests with warnings treated as errors.
+Logs, rendered pages and timing are under `build/docs/`; the HTML home is
+`build/docs/html/index.html`. `EPCSAFT_NOTEBOOK_EXECUTION=force` executes every
+gallery notebook afresh, and then notebook execution errors fail the build.
+
+## Automatic and on-demand checks
+
+Every pull request and push to `main` runs one quick GitHub Actions job,
+`.github/workflows/ci.yml`, on Ubuntu 24.04: it builds the Engine with
+`tools/setup.sh`, imports it, runs the methane/ethane bubble-point smoke case
+`packaging/conda-forge/run_test.py` and Ruff over `engine/src` and
+`engine/tests`. Everything else runs on demand. The documentation workflow,
+`.github/workflows/docs.yml`, runs when dispatched by hand or when a release is
+published; it executes every gallery notebook and, in the public repository,
+publishes this site. The checks above, native qualification, corpora, timing
+and analysis reproductions run locally.
 
 ## Document the source-owned meaning
 
