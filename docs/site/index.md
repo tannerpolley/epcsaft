@@ -1,23 +1,28 @@
 # ePC-SAFT
 
-Compute fluid properties, declared phase and reaction equilibrium, exact
-directional derivatives and parameter estimates with the native C++ Engine.
-Python supplies the physical declarations and reads values and diagnostics.
+A native C++ implementation of the PC-SAFT and electrolyte PC-SAFT (ePC-SAFT)
+equations of state. It computes fluid properties, declared phase and reaction
+equilibrium, phase stability tests, exact derivatives of solved states and
+parameter estimates. Python supplies the physical declarations and reads
+values and diagnostics; every iterative calculation runs in the Engine.
+
+The residual Helmholtz energy follows PC-SAFT (Gross and Sadowski, 2001) with
+association and optional polar terms. For electrolytes, ePC-SAFT adds a
+Debye–Hückel term (Cameretti, Sadowski and Mollerup, 2005; Held, Cameretti and
+Sadowski, 2008) with cation–anion dispersion (Held et al., 2014). Optional
+later extensions add composition-dependent permittivity (Bülow, Ji and Held,
+2019) and a Born term (Bülow, Ascani and Held, 2021; Figiel, Yu and Held,
+2025). The [EOS specification](theory/eos.md) lists every source and
+the [equation registry](theory/equations.md) gives each implemented equation
+with its source equation number.
+
 Start with [installation](installation.md) and the [quickstart](quickstart.md),
-then use the [example gallery](examples/index.md) for executed calculations.
-The [equations](theory/equations.md) and
-[algorithms](theory/algorithms.md) define the thermodynamics and methods.
+then the [examples](examples/index.md), which are executed when this site is
+built. Parameters and reference states remain explicit; unavailable outputs
+carry causes. Read the [limits](limits.md) before applying a case outside its
+source domain or reading a finite stability search as global evidence.
 
-Follow the [quickstart](quickstart.md) for a first state declaration and the
-[water notebook](examples/parameters-and-water-state.ipynb) for its source,
-pressure-closure check and prediction limits.
-
-Choose the next guide by the quantity you need. Parameters and reference
-states remain explicit; unavailable outputs carry causes. Read
-[limits](limits.md) before extending a case to another source domain or
-interpreting a finite stability search as global evidence.
-
-````{grid} 1 2 2 3
+````{grid} 1 2 2 2
 :gutter: 3
 
 ```{grid-item-card} User guide
@@ -25,6 +30,12 @@ interpreting a finite stability search as global evidence.
 :link-type: doc
 
 Declare parameters, states and equilibrium specifications.
+```
+```{grid-item-card} Examples
+:link: examples/index
+:link-type: doc
+
+Executed notebooks with their sources, checks and limits.
 ```
 ```{grid-item-card} Python reference
 :link: api/index
@@ -47,7 +58,7 @@ Read the source-owned equations, conventions and algorithms.
 installation
 quickstart
 guide/index
-Special-case appendix <examples/index>
+Examples <examples/index>
 api/index
 theory/index
 limits

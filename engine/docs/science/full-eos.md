@@ -3,8 +3,7 @@
 This document owns symbols, bases, source applicability and EOS conventions.
 It states required behavior, not installed availability. The canonical
 [equation definitions](../equations.md) are edited once; repeated derivations
-below explain their meaning. [Algorithms](algorithms.md) own numerical methods
-and the [GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones) owns implementation gaps.
+below explain their meaning. [Algorithms](algorithms.md) own numerical methods.
 Correct mathematics is not weakened to match an implementation defect.
 
 ## 1. Sources and evidence classes
@@ -40,7 +39,7 @@ Each equation below has one status:
   source;
 - **exact derivation**: algebra or thermodynamic differentiation of named
   source equations;
-- **implementation convention**: an explicit indexing, unit, or API choice;
+- **implementation convention**: an explicit indexing, unit, or interface choice;
 - **bounded empirical relation**: a source correlation used only in its
   retained domain.
 
@@ -102,8 +101,7 @@ with number density. It does not mix SI number density with Angstrom cubed.
 
 The [equation catalogue](../equations.md) gives each defining relation a stable
 ID and source locator. Its YAML index is generated, not independently edited.
-Current native owners and numerical falsifiers are linked by the
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones). Historical `_native`
+Historical `_native`
 paths and pure-version interfaces do not describe current ownership.
 
 ADR 0006 retires residual point-multipole behavior while preserving the
@@ -236,7 +234,7 @@ mixture/site indexing as an implementation convention. `g_ij^hs` is the
 Gross2001 hard-sphere contact function. Chapman1990 Eq. 18 carries `d^3`; the
 strength here carries `sigma_ij^3`, the PC-SAFT convention written explicitly by
 Nasrifar and Tafazzol 2010 (DOI `10.1021/ie901181n`, Eq. 34). A parameter set
-regressed with `d_ij^3` is a different model: its volume must be converted in the
+fitted with `d_ij^3` is a different model: its volume must be converted in the
 packet, and no constant conversion is exact because `(d/sigma)^3` depends on
 temperature. See [association source conversions](#association-source-conversions)
 for packet-specific evidence. Every admitted site pair is an explicit
@@ -289,7 +287,7 @@ explicitly. Their energy is the SI Eq. S6 arithmetic mean multiplied by
 once from the cited Wolbach--Sandler rule. The distinct `k_ij^hb` provenance is
 therefore retained without adding a runtime pair matrix or overloading `k_ij`.
 
-**Temperature laws** (#567). A pair `k_ij` or `l_ij` record, an explicit edge's
+**Temperature laws**. A pair `k_ij` or `l_ij` record, an explicit edge's
 `energy_over_k` or `volume`, and a combining-rule edge's `volume_correction`
 carry exactly one of `value` or `temperature_law`:
 
@@ -816,8 +814,8 @@ Gibbs offsets and their temperature derivatives; equilibrium consumes those
 values consistently. Request value and derivative orders explicitly. Missing
 thermochemistry or unsupported actions produce typed unavailable total fields
 while preserving valid residual properties. These are required semantics;
-concrete class names and installed availability belong to the implementation
-plan and public interface, not this mathematical specification.
+class names and installed availability belong to the public interface and the
+[limits page](https://tannerpolley.github.io/epcsaft/limits.html), not this mathematical specification.
 
 On an ion-free support, Born and DH are identically zero before reciprocal
 permittivity, solvation mixing or screening operations are evaluated. Their
@@ -890,7 +888,7 @@ The [current-wheel admission control](../../../docs/scientific/reviews/modular-b
 retains sampled values, derivative outputs, exact input identities, and limits.
 
 Figiel parameter roles and calibration rows remain with the existing
-[reproduction source manifest](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
+[reproduction target ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
 the canonical Data packet owns reusable model inputs, while the reproduction
 analysis owns paper-specific fitted targets and partitions. Its
 [parameter-role ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv)
@@ -1032,14 +1030,14 @@ Figiel parameters unchanged, the EOS returns `0.70721` for Figiel,
 osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
 is assigned to those three osmotic numbers here. The Schreckenberg reference
 path, which formerly failed on a lone stable root, now completes and gives
-`0.56348`. The #27 common-data comparison
+`0.56348`. The common-data comparison
 ([analyses/2026-dielectric-alternatives](../../../analyses/2026-dielectric-alternatives/README.md))
 supersedes these single-point diagnostics for water/NaCl at 298.15 K and 1 bar.
 
 Since the retained ePC-SAFT ion, Born, and interaction parameters were not
 fitted with the density topologies, this is equation and topology evidence,
 not VLE validation or authority to change a caller-owned default. The next
-scientific step is a Regression-owned sensitivity/refit study with liquid
+scientific step is a parameter regression study (sensitivity and refit) with liquid
 dielectric-decrement, density, MIAC, and osmotic anchors before cross-package
 equilibrium validation. The density-based topology is worth pursuing; changing
 only the Zuber suppression coefficients is not supported as the next priority
@@ -1048,7 +1046,7 @@ by this comparison.
 ### Cation-mixing qualification
 
 The coefficients are qualified only for retained aqueous water/chloride-salt
-cases at 298.15 K and 1 bar; the #658 Yao
+cases at 298.15 K and 1 bar; the Yao
 calibration covers ionic strength through 8.3 mol/kg. It gives no vapor, dry-salt,
 mixed-solvent, nonaqueous, temperature-law, caloric or stability qualification.
 In particular, it has no ideal-gas residual limit at fixed composition.

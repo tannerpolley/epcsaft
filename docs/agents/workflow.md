@@ -47,6 +47,22 @@ needs no wheel or binding management. Builds use explicit `-j` parallelism sized
 from CPUs and available memory; `EPCSAFT_BUILD_JOBS` can select it for a measured
 run. Use one-thread numerical pools only for timing measurements.
 
+Adapt justified existing native fitting and evaluator logic through the plan's
+adoption gate, and implement only observation forms consumed by current scope;
+the parameter regression formulation's broader algebra defines meaning rather
+than requiring unused nodes.
+
+A tolerance-gated check (ALG-TERMINATION) is a diagnosis, not an end state: the
+owning issue attempts the root-cause fix that lowers the floor below the
+criterion, and the check stays gated only while that fix is open or after
+retained evidence shows it impossible.
+
+Before a scientific behavior change is accepted, update or explicitly revalidate
+the affected equation/algorithm IDs and execute the smallest independent
+falsifier identified in the owning issue (examples in ALG-TERMINATION
+"Verification meaning"). Documentation readiness checks cannot replace them.
+Expensive application/reproduction sweeps remain explicit.
+
 ## Gates
 
 This is the only gate list. Comparisons select prepared Python interpreters or
@@ -99,6 +115,14 @@ The lead checks reviewer findings against source and evidence; a build,
 readiness label or reviewer opinion is not numerical acceptance. When a
 capability claim changes, rewrite the issue body's current state and update
 repository evidence together.
+
+Fix before a negative disposition (owner decision 2026-09-23): no analysis,
+qualification or issue closes on a result that is refused, failed, unavailable,
+reference unresolved, tolerance gated or a supported negative until its cause
+is diagnosed and a root-cause fix has been attempted and shown impossible, or
+the state is shown outside the stated physical domain, with evidence. Reviews
+ask whether the outcome could be fixed, not only whether its label is honest.
+Missing accuracy/runtime thresholds stay owner decisions.
 
 ## Closeout
 

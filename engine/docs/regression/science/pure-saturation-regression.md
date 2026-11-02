@@ -1,12 +1,10 @@
 # Parameter regression formulation
 
 Required general fitting mathematics; pure saturation is one observation
-construction. Installed availability is recorded in the
-[GitHub issue roadmap](https://github.com/tannerpolley/ePC-SAFT/milestones).
+construction.
 
-Use the plan's adoption gate to adapt justified existing native fitting and
-evaluator logic. Implement only observation forms consumed by current scope;
-the broader algebra below defines meaning rather than requiring unused nodes.
+The algebra below defines the meaning of an observation; it does not imply
+that every expression it allows is implemented.
 
 An observation combines a state/equilibrium specification, an expression, a
 reported value and an explicit discrepancy/uncertainty model. Expressions use
@@ -119,7 +117,7 @@ A direct source-basis ln K row uses `ObservationKind.LogEquilibriumConstant`,
 problem. Its problem supplies the same reaction/source declarations as the
 other observations; phase, pressure and feed data are not consumed for a direct
 prediction. EqID: `source_log_equilibrium_constant_observation` gives its value,
-exact coefficient columns and zero EOS columns. The same #187 naming, tying and
+exact coefficient columns and zero EOS columns. The same naming, tying and
 fixed-target rejections apply. Use Difference: ln K is already logarithmic.
 For absolute standard uncertainty σ in ln K, choose scale=1 and weight=1/σ².
 
@@ -197,7 +195,8 @@ A reaction coordinate is a named scalar ln K (coefficient a) or a stored
 `ReactionLogPolynomial` coefficient a, b, c, d, in units 1, K, 1, K⁻¹. It uses
 the same affine map and inclusive bounds. Name tying requires identical
 stoichiometry, constant representation and starts, correlation coefficients,
-Tref, interval and standard-state identity, and source basis/pressure. Referenced
+Tref and standard-state identity, and source basis/pressure. Each declaration
+retains its own temperature interval. Referenced
 matches also share the solvent, the common-molality standard and the effective
 species reference of every reacting species, since no conversion between
 conventions is declared (EqID: `neutral_reaction_reference_transfer`); their
@@ -267,7 +266,7 @@ clamp spoils a step computed as if a bound could be crossed): a step leaving the
 box is shortened along its direction to the first bound. The trust-region ratio
 keeps the full step's predicted decrease while the evaluated step may be shortened
 or clamped, and is not shown to be conservative: in the 149-row reacting MEA fit
-(#455) it rejected five shortened steps that lowered the cost (full-step ratio at
+it rejected five shortened steps that lowered the cost (full-step ratio at
 most $5.6\times10^{-4}$, shortened-step ratio above 0.9997, threshold $10^{-3}$)
 under the earlier release rule, and no such step under the current one. Bounds form an
 active set in optimizer space, against the physical bounds mapped by the affine
@@ -525,8 +524,10 @@ verification input generation, not a calibrated parameter dataset.
 Singular vectors label independent optimizer and objective-row orders. SVD,
 rank, bounds and projected gradient are local diagnostics. Gamma and Phi are
 related by Gibbs-Duhem, so independent-error covariance is conditional sensitivity,
-not measurement uncertainty or structural identifiability. Profiles and native
-constrained minimax estimation remain outside this slice's delivered capability.
+not measurement uncertainty or structural identifiability. This electrolyte
+least-squares construction provides no likelihood profiles; constrained minimax
+estimation is the separate request below, with its own feasibility and
+stationarity diagnostics and no covariance.
 
 ## Native constrained estimation
 

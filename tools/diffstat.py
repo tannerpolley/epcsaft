@@ -150,7 +150,7 @@ def formatted_lines(path: Path) -> int:
                    f"--stdin-filename={path.name}", "-"]
     else:
         if not shutil.which("clang-format-18"):
-            raise ValueError("missing clang-format-18: install it (README Prerequisites)")
+            raise ValueError("missing clang-format-18: install it (engine/README.md, Build and installation)")
         command = ["clang-format-18", f"--style=file:{CPP_STYLE}", f"--assume-filename={path.name}"]
     done = subprocess.run(command, input=source, capture_output=True, check=False)
     if done.returncode:

@@ -122,10 +122,9 @@ struct SolidSpec final {
 };
 
 // Exact declaration equality, shared by fitting admission/grouping and continuation.
-inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
+inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool compare_temperature_bounds = true) {
     const auto correlation = [](const auto& v) {
-        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.temperature_min,
-                        v.temperature_max, v.standard_state_id, v.e, v.f);
+        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.standard_state_id, v.e, v.f);
     };
     const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
     const auto optional_equal = [](const auto& a, const auto& b, const auto& fields) {
@@ -134,6 +133,9 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y) {
     return std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
         == std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
         && optional_equal(x.correlation, y.correlation, correlation)
+        && (!compare_temperature_bounds || !x.correlation
+            || std::tie(x.correlation->temperature_min, x.correlation->temperature_max)
+                == std::tie(y.correlation->temperature_min, y.correlation->temperature_max))
         && optional_equal(x.reference, y.reference, reference);
 }
 
