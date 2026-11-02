@@ -1518,7 +1518,7 @@ void check_reaction_enthalpy_shift() {
         auto minimum = equal;
         for (const std::size_t i : {1, 3}) minimum.observations[i].problem.reactions[0].correlation->temperature_min = 275.0;
         for (const auto* candidate : {&mixed, &minimum})
-        for (const auto point : {std::vector<double>{-0.1, 1.0}, std::vector<double>{0.2, 1.1}}) {
+        for (const auto& point : {std::vector<double>{-0.1, 1.0}, std::vector<double>{0.2, 1.1}}) {
             FitResult errors_a, errors_b;
             ObservationEvaluation a, b;
             CHECK(ObservationEvaluator(equal, errors_a, {0, 1, 2, 3}).evaluate(point, true, a));
