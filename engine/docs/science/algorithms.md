@@ -1,16 +1,15 @@
 # Scientific algorithms
 
-Accepted requirements, reconciled against the 2026-09-06 transfer audit.
 These methods consume the [equation definitions](../equations.md),
 [EOS conventions](full-eos.md) and [equilibrium formulation](../equilibrium/formulation.md).
 Algorithm IDs below are stable references.
-No section claims that all required actions currently exist. The implementation
-plan owns current versus deferred scope. PH/PS uses the neutral caloric specifications below; neutral critical-equation
+Sections state required methods; not every required action is available yet.
+The [limits page](https://tannerpolley.github.io/epcsaft/limits.html) lists what the installed package supports.
+PH/PS uses the neutral caloric specifications below; neutral critical-equation
 candidates and phase envelopes use ALG-EQUILIBRIUM; UV remains future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
-admitted ionic/reacting cases, supported by the independent delivered review
-within the retained limits. Reuse accepted numerical owners and independent cases.
+admitted ionic/reacting cases, within the retained limits.
 Declared-branch continuation and mechanical/local checks remain required.
 
 See [ideal mole-fraction and molarity specifications](#ideal-mole-fraction-and-molarity-specifications)

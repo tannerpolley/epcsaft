@@ -814,8 +814,8 @@ Gibbs offsets and their temperature derivatives; equilibrium consumes those
 values consistently. Request value and derivative orders explicitly. Missing
 thermochemistry or unsupported actions produce typed unavailable total fields
 while preserving valid residual properties. These are required semantics;
-concrete class names and installed availability belong to the implementation
-plan and public interface, not this mathematical specification.
+class names and installed availability belong to the public interface and the
+[limits page](https://tannerpolley.github.io/epcsaft/limits.html), not this mathematical specification.
 
 On an ion-free support, Born and DH are identically zero before reciprocal
 permittivity, solvation mixing or screening operations are evaluated. Their

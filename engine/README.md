@@ -185,10 +185,11 @@ outputs, uploads and shared caches. Only rendered pages, original notebooks,
 figures, numerical records and text logs are uploaded. See the
 [acknowledgement](../docs/site/contributing.md#optional-process-example-tools).
 
-The Documentation workflow runs when dispatched by hand or when a release is
-published, never on a push or pull request. In the public repository
-`tannerpolley/epcsaft` it then deploys the built site to GitHub Pages; in any
-other repository it only builds, and uploads the logs if the build fails.
+The Documentation workflow never runs on a push or pull request. In the public
+repository `tannerpolley/epcsaft` it runs when a release is published or when
+dispatched by hand, and deploys the built site to GitHub Pages. In any other
+repository it runs only when dispatched by hand: it builds without deploying,
+and uploads the logs if the build fails.
 
 Run a canonical end-to-end workflow with:
 
