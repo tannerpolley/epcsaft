@@ -298,7 +298,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         if (!(logs[liquid] - logs[1 - liquid] > 2 * error)) throw std::runtime_error("one-component two-density unresolved density intervals");
                         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
                         ++result.evaluations;
-                        at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure);
+                        at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure, &result.rank_records);
                         std::vector<Wide> exported; Wide displacement = 0;
                         for (std::size_t p = 0; p < 2; ++p) {
                             exported.push_back(wide_math::log(Wide(1.0 / at.phase.volume[p])));

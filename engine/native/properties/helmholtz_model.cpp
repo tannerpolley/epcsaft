@@ -118,7 +118,10 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
+    const auto previous = diagnostics.site_conditioning;
     if (!options.nested_solve) diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(core::conditioning(*result, "implicit_site_fractions", 0, "endpoint"));
+    if (previous && previous->first_conditioning_warning)
+        diagnostics.site_conditioning->first_conditioning_warning = previous->first_conditioning_warning;
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;
@@ -1387,6 +1390,9 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     }
     std::lock_guard<std::mutex> lock(mutex_);
     const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
+    core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
+    for (const auto& rank : refreshed.rank_records)
+        result.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(rank);
     const double density = total / volume;
     std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
     result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
@@ -1750,6 +1756,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
     std::optional<core::Convergence> first;
+    core::Convergence site_record;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;
     if (need_residual) {
@@ -1760,7 +1767,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
+                parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
             need_residual = false;
@@ -1770,6 +1777,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
     PropertyActionBatch result;
     core::retain_first(result.diagnostics.first_numerical_failure, first);
+    result.diagnostics.site_conditioning = site_record.rank;
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;

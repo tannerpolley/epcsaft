@@ -399,10 +399,11 @@ struct CompiledSystem final {
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
     EPC_API PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
-        std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
+        std::optional<core::Convergence>* first_numerical_failure = nullptr,
+        std::vector<core::NumericalRank>* ranks = nullptr) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
-        std::optional<core::Convergence>* = nullptr) const;
+        std::optional<core::Convergence>* = nullptr, std::vector<core::NumericalRank>* = nullptr) const;
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&) const;
     template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,

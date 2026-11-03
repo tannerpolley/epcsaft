@@ -43,11 +43,12 @@ struct NumericalRank final {
 };
 inline void observe_conditioning(NumericalRank& record, ConditioningObservation incoming,
     const std::vector<double>& point = {}) {
+    if (incoming.error == INFINITY) incoming.cause = "nonfinite_projection";
     incoming.basis = record.basis; incoming.rank = record.rank; incoming.dimension = record.dimension;
     incoming.threshold = record.threshold;
     if (!record.first_conditioning_warning && (incoming.cause == "rank_deficient"
         || incoming.cause == "nonfinite_inverse" || incoming.cause == "association_pivot_refusal"
-        || (std::isfinite(incoming.error) && std::isfinite(incoming.criterion_value) && incoming.error > incoming.criterion_value))) {
+        || (incoming.error == INFINITY || incoming.error > incoming.criterion_value))) {
         record.first_conditioning_warning = std::make_shared<ConditioningObservation>(incoming);
         record.first_conditioning_warning->coordinates = point;
     }

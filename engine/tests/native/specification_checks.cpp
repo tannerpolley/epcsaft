@@ -1382,6 +1382,19 @@ void check_conditioning() {
             <= 1e-10 * std::max(std::abs(*outside.action), 1.0));
     }
     {
+        core::Convergence overflow; overflow.residual = 1e-10; overflow.floor = 0;
+        core::density_conditioning(overflow, 1.0, 1e-320, true, "endpoint");
+        CHECK(overflow.rank->observation.available && overflow.rank->observation.condition == 1);
+        CHECK(std::isinf(overflow.rank->observation.error) && overflow.rank->first_conditioning_warning);
+        CHECK(overflow.rank->first_conditioning_warning->cause == "nonfinite_projection");
+        std::vector<core::NumericalRank> recovered;
+        core::retain_rank(recovered, *overflow.rank);
+        core::density_conditioning(overflow, 1.0, 1.0, true, "endpoint");
+        core::retain_rank(recovered, *overflow.rank);
+        CHECK(recovered[0].observation.condition == 1 && std::isfinite(recovered[0].observation.error));
+        CHECK(recovered[0].first_conditioning_warning && std::isinf(recovered[0].first_conditioning_warning->error));
+        overflow.floor.reset(); core::density_conditioning(overflow, 1.0, 1.0, true);
+        CHECK(std::isnan(overflow.rank->observation.error) && !overflow.rank->first_conditioning_warning);
         core::Convergence earlier; earlier.floor = 0.0;
         core::density_conditioning(earlier, 1.0, 1.0, true);
         CHECK(earlier.rank->observation.point_kind == "last_linearization");
@@ -1440,6 +1453,45 @@ void check_conditioning() {
             || warning->first_conditioning_warning->coordinates != std::vector<double>({0.5, 0.5})
             || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))
             throw std::runtime_error("nested rank/pivot warning lost or first refusal overwritten");
+    }
+    {
+        // Manufactured self-association: initial pivot refusal, then substitution recovers.
+        auto p = properties_support::associating_binary();
+        p.site_component = {0, 1}; p.site_multiplicity = {1, 1};
+        p.association_active = {1, 0, 0, 0};
+        p.association_energy_over_k = {3000, 0, 0, 0}; p.association_volume = {1, 0, 0, 0};
+        const double temperature = 313.15, density = 10000;
+        const std::vector<double> x{0.5, 0.5};
+        const auto sigma = segment_sigma(temperature, p), diameter = segment_diameter(temperature, p, sigma);
+        const auto delta = association_delta(temperature, density, x, p, sigma, diameter);
+        p.association_volume[0] *= 8e12 / (density * NUMBER_DENSITY_PER_ANGSTROM3 * x[0] * delta[0]);
+        policy::SolverOptions nested; nested.nested_solve = true;
+        HelmholtzModel model(p, {}, std::nullopt, nested);
+        equilibrium::CompiledSystem c; c.model = &model; c.primal_size = 3;
+        c.problem.temperature = equilibrium::FreeValue::fixed(temperature);
+        c.problem.pressure = equilibrium::FreeValue::fixed(1e5);
+        auto phase = equilibrium_support::phase("liquid", equilibrium::PhaseKind::Liquid,
+            equilibrium::AmountSpec::pinned(1)); phase.support = {0, 1}; c.problem.phases = {phase};
+        const auto packing = model.packing_fraction_coefficient(temperature, x);
+        std::vector<double> point{std::log(x[0]), std::log(x[1]), std::log(packing * density)};
+        equilibrium::EquilibriumResult result; result.first_numerical_failure = refusal;
+        const auto prepared = c.prepare(point, true, &result.first_numerical_failure, &result.rank_records);
+        CHECK(!result.rank_records.empty());
+        const auto warning = result.rank_records[0].first_conditioning_warning;
+        CHECK(warning && warning->cause == "association_pivot_refusal" && warning->phase == 0);
+        CHECK(warning->coordinates == std::vector<double>({1, 1}));
+        CHECK(warning->controls.size() == 4 && warning->controls[0] == temperature
+            && std::abs(warning->controls[1] / density - 1) <= 1e-10
+            && warning->controls[2] == 0.5 && warning->controls[3] == 0.5);
+        CHECK(core::describe(*result.first_numerical_failure) == core::describe(refusal));
+        point.back() -= std::log(1e8);
+        const auto regular = c.prepare(point, true, &result.first_numerical_failure, &result.rank_records);
+        CHECK(result.rank_records[0].first_conditioning_warning == warning);
+        equilibrium::StageWork work; work.observe(result);
+        equilibrium::EquilibriumResult recovered; std::move(work).publish_observations(recovered);
+        CHECK(recovered.rank_records[0].first_conditioning_warning->coordinates == warning->coordinates);
+        CHECK(core::describe(*recovered.first_numerical_failure) == core::describe(refusal));
+        std::cout << "association preparation recovery: warning coordinates and controls retained\n";
     }
     for (bool singular : {true, false}) {
         equilibrium::EquilibriumResult early, recovered;

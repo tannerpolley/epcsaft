@@ -61,3 +61,33 @@ def test_saturation_conditioning_transport(temperature: float) -> None:
         assert warning.controls[0] == temperature
         assert record.observation.precision_bits > 53
         assert record.observation.error < warning.criterion_value
+
+
+def test_polish_endpoint_conditioning():
+    import importlib.util
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[3] / "analyses/2026-tpd-phase-discovery/scripts/baseline.py"
+    spec = importlib.util.spec_from_file_location("conditioning_baseline", path)
+    baseline = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = baseline
+    spec.loader.exec_module(baseline)
+    from epcsaft import equilibrium as eq
+    for name, model, problem in baseline.declared_cases():
+        if name not in ("case-1/two-liquid", "case-3/VLLE"):
+            continue
+        result = eq.solve_equilibrium(model, problem)
+        assert result.success
+        observation = next(rank.observation for rank in result.rank_records if rank.basis == "numerical")
+        print(name, "available", observation.available, "condition", observation.condition,
+              "point", observation.point_kind, "cause", observation.cause, "error", observation.error)
+        if name == "case-3/VLLE":
+            assert observation.available and observation.condition > 0
+            assert observation.point_kind == "endpoint"
+            assert observation.cause == "inner_floor_unavailable"
+        else:
+            assert not observation.available
+            assert observation.point_kind == "last_linearization"
+        if name == "case-3/VLLE":
+            break
