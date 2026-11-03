@@ -63,13 +63,14 @@ def test_saturation_conditioning_transport(temperature: float) -> None:
         assert record.observation.error < warning.criterion_value
 
 
-def test_polish_endpoint_conditioning():
+def test_polish_endpoint_conditioning() -> None:
     import importlib.util
     import sys
     from pathlib import Path
 
     path = Path(__file__).resolve().parents[3] / "analyses/2026-tpd-phase-discovery/scripts/baseline.py"
     spec = importlib.util.spec_from_file_location("conditioning_baseline", path)
+    assert spec is not None and spec.loader is not None
     baseline = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = baseline
     spec.loader.exec_module(baseline)

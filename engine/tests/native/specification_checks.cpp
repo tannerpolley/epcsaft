@@ -1486,6 +1486,7 @@ void check_conditioning() {
         CHECK(core::describe(*result.first_numerical_failure) == core::describe(refusal));
         point.back() -= std::log(1e8);
         const auto regular = c.prepare(point, true, &result.first_numerical_failure, &result.rank_records);
+        CHECK(regular.derivative[0].rank_records.empty());
         CHECK(result.rank_records[0].first_conditioning_warning == warning);
         equilibrium::StageWork work; work.observe(result);
         equilibrium::EquilibriumResult recovered; std::move(work).publish_observations(recovered);
