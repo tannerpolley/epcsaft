@@ -97,6 +97,7 @@ public:
                     static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
                     target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
         }
+        if (!core::AssociationObservations::current()) observations_.emplace(rank_records);
         // With one partner per site the mass action's pair step is its exact solution at every density.
         const std::size_t sites = parameters_.site_component.size();
         for (std::size_t a = 0; a < sites; ++a)
@@ -106,6 +107,7 @@ public:
     mutable std::optional<DensityPartition> partition;
     mutable std::optional<core::Convergence> first_numerical_failure;
     mutable std::vector<core::NumericalRank> rank_records;
+    std::optional<core::AssociationObservations> observations_;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
 
@@ -169,7 +171,6 @@ public:
                 narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure);
         } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
         }();
-        if (record.rank) core::retain_rank(rank_records, *record.rank);
         site_series.clear();
         for (double site : sites) site_series.emplace_back(Base(site));
         for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];

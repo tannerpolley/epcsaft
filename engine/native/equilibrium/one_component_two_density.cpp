@@ -117,6 +117,7 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
         auto& at = out.phase;
         at.parameter_standard.reset(); at.energy_actions.clear();
         for (std::size_t p = 0; p < 2; ++p) {
+            core::AssociationObservations phase_observations(p);
             at.point[at.shape[p].volume] = log_coefficient + u[p];
             at.eta[p] = std::exp(at.point[at.shape[p].volume]);
             if (c.log_packing_unbounded() && !admitted_packing_fraction(at.eta[p]))
@@ -139,6 +140,7 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, const std::vector<double>& initial,
     const EquilibriumResult& structural, core::Scope& scope, const DriverLimits* limits) {
     auto result = structural;
+    core::AssociationObservations observations(result.rank_records);
     result.message = "one-component two-density initialization";
     result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const auto retain = [&](const std::exception& error) {
@@ -252,6 +254,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         ++result.evaluations;
                         std::vector<Wide> volume; std::vector<PureIsothermalValues<Wide>> phases;
                         for (Wide value : values) {
+                            core::AssociationObservations phase_observations(phases.size());
                             volume.push_back(1 / wide_math::exp(value));
                             phases.push_back(c.model->pure_isothermal(temperature, volume.back()));
                             core::retain_first(result.first_numerical_failure, phases.back().derivative.first_numerical_failure);
@@ -298,7 +301,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         if (!(logs[liquid] - logs[1 - liquid] > 2 * error)) throw std::runtime_error("one-component two-density unresolved density intervals");
                         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) throw std::runtime_error("one-component two-density evaluation budget");
                         ++result.evaluations;
-                        at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure, &result.rank_records);
+                        at.phase = c.prepare(lift(logs, vapor).point, true, &result.first_numerical_failure);
                         std::vector<Wide> exported; Wide displacement = 0;
                         for (std::size_t p = 0; p < 2; ++p) {
                             exported.push_back(wide_math::log(Wide(1.0 / at.phase.volume[p])));

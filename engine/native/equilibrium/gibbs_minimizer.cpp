@@ -280,7 +280,7 @@ std::vector<double> add_multipliers(
     // Recover the balance and charge multipliers by the KKT-weighted least squares of the
     // chemical rows: the free-amount minimizer's stationarity conditions carry the weights
     // N_p x_i / N_feed, so the weighted fit is the one whose classified residual is minimal.
-    const auto prepared = compiled.prepare(result, true, observations ? &observations->first_numerical_failure : nullptr, observations ? &observations->rank_records : nullptr);
+    const auto prepared = compiled.prepare(result, true, observations ? &observations->first_numerical_failure : nullptr);
     const auto values = compiled.evaluate_at(prepared).values;
     std::vector<std::size_t> chemical;
     std::vector<std::size_t> phi_phase;
@@ -545,7 +545,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         objective_hessian_.reset();
         constraint_hessian_.reset();
         try {
-            prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure, &observations_.rank_records);
+            prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure);
         } catch (const std::exception& error) {
             prepared_.reset();
 
@@ -989,7 +989,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
             diagnostic.temperature = FreeValue::fixed(temperature);
             auto tp = compile_problem(*model, diagnostic);
             auto restricted = tp.generic_point();
-            const auto layout = tp.prepare(restricted, false, &result.first_numerical_failure, &result.rank_records).shape;
+            const auto layout = tp.prepare(restricted, false, &result.first_numerical_failure).shape;
             for (std::size_t p = 0; p < layout.size(); ++p) {
                 for (std::size_t i = 0; i < layout[p].x.size(); ++i)
                     restricted[layout[p].x[i]] = full[prepared.shape[p].x[i]];
@@ -1003,7 +1003,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
                 if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
                 weights.push_back(row.kind == RowKind::Moiety ? -tp.feed_total * restricted[tp.primal_size + row.index] : 0.0);
             }
-            curvature = reduced_curvature_at(tp, tp.prepare(restricted, false, &result.first_numerical_failure, &result.rank_records), weights);
+            curvature = reduced_curvature_at(tp, tp.prepare(restricted, false, &result.first_numerical_failure), weights);
         }
     }
     result.reduced_hessian_minimum = curvature.minimum;
@@ -1082,7 +1082,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     std::size_t polish_round = 0;
     while (non_error && !expired()) {
         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
-        auto at = compiled.prepare_values(full, true, &result.first_numerical_failure, &result.rank_records);
+        auto at = compiled.prepare_values(full, true, &result.first_numerical_failure);
         ++polish_evaluations;
         if (audit) audit->convergence.evaluations = ++audit->evaluations;
         if (expired()) return false;
@@ -1252,7 +1252,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             });
             if (correction_stop && !final_correction) {
                 if constexpr (std::is_same_v<Base, double>) {
-                    result.last_rank = core::conditioning(lu, "numerical", step, "endpoint", {double(at.temperature), double(at.pressure)});
+                    if (!compiled.problem.solver_options.nested_solve) result.last_rank = core::conditioning(lu, "numerical", step, "endpoint", {double(at.temperature), double(at.pressure)});
                     retain_error(bound, policy::EQUILIBRIUM_POLISH_CORRECTION, "inner_floor_unavailable");
                 }
                 stop("scaled correction"); break;
@@ -1284,7 +1284,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 std::vector<Base> rows_after;
                 if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
                 try {
-                    at_candidate = compiled.prepare_values(candidate, true, &result.first_numerical_failure, &result.rank_records);
+                    at_candidate = compiled.prepare_values(candidate, true, &result.first_numerical_failure);
                     ++polish_evaluations;
                     if (audit) audit->convergence.evaluations = ++audit->evaluations;
                     if (expired()) { stop("elapsed budget"); return false; }
@@ -1384,7 +1384,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             for (const auto& value : point) exported.push_back(static_cast<double>(value));
             if (!limits->spend(limits->evaluations, limits->evaluation_cap) || limits->expired())
                 throw std::runtime_error("work budget exhausted before export admission");
-            const auto at = compiled.prepare(exported, false, &refined.first_numerical_failure, &refined.rank_records);
+            const auto at = compiled.prepare(exported, false, &refined.first_numerical_failure);
             const auto rows = compiled.evaluate_at(at);
             refined.residuals = rows.values; refined.classified_residuals = compiled.classified_residuals(at, rows.values);
             refined.convergence.residual = maximum_abs(refined.classified_residuals);
@@ -1423,6 +1423,7 @@ static EquilibriumResult run_driver_once(
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, bool* initialized_warm = nullptr,
     bool* retry_eligible = nullptr, bool physical_amounts = false, bool publishing = false
 ) try {
+    core::AssociationObservations observations(result.rank_records);
     if (retry_eligible) *retry_eligible = false;
     const double row_tolerance = declared.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
@@ -1505,7 +1506,7 @@ static EquilibriumResult run_driver_once(
     const auto solid_violations = [&](bool flip) {
         std::string names;
         if (!classified) return names;
-        const auto at = compiled.prepare(full, true, &result.first_numerical_failure, &result.rank_records);
+        const auto at = compiled.prepare(full, true, &result.first_numerical_failure);
         for (std::size_t s = 0; s < classified->solids.size(); ++s) {
             auto& solid = classified->solids[s];
             if (!solid.column) continue;
@@ -1572,7 +1573,7 @@ static EquilibriumResult run_driver_once(
     }
     PhasePoint prepared;
     try {
-        prepared = compiled.prepare(full, false, &result.first_numerical_failure, &result.rank_records);
+        prepared = compiled.prepare(full, false, &result.first_numerical_failure);
     } catch (const std::invalid_argument& error) {
         if (std::string(error.what()).rfind("reference_unavailable:", 0) != 0) throw;
         result.success = false;

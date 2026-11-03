@@ -435,7 +435,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             trial[offset + m] = compiled.feed_total;
             trial[offset + m + 1] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
-            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true, observations ? &observations->first_numerical_failure : nullptr, observations ? &observations->rank_records : nullptr)).values;
+            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true, observations ? &observations->first_numerical_failure : nullptr)).values;
             std::vector<double> c(m);
             for (std::size_t j = 0; j < m; ++j) c[j] = rows[chemical[j]] - trial[offset + j];
             if (!ideal_speciation(B, compiled.balance, c, n, observations)) break;

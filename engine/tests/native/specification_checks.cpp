@@ -11,6 +11,7 @@
 #include <cmath>
 #include <cstdio>
 #include <limits>
+#include <iomanip>
 #include <stdexcept>
 #include <string>
 namespace {
@@ -1355,6 +1356,66 @@ void check_trace_inventory_witness() {
 }
 }
 namespace {
+void check_nested_endpoint(){ using namespace epcsaft; namespace eq=epcsaft::equilibrium; ParameterDocument d;
+d.component_ids={"water","ethanol","isobutanol"};
+d.site_component={1,1,2,2,0,0};
+d.site_multiplicity={1,1,1,1,1,1};
+d.base_choice="pc-saft";
+d.association_choice="general-site";
+d.electrolyte_choice="born";
+d.ionic_dispersion_choice="exclude-same-sign-ion-pairs";
+d.permittivity_choice="ion-fraction-suppression";
+d.polar_choice="none";
+d.entries.push_back({"component/water/molar_mass","molar_mass",{0},18.01528,"gram / mole"});
+d.entries.push_back({"component/water/charge_number","charge_number",{0},0.0,"elementary-charge"});
+d.entries.push_back({"component/water/dispersion_energy_over_k","dispersion_energy_over_k",{0},353.95,"kelvin"});
+d.entries.push_back({"component/water/segment_count","segment_count",{0},1.2047,"dimensionless"});
+d.entries.push_back({"component/water/solvation_factor","solvation_factor",{0},1.5,"dimensionless"});
+d.entries.push_back({"component/ethanol/molar_mass","molar_mass",{1},46.068,"gram / mole"});
+d.entries.push_back({"component/ethanol/charge_number","charge_number",{1},0.0,"elementary-charge"});
+d.entries.push_back({"component/ethanol/dispersion_energy_over_k","dispersion_energy_over_k",{1},198.24,"kelvin"});
+d.entries.push_back({"component/ethanol/segment_count","segment_count",{1},2.3827,"dimensionless"});
+d.entries.push_back({"component/ethanol/solvation_factor","solvation_factor",{1},1.6,"dimensionless"});
+d.entries.push_back({"component/isobutanol/molar_mass","molar_mass",{2},74.1216,"gram / mole"});
+d.entries.push_back({"component/isobutanol/charge_number","charge_number",{2},0.0,"elementary-charge"});
+d.entries.push_back({"component/isobutanol/dispersion_energy_over_k","dispersion_energy_over_k",{2},257.13,"kelvin"});
+d.entries.push_back({"component/isobutanol/segment_count","segment_count",{2},2.844,"dimensionless"});
+d.entries.push_back({"component/isobutanol/segment_diameter","sigma_constant",{2},3.5561,"angstrom"});
+d.entries.push_back({"component/isobutanol/solvation_factor","solvation_factor",{2},1.5,"dimensionless"});
+d.entries.push_back({"component/ethanol/relative_permittivity/constant/constant","relative_permittivity",{1},24.88,"dimensionless"});
+d.entries.push_back({"component/ethanol/segment_diameter/constant/constant","sigma_constant",{1},3.1771,"angstrom"});
+d.entries.push_back({"component/isobutanol/relative_permittivity/constant/constant","relative_permittivity",{2},17.2,"dimensionless"});
+d.entries.push_back({"component/water/relative_permittivity/constant/constant","relative_permittivity",{0},78.09,"dimensionless"});
+d.entries.push_back({"component/water/segment_diameter/constant-plus-sum-of-exponentials/constant","sigma_constant",{0},2.7927,"angstrom"});
+d.entries.push_back({"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/amplitude","sigma_term_amplitude",{0,0},10.11,"angstrom"});
+d.entries.push_back({"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-0/exponent_coefficient","sigma_term_exponent",{0,0},-0.01775,"1 / kelvin"});
+d.entries.push_back({"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/amplitude","sigma_term_amplitude",{1,0},-1.417,"angstrom"});
+d.entries.push_back({"component/water/segment_diameter/constant-plus-sum-of-exponentials/term-1/exponent_coefficient","sigma_term_exponent",{1,0},-0.01146,"1 / kelvin"});
+d.entries.push_back({"pair/ethanol/isobutanol/k_ij","k_ij",{1,2},0.00154,"dimensionless"});
+d.entries.push_back({"pair/ethanol/water/k_ij","k_ij",{1,0},-0.06167,"dimensionless"});
+d.entries.push_back({"pair/isobutanol/water/k_ij","k_ij",{2,0},-0.0071,"dimensionless"});
+d.entries.push_back({"model/electrolyte/c_shell","born_c_shell",{},1.0,"dimensionless"});
+d.entries.push_back({"model/electrolyte/c_dielectric","born_c_dielectric",{},1.0,"dimensionless"});
+d.entries.push_back({"model/relative_permittivity/ion_fraction_suppression_coefficient","ion_suppression_coefficient",{},7.01,"dimensionless"});
+d.entries.push_back({"model/relative_permittivity/ionic_region_relative_permittivity","ionic_region_relative_permittivity",{},8.0,"dimensionless"});
+d.entries.push_back({"association/ethanol/a/ethanol/b/energy_over_k","association_energy_over_k",{0,1},2653.4,"kelvin"});
+d.entries.push_back({"association/ethanol/a/ethanol/b/volume","association_volume",{0,1},0.03238,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{0,3,0,1,2,3},0.0,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{0,5,0,1,4,5},0.0,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{1,2,0,1,2,3},0.0,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{1,4,0,1,4,5},0.0,"dimensionless"});
+d.entries.push_back({"association/isobutanol/a/isobutanol/b/energy_over_k","association_energy_over_k",{2,3},2514.3,"kelvin"});
+d.entries.push_back({"association/isobutanol/a/isobutanol/b/volume","association_volume",{2,3},0.00391,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{2,5,2,3,4,5},0.0,"dimensionless"});
+d.entries.push_back({"wolbach-sandler","association_combining_rule",{3,4,2,3,4,5},0.0,"dimensionless"});
+d.entries.push_back({"association/water/a/water/b/energy_over_k","association_energy_over_k",{4,5},2425.7,"kelvin"});
+d.entries.push_back({"association/water/a/water/b/volume","association_volume",{4,5},0.04509,"dimensionless"});
+const auto p=build_parameters(d); for(bool nested : {false,true}) { policy::SolverOptions opts; opts.nested_solve=nested; HelmholtzModel model(p,{},std::nullopt,opts); eq::EquilibriumProblem q; q.solver_options=opts; q.temperature=eq::FreeValue::fixed(364.2); q.pressure=eq::FreeValue::fixed(1e5); q.feed.values={.8,.02,.18};
+{ eq::PhaseSpec ph; ph.name="Lw"; ph.kind=eq::PhaseKind::Liquid; ph.composition_guess={0.98,0.01,0.01}; q.phases.push_back(ph); }
+{ eq::PhaseSpec ph; ph.name="Lo"; ph.kind=eq::PhaseKind::Liquid; ph.composition_guess={0.5,0.03,0.47}; q.phases.push_back(ph); }
+{ eq::PhaseSpec ph; ph.name="V"; ph.kind=eq::PhaseKind::Vapor; ph.composition_guess={0.713829,0.039282,0.246889}; q.phases.push_back(ph); }
+const auto r=eq::solve_equilibrium(model,q); CHECK(r.success); for(const auto& rank:r.rank_records) if(rank.basis=="numerical") { CHECK(rank.observation.available == !nested); CHECK(rank.observation.error < policy::EQUILIBRIUM_POLISH_CORRECTION.value); if(!nested) CHECK(rank.observation.point_kind == "endpoint"); std::cout<<std::setprecision(17)<<"nested="<<nested<<" success="<<r.success<<" available="<<rank.observation.available<<" condition="<<rank.observation.condition<<" point="<<rank.observation.point_kind<<" iterations="<<r.iterations<<" evaluations="<<r.evaluations<<"\n"; }}}
+
 struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
     using Eigen::FullPivLU<Eigen::MatrixXd>::FullPivLU;
     mutable std::size_t inverse_calls = 0, condition_calls = 0;
@@ -1363,7 +1424,104 @@ struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
     }
     double rcond() const { ++condition_calls; return Eigen::FullPivLU<Eigen::MatrixXd>::rcond(); }
 };
+void check_association_preparation() {
+    using namespace epcsaft;
+    core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
+    {
+        // Manufactured self-association: initial pivot refusal, then substitution recovers.
+        auto p = properties_support::associating_binary();
+        p.site_component = {0, 1}; p.site_multiplicity = {1, 1};
+        p.association_active = {1, 0, 0, 0};
+        p.association_energy_over_k = {3000, 0, 0, 0}; p.association_volume = {1, 0, 0, 0};
+        const double temperature = 313.15, density = 10000;
+        const std::vector<double> x{0.5, 0.5};
+        const auto sigma = segment_sigma(temperature, p), diameter = segment_diameter(temperature, p, sigma);
+        const auto delta = association_delta(temperature, density, x, p, sigma, diameter);
+        p.association_volume[0] *= 8e12 / (density * NUMBER_DENSITY_PER_ANGSTROM3 * x[0] * delta[0]);
+        policy::SolverOptions nested; nested.nested_solve = true;
+        HelmholtzModel model(p, {}, std::nullopt, nested);
+        equilibrium::CompiledSystem c; c.model = &model; c.primal_size = 3;
+        c.problem.temperature = equilibrium::FreeValue::fixed(temperature);
+        c.problem.pressure = equilibrium::FreeValue::fixed(1e5);
+        auto phase = equilibrium_support::phase("liquid", equilibrium::PhaseKind::Liquid,
+            equilibrium::AmountSpec::pinned(1)); phase.support = {0, 1}; c.problem.phases = {phase};
+        const auto packing = model.packing_fraction_coefficient(temperature, x);
+        std::vector<double> point{std::log(x[0]), std::log(x[1]), std::log(packing * density)};
+        equilibrium::EquilibriumResult result; result.first_numerical_failure = refusal;
+        core::AssociationObservations observations(result.rank_records);
+        const auto prepared = c.prepare(point, true, &result.first_numerical_failure);
+        CHECK(!result.rank_records.empty());
+        const auto warning = result.rank_records[0].first_conditioning_warning;
+        CHECK(warning && warning->cause == "association_pivot_refusal" && warning->phase == 0);
+        CHECK(warning->coordinates == std::vector<double>({1, 1}));
+        CHECK(warning->controls.size() == 4 && warning->controls[0] == temperature
+            && std::abs(warning->controls[1] / density - 1) <= 1e-10
+            && warning->controls[2] == 0.5 && warning->controls[3] == 0.5);
+        CHECK(core::describe(*result.first_numerical_failure) == core::describe(refusal));
+        point.back() -= std::log(1e8);
+        const auto regular = c.prepare(point, true, &result.first_numerical_failure);
+        CHECK(regular.derivative[0].rank_records.empty());
+        CHECK(result.rank_records[0].first_conditioning_warning == warning);
+        equilibrium::StageWork work; work.observe(result);
+        equilibrium::EquilibriumResult recovered; std::move(work).publish_observations(recovered);
+        CHECK(recovered.rank_records[0].first_conditioning_warning->coordinates == warning->coordinates);
+        CHECK(core::describe(*recovered.first_numerical_failure) == core::describe(refusal));
+        std::cout << "association preparation recovery: warning coordinates and controls retained\n";
+    }
+}
+void check_pure_association_attempt() {
+    using namespace epcsaft;
+    namespace eq = epcsaft::equilibrium;
+    const double temperature = 313.15, density = 10000;
+    auto p = properties_support::ethane();
+    p.site_component = {0, 0, 0}; p.site_multiplicity = {1, 1, 1};
+    p.association_active = {0, 1, 0, 1, 1, 0, 0, 0, 0};
+    p.association_energy_over_k.assign(9, 3000); p.association_volume.assign(9, 1);
+    const auto sigma = segment_sigma(temperature, p), diameter = segment_diameter(temperature, p, sigma);
+    const auto delta = association_delta(temperature, density, {1}, p, sigma, diameter);
+    for (std::size_t i = 0; i < 9; ++i)
+        p.association_volume[i] = p.association_active[i]
+            ? 1e14 / (density * NUMBER_DENSITY_PER_ANGSTROM3 * delta[i]) : 0;
+    HelmholtzModel model(p);
+    eq::EquilibriumProblem problem;
+    problem.temperature = eq::FreeValue::fixed(temperature); problem.pressure = eq::FreeValue::variable(1e5);
+    problem.feed.values = {1};
+    auto liquid = equilibrium_support::phase("L", eq::PhaseKind::Liquid);
+    auto vapor = equilibrium_support::phase("V", eq::PhaseKind::Vapor, eq::AmountSpec::pinned(0));
+    liquid.support = vapor.support = {0}; problem.phases = {liquid, vapor};
+    const auto compiled = eq::compile_problem(model, problem);
+    auto initial = compiled.generic_point();
+    const auto offsets = compiled.phase_offsets();
+    const double coefficient = model.packing_fraction_coefficient(temperature, {1});
+    for (std::size_t phase = 0; phase < 2; ++phase)
+        initial[offsets[phase] + 1 + (problem.phases[phase].is_free() ? 1 : 0)] = std::log(coefficient * (phase == 0 ? density : 1));
+    core::Capture capture(false); core::Scope scope("one_component_two_density");
+    auto structural = eq::structural_result(compiled, scope);
+    core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
+    structural.first_numerical_failure = refusal;
+    const auto result = eq::one_component_two_density_attempt(compiled, initial, structural, scope, nullptr);
+    const auto rank = std::find_if(result.rank_records.begin(), result.rank_records.end(),
+        [](const auto& rank) { return rank.basis == "mass_action_site_fractions"; });
+    CHECK(rank != result.rank_records.end());
+    CHECK(rank->first_conditioning_warning && rank->first_conditioning_warning->phase == 0);
+    const auto& warning = *rank->first_conditioning_warning;
+    CHECK(warning.controls.size() == 3 && warning.controls[0] == temperature && warning.controls[2] == 1);
+    CHECK(std::abs(warning.controls[1] / density - 1) <= 1e-10);
+    bool recovered = false;
+    for (const auto& span : capture.trace().spans) if (std::string(span.name) == "association_newton" && span.convergence
+        && span.convergence->rank && span.convergence->rank->first_conditioning_warning
+        && (span.convergence->stop == core::Stop::converged || span.convergence->stop == core::Stop::converged_to_floor)) {
+        const auto& original = *span.convergence->rank->first_conditioning_warning;
+        recovered = recovered || (original.coordinates == warning.coordinates && original.controls == warning.controls);
+    }
+    CHECK(recovered && warning.coordinates.size() == 3);
+    CHECK(result.first_numerical_failure && core::describe(*result.first_numerical_failure) == core::describe(refusal));
+    std::cout << "pure attempt warning: phase " << *warning.phase << " density " << warning.controls[1]
+        << " original point "; for (auto x : warning.coordinates) std::cout << x << ' ';
+    std::cout << "site recovered, attempt success=" << result.success << '\n';
+}
 void check_conditioning() {
+    check_nested_endpoint();
     using namespace epcsaft;
     using Matrix = Eigen::MatrixXd; using Vector = Eigen::VectorXd;
     {
@@ -1454,46 +1612,6 @@ void check_conditioning() {
             || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))
             throw std::runtime_error("nested rank/pivot warning lost or first refusal overwritten");
     }
-    {
-        // Manufactured self-association: initial pivot refusal, then substitution recovers.
-        auto p = properties_support::associating_binary();
-        p.site_component = {0, 1}; p.site_multiplicity = {1, 1};
-        p.association_active = {1, 0, 0, 0};
-        p.association_energy_over_k = {3000, 0, 0, 0}; p.association_volume = {1, 0, 0, 0};
-        const double temperature = 313.15, density = 10000;
-        const std::vector<double> x{0.5, 0.5};
-        const auto sigma = segment_sigma(temperature, p), diameter = segment_diameter(temperature, p, sigma);
-        const auto delta = association_delta(temperature, density, x, p, sigma, diameter);
-        p.association_volume[0] *= 8e12 / (density * NUMBER_DENSITY_PER_ANGSTROM3 * x[0] * delta[0]);
-        policy::SolverOptions nested; nested.nested_solve = true;
-        HelmholtzModel model(p, {}, std::nullopt, nested);
-        equilibrium::CompiledSystem c; c.model = &model; c.primal_size = 3;
-        c.problem.temperature = equilibrium::FreeValue::fixed(temperature);
-        c.problem.pressure = equilibrium::FreeValue::fixed(1e5);
-        auto phase = equilibrium_support::phase("liquid", equilibrium::PhaseKind::Liquid,
-            equilibrium::AmountSpec::pinned(1)); phase.support = {0, 1}; c.problem.phases = {phase};
-        const auto packing = model.packing_fraction_coefficient(temperature, x);
-        std::vector<double> point{std::log(x[0]), std::log(x[1]), std::log(packing * density)};
-        equilibrium::EquilibriumResult result; result.first_numerical_failure = refusal;
-        const auto prepared = c.prepare(point, true, &result.first_numerical_failure, &result.rank_records);
-        CHECK(!result.rank_records.empty());
-        const auto warning = result.rank_records[0].first_conditioning_warning;
-        CHECK(warning && warning->cause == "association_pivot_refusal" && warning->phase == 0);
-        CHECK(warning->coordinates == std::vector<double>({1, 1}));
-        CHECK(warning->controls.size() == 4 && warning->controls[0] == temperature
-            && std::abs(warning->controls[1] / density - 1) <= 1e-10
-            && warning->controls[2] == 0.5 && warning->controls[3] == 0.5);
-        CHECK(core::describe(*result.first_numerical_failure) == core::describe(refusal));
-        point.back() -= std::log(1e8);
-        const auto regular = c.prepare(point, true, &result.first_numerical_failure, &result.rank_records);
-        CHECK(regular.derivative[0].rank_records.empty());
-        CHECK(result.rank_records[0].first_conditioning_warning == warning);
-        equilibrium::StageWork work; work.observe(result);
-        equilibrium::EquilibriumResult recovered; std::move(work).publish_observations(recovered);
-        CHECK(recovered.rank_records[0].first_conditioning_warning->coordinates == warning->coordinates);
-        CHECK(core::describe(*recovered.first_numerical_failure) == core::describe(refusal));
-        std::cout << "association preparation recovery: warning coordinates and controls retained\n";
-    }
     for (bool singular : {true, false}) {
         equilibrium::EquilibriumResult early, recovered;
         early.first_numerical_failure = refusal;
@@ -1535,6 +1653,8 @@ void check_conditioning() {
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.specification.conditioning", "conditioning"}, check_conditioning},
+        {{"native.specification.association-preparation", "association-preparation"}, check_association_preparation},
+        {{"native.specification.pure-association-attempt", "pure-association-attempt"}, check_pure_association_attempt},
         {{"native.specification.polish-solve", "Newton-solve"}, check_polish_solve_admission},
         {{"native.specification.inventory", "Inventory"}, check_inventory_support},
         {{"native.specification.trace-inventory-witness", "trace-inventory-witness"}, check_trace_inventory_witness},

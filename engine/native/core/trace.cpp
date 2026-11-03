@@ -6,5 +6,9 @@
 namespace epcsaft::core {
 thread_local Trace* active_trace = nullptr;
 Trace*& current_trace() noexcept { return active_trace; }
+AssociationObservations*& AssociationObservations::current() noexcept {
+    static thread_local AssociationObservations* active = nullptr;
+    return active;
+}
 
 }  // namespace epcsaft::core

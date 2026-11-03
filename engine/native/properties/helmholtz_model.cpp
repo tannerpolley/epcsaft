@@ -118,10 +118,8 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
         association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
-    const auto previous = diagnostics.site_conditioning;
-    if (!options.nested_solve) diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(core::conditioning(*result, "implicit_site_fractions", 0, "endpoint"));
-    if (previous && previous->first_conditioning_warning)
-        diagnostics.site_conditioning->first_conditioning_warning = previous->first_conditioning_warning;
+    if (!options.nested_solve) core::retain_rank(diagnostics.site_conditioning,
+        core::conditioning(*result, "implicit_site_fractions", 0, "endpoint"));
     const auto pivots = result->matrixLU().diagonal().cwiseAbs();
     if (pivots.size() != 0 && pivots.minCoeff() > 0.0) diagnostics.site_pivot_ratio = pivots.maxCoeff() / pivots.minCoeff();
     return result;
@@ -1002,6 +1000,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const std::vector<double>& amounts,
     DerivativeOrder order
 ) const {
+    HelmholtzDerivatives result;
+    std::optional<core::AssociationObservations> observations;
+    if (!core::AssociationObservations::current()) observations.emplace(result.rank_records);
     core::Scope entry("helmholtz_evaluate_locked"), scope("evaluate");
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
@@ -1051,10 +1052,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     full_point.insert(full_point.end(), sites.begin(), sites.end());
     const auto values = tape_->forward_zero(full_point, &counters_.forward);
     tape_->site_values = sites;
-    HelmholtzDerivatives result;
     core::retain_first(result.first_numerical_failure, first);
     result.site_fractions = sites;
-    if (site_record.rank) core::retain_rank(result.rank_records, *site_record.rank);
     result.value = values.front();
     scope.probe("residual_helmholtz_extensive", result.value);
     if (order == DerivativeOrder::Value) return result;
@@ -1373,6 +1372,8 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         require(direction.size() == width && finite_vector(direction), "direction");
     double total = 0.0; for (double amount : amounts) total += amount;
     ResidualEnergyAction result;
+    std::optional<core::AssociationObservations> observations;
+    if (!core::AssociationObservations::current()) observations.emplace(result.diagnostics.site_conditioning);
     std::vector<ActionDirection> inserted;
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
@@ -1391,8 +1392,6 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     std::lock_guard<std::mutex> lock(mutex_);
     const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
     core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
-    for (const auto& rank : refreshed.rank_records)
-        result.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(rank);
     const double density = total / volume;
     std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
     result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
@@ -1755,8 +1754,10 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto ideal_status = !need_ideal || ideal_available ? PropertyActionStatus::Available
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
+    PropertyActionBatch result;
+    std::optional<core::AssociationObservations> observations;
+    if (!core::AssociationObservations::current()) observations.emplace(result.diagnostics.site_conditioning);
     std::optional<core::Convergence> first;
-    core::Convergence site_record;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;
     if (need_residual) {
@@ -1767,7 +1768,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_, &first);
+                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
             need_residual = false;
@@ -1775,9 +1776,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         }
     }
     const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
-    PropertyActionBatch result;
     core::retain_first(result.diagnostics.first_numerical_failure, first);
-    result.diagnostics.site_conditioning = site_record.rank;
     result.diagnostics.recordings = ensure_tape(point, sites, signature,
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
@@ -2155,6 +2154,9 @@ State HelmholtzModel::state(
     const std::vector<double>& mole_fractions,
     bool derived_properties
 ) const {
+    State result;
+    std::optional<core::AssociationObservations> observations;
+    if (!core::AssociationObservations::current()) observations.emplace(result.rank_records);
     core::Scope scope("state");
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
@@ -2194,9 +2196,7 @@ State HelmholtzModel::state(
         * (1.0 + volume * volume * phi_vv);
     const double cv_over_r = -2.0 * temperature * phi_t
         - temperature * temperature * derivatives.hessian[0];
-    State result;
     core::retain_first(result.first_numerical_failure, derivatives.first_numerical_failure);
-    result.rank_records = derivatives.rank_records;
     result.solver_options = solver_options_;
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;

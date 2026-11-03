@@ -1732,11 +1732,11 @@ std::vector<std::size_t> CompiledSystem::phase_offsets() const {
 }
 
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
-    std::optional<core::Convergence>* first, std::vector<core::NumericalRank>* ranks) const { return prepare_values(point, state_only, first, ranks); }
+    std::optional<core::Convergence>* first) const { return prepare_values(point, state_only, first); }
 
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
-    std::optional<core::Convergence>* first_numerical_failure, std::vector<core::NumericalRank>* ranks) const {
+    std::optional<core::Convergence>* first_numerical_failure) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1766,6 +1766,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     if constexpr (std::is_same_v<Base, double>) admit_calorics(*this, result.temperature);
     for (std::size_t phase = 0; phase < result.shape.size(); ++phase) {
+        core::AssociationObservations phase_observations(phase);
         const auto& layout = result.shape[phase];
         std::vector<Base> values(components, 0.0);
         Base total = 0.0;
@@ -1792,11 +1793,6 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));
         } else result.derivative.push_back(model->isothermal(result.temperature, result.volume.back(), values));
         if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative.back().first_numerical_failure);
-        if (ranks) for (auto rank : result.derivative.back().rank_records) {
-            if (auto& warning = rank.first_conditioning_warning)
-                (warning = std::make_shared<core::ConditioningObservation>(*warning))->phase = phase;
-            core::retain_rank(*ranks, rank);
-        }
         scope.probe("gradient_floor", double(result.derivative.back().gradient_floor),
                     static_cast<std::uint32_t>(phase));
         result.composition.push_back(std::move(values));
@@ -1806,8 +1802,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::vector<core::NumericalRank>*) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::vector<core::NumericalRank>*) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));

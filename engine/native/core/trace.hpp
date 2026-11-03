@@ -16,6 +16,7 @@
 #include <utility>
 #include <type_traits>
 #include <vector>
+#include <variant>
 
 namespace epcsaft::core {
 
@@ -71,17 +72,45 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
 inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) {
     if (!first) retain_failure(first, std::runtime_error(std::string(cause)), operation);
 }
+inline void retain_rank(NumericalRank& target, const NumericalRank& rank,
+    const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
+    auto warning = target.first_conditioning_warning; target = rank;
+    if (warning) target.first_conditioning_warning = std::move(warning);
+    else if (target.first_conditioning_warning && target.first_conditioning_warning->coordinates.empty()) target.first_conditioning_warning->coordinates = point;
+    if (target.first_conditioning_warning && !target.first_conditioning_warning->stage) (target.first_conditioning_warning = std::make_shared<ConditioningObservation>(*target.first_conditioning_warning))->stage = stage;
+}
 inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank,
     const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
-    auto assign = [&](NumericalRank& target) {
-        auto warning = target.first_conditioning_warning; target = rank;
-        if (warning) target.first_conditioning_warning = std::move(warning);
-        else if (target.first_conditioning_warning && target.first_conditioning_warning->coordinates.empty()) target.first_conditioning_warning->coordinates = point;
-        if (target.first_conditioning_warning && !target.first_conditioning_warning->stage) (target.first_conditioning_warning = std::make_shared<ConditioningObservation>(*target.first_conditioning_warning))->stage = stage;
-    };
-    for (auto& r : records) if (r.basis == rank.basis) { assign(r); return; }
-    records.emplace_back(); assign(records.back());
+    for (auto& r : records) if (r.basis == rank.basis) { retain_rank(r, rank, point, stage); return; }
+    records.emplace_back(); retain_rank(records.back(), rank, point, stage);
 }
+
+inline void retain_rank(std::shared_ptr<NumericalRank>& target, const NumericalRank& rank) {
+    if (!target) target = std::make_shared<NumericalRank>(rank);
+    else retain_rank(*target, rank);
+}
+
+class AssociationObservations final {
+public:
+    static EPC_API AssociationObservations*& current() noexcept;
+    template<class Destination> explicit AssociationObservations(Destination& target)
+        : destination_(&target), previous_(current()) { current() = this; }
+    explicit AssociationObservations(std::size_t phase)
+        : destination_(current() ? current()->destination_ : Destination{}), previous_(current()), phase_(phase) { if (previous_) current() = this; }
+    ~AssociationObservations() { current() = previous_; }
+    AssociationObservations(const AssociationObservations&) = delete;
+    static void publish(NumericalRank rank) {
+        const auto* owner = current();
+        if (rank.first_conditioning_warning && owner->phase_)
+            (rank.first_conditioning_warning = std::make_shared<ConditioningObservation>(*rank.first_conditioning_warning))->phase = owner->phase_;
+        std::visit([&](auto* target) { if (target) retain_rank(*target, rank); }, owner->destination_);
+    }
+private:
+    using Destination = std::variant<std::vector<NumericalRank>*, std::shared_ptr<NumericalRank>*>;
+    Destination destination_;
+    AssociationObservations* const previous_;
+    std::optional<std::size_t> phase_;
+};
 
 template <typename Observation>
 void observe(Trace* trace, Observation&& observation) {

@@ -67,7 +67,7 @@ struct OneComponentTwoDensityPoint final {
 };
 EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
 bool one_component_two_density_eligible(const CompiledSystem&);
-EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
+EPC_API EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
 EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);

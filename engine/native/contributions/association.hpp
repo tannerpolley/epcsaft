@@ -263,8 +263,8 @@ inline std::vector<double> solve_site_fractions(
         if (result.rank) if (auto& warning = result.rank->first_conditioning_warning) {
             warning->controls = {temperature, molar_density};
             warning->controls.insert(warning->controls.end(), mole_fractions.begin(), mole_fractions.end());
+            if (core::AssociationObservations::current()) core::AssociationObservations::publish(*result.rank);
         }
-
         core::stopping_criterion(result, options, policy::association);
         result.floor = std::numeric_limits<double>::epsilon() * sites;
         result.amplification = last_pivot;
