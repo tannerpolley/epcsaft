@@ -138,4 +138,6 @@ exact commit. `--dry-run` plans without changing anything. The daily
 `tools/clean-build` timer (owner, 2026-11-03) runs the same tool on every linked
 worktree, keeps only reports in `build/issue-N` three days after issue N closes,
 removes `build/pr-gates/pr-N` once pull request N is closed, and expires old
-`build/archive` files; dirty worktrees and nested clones stay for the lead.
+`build/archive` files. Worktrees it keeps (dirty, nested clones, in use) are
+listed in `build/worktrees-to-resolve.md`; the lead commits or discards each
+and prunes it.

@@ -3,7 +3,8 @@
 
 Usage: tools/clean-build [--dry-run]
 Run daily by the user timer epcsaft-clean-build.timer. In order:
-1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones.
+1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
+   and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
 2. build/issue-N, once issue N has been closed for DAYS: keep only reports (*.md, *.qmd, *.html, *.png of at
    most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline* copies) and delete everything else.
 3. build/pr-gates/pr-N once pull request N is no longer open.
@@ -76,8 +77,18 @@ def main():
         sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
 
     if len(paths) > 1:
-        subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []), *paths[1:]],
-                       cwd=root)
+        pruned = subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []),
+                                 *paths[1:]], cwd=root, capture_output=True, text=True)
+        print(pruned.stdout + pruned.stderr, end="")
+        blocked = [line for line in (pruned.stdout + pruned.stderr).splitlines()
+                   if line.startswith(("kept /", "archive-worktree:"))]
+        attention = build / "worktrees-to-resolve.md"
+        if not dry and blocked:
+            attention.write_text(f"# Worktrees the {datetime.now():%Y-%m-%d} cleanup kept\n\nFor each: commit the "
+                                 "work (or tag it archive/<branch>-wip) or discard it, then run tools/prune-worktrees "
+                                 "on it.\n\n" + "".join(f"- {line}\n" for line in blocked))
+        elif not dry:
+            attention.unlink(missing_ok=True)
 
     try:
         open_issues = {item["number"] for item in gh_json(root, "issue", "list", "--state", "open", "--limit", "1000",
