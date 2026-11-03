@@ -2696,6 +2696,13 @@ most one `first_conditioning_warning`. The warning survives later regular or
 unavailable observations through `StageWork`; it is separate from the first
 numerical refusal. Read the observation's operation, basis, norm, method,
 precision and point attribution together with its condition and error.
+
+Known limit: association conditioning warnings first raised while the final
+equilibrium result is assembled, during wide-precision refinement of the
+selected endpoint, or inside a standalone reference expansion (including
+cached central values) may be missing from the returned result. Computed
+values are unaffected.
+
 The owner amendment of 2026-11-02 restricts full condition estimation to
 already-computed factors for the top-level returned state. Nested iterations
 retain cheap rank/pivot checks and existing physical-error/refusal warnings,
