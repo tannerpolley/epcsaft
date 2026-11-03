@@ -5,10 +5,12 @@ Usage: tools/clean-build [--dry-run]
 Run daily by the user timer epcsaft-clean-build.timer. In order:
 1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
    and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
-2. build/issue-N, once issue N has been closed for DAYS: keep only reports (*.md, *.qmd, *.html, *.png of at
-   most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline* copies) and delete everything else.
+2. build/issue-N, once issue N has been closed for DAYS and no tracked file cites build/issue-N: keep only reports
+   (*.md, *.qmd, *.html, *.png of at most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline* copies)
+   and delete everything else. Cited folders stay whole until their evidence moves into the citing analysis.
 3. build/pr-gates/pr-N once pull request N is no longer open.
-4. Regular files directly in build/archive older than DAYS whose name carries no open issue or PR number.
+4. Regular files directly in build/archive older than DAYS whose name carries no open issue or PR number and
+   that no tracked file cites.
 It never follows a symlink.
 
 Trust assumption (owner, 2026-10-22): only this repository's tools write build/, so nothing swaps build/ or its
@@ -99,12 +101,18 @@ def main():
         sys.exit("clean-build: open issues or PRs unknown (gh failed); nothing removed")
     if len(open_issues) >= 1000 or len(open_prs) >= 1000:
         sys.exit("clean-build: open issue or PR list may be truncated; nothing removed")
+    grep = subprocess.run(["git", "grep", "-ohE", r"build/(issue-[0-9]+|archive/[A-Za-z0-9._-]+)"], cwd=root,
+                          capture_output=True, text=True)
+    if grep.returncode > 1:
+        sys.exit("clean-build: cited build/ paths unknown (git grep failed); nothing removed")
+    cited = {int(n) for n in re.findall(r"build/issue-(\d+)", grep.stdout)}
+    cited_archives = set(re.findall(r"build/archive/([A-Za-z0-9._-]+)", grep.stdout))
     verb = "would free" if dry else "freed"
     cutoff = datetime.now(timezone.utc) - timedelta(days=DAYS)
 
     for folder in sorted(build.glob("issue-*")):
         number = re.fullmatch(r"issue-(\d+)", folder.name)
-        if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_issues | open_prs:
+        if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_issues | open_prs | cited:
             continue
         try:
             closed = gh_json(root, "issue", "view", number[1], "--json", "state,closedAt")
@@ -129,7 +137,7 @@ def main():
         info = item.lstat()
         if not stat.S_ISREG(info.st_mode) or info.st_mtime > time.time() - DAYS * 86400:
             continue
-        if any(int(token) in protected for token in re.findall(r"\d+", item.name)):
+        if item.name in cited_archives or any(int(token) in protected for token in re.findall(r"\d+", item.name)):
             continue
         if not dry:
             item.unlink()
