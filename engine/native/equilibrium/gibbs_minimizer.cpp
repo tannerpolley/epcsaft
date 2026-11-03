@@ -808,8 +808,9 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     return result;
 }
 
-static void capture_driver(const GibbsMinimizer& nlp, const EquilibriumResult& result, EquilibriumResult* audit) {
+static void capture_driver(const GibbsMinimizer& nlp, const EquilibriumResult& result, EquilibriumResult* audit, const core::AssociationObservations& observations) {
     if (!audit) return;
+    observations.merge(audit->rank_records);
     nlp.publish_observations(*audit);
     audit->solver_settings = result.solver_settings;
     audit->diagnostic_options_file = result.diagnostic_options_file;
@@ -1347,9 +1348,15 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     return true;
 }
 
+static EquilibriumResult association_result(EquilibriumResult result, const core::AssociationObservations& observations) {
+    observations.merge(result.rank_records);
+    return result;
+}
+
 EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, EquilibriumResult result,
     core::Scope& scope, const DriverLimits* limits) {
-    if (!result.has_state() || !mixture_precision_eligible(compiled) || !result.prepared_endpoint) return result;
+    core::AssociationObservations observations;
+    if (!result.has_state() || !mixture_precision_eligible(compiled) || !result.prepared_endpoint) return association_result(std::move(result), observations);
     DriverLimits defaults{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
         std::chrono::steady_clock::time_point::max(), result.iterations};
     if (!limits) limits = &defaults;
@@ -1359,12 +1366,12 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
     const auto& error = *result.numerical_estimates;
     const double radius = error.physical_radius;
     scope.probe("mixture_precision_decision", {*result.temperature, radius}, 0, error.cause.c_str());
-    if (!error.cause.empty() || !std::isfinite(radius) || radius <= policy::MIXTURE_FORWARD_ERROR.value) return result;
+    if (!error.cause.empty() || !std::isfinite(radius) || radius <= policy::MIXTURE_FORWARD_ERROR.value) return association_result(std::move(result), observations);
     result.linear_solve_diagnostics = LinearSolveDiagnostics{"canonical_defining_rows"};
     auto& diagnostic = *result.linear_solve_diagnostics;
     diagnostic.forward_error_estimate = radius;
     if constexpr (std::numeric_limits<WiderScalar>::digits <= std::numeric_limits<double>::digits) {
-        diagnostic.reason = "extra precision unavailable"; return result;
+        diagnostic.reason = "extra precision unavailable"; return association_result(std::move(result), observations);
     }
     scope.probe("mixture_precision_activate", {*result.temperature, *result.pressure, radius});
     auto refined = result;
@@ -1410,10 +1417,10 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
         core::retain_failure(refined.first_numerical_failure, refined.message, "mixture refinement");
         StageWork::publish_observations(refined, result);
         result.iterations = refined.iterations; result.evaluations = refined.evaluations;
-        diagnostic.reason = "refinement refused: " + refined.message; return result;
+        diagnostic.reason = "refinement refused: " + refined.message; return association_result(std::move(result), observations);
     }
     refined.message = result.message;
-    return refined;
+    return association_result(std::move(refined), observations);
 }
 
 static EquilibriumResult run_driver_once(
@@ -1422,8 +1429,10 @@ static EquilibriumResult run_driver_once(
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, bool newton,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, bool* initialized_warm = nullptr,
     bool* retry_eligible = nullptr, bool physical_amounts = false, bool publishing = false
-) try {
-    core::AssociationObservations observations(result.rank_records);
+) {
+    core::AssociationObservations observations;
+    std::optional<EquilibriumResult> limit_audit;
+    try {
     if (retry_eligible) *retry_eligible = false;
     const double row_tolerance = declared.problem.solver_options.value(policy::row);
     // The optimizer works one policy decade below the caller criterion, which alone classifies.
@@ -1434,9 +1443,8 @@ static EquilibriumResult run_driver_once(
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
-        reject_elapsed(result, scope); return result; }
+        reject_elapsed(result, scope); return association_result(std::move(result), observations); }
     if (limits) ++limits->attempts;
-    std::optional<EquilibriumResult> limit_audit;
     if (limits && !audit) audit = &limit_audit.emplace(result);
     auto fallback = limits || newton ? initial : std::vector<double>{};
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(declared, std::move(initial), &scope, limits, physical_amounts);
@@ -1455,13 +1463,13 @@ static EquilibriumResult run_driver_once(
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver);
-        } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, audit); throw; }
+        } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, audit, observations); throw; }
     }();
     if (!newton) {
         nlp->finish_ipopt(int(initialized), int(returned), predicted, physical_amounts);
     }
     nlp->publish_observations(result);
-    capture_driver(*nlp, result, audit);
+    capture_driver(*nlp, result, audit, observations);
     if (nlp->step_rule_error()) throw std::logic_error(*nlp->step_rule_error());
     const Ipopt::SolverReturn status = newton ? Ipopt::SUCCESS : nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
@@ -1478,7 +1486,7 @@ static EquilibriumResult run_driver_once(
     const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     if (audit) audit->solver_status = result.solver_status;
     const auto limited_result = [&] {
-        StageWork::publish_observations(result, *audit);
+        observations.merge(result.rank_records); StageWork::publish_observations(result, *audit);
         auto failed = *audit;
         failed.message = "elapsed work budget exhausted";
         reject_elapsed(failed, scope); return failed;
@@ -1524,7 +1532,7 @@ static EquilibriumResult run_driver_once(
     const auto inside_box = [&](auto& candidate) { return inside_correction_box(compiled, candidate, lower, upper, free_amount_newton); };
     if (free_amount_newton && (!nlp->physical_bounds(lower, upper) || !inside_box(full)
         || check_topology(compiled, full).event != TopologyEvent::None)) {
-        result.message = "Newton seed bounds/topology"; return result;
+        result.message = "Newton seed bounds/topology"; return association_result(std::move(result), observations);
     }
     // The optimizer's amount-weighted rows underresolve intensive trace defects.
     // Exact Newton steps contract raw rows at any positive supported composition.
@@ -1584,7 +1592,7 @@ static EquilibriumResult run_driver_once(
         result.evaluations = result.convergence.evaluations = nlp->evaluations() + polish_evaluations;
         clear_state(result);
         scope.finish(result.convergence);
-        return result;
+        return association_result(std::move(result), observations);
     }
     if (expired()) return limited_result();
     if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
@@ -1629,7 +1637,7 @@ static EquilibriumResult run_driver_once(
     if (!newton) scope.probe("optimizer_constraint_multipliers", nlp->constraint_multipliers());
     if (compiled.feasibility_cell()) result.constraint_multipliers = newton
         ? std::vector<double>(compiled.rows.size(), 0.0) : nlp->constraint_multipliers();
-    if (audit) StageWork::publish_observations(result, *audit);
+    if (audit) { observations.merge(result.rank_records); StageWork::publish_observations(result, *audit); }
     publishing = true;
     result = publish_candidate(compiled, prepared, std::move(result), scope, limits);
     if (!result.success) {
@@ -1639,12 +1647,14 @@ static EquilibriumResult run_driver_once(
         if (retry_eligible) *retry_eligible = non_error && (result.topology_event == TopologyEvent::PhaseDisappeared
             || convergence.stop == core::Stop::budget_exhausted);
     } else if (!newton && result.requested_tolerance_met.value_or(false)) result.optimizer_state = nlp->optimizer_state();
-    return result;
-} catch (const std::exception& error) {
+    return association_result(std::move(result), observations);
+    } catch (const std::exception& error) {
         auto& observed = publishing && audit ? *audit : result;
+        observations.merge(observed.rank_records);
         core::retain_failure(observed.first_numerical_failure, error, "equilibrium preparation");
         if (audit && !publishing) StageWork::publish_observations(result, *audit);
         throw;
+}
 }
 
 EquilibriumResult recover_physical_amounts(
