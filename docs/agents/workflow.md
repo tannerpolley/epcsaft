@@ -134,5 +134,8 @@ or an open pull request, archives the rest through `tools/archive-worktree`, and
 deletes their local branches and any remote branch whose tip is on
 `origin/main`. Unmerged branches are kept unless `--archive-unmerged` is given
 and their issue is closed; they are then first tagged `archive/<branch>` on the
-exact commit. `--dry-run` plans without changing anything. Gate source
-checkouts under `build/pr-gates/` are left to `tools/check-pr-native`.
+exact commit. `--dry-run` plans without changing anything. The daily
+`tools/clean-build` timer (owner, 2026-11-03) runs the same tool on every linked
+worktree, keeps only reports in `build/issue-N` three days after issue N closes,
+removes `build/pr-gates/pr-N` once pull request N is closed, and expires old
+`build/archive` files; dirty worktrees and nested clones stay for the lead.
