@@ -86,11 +86,11 @@ unless they say they compare with measurements.
 
 ## Installation
 
-Release 1.2.0 for Linux and Windows (x86-64) is on an interim conda channel
+Release 1.2.1 for Linux and Windows (x86-64) is on an interim conda channel
 until the conda-forge package is published:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.0
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.1
 ```
 
 The package contains the Engine but not the parameter packets; download the

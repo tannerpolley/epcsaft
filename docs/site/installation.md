@@ -11,11 +11,11 @@ an installation with a native pressure closure.
 
 ## Conda package
 
-Until the conda-forge package is published, release 1.2.0 for Linux (linux-64)
+Until the conda-forge package is published, release 1.2.1 for Linux (linux-64)
 and Windows (win-64) is available from an interim channel:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.0
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.1
 conda activate epcsaft
 python -c 'import epcsaft; print(epcsaft.__file__)'
 ```
