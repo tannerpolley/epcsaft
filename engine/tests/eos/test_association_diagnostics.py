@@ -1,5 +1,6 @@
 """Retained association failure and diagnostic transport cases."""
 import copy
+from typing import Any, cast
 
 import pytest
 
@@ -8,11 +9,11 @@ from epcsaft.parameters import document_mapping
 from tests.packets import PACKETS
 
 
-def water_parameters():
+def water_parameters() -> Parameters:
     return Parameters.from_packets(PACKETS, [("held-cameretti-sadowski-2008/4", ["water"])])
 
 
-def test_association_conditioning_is_readable():
+def test_association_conditioning_is_readable() -> None:
     model = Pure(water_parameters())
     batch = model.pressure_actions(298.15, 1e5, phase="liquid", observables=[PropertyObservable.ResidualEnthalpy],
                                    directions=[PressureActionDirection(temperature=1.0)])
@@ -22,8 +23,8 @@ def test_association_conditioning_is_readable():
     assert "rank=2" in repr(rank) and "dimension=2" in repr(rank)
 
 
-def test_singular_association_names_declared_sites():
-    document = copy.deepcopy(document_mapping(water_parameters()))
+def test_singular_association_names_declared_sites() -> None:
+    document = cast(dict[str, Any], copy.deepcopy(document_mapping(water_parameters())))
     document["topology"]["edges"][0]["energy_over_k"]["value"]["magnitude"] = 100000.0
     model = Pure(Parameters.from_mapping(document, components=["water"]))
     with pytest.raises(EosError, match="association Jacobian is singular") as caught:
@@ -31,16 +32,16 @@ def test_singular_association_names_declared_sites():
     assert "water/a" in str(caught.value) and "water/b" in str(caught.value)
 
 
-def test_nonassociating_conditioning_is_absent():
+def test_nonassociating_conditioning_is_absent() -> None:
     params = Parameters.from_packets(PACKETS, [("gross-2001-propane/3", ["propane"])])
     batch = Pure(params).pressure_actions(300.0, 1e5, phase="vapor",
         observables=[PropertyObservable.ResidualEnthalpy], directions=[PressureActionDirection(temperature=1.0)])
     assert batch.diagnostics.site_conditioning is None
 
 
-def test_asl_thermochemistry_interval_message(capfd):
+def test_asl_thermochemistry_interval_message(capfd: pytest.CaptureFixture[str]) -> None:
     from pathlib import Path
-    from pyomo.environ import ExternalFunction
+    from pyomo.environ import ExternalFunction  # type: ignore[import-untyped]
     from epcsaft import ThermochemistryPacket, _core
     from epcsaft.eos import property_asl_record
 
@@ -55,10 +56,10 @@ def test_asl_thermochemistry_interval_message(capfd):
     assert "20000" in message and ":1" in message and "site rank 0" not in message
 
 
-def test_density_structure_message_retains_context():
+def test_density_structure_message_retains_context() -> None:
     from epcsaft import DensityStructureError
 
-    document = copy.deepcopy(document_mapping(water_parameters()))
+    document = cast(dict[str, Any], copy.deepcopy(document_mapping(water_parameters())))
     coefficients = document["components"][0]["coefficients"]
     energy = next(item for item in coefficients if item["identity"] == "component/water/dispersion_energy_over_k")
     energy["value"]["magnitude"] = 100000.0
@@ -71,7 +72,7 @@ def test_density_structure_message_retains_context():
     assert "T=" in message and "P=" in message and "curvature order" in message
 
 
-def test_diagnostic_reprs_show_values():
+def test_diagnostic_reprs_show_values() -> None:
     from epcsaft import _core
     from epcsaft.equilibrium import SolvedStateObservable, SolvedStateObservableKind
 
