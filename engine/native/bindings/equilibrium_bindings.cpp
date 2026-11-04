@@ -24,6 +24,8 @@ namespace epcsaft::equilibrium {
 struct IpoptIterations final {
     std::vector<IpoptIterationRecord> records;
     std::vector<IpoptIterationRecord>* previous = nullptr;
+    IpoptIterations& enter() { records.clear(); previous = std::exchange(ipopt_iteration_log(), &records); return *this; }
+    bool exit(const nb::args&) { ipopt_iteration_log() = previous; return false; }
 };
 
 // A fit the start document cannot represent carries the refusal message in place of the document.
@@ -298,10 +300,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<IpoptIterationRecord>(module, "IpoptIterationRecord") EPCSAFT_READONLY(IpoptIterationRecord, run, iteration);
     nb::class_<IpoptIterations>(module, "IpoptIterations")
         .def(nb::init<>())
-        .def("__enter__", [](IpoptIterations& c) -> IpoptIterations& {
-            c.records.clear(); c.previous = std::exchange(ipopt_iteration_log(), &c.records); return c; }, nb::rv_policy::reference_internal)
-        .def("__exit__", [](IpoptIterations& c, nb::object, nb::object, nb::object) { ipopt_iteration_log() = c.previous; return false; },
-            nb::arg("exc_type").none(), nb::arg("exc_value").none(), nb::arg("traceback").none())
+        .def("__enter__", &IpoptIterations::enter, nb::rv_policy::reference_internal)
+        .def("__exit__", &IpoptIterations::exit)
         .def_ro("records", &IpoptIterations::records);
     nb::class_<IpoptPoint>(module, "IpoptPoint")
         EPCSAFT_READONLY(IpoptPoint, tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers,

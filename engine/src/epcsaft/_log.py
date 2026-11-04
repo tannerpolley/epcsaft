@@ -16,6 +16,8 @@ from . import _core
 log = logging.getLogger("epcsaft")
 log.addHandler(logging.NullHandler())
 
+_IPOPT = ("inf_pr", "inf_du", "mu", "step_norm", "regularization", "alpha_pr", "alpha_du")
+_IPOPT_LINE = "%s Ipopt run %d iteration %d (%s): objective=%.17g, %s, line_search_trials=%d"
 _SUMMARY = ("success", "status", "usable", "selected", "solver_status", "iterations", "evaluations", "final_cost")
 
 
@@ -29,24 +31,24 @@ def _summary(result: Any) -> str:
     return ", ".join(fields) + (f": {message.split('; ')[0]}" if message else "")
 
 
-def logged(name: str, call: Callable[[], Any]) -> Any:
-    """Run one public solve and log it; returns the native result unchanged."""
+def logged(solve: Callable[..., Any], *args: Any) -> Any:
+    """Run one public native solve and log it; returns the native result unchanged."""
     if not log.isEnabledFor(logging.INFO):
-        return call()
+        return solve(*args)
+    name = solve.__name__
     debug = log.isEnabledFor(logging.DEBUG)
     begun = time.perf_counter()
     with _core.IpoptIterations() if debug else nullcontext() as collected:
-        result = call()
+        result = solve(*args)
     seconds = time.perf_counter() - begun
     for index, item in enumerate(result if isinstance(result, list) else [result]):
         label = f"{name} start {index}" if isinstance(result, list) else name
         log.info("%s: %s; %.6g s", label, _summary(item), seconds)
-        for k, (cost, wall) in enumerate(zip(getattr(item, "iteration_costs", ()), getattr(item, "iteration_seconds", ()))):
-            log.debug("%s iteration %d: cost=%.17g, seconds=%.6g", label, k, cost, wall)
+        for k, cost in enumerate(getattr(item, "iteration_costs", ())):
+            log.debug("%s iteration %d: cost=%.17g, seconds=%.6g", label, k, cost, item.iteration_seconds[k])
     for record in collected.records if debug else ():
         i = record.iteration
-        log.debug("%s Ipopt run %d iteration %d (%s): objective=%.17g, inf_pr=%.6e, inf_du=%.6e, mu=%.6e, step_norm=%.6e, "
-                  "regularization=%.6e, alpha_pr=%.6e, alpha_du=%.6e, line_search_trials=%d", name, record.run, i.iteration,
-                  "restoration" if i.mode else "regular", i.objective, i.inf_pr, i.inf_du, i.mu, i.step_norm,
-                  i.regularization, i.alpha_pr, i.alpha_du, i.line_search_trials)
+        values = ", ".join(f"{field}={getattr(i, field):.6e}" for field in _IPOPT)
+        mode = "restoration" if i.mode else "regular"
+        log.debug(_IPOPT_LINE, name, record.run, i.iteration, mode, i.objective, values, i.line_search_trials)
     return result

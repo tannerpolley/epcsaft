@@ -1524,13 +1524,10 @@ std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem&
         if (status) { for (auto& c : out) c.status = status; return out; }
         for (const auto& r : solved_state_actions(neighbor_system, neighbor, request).results) values[side].push_back(r.value.value_or(NAN));
     }
-    if (exact.results.size() != out.size() || values[0].size() != out.size() || values[1].size() != out.size())
-        throw std::logic_error("solved-state difference: one result per observable");
-    for (std::size_t k = 0; k < out.size(); ++k) {
-        const double eps = std::numeric_limits<double>::epsilon();
+    const double eps = std::numeric_limits<double>::epsilon();  // one result per observable at each point
+    for (std::size_t k = 0; k < out.size(); ++k)
         out[k] = core::difference_check(out[k].label, exact.results[k].action.value_or(NAN), values[0][k], values[1][k],
             eps * std::abs(values[0][k]), eps * std::abs(values[1][k]), step, tau, kappa);
-    }
     return out;
 }
 

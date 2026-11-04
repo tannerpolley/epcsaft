@@ -980,7 +980,7 @@ def solve_equilibrium(
     (ALG-EQUILIBRIUM and ALG-STABILITY).
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
-    return logged("solve_equilibrium", lambda: _core.solve_equilibrium(model._model, native, start))
+    return logged(_core.solve_equilibrium, model._model, native, start)
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
@@ -1098,7 +1098,7 @@ def continue_equilibrium(
     request.start_result = start_result
     request.parameter_targets = () if parameter_targets is None else parameter_targets
     request.options = options
-    return logged("continue_equilibrium", lambda: _core.continue_equilibrium(model._model, request))
+    return logged(_core.continue_equilibrium, model._model, request)
 
 
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None,
@@ -1209,5 +1209,4 @@ def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_
     The native owner enforces shared work limits and retains exhausted-budget
     causes rather than silently retrying without a bound (ALG-EQUILIBRIUM).
     """
-    native = problem._native(model)
-    return logged("solve_equilibrium_starts", lambda: _core.solve_equilibrium_starts(model._model, native, list(starts), limits))
+    return logged(_core.solve_equilibrium_starts, model._model, problem._native(model), list(starts), limits)

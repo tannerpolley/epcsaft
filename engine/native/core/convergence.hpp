@@ -180,9 +180,10 @@ inline void admit_difference_parameters(double step, double tau, double kappa) {
 // allowance passes only a zero error (ratio 0, else +inf); any nonfinite operand is "nonfinite" with no ratio.
 inline DifferenceCheck difference_check(std::string label, double exact, double plus, double minus, double floor_plus,
                                         double floor_minus, double step, double tau, double kappa) {
-    DifferenceCheck c{std::move(label), "nonfinite", exact, (plus - minus) / (2.0 * step), step, (floor_plus + floor_minus) / (2.0 * step)};
-    if (!std::isfinite(exact) || !std::isfinite(plus) || !std::isfinite(minus) || !std::isfinite(c.difference) || !std::isfinite(c.roundoff))
-        return c;
+    // A finite difference implies finite plus and minus.
+    const double d = (plus - minus) / (2.0 * step), r = (floor_plus + floor_minus) / (2.0 * step);
+    DifferenceCheck c{std::move(label), "nonfinite", exact, d, step, r};
+    if (!(std::isfinite(exact) && std::isfinite(d) && std::isfinite(r))) return c;
     const double error = std::abs(c.difference - exact), allowance = tau * std::abs(exact) + kappa * c.roundoff;
     c.ratio = allowance > 0.0 ? error / allowance : error == 0.0 ? 0.0 : INFINITY;
     c.status = c.ratio <= 1.0 ? "passed" : "failed";
