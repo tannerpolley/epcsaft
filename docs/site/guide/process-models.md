@@ -95,12 +95,14 @@ endpoint diagnostics and warns if a sole root has no classified phase side.
 
 The initial VLE domain is neutral, inactive-parameter, positive-composition,
 steady molar-flow liquid/vapor equilibrium with classified local density roots.
-The strict equilibrium record refuses unclassified roots and resolved opposite
-branches. This is a declared domain restriction: gas–liquid equilibria with a
-supercritical component are excluded and refused, not solved. It is not a claim
-that such equilibria are physically impossible. Single-phase packages admit a
-sole unclassified root with an explicit endpoint warning. Roots classified on
-the opposite side are refused; no arbitrary density cutoff selects a phase.
+Each phase's own mixture density root must classify as its requested liquid or
+vapor side on its own (T, P, x) isotherm, or the strict equilibrium call is
+refused. This is mixture-root classification, not a pure-component critical
+test. A component above its own critical temperature is admitted when both
+phase roots classify, including methane at the retained 219.459 K near-dew
+point. Unclassified VLE roots and resolved opposite branches are refused.
+Single-phase packages admit a sole unclassified root with an explicit endpoint
+warning. No arbitrary density cutoff selects a phase.
 
 SmoothVLE evaluates fugacity equalities at a smoothed temperature between the
 mixture bubble and dew temperatures. Incipient-phase flow remains small rather

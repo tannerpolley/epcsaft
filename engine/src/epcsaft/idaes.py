@@ -167,9 +167,12 @@ def property_configuration(
 ) -> dict[str, Any]:
     """Declare a neutral GenericParameterBlock; starts and state bounds are caller inputs.
 
-    Phases are liquid, vapor, or both. VLE excludes unclassified roots and
-    gas–liquid equilibria with a supercritical component. Generic initialization
-    requiring pure saturation correlations is unavailable; supply state starts.
+    Phases are liquid, vapor, or both. Each VLE phase mixture density root must
+    classify as its requested liquid or vapor side on its own (T, P, x) isotherm,
+    or the call is refused. A component above its own critical temperature is
+    admitted when both mixture roots classify; no pure-component critical test
+    is applied. Generic initialization requiring pure saturation correlations
+    is unavailable; supply state starts.
     """
     if not phases or len(set(phases)) != len(phases) or set(phases) - {"liquid", "vapor"}:
         raise ValueError("phases must select liquid, vapor, or both once")
