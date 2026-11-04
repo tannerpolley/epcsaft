@@ -402,7 +402,7 @@ void trace_state_case(
             for (std::size_t i = 0; i < full.hessian.size(); ++i)
                 recording_support::compare("trace-state", "Helmholtz Hessian", "chart", event.values[i], full.hessian[i],
                     "{}", "Relationship", "explicit-Hessian", "diagnostic versus explicit evaluation",
-                    "scaled", 1e-10, 1e-10, std::abs(event.values[i] - full.hessian[i])
+                    "reference_or_one", 1e-10, 1e-10, std::abs(event.values[i] - full.hessian[i])
                         <= 1e-10 * std::max(1.0, std::abs(full.hessian[i])));
         }
         CHECK(hessian_seen == diagnostics);
