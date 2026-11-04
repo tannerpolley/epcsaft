@@ -4,11 +4,20 @@ from functools import cache
 import pytest
 
 from epcsaft import Mixture, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop
+from epcsaft._core import EquilibriumResult, StabilityReport
 from epcsaft.equilibrium import (
-    Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
-    compile_problem, jacobian_table, solve_equilibrium, solved_state_difference,
+    Amounts,
+    Phase,
+    Problem,
+    SolvedStateActionDirection,
+    SolvedStateObservable,
+    SolvedStateObservableKind,
+    bubble_point,
+    compile_problem,
+    jacobian_table,
+    solve_equilibrium,
+    solved_state_difference,
 )
-
 from tests.packets import PACKETS
 
 UNSUPPORTED_CLAIMS = ("stable phase", "does not exist", "exceeds", "no bubble point exists")
@@ -24,7 +33,7 @@ def flash(T: float, P: float) -> Problem:
                    feed=Amounts({"methane": 0.3, "ethane": 0.7}))
 
 
-def charged(report) -> tuple[float, float, float]:
+def charged(report: StabilityReport) -> tuple[float, ...]:
     """Driver plus native tangent-plane work the #987 trial search was charged."""
     work = report.work
     return tuple(work.get(driver, 0.0) + work.get(native, 0.0) for driver, native in (
@@ -32,7 +41,7 @@ def charged(report) -> tuple[float, float, float]:
         ("hessian_calls", "trial_tangent_plane_hessian_evaluations")))
 
 
-def work(result) -> tuple[int, int, int]:
+def work(result: EquilibriumResult) -> tuple[int, int, int]:
     return result.iterations, result.evaluations, result.hessian_calls
 
 
@@ -49,6 +58,7 @@ def test_single_phase_flash_verdict() -> None:
             "unresolved trials 0; not a global stability certificate: a split outside this finite trial set is not "
             "excluded; recovery not run") in result.message and "; recovery: " not in result.message
     report = result.recovery_stability
+    assert report is not None
     assert report.completed and len(report.trials) == 7
     assert all(t.evidence == "no_resolved_descent" and t.optimizer.success for t in report.trials)
     first = compile_problem(methane_ethane(), problem).solve()
@@ -61,9 +71,10 @@ def test_recoverable_flash_keeps_recovery() -> None:
     problem = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")], T=240.0, P=4535437.839536398,
                       feed=Amounts({"methane": 0.7, "ethane": 0.3}))
     result = solve_equilibrium(methane_ethane(), problem)
-    assert result.success and any(t.resolved_descent for t in result.recovery_stability.trials)
+    report = result.recovery_stability
+    assert report is not None and result.success and any(t.resolved_descent for t in report.trials)
     assert list(result.amounts) == [0.08578566729375602, 0.914214332706244]  # before #987, 71 / 144 / 92 work
-    assert work(result) == tuple(a + b for a, b in zip((71, 144, 92), charged(result.recovery_stability)))
+    assert work(result) == tuple(a + b for a, b in zip((71, 144, 92), charged(report)))
 
 
 def test_bubble_point_above_coalescence_verdict() -> None:
