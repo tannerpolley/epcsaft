@@ -1734,6 +1734,7 @@ std::vector<std::size_t> CompiledSystem::phase_offsets() const {
 // The layout owners of generic_point name each column: phase compositions, free amounts and volume slots (log packing,
 // or log molar density for an ideal-gas model), free solids, critical mode, loading, free T/P, then multipliers.
 std::vector<std::string> CompiledSystem::coordinate_labels() const {
+    core::Scope scope("coordinate_labels");
     const auto id = [](std::size_t component) { return "component " + std::to_string(component); };  // model order
     std::vector<std::string> labels(unknown_count());
     if (ideal) {
@@ -1762,6 +1763,7 @@ std::vector<std::string> CompiledSystem::coordinate_labels() const {
 
 std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std::vector<double>& point, double relative_step,
     double tau, double kappa) const {
+    core::Scope scope("jacobian_difference");
     core::admit_difference_parameters(relative_step, tau, kappa);
     if (point.size() != unknown_count()) throw std::invalid_argument("jacobian difference needs every solved-chart coordinate");
     const auto exact = jacobian(point);

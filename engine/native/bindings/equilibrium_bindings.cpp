@@ -24,9 +24,20 @@ namespace epcsaft::equilibrium {
 struct IpoptIterations final {
     std::vector<IpoptIterationRecord> records;
     std::vector<IpoptIterationRecord>* previous = nullptr;
-    IpoptIterations& enter() { records.clear(); previous = std::exchange(ipopt_iteration_log(), &records); return *this; }
-    bool exit(const nb::args&) { ipopt_iteration_log() = previous; return false; }
+    IpoptIterations& enter();
+    bool exit(const nb::args&);
 };
+IpoptIterations& IpoptIterations::enter() {
+    core::Scope scope("ipopt_iterations");
+    records.clear();
+    previous = std::exchange(ipopt_iteration_log(), &records);
+    return *this;
+}
+bool IpoptIterations::exit(const nb::args&) {
+    core::Scope scope("ipopt_iterations");
+    ipopt_iteration_log() = previous;
+    return false;
+}
 
 // A fit the start document cannot represent carries the refusal message in place of the document.
 static ParameterDocument record_document(const nb::object& model) {

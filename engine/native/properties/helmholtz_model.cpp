@@ -2010,6 +2010,7 @@ PropertyActionBatch HelmholtzModel::density_actions(
 std::vector<core::DifferenceCheck> HelmholtzModel::pressure_action_difference(double temperature, double pressure,
     const std::vector<double>& x, DensityBranch branch, const std::vector<PropertyObservable>& observables,
     const PressureActionDirection& d, double step, double tau, double kappa) const {
+    core::Scope scope("pressure_action_difference");
     core::admit_difference_parameters(step, tau, kappa);
     const auto exact = pressure_actions(temperature, pressure, x, branch, observables, {d});
     std::vector<core::DifferenceCheck> out;

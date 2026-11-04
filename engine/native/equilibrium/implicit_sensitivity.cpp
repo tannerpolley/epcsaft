@@ -1488,6 +1488,7 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFra
 // is a status of every record, never a value.
 std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables, const SolvedStateActionDirection& d, double step, double tau, double kappa) {
+    core::Scope scope("solved_state_difference");
     core::admit_difference_parameters(step, tau, kappa);
     const auto& p = compiled.problem;
     const auto zero = [](double value) { return value == 0.0; };

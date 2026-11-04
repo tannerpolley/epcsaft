@@ -52,6 +52,10 @@ DensityStructureError = _core.DensityStructureError
 property_asl_record = _core.property_asl_record
 
 
+# density_diagnostics scan defaults: tolerances, evaluation and wall-time budgets, adaptivity, finite upper, order.
+_DENSITY_SCAN = (1e-9, 1e-14, 100000, 60.0, True, 0.0, _core.DerivativeOrder.PressureSlope)
+
+
 class ThermochemistryPacket:
     """Load and prepare source NASA9 ideal-gas thermochemistry once.
 
@@ -488,9 +492,9 @@ class Mixture:
 
     def density_diagnostics(
         self, T: float, P: float, *, x: Sequence[float] | None = None, nodes: Sequence[float] | None = None,
-        density_tolerance: float = 1e-9, log_tolerance: float = 1e-14,
-        max_evaluations: int = 100000, max_seconds: float = 60.0, adaptive: bool = True,
-        finite_upper: float = 0.0, evaluation_order: _core.DerivativeOrder = _core.DerivativeOrder.PressureSlope,
+        density_tolerance: float | None = None, log_tolerance: float | None = None,
+        max_evaluations: int | None = None, max_seconds: float | None = None, adaptive: bool | None = None,
+        finite_upper: float | None = None, evaluation_order: _core.DerivativeOrder | None = None,
         finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         """Inspect pressure roots and mechanical turning points on a declared grid.
@@ -549,9 +553,10 @@ class Mixture:
         if nodes is None:
             span = math.log(0.999 * self.molar_density_upper_bound(T, x=x) / 1e-3)
             nodes = [math.exp(math.log(1e-3) + k / 512 * span) for k in range(513)]
+        given = (density_tolerance, log_tolerance, max_evaluations, max_seconds, adaptive, finite_upper, evaluation_order)
+        values: list[Any] = [d if g is None else g for g, d in zip(given, _DENSITY_SCAN)]
         return self._model.density_diagnostics(
-            T, P, self._composition(x), nodes, density_tolerance, log_tolerance, max_evaluations,
-            max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
+            T, P, self._composition(x), nodes, *values[:5], finite_anchor, *values[5:],
         )
 
     def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:

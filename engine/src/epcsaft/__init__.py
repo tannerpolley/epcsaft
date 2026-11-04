@@ -65,15 +65,15 @@ tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
 
 
-def trace(diagnostics: bool = False, ipopt_log: str = "", ipopt_print_level: int | None = None) -> _core.Capture:
+def trace(diagnostics: bool | None = None, ipopt_log: str | None = None, ipopt_print_level: int | None = None) -> _core.Capture:
     """Capture native spans and events, and optionally an Ipopt log, inside a ``with`` block.
 
     Parameters
     ----------
-    diagnostics : bool, default False
-        Record detailed observations as well as work spans.
-    ipopt_log : str, default ""
-        Absolute path of a file receiving every Ipopt run in the block.
+    diagnostics : bool, optional
+        Record detailed observations as well as work spans (default: no).
+    ipopt_log : str, optional
+        Absolute path of a file receiving every Ipopt run in the block (default: none).
     ipopt_print_level : int, optional
         Ipopt journal level of that file (J_MAIN is capped at 5). Default: 12 when the
         ``epcsaft`` logger is enabled for DEBUG, else 5 (one summary line per iteration).
@@ -90,7 +90,7 @@ def trace(diagnostics: bool = False, ipopt_log: str = "", ipopt_print_level: int
     """
     if ipopt_print_level is None:
         ipopt_print_level = 12 if _log.isEnabledFor(logging.DEBUG) else 5
-    return _core.Capture(diagnostics, ipopt_log, ipopt_print_level)
+    return _core.Capture(bool(diagnostics), ipopt_log or "", ipopt_print_level)
 
 
 def _repr(record: type, *fields: str) -> None:
