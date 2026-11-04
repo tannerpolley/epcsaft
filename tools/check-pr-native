@@ -122,6 +122,11 @@ def main():
         current = identity()
         prepared_file.write_text(json.dumps(current, indent=2))
         run('meson', 'install', '-C', str(build), '--no-rebuild', env=env)
+        # Meson installs the prepared image directly, without the wheel metadata normally supplied by pip.
+        version = json.loads((build / 'meson-info/intro-projectinfo.json').read_text())['version']
+        metadata = package.parent / f'epcsaft-{version}.dist-info'
+        metadata.mkdir(exist_ok=True)
+        (metadata / 'METADATA').write_text(f'Metadata-Version: 2.1\nName: epcsaft\nVersion: {version}\n')
         for library in [build / ('_core' + suffix), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']:
             (package / library.name).unlink(missing_ok=True)
             (package / library.name).symlink_to(library)
