@@ -67,6 +67,10 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
     """Generic-property EOS methods supplied by native pressure actions."""
 
     @staticmethod
+    def build_parameters(phase: Any) -> None:
+        """The immutable native record already contains the physical parameters."""
+
+    @staticmethod
     def common(b: Any, phase: Any) -> None:
         options = phase.config.equation_of_state_options
         if b.component("_pressure_property") is None:
@@ -169,7 +173,7 @@ def property_configuration(
     """
     if not phases or len(set(phases)) != len(phases) or set(phases) - {"liquid", "vapor"}:
         raise ValueError("phases must select liquid, vapor, or both once")
-    if any(model.parameters._native.charge_number):
+    if any(e.magnitude != 0 for e in model.parameters._document.entries if e.field == "charge_number"):
         raise ValueError("IDAES pressure properties qualify neutral components only")
     record = property_asl_record(model)
     equilibrium_record = property_asl_record(model, require_phase_identity=True) if len(phases) == 2 else record
@@ -216,7 +220,7 @@ def check_state(state: Any, phase: str) -> Any:
         x=[value(state.mole_frac_phase_comp[phase, j]) for j in state.component_list],
         phase=phase,
         observables=[],
-        directions=[PressureActionDirection()],
+        directions=[PressureActionDirection(composition=[0.0] * len(model.component_ids))],
     )
     if batch.molar_density is None:
         raise RuntimeError(batch.density_message)
