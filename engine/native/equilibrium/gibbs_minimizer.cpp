@@ -833,6 +833,27 @@ static bool mixture_precision_eligible(const CompiledSystem& c) {
         && !c.problem.source_reference && c.solids.empty() && c.model->parameters().component_count() > 1;
 }
 
+// ALG-TERMINATION: the leading sentence of a topology rejection states what check_topology observed, at the
+// declared intensives; it claims neither global stability nor a critical point (#976).
+static std::string topology_sentence(const CompiledSystem& compiled, const TopologyCheck& topology) {
+    const auto& p = compiled.problem;
+    const auto number = [](double value) { char text[32]; std::snprintf(text, sizeof text, "%.6g", value); return std::string(text); };
+    if (topology.event == TopologyEvent::PhaseDisappeared) return "phase " + p.phases[*topology.phase].name
+        + " vanished: its amount reached at most PHASE_DISAPPEARANCE_AMOUNT of the feed; the declared split was rejected";
+    const auto& a = p.phases[topology.pair->first];
+    const auto& b = p.phases[topology.pair->second];
+    const std::string pair = "declared phases " + a.name + " and " + b.name + " coalesced (phase distance "
+        + number(topology.distance) + " at most PHASE_COINCIDENCE_DISTANCE)";
+    if (p.phases.size() == 2 && a.kind != b.kind && a.is_zero_pinned() != b.is_zero_pinned() && p.temperature.free != p.pressure.free)
+        return std::string("no distinct ") + ((a.is_zero_pinned() ? a : b).kind == PhaseKind::Vapor ? "bubble" : "dew")
+            + " point was found at " + (p.pressure.free ? "T = " + number(p.temperature.value) + " K" : "P = " + number(p.pressure.value) + " Pa")
+            + ": " + pair + "; a critical limit near these conditions is one possible, untested explanation";
+    std::string at;
+    if (!p.temperature.free) at += " at T = " + number(p.temperature.value) + " K";
+    if (!p.pressure.free) at += (at.empty() ? " at P = " : ", P = ") + number(p.pressure.value) + " Pa";
+    return pair + at + "; the declared split was rejected; Discover() searches for the stable phases";
+}
+
 EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
     EquilibriumResult result, core::Scope& scope, const DriverLimits* limits) {
     const auto* model = compiled.model;
@@ -842,7 +863,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     std::vector<double> volumes;
     const double temperature = prepared.temperature;
     bool topology_ok = true;
-    std::string topology_failure;
+    std::string topology_failure, cause;
     // Preparation above admitted every composition with a positive total.
     const auto topology = check_topology(compiled, full);
     const auto& compositions = topology.compositions;
@@ -859,13 +880,14 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
             topology_ok = false;
-            topology_failure = "phase " + spec.name + " vanished; Michelsen deficit "
-                + std::to_string(deficit);
+            cause = "phase_disappeared";
+            topology_failure = "Michelsen deficit " + std::to_string(deficit);
         }
     }
     for (const double distance : topology.distances) scope.probe("phase_distance", distance);
     if (topology.event == TopologyEvent::PhasesCoalesced) {
         topology_ok = false;
+        cause = "phases_coalesced";
         topology_failure = "phases_coincide: phase distance between "
             + compiled.problem.phases[topology.pair->first].name + " and "
             + compiled.problem.phases[topology.pair->second].name + " is too small: "
@@ -884,6 +906,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     }
     if (!violations.empty()) {
         topology_ok = false;
+        cause = "solid_classification";
         topology_failure = "solid classification violated after one flip round: " + violations;
     } else if (!present.empty()) {
         const auto info = inspect_sensitivity(compiled, full);
@@ -891,6 +914,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         if (!info.nonsingular) {
             topology_ok = false;
             result.convergence.stop = core::Stop::singular;
+            cause = "present_solid_rank";
             topology_failure = "rank-deficient classified equations with present solids: " + present;
         }
     }
@@ -905,16 +929,26 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         result.last_rank = core::conditioning(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge", 0, "endpoint");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
-        if (numerical_rank != n) { topology_ok = false; topology_failure = "rank-deficient log-charge equations"; }
+        if (numerical_rank != n) { topology_ok = false; cause = "log_charge_rank"; topology_failure = "rank-deficient log-charge equations"; }
     }
     bool accepted = !expired() && result.success && topology_ok;
     if (accepted) {
         topology_failure = local_phase_instability(compiled, prepared);
         topology_ok = accepted = topology_failure.empty();
+        cause = "local_phase_instability";
     }
     if (!accepted) {
         result.success = false;
-        if (!topology_ok) result.message = topology_failure;
+        if (!topology_ok) {
+            // One Engine verdict: a rejected point that classified as converged stops as infeasible; other stops stand.
+            auto& stop = result.convergence.stop;
+            if (stop == core::Stop::converged || stop == core::Stop::converged_to_floor) {
+                stop = core::Stop::infeasible;
+                result.convergence.cause = cause;
+            }
+            result.message = cause == "phases_coalesced" || cause == "phase_disappeared"
+                ? topology_sentence(compiled, topology) + "; " + topology_failure : topology_failure;
+        }
         clear_state(result);
         return result;
     }
