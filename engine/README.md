@@ -191,12 +191,6 @@ dispatched by hand, and deploys the built site to GitHub Pages. In any other
 repository it runs only when dispatched by hand: it builds without deploying,
 and uploads the logs if the build fails.
 
-Run a canonical end-to-end workflow with:
-
-```bash
-bash tools/run-slice.sh khudaida
-```
-
 ## Native development
 
 `tools/native-run <program> [case|--list]` rebuilds one native program in the

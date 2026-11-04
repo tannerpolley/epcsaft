@@ -167,7 +167,7 @@ fi
 
 check_tools
 
-grep -q '^analyses/' <<<"$paths" && bash -n tools/run-slice.sh
+grep -q '^analyses/' <<<"$paths" && bash -n analyses/2026-khudaida-idaes-settler/scripts/run.sh
 
 if grep -q '^data/' <<<"$paths"; then
     timed packets .venv/bin/python data/tools/validate_packets.py
