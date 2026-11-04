@@ -20,8 +20,10 @@ log.addHandler(logging.NullHandler())
 _IPOPT = ("inf_pr", "inf_du", "mu", "step_norm", "regularization", "alpha_pr", "alpha_du")
 _IPOPT_LINE = "%s Ipopt run %d iteration %d (%s): objective=%.17g, %s, line_search_trials=%d"
 # Native result fields, read when present: equilibrium, multistart, continuation and fit results.
-_SUMMARY = ("success", "status", "usable", "selected", "budget_exhausted", "solver_status", "iterations", "evaluations",
-            "residual_evaluations", "jacobian_evaluations", "accepted_steps", "final_cost", "cause_stop")
+_SUMMARY = (
+    "success status usable selected budget_exhausted solver_status iterations evaluations residual_evaluations "
+    "jacobian_evaluations accepted_steps final_cost cause_stop"
+).split()
 
 
 def _summary(result: Any) -> str:
