@@ -52,9 +52,6 @@ DensityStructureError = _core.DensityStructureError
 property_asl_record = _core.property_asl_record
 
 
-# density_diagnostics scan defaults: tolerances, evaluation and wall-time budgets, adaptivity, finite upper, order.
-_DENSITY_SCAN = (1e-9, 1e-14, 100000, 60.0, True, 0.0, _core.DerivativeOrder.PressureSlope)
-
 
 class ThermochemistryPacket:
     """Load and prepare source NASA9 ideal-gas thermochemistry once.
@@ -553,10 +550,12 @@ class Mixture:
         if nodes is None:
             span = math.log(0.999 * self.molar_density_upper_bound(T, x=x) / 1e-3)
             nodes = [math.exp(math.log(1e-3) + k / 512 * span) for k in range(513)]
-        given = (density_tolerance, log_tolerance, max_evaluations, max_seconds, adaptive, finite_upper, evaluation_order)
-        values: list[Any] = [d if g is None else g for g, d in zip(given, _DENSITY_SCAN)]
+        order = _core.DerivativeOrder.PressureSlope if evaluation_order is None else evaluation_order
         return self._model.density_diagnostics(
-            T, P, self._composition(x), nodes, *values[:5], finite_anchor, *values[5:],
+            T, P, self._composition(x), nodes, 1e-9 if density_tolerance is None else density_tolerance,
+            1e-14 if log_tolerance is None else log_tolerance, 100000 if max_evaluations is None else max_evaluations,
+            60.0 if max_seconds is None else max_seconds, True if adaptive is None else adaptive, finite_anchor,
+            0.0 if finite_upper is None else finite_upper, order,
         )
 
     def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:

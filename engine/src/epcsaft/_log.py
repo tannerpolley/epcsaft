@@ -9,10 +9,11 @@ import logging
 import time
 from collections.abc import Callable
 from contextlib import nullcontext
-from typing import Any
+from typing import Any, TypeVar
 
 from . import _core
 
+R = TypeVar("R")
 log = logging.getLogger("epcsaft")
 log.addHandler(logging.NullHandler())
 
@@ -31,7 +32,7 @@ def _summary(result: Any) -> str:
     return ", ".join(fields) + (f": {message.split('; ')[0]}" if message else "")
 
 
-def logged(solve: Callable[..., Any], *args: Any) -> Any:
+def logged(solve: Callable[..., R], *args: Any) -> R:
     """Run one public native solve and log it; returns the native result unchanged."""
     if not log.isEnabledFor(logging.INFO):
         return solve(*args)
@@ -46,7 +47,7 @@ def logged(solve: Callable[..., Any], *args: Any) -> Any:
         log.info("%s: %s; %.6g s", label, _summary(item), seconds)
         for k, cost in enumerate(getattr(item, "iteration_costs", ())):
             log.debug("%s iteration %d: cost=%.17g, seconds=%.6g", label, k, cost, item.iteration_seconds[k])
-    for record in collected.records if debug else ():
+    for record in collected.records if collected else ():
         i = record.iteration
         values = ", ".join(f"{field}={getattr(i, field):.6e}" for field in _IPOPT)
         mode = "restoration" if i.mode else "regular"

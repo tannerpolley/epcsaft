@@ -3,7 +3,7 @@ from functools import cache
 
 import pytest
 
-from epcsaft import Mixture, Parameters, PressureActionDirection, PropertyObservable, Pure
+from epcsaft import Mixture, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop
 from epcsaft.equilibrium import (
     Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
     compile_problem, jacobian_table, solve_equilibrium, solved_state_difference,
@@ -28,7 +28,7 @@ def test_single_phase_flash_verdict() -> None:
     """F1: the 1 bar vapor feed's declared L+V split coalesces; the verdict says so and claims nothing more."""
     result = solve_equilibrium(methane_ethane(), flash(250.0, 1e5))
     assert not result.success and result.solver_status == "SUCCESS"
-    assert result.convergence.stop.name == "infeasible" and result.convergence.cause == "phases_coalesced"
+    assert result.convergence.stop == Stop.infeasible and result.convergence.cause == "phases_coalesced"
     assert result.message.startswith("declared phases L and V coalesced at T = 250 K, P = 100000 Pa (phase distance ")
     assert not any(claim in result.message for claim in UNSUPPORTED_CLAIMS)
 
@@ -37,7 +37,7 @@ def test_bubble_point_above_coalescence_verdict() -> None:
     """F3: a coalesced bubble point names what was observed and leaves the critical limit untested."""
     problem = bubble_point(liquid=Phase("L", kind="liquid"), T=250.0, feed=Amounts({"methane": 0.9, "ethane": 0.1}))
     result = solve_equilibrium(methane_ethane(), problem)
-    assert not result.success and result.convergence.stop.name == "infeasible"
+    assert not result.success and result.convergence.stop == Stop.infeasible
     assert result.message.startswith("no distinct bubble point was found at T = 250 K: declared phases L and V coalesced")
     assert "one possible, untested explanation" in result.message
     assert not any(claim in result.message for claim in UNSUPPORTED_CLAIMS)

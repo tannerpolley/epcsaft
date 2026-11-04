@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 
 from .. import _core
 from .._log import logged
@@ -1020,7 +1020,7 @@ solved_state_actions = _core.solved_state_actions
 solved_state_difference = _core.solved_state_difference
 
 
-def jacobian_table(compiled: _core.CompiledSystem, point: Sequence[float]) -> dict[str, list]:
+def jacobian_table(compiled: _core.CompiledSystem, point: Sequence[float]) -> dict[str, list[Any]]:
     """Label ``compiled.jacobian(point)`` by its defining rows and solved-chart coordinates.
 
     Parameters
