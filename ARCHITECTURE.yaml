@@ -25,7 +25,7 @@ plan:
 # Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
 # the counting and the band rule.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-code_budgets: {"core": 1620, "contributions": 1307, "properties": 6604, "equilibrium": 13442, "regression": 4532, "surface": 815, "bindings": 2591, "python": 2640, "total": 33551}
+code_budgets: {"core": 1620, "contributions": 1307, "properties": 6687, "equilibrium": 13442, "regression": 4532, "surface": 815, "bindings": 2591, "python": 2640, "total": 33551}
 
 property_categories: [Ideal, Residual, Total]
 

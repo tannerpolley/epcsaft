@@ -16,7 +16,6 @@
 #include <utility>
 #include <type_traits>
 #include <vector>
-#include <variant>
 
 namespace epcsaft::core {
 
@@ -94,22 +93,28 @@ inline void retain_rank(std::shared_ptr<NumericalRank>& target, const NumericalR
 class AssociationObservations final {
 public:
     static EPC_API AssociationObservations*& current() noexcept;
-    template<class Destination> explicit AssociationObservations(Destination& target)
-        : destination_(&target), previous_(current()) { current() = this; }
+    explicit AssociationObservations(bool inherit = false)
+        : previous_(current()), destination_(inherit && previous_ ? previous_->destination_ : &records_),
+          phase_(inherit && previous_ ? previous_->phase_ : std::nullopt) { current() = this; }
     explicit AssociationObservations(std::size_t phase)
-        : destination_(current() ? current()->destination_ : Destination{}), previous_(current()), phase_(phase) { if (previous_) current() = this; }
+        : previous_(current()), destination_(previous_ ? previous_->destination_ : &records_), phase_(phase) { if (previous_) current() = this; }
     ~AssociationObservations() { current() = previous_; }
     AssociationObservations(const AssociationObservations&) = delete;
-    static void publish(NumericalRank rank) {
-        const auto* owner = current();
+    static void publish(NumericalRank rank, AssociationObservations* owner = current()) {
+        if (!owner) return;
         if (rank.first_conditioning_warning && owner->phase_)
             (rank.first_conditioning_warning = std::make_shared<ConditioningObservation>(*rank.first_conditioning_warning))->phase = owner->phase_;
-        std::visit([&](auto* target) { if (target) retain_rank(*target, rank); }, owner->destination_);
+        retain_rank(*owner->destination_, rank);
     }
+    template<class Destination> void merge(Destination& target) const {
+        for (const auto& rank : records_) retain_rank(target, rank);
+    }
+    template<class Destination> void drain(Destination& target) { merge(target); records_.clear(); }
+    void forward() const { for (const auto& rank : records_) publish(rank, previous_); }
 private:
-    using Destination = std::variant<std::vector<NumericalRank>*, std::shared_ptr<NumericalRank>*>;
-    Destination destination_;
+    std::vector<NumericalRank> records_;
     AssociationObservations* const previous_;
+    std::vector<NumericalRank>* destination_;
     std::optional<std::size_t> phase_;
 };
 

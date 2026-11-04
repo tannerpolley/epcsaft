@@ -92,6 +92,15 @@ Budget changes must not silently change scientific scope.
 Past ceiling changes and their allowances are recorded in the owning issue
 bodies and in `git log -p -- ARCHITECTURE.yaml`.
 
+Issue #969 retains association conditioning observations across publication,
+selected-endpoint refinement and reference central reuse. The approved allowance
+is 180 gross / +60 net formatted runtime lines (Core 50/+10, Properties 65/+28,
+Equilibrium 65/+22), with at most 220 raw additions. Against the refreshed
+base `053b0ddff`, the implementation uses Core 19/+6, Properties 51/+24 and
+Equilibrium 57/+21: 127 gross / +51 net. Properties requires its ceiling
+to be raised to the measured count plus its rounded-up one-percent band;
+`ARCHITECTURE.yaml` owns that ceiling. The other ceilings remain within band.
+
 ## Duplication constraints
 
 One common Helmholtz definition supplies properties and their derivatives.
