@@ -97,6 +97,11 @@ Bundled source and coefficient distributions
 
 Retained data
 
+The repository retains the CC BY-NC 4.0 items below. Public source archives
+omit them, together with
+analyses/2026-neutral-solvent-densities/inputs/esper-parameters.json, an
+excerpt of the Esper packet.
+
 * analyses/reproduction/2025-figiel/inputs/source/
   figiel-2025-regression-target-ledger.yaml and its SI-derived digitizations:
   CC BY-NC 4.0, https://creativecommons.org/licenses/by-nc/4.0/.

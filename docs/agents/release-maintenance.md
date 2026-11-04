@@ -6,7 +6,10 @@ a private repository. Public source releases do not use that tool.
 Maintainers prepare a local snapshot with `python3 tools/release-snapshot` after
 committing the candidate. It writes a new tree and a JSON manifest under
 `build/release/`, excludes agent configuration, the manuscript (`docs/scientific/latex/`), ignored files and `build/`, and replaces files larger
-than 50 MiB with SHA-256 notes. The manifest records the HSL and journal-PDF
+than 50 MiB with SHA-256 notes. It also excludes every packet whose own
+`packet.toml` `license_or_use_basis` is CC BY-NC, and the CC BY-NC analysis
+inputs named in the tool, and lists both in the manifest; a packet without a
+readable basis stops the snapshot. The manifest records the HSL and journal-PDF
 path checks and personal-path counts. Complete the secret scan before any
 publication; snapshot generation does not publish or tag a release.
 

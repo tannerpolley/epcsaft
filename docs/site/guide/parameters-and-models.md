@@ -93,18 +93,41 @@ packets = Path(epcsaft.__file__).resolve().parent / "data" / "packets"
 hexane = epcsaft.Parameters.from_packets(packets, [("feos-gross-sadowski-2001/1", ["hexane"])])
 ```
 
-The public source archive for the installed version also contains `data/packets`,
-including the Esper 2023 pure-component and Rehner 2023 binary parameter sets.
+The public source archive for the installed version also contains `data/packets`.
 Download and extract the matching source archive from the [project releases](https://github.com/tannerpolley/epcsaft/releases),
 then pass its `data/packets` directory to `Parameters.from_packets`:
 
 ```python
 source_packets = Path("path/to/extracted/source/data/packets")
-xenon = epcsaft.Parameters.from_packets(source_packets, [("feos-esper-2023/1", ["xenon"])])
+methane = epcsaft.Parameters.from_packets(source_packets, [("gross-sadowski-2001/3", ["methane"])])
 ```
 Each packet's `packet.toml` and any
-`parameters/LICENSE-NOTICE.md` state its use terms; follow those terms. The
-Esper and Rehner packets carry noncommercial terms. Selection and mathematical
+`parameters/LICENSE-NOTICE.md` state its use terms; follow those terms.
+
+The source archive omits the Esper 2023 pure-component (`feos-esper-2023/1`) and
+Rehner 2023 binary (`feos-rehner-2023/1`) packets because their use basis is
+CC BY-NC 4.0, which permits noncommercial use only. Rebuild them from their
+original FeOs distribution. Download `gross2001.json`, `gross2002.json`,
+`esper2023.json` and `rehner2023_binary.json` from
+[feos-org/feos `parameters/pcsaft` at commit `af84e3f9`](https://github.com/feos-org/feos/tree/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft)
+into one directory, then run the importer from the extracted source root:
+
+```bash
+python3 data/tools/import_feos.py path/to/feos-json
+```
+
+The importer checks each file's SHA-256 and writes the four `feos-*/1` packets
+under `data/packets`. Cite the parameter sources:
+
+- Esper, T.; Bauer, G.; Rehner, P.; Gross, J. PCP-SAFT Parameters of Pure
+  Substances Using Large Experimental Databases. *Ind. Eng. Chem. Res.* **2023**,
+  DOI [10.1021/acs.iecr.3c02255](https://doi.org/10.1021/acs.iecr.3c02255).
+- Rehner, P.; Bardow, A.; Gross, J. Modeling Mixtures with PCP-SAFT: Insights
+  from Large-Scale Parametrization and Group-Contribution Method for Binary
+  Interaction Parameters. *Int. J. Thermophys.* **2023**, DOI
+  [10.1007/s10765-023-03290-3](https://doi.org/10.1007/s10765-023-03290-3).
+
+Selection and mathematical
 admission do not establish a fit range or validate an extrapolation.
 
 The polar model may select a quadrupole–quadrupole contribution. Only one
