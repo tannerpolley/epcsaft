@@ -1145,8 +1145,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
         Eigen::MatrixXd partials(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(width));
         if (width <= sites_count) {
+            std::vector<double> direction(input_count, 0.0);
             for (std::size_t local = 0; local < width; ++local) {
-                std::vector<double> direction(input_count, 0.0);
+                std::fill(direction.begin(), direction.end(), 0.0);
                 direction[coordinates[local]] = 1.0;
                 const auto first = tape_->function.Forward(1, direction);
                 ++counters_.forward;
@@ -1154,8 +1155,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                     partials(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(local)) = first[1 + site];
             }
         } else {
+            std::vector<double> site_weight(output_count, 0.0);
             for (std::size_t site = 0; site < sites_count; ++site) {
-                std::vector<double> site_weight(output_count, 0.0);
+                std::fill(site_weight.begin(), site_weight.end(), 0.0);
                 site_weight[1 + site] = 1.0;
                 const auto partial = tape_->function.Reverse(1, site_weight);
                 ++counters_.reverse;
@@ -1180,10 +1182,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     }
     result.hessian.assign(point_size * point_size, 0.0);
     if (order != DerivativeOrder::PressureSlope) ++counters_.hessian_calls;
+    std::vector<double> direction(input_count, 0.0);
     for (std::size_t offset = 0; offset < width; ++offset) {
         const std::size_t column = coordinates[offset];
         if (order == DerivativeOrder::StateHessian && column >= 2 && column < 2 + components) continue;
-        std::vector<double> direction(input_count, 0.0);
+        std::fill(direction.begin(), direction.end(), 0.0);
         direction[column] = 1.0;
         for (std::size_t site = 0; site < sites_count; ++site)
             direction[point_size + site] =
