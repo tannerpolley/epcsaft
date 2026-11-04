@@ -10,6 +10,7 @@ Parameter names and array order come from ``Parameters``.
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
@@ -449,11 +450,47 @@ class Mixture:
             anchor.molar_density if anchor else None,
         )
 
+    def pressure_action_difference(
+        self, T: float, P: float, *, x: Sequence[float] | None = None, phase: str,
+        observables: Sequence[PropertyObservable], direction: PressureActionDirection,
+        step: float, tau: float, kappa: float,
+    ) -> list[_core.DifferenceCheck]:
+        """Compare first-order ``pressure_actions`` with native central differences.
+
+        Parameters
+        ----------
+        T, P, x, phase, observables
+            As for ``pressure_actions``.
+        direction : PressureActionDirection
+            One direction: temperature in K, pressure in Pa and a composition
+            increment whose entries sum to zero; nonzero parameter entries are
+            reported as ``unsupported_direction``.
+        step : float
+            Positive scalar multiplying ``direction``.
+        tau, kappa : float
+            Positive relative and roundoff-multiple allowances.
+
+        Returns
+        -------
+        checks : list of DifferenceCheck
+            One record per result: exact action A, D = (f(+h) - f(-h))/(2h),
+            roundoff r, ``ratio`` = |D - A| / (tau |A| + kappa r) and ``status``
+            ``passed``, ``failed``, ``nonfinite``, ``unsupported_direction``,
+            ``neighbor_unavailable`` or ``branch_changed``.
+
+        Notes
+        -----
+        Verification only (ALG-ACTIONS): neighbors are evaluated natively on the
+        central root through its density anchor.
+        """
+        return self._model.pressure_action_difference(
+            T, P, self._composition(x), _branch(phase), observables, direction, step, tau, kappa)
+
     def density_diagnostics(
-        self, T: float, P: float, *, x: Sequence[float] | None = None, nodes: Sequence[float],
-        density_tolerance: float, log_tolerance: float,
-        max_evaluations: int, max_seconds: float, adaptive: bool,
-        finite_upper: float, evaluation_order: _core.DerivativeOrder,
+        self, T: float, P: float, *, x: Sequence[float] | None = None, nodes: Sequence[float] | None = None,
+        density_tolerance: float = 1e-9, log_tolerance: float = 1e-14,
+        max_evaluations: int = 100000, max_seconds: float = 60.0, adaptive: bool = True,
+        finite_upper: float = 0.0, evaluation_order: _core.DerivativeOrder = _core.DerivativeOrder.PressureSlope,
         finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         """Inspect pressure roots and mechanical turning points on a declared grid.
@@ -466,23 +503,24 @@ class Mixture:
             Target pressure in Pa.
         x : sequence of float, optional
             Dimensionless mole fractions in component order; required for a mixture.
-        nodes : sequence of float
+        nodes : sequence of float, optional
             At least two increasing positive densities in mol/m³, below the
-            geometric density cap.
-        density_tolerance : float
+            geometric density cap. Default: 513 geometric densities from
+            1e-3 mol/m³ to 0.999 times ``molar_density_upper_bound``.
+        density_tolerance : float, default 1e-9
             Positive absolute density-bracket width in mol/m³.
-        log_tolerance : float
+        log_tolerance : float, default 1e-14
             Positive dimensionless bracket width in natural log density ratio.
-        max_evaluations : int
+        max_evaluations : int, default 100000
             Positive maximum number of native pressure evaluations.
-        max_seconds : float
+        max_seconds : float, default 60.0
             Positive wall-time budget in s.
-        adaptive : bool
+        adaptive : bool, default True
             Enable native adaptive grid investigation.
-        finite_upper : float
+        finite_upper : float, default 0.0
             Finite-domain upper density in mol/m³ when an anchor is supplied;
             otherwise unused.
-        evaluation_order : DerivativeOrder
+        evaluation_order : DerivativeOrder, default PressureSlope
             Gradient, PressureSlope or Hessian for finite-domain evaluation.
         finite_anchor : float, optional
             Positive finite-domain anchor density in mol/m³, below the geometric cap
@@ -508,6 +546,9 @@ class Mixture:
         Partial results retain budget/domain causes; a finite scan is not a proof
         that no additional root exists (ALG-DENSITY).
         """
+        if nodes is None:
+            span = math.log(0.999 * self.molar_density_upper_bound(T, x=x) / 1e-3)
+            nodes = [math.exp(math.log(1e-3) + k / 512 * span) for k in range(513)]
         return self._model.density_diagnostics(
             T, P, self._composition(x), nodes, density_tolerance, log_tolerance, max_evaluations,
             max_seconds, adaptive, finite_anchor, finite_upper, evaluation_order,
