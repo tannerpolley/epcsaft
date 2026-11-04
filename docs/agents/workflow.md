@@ -23,7 +23,9 @@ unresolved scientific choice, a new solver, derivative or method design, a
 hard-ceiling excess or a scope change. It never loosens a tolerance or adds
 per-case epsilons, application selectors or outer retries; never pushes, opens
 pull requests, merges or edits issue bodies or labels (comments are fine); and
-keeps evidence under `build/` or the analysis leaf, never `/tmp`. Current
+keeps evidence under `build/` or the analysis leaf, never `/tmp`. A promoted
+study's producer source, unique inputs and run command live in its analysis
+leaf; `build/` holds scratch output and logs only. Current
 key-solve work counts are in `build/wheels/main-current/README` of the main
 checkout.
 

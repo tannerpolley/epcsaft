@@ -1556,6 +1556,7 @@ void check_ideal_gas() {
     const auto c = compile_problem(model, problem);
     auto q = c.generic_point();
     const auto layout = c.prepare(q).shape.front();
+    CHECK(c.coordinate_labels().size() == c.unknown_count() && c.coordinate_labels()[layout.volume] == "ln rho[V] / (mol/m3)");
     q[layout.x[0]] = std::log(0.2); q[layout.x[1]] = std::log(0.6);
     CHECK(layout.amount.has_value());
     q[*layout.amount] = 2;

@@ -167,6 +167,29 @@ inline std::string describe(const Convergence& record) {
     return result;
 }
 
+// ALG-ACTIONS verification only: an exact derivative A against D = (f+ - f-)/(2h) of its value (#976).
+struct DifferenceCheck final {
+    std::string label, status = "nonfinite", cause;  // cause: why a neighbor was unavailable
+    double exact = NAN, difference = NAN, step = NAN, roundoff = NAN, ratio = NAN;
+};
+inline void admit_difference_parameters(double step, double tau, double kappa) {
+    if (!(std::isfinite(step) && step > 0.0 && std::isfinite(tau) && tau > 0.0 && std::isfinite(kappa) && kappa > 0.0))
+        throw std::invalid_argument("difference step, tau and kappa must be finite and positive");
+}
+// Roundoff r = (e+ + e-)/(2h) from each value's evaluation floor e. Passes when |D - A| <= tau |A| + kappa r; a zero
+// allowance passes only a zero error (ratio 0, else +inf); any nonfinite operand is "nonfinite" with no ratio.
+inline DifferenceCheck difference_check(std::string label, double exact, double plus, double minus, double floor_plus,
+                                        double floor_minus, double step, double tau, double kappa) {
+    // A finite difference implies finite plus and minus.
+    const double d = (plus - minus) / (2.0 * step), r = (floor_plus + floor_minus) / (2.0 * step);
+    DifferenceCheck c{std::move(label), "nonfinite", {}, exact, d, step, r};
+    if (!(std::isfinite(exact) && std::isfinite(d) && std::isfinite(r))) return c;
+    const double error = std::abs(c.difference - exact), allowance = tau * std::abs(exact) + kappa * c.roundoff;
+    c.ratio = allowance > 0.0 ? error / allowance : error == 0.0 ? 0.0 : INFINITY;
+    c.status = c.ratio <= 1.0 ? "passed" : "failed";
+    return c;
+}
+
 class EPC_EXCEPTION ConvergenceFailure : public std::runtime_error {
 public:
     explicit ConvergenceFailure(const Convergence& record)

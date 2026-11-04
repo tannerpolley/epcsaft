@@ -154,3 +154,12 @@ feed-scale optimization. The notebook uses one start with fixed T/P and
 checks component/charge closure, derivative transport and independent local
 optimality quantities. The Engine callback's phase amounts are mapped onto
 the declared mol/s feed basis by the process equations.
+
+## Short IDAES VLE flowsheet
+
+The {download}`standard IDAES Flash script <idaes-vle-flash.py>` separates
+process declaration from the longer numerical verification notebooks.
+Run it from the checkout root after the
+[process-model setup](../guide/process-models.md#library-and-external-solver-setup).
+It prints the neutral binary phase split and native comparisons; numerical
+assertions remain in the separate qualification script.

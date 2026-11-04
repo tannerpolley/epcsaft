@@ -1,4 +1,56 @@
-// Included once, by request_compile.cpp in namespace epcsaft::equilibrium: CompiledSystem row values, uncertainty, Jacobians and Hessians.
+// Included once, by request_compile.cpp in namespace epcsaft::equilibrium: CompiledSystem coordinate labels, row values, uncertainty, Jacobians and Hessians.
+// The layout owners of generic_point name each column: phase compositions, free amounts and volume slots (log packing,
+// or log molar density for an ideal-gas model), free solids, critical mode, loading, free T/P, then multipliers.
+std::vector<std::string> CompiledSystem::coordinate_labels() const {
+    core::Scope scope("coordinate_labels");
+    const auto id = [](std::size_t component) { return "component " + std::to_string(component); };  // model order
+    std::vector<std::string> labels(unknown_count());
+    if (ideal) {
+        for (std::size_t j = 0; j < primal_size; ++j) labels[j] = "ln(n[" + id(problem.phases[0].support[j]) + "]/N_feed)";
+        return labels;
+    }
+    const auto shape = layouts(*this);
+    for (std::size_t p = 0; p < shape.size(); ++p) {
+        const auto& name = problem.phases[p].name;
+        for (std::size_t i = 0; i < shape[p].x.size(); ++i)
+            labels[shape[p].x[i]] = "ln x[" + name + "," + id(problem.phases[p].support[i]) + "]";
+        if (shape[p].amount) labels[*shape[p].amount] = "n[" + name + "] / mol";
+        labels[shape[p].volume] = model->parameters().ideal_gas ? "ln rho[" + name + "] / (mol/m3)" : "ln eta[" + name + "]";
+    }
+    for (std::size_t s = 0; s < solids.size(); ++s)
+        if (solids[s].column) labels[*solids[s].column] = "n_solid[" + problem.solids[s].name + "] / mol";
+    for (std::size_t k = 0; k < mode_count; ++k) labels[mode_offset() + k] = "u[" + id(k) + "]";
+    if (problem.loading) labels[loading_column()] = "loading";
+    std::size_t offset = primal_size - free_intensive_count;
+    if (problem.temperature.free) labels[offset++] = "T / K";
+    if (problem.pressure.free) labels[offset++] = "P / Pa";
+    for (std::size_t k = 0; k < rank; ++k) labels[primal_size + k] = "lambda[moiety " + std::to_string(k) + "]";
+    for (std::size_t r = 0; r < charge_row_count; ++r) labels[primal_size + rank + r] = "phi[charge row " + std::to_string(r) + "]";
+    return labels;
+}
+
+std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std::vector<double>& point, double relative_step,
+    double tau, double kappa) const {
+    core::Scope scope("jacobian_difference");
+    core::admit_difference_parameters(relative_step, tau, kappa);
+    if (point.size() != unknown_count()) throw std::invalid_argument("jacobian difference needs every solved-chart coordinate");
+    const auto exact = jacobian(point);
+    const auto labels = coordinate_labels();
+    const std::size_t n = point.size();
+    std::vector<core::DifferenceCheck> out;
+    for (std::size_t j = 0; j < n; ++j) {
+        auto plus = point, minus = point;
+        plus[j] += relative_step * std::max(1.0, std::abs(point[j]));
+        minus[j] -= relative_step * std::max(1.0, std::abs(point[j]));
+        const auto up = evaluate(plus), down = evaluate(minus);
+        for (std::size_t i = 0; i < rows.size(); ++i)
+            out.push_back(core::difference_check(std::string(row_kind_name(rows[i].kind)) + "[" + std::to_string(rows[i].phase) + ","
+                + std::to_string(rows[i].index) + "] / " + labels[j], exact[i * n + j], up.values[i], down.values[i], up.floor, down.floor,
+                0.5 * (plus[j] - minus[j]), tau, kappa));
+    }
+    return out;
+}
+
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
     std::optional<core::Convergence>* first) const { return prepare_values(point, state_only, first); }
 

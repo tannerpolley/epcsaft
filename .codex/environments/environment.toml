@@ -22,9 +22,3 @@ name = "Check all"
 icon = "test"
 command = "bash tools/check-all.sh"
 platform = "linux"
-
-[[actions]]
-name = "Khudaida slice"
-icon = "test"
-command = "bash tools/run-slice.sh khudaida"
-platform = "linux"

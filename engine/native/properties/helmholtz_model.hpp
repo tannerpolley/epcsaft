@@ -151,6 +151,7 @@ struct PropertyActionDiagnostics final {
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
     std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
+    DensityBranch returned_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<core::Convergence> first_numerical_failure;
     std::shared_ptr<core::NumericalRank> site_conditioning;
@@ -442,6 +443,11 @@ public:
         const std::vector<PressureActionDirection>&,
         std::optional<double> = std::nullopt
     ) const;
+    // Each first-order pressure_actions result along `direction` against central differences of its value at +-step
+    // on the anchored central root (verification only). Supported: T, P and a zero-sum composition direction.
+    EPC_API std::vector<core::DifferenceCheck> pressure_action_difference(double temperature, double pressure,
+        const std::vector<double>& mole_fractions, DensityBranch branch, const std::vector<PropertyObservable>& observables,
+        const PressureActionDirection& direction, double step, double tau, double kappa) const;
     EPC_API double packing_fraction_coefficient(
         double temperature,
         const std::vector<double>& mole_fractions

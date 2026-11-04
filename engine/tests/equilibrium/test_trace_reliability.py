@@ -430,7 +430,8 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
         assert k_ij == 0.5 and min(result.mole_fractions) < 1e-4 and result.reduced_hessian_minimum > 0.0
         return
     assert "is not positive definite" in result.message
-    assert str(result.convergence.stop).split(".")[-1] == "converged" and result.reduced_hessian_minimum < -0.1
+    assert str(result.convergence.stop).split(".")[-1] == "infeasible" and result.reduced_hessian_minimum < -0.1
+    assert result.convergence.cause == "reduced_hessian_not_positive_definite"
 
 
 def test_zero_feed_ions_allow_provisional_flash_start() -> None:

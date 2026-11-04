@@ -42,7 +42,9 @@ from .problem import (
     problem_from_mapping,
     solve_equilibrium,
     solve_equilibrium_starts,
+    jacobian_table,
     solved_state_actions,
+    solved_state_difference,
 )
 
 EquilibriumStart = _core.EquilibriumStart
@@ -151,6 +153,8 @@ __all__ = (
     "problem_from_mapping",
     "solve_equilibrium",
     "solve_equilibrium_starts",
+    "jacobian_table",
     "solved_state_actions",
+    "solved_state_difference",
     "solved_state_first_actions",
 )

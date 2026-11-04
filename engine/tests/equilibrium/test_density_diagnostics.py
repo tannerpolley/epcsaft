@@ -12,11 +12,8 @@ def test_density_crossings_and_finite_domain() -> None:
     T, P = 200.0, 217800.69494692178
     cap = model.molar_density_upper_bound(T)
     nodes = [math.exp(math.log(1e-3) + k / 512 * math.log(cap * .999 / 1e-3)) for k in range(513)]
-    diagnostic = model.density_diagnostics(
-        T, P, nodes=nodes, density_tolerance=1e-9, log_tolerance=1e-14,
-        max_evaluations=100000, max_seconds=60.0, adaptive=True,
-        finite_anchor=1e-3, finite_upper=2 * cap, evaluation_order=_core.DerivativeOrder.PressureSlope,
-    )
+    # #976: the default grid and budgets are those this call used to state; the finite domain stays explicit.
+    diagnostic = model.density_diagnostics(T, P, finite_anchor=1e-3, finite_upper=2 * cap)
     expected = (138.1005458522085, 3218.7215247759887, 17541.25129083695)
     assert len(diagnostic.pressure_roots) == 3
     for root, reference in zip(diagnostic.pressure_roots, expected):

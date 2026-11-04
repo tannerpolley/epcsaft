@@ -15,9 +15,29 @@
 #include <nanobind/stl/vector.h>
 
 #include <optional>
+#include <utility>
 
 namespace nb = nanobind;
 namespace epcsaft::equilibrium {
+
+// Python opens this only while the epcsaft logger is at DEBUG; it collects the calling thread's Ipopt iterations.
+struct IpoptIterations final {
+    std::vector<IpoptIterationRecord> records;
+    std::vector<IpoptIterationRecord>* previous = nullptr;
+    IpoptIterations& enter();
+    bool exit(const nb::args&);
+};
+IpoptIterations& IpoptIterations::enter() {
+    core::Scope scope("ipopt_iterations");
+    records.clear();
+    previous = std::exchange(ipopt_iteration_log(), &records);
+    return *this;
+}
+bool IpoptIterations::exit(const nb::args&) {
+    core::Scope scope("ipopt_iterations");
+    ipopt_iteration_log() = previous;
+    return false;
+}
 
 // A fit the start document cannot represent carries the refusal message in place of the document.
 static ParameterDocument record_document(const nb::object& model) {
@@ -130,14 +150,14 @@ void register_equilibrium(nb::module_& module) {
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
-    module.def("property_asl_record", [](nb::object model) {
+    module.def("property_asl_record", [](nb::object model, bool require_phase_identity) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        if (!native.active_parameters().empty() || !native.thermochemistry())
-            throw std::invalid_argument("ASL property record requires inactive parameters with thermochemistry");
-        return asl_property_record(document, *native.thermochemistry(), native.solver_options());
-    }, nb::arg("model"));
+        if (!native.active_parameters().empty())
+            throw std::invalid_argument("ASL property record requires inactive parameters");
+        return asl_property_record(document, native.thermochemistry(), native.solver_options(), require_phase_identity);
+    }, nb::arg("model"), nb::arg("require_phase_identity") = false);
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
     module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;
     nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")
@@ -252,6 +272,9 @@ void register_equilibrium(nb::module_& module) {
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("solve_saturation", &solve_saturation, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
+        .def("coordinate_labels", &CompiledSystem::coordinate_labels)
+        .def("jacobian_difference", &CompiledSystem::jacobian_difference, nb::arg("point"), nb::arg("relative_step"),
+            nb::arg("tau"), nb::arg("kappa"))
         .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
                 double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
                 std::vector<double> densities, std::vector<double> packing) {
@@ -285,6 +308,12 @@ void register_equilibrium(nb::module_& module) {
             condition_estimate, forward_error_estimate, precision_bits, refinement_iterations);
     nb::class_<IpoptIteration>(module, "IpoptIteration")
         EPCSAFT_READONLY(IpoptIteration, mode, iteration, line_search_trials, objective, inf_pr, inf_du, mu, step_norm, regularization, alpha_du, alpha_pr);
+    nb::class_<IpoptIterationRecord>(module, "IpoptIterationRecord") EPCSAFT_READONLY(IpoptIterationRecord, run, iteration);
+    nb::class_<IpoptIterations>(module, "IpoptIterations")
+        .def(nb::init<>())
+        .def("__enter__", &IpoptIterations::enter, nb::rv_policy::reference_internal)
+        .def("__exit__", &IpoptIterations::exit)
+        .def_ro("records", &IpoptIterations::records);
     nb::class_<IpoptPoint>(module, "IpoptPoint")
         EPCSAFT_READONLY(IpoptPoint, tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers,
             tnlp_constraint_multipliers, declaration, rows, constraint_rows, objective_factor);
@@ -416,6 +445,8 @@ void register_equilibrium(nb::module_& module) {
             central_floor);
     nb::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch")
         EPCSAFT_READONLY(SolvedStateActionBatch, results, diagnostics);
+    module.def("solved_state_difference", &solved_state_difference, nb::arg("compiled"), nb::arg("central"),
+        nb::arg("observables"), nb::arg("direction"), nb::arg("step"), nb::arg("tau"), nb::arg("kappa"));
     module.def("solved_state_actions", &solved_state_actions,
                nb::arg("compiled"), nb::arg("central"), nb::arg("request"),
                "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"

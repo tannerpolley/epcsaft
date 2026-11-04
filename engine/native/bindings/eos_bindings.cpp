@@ -171,7 +171,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(Diagnostics, site_conditioning, site_rank, site_factorizations, site_solves, site_pivot_ratio,
             association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
-            forward_sweeps, branch, stable_root_count, first_numerical_failure);
+            forward_sweeps, branch, returned_branch, stable_root_count, first_numerical_failure);
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
     nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
@@ -256,6 +256,9 @@ void register_eos(nb::module_& module) {
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("observables"), nb::arg("directions"),
              nb::arg("anchor_density") = std::nullopt)
+        .def("pressure_action_difference", &epcsaft::HelmholtzModel::pressure_action_difference, nb::arg("temperature"),
+             nb::arg("pressure"), nb::arg("mole_fractions"), nb::arg("branch"), nb::arg("observables"), nb::arg("direction"),
+             nb::arg("step"), nb::arg("tau"), nb::arg("kappa"))
         .def("packing_fraction_coefficient", [](const epcsaft::HelmholtzModel& model,
                                                double temperature, const std::vector<double>& composition) {
             epcsaft::core::Scope scope("packing_fraction_coefficient");

@@ -270,8 +270,9 @@ Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
 State construction evaluates the full Helmholtz gradient and every row of the
-T, V and active-parameter Hessian columns. Uncaptured construction omits unused
-composition columns; active Core capture retains the complete Hessian payload.
+T, V and active-parameter Hessian columns. Uncaptured and ordinary Core capture
+omit unused composition columns. Diagnostic capture retains the complete Hessian
+payload; only complete Hessian evaluations emit the `hessian` trace event.
 
 Density closure evaluates normalized Taylor coefficients of the shared residual
 Helmholtz equations in volume at fixed temperature and composition. Order two
@@ -2279,6 +2280,28 @@ increment; Taylor factorial conversion is separate and applied once. The
 [retained numerical notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
 owns the tested cases, tolerances, errors and interpretation limits.
 
+### Difference checks of exact actions
+
+`CompiledSystem.jacobian_difference`, `solved_state_difference` and
+`pressure_action_difference` verify exact derivatives; they are never a
+production derivative. Each returns `DifferenceCheck` records comparing the
+exact action $A$ with the native central difference
+$D = [f(q+hd) - f(q-hd)]/(2h)$. The roundoff scale is $r = (e_+ + e_-)/(2h)$,
+with $e_\pm$ the native evaluation floor at $q \pm hd$ when one exists
+(residual rows) and $\varepsilon|f(q \pm hd)|$ otherwise. The check passes when
+$|D-A| \le \tau|A| + \kappa r$. A zero allowance passes only an exactly
+reproduced zero (ratio 0) and otherwise fails (ratio $+\infty$). Any nonfinite
+operand gives `nonfinite`. Step, $\tau$ and $\kappa$ must be finite and
+positive. The Jacobian check perturbs column $j$ by
+`relative_step * max(1, |x_j|)`, and labels each entry by its row and by
+`coordinate_labels()`. The solved-state check supports fixed T or P, feed
+amounts and declared enthalpy or entropy directions. It re-solves each neighbor
+from the central result and reports `neighbor_unavailable` or `branch_changed`
+when a neighbor fails, changes phase count or solids, or leaves the central
+density's `DENSITY_ANCHOR_LOG_WINDOW`. The property check supports T, P and
+zero-sum composition directions at the central density's branch. Other
+directions return `unsupported_direction`.
+
 ## ALG-REFERENCE
 
 Referenced solved-state third actions admit feed directions only at fixed T/P.
@@ -2697,12 +2720,6 @@ unavailable observations through `StageWork`; it is separate from the first
 numerical refusal. Read the observation's operation, basis, norm, method,
 precision and point attribution together with its condition and error.
 
-Known limit: association conditioning warnings first raised while the final
-equilibrium result is assembled, during wide-precision refinement of the
-selected endpoint, or inside a standalone reference expansion (including
-cached central values) may be missing from the returned result. Computed
-values are unaffected.
-
 The owner amendment of 2026-11-02 restricts full condition estimation to
 already-computed factors for the top-level returned state. Nested iterations
 retain cheap rank/pivot checks and existing physical-error/refusal warnings,
@@ -2793,9 +2810,13 @@ different basis.
    iteration, restoration marker, termination, factorization and line-search
    message alongside the bounded callback observations. A Newton-only solve
    opens no log. Inspect `capture.trace.ipopt_log_error` if opening fails; this
-   failure leaves the calculation on its original path. J_MAIN uses level 5
-   iteration summaries and other normal categories level 12. An all-category
-   J_MAIN level-12 dump is not qualified on installed Ipopt 3.11.9.
+   failure leaves the calculation on its original path. `ipopt_print_level`
+   sets every category's journal level, with J_MAIN capped at 5 iteration
+   summaries. `epcsaft.trace` uses 5 by default and 12 when the `epcsaft`
+   logger is enabled for DEBUG; native `core::Capture` keeps 12. For the 1 bar
+   methane/ethane L+V rejection (598 iterations) the log is 79.7 kB at level 5
+   and 24.4 MB at level 12. An all-category J_MAIN level-12 dump is not
+   qualified on installed Ipopt 3.11.9.
 5. Interpret each quantity in its own basis. Structural rank, endpoint rank,
    association pivot admission, pressure slope and Ipopt regularization describe
    different operations. Small backward error alone does not bound physical
@@ -2816,6 +2837,38 @@ finite deadlines; no timing identity is claimed.
 
 Requested source-reference estimates follow [ALG-REFERENCE](#alg-reference).
 Their returned method annotation supplies no new termination or admission criterion.
+
+### Rejected points and the `epcsaft` logger
+
+`solver_status` is Ipopt's own return code. `SUCCESS` with `success=False`
+means the optimizer converged and the Engine rejected the point. Every such
+rejection of a converged or floor-converged stop records `Stop::infeasible`
+and a `convergence.cause`: `phases_coalesced`, `phase_disappeared`,
+`solid_classification`, `log_charge_rank`, `local_phase_instability`,
+`caloric_split` or `reduced_hessian_not_positive_definite`. Singular and
+nonfinite stops keep their own stop and publish no new cause; a rank-deficient
+present-solid block stays `singular`. The verdict changes no work, coordinate
+or state.
+
+A topology rejection's message leads with the observation: the declared phases
+that coalesced, with T, P and the phase distance against
+`PHASE_COINCIDENCE_DISTANCE`, or the phase whose amount fell to
+`PHASE_DISAPPEARANCE_AMOUNT` of the feed. A coalesced bubble or dew point names
+a critical limit near those conditions as one possible, untested explanation.
+These leading sentences claim no global stability, nonexistence of a split or
+critical point; `Discover()` searches other phase sets. The earlier technical
+and recovery text follows unchanged after `; `. That inherited text keeps its
+own wording: a recovery continuation whose phases exchange identity between
+accepted states reports "swapped identity between accepted states: passage
+through a critical point". The observation is the identity exchange; no
+critical-point calculation supports the stated explanation.
+
+The `epcsaft` logger is silent until configured. INFO writes one line per
+public equilibrium solve, continuation, multistart or fit (status, stop, cause,
+work, wall time and the message's first clause). DEBUG adds one line per Ipopt
+intermediate callback, collected natively only while DEBUG is enabled, and one
+line per fit iteration from `iteration_costs`/`iteration_seconds`. The logger
+opens no trace capture, so derivative work is identical with DEBUG on or off.
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
 $\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the
