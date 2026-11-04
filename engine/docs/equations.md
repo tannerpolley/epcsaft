@@ -1803,20 +1803,6 @@ S=n_{H_2S}+n_{HS^-}+n_{S^{2-}},\quad
 Z=n_{H_3O^+}+n_{MDEAH^+}-n_{OH^-}-n_{HCO_3^-}-2n_{CO_3^{2-}}-n_{HS^-}-2n_{S^{2-}}.
 $$
 
-## `effective_water_amounts`
-
-- Section: Equilibrium / Amount conversion
-- Status: Source equation
-- Source: Nasrifar and Tafazzol (2010), section 6, p.7627, effective-water passage
-- Description: Lump every charged species amount into declared neutral water, preserving every remaining free molecular species and the current true-species mole total. This molecular representation does not preserve every elemental inventory.
-- Change note: Native conversion requires this ideal model's criterion-meeting liquid result and a complete disjoint water/ion/molecular partition. It does not calculate molecular phase equilibrium or reproduce Figure 15.
-
-$$
-\widetilde n_w=n_w+\sum_{i\in I}n_i,\qquad
-\widetilde n_j=n_j\ (j\in J),\qquad
-\widetilde N=\widetilde n_w+\sum_{j\in J}\widetilde n_j=N.
-$$
-
 ## `reaction_standard_state_conversion`
 
 - Section: Equilibrium / Reaction standard states

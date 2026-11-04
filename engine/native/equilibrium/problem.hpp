@@ -743,8 +743,6 @@ EPC_API EquilibriumResult solve_equilibrium(
 );
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
-EPC_API std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, const EquilibriumResult&,
-    const std::string& water, const std::vector<std::string>& ions, const std::vector<std::string>& molecular_species);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 // `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
 struct DriverLimits;

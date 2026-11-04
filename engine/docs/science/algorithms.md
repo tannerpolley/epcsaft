@@ -3053,8 +3053,7 @@ Its cold start is positive on the admitted inventory support, or uses a declared
 positive composition guess. The same Ipopt lifecycle and exact-Jacobian polish
 classify these rows. No EOS density seed, branch admission, neutral recovery or
 pre-Ipopt Newton attempt applies. Previous-result starts are refused before native
-compilation. EqID: `effective_water_amounts` is a deterministic native amount map
-from an available criterion-meeting result, with no further equilibrium iteration.
+compilation.
 
 ### Equilibrium initialization by declaration
 

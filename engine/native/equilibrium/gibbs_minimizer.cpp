@@ -2045,33 +2045,6 @@ std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction& mod
     return read_reaction_activities(nullptr, &model, result);
 }
 
-std::map<std::string, double> effective_water_amounts(const IdealMoleFraction& model, const EquilibriumResult& result,
-    const std::string& water, const std::vector<std::string>& ions, const std::vector<std::string>& molecular_species) {
-    core::Scope scope("effective_water_amounts");
-    if (result.ideal_identity != &model || !result.has_state() || !result.requested_tolerance_met.value_or(false)
-        || result.phase_count != 1 || result.mole_fractions.size() != model.component_ids.size())
-        throw std::invalid_argument("effective water requires this ideal model's criterion-meeting liquid result");
-    std::vector<bool> seen(model.component_ids.size(), false);
-    std::map<std::string, double> converted;
-    const auto take = [&](const std::string& name, bool ion) {
-        const auto found = std::find(model.component_ids.begin(), model.component_ids.end(), name);
-        if (found == model.component_ids.end()) throw std::invalid_argument("unknown conversion species: " + name);
-        const auto i = static_cast<std::size_t>(found - model.component_ids.begin());
-        if (seen[i] || (model.charge_number[i] != 0) != ion) throw std::invalid_argument("conversion species duplicate or charge role: " + name);
-        seen[i] = true;
-        const double amount = result.amounts[0] * result.mole_fractions[i];
-        if (!std::isfinite(amount) || amount < 0.0) throw std::invalid_argument("invalid conversion amount: " + name);
-        return amount;
-    };
-    double effective = take(water, false);
-    for (const auto& ion : ions) effective += take(ion, true);
-    if (!std::isfinite(effective)) throw std::invalid_argument("nonfinite effective water");
-    converted[water] = effective;
-    for (const auto& name : molecular_species) converted[name] = take(name, false);
-    if (std::find(seen.begin(), seen.end(), false) != seen.end()) throw std::invalid_argument("incomplete conversion species partition");
-    return converted;
-}
-
 bool newton_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()

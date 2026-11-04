@@ -408,6 +408,10 @@ executable('reaction_reference_e3', '../analyses/2026-reaction-reference-associa
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 
+executable('nasrifar_effective_water', '../analyses/reproduction/2010-nasrifar-mdea/scripts/effective_water.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
+
 executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
