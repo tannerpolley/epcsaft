@@ -16,11 +16,14 @@ share; Ninja rebuilds only what changed, one Ninja at a time (`tools/locked-ninj
 Re-running setup on an editable install only compiles what changed. If `ccache` is installed,
 compiler results are reused across checkouts; it is optional.
 
-Engine, native-test and `tools/native-run` compilation use four build jobs by
-default. Set `EPCSAFT_BUILD_JOBS` to another positive integer at setup; values
-above the CPUs available to the process are capped, and setup records the
-resolved count in `build/environment-wheel/build-jobs`. For example, `EPCSAFT_BUILD_JOBS=1 bash tools/check-all.sh`
-uses one job.
+Engine, native-test and `tools/native-run` compilation default to one build
+job per 1.5 GiB of available memory (free RAM or, if tighter, the nearest
+cgroup headroom), at least one and at most the CPU count
+(`tools/build-engine.sh`). `EPCSAFT_BUILD_JOBS` at setup overrides it with any
+positive integer, without a CPU cap; for example,
+`EPCSAFT_BUILD_JOBS=1 bash tools/check-all.sh` uses one job. Setup records the
+resolved count in `build/environment-wheel/build-jobs`, which `tools/native-run`
+reads.
 The setting changes build scheduling without changing compiler optimization.
 Import-time rebuilds keep the job count fixed when setup installed the editable build;
 `EPCSAFT_BUILD_JOBS` does not change them.
