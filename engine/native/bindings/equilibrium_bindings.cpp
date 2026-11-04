@@ -173,8 +173,6 @@ void register_equilibrium(nb::module_& module) {
            nb::arg("unit_activity_solvent").none() = nb::none())
         EPCSAFT_READONLY(IdealMoleFraction, component_ids, charge_number, activity_basis, solution_volume_m3, unit_activity_solvent)
         EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, 4);
-    module.def("effective_water_amounts", &effective_water_amounts, nb::arg("model"), nb::arg("result"),
-        nb::arg("water"), nb::arg("ions"), nb::arg("molecular_species"));
     nb::class_<SpeciesActivities>(module, "SpeciesActivities")
         EPCSAFT_READONLY(SpeciesActivities, log_activities, activities, causes, solvent_index, standard_molality_mol_per_kg);
     nb::class_<ReactionActivities>(module, "ReactionActivities")

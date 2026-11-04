@@ -194,6 +194,7 @@ SOLVER_FILES = {
     "equilibrium/gibbs_minimizer.hpp", "equilibrium/gibbs_minimizer.cpp",
     "equilibrium/phase_boundary.cpp", "equilibrium/implicit_sensitivity.cpp",
     "equilibrium/request_compile.cpp",
+    "equilibrium/row_evaluation.hpp", "equilibrium/reaction_activities.hpp", "equilibrium/starts.hpp",
     "equilibrium/phase_stability.cpp",
 }
 
@@ -270,10 +271,24 @@ def rule_policy_entries_name_themselves() -> list[str]:
 def rule_budget_readers_carry_records() -> list[str]:
     budget = re.compile(r"policy::\w+_(?:MAX_ITERATIONS|BUDGET)\b")
     bad = []
-    for path in sources():
+    files = sources()
+    includes = [(p, (p.parent / t).resolve() if (p.parent / t).is_file() else (NATIVE / t).resolve())
+                for p in files for t in INCLUDE.findall(p.read_text())]
+    for path in files:
         if layer_of(path) in {"core", "bindings"}:
             continue
         text = without_comments(path.read_text())
+        # A private piece ("// Included once, by fit.cpp ...") is judged with its one includer's translation unit,
+        # only when that sibling .cpp is in fact its sole includer, including it once.
+        includer = re.match(r"// Included once, by (\w+\.cpp)\b", path.read_text())
+        if includer:
+            owner = path.parent / includer[1]
+            actual = [p for p, target in includes if target == path.resolve()]
+            if path.suffix != ".hpp" or actual != [owner]:
+                bad.append(f"{path.relative_to(ROOT)} names {includer[1]} as its only includer; included by "
+                           f"{sorted(str(p.relative_to(ROOT)) for p in actual) or 'nothing'}")
+                continue
+            text += without_comments(owner.read_text())
         if budget.search(text) and ("core::Scope" not in text or "Convergence" not in text):
             bad.append(f"{path.relative_to(ROOT)} reads a budget without a convergence record")
     return bad

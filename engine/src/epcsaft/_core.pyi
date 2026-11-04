@@ -2823,7 +2823,6 @@ class IdealMoleFraction:
     solver_options: list[dict[str, Any]]
     def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ..., activity_basis: str | None = ..., solution_volume_m3: float | None = ..., unit_activity_solvent: str | None = ...) -> None: ...
 
-def effective_water_amounts(model: IdealMoleFraction, result: EquilibriumResult, water: str, ions: Sequence[str], molecular_species: Sequence[str]) -> dict[str, float]: ...
 
 class CompiledSystem:
     """Admitted equilibrium chart and exact defining-equation readers.

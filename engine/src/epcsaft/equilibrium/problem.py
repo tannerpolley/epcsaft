@@ -72,18 +72,6 @@ def reaction_activities(model: _Model | IdealMoleFraction, result: _core.Equilib
     return _core.reaction_activities(model._model, result)
 
 
-def effective_water_amounts(
-    model: IdealMoleFraction,
-    result: _core.EquilibriumResult,
-    *,
-    water: str,
-    ions: Sequence[str],
-    molecular_species: Sequence[str],
-) -> dict[str, float]:
-    """Return native effective-water and preserved free molecular amounts in mol."""
-    return _core.effective_water_amounts(model._model, result, water, ions, molecular_species)
-
-
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
     """Declare a free temperature, pressure or phase amount.

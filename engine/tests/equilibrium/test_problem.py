@@ -456,8 +456,6 @@ def test_ideal_mole_fraction_species_order_and_amount_transport() -> None:
     assert result.molar_densities == result.packing_fractions == []
     labels = ["ln(n[component 0]/N_feed)", "ln(n[component 1]/N_feed)", "ln(n[component 2]/N_feed)"]
     assert equilibrium.compile_problem(model, declared).coordinate_labels() == labels  # F10: the ideal amount chart
-    assert equilibrium.effective_water_amounts(model, result, water="water", ions=("OH-", "H3O+"),
-                                              molecular_species=()) == pytest.approx({"water": 1.0}, abs=1e-10)
 
 
 @pytest.mark.parametrize("case", range(3))

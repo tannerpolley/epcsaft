@@ -1280,8 +1280,6 @@ void check_ideal_mole_fraction() {
     CHECK(!undefined.log_quotient && undefined.cause.find("conflicting infinite") != std::string::npos);
     candidate.mole_fractions.clear();
     refused([&] { reaction_activities(water, candidate); }, "physical state or declaration unavailable");
-    const auto converted = effective_water_amounts(water, r1, "water", {"OH-", "H3O+"}, {});
-    record("R1-effective-water", converted.at("water"), 1.0, 1e-10, input, "mol");
     auto rebased = *p.reactions[0].correlation;
     rebased.a += rebased.c * std::log(p.temperature.value); rebased.reference_temperature = p.temperature.value;
     record("log-reference-scale", evaluate_reaction_properties(rebased, p.temperature.value).ln_k,
@@ -1289,7 +1287,6 @@ void check_ideal_mole_fraction() {
     refused([&] { evaluate_reaction_properties(rebased, 250.0); }, "outside reaction correlation");
     auto invalid = p; invalid.reactions[0].correlation->standard_state_id = EOS_STANDARD_STATE_ID;
     refused([&] { compile_problem(water, invalid); }, "reference-basis-mismatch");
-    refused([&] { effective_water_amounts(water, r1, "water", {"OH-"}, {}); }, "incomplete conversion");
     core::Capture capture;
     refused([&] { solve_equilibrium(water, invalid, r1); }, "previous-result starts unsupported before calculation");
     record("start-refusal-native-spans", capture.trace().spans.size(), 0.0, 0.0, input);
@@ -1308,15 +1305,13 @@ void check_ideal_mole_fraction() {
         CHECK(result.jacobian_rank == 8);
         std::vector<double> n = result.mole_fractions;
         for (double& value : n) value *= result.amounts[0];
-        const auto out = effective_water_amounts(model, result, "water",
-            {"OH-", "H3O+", model.component_ids[5], model.component_ids[6], "MDEAH+"}, {"MDEA", model.component_ids[2]});
         const auto prefix = sulfide ? "H2S-" : "CO2-";
         const auto data = fields({field("T_K", problem.temperature.value), field("P_Pa", problem.pressure.value),
             field("model", IDEAL_MOLE_FRACTION_STANDARD_STATE_ID), field("species", sulfide ? "water,MDEA,H2S,OH-,H3O+,HS-,S--,MDEAH+" : "water,MDEA,CO2,OH-,H3O+,HCO3-,CO3--,MDEAH+"),
             field("feed_mol", problem.feed.values), field("n_mol", n), field("x", result.mole_fractions),
             field("rows", result.residuals), field("classified_rows", result.classified_residuals),
             field("rank", result.jacobian_rank), field("condition", inspect_sensitivity(compiled, result.coordinates).condition_estimate), field("iterations", result.iterations), field("evaluations", result.evaluations),
-            field("hessian_calls", result.hessian_calls), field("effective_water_mol", out.at("water"))});
+            field("hessian_calls", result.hessian_calls)});
         for (std::size_t r = 0; r < 4; ++r) {
             const auto& spec = problem.reactions[r]; double logQ = 0.0;
             for (std::size_t i = 0; i < 8; ++i) logQ += spec.stoichiometry[i] * std::log(result.mole_fractions[i]);
@@ -1329,11 +1324,6 @@ void check_ideal_mole_fraction() {
         record(std::string(prefix) + "gas", n[2]+n[5]+n[6], G, 1e-10, data, "mol");
         record(std::string(prefix) + "charge", n[4]+n[7]-n[3]-n[5]-2*n[6], 0.0, 1e-10, data, "mol");
         record(std::string(prefix) + "normalization", std::accumulate(result.mole_fractions.begin(), result.mole_fractions.end(), 0.0), 1.0, 1e-10, data);
-        record(std::string(prefix) + "converted-total", out.at("water")+out.at("MDEA")+out.at(model.component_ids[2]), result.amounts[0], 1e-10, data, "mol");
-        record(std::string(prefix) + "free-MDEA", out.at("MDEA"), n[1], 1e-10, data, "mol");
-        record(std::string(prefix) + "free-gas", out.at(model.component_ids[2]), n[2], 1e-10, data, "mol");
-        record(std::string(prefix) + "effective-water", out.at("water"), W+n[7]+(sulfide ? n[5]+n[6] : 0.0), 1e-10, data, "mol");
-        record(std::string(prefix) + "effective-inventory", out.at("water")+n[1]+(sulfide ? n[2] : 0.0), W+M+(sulfide ? G : 0.0), 1e-10, data, "mol");
         record(std::string(prefix) + "changed-total", result.amounts[0], W+M+G-(sulfide ? 0.0 : n[5]+n[6]), 1e-10, data, "mol");
         for (double value : n) CHECK(std::isfinite(value) && value > 0.0);
         if (sulfide) continue;

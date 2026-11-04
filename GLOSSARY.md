@@ -121,4 +121,4 @@ Source: IAPWS TGD9-18, Table 2, p.15 (ideal concentration constants); `engine/do
 
 **Effective-water amount**:
 The free water amount plus all declared ionic species amounts, used with preserved free molecular amounts.
-Source: Nasrifar and Tafazzol (2010), section 6, p.7627; `engine/docs/equations.md` effective_water_amounts.
+Source: Nasrifar and Tafazzol (2010), section 6, p.7627; `analyses/reproduction/2010-nasrifar-mdea/README.md` effective-water conversion.
