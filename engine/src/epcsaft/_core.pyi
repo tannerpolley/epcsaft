@@ -1225,6 +1225,8 @@ class PropertyActionDiagnostics:
     """Number of forward derivative sweeps."""
     branch: DensityBranch
     """Established density-branch label, or Unspecified."""
+    returned_branch: DensityBranch
+    """Root side classified with the native negative-slope witness, or Unspecified."""
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by the search, or None when not established."""
 
