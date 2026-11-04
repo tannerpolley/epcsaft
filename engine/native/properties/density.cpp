@@ -97,7 +97,7 @@ public:
                     static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
                     target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
         }
-        if (!core::AssociationObservations::current()) observations_.emplace(rank_records);
+        if (!core::AssociationObservations::current()) observations_.emplace();
         // With one partner per site the mass action's pair step is its exact solution at every density.
         const std::size_t sites = parameters_.site_component.size();
         for (std::size_t a = 0; a < sites; ++a)
@@ -1457,6 +1457,7 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
     core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
     d.rank_records = series.rank_records;
+    if (series.observations_) series.observations_->merge(d.rank_records);
     if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
     const std::size_t width = 3 + active_.size();
@@ -1507,6 +1508,7 @@ HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar te
     out.volume_second_derivative = out.hessian[width + 1];
     core::retain_first(out.first_numerical_failure, series.first_numerical_failure);
     out.rank_records = series.rank_records;
+    if (series.observations_) series.observations_->merge(out.rank_records);
     return out;
 }
 
@@ -1683,6 +1685,7 @@ DensityRoot solve_density(
     }
     auto publish_conditioning = [&](DensityRoot& root) {
         root.rank_records = series.rank_records;
+    if (series.observations_) series.observations_->merge(root.rank_records);
         if (root.convergence.rank) {
             core::retain_rank(root.rank_records, *root.convergence.rank);
             for (const auto& rank : root.rank_records) if (rank.basis == root.convergence.rank->basis) root.convergence.rank = std::make_shared<core::NumericalRank>(rank);

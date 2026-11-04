@@ -1424,6 +1424,112 @@ struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
     }
     double rcond() const { ++condition_calls; return Eigen::FullPivLU<Eigen::MatrixXd>::rcond(); }
 };
+epcsaft::Parameters association_parameters(double density = 10000, double strength = 8e12) {
+    using namespace epcsaft;
+    auto p = properties_support::associating_binary();
+    p.site_component = {0, 1}; p.site_multiplicity = {1, 1};
+    p.association_active = {1, 0, 0, 0};
+    p.association_energy_over_k = {3000, 0, 0, 0}; p.association_volume = {1, 0, 0, 0};
+    const std::vector<double> x{0.5, 0.5};
+    const auto sigma = segment_sigma(313.15, p), diameter = segment_diameter(313.15, p, sigma);
+    const auto delta = association_delta(313.15, density, x, p, sigma, diameter);
+    p.association_volume[0] *= strength / (density * NUMBER_DENSITY_PER_ANGSTROM3 * x[0] * delta[0]);
+    return p;
+}
+void check_association_publication() {
+    using namespace epcsaft; namespace eq = epcsaft::equilibrium;
+    const double temperature = 313.15, density = 40000;
+    const std::vector<double> x{0.5, 0.5};
+    HelmholtzModel scale(association_parameters());
+    HelmholtzModel model(association_parameters(0.25 / scale.packing_fraction_coefficient(temperature, x)),
+        {}, properties_support::p3_binary_record());
+    const auto state = model.state(temperature, density, x);
+    CHECK(state.rank_records.empty() && state.total_enthalpy);
+    auto problem = equilibrium_support::flash(2);
+    problem.temperature = eq::FreeValue::variable(temperature);
+    problem.pressure = eq::FreeValue::fixed(state.pressure);
+    problem.enthalpy_j = state.total_enthalpy;
+    const auto compiled = eq::compile_problem(model, problem);
+    auto point = compiled.generic_point();
+    point[0] = point[1] = std::log(0.5); point[2] = 1;
+    point[3] = std::log(model.packing_fraction_coefficient(temperature, x) * density); point[4] = temperature;
+    core::Capture capture(true); core::Scope scope("association_publication");
+    auto initial = eq::structural_result(compiled, scope);
+    core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
+    initial.first_numerical_failure = refusal;
+    const auto result = eq::run_driver(model, compiled, point, initial, scope, nullptr, nullptr, nullptr, true);
+    CHECK(result.success && std::abs(result.molar_densities[0] / density - 1) <= 1e-10);
+    std::shared_ptr<core::ConditioningObservation> produced;
+    for (const auto& span : capture.trace().spans) if (span.convergence && span.convergence->rank
+        && span.convergence->rank->first_conditioning_warning) {
+        const auto& w = span.convergence->rank->first_conditioning_warning;
+        // Only the restricted publication's generic composition differs from the supplied equimolar state.
+        CHECK(w->controls.size() == 4 && std::abs(w->controls[1] / density - 1) > 0.1);
+        CHECK(w->controls[2] != x[0] && w->coordinates == std::vector<double>({1, 1}));
+        if (!produced) produced = w;
+    }
+    CHECK(produced);
+    const auto rank = std::find_if(result.rank_records.begin(), result.rank_records.end(),
+        [](const auto& r) { return r.basis == "mass_action_site_fractions"; });
+    CHECK(rank != result.rank_records.end() && rank->first_conditioning_warning);
+    const auto& warning = *rank->first_conditioning_warning;
+    CHECK(warning.coordinates == produced->coordinates && warning.controls == produced->controls && warning.phase == 0);
+    CHECK(result.first_numerical_failure && core::describe(*result.first_numerical_failure) == core::describe(refusal));
+    std::cout << std::setprecision(17) << "publication warning: density " << warning.controls[1]
+        << " composition " << warning.controls[2] << ' ' << warning.controls[3] << " point ";
+    for (auto v : warning.coordinates) std::cout << v << ' ';
+    std::cout << '\n';
+}
+void check_association_reference() {
+    using namespace epcsaft;
+    const double temperature = 313.15;
+    const std::vector<double> x{0.5, 0.5};
+    PressureActionDirection direction; direction.temperature = 1;
+    HelmholtzModel model(association_parameters());
+    core::Capture capture(true);
+    const auto call = [&](const HelmholtzModel& m) { return m.reference_taylor(temperature, 1e-4, x, {1, 0}, direction, 1); };
+    const auto first = call(model);
+    const auto spans = capture.trace().spans.size();
+    const auto second = call(model);
+    CHECK(first.status == PropertyActionStatus::PressureSingular && second.status == first.status);
+    const auto& rank = first.diagnostics.site_conditioning;
+    CHECK(rank && rank->first_conditioning_warning && second.diagnostics.site_conditioning);
+    const auto& warning = *rank->first_conditioning_warning;
+    CHECK(warning.cause == "association_pivot_refusal" && warning.coordinates == std::vector<double>({1, 1}));
+    CHECK(warning.controls == std::vector<double>({temperature, 10000, 0.5, 0.5}));
+    CHECK(second.diagnostics.site_conditioning->first_conditioning_warning);
+    CHECK(second.diagnostics.site_conditioning->first_conditioning_warning->coordinates == warning.coordinates);
+    for (std::size_t i = spans; i < capture.trace().spans.size(); ++i)
+        CHECK(std::string(capture.trace().spans[i].name) != "association_newton");
+    HelmholtzModel nested(association_parameters());
+    {
+        core::AssociationObservations outer;
+        { core::AssociationObservations phase(std::size_t{7}); (void)call(nested); }
+        std::vector<core::NumericalRank> records; outer.merge(records);
+        CHECK(records.size() == 1 && records[0].first_conditioning_warning->phase == 7);
+    }
+    const auto reused = call(nested);
+    CHECK(reused.diagnostics.site_conditioning && reused.diagnostics.site_conditioning->first_conditioning_warning);
+    CHECK(!reused.diagnostics.site_conditioning->first_conditioning_warning->phase);
+    const auto energy = model.residual_energy_action(temperature, 1e-4, x,
+        {{1, 0, 0, 0}, {1, 0, 0, 0}, {1, 0, 0, 0}});
+    CHECK(energy.status == PropertyActionStatus::Available && energy.diagnostics.site_conditioning);
+    CHECK(energy.diagnostics.site_conditioning->basis == "implicit_site_fractions");
+    CHECK(energy.diagnostics.site_conditioning->first_conditioning_warning
+        && energy.diagnostics.site_conditioning->first_conditioning_warning->coordinates == warning.coordinates);
+    policy::SolverOptions options; options.values[policy::association] = 1e-30;
+    HelmholtzModel strict(association_parameters(), {}, std::nullopt, options);
+    core::AssociationObservations parent;
+    bool threw = false;
+    { core::AssociationObservations phase(std::size_t{3});
+        try { (void)call(strict); } catch (const core::ConvergenceFailure&) { threw = true; }
+    }
+    std::vector<core::NumericalRank> records; parent.merge(records);
+    CHECK(threw && records.size() == 1 && records[0].first_conditioning_warning);
+    CHECK(records[0].first_conditioning_warning->coordinates == warning.coordinates
+        && records[0].first_conditioning_warning->phase == 3);
+    std::cout << "reference warning: fresh, reused, outer-filled cache, first-site/latest-factor observation, exception retained\n";
+}
 void check_association_preparation() {
     using namespace epcsaft;
     core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
@@ -1448,8 +1554,9 @@ void check_association_preparation() {
         const auto packing = model.packing_fraction_coefficient(temperature, x);
         std::vector<double> point{std::log(x[0]), std::log(x[1]), std::log(packing * density)};
         equilibrium::EquilibriumResult result; result.first_numerical_failure = refusal;
-        core::AssociationObservations observations(result.rank_records);
+        core::AssociationObservations observations;
         const auto prepared = c.prepare(point, true, &result.first_numerical_failure);
+        observations.merge(result.rank_records);
         CHECK(!result.rank_records.empty());
         const auto warning = result.rank_records[0].first_conditioning_warning;
         CHECK(warning && warning->cause == "association_pivot_refusal" && warning->phase == 0);
@@ -1653,6 +1760,8 @@ void check_conditioning() {
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.specification.conditioning", "conditioning"}, check_conditioning},
+        {{"native.specification.association-publication", "association-publication"}, check_association_publication},
+        {{"native.specification.association-reference", "association-reference"}, check_association_reference},
         {{"native.specification.association-preparation", "association-preparation"}, check_association_preparation},
         {{"native.specification.pure-association-attempt", "pure-association-attempt"}, check_pure_association_attempt},
         {{"native.specification.polish-solve", "Newton-solve"}, check_polish_solve_admission},

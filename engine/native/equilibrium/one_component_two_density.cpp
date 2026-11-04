@@ -139,8 +139,8 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
 
 EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, const std::vector<double>& initial,
     const EquilibriumResult& structural, core::Scope& scope, const DriverLimits* limits) {
+    core::AssociationObservations observations;
     auto result = structural;
-    core::AssociationObservations observations(result.rank_records);
     result.message = "one-component two-density initialization";
     result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const auto retain = [&](const std::exception& error) {
@@ -342,7 +342,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                     result.phase_pressures.push_back(pure.pressure);
                 }
             }
-            return result;
+            observations.merge(result.rank_records); return result;
         }
         result.message = "one-component two-density iteration budget";
     } catch (const std::bad_alloc&) { throw; }
@@ -352,8 +352,9 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
     if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + result.message;
     core::retain_failure(result.first_numerical_failure, result.message, "one-component two-density refusal");
     result.success = false; clear_state(result);
-    return result;
+    observations.merge(result.rank_records); return result;
 }
+
 EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
     core::Scope scope("solve_saturation");
     if (!one_component_two_density_eligible(compiled) || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE"))

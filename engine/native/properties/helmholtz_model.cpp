@@ -105,6 +105,11 @@ void properties::site_factorization(
 
 namespace {
 
+template<class Result> Result association_result(Result result, const core::AssociationObservations& observations) {
+    observations.merge(result.diagnostics.site_conditioning);
+    return result;
+}
+
 // One central association factorization with its rank and pivot diagnostics; a failure
 // is reported through `status` and the factorization is still returned.
 std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
@@ -1000,9 +1005,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const std::vector<double>& amounts,
     DerivativeOrder order
 ) const {
+    core::AssociationObservations observations(true);
+    const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
     HelmholtzDerivatives result;
-    std::optional<core::AssociationObservations> observations;
-    if (!core::AssociationObservations::current()) observations.emplace(result.rank_records);
     core::Scope entry("helmholtz_evaluate_locked"), scope("evaluate");
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
@@ -1056,7 +1061,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     result.site_fractions = sites;
     result.value = values.front();
     scope.probe("residual_helmholtz_extensive", result.value);
-    if (order == DerivativeOrder::Value) return result;
+    if (order == DerivativeOrder::Value) return finish(std::move(result));
 
     const std::size_t sites_count = sites.size();
     const std::size_t input_count = point_size + sites_count;
@@ -1067,7 +1072,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         result.gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
         scope.probe("gradient", result.gradient);
-        return result;
+        return finish(std::move(result));
     }
     const auto delta = parameters_.ideal_gas ? std::vector<double>{} : association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
@@ -1108,7 +1113,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         scope.probe("volume_second_derivative", result.volume_second_derivative);
         scope.probe("gradient_floor", result.gradient_floor);
-        return result;
+        return finish(std::move(result));
     }
     // Requested chart: phase Hessians drop fixed controls, absent species and active parameters.
     std::vector<std::size_t> coordinates;
@@ -1167,7 +1172,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                     * site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(local));
         }
         scope.probe("gradient", result.gradient);
-        if (order == DerivativeOrder::Gradient) return result;
+        if (order == DerivativeOrder::Gradient) return finish(std::move(result));
         const Eigen::VectorXd multipliers = factorization.transpose().solve(
             Eigen::Map<const Eigen::VectorXd>(raw_gradient.data() + point_size, static_cast<Eigen::Index>(sites_count)));
         for (std::size_t site = 0; site < sites_count; ++site)
@@ -1203,7 +1208,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         result.volume_second_derivative = result.hessian[1 * point_size + 1];
         scope.probe("volume_second_derivative", result.volume_second_derivative);
         scope.probe("gradient_floor", result.gradient_floor);
-        return result;
+        return finish(std::move(result));
     }
     if (sites_count != 0) {
         // Floor over the requested chart only: it bounds exactly the gradient entries computed here.
@@ -1226,7 +1231,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     scope.probe("volume_second_derivative", result.volume_second_derivative);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
-    return result;
+    return finish(std::move(result));
 }
 
 static std::vector<double> coefficient_errors(const Parameters& p, detail::HelmholtzTape& tape,
@@ -1371,13 +1376,12 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     for (const auto& direction : directions)
         require(direction.size() == width && finite_vector(direction), "direction");
     double total = 0.0; for (double amount : amounts) total += amount;
+    core::AssociationObservations observations(true);
     ResidualEnergyAction result;
-    std::optional<core::AssociationObservations> observations;
-    if (!core::AssociationObservations::current()) observations.emplace(result.diagnostics.site_conditioning);
     std::vector<ActionDirection> inserted;
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
-    if ((result.status = support_status(*this, amounts, inserted)[0]) != PropertyActionStatus::Available) return result;
+    if ((result.status = support_status(*this, amounts, inserted)[0]) != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     const auto point = action_point(*this, temperature, volume, amounts);
     std::vector<double> norms(order);
     std::vector<std::vector<double>> normalized(directions);
@@ -1397,10 +1401,11 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
         predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     result.status = PropertyActionStatus::Available;
+    observations.drain(result.diagnostics.site_conditioning);
     const auto factorization = association_factorization(parameters_, temperature, density,
         refreshed.site_fractions, composition, result.status, result.diagnostics, solver_options_);
-    if (result.status != PropertyActionStatus::Available) return result;
-    if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return result; }
+    if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
+    if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return association_result(std::move(result), observations); }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;
     if (order == 3) {
         for (std::size_t i = 0; i < 3; ++i)
@@ -1447,7 +1452,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) result.status = PropertyActionStatus::AssociationResidual;
     else if (!std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;
     else result.action = action;
-    return result;
+    return association_result(std::move(result), observations);
 }
 
 // Fixed-input replay uses the same contribution and stationary-association owners as the tape.
@@ -1518,21 +1523,28 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         && finite_vector(stoichiometry) && wide_math::isfinite(direction.temperature)
         && wide_math::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
     if (error && order > 1) throw std::invalid_argument("reference error order");
+    core::AssociationObservations observations(true);
     ReferenceTaylor result;
     std::vector<ActionDirection> insertion{{0.0, 0.0, stoichiometry, {}}};
     require(!infinite_dilution || !detail::charged_support(composition, parameters_), "ion-free reference solvent required");
     result.status = infinite_dilution ? PropertyActionStatus::Available : support_status(*this, composition, insertion)[0];
-    if (result.status != PropertyActionStatus::Available) return result;
+    if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     std::lock_guard<std::mutex> lock(mutex_);
     std::vector<double> key{temperature, volume};
     key.insert(key.end(), composition.begin(), composition.end());
     auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return entry.first == key; });
     if (found == centrals_.end()) {
         if (centrals_.size() == 16) centrals_.pop_front();
-        centrals_.emplace_back(std::move(key), evaluate_locked(temperature, volume, composition, DerivativeOrder::Hessian));
+        core::AssociationObservations central;
+        try {
+            auto value = evaluate_locked(temperature, volume, composition, DerivativeOrder::Hessian);
+            central.merge(value.rank_records);
+            centrals_.emplace_back(std::move(key), std::move(value));
+        } catch (...) { central.forward(); throw; }
         found = std::prev(centrals_.end());
     }
     const auto& central = found->second;  // valid: centrals_ is not touched again while the lock is held
+    for (const auto& rank : central.rank_records) core::AssociationObservations::publish(rank);
     const std::size_t width = central.gradient.size(), components = composition.size();
     const auto point = action_point(*this, temperature, volume, composition);
     std::vector<double> motion(width, 0.0);
@@ -1549,7 +1561,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     const double pressure = gas * temperature * (1.0 / volume - central.gradient[1]);
     const double pv = gas * temperature * (-1.0 / (volume * volume) - central.hessian[width + 1]);
     result.diagnostics.pressure_density_derivative = -pv * volume * volume;
-    if (!wide_math::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return result; }
+    if (!wide_math::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return association_result(std::move(result), observations); }
     double norm = wide_math::abs(direction.pressure) / (-pv * volume);
     for (std::size_t i = 0; i < width; ++i) {
         const double scale = i == 0 ? temperature : i == 1 ? volume
@@ -1574,9 +1586,10 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     } else result.diagnostics.recordings = ensure_tape(point, central.site_fractions, signature, {}, 0.0, true) ? 1 : 0;
     auto& tape = infinite_dilution ? *reference_tape_ : *tape_;
     tape.site_values = central.site_fractions;
+    observations.drain(result.diagnostics.site_conditioning);
     const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
         central.site_fractions, composition, result.status, result.diagnostics, solver_options_);
-    if (result.status != PropertyActionStatus::Available) return result;
+    if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     const std::size_t insertion_degree = order + 1, degree = 2 * order + 1;
     std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
     path[0] = point; path[1] = motion;
@@ -1678,7 +1691,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     counters_.directional_paths += result.diagnostics.directional_paths;
     counters_.forward += result.diagnostics.forward_sweeps;
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order + 1);
-    return result;
+    return association_result(std::move(result), observations);
 }
 
 // ponytail: retain two signatures for alternating phases; widen only for measured multi-signature churn.
@@ -1754,9 +1767,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     const auto ideal_status = !need_ideal || ideal_available ? PropertyActionStatus::Available
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
+    core::AssociationObservations observations(true);
     PropertyActionBatch result;
-    std::optional<core::AssociationObservations> observations;
-    if (!core::AssociationObservations::current()) observations.emplace(result.diagnostics.site_conditioning);
     std::optional<core::Convergence> first;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, sigma, diameter;
@@ -1781,6 +1793,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         ideal_available ? correlations : std::vector<IdealCorrelation>{},
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
     tape_->site_values = sites;
+    observations.drain(result.diagnostics.site_conditioning);
     const auto factorization = need_residual ? association_factorization(parameters_, temperature, molar_density,
         tape_->site_values, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
     ActionContext context{*tape_, point, molar_density, all,
@@ -1990,7 +2003,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order,
         result.maximum_energy_order);
     result.solver_options = solver_options_;
-    return result;
+    return association_result(std::move(result), observations);
 }
 
 PropertyActionBatch HelmholtzModel::density_actions(
@@ -2197,9 +2210,8 @@ State HelmholtzModel::state(
     const std::vector<double>& mole_fractions,
     bool derived_properties
 ) const {
+    core::AssociationObservations observations(true);
     State result;
-    std::optional<core::AssociationObservations> observations;
-    if (!core::AssociationObservations::current()) observations.emplace(result.rank_records);
     core::Scope scope("state");
     validate_composition(mole_fractions);
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
@@ -2344,7 +2356,7 @@ State HelmholtzModel::state(
     result.molar_density = molar_density;
     result.pressure_density_derivative = dpressure_drho;
     result.site_fractions = sites;
-    if (!derived_properties) return result;
+    if (!derived_properties) { observations.merge(result.rank_records); return result; }
     // Fixed-composition response and partial molar properties from the T/V Hessian columns above.
     const auto finite = [](double value) { return std::isfinite(value) ? std::optional(value) : std::nullopt; };
     const std::size_t components = mole_fractions.size(), width = derivatives.gradient.size();
@@ -2400,6 +2412,7 @@ State HelmholtzModel::state(
         // EqID: partial_molar_entropy
         entropies[i] = finite(thermal.s - GAS_CONSTANT_J_PER_MOL_K * (log_ideal + temperature * d));
     }
+    observations.merge(result.rank_records);
     return result;
 }
 
