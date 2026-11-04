@@ -94,7 +94,7 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
         """Use generic-state scaling; log-fugacity equations have unit scale."""
 
     @staticmethod
-    def _at(b: Any, p: str, row: int, T: Any, P: Any, x: Any, strict: bool = False) -> Any:
+    def _at(b: Any, p: str, row: int, T: Any, P: Any, x: Any, strict: bool) -> Any:
         phase = b.params.get_phase(p)
         options = phase.config.equation_of_state_options
         function = b._density_property if row == 0 else b._enthalpy_property if row == 1 else b._pressure_property
@@ -110,13 +110,13 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
     @staticmethod
     def dens_mol_phase(b: Any, p: str) -> Any:
         return PressureProperties._at(
-            b, p, 0, b.temperature, b.pressure, {j: b.mole_frac_phase_comp[p, j] for j in b.component_list}
+            b, p, 0, b.temperature, b.pressure, {j: b.mole_frac_phase_comp[p, j] for j in b.component_list}, False
         )
 
     @staticmethod
     def enth_mol_phase(b: Any, p: str) -> Any:
         return PressureProperties._at(
-            b, p, 1, b.temperature, b.pressure, {j: b.mole_frac_phase_comp[p, j] for j in b.component_list}
+            b, p, 1, b.temperature, b.pressure, {j: b.mole_frac_phase_comp[p, j] for j in b.component_list}, False
         )
 
     @staticmethod
@@ -238,7 +238,7 @@ def check_state(state: Any, phase: str) -> Any:
 
 
 def solve_with_diagnostics(
-    solver: Any, model: Any, *, logfile: Path, endpoints: tuple[tuple[Any, str], ...] = ()
+    solver: Any, model: Any, *, logfile: Path, endpoints: tuple[tuple[Any, str], ...] | None = None
 ) -> Any:
     """Keep subprocess diagnostics in a caller-owned log and surface failure in Python."""
     logfile = Path(logfile).resolve()
@@ -257,6 +257,6 @@ def solve_with_diagnostics(
             else []
         )
         raise RuntimeError(f"{error}; ASL diagnostics: {'; '.join(messages)}; solver log: {logfile}") from error
-    for state, phase in endpoints:
+    for state, phase in endpoints or ():
         check_state(state, phase)
     return result

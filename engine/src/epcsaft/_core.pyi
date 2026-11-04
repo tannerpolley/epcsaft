@@ -3801,7 +3801,9 @@ def property_asl_record(model: Any, require_phase_identity: bool = False) -> str
     Parameters
     ----------
     model : Any
-        Python model/declaration exposing the source parameter document, thermochemistry and numerical options consumed by the native record writer.
+        Python model/declaration exposing the source parameter document, optional thermochemistry and numerical options consumed by the native record writer.
+    require_phase_identity : bool
+        Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
 
     Returns
     -------

@@ -97,6 +97,14 @@ Budget changes must not silently change scientific scope.
 
 ## Amendments
 
+- 2026-11-03, #977: owner allowance 460 gross / +310 net runtime lines;
+  Properties 20/+10, Bindings 89/+60, Python 350/+240 and Parameter Regression
+  1/0 after the approved mechanical field-list reallocation. Candidate counts
+  are Properties 6,541, Bindings 2,527, Python 2,530 and total 32,895.
+  Python ceiling 2,319 → 2,556 is count plus band 26; total ceiling
+  32,763 → 33,113 is capped by the sum of layer ceilings. Other ceilings
+  remain sufficient. Numerical and runtime qualification are separate gates.
+
 - 2026-11-02, #860 producer-owned recovery: owner raises the total allowance to **+333 net / 434 gross**. The measured draft reallocates net/gross: Core152/159, Contributions20/24, Properties47/60, Equilibrium74/134, Parameter Regression10/14, Bindings30/43. Completed measured net/gross: Core148/155, Contributions20/24, Properties45/56, Equilibrium75/137, Parameter Regression10/14, Bindings30/43; total328/429. Core ceiling **1,555 → 1,598** equals measured1,582 plus band16. All other layer ceilings and total32,763 remain sufficient; no numerical criterion changes.
 
 - 2026-11-02, #860 fix r1: owner raises the total gross allowance from **387 to 412**, retaining **+300 net**. Layer reallocation is approved. Completed measured net/gross: Core105/112, Contributions19/23, Properties45/54, Equilibrium85/165, Parameter Regression10/14, Bindings30/43; total294/411. Properties ceiling **6,534 → 6,604**, from completed count6,538 plus band66. Other layer ceilings and total32,763 remain sufficient. Numerical verification is separate.
