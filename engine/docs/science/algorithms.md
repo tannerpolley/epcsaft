@@ -270,8 +270,9 @@ Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
 State construction evaluates the full Helmholtz gradient and every row of the
-T, V and active-parameter Hessian columns. Uncaptured construction omits unused
-composition columns; active Core capture retains the complete Hessian payload.
+T, V and active-parameter Hessian columns. Uncaptured and ordinary Core capture
+omit unused composition columns. Diagnostic capture retains the complete Hessian
+payload; only complete Hessian evaluations emit the `hessian` trace event.
 
 Density closure evaluates normalized Taylor coefficients of the shared residual
 Helmholtz equations in volume at fixed temperature and composition. Order two
