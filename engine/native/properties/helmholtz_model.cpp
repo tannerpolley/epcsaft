@@ -2013,16 +2013,20 @@ std::vector<core::DifferenceCheck> HelmholtzModel::pressure_action_difference(do
     const PressureActionDirection& d, double step, double tau, double kappa) const {
     core::Scope scope("pressure_action_difference");
     core::admit_difference_parameters(step, tau, kappa);
-    const auto exact = pressure_actions(temperature, pressure, x, branch, observables, {d});
-    std::vector<core::DifferenceCheck> out;
-    for (const auto& r : exact.results)
-        out.push_back({"observable " + std::to_string(static_cast<int>(r.observable))
-            + (r.component ? "[" + std::to_string(*r.component) + "]" : ""), "unsupported_direction"});
+    // Refuse unsupported directions before the exact evaluation, whose validator rejects them; shape and
+    // finiteness errors still reach that validator.
     double sum = 0.0, size = 0.0;
     for (const double value : d.composition) { sum += value; size += std::abs(value); }
-    if (std::any_of(d.parameter.begin(), d.parameter.end(), [](const auto& p) { return p.value != 0.0; })
-        || (!d.composition.empty() && d.composition.size() != x.size())
-        || std::abs(sum) > static_cast<double>(x.size()) * std::numeric_limits<double>::epsilon() * size) return out;
+    std::vector<core::DifferenceCheck> out;
+    if (std::any_of(d.parameter.begin(), d.parameter.end(), [](const auto& p) { return std::isfinite(p.value) && p.value != 0.0; })
+        || (d.composition.size() == x.size() && std::abs(sum) > static_cast<double>(x.size()) * std::numeric_limits<double>::epsilon() * size)) {
+        for (const auto o : observables) out.push_back({"observable " + std::to_string(static_cast<int>(o)), "unsupported_direction"});
+        return out;
+    }
+    const auto exact = pressure_actions(temperature, pressure, x, branch, observables, {d});
+    for (const auto& r : exact.results)
+        out.push_back({"observable " + std::to_string(static_cast<int>(r.observable))
+            + (r.component ? "[" + std::to_string(*r.component) + "]" : ""), "nonfinite"});
     if (!exact.molar_density) { for (auto& c : out) c.status = "neighbor_unavailable"; return out; }
     std::array<std::vector<double>, 2> values;
     for (std::size_t side = 0; side < 2; ++side) {

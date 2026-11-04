@@ -169,7 +169,7 @@ inline std::string describe(const Convergence& record) {
 
 // ALG-ACTIONS verification only: an exact derivative A against D = (f+ - f-)/(2h) of its value (#976).
 struct DifferenceCheck final {
-    std::string label, status = "nonfinite";
+    std::string label, status = "nonfinite", cause;  // cause: why a neighbor was unavailable
     double exact = NAN, difference = NAN, step = NAN, roundoff = NAN, ratio = NAN;
 };
 inline void admit_difference_parameters(double step, double tau, double kappa) {
@@ -182,7 +182,7 @@ inline DifferenceCheck difference_check(std::string label, double exact, double 
                                         double floor_minus, double step, double tau, double kappa) {
     // A finite difference implies finite plus and minus.
     const double d = (plus - minus) / (2.0 * step), r = (floor_plus + floor_minus) / (2.0 * step);
-    DifferenceCheck c{std::move(label), "nonfinite", exact, d, step, r};
+    DifferenceCheck c{std::move(label), "nonfinite", {}, exact, d, step, r};
     if (!(std::isfinite(exact) && std::isfinite(d) && std::isfinite(r))) return c;
     const double error = std::abs(c.difference - exact), allowance = tau * std::abs(exact) + kappa * c.roundoff;
     c.ratio = allowance > 0.0 ? error / allowance : error == 0.0 ? 0.0 : INFINITY;

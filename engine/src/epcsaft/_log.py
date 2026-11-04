@@ -19,7 +19,9 @@ log.addHandler(logging.NullHandler())
 
 _IPOPT = ("inf_pr", "inf_du", "mu", "step_norm", "regularization", "alpha_pr", "alpha_du")
 _IPOPT_LINE = "%s Ipopt run %d iteration %d (%s): objective=%.17g, %s, line_search_trials=%d"
-_SUMMARY = ("success", "status", "usable", "selected", "solver_status", "iterations", "evaluations", "final_cost")
+# Native result fields, read when present: equilibrium, multistart, continuation and fit results.
+_SUMMARY = ("success", "status", "usable", "selected", "budget_exhausted", "solver_status", "iterations", "evaluations",
+            "residual_evaluations", "jacobian_evaluations", "accepted_steps", "final_cost", "cause_stop")
 
 
 def _summary(result: Any) -> str:
@@ -28,6 +30,8 @@ def _summary(result: Any) -> str:
         fields += [f"stop={result.convergence.stop.name}", f"cause={result.convergence.cause or '-'}"]
     elif hasattr(result, "stop"):
         fields.append(f"stop={result.stop}")
+    if hasattr(result, "causes") and result.selected is None:  # multistart: why no start was selected
+        fields.append(f"causes={result.causes}")
     message = getattr(result, "message", "")
     return ", ".join(fields) + (f": {message.split('; ')[0]}" if message else "")
 

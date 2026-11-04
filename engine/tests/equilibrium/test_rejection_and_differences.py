@@ -72,3 +72,12 @@ def test_directional_differences() -> None:
         water.pressure_action_difference(298.15, 1e5, phase="liquid", observables=[PropertyObservable.ResidualEnthalpy],
                                          direction=PressureActionDirection(temperature=1.0, composition=[0.0]),
                                          step=0.0, tau=1e-8, kappa=10.0)
+
+
+def test_failed_neighbor_is_a_status() -> None:
+    """A 70 K step from the 230 K bubble point fails its 300 K neighbor; the check reports it instead of crashing."""
+    problem = bubble_point(liquid=Phase("L", kind="liquid"), T=230.0, feed=Amounts({"methane": 0.3, "ethane": 0.7}))
+    pressure = SolvedStateObservable(SolvedStateObservableKind.Pressure, 0, 0)
+    [check] = solved_state_difference(compile_problem(methane_ethane(), problem), solve_equilibrium(methane_ethane(), problem),
+                                      [pressure], SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], []), 70.0, 1e-8, 10.0)
+    assert check.status == "neighbor_unavailable" and check.cause

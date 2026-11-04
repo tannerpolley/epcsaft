@@ -464,8 +464,9 @@ class Mixture:
             As for ``pressure_actions``.
         direction : PressureActionDirection
             One direction: temperature in K, pressure in Pa and a composition
-            increment whose entries sum to zero; nonzero parameter entries are
-            reported as ``unsupported_direction``.
+            increment whose entries sum to zero. A composition increment that
+            does not sum to zero, or a nonzero parameter entry, is reported as
+            ``unsupported_direction`` without evaluation.
         step : float
             Positive scalar multiplying ``direction``.
         tau, kappa : float

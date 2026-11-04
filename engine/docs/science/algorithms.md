@@ -2849,19 +2849,24 @@ Their returned method annotation supplies no new termination or admission criter
 means the optimizer converged and the Engine rejected the point. Every such
 rejection of a converged or floor-converged stop records `Stop::infeasible`
 and a `convergence.cause`: `phases_coalesced`, `phase_disappeared`,
-`solid_classification`, `present_solid_rank`, `log_charge_rank`,
-`local_phase_instability`, `caloric_split` or
-`reduced_hessian_not_positive_definite`. Singular and nonfinite stops keep
-their own stop. The verdict changes no work, coordinate or state.
+`solid_classification`, `log_charge_rank`, `local_phase_instability`,
+`caloric_split` or `reduced_hessian_not_positive_definite`. Singular and
+nonfinite stops keep their own stop and publish no new cause; a rank-deficient
+present-solid block stays `singular`. The verdict changes no work, coordinate
+or state.
 
 A topology rejection's message leads with the observation: the declared phases
 that coalesced, with T, P and the phase distance against
 `PHASE_COINCIDENCE_DISTANCE`, or the phase whose amount fell to
 `PHASE_DISAPPEARANCE_AMOUNT` of the feed. A coalesced bubble or dew point names
 a critical limit near those conditions as one possible, untested explanation.
-None of these messages claims global stability, nonexistence of a split or a
+These leading sentences claim no global stability, nonexistence of a split or
 critical point; `Discover()` searches other phase sets. The earlier technical
-text follows after `; `.
+and recovery text follows unchanged after `; `. That inherited text keeps its
+own wording: a recovery continuation whose phases exchange identity between
+accepted states reports "swapped identity between accepted states: passage
+through a critical point". The observation is the identity exchange; no
+critical-point calculation supports the stated explanation.
 
 The `epcsaft` logger is silent until configured. INFO writes one line per
 public equilibrium solve, continuation, multistart or fit (status, stop, cause,

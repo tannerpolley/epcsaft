@@ -3010,6 +3010,8 @@ class DifferenceCheck:
     """Row and coordinate, solved-state observable, or property result compared."""
     status: str
     """passed, failed, nonfinite, unsupported_direction, neighbor_unavailable or branch_changed."""
+    cause: str
+    """Why a neighbor was unavailable: its convergence cause or stop; empty otherwise."""
     exact: float
     """Exact first-order action A in the value's unit per unit step."""
     difference: float

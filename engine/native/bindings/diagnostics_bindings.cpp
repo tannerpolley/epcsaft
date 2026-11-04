@@ -70,7 +70,7 @@ void register_diagnostics(nb::module_& module) {
     nb::class_<core::Event>(module, "Event")
         EPCSAFT_READONLY(core::Event, name, span, iteration, values, reason);
     nb::class_<core::DifferenceCheck>(module, "DifferenceCheck")
-        EPCSAFT_READONLY(core::DifferenceCheck, label, status, exact, difference, step, roundoff, ratio);
+        EPCSAFT_READONLY(core::DifferenceCheck, label, status, cause, exact, difference, step, roundoff, ratio);
     nb::class_<core::Span>(module, "Span")
         EPCSAFT_READONLY(core::Span, name, parent, convergence, wall_us);
     nb::class_<core::Trace>(module, "Trace")
