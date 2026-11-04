@@ -101,6 +101,12 @@ Equilibrium 57/+21: 127 gross / +51 net. Properties requires its ceiling
 to be raised to the measured count plus its rounded-up one-percent band;
 `ARCHITECTURE.yaml` owns that ceiling. The other ceilings remain within band.
 
+Issue #975 integration against `9016663e3` uses Properties +1, Bindings +25
+and Python +15, total +41 net formatted runtime lines. Bindings increases from
+2,591 to 2,620, the measured 2,594 plus band 26. The total ceiling remains
+33,677, below the layer sum 33,710. The approved allowance is 185 gross /
++145 net; numerical qualification is separate.
+
 ## Duplication constraints
 
 One common Helmholtz definition supplies properties and their derivatives.
