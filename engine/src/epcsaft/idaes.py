@@ -11,14 +11,14 @@ from pathlib import Path
 from typing import Any
 import warnings
 
-from idaes.core import Component, LiquidPhase, VaporPhase
-from idaes.models.properties.modular_properties.eos.eos_base import EoSBase
-from idaes.models.properties.modular_properties.phase_equil import SmoothVLE
-from idaes.models.properties.modular_properties.phase_equil.bubble_dew import LogBubbleDew
-from idaes.models.properties.modular_properties.phase_equil.forms import log_fugacity
-from idaes.models.properties.modular_properties.state_definitions import FTPx
-from pyomo.core.base.external import AMPLExternalFunction, _ARGLIST
-from pyomo.environ import check_optimal_termination, log, value, units as u
+from idaes.core import Component, LiquidPhase, VaporPhase  # type: ignore[import-untyped]
+from idaes.models.properties.modular_properties.eos.eos_base import EoSBase  # type: ignore[import-untyped]
+from idaes.models.properties.modular_properties.phase_equil import SmoothVLE  # type: ignore[import-untyped]
+from idaes.models.properties.modular_properties.phase_equil.bubble_dew import LogBubbleDew  # type: ignore[import-untyped]
+from idaes.models.properties.modular_properties.phase_equil.forms import log_fugacity  # type: ignore[import-untyped]
+from idaes.models.properties.modular_properties.state_definitions import FTPx  # type: ignore[import-untyped]
+from pyomo.core.base.external import AMPLExternalFunction, _ARGLIST  # type: ignore[import-untyped]
+from pyomo.environ import check_optimal_termination, log, value, units as u  # type: ignore[import-untyped]
 
 from . import _core
 from .eos import DensityBranch, PressureActionDirection, property_asl_record
@@ -243,11 +243,14 @@ def solve_with_diagnostics(
     """Keep subprocess diagnostics in a caller-owned log and surface failure in Python."""
     logfile = Path(logfile).resolve()
     logfile.parent.mkdir(parents=True, exist_ok=True)
+    solver._log = ""
     try:
         result = solver.solve(model, logfile=str(logfile), symbolic_solver_labels=True)
         if not check_optimal_termination(result):
             raise RuntimeError(str(result.solver))
     except Exception as error:
+        if solver._log:
+            logfile.write_text(solver._log)
         messages = (
             [line for line in logfile.read_text().splitlines() if "epcsaft_property:" in line]
             if logfile.exists()
