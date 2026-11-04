@@ -617,6 +617,7 @@ double equilibrium_amount(arglist* arguments) {
 // d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) are applied here. Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
 struct PropertyContext final {
     std::string record;
+    bool require_phase_identity = false;
     std::unique_ptr<epcsaft::HelmholtzModel> model;
     struct Branch final {
         std::vector<double> q, values;
@@ -628,16 +629,19 @@ struct PropertyContext final {
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v2");
+    reader.field("epcsaft.asl.property.v3");
+    const bool require_phase_identity = reader.integer(1) != 0;
     const auto document = read_document(reader);
     epcsaft::policy::SolverOptions solver_options;
     reader.field("solver_options");
     for (auto& value : solver_options.values) value = reader.number();
-    epcsaft::ThermochemistryRecord thermochemistry;
+    std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
+    if (reader.integer(1) != 0) {
+    thermochemistry.emplace();
     reader.field("standard_pressure");
-    thermochemistry.standard_pressure = reader.number();
+    thermochemistry->standard_pressure = reader.number();
     reader.field("component_intervals");
-    thermochemistry.component_intervals = reader.vector([&] {
+    thermochemistry->component_intervals = reader.vector([&] {
         return reader.vector([&] {
             epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
             item.correlation.source_pressure = reader.number();
@@ -656,8 +660,10 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
             return item;
         });
     });
+    }
     reader.finish();
     auto context = std::make_unique<PropertyContext>();
+    context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<epcsaft::HelmholtzModel>(
         epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry, solver_options);
     context->record = raw;
@@ -705,9 +711,17 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
                 + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
                     : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
         }
+        const auto requested = phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor;
+        const auto returned = batch.diagnostics.returned_branch;
+        if ((!anchor && context.require_phase_identity && returned == epcsaft::DensityBranch::Unspecified)
+            || (returned != epcsaft::DensityBranch::Unspecified && returned != requested))
+            throw std::runtime_error("epcsaft_property:branch_mismatch:requested=" + std::to_string(static_cast<int>(requested))
+                + ":returned=" + std::to_string(static_cast<int>(returned)) + ":T=" + epcsaft::core::optional_number(q[0])
+                + ":P=" + epcsaft::core::optional_number(q[1]) + ":stable_root_count="
+                + (batch.diagnostics.stable_root_count ? std::to_string(*batch.diagnostics.stable_root_count) : "absent"));
         const auto fail = [&](std::size_t row, int k, Status status) {
             if (k < branch.failures[row].first)
-                branch.failures[row] = {k, "epcsaft_property:" + cause(status, "unavailable_derivative") + ":"
+                branch.failures[row] = {k, "epcsaft_property:" + cause(status, status == Status::MissingThermochemistry ? "MissingThermochemistry" : status == Status::OutsideInterval ? "OutsideInterval" : "unavailable_derivative") + ":"
                     + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
                     + (status == Status::ThermalBoundary ? ": ThermalBoundary at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
                     + "; site rank " + std::to_string(batch.diagnostics.site_rank)

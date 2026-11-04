@@ -150,14 +150,14 @@ void register_equilibrium(nb::module_& module) {
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
-    module.def("property_asl_record", [](nb::object model) {
+    module.def("property_asl_record", [](nb::object model, bool require_phase_identity) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        if (!native.active_parameters().empty() || !native.thermochemistry())
-            throw std::invalid_argument("ASL property record requires inactive parameters with thermochemistry");
-        return asl_property_record(document, *native.thermochemistry(), native.solver_options());
-    }, nb::arg("model"));
+        if (!native.active_parameters().empty())
+            throw std::invalid_argument("ASL property record requires inactive parameters");
+        return asl_property_record(document, native.thermochemistry(), native.solver_options(), require_phase_identity);
+    }, nb::arg("model"), nb::arg("require_phase_identity") = false);
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
     module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;
     nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")

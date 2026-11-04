@@ -361,7 +361,7 @@ const int native_image = open_image(reinterpret_cast<const void*>(&interrupted))
 FIELDS(ResidualEnergyAction, action, status, diagnostics)
 FIELDS(PropertyActionDiagnostics, site_rank, site_factorizations, site_solves, site_pivot_ratio, association_residual,
     pressure_density_derivative, pressure_residual, stability_determinant, pressure_factorizations, pressure_solves, thermal_evaluations,
-    recordings, directional_paths, forward_sweeps, branch, stable_root_count, first_numerical_failure, site_conditioning)
+    recordings, directional_paths, forward_sweeps, branch, returned_branch, stable_root_count, first_numerical_failure, site_conditioning)
 FIELDS(core::ConditioningObservation, operation, basis, norm, method, cause, point_kind, criterion, dimension, rank,
     precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error, criterion_value, coordinates,
     row_scale, column_scale, controls, phase, component, export_displacement, available)

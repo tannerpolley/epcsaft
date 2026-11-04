@@ -1982,6 +1982,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             / (GAS_CONSTANT_J_PER_MOL_K * temperature);
         result.diagnostics.pressure_residual = root->pressure_residual;
         result.diagnostics.branch = root->branch;
+        result.diagnostics.returned_branch = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
         result.diagnostics.stable_root_count = root->stable_root_count;
     }
     counters_.directional_paths += context.paths.size();

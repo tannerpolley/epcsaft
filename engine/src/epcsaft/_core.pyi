@@ -1227,6 +1227,8 @@ class PropertyActionDiagnostics:
     """Number of forward derivative sweeps."""
     branch: DensityBranch
     """Established density-branch label, or Unspecified."""
+    returned_branch: DensityBranch
+    """Root side classified with the native negative-slope witness, or Unspecified."""
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by the search, or None when not established."""
 
@@ -3846,13 +3848,15 @@ def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationO
     The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
     """
     ...
-def property_asl_record(model: Any) -> str:
+def property_asl_record(model: Any, require_phase_identity: bool = False) -> str:
     """Serialize a declared model for native ASL property callbacks.
 
     Parameters
     ----------
     model : Any
-        Python model/declaration exposing the source parameter document, thermochemistry and numerical options consumed by the native record writer.
+        Python model/declaration exposing the source parameter document, optional thermochemistry and numerical options consumed by the native record writer.
+    require_phase_identity : bool
+        Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
 
     Returns
     -------

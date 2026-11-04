@@ -171,7 +171,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(Diagnostics, site_conditioning, site_rank, site_factorizations, site_solves, site_pivot_ratio,
             association_residual, pressure_density_derivative, pressure_residual, stability_determinant,
             pressure_factorizations, pressure_solves, thermal_evaluations, recordings, directional_paths,
-            forward_sweeps, branch, stable_root_count, first_numerical_failure);
+            forward_sweeps, branch, returned_branch, stable_root_count, first_numerical_failure);
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
     nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")

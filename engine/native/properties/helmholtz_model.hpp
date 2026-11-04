@@ -151,6 +151,7 @@ struct PropertyActionDiagnostics final {
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
     std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
+    DensityBranch returned_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<core::Convergence> first_numerical_failure;
     std::shared_ptr<core::NumericalRank> site_conditioning;
