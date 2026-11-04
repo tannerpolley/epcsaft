@@ -74,8 +74,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const DriverLimits* limits = nullptr) {
     // DriverLimits::spend reads no clock: the deadline is checked first.
     const auto charge = [limits](std::size_t& used, std::size_t cap) {
-        limits->check();
-        if (!limits->spend(used, cap)) throw std::runtime_error("elapsed work budget exhausted");
+        if (limits->check(); !limits->spend(used, cap)) throw std::runtime_error("elapsed work budget exhausted");
     };
     const auto& S = phase.support;
     const auto n = static_cast<Eigen::Index>(S.size());
@@ -557,13 +556,6 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     }
 }
 
-// The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
-// converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
-bool unresolved_trial(const StabilityTrial& t) {
-    return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"
-        || (t.evidence == "no_resolved_descent" && !t.optimizer.success);
-}
-
 StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     const core::Trace& trace, std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
@@ -632,10 +624,6 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
         std::vector<std::pair<std::vector<double>, double>> rooted;
         for (auto& [seed_name, seed] : seeds) {
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
-            if (limits && limits->expired()) {  // #987: the trials so far stand; the search is incomplete
-                report.message = "search-incomplete: work budget exhausted";
-                count_stability_work(report.work, trace, begin); return report;
-            }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             try {
                 if (options.evaluate_supplied_trials) {
@@ -660,8 +648,9 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                         return prior.first == seed && std::abs(std::log(prior.second / eta))
                             <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; })) continue;
                 rooted.emplace_back(seed, eta);
-                if (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget) {
-                    report.message = "search-incomplete: trial budget exhausted";
+                const bool spent = limits && limits->expired();  // #987: the trials so far stand
+                if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
+                    report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { count_stability_work(report.work, trace, begin); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
@@ -751,8 +740,13 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
         }
     }
     report.completed = !stopped;
-    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), unresolved_trial);
+    // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
+    // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
+    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
+        return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"
+            || (t.evidence == "no_resolved_descent" && !t.optimizer.success); });
     const auto descending = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; });
+    report.no_descent_in_trial_set = report.completed && !report.trials.empty() && !descending && !unresolved;
     if (report.message.empty()) report.message = descending ? "numerically resolved descending split with estimated uncertainty"
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
@@ -774,55 +768,40 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     return test_snapshot(c, result, options, {}, capture.trace());
 }
 
-bool no_descent_in_trial_set(const StabilityReport& report) {
-    return report.completed && !report.trials.empty() && std::none_of(report.trials.begin(), report.trials.end(),
-        [](const auto& t) { return t.resolved_descent || unresolved_trial(t); });
-}
-
 // ALG-STABILITY before neutral recovery (#987): the Full trial set on the lower-objective single-phase L1/V1
 // declaration of the feed, every solve and native trial charged to `limits`. Every outcome returns its report;
 // nothing from it feeds recovery. A failed parent keeps its cause and work.
 StabilityReport recovery_stability(const CompiledSystem& c, const DriverLimits& limits) {
-    core::Scope scope("recovery_stability");
     StabilityReport parents, report;
     std::optional<std::pair<CompiledSystem, EquilibriumResult>> best;
-    std::string causes;
     for (const auto kind : {PhaseKind::Liquid, PhaseKind::Vapor}) {
         auto single = c.problem;
-        PhaseSpec phase; phase.name = kind == PhaseKind::Liquid ? "L1" : "V1"; phase.kind = kind;
-        single.phases = {phase};
-        EquilibriumResult audit, parent;
-        std::optional<CompiledSystem> compiled;
-        try {
-            compiled = compile_problem(*c.model, single);
-            parent = solve_compiled(*compiled, std::nullopt, nullptr, &limits, {}, false, &audit);
-        } catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) {
-            parent = audit; parent.success = false; parent.message = error.what();
-            core::retain_failure(parent.first_numerical_failure, error, "recovery stability parent");
-        }
+        single.phases = {PhaseSpec{kind == PhaseKind::Liquid ? "L1" : "V1", kind}};
+        auto compiled = compile_problem(*c.model, single);
+        EquilibriumResult audit, parent;  // a parent that throws keeps the driver's audit work
+        try { parent = solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, false, &audit); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { parent = audit; parent.message = error.what(); }
         count_driver(parents.work, parent, "parent_declarations");
         core::retain_first(parents.first_numerical_failure, parent.first_numerical_failure);
-        if (!parent.success) causes += "; " + phase.name + ": " + parent.message;
-        else if (!best || parent.objective < best->second.objective) best.emplace(std::move(*compiled), std::move(parent));
+        if (!parent.success) parents.message += "; " + single.phases[0].name + ": " + parent.message;
+        if (parent.success && (!best || parent.objective < best->second.objective)) best.emplace(std::move(compiled), std::move(parent));
     }
-    if (!best) report.message = ": no single-phase candidate";
-    else {
-        core::Capture capture;
-        try { report = test_snapshot(best->first, best->second, StabilityOptions{}, {}, capture.trace(), nullptr, &limits); }
-        catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) {
-            report = StabilityReport{}; report.message = error.what();
-            core::retain_failure(report.first_numerical_failure, error, "recovery stability");
-            count_stability_work(report.work, capture.trace());
-        }
-        report.message = " from single-phase " + best->first.problem.phases[0].name + ", " + std::to_string(report.trials.size())
-            + " trials: " + report.message;
+    core::Capture capture;
+    try {
+        if (!best) throw std::runtime_error("no single-phase candidate");
+        report = test_snapshot(best->first, best->second, {}, {}, capture.trace(), nullptr, &limits);
+        report.message = " from single-phase " + best->first.problem.phases[0].name + ", "
+            + std::to_string(report.trials.size()) + " trials: " + report.message;
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {  // only before the first trial: the trials' own catches keep theirs
+        report.message = std::string(": ") + error.what();
+        core::retain_failure(report.first_numerical_failure, error, "recovery stability");
+        count_stability_work(report.work, capture.trace());
     }
     for (const auto& [name, value] : parents.work) report.work[name] += value;
-    core::retain_first(parents.first_numerical_failure, report.first_numerical_failure);
-    report.first_numerical_failure = std::move(parents.first_numerical_failure);
-    report.message = "tangent-plane search before recovery" + report.message + causes;
+    core::retain_first(report.first_numerical_failure, parents.first_numerical_failure, true);
+    report.message = "tangent-plane search before recovery" + report.message + parents.message;
     return report;
 }
 

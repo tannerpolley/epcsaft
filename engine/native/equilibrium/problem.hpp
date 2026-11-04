@@ -707,6 +707,7 @@ struct StabilityReport final {
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::NumericalRank> last_rank;
     bool completed = false;
+    bool no_descent_in_trial_set = false;  // #987: completed, trials, none descending or unresolved
     std::string message;
     std::vector<StabilityTrial> trials;
     std::vector<double> candidate_coordinates, standard_over_rt, plane_over_rt;
