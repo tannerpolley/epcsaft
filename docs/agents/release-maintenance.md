@@ -9,7 +9,9 @@ committing the candidate. It writes a new tree and a JSON manifest under
 than 50 MiB with SHA-256 notes. It also excludes every packet whose own
 `packet.toml` `license_or_use_basis` is CC BY-NC, and the CC BY-NC analysis
 inputs named in the tool, and lists both in the manifest; a packet without a
-readable basis stops the snapshot. The manifest records the HSL and journal-PDF
+readable basis stops the snapshot. In the exported tree only, it drops the
+excluded packets' locks and regenerates `data/docs/parameter-index.md`, so the
+shipped packet validator passes; `data/tools/restore_feos.sh` restores them. The manifest records the HSL and journal-PDF
 path checks and personal-path counts. Complete the secret scan before any
 publication; snapshot generation does not publish or tag a release.
 

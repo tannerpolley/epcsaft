@@ -17,6 +17,12 @@ ROOT = PACKETS.parents[1]
 SOURCE_RECORDS = {"feos-gross-sadowski-2001": 78, "feos-gross-sadowski-2002": 18, "feos-esper-2023": 1842, "feos-rehner-2023": 7848}
 
 
+def restricted_data() -> None:
+    """Source archives omit the CC BY-NC Esper and Rehner packets; their checks need them restored."""
+    if not all((PACKETS / packet / "1/packet.toml").is_file() for packet in ("feos-esper-2023", "feos-rehner-2023")):
+        pytest.skip("CC BY-NC Esper/Rehner packets absent; restore them with bash data/tools/restore_feos.sh")
+
+
 def document(packet: str) -> dict[str, Any]:
     result: dict[str, Any] = json.loads((PACKETS / packet / "1/parameters/parameters.json").read_text())
     return result
@@ -28,6 +34,7 @@ def coefficients(component: dict[str, Any]) -> dict[str, float]:
 
 
 def test_every_source_record_is_admitted_or_refused_once() -> None:
+    restricted_data()
     for packet, count in SOURCE_RECORDS.items():
         rows = list(csv.DictReader((PACKETS / packet / "1/sources/record-accounting.csv").open()))
         assert [int(r["source_index"]) for r in rows] == list(range(count))
@@ -75,6 +82,7 @@ def test_gross_2002_equals_table_1_and_declares_its_rules() -> None:
 
 
 def test_esper_maps_nonpolar_dipolar_self_and_acceptor_only_records() -> None:
+    restricted_data()
     packet = document("feos-esper-2023")
     sites: dict[str, list[tuple[str, int]]] = {}
     for site in packet["topology"]["sites"]:
@@ -91,6 +99,7 @@ def test_esper_maps_nonpolar_dipolar_self_and_acceptor_only_records() -> None:
 def test_rehner_fitted_cross_volume_keeps_the_source_strength() -> None:
     """Rehner 2023 Eq. 17 builds the cross volume on (sigma_i sigma_j)^(3/2); the Engine's direct edge on
     ((sigma_i + sigma_j)/2)^3. First pinned induced row: acetaldehyde (acceptor only) / 2-propen-1-ol."""
+    restricted_data()
     packet = document("feos-rehner-2023")
     sigma = {c["component_id"]: coefficients(c)["segment_diameter"] for c in packet["components"]}
     edge = next(e for e in packet["topology"]["edges"]

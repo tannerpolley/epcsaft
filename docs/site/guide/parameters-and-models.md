@@ -107,17 +107,19 @@ Each packet's `packet.toml` and any
 The source archive omits the Esper 2023 pure-component (`feos-esper-2023/1`) and
 Rehner 2023 binary (`feos-rehner-2023/1`) packets because their use basis is
 CC BY-NC 4.0, which permits noncommercial use only. Rebuild them from their
-original FeOs distribution. Download `gross2001.json`, `gross2002.json`,
-`esper2023.json` and `rehner2023_binary.json` from
-[feos-org/feos `parameters/pcsaft` at commit `af84e3f9`](https://github.com/feos-org/feos/tree/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft)
-into one directory, then run the importer from the extracted source root:
+original FeOs distribution,
+[feos-org/feos `parameters/pcsaft` at commit `af84e3f9`](https://github.com/feos-org/feos/tree/af84e3f9da2fac2d102d449cd07cbbb48237617b/parameters/pcsaft),
+by running this from the extracted source root:
 
 ```bash
-python3 data/tools/import_feos.py path/to/feos-json
+bash data/tools/restore_feos.sh
 ```
 
-The importer checks each file's SHA-256 and writes the four `feos-*/1` packets
-under `data/packets`. Cite the parameter sources:
+It downloads `gross2001.json`, `gross2002.json`, `esper2023.json` and
+`rehner2023_binary.json` at that commit, refuses any file whose SHA-256 differs
+from the pinned value, writes the four `feos-*/1` packets under `data/packets`
+and regenerates `data/docs/parameter-index.md`. The Esper and Rehner packet
+tests skip until this step has run. Cite the parameter sources:
 
 - Esper, T.; Bauer, G.; Rehner, P.; Gross, J. PCP-SAFT Parameters of Pure
   Substances Using Large Experimental Databases. *Ind. Eng. Chem. Res.* **2023**,

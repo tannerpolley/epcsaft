@@ -50,6 +50,8 @@ jobs:
           SHA256
           nice -n 10 tar -xzf idaes-solvers-ubuntu2204-x86_64.tar.gz -C "$IDAES_DATA/bin"
           nice -n 10 tar -xzf idaes-lib-ubuntu2204-x86_64.tar.gz -C "$IDAES_DATA/bin"
+      - name: Restore FeOs packets omitted from source archives
+        run: bash data/tools/restore_feos.sh
       - name: Build site
         env:
           EPCSAFT_NOTEBOOK_EXECUTION: force
