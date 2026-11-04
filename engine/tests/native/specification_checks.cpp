@@ -1519,6 +1519,34 @@ void check_association_reference() {
     CHECK(energy.diagnostics.site_conditioning->basis == "implicit_site_fractions");
     CHECK(energy.diagnostics.site_conditioning->first_conditioning_warning
         && energy.diagnostics.site_conditioning->first_conditioning_warning->coordinates == warning.coordinates);
+    // Remove dispersion attraction so the warning-producing central point has positive pressure slope.
+    auto repulsive = association_parameters(); repulsive.dispersion_energy_over_k.assign(2, 0.0);
+    HelmholtzModel stable(repulsive);
+    for (int reuse = 0; reuse < 2; ++reuse) {
+        const auto before = capture.trace().spans.size();
+        const auto reference = call(stable);
+        const auto& d = reference.diagnostics; const auto& r = d.site_conditioning;
+        const bool recomputed = std::any_of(capture.trace().spans.begin() + before, capture.trace().spans.end(),
+            [](const auto& span) { return std::string(span.name) == "association_newton"; });
+        CHECK(reference.status == PropertyActionStatus::Available && d.site_factorizations == 1
+            && r && r->basis == "implicit_site_fractions" && r->observation.basis == r->basis
+            && r->observation.point_kind == "endpoint" && r->first_conditioning_warning
+            && r->first_conditioning_warning->basis == "mass_action_site_fractions"
+            && r->first_conditioning_warning->coordinates == warning.coordinates
+            && r->first_conditioning_warning->controls == warning.controls && (!reuse || !recomputed));
+        std::cout << "reference ordering: cache_hit=" << reuse << " first=mass_action_site_fractions latest="
+            << r->observation.basis << " factors=" << d.site_factorizations << " recomputed=" << recomputed << '\n';
+    }
+    const auto directional = stable.density_actions(temperature, 10000, x,
+        {PropertyObservable::ResidualEnthalpy}, {DensityActionDirection{1, 0, {0, 0}, {}}});
+    const auto& dr = directional.diagnostics.site_conditioning;
+    CHECK(directional.results[0].status == PropertyActionStatus::Available
+        && directional.diagnostics.site_factorizations == 1 && dr && dr->observation.basis == "implicit_site_fractions"
+        && dr->observation.point_kind == "endpoint" && dr->first_conditioning_warning
+        && dr->first_conditioning_warning->basis == "mass_action_site_fractions"
+        && dr->first_conditioning_warning->coordinates == warning.coordinates
+        && dr->first_conditioning_warning->controls == warning.controls);
+    std::cout << "directional ordering: first=mass_action_site_fractions latest=" << dr->observation.basis << '\n';
     policy::SolverOptions options; options.values[policy::association] = 1e-30;
     HelmholtzModel strict(association_parameters(), {}, std::nullopt, options);
     core::AssociationObservations parent;
