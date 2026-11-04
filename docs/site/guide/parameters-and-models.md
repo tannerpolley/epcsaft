@@ -16,8 +16,8 @@ versioned packets below a supplied directory. `parameter_document` exposes the
 combined document before native construction. These calls are documented in
 [parameter inputs](../api/parameters.rst).
 
-The packet root in the quickstart is `data/packets`; it is a checkout path,
-not a resource bundled with the wheel. Keep the selected packet versions,
+The packet root in the quickstart is `data/packets`; it is a checkout path.
+The conda package also includes the two packets described below. Keep the selected packet versions,
 component order, source locators and caller overrides with the calculation.
 A combined document retains materialization source information. A successful
 load establishes mathematical admission, not the validity of extrapolation.
@@ -79,3 +79,29 @@ Charged ordinary states must be electroneutral. Mathematical admission does
 not establish parameter accuracy at a temperature, concentration or solvent
 composition. Read the source's fit domain and retain unknown applicability
 as unknown; the [limits](../limits.md) explain this distinction.
+
+## Installed and downloaded packets
+
+The conda package includes the FeOs Gross–Sadowski 2001 and 2002 packets. Locate
+its packet root and select a component explicitly:
+
+```python
+from pathlib import Path
+import epcsaft
+
+packets = Path(epcsaft.__file__).resolve().parent / "data" / "packets"
+hexane = epcsaft.Parameters.from_packets(packets, [("feos-gross-sadowski-2001/1", ["hexane"])])
+```
+
+The public source archive for the installed version also contains `data/packets`,
+including the Esper 2023 pure-component and Rehner 2023 binary parameter sets.
+Download and extract the matching source archive from the project's releases,
+then pass its `data/packets` directory as the first argument to
+`Parameters.from_packets`, as above. Each packet's `packet.toml` and any
+`parameters/LICENSE-NOTICE.md` state its use terms; follow those terms. The
+Esper and Rehner packets carry noncommercial terms. Selection and mathematical
+admission do not establish a fit range or validate an extrapolation.
+
+The polar model may instead select a quadrupole–quadrupole contribution. Only
+one polar choice is active; its source mixing-rule limitations are described
+in the [quadrupole decision](../../scientific/decisions/0014-optional-quadrupole-quadrupole-term.md).

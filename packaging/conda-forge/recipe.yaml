@@ -112,6 +112,8 @@ about:
   license_file:
     - LICENSE
     - NOTICE
+    - data/packets/feos-gross-sadowski-2001/1/packet.toml
+    - data/packets/feos-gross-sadowski-2002/1/packet.toml
     - ipopt-source/Ipopt/LICENSE
     - engine/build/subprojects/CppAD-20250000.3/COPYING
     - engine/build/subprojects/CppAD-20250000.3/epl-2.0.txt

@@ -95,3 +95,6 @@ See [halite complementarity](../examples/index.md#halite-complementarity)
 for the one-salt numerical example. See
 [solid equations](../theory/algorithms.md#pure-stoichiometric-solids) and the
 [reaction guide](reacting-equilibrium.md) before changing reference bases.
+
+Neutral critical-equation candidates can be declared through
+`CriticalDeclaration`; a candidate is not a certificate of global phase stability.

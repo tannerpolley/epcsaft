@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import json
 import math
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -208,6 +209,16 @@ class Mixture:
         self.site_ids = parameters.site_ids
         self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
 
+    @contextmanager
+    def _association_error(self) -> Iterator[None]:
+        try:
+            yield
+        except EosError as error:
+            if "association Jacobian is singular" in str(error):
+                sites = ", ".join(f"{component}/{site}" for component, site in self.site_ids)
+                error.args = (f"{error}; declared association sites: {sites}",)
+            raise
+
     def state(
         self,
         T: float,
@@ -265,12 +276,13 @@ class Mixture:
         if (rho is None) == (P is None):
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
-        if rho is not None:
-            return self._model.state(T, rho, self._composition(x), bool(derived_properties))
-        assert P is not None
-        return self._model.state_at_pressure(
-            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
-        )
+        with self._association_error():
+            if rho is not None:
+                return self._model.state(T, rho, self._composition(x), bool(derived_properties))
+            assert P is not None
+            return self._model.state_at_pressure(
+                T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
+            )
 
     def reference(
         self,
@@ -324,7 +336,8 @@ class Mixture:
             raise ParameterError("reference requires both ions and stoichiometry or neither")
         if ions is None:
             fractions = tuple(solvent_fractions)
-            native = _core.solvent_reference(self._model, T, P, fractions)
+            with self._association_error():
+                native = _core.solvent_reference(self._model, T, P, fractions)
             return Reference(self._model, self.component_ids, T, P, fractions, None, None, native)
         assert stoichiometry is not None
         try:
@@ -333,7 +346,8 @@ class Mixture:
             raise ParameterError(f"unknown ion component in {ions}") from error
         # The reference keeps its own copies: later caller edits cannot mix states with the native fugacities.
         fractions, formula = tuple(solvent_fractions), cast(tuple[int, int], tuple(stoichiometry))
-        native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
+        with self._association_error():
+            native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
         return Reference(self._model, self.component_ids, T, P, fractions, ion_indices, formula, native)
 
     def density_actions(

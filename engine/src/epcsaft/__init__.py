@@ -12,7 +12,10 @@ Native result types and exceptions are re-exported from ``_core``.
 import logging
 import os
 import sys
+from importlib.metadata import version
 from pathlib import Path
+
+__version__ = version("epcsaft")
 
 _dll_directories: list[object] = []
 if sys.platform == "win32":

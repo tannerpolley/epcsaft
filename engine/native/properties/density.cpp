@@ -50,7 +50,7 @@ struct DensityPartition final {
     std::size_t evaluations = 0, intervals = 0, stable = 0;
     bool active = false;
     DensityStructureError refused(const std::string& cause_now, const std::optional<core::Convergence>& first) const {
-        return DensityStructureError(cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
+        return DensityStructureError("could not resolve the density structure; " + cause + "; enumeration interval=[" + core::optional_number(lower) + "," + core::optional_number(upper)
             + "] mol/m3; cells=" + std::to_string(intervals) + "; stable=" + std::to_string(stable)
             + "; evaluations=" + std::to_string(evaluations) + "; unresolved: " + cause_now, first);
     }

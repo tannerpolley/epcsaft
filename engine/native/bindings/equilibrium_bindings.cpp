@@ -121,9 +121,11 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<core::ConditioningObservation>(module, "ConditioningObservation")
         EPCSAFT_READONLY(core::ConditioningObservation, operation, basis, norm, method, cause, point_kind, criterion,
             dimension, rank, precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error,
-            criterion_value, coordinates, row_scale, column_scale, controls, phase, component, export_displacement, available);
+            criterion_value, coordinates, row_scale, column_scale, controls, phase, component, export_displacement, available)
+        EPCSAFT_REPR(ConditioningObservation, "operation", "basis", "rank", "dimension", "condition", "cause", "available");
     nb::class_<core::NumericalRank>(module, "NumericalRank")
-        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning);
+        EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning)
+        EPCSAFT_REPR(NumericalRank, "basis", "dimension", "rank", "threshold", "first_conditioning_warning");
     using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
     using core::ComparisonEligibility; using core::EquilibriumComparison;
     using core::compare_equilibrium_quantity;
@@ -131,7 +133,8 @@ void register_equilibrium(nb::module_& module) {
     nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
     nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
     nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())
-        EPCSAFT_READWRITE(NumericalEstimate, absolute, chart, available, resolved, cause);
+        EPCSAFT_READWRITE(NumericalEstimate, absolute, chart, available, resolved, cause)
+        EPCSAFT_REPR(NumericalEstimate, "absolute", "chart", "available", "resolved", "cause");
     nb::class_<ComparisonEligibility>(module, "ComparisonEligibility").def(nb::init<>())
         EPCSAFT_READWRITE(ComparisonEligibility, declaration, branch, phase_matching, inventory,
             residual_a, residual_b, admission_a, admission_b);
@@ -262,6 +265,7 @@ void register_equilibrium(nb::module_& module) {
             CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
+        EPCSAFT_REPR(Row, "kind", "phase", "index")
         .def_prop_ro("eqid", [](const Row& row) { return row_kind_name(row.kind); });
     nb::class_<PointEvaluation>(module, "PointEvaluation")
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
@@ -319,7 +323,8 @@ void register_equilibrium(nb::module_& module) {
             tnlp_constraint_multipliers, declaration, rows, constraint_rows, objective_factor);
     nb::class_<IpoptDiagnostics>(module, "IpoptDiagnostics")
         EPCSAFT_READONLY(IpoptDiagnostics, last, first_restoration_iteration, initialization_return, application_return,
-            restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, failed_point);
+            restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, failed_point)
+        EPCSAFT_REPR(IpoptDiagnostics, "initialization_return", "application_return", "restoration_entries", "callbacks", "warm_initialized");
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def("saturation_values", [](nb::object self) {
             auto values = saturation_values(nb::cast<const EquilibriumResult&>(self));
@@ -417,7 +422,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<SolvedStateObservable>(module, "SolvedStateObservable")
         .def(nb::init<SolvedStateObservableKind, std::size_t, std::size_t, PropertyObservable>(), nb::arg("kind"), nb::arg("phase") = 0, nb::arg("component") = 0,
             nb::arg("property") = PropertyObservable::IdealEnthalpy)
-        EPCSAFT_READONLY(SolvedStateObservable, kind, phase, component, property);
+        EPCSAFT_READONLY(SolvedStateObservable, kind, phase, component, property)
+        EPCSAFT_REPR(SolvedStateObservable, "kind", "phase", "component", "property");
     nb::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
         .def(nb::init<double, double, std::vector<double>, std::vector<double>, std::vector<std::array<double, 4>>, double, double>(),
              nb::arg("temperature_k"), nb::arg("pressure_pa"), nb::arg("feed_amounts_mol"),

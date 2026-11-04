@@ -205,7 +205,8 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure);
     nb::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
-            projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);
+            projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor)
+        EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
     nb::enum_<MeasuredInputKind>(module, "MeasuredInputKind")
         EPCSAFT_VALUES(MeasuredInputKind, Temperature, Pressure, MoleFraction, Molality);
     nb::class_<MeasuredInput>(module, "MeasuredInput").def(nb::init<>())

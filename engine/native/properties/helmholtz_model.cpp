@@ -91,7 +91,7 @@ void properties::site_factorization(
             *status = PropertyActionStatus::AssociationSingular;
             return;
         }
-        throw std::domain_error("association Jacobian is singular");
+        throw std::runtime_error("association Jacobian is singular");
     }
     if (!admitted_pivot_ratio(factorization)) {
         failure("association Jacobian is ill-conditioned");

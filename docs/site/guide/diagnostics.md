@@ -2,9 +2,7 @@
 
 Read the cause, available values and achieved residuals together. Declaration
 errors, unavailable candidates and finite candidates outside a requested
-tolerance describe different outcomes. The
-[termination algorithm](../theory/algorithms.md#alg-termination) defines these
-meanings. The [water notebook](../examples/parameters-and-water-state.ipynb),
+tolerance describe different outcomes. The [water notebook](../examples/parameters-and-water-state.ipynb),
 [caloric notebook](../examples/methane-caloric-properties.ipynb) and
 [discovery notebook](../examples/water-isobutanol-discovery.ipynb) show pressure
 closure, missing thermal outputs and finite-search evidence respectively.
@@ -27,7 +25,7 @@ inputs does not identify a thermodynamic failure.
 
 For equilibrium, check that temperature and pressure are present and the
 state arrays are populated before consuming the candidate. Then inspect
-`convergence`, `message`, raw and classified residuals and warnings.
+`success`, `message`, `topology_event`, `first_numerical_failure`, `convergence`, and raw and classified residuals.
 A finite candidate can miss the requested tolerance; retain its achieved
 residual instead of reporting a successful physical result from the optimizer
 termination alone. No finite candidate means there is no state to substitute
@@ -86,3 +84,27 @@ physical inputs and the exact unavailable cause. State whether the evidence
 is a source-parameter prediction, numerical verification or an independent
 physical comparison. A convergence record alone establishes none of the
 last category.
+
+
+## Example: a declared split
+
+```python
+from epcsaft import Mixture, Parameters
+from epcsaft.equilibrium import Amounts, Phase, Problem, bubble_point, solve_equilibrium
+
+parameters = Parameters.from_packets("data/packets", [("gross-2001-methane-ethane/3", ["methane", "ethane"])])
+model = Mixture(parameters)
+feed = Amounts({"methane": 0.3, "ethane": 0.7})
+problem = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")],
+                  T=250.0, P=1e5, feed=feed)
+result = solve_equilibrium(model, problem)
+print(result.success, result.message, result.topology_event,
+      result.first_numerical_failure, result.convergence)
+# Inner convergence does not make a coalesced declared split successful.
+bubble = bubble_point(liquid=Phase("L", kind="liquid"), T=230.0, feed=feed)
+report = model.density_diagnostics(250.0, 1e5, x=[0.3, 0.7])
+print(report.unresolved)
+```
+
+`bubble` is a declaration; solve it with `solve_equilibrium(model, bubble)`.
+Density diagnostics describes a finite search, not proof of all roots.

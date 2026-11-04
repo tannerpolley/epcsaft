@@ -723,10 +723,10 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             if (k < branch.failures[row].first)
                 branch.failures[row] = {k, "epcsaft_property:" + cause(status, status == Status::MissingThermochemistry ? "MissingThermochemistry" : status == Status::OutsideInterval ? "OutsideInterval" : "unavailable_derivative") + ":"
                     + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
-                    + (status == Status::ThermalBoundary ? ": ThermalBoundary at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
-                    + "; site rank " + std::to_string(batch.diagnostics.site_rank)
+                    + ((status == Status::ThermalBoundary || status == Status::OutsideInterval) ? ": thermochemistry interval at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
+                    + ((status == Status::OutsideInterval || status == Status::MissingThermochemistry) ? "" : "; site rank " + std::to_string(batch.diagnostics.site_rank)
                     + "; pivot ratio " + epcsaft::core::optional_number(batch.diagnostics.site_pivot_ratio)
-                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual)
+                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual))
                     + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
         };
         std::vector<double> actions(n);
