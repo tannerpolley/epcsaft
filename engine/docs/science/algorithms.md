@@ -1598,7 +1598,9 @@ lower-objective single-phase declaration before [neutral recovery](#neutral-reco
 (owner, 2026-11-03). A completed search without a descent means "no witness in the
 recorded trial set", never a global certificate: a split outside the finite trial
 set is not excluded, and a refused solve does not run recovery, so a case recovery
-could have solved can be refused. They preserve callback arithmetic/order and counted work. Returned
+could have solved can be refused. Calls outside this exception preserve callback
+arithmetic/order and counted work; the exception adds the search's work and, on a
+refusal, omits recovery's. Returned
 solved-state actions use the fixed discovered declaration without searching.
 Qualification must compare the retained before/after declared numerical values
 bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
