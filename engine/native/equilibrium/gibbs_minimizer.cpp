@@ -833,6 +833,11 @@ static bool mixture_precision_eligible(const CompiledSystem& c) {
         && !c.problem.source_reference && c.solids.empty() && c.model->parameters().component_count() > 1;
 }
 
+std::vector<IpoptIterationRecord>*& ipopt_iteration_log() noexcept {
+    static thread_local std::vector<IpoptIterationRecord>* log = nullptr;
+    return log;
+}
+
 // ALG-TERMINATION: the leading sentence of a topology rejection states what check_topology observed, at the
 // declared intensives; it claims neither global stability nor a critical point (#976).
 static std::string topology_sentence(const CompiledSystem& compiled, const TopologyCheck& topology) {
@@ -842,16 +847,16 @@ static std::string topology_sentence(const CompiledSystem& compiled, const Topol
         + " vanished: its amount reached at most PHASE_DISAPPEARANCE_AMOUNT of the feed; the declared split was rejected";
     const auto& a = p.phases[topology.pair->first];
     const auto& b = p.phases[topology.pair->second];
-    const std::string pair = "declared phases " + a.name + " and " + b.name + " coalesced (phase distance "
-        + number(topology.distance) + " at most PHASE_COINCIDENCE_DISTANCE)";
+    const std::string pair = "declared phases " + a.name + " and " + b.name + " coalesced",
+        distance = " (phase distance " + number(topology.distance) + " at most PHASE_COINCIDENCE_DISTANCE)";
     if (p.phases.size() == 2 && a.kind != b.kind && a.is_zero_pinned() != b.is_zero_pinned() && p.temperature.free != p.pressure.free)
         return std::string("no distinct ") + ((a.is_zero_pinned() ? a : b).kind == PhaseKind::Vapor ? "bubble" : "dew")
             + " point was found at " + (p.pressure.free ? "T = " + number(p.temperature.value) + " K" : "P = " + number(p.pressure.value) + " Pa")
-            + ": " + pair + "; a critical limit near these conditions is one possible, untested explanation";
+            + ": " + pair + distance + "; a critical limit near these conditions is one possible, untested explanation";
     std::string at;
     if (!p.temperature.free) at += " at T = " + number(p.temperature.value) + " K";
     if (!p.pressure.free) at += (at.empty() ? " at P = " : ", P = ") + number(p.pressure.value) + " Pa";
-    return pair + at + "; the declared split was rejected; Discover() searches for the stable phases";
+    return pair + at + distance + "; the declared split was rejected; Discover() searches for the stable phases";
 }
 
 EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
@@ -872,7 +877,6 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     result.topology_phase = topology.phase;
     result.topology_pair = topology.pair;
     for (std::size_t phase = 0; !compiled.ideal && phase < compiled.problem.phases.size(); ++phase) {
-        const auto& spec = compiled.problem.phases[phase];
         volumes.push_back(model->parameters().ideal_gas ? prepared.volume[phase] / sum(prepared.composition[phase])
             : model->packing_fraction_coefficient(temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
         const double deficit = michelsen_deficit(

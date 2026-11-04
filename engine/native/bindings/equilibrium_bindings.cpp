@@ -15,9 +15,16 @@
 #include <nanobind/stl/vector.h>
 
 #include <optional>
+#include <utility>
 
 namespace nb = nanobind;
 namespace epcsaft::equilibrium {
+
+// Python opens this only while the epcsaft logger is at DEBUG; it collects the calling thread's Ipopt iterations.
+struct IpoptIterations final {
+    std::vector<IpoptIterationRecord> records;
+    std::vector<IpoptIterationRecord>* previous = nullptr;
+};
 
 // A fit the start document cannot represent carries the refusal message in place of the document.
 static ParameterDocument record_document(const nb::object& model) {
@@ -252,6 +259,9 @@ void register_equilibrium(nb::module_& module) {
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("solve_saturation", &solve_saturation, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
+        .def("coordinate_labels", &CompiledSystem::coordinate_labels)
+        .def("jacobian_difference", &CompiledSystem::jacobian_difference, nb::arg("point"), nb::arg("relative_step"),
+            nb::arg("tau"), nb::arg("kappa"))
         .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
                 double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
                 std::vector<double> densities, std::vector<double> packing) {
@@ -285,6 +295,14 @@ void register_equilibrium(nb::module_& module) {
             condition_estimate, forward_error_estimate, precision_bits, refinement_iterations);
     nb::class_<IpoptIteration>(module, "IpoptIteration")
         EPCSAFT_READONLY(IpoptIteration, mode, iteration, line_search_trials, objective, inf_pr, inf_du, mu, step_norm, regularization, alpha_du, alpha_pr);
+    nb::class_<IpoptIterationRecord>(module, "IpoptIterationRecord") EPCSAFT_READONLY(IpoptIterationRecord, run, iteration);
+    nb::class_<IpoptIterations>(module, "IpoptIterations")
+        .def(nb::init<>())
+        .def("__enter__", [](IpoptIterations& c) -> IpoptIterations& {
+            c.records.clear(); c.previous = std::exchange(ipopt_iteration_log(), &c.records); return c; }, nb::rv_policy::reference_internal)
+        .def("__exit__", [](IpoptIterations& c, nb::object, nb::object, nb::object) { ipopt_iteration_log() = c.previous; return false; },
+            nb::arg("exc_type").none(), nb::arg("exc_value").none(), nb::arg("traceback").none())
+        .def_ro("records", &IpoptIterations::records);
     nb::class_<IpoptPoint>(module, "IpoptPoint")
         EPCSAFT_READONLY(IpoptPoint, tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers,
             tnlp_constraint_multipliers, declaration, rows, constraint_rows, objective_factor);
@@ -416,6 +434,8 @@ void register_equilibrium(nb::module_& module) {
             central_floor);
     nb::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch")
         EPCSAFT_READONLY(SolvedStateActionBatch, results, diagnostics);
+    module.def("solved_state_difference", &solved_state_difference, nb::arg("compiled"), nb::arg("central"),
+        nb::arg("observables"), nb::arg("direction"), nb::arg("step"), nb::arg("tau"), nb::arg("kappa"));
     module.def("solved_state_actions", &solved_state_actions,
                nb::arg("compiled"), nb::arg("central"), nb::arg("request"),
                "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"

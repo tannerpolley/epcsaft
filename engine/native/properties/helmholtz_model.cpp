@@ -2006,6 +2006,43 @@ PropertyActionBatch HelmholtzModel::density_actions(
     return directional_actions(temperature, molar_density, mole_fractions, observables, directions);
 }
 
+// ALG-ACTIONS verification: neighbors stay on the central root through its anchor; a moved root is "branch_changed".
+std::vector<core::DifferenceCheck> HelmholtzModel::pressure_action_difference(double temperature, double pressure,
+    const std::vector<double>& x, DensityBranch branch, const std::vector<PropertyObservable>& observables,
+    const PressureActionDirection& d, double step, double tau, double kappa) const {
+    core::admit_difference_parameters(step, tau, kappa);
+    const auto exact = pressure_actions(temperature, pressure, x, branch, observables, {d});
+    std::vector<core::DifferenceCheck> out;
+    for (const auto& r : exact.results)
+        out.push_back({"observable " + std::to_string(static_cast<int>(r.observable))
+            + (r.component ? "[" + std::to_string(*r.component) + "]" : ""), "unsupported_direction"});
+    double sum = 0.0, size = 0.0;
+    for (const double value : d.composition) { sum += value; size += std::abs(value); }
+    if (std::any_of(d.parameter.begin(), d.parameter.end(), [](const auto& p) { return p.value != 0.0; })
+        || (!d.composition.empty() && d.composition.size() != x.size())
+        || std::abs(sum) > static_cast<double>(x.size()) * std::numeric_limits<double>::epsilon() * size) return out;
+    if (!exact.molar_density) { for (auto& c : out) c.status = "neighbor_unavailable"; return out; }
+    std::array<std::vector<double>, 2> values;
+    for (std::size_t side = 0; side < 2; ++side) {
+        const double h = side == 0 ? step : -step;
+        auto w = x;
+        for (std::size_t i = 0; i < d.composition.size(); ++i) w[i] += h * d.composition[i];
+        const auto neighbor = pressure_actions(temperature + h * d.temperature, pressure + h * d.pressure, w, branch, observables, {d},
+            exact.molar_density);
+        if (!neighbor.molar_density || neighbor.results.size() != out.size()
+            || std::abs(std::log(*neighbor.molar_density / *exact.molar_density)) > policy::DENSITY_ANCHOR_LOG_WINDOW.value) {
+            for (auto& c : out) c.status = neighbor.molar_density ? "branch_changed" : "neighbor_unavailable";
+            return out;
+        }
+        for (const auto& r : neighbor.results) values[side].push_back(r.value.value_or(NAN));
+    }
+    const double eps = std::numeric_limits<double>::epsilon();
+    for (std::size_t k = 0; k < out.size(); ++k)
+        out[k] = core::difference_check(out[k].label, exact.results[k].action.value_or(NAN), values[0][k], values[1][k],
+            eps * std::abs(values[0][k]), eps * std::abs(values[1][k]), step, tau, kappa);
+    return out;
+}
+
 PropertyActionBatch HelmholtzModel::pressure_actions(
     double temperature, double pressure, const std::vector<double>& mole_fractions,
     DensityBranch branch, const std::vector<PropertyObservable>& observables,

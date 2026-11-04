@@ -442,6 +442,11 @@ public:
         const std::vector<PressureActionDirection>&,
         std::optional<double> = std::nullopt
     ) const;
+    // Each first-order pressure_actions result along `direction` against central differences of its value at +-step
+    // on the anchored central root (verification only). Supported: T, P and a zero-sum composition direction.
+    EPC_API std::vector<core::DifferenceCheck> pressure_action_difference(double temperature, double pressure,
+        const std::vector<double>& mole_fractions, DensityBranch branch, const std::vector<PropertyObservable>& observables,
+        const PressureActionDirection& direction, double step, double tau, double kappa) const;
     EPC_API double packing_fraction_coefficient(
         double temperature,
         const std::vector<double>& mole_fractions

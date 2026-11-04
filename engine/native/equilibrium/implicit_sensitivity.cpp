@@ -1484,4 +1484,54 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFra
     return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
 }
 
+// ALG-ACTIONS verification: each neighbor re-solves from `central`; a failed, coalesced or branch-changed neighbor
+// is a status of every record, never a value.
+std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem& compiled, const EquilibriumResult& central,
+    const std::vector<SolvedStateObservable>& observables, const SolvedStateActionDirection& d, double step, double tau, double kappa) {
+    core::admit_difference_parameters(step, tau, kappa);
+    const auto& p = compiled.problem;
+    const auto zero = [](double value) { return value == 0.0; };
+    const bool supported = compiled.model && std::all_of(d.active_parameters.begin(), d.active_parameters.end(), zero)
+        && std::all_of(d.reaction_coefficients.begin(), d.reaction_coefficients.end(),
+            [&](const auto& c) { return std::all_of(c.begin(), c.end(), zero); })
+        && (zero(d.temperature_k) || !p.temperature.free) && (zero(d.pressure_pa) || !p.pressure.free)
+        && (zero(d.enthalpy_j) || p.enthalpy_j) && (zero(d.entropy_j_per_k) || p.entropy_j_per_k)
+        && (std::all_of(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(), zero)
+            || (p.feed.kind == FeedKind::Amounts && d.feed_amounts_mol.size() == p.feed.values.size()));
+    std::vector<core::DifferenceCheck> out;
+    for (const auto& o : observables) out.push_back({solved_state_observable_id(o), "unsupported_direction"});
+    if (!supported) return out;
+    const SolvedStateActionRequest request{observables, {d}};
+    const auto exact = solved_state_actions(compiled, central, request);
+    std::array<std::vector<double>, 2> values;
+    for (std::size_t side = 0; side < 2; ++side) {
+        const double h = side == 0 ? step : -step;
+        auto q = p;
+        q.temperature.value += h * d.temperature_k;
+        q.pressure.value += h * d.pressure_pa;
+        if (q.enthalpy_j) *q.enthalpy_j += h * d.enthalpy_j;
+        if (q.entropy_j_per_k) *q.entropy_j_per_k += h * d.entropy_j_per_k;
+        for (std::size_t i = 0; i < d.feed_amounts_mol.size(); ++i) q.feed.values[i] += h * d.feed_amounts_mol[i];
+        const auto neighbor_system = compile_problem(*compiled.model, q);
+        const auto neighbor = solve_compiled(neighbor_system, central);
+        bool same = neighbor.phase_count == central.phase_count && neighbor.solid_amounts.size() == central.solid_amounts.size();
+        for (std::size_t i = 0; same && i < central.molar_densities.size(); ++i)
+            same = std::abs(std::log(neighbor.molar_densities[i] / central.molar_densities[i])) <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+        for (std::size_t i = 0; same && i < central.solid_amounts.size(); ++i)
+            same = (neighbor.solid_amounts[i] > 0.0) == (central.solid_amounts[i] > 0.0);
+        const char* status = !neighbor.success || !neighbor.requested_tolerance_met.value_or(false)
+            || neighbor.topology_event != TopologyEvent::None ? "neighbor_unavailable" : same ? nullptr : "branch_changed";
+        if (status) { for (auto& c : out) c.status = status; return out; }
+        for (const auto& r : solved_state_actions(neighbor_system, neighbor, request).results) values[side].push_back(r.value.value_or(NAN));
+    }
+    if (exact.results.size() != out.size() || values[0].size() != out.size() || values[1].size() != out.size())
+        throw std::logic_error("solved-state difference: one result per observable");
+    for (std::size_t k = 0; k < out.size(); ++k) {
+        const double eps = std::numeric_limits<double>::epsilon();
+        out[k] = core::difference_check(out[k].label, exact.results[k].action.value_or(NAN), values[0][k], values[1][k],
+            eps * std::abs(values[0][k]), eps * std::abs(values[1][k]), step, tau, kappa);
+    }
+    return out;
+}
+
 }  // namespace epcsaft::equilibrium

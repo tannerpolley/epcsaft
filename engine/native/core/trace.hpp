@@ -38,6 +38,7 @@ struct Span final {
 
 struct IpoptLog final {
     std::string destination, error;
+    int print_level = 12;  // Ipopt journal level of every category; J_MAIN is capped at 5
     bool attempted = false;
     std::shared_ptr<void> application;
 };
@@ -119,8 +120,13 @@ void observe(Trace* trace, Observation&& observation) {
 
 class Capture final {
 public:
-    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}) : previous_(current_trace()) {
-        if (!ipopt_log.empty()) { trace_.ipopt_log = std::make_shared<IpoptLog>(); trace_.ipopt_log->destination = ipopt_log; }
+    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}, int ipopt_print_level = 12)
+        : previous_(current_trace()) {
+        if (!ipopt_log.empty()) {
+            trace_.ipopt_log = std::make_shared<IpoptLog>();
+            trace_.ipopt_log->destination = ipopt_log;
+            trace_.ipopt_log->print_level = ipopt_print_level;
+        }
         else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;

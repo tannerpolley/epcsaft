@@ -102,6 +102,8 @@ inline void observe_ipopt(IpoptDiagnostics& d, core::Scope* scope, const IpoptIt
         if (!d.first_restoration_iteration) d.first_restoration_iteration = iteration.iteration;
     }
     d.last = iteration;
+    if (auto* log = ipopt_iteration_log())
+        log->push_back({(log->empty() ? 0 : log->back().run) + (iteration.iteration == 0), iteration});
     if (scope) scope->probe("ipopt_iteration",
         {double(iteration.mode), iteration.objective, iteration.inf_pr, iteration.inf_du, iteration.mu, iteration.step_norm, iteration.regularization,
          iteration.alpha_pr, iteration.alpha_du, double(iteration.line_search_trials)}, iteration.iteration);
@@ -127,8 +129,9 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         if (!request.attempted) {
             request.attempted = true;
             auto holder = std::make_shared<Application>(::IpoptApplicationFactory());
-            if ((*holder)->OpenOutputFile(request.destination, Ipopt::J_ALL)) {
-                (*holder)->Jnlst()->GetJournal("OutputFile:" + request.destination)->SetPrintLevel(Ipopt::J_MAIN, Ipopt::J_ITERSUMMARY);
+            if ((*holder)->OpenOutputFile(request.destination, Ipopt::EJournalLevel(request.print_level))) {
+                (*holder)->Jnlst()->GetJournal("OutputFile:" + request.destination)->SetPrintLevel(Ipopt::J_MAIN,
+                    Ipopt::EJournalLevel(std::min(request.print_level, int(Ipopt::J_ITERSUMMARY))));
                 request.application = std::move(holder);
             } else {
                 request.error = "Ipopt log could not be opened";

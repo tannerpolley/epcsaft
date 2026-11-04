@@ -256,6 +256,9 @@ void register_eos(nb::module_& module) {
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("observables"), nb::arg("directions"),
              nb::arg("anchor_density") = std::nullopt)
+        .def("pressure_action_difference", &epcsaft::HelmholtzModel::pressure_action_difference, nb::arg("temperature"),
+             nb::arg("pressure"), nb::arg("mole_fractions"), nb::arg("branch"), nb::arg("observables"), nb::arg("direction"),
+             nb::arg("step"), nb::arg("tau"), nb::arg("kappa"))
         .def("packing_fraction_coefficient", [](const epcsaft::HelmholtzModel& model,
                                                double temperature, const std::vector<double>& composition) {
             epcsaft::core::Scope scope("packing_fraction_coefficient");
