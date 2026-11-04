@@ -1480,6 +1480,27 @@ void check_association_publication() {
     for (auto v : warning.coordinates) std::cout << v << ' ';
     std::cout << '\n';
 }
+void check_pure_association_publication() {
+    using namespace epcsaft; namespace eq = epcsaft::equilibrium;
+    HelmholtzModel model(properties_support::ethane());
+    eq::CompiledSystem compiled; compiled.model = &model; compiled.primal_size = 4; compiled.feed_total = 1;
+    compiled.problem.phases = {equilibrium_support::phase("L", eq::PhaseKind::Liquid, eq::AmountSpec::pinned(1)),
+        equilibrium_support::phase("V", eq::PhaseKind::Vapor, eq::AmountSpec::pinned(0))};
+    for (auto& phase : compiled.problem.phases) phase.support = {0};
+    eq::PhasePoint prepared; prepared.temperature = 200; prepared.point = {0, std::log(0.2), 0, std::log(0.01)};
+    core::Scope scope("pure_association_publication"); core::AssociationObservations observations;
+    eq::EquilibriumResult candidate; // Manufactured refusal; no equilibrium prediction is requested.
+    auto published = eq::publish_candidate(compiled, prepared, std::move(candidate), scope, nullptr);
+    core::NumericalRank rank{"mass_action_site_fractions", 2, 1, 1e-14};
+    core::ConditioningObservation warning; warning.cause = "association_pivot_refusal";
+    warning.controls = {200, 1000, 1}; core::observe_conditioning(rank, warning, {1, 1});
+    core::AssociationObservations::publish(rank); // Deterministic warning collected after the publication move.
+    observations.merge(published.rank_records);
+    CHECK(published.rank_records.size() == 1 && published.rank_records[0].first_conditioning_warning
+        && published.rank_records[0].first_conditioning_warning->coordinates == std::vector<double>({1, 1})
+        && published.rank_records[0].first_conditioning_warning->controls == warning.controls);
+    std::cout << "manufactured pure publication: warning point=(1,1), controls=(200 K,1000 mol/m^3,1) retained after move\n";
+}
 void check_association_reference() {
     using namespace epcsaft;
     const double temperature = 313.15;
@@ -1796,6 +1817,7 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.specification.conditioning", "conditioning"}, check_conditioning},
         {{"native.specification.association-publication", "association-publication"}, check_association_publication},
+        {{"native.specification.pure-association-publication", "pure-association-publication"}, check_pure_association_publication},
         {{"native.specification.association-reference", "association-reference"}, check_association_reference},
         {{"native.specification.association-preparation", "association-preparation"}, check_association_preparation},
         {{"native.specification.pure-association-attempt", "pure-association-attempt"}, check_pure_association_attempt},
