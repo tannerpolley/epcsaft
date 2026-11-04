@@ -1685,7 +1685,7 @@ DensityRoot solve_density(
     }
     auto publish_conditioning = [&](DensityRoot& root) {
         root.rank_records = series.rank_records;
-    if (series.observations_) series.observations_->merge(root.rank_records);
+        if (series.observations_) series.observations_->merge(root.rank_records);
         if (root.convergence.rank) {
             core::retain_rank(root.rank_records, *root.convergence.rank);
             for (const auto& rank : root.rank_records) if (rank.basis == root.convergence.rank->basis) root.convergence.rank = std::make_shared<core::NumericalRank>(rank);

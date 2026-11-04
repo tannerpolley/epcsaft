@@ -1492,6 +1492,10 @@ void check_association_reference() {
     const auto spans = capture.trace().spans.size();
     const auto second = call(model);
     CHECK(first.status == PropertyActionStatus::PressureSingular && second.status == first.status);
+    for (std::size_t i = spans; i < capture.trace().spans.size(); ++i)
+        CHECK(std::string(capture.trace().spans[i].name) != "association_newton");
+    std::cout << "reference cache hit: no central site recomputation\n";
+    CHECK(second.diagnostics.site_conditioning && second.diagnostics.site_conditioning->first_conditioning_warning);
     const auto& rank = first.diagnostics.site_conditioning;
     CHECK(rank && rank->first_conditioning_warning && second.diagnostics.site_conditioning);
     const auto& warning = *rank->first_conditioning_warning;
@@ -1499,8 +1503,6 @@ void check_association_reference() {
     CHECK(warning.controls == std::vector<double>({temperature, 10000, 0.5, 0.5}));
     CHECK(second.diagnostics.site_conditioning->first_conditioning_warning);
     CHECK(second.diagnostics.site_conditioning->first_conditioning_warning->coordinates == warning.coordinates);
-    for (std::size_t i = spans; i < capture.trace().spans.size(); ++i)
-        CHECK(std::string(capture.trace().spans[i].name) != "association_newton");
     HelmholtzModel nested(association_parameters());
     {
         core::AssociationObservations outer;
@@ -1522,7 +1524,12 @@ void check_association_reference() {
     core::AssociationObservations parent;
     bool threw = false;
     { core::AssociationObservations phase(std::size_t{3});
-        try { (void)call(strict); } catch (const core::ConvergenceFailure&) { threw = true; }
+        try { (void)call(strict); } catch (const core::ConvergenceFailure& error) {
+            threw = true;
+            CHECK(error.record.criterion && error.record.criterion->value == 1e-30);
+            CHECK(error.record.rank && error.record.rank->first_conditioning_warning);
+            CHECK(error.record.rank->first_conditioning_warning->coordinates == warning.coordinates);
+        }
     }
     std::vector<core::NumericalRank> records; parent.merge(records);
     CHECK(threw && records.size() == 1 && records[0].first_conditioning_warning);
