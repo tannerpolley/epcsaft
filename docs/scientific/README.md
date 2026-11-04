@@ -25,7 +25,10 @@ place and remove duplicate progress summaries; Git preserves edit history.
 each ceiling is raised or lowered; their single numeric owner is `ARCHITECTURE.yaml`.
 
 [ADR 0011](decisions/0011-optional-dipole-dipole-term.md) owns the optional
-Gross–Vrabec dipole–dipole admission; remaining multipoles stay retired under
+Gross–Vrabec dipole–dipole term, and
+[ADR 0014](decisions/0014-optional-quadrupole-quadrupole-term.md) owns the optional
+Gross quadrupole–quadrupole term. The two terms cannot be combined in one model;
+the dipole–quadrupole cross term remains retired under
 [ADR 0006](decisions/0006-retire-residual-polar.md).
 
 ## Sources
