@@ -125,6 +125,13 @@ def actions(result: _core.EquilibriumResult, molality: float, observables: list[
     return [item.action for item in batch.results if item.action is not None]
 
 
+def test_free_solid_amount_label() -> None:
+    """F10: the free halite amount has its own column, after the liquid's coordinates and before the multipliers."""
+    compiled = compile_problem(model(), problem(6.5))
+    labels = compiled.coordinate_labels()
+    assert len(labels) == len(compiled.generic_point()) and labels[labels.index("ln eta[L]") + 1] == "n_solid[halite] / mol"
+
+
 def test_present_branch_actions(evidence: Any) -> None:
     """F5: exact dm_s/dT and water-feed actions of order 1 and 2 against central differences of native solves."""
     center = solve(6.5)

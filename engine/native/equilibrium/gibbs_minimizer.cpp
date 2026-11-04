@@ -856,7 +856,7 @@ static std::string topology_sentence(const CompiledSystem& compiled, const Topol
     std::string at;
     if (!p.temperature.free) at += " at T = " + number(p.temperature.value) + " K";
     if (!p.pressure.free) at += (at.empty() ? " at P = " : ", P = ") + number(p.pressure.value) + " Pa";
-    return pair + at + distance + "; the declared split was rejected; Discover() searches for the stable phases";
+    return pair + at + distance + "; the declared split was rejected; Discover() searches other phase sets";
 }
 
 EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
@@ -869,6 +869,13 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     const double temperature = prepared.temperature;
     bool topology_ok = true;
     std::string topology_failure, cause;
+    // One Engine verdict: a rejected point that classified as converged stops as infeasible; other stops stand.
+    const auto infeasible = [&result](const char* reason) {
+        auto& stop = result.convergence.stop;
+        if (stop != core::Stop::converged && stop != core::Stop::converged_to_floor) return;
+        stop = core::Stop::infeasible;
+        result.convergence.cause = reason;
+    };
     // Preparation above admitted every composition with a positive total.
     const auto topology = check_topology(compiled, full);
     const auto& compositions = topology.compositions;
@@ -944,12 +951,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!accepted) {
         result.success = false;
         if (!topology_ok) {
-            // One Engine verdict: a rejected point that classified as converged stops as infeasible; other stops stand.
-            auto& stop = result.convergence.stop;
-            if (stop == core::Stop::converged || stop == core::Stop::converged_to_floor) {
-                stop = core::Stop::infeasible;
-                result.convergence.cause = cause;
-            }
+            infeasible(cause.c_str());
             result.message = cause == "phases_coalesced" || cause == "phase_disappeared"
                 ? topology_sentence(compiled, topology) + "; " + topology_failure : topology_failure;
         }
@@ -1015,6 +1017,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         if (pure) {
             if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
                 result.success = false;
+                infeasible("caloric_split");
                 result.message = "caloric coexistence requires an interior distinct split";
                 clear_state(result);
                 return result;
@@ -1052,6 +1055,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         const bool singular = curvature.equilibrated >= -curvature.band;
         if (singular || std::isnan(curvature.equilibrated))
             result.convergence.stop = singular ? core::Stop::singular : core::Stop::nonfinite;
+        infeasible("reduced_hessian_not_positive_definite");
         result.success = false;
         result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
             + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)
