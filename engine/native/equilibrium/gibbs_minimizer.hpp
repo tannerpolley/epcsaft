@@ -20,15 +20,16 @@ namespace Ipopt { class TNLPAdapter; }
 namespace epcsaft::equilibrium {
 
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
-    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0;
+    std::size_t iterations = 0, evaluations = 0, hessian_calls = 0, stage = 0;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<IpoptDiagnostics> ipopt_diagnostics, recovered_ipopt_diagnostics;
     template<class R> void observe(const R& r) {
         core::retain_first(first_numerical_failure, r.first_numerical_failure);
-        for (const auto& rank : r.rank_records) core::retain_rank(rank_records, rank);
+        for (const auto& rank : r.rank_records) core::retain_rank(rank_records, rank, {}, stage);
         if constexpr (std::is_same_v<R, EquilibriumResult>)
-            if (r.last_rank) core::retain_rank(rank_records, *r.last_rank);
+            if (r.last_rank) core::retain_rank(rank_records, *r.last_rank, {}, stage);
+        ++stage;
         if (!recovered_ipopt_diagnostics && ipopt_diagnostics && ipopt_diagnostics->first_restoration_iteration && r.ipopt_diagnostics)
             recovered_ipopt_diagnostics = ipopt_diagnostics;
         if (!recovered_ipopt_diagnostics) recovered_ipopt_diagnostics = r.recovered_ipopt_diagnostics;
@@ -66,7 +67,7 @@ struct OneComponentTwoDensityPoint final {
 };
 EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
 bool one_component_two_density_eligible(const CompiledSystem&);
-EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
+EPC_API EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
 EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);
@@ -135,6 +136,8 @@ struct DriverLimits final {
 // ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
 // source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
+// #987: the finite trial search of a coalesced fixed-T/P flash before recovery, charged to `limits`.
+EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const DriverLimits& limits);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void clear_state(EquilibriumResult& result);

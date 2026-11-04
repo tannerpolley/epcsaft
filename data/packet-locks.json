@@ -312,20 +312,6 @@
       "materialization": "byte-for-byte"
     },
     {
-      "packet_id": "feos-esper-2023",
-      "packet_version": "1",
-      "packet_path": "data/packets/feos-esper-2023/1",
-      "packet_fingerprint": "fe1d01dd6dfefcdf1bacdae5652b921512cc13d94794a52985eb63f5d28b6345",
-      "materialization": "byte-for-byte"
-    },
-    {
-      "packet_id": "feos-rehner-2023",
-      "packet_version": "1",
-      "packet_path": "data/packets/feos-rehner-2023/1",
-      "packet_fingerprint": "eec880e1b87dbdef52e681469c51d4c4367f47690e2df50beae3b44aa4dc777f",
-      "materialization": "byte-for-byte"
-    },
-    {
       "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
       "packet_version": "1",
       "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",

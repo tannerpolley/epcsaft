@@ -24,12 +24,14 @@ within 1e-8, with finite positive coefficient, density and pressure slope.
 `results/figure-09-run-identity.json` identifies all source and packet bytes and
 the loaded native library. The notebook computes its coverage, descriptive
 statistics and comparison plots from retained files only. It neither reruns the
-Engine nor applies historical thresholds. Independent delivered review remains
-open.
+Engine nor applies historical thresholds. The investigator promoted `9bfc702f` for NaCl/NaBr in water–alcohols, subject to these limitations: descriptive; incomplete primary-source lineage. This promotion does not extend to later results or other comparisons in this leaf.
 
 Source: Figiel, Yu and Held (2025), DOI 10.1021/acs.iecr.5c00475, Figure 9;
 exact source rows remain under `figures/figure-09/source/`. The observation and
-parameter ledgers remain in `inputs/source/`. The source checker is rerunnable:
+parameter ledgers remain in `inputs/source/`. Public source archives omit
+`inputs/source/` because its supporting-information transcriptions carry
+CC BY-NC 4.0 terms; obtain the values from Figiel, Yu and Held (2025),
+Supporting Information, DOI 10.1021/acs.iecr.5c00475.s001. The source checker is rerunnable:
 
 ```bash
 .venv/bin/python analyses/reproduction/2025-figiel/scripts/check_figiel_2025_source_packet.py

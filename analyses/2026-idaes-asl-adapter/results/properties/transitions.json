@@ -1,0 +1,1310 @@
+[
+  {
+    "case": "transition-0-0--1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.0568788424013743e-06,
+    "T_eq_minus_T_K": 1.000024998226138,
+    "active_phase": "liquid",
+    "absent_fraction": 1.0568788424013743e-06,
+    "active_density": 20662.997180684968,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.4999994975891241,
+      0.5000005024108758
+    ],
+    "component_balance_mol_s": [
+      2.042810365310288e-14,
+      -2.0483614804334138e-14
+    ]
+  },
+  {
+    "case": "transition-0-0--1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.056878857209533e-06,
+    "T_eq_minus_T_K": 1.000024998226138,
+    "active_phase": "liquid",
+    "absent_fraction": 1.056878857209533e-06,
+    "active_density": 20662.997180684975,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.49999949758912404,
+      0.5000005024108759
+    ],
+    "component_balance_mol_s": [
+      2.7422508708241367e-14,
+      -2.7422508708241367e-14
+    ]
+  },
+  {
+    "case": "transition-0-0--0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.0543038396865518e-05,
+    "T_eq_minus_T_K": 0.10024937695669678,
+    "active_phase": "liquid",
+    "absent_fraction": 1.0543038396865518e-05,
+    "active_density": 20608.702816052937,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.4999949880897557,
+      0.5000050119102444
+    ],
+    "component_balance_mol_s": [
+      4.551914400963142e-15,
+      -4.551914400963142e-15
+    ]
+  },
+  {
+    "case": "transition-0-0--0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.0543038416733906e-05,
+    "T_eq_minus_T_K": 0.10024937695669678,
+    "active_phase": "liquid",
+    "absent_fraction": 1.0543038416733906e-05,
+    "active_density": 20608.702816052915,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.49999498808974835,
+      0.5000050119102516
+    ],
+    "component_balance_mol_s": [
+      6.661338147750939e-15,
+      -6.772360450213455e-15
+    ]
+  },
+  {
+    "case": "transition-0-0-+0-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.00021132029678108878,
+    "T_eq_minus_T_K": 0.004999998850962584,
+    "active_phase": "liquid",
+    "absent_fraction": 0.00021132029678108878,
+    "active_density": 20602.395280346616,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.49989952546855626,
+      0.5001004745314437
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      -5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-0-0-+0-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.00021132029678647048,
+    "T_eq_minus_T_K": 0.004999998850962584,
+    "active_phase": "liquid",
+    "absent_fraction": 0.00021132029678647048,
+    "active_density": 20602.395280346587,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.4998995254685537,
+      0.5001004745314463
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-0-0-+0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.004210102365297266,
+    "T_eq_minus_T_K": 0.00024937695454241293,
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-0-0-+0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.004210102365296183,
+    "T_eq_minus_T_K": 0.00024937695454241293,
+    "component_balance_mol_s": [
+      -5.551115123125783e-17,
+      -5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-0-0-+1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.03963047728146066,
+    "T_eq_minus_T_K": 2.499820456591806e-05,
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-0-0-+1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.03963047727558384,
+    "T_eq_minus_T_K": 2.499820456591806e-05,
+    "component_balance_mol_s": [
+      -2.841837876133013e-12,
+      2.8418933872842445e-12
+    ]
+  },
+  {
+    "case": "transition-0-1--1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9589095860678774,
+    "T_eq_minus_T_K": 4.056846307776141e-07,
+    "component_balance_mol_s": [
+      1.6261436641684668e-12,
+      -1.626199175319698e-12
+    ]
+  },
+  {
+    "case": "transition-0-1--1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9589095860674492,
+    "T_eq_minus_T_K": 4.056846307776141e-07,
+    "component_balance_mol_s": [
+      1.4310219675905955e-12,
+      -1.4309664564393643e-12
+    ]
+  },
+  {
+    "case": "transition-0-1--0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9957192244208665,
+    "T_eq_minus_T_K": -1.6457462947983004e-07,
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-0-1--0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9957192244208738,
+    "T_eq_minus_T_K": -1.645746010581206e-07,
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-0-1-+0-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999892581200855,
+    "T_eq_minus_T_K": -0.0002497703166284282,
+    "active_phase": "vapor",
+    "absent_fraction": 1.074187991445541e-05,
+    "active_density": 617.7334326890578,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.5000045693507247,
+      0.49999543064927515
+    ],
+    "component_balance_mol_s": [
+      -2.55351295663786e-15,
+      2.609024107869118e-15
+    ]
+  },
+  {
+    "case": "transition-0-1-+0-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999892581200845,
+    "T_eq_minus_T_K": -0.0002497703166284282,
+    "active_phase": "vapor",
+    "absent_fraction": 1.074187991545461e-05,
+    "active_density": 617.733432689058,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.5000045693507245,
+      0.49999543064927554
+    ],
+    "component_balance_mol_s": [
+      -3.164135620181696e-15,
+      3.219646771412954e-15
+    ]
+  },
+  {
+    "case": "transition-0-1-+0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999731205814,
+    "T_eq_minus_T_K": -0.10000062499321416,
+    "active_phase": "vapor",
+    "absent_fraction": 2.6879418579817127e-08,
+    "active_density": 617.34089478149,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.5000000114337938,
+      0.4999999885662062
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      1.1102230246251565e-16
+    ]
+  },
+  {
+    "case": "transition-0-1-+0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999731205885,
+    "T_eq_minus_T_K": -0.10000062499304363,
+    "active_phase": "vapor",
+    "absent_fraction": 2.687941147438977e-08,
+    "active_density": 617.3408947814904,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.5000000114337908,
+      0.49999998856620914
+    ],
+    "component_balance_mol_s": [
+      -1.1102230246251565e-16,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-0-1-+1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999973120383,
+    "T_eq_minus_T_K": -1.0000000624999075,
+    "active_phase": "vapor",
+    "absent_fraction": 2.6879617420760837e-09,
+    "active_density": 613.8313269674909,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.5000000011433878,
+      0.49999999885661217
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-0-1-+1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 0.01,
+    "eps_2_K": 0.0005,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999973120322,
+    "T_eq_minus_T_K": -1.0000000624998222,
+    "active_phase": "vapor",
+    "absent_fraction": 2.687967848302719e-09,
+    "active_density": 613.8313269674906,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.5000000011433904,
+      0.49999999885660956
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-0--1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.05704910241298e-10,
+    "T_eq_minus_T_K": 1.0000000025002578,
+    "active_phase": "liquid",
+    "absent_fraction": 1.05704910241298e-10,
+    "active_density": 20662.99857200068,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.4999999999497461,
+      0.5000000000502425
+    ],
+    "component_balance_mol_s": [
+      -7.105427357601002e-15,
+      -1.84297022087776e-14
+    ]
+  },
+  {
+    "case": "transition-1-0--1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.0568960288676247e-10,
+    "T_eq_minus_T_K": 1.000000002500002,
+    "active_phase": "liquid",
+    "absent_fraction": 1.0568960288676247e-10,
+    "active_density": 20662.99857200071,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.49999999994975813,
+      0.5000000000502416
+    ],
+    "component_balance_mol_s": [
+      -1.6653345369377348e-16,
+      -3.885780586188048e-16
+    ]
+  },
+  {
+    "case": "transition-1-0--0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.056961884351126e-09,
+    "T_eq_minus_T_K": 0.10000002500029836,
+    "active_phase": "liquid",
+    "absent_fraction": 1.056961884351126e-09,
+    "active_density": 20608.716357904643,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.49999999949754886,
+      0.500000000502451
+    ],
+    "component_balance_mol_s": [
+      1.0103029524088925e-14,
+      -1.1102230246251565e-15
+    ]
+  },
+  {
+    "case": "transition-1-0--0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.0569581420404511e-09,
+    "T_eq_minus_T_K": 0.10000002500007099,
+    "active_phase": "liquid",
+    "absent_fraction": 1.0569581420404511e-09,
+    "active_density": 20608.71635790467,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.4999999994975519,
+      0.5000000005024481
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      -5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-1-0-+0-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 2.1139040805874544e-06,
+    "T_eq_minus_T_K": 4.9999999902183845e-05,
+    "active_phase": "liquid",
+    "absent_fraction": 2.1139040805874544e-06,
+    "active_density": 20602.663338260674,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.49999899510769147,
+      0.5000010048923086
+    ],
+    "component_balance_mol_s": [
+      1.7985612998927536e-14,
+      -1.787459069646502e-14
+    ]
+  },
+  {
+    "case": "transition-1-0-+0-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 2.1139040922246944e-06,
+    "T_eq_minus_T_K": 4.9999999902183845e-05,
+    "active_phase": "liquid",
+    "absent_fraction": 2.1139040922246944e-06,
+    "active_density": 20602.663338260685,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.4999989951076922,
+      0.5000010048923077
+    ],
+    "component_balance_mol_s": [
+      2.4202861936828413e-14,
+      -2.4313884239290928e-14
+    ]
+  },
+  {
+    "case": "transition-1-0-+0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.004199700151751288,
+    "T_eq_minus_T_K": 2.4999906145239947e-08,
+    "component_balance_mol_s": [
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-0-+0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.004199700151745959,
+    "T_eq_minus_T_K": 2.4999877723530517e-08,
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-1-0-+1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.03962954862632341,
+    "T_eq_minus_T_K": 2.499859874660615e-09,
+    "component_balance_mol_s": [
+      5.551115123125783e-17,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-0-+1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.03962954862045042,
+    "T_eq_minus_T_K": 2.4998882963700453e-09,
+    "component_balance_mol_s": [
+      -2.8412827646207006e-12,
+      2.8414492980743944e-12
+    ]
+  },
+  {
+    "case": "transition-1-1--1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9589095701422506,
+    "T_eq_minus_T_K": 4.055777935718652e-11,
+    "component_balance_mol_s": [
+      1.6261436641684668e-12,
+      -1.6260881530172355e-12
+    ]
+  },
+  {
+    "case": "transition-1-1--1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9589095701418059,
+    "T_eq_minus_T_K": 4.055777935718652e-11,
+    "component_balance_mol_s": [
+      1.430910945288133e-12,
+      -1.430910945288133e-12
+    ]
+  },
+  {
+    "case": "transition-1-1--0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9957192314324876,
+    "T_eq_minus_T_K": -1.645616976020392e-11,
+    "component_balance_mol_s": [
+      1.1102230246251565e-16,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-1--0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9957192314324881,
+    "T_eq_minus_T_K": -1.645616976020392e-11,
+    "component_balance_mol_s": [
+      5.551115123125783e-17,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-1-+0-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999998924821774,
+    "T_eq_minus_T_K": -2.499976972103468e-06,
+    "active_phase": "vapor",
+    "absent_fraction": 1.075178226450646e-07,
+    "active_density": 617.7339203814645,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.5000000457352416,
+      0.49999995426475824
+    ],
+    "component_balance_mol_s": [
+      -5.551115123125783e-17,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-1-1-+0-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999998924821564,
+    "T_eq_minus_T_K": -2.4999770005251776e-06,
+    "active_phase": "vapor",
+    "absent_fraction": 1.0751784362827976e-07,
+    "active_density": 617.7339203814635,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.5000000457352505,
+      0.4999999542647494
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      1.1102230246251565e-16
+    ]
+  },
+  {
+    "case": "transition-1-1-+0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999999973276,
+    "T_eq_minus_T_K": -0.10000000006220944,
+    "active_phase": "vapor",
+    "absent_fraction": 2.6724178425752143e-12,
+    "active_density": 617.3408960111383,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.5000000000011366,
+      0.4999999999988632
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      1.1102230246251565e-16
+    ]
+  },
+  {
+    "case": "transition-1-1-+0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999999973231,
+    "T_eq_minus_T_K": -0.10000000006220944,
+    "active_phase": "vapor",
+    "absent_fraction": 2.676858734673715e-12,
+    "active_density": 617.3408960111379,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.5000000000011386,
+      0.4999999999988614
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-1-1-+1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999999997407,
+    "T_eq_minus_T_K": -1.0000000000061675,
+    "active_phase": "vapor",
+    "absent_fraction": 2.5934809855243657e-13,
+    "active_density": 613.8313270878782,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.5000000000001102,
+      0.49999999999988975
+    ],
+    "component_balance_mol_s": [
+      5.551115123125783e-17,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-1-1-+1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 0.0001,
+    "eps_2_K": 5e-06,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999999997299,
+    "T_eq_minus_T_K": -1.0000000000063665,
+    "active_phase": "vapor",
+    "absent_fraction": 2.701172618913006e-13,
+    "active_density": 613.8313270878778,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.5000000000001149,
+      0.49999999999988515
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-2-0--1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.437050772026523e-14,
+    "T_eq_minus_T_K": 1.0000000000004263,
+    "active_phase": "liquid",
+    "absent_fraction": 1.437050772026523e-14,
+    "active_density": 20662.998572139808,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.49999999999999134,
+      0.5000000000000059
+    ],
+    "component_balance_mol_s": [
+      1.7763568394002505e-15,
+      -1.1102230246251565e-15
+    ]
+  },
+  {
+    "case": "transition-2-0--1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -1,
+    "temperature_K": 164.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 2.550794436157383e-14,
+    "T_eq_minus_T_K": 1.0000000000002274,
+    "active_phase": "liquid",
+    "absent_fraction": 2.550794436157383e-14,
+    "active_density": 20662.99857213982,
+    "native_active_density": 20662.998572139837,
+    "active_composition": [
+      0.49999999999998784,
+      0.5000000000000121
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-2-0--0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.153351184148311e-13,
+    "T_eq_minus_T_K": 0.10000000000260911,
+    "active_phase": "liquid",
+    "absent_fraction": 1.153351184148311e-13,
+    "active_density": 20608.716359262213,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.49999999999994366,
+      0.5000000000000535
+    ],
+    "component_balance_mol_s": [
+      -4.9960036108132044e-15,
+      -7.827072323607354e-15
+    ]
+  },
+  {
+    "case": "transition-2-0--0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": -0.1,
+    "temperature_K": 165.0613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.3877588336849334e-13,
+    "T_eq_minus_T_K": 0.10000000000314913,
+    "active_phase": "liquid",
+    "absent_fraction": 1.3877588336849334e-13,
+    "active_density": 20608.7163592622,
+    "native_active_density": 20608.716359262362,
+    "active_composition": [
+      0.499999999999934,
+      0.500000000000066
+    ],
+    "component_balance_mol_s": [
+      3.3306690738754696e-16,
+      3.3306690738754696e-16
+    ]
+  },
+  {
+    "case": "transition-2-0-+0-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 2.1139125424450954e-08,
+    "T_eq_minus_T_K": 5.000006808586477e-07,
+    "active_phase": "liquid",
+    "absent_fraction": 2.1139125424450954e-08,
+    "active_density": 20602.666019001525,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.49999998995106115,
+      0.5000000100489524
+    ],
+    "component_balance_mol_s": [
+      -1.6986412276764895e-14,
+      -2.55351295663786e-15
+    ]
+  },
+  {
+    "case": "transition-2-0-+0-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0,
+    "temperature_K": 165.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 2.1139106797908294e-08,
+    "T_eq_minus_T_K": 4.999998566290742e-07,
+    "active_phase": "liquid",
+    "absent_fraction": 2.1139106797908294e-08,
+    "active_density": 20602.666019001543,
+    "native_active_density": 20602.66604607972,
+    "active_composition": [
+      0.49999998995106376,
+      0.5000000100489362
+    ],
+    "component_balance_mol_s": [
+      -1.1102230246251565e-16,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-2-0-+0.1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.004199699108904677,
+    "T_eq_minus_T_K": 2.5011104298755527e-12,
+    "component_balance_mol_s": [
+      0.0,
+      1.1102230246251565e-16
+    ]
+  },
+  {
+    "case": "transition-2-0-+0.1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 0.1,
+    "temperature_K": 165.2613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.004199699108906144,
+    "T_eq_minus_T_K": 2.5011104298755527e-12,
+    "component_balance_mol_s": [
+      0.0,
+      1.1102230246251565e-16
+    ]
+  },
+  {
+    "case": "transition-2-0-+1-start-0",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.03962954853345739,
+    "T_eq_minus_T_K": 2.5579538487363607e-13,
+    "component_balance_mol_s": [
+      0.0,
+      -5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-2-0-+1-start-1",
+    "boundary": "bubble",
+    "boundary_temperature_K": 165.1613091157362,
+    "offset_K": 1,
+    "temperature_K": 166.1613091157362,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.03962954852758657,
+    "T_eq_minus_T_K": 2.5579538487363607e-13,
+    "component_balance_mol_s": [
+      -2.8412827646207006e-12,
+      2.8412827646207006e-12
+    ]
+  },
+  {
+    "case": "transition-2-1--1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.958909570140659,
+    "T_eq_minus_T_K": 0.0,
+    "component_balance_mol_s": [
+      1.626199175319698e-12,
+      -1.6261436641684668e-12
+    ]
+  },
+  {
+    "case": "transition-2-1--1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -1,
+    "temperature_K": 218.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9589095701402137,
+    "T_eq_minus_T_K": 0.0,
+    "component_balance_mol_s": [
+      1.430910945288133e-12,
+      -1.430910945288133e-12
+    ]
+  },
+  {
+    "case": "transition-2-1--0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9957192314331937,
+    "T_eq_minus_T_K": 2.842170943040401e-14,
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-2-1--0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": -0.1,
+    "temperature_K": 219.45904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9957192314331978,
+    "T_eq_minus_T_K": 0.0,
+    "component_balance_mol_s": [
+      -5.551115123125783e-17,
+      5.551115123125783e-17
+    ]
+  },
+  {
+    "case": "transition-2-1-+0-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999989248154,
+    "T_eq_minus_T_K": -2.499999141036824e-08,
+    "active_phase": "vapor",
+    "absent_fraction": 1.0751846080125915e-09,
+    "active_density": 617.7339252629018,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.500000000457355,
+      0.49999999954264496
+    ],
+    "component_balance_mol_s": [
+      5.551115123125783e-17,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-2-1-+0-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0,
+    "temperature_K": 219.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999989248165,
+    "T_eq_minus_T_K": -2.4999962988658808e-08,
+    "active_phase": "vapor",
+    "absent_fraction": 1.075183497789567e-09,
+    "active_density": 617.7339252629018,
+    "native_active_density": 617.7339253122096,
+    "active_composition": [
+      0.5000000004573546,
+      0.4999999995426454
+    ],
+    "component_balance_mol_s": [
+      5.551115123125783e-17,
+      0.0
+    ]
+  },
+  {
+    "case": "transition-2-1-+0.1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 0.9999999999999956,
+    "T_eq_minus_T_K": -0.10000000000007958,
+    "active_phase": "vapor",
+    "absent_fraction": 4.440892098500626e-15,
+    "active_density": 617.3408960112603,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.5000000000000019,
+      0.49999999999999817
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      1.6653345369377348e-16
+    ]
+  },
+  {
+    "case": "transition-2-1-+0.1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 0.1,
+    "temperature_K": 219.65904397311587,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 1.0000000000000058,
+    "T_eq_minus_T_K": -0.0999999999997101,
+    "active_phase": "vapor",
+    "absent_fraction": -5.773159728050814e-15,
+    "active_density": 617.3408960112607,
+    "native_active_density": 617.3408960112604,
+    "active_composition": [
+      0.49999999999999756,
+      0.5000000000000024
+    ],
+    "component_balance_mol_s": [
+      4.440892098500626e-16,
+      5.384581669432009e-15
+    ]
+  },
+  {
+    "case": "transition-2-1-+1-start-0",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.3,
+    "start_composition_perturbation": 0.0001,
+    "vapor_fraction": 1.000000000000002,
+    "T_eq_minus_T_K": -0.9999999999996874,
+    "active_phase": "vapor",
+    "absent_fraction": -1.9984014443252818e-15,
+    "active_density": 613.8313270878899,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.49999999999999906,
+      0.5000000000000009
+    ],
+    "component_balance_mol_s": [
+      1.1102230246251565e-16,
+      2.0539125955565396e-15
+    ]
+  },
+  {
+    "case": "transition-2-1-+1-start-1",
+    "boundary": "dew",
+    "boundary_temperature_K": 219.55904397311588,
+    "offset_K": 1,
+    "temperature_K": 220.55904397311588,
+    "eps_1_K": 1e-06,
+    "eps_2_K": 5e-08,
+    "start_vapor_fraction": 0.4,
+    "start_composition_perturbation": -0.0001,
+    "vapor_fraction": 0.9999999999999969,
+    "T_eq_minus_T_K": -0.9999999999999147,
+    "active_phase": "vapor",
+    "absent_fraction": 3.1086244689504383e-15,
+    "active_density": 613.8313270878897,
+    "native_active_density": 613.8313270878898,
+    "active_composition": [
+      0.5000000000000013,
+      0.4999999999999986
+    ],
+    "component_balance_mol_s": [
+      0.0,
+      5.551115123125783e-17
+    ]
+  }
+]

@@ -24,8 +24,8 @@ substitution of the converted application tuple. There is no physical validation
 against raw measurements and no claim of global phase stability.
 
 The accepted design was independently reviewed as Ready against main commit
-`69f61380`; that review is `build/issue-725/readiness-r1.md` in the main checkout.
-Independent delivered review returned Supported (`build/issue-725/delivered-r1.md` in the main checkout).
+`69f61380`; that review was `build/issue-725/readiness-r1.md`, which no longer exists.
+Independent delivered review returned Supported (`build/issue-725/delivered-r1.md`, no longer present).
 Render without solving the model by copying `notebook.qmd` into
 `build/issue-725/` and running Quarto there with this leaf as `--execute-dir`
 and the worktree's `.venv/bin/python` as `QUARTO_PYTHON`.

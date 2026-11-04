@@ -47,7 +47,7 @@ bash tools/build-engine.sh --install-wheel
 .venv/bin/python analyses/2026-cold-vapor-branch/scripts/run.py
 .venv/bin/python -m pytest -q -s engine/tests/equilibrium/test_cold_vapor.py
 engine/tools/run-native-tests.sh 'equilibrium/*' boundary
-bash tools/run-slice.sh khudaida
+bash analyses/2026-khudaida-idaes-settler/scripts/run.sh <output-dir>
 bash tools/check-all.sh
 ```
 

@@ -3,6 +3,11 @@
 // to .value("X", E::X). Renamed fields, docstrings and other policies stay explicit nanobind calls.
 #pragma once
 
+#include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <initializer_list>
+#include <string>
+
 #define EPCSAFT_READONLY(T, ...) EPCSAFT_EACH(EPCSAFT_READONLY_ONE, T, __VA_ARGS__)
 #define EPCSAFT_READWRITE(T, ...) EPCSAFT_EACH(EPCSAFT_READWRITE_ONE, T, __VA_ARGS__)
 #define EPCSAFT_VALUES(E, ...) EPCSAFT_EACH(EPCSAFT_VALUE_ONE, E, __VA_ARGS__)
@@ -61,3 +66,14 @@
 #define EPCSAFT_EACH_38(f, T, a, ...) f(T, a) EPCSAFT_EACH_37(f, T, __VA_ARGS__)
 #define EPCSAFT_EACH_39(f, T, a, ...) f(T, a) EPCSAFT_EACH_38(f, T, __VA_ARGS__)
 #define EPCSAFT_EACH_40(f, T, a, ...) f(T, a) EPCSAFT_EACH_39(f, T, __VA_ARGS__)
+
+// Opt-in compact descriptions use the same bound fields exposed to Python.
+inline std::string epcsaft_repr(nanobind::handle self, const char* name, std::initializer_list<const char*> fields) {
+    std::string result = std::string(name) + "(";
+    for (const char* field : fields) {
+        if (result.back() != '(') result += ", ";
+        result += std::string(field) + "=" + nanobind::cast<std::string>(nanobind::repr(self.attr(field)));
+    }
+    return result + ")";
+}
+#define EPCSAFT_REPR(T, ...) .def("__repr__", [](nanobind::handle self) { return epcsaft_repr(self, #T, {__VA_ARGS__}); })

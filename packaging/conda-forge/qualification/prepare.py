@@ -2,6 +2,7 @@ from pathlib import Path
 import shutil
 root=Path.cwd(); engine=root/'engine'; q=root/'packaging/conda-forge/qualification'
 shutil.copytree(q,engine/'qualification-939',ignore=shutil.ignore_patterns('candidate.tar.gz'))
+shutil.copy(root/'analyses/2026-equilibrium-forward-error/scripts/forward-error.cpp',engine/'qualification-939')
 p=engine/'meson.build';p.write_text(p.read_text()+'\n'+(q/'qualification.meson').read_text()+'''
 executable('qualification-product', 'qualification-939/product.cpp',
   cpp_args: native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],

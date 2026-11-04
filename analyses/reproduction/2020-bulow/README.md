@@ -13,7 +13,7 @@ Source: Bülow, Ascani and Held (2020), ePC-SAFT advanced, part I, with its corr
   - It underpredicts the strong rise of γ±\* for LiBr, LiCl and NaBr in methanol.
   - It captures the measured osmotic coefficients of LiCl and LiBr in methanol (Zafarani-Moattar 1998) far better than revised.
 
-Evidence type: numerical verification against the paper's digitized model values, and physical comparison with literature data using unfitted literature parameters. Not independently reviewed or promoted.
+Evidence type: numerical verification against the paper's digitized model values, and physical comparison with literature data using unfitted literature parameters. The investigator promoted `50792d0d` for Solvation energies, subject to these limitations: bounded R09 scope. This promotion does not extend to later results or other comparisons in this leaf.
 
 ## Conventions mapped onto Engine terms
 

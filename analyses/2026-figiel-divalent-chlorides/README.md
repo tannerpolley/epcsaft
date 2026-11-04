@@ -2,7 +2,7 @@
 
 The #755 stored-point comparison follows the
 [diagnosis](https://github.com/tannerpolley/ePC-SAFT/issues/755#issuecomment-6328905027)
-(`build/issue-755/diagnosis.md` in the main checkout; SHA-256
+(`build/issue-755/diagnosis.md`, no longer present; SHA-256
 `c05f7935095723d0a4c80dd765e641a890cd257f22220d5c9b9b4ccbf2a1cc1b`)
 and the [owner's 2026-10-21 decision](https://github.com/tannerpolley/ePC-SAFT/issues/755#issuecomment-6328916449):
 "Common cold start, keep 1e-12". The producer evaluates the returned physical
@@ -631,12 +631,13 @@ coordinate, hydration hold, optimizer control or numerical criterion changed.
 The original target remains unmet and is explicitly owner-relaxed in `/2`.
 
 The local declaration reader `build/issue-209-provisional/rebaseline_fit.py`
+(recovered with its recorded SHA-256, with `replay.py`, into `scripts/historical/`)
 records the current-wheel reference and calls the existing native declarations;
 `packet.py` writes the owner-authorized provisional packet after comparing the
 new fit with the retained fit. `qualification.py` assembles the CSV operands and
 runs the packet validator. `present.py` reads the retained data and prepares
-notebook tables and figures without calling the Engine. These local commands
-remain untracked. The delivered record identifies their hashes, the source
+notebook tables and figures without calling the Engine. `packet.py`, `qualification.py` and `present.py` were not recovered.
+**Frozen record — not replayable from this repository.** The delivered record identifies their hashes, the source
 commit and the exact wheel. The standard affected and full fast checks qualify
 this worktree; no delivered review or downstream adoption follows from them.
 

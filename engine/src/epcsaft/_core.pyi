@@ -230,7 +230,7 @@ class Capture:
     -----
     Capture observes calculations without changing their stopping criteria. Detailed probes are enabled by diagnostics; exceptions from the enclosed calculation are not suppressed.
     """
-    def __init__(self, diagnostics: bool = False, ipopt_log: str = "") -> None:
+    def __init__(self, diagnostics: bool = False, ipopt_log: str = "", ipopt_print_level: int = 12) -> None:
         """Initialize Capture from the declared inputs.
 
         Parameters
@@ -239,6 +239,8 @@ class Capture:
             Enable detailed numerical probes in addition to operation spans.
         ipopt_log : str
             Optional absolute destination for the original calculation's sequential Ipopt log.
+        ipopt_print_level : int
+            Ipopt journal level of every category in that log; J_MAIN is capped at 5.
 
         Returns
         -------
@@ -1186,6 +1188,7 @@ class ThermochemistryStatus:
     """A required caloric evaluation is nonfinite."""
 
 class PropertyActionDiagnostics:
+    site_conditioning: Optional[NumericalRank]
     """Numerical work and conditioning for one property-action batch."""
     site_rank: int
     """Rank of the association-site Jacobian, a count."""
@@ -1224,6 +1227,8 @@ class PropertyActionDiagnostics:
     """Number of forward derivative sweeps."""
     branch: DensityBranch
     """Established density-branch label, or Unspecified."""
+    returned_branch: DensityBranch
+    """Root side classified with the native negative-slope witness, or Unspecified."""
     stable_root_count: Optional[int]
     """Number of mechanically stable roots established by the search, or None when not established."""
 
@@ -1263,6 +1268,7 @@ class PropertyActionBatch:
     for successful pressure closure and for failures without that record."""
 
 class State:
+    rank_records: list[NumericalRank]
     """One homogeneous state with SI molar quantities.
 
     Notes
@@ -1631,6 +1637,12 @@ class HelmholtzModel:
         -----
         One through three directions form the mixed contraction. All action units equal the observable unit. LogFugacityCoefficient is refused on this chart; see ALG-ACTIONS.
         """
+        ...
+    def pressure_action_difference(self, temperature: float, pressure: float, mole_fractions: Sequence[float],
+                                   branch: DensityBranch, observables: Sequence[PropertyObservable],
+                                   direction: PressureActionDirection, step: float, tau: float,
+                                   kappa: float) -> list[DifferenceCheck]:
+        """Compare first-order pressure actions with native central differences (verification only)."""
         ...
     def pressure_actions(self, temperature: float, pressure: float,
                          mole_fractions: Sequence[float], branch: DensityBranch,
@@ -2459,12 +2471,43 @@ class CriticalRecord:
     rank: int
     """Numerical rank of the augmented defining Jacobian, a count."""
 
+class ConditioningObservation:
+    """Condition and local error evidence at the attributed numerical point."""
+    operation: str
+    basis: str
+    norm: str
+    method: str
+    cause: str
+    point_kind: str
+    criterion: str
+    dimension: int
+    rank: int
+    precision_bits: int
+    attempt: int | None
+    stage: int | None
+    iteration: int
+    threshold: float
+    condition: float
+    matrix_norm: float
+    error: float
+    criterion_value: float
+    export_displacement: float
+    coordinates: list[float]
+    row_scale: list[float]
+    column_scale: list[float]
+    controls: list[float]
+    phase: Optional[int]
+    component: Optional[int]
+    available: bool
+
 class NumericalRank:
     """Most recent existing factorization's rank decision and relative threshold."""
     basis: str
     dimension: int
     rank: int
     threshold: float
+    observation: ConditioningObservation
+    first_conditioning_warning: Optional[ConditioningObservation]
 
 class Quantity:
     """Comparison chart: linear, positive physical quantity, or stored logarithm."""
@@ -2780,7 +2823,6 @@ class IdealMoleFraction:
     solver_options: list[dict[str, Any]]
     def __init__(self, component_ids: Sequence[str], charge_number: Sequence[int], solver_options: Mapping[str, float] | None = ..., activity_basis: str | None = ..., solution_volume_m3: float | None = ..., unit_activity_solvent: str | None = ...) -> None: ...
 
-def effective_water_amounts(model: IdealMoleFraction, result: EquilibriumResult, water: str, ions: Sequence[str], molecular_species: Sequence[str]) -> dict[str, float]: ...
 
 class CompiledSystem:
     """Admitted equilibrium chart and exact defining-equation readers.
@@ -2825,6 +2867,13 @@ class CompiledSystem:
                             amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
                             packing: Sequence[float]) -> EquilibriumNumericalEstimates:
         """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
+        ...
+    def coordinate_labels(self) -> list[str]:
+        """Quantity and basis of each solved-chart coordinate, in coordinate order."""
+        ...
+    def jacobian_difference(self, point: Sequence[float], relative_step: float, tau: float,
+                            kappa: float) -> list[DifferenceCheck]:
+        """Compare each Jacobian entry with central differences of the rows (verification only)."""
         ...
     def generic_point(self) -> list[float]:
         """Construct the native generic chart seed.
@@ -2920,6 +2969,7 @@ class CompiledSystem:
 
 
 class LinearSolveDiagnostics:
+    point_kind: str
     """Local first-order error estimates in the named system's unscaled coordinates.
 
     Attributes
@@ -2952,6 +3002,40 @@ class LinearSolveDiagnostics:
     forward_error_estimate: float
     precision_bits: int
     refinement_iterations: int
+
+class DifferenceCheck:
+    """One exact derivative against the native central difference of its value (verification only)."""
+    label: str
+    """Row and coordinate, solved-state observable, or property result compared."""
+    status: str
+    """passed, failed, nonfinite, unsupported_direction, neighbor_unavailable or branch_changed."""
+    cause: str
+    """Why a neighbor was unavailable: its convergence cause or stop; empty otherwise."""
+    exact: float
+    """Exact first-order action A in the value's unit per unit step."""
+    difference: float
+    """D = (f(+h) - f(-h)) / (2h)."""
+    step: float
+    """Scalar step h multiplying the direction."""
+    roundoff: float
+    """r = (e(+h) + e(-h)) / (2h) from each value's evaluation floor e."""
+    ratio: float
+    """|D - A| / (tau |A| + kappa r); 0 or inf for a zero allowance; NaN when nonfinite."""
+
+class IpoptIterationRecord:
+    """One Ipopt intermediate callback collected while DEBUG logging is enabled."""
+    run: int
+    """Ipopt run ordinal in the collecting thread, from 1."""
+    iteration: IpoptIteration
+    """The callback's existing iteration record."""
+
+class IpoptIterations:
+    """Collect this thread's Ipopt iteration records inside a ``with`` block."""
+    records: list[IpoptIterationRecord]
+    """Collected records in callback order."""
+    def __init__(self) -> None: ...
+    def __enter__(self) -> IpoptIterations: ...
+    def __exit__(self, exc_type: object | None, exc_value: object | None, traceback: object | None) -> bool: ...
 
 class IpoptIteration:
     """Last callback tuple in Ipopt's internal optimization and scaling basis."""
@@ -3024,6 +3108,7 @@ class IpoptDiagnostics:
 
 class EquilibriumResult:
     rejected_reduction: EquilibriumResult | None
+    recovery_stability: StabilityReport | None
     terminal_numerical_failure: Convergence | None
     last_full_evaluation: Convergence | None
     phase_pressures: list[float]
@@ -3651,6 +3736,12 @@ class SolvedStateActionBatch:
     diagnostics: SolvedStateActionDiagnostics
     """Shared defining-equation work and conditioning."""
 
+def solved_state_difference(compiled: CompiledSystem, central: EquilibriumResult,
+                            observables: Sequence[SolvedStateObservable], direction: SolvedStateActionDirection,
+                            step: float, tau: float, kappa: float) -> list[DifferenceCheck]:
+    """Compare first-order solved-state actions with central differences of re-solved neighbors (verification only)."""
+    ...
+
 def solved_state_actions(compiled: CompiledSystem, central: EquilibriumResult,
                          request: SolvedStateActionRequest) -> SolvedStateActionBatch:
     """Contract implicit equilibrium derivatives on one admitted branch.
@@ -3759,13 +3850,15 @@ def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationO
     The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
     """
     ...
-def property_asl_record(model: Any) -> str:
+def property_asl_record(model: Any, require_phase_identity: bool = False) -> str:
     """Serialize a declared model for native ASL property callbacks.
 
     Parameters
     ----------
     model : Any
-        Python model/declaration exposing the source parameter document, thermochemistry and numerical options consumed by the native record writer.
+        Python model/declaration exposing the source parameter document, optional thermochemistry and numerical options consumed by the native record writer.
+    require_phase_identity : bool
+        Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
 
     Returns
     -------
@@ -4853,6 +4946,7 @@ class InputReconciliation:
     on the outputs.
     """
 class FitResult:
+    internal_factor_conditioning: str
     """Native parameter-estimation candidate, objective and local evidence.
 
     Notes

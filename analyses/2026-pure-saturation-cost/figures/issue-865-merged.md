@@ -16,7 +16,7 @@ The timing verdict is **unresolved**: the median saving does not exceed the same
 
 Six paired medians use three repetitions, two workers per image, five warmups and 25 samples per arm/block on logical CPU 31 at niceness 10. The middle ordering is reversed. Selected boundaries have load1 below four and no compiler observations. Whole disturbed operations are rejected by the unchanged reducer; none is replaced because of speed.
 
-[Pairs and decision arithmetic](results/issue-865-r2/interim-summary.json), [block medians](results/issue-865-r2/blocks.csv), [selection](results/issue-865-r2/selection.csv), [comparator ratios](results/issue-865-r2/paired-ratios.csv), and image identities retain the measurements. All raw samples and deferrals remain in the main checkout under `build/issue-865/build-r2/cost-analysis/results/`.
+[Pairs and decision arithmetic](results/issue-865-r2/interim-summary.json), [block medians](results/issue-865-r2/blocks.csv), [selection](results/issue-865-r2/selection.csv), [comparator ratios](results/issue-865-r2/paired-ratios.csv), and image identities retain the measurements. All raw samples and deferrals were under `build/issue-865/build-r2/cost-analysis/results/`, which no longer exists.
 
 | Numerical preservation | Result |
 |---|---:|
@@ -41,4 +41,4 @@ All equilibrium corpora have zero differences: Cameretti 1800/1800, Gross 721/72
 
 A=A fit wall range: 7.25955522–7.29538203 s. Fits retain full CPU affinity and 32 native workers; serial samples use CPU 31. Work and states agree, with zero state differences and zero central Taylor evaluations. [A=A control](results/issue-865-r2/key-control-summary.json.gz) and [A/B comparison](results/issue-865-r2/key-comparison-summary.json.gz) retain the operands.
 
-At the time of this measurement, both the affected and the full checks stopped at the total runtime-line ceiling: 30059 / 30025, over by 34. Equilibrium was 11884 / 11950. The total ceiling has since been set to the measured count, 30059, and the current budget check passes: total 30059 / 30059, with every layer within its ceiling. Supplemental architecture, 238 Python cases, Ruff and strict type checking pass. The explicit native result and final frozen-head native qualification are reported in `build/issue-865/build-r2/build-summary.md`.
+At the time of this measurement, both the affected and the full checks stopped at the total runtime-line ceiling: 30059 / 30025, over by 34. Equilibrium was 11884 / 11950. The total ceiling has since been set to the measured count, 30059, and the current budget check passes: total 30059 / 30059, with every layer within its ceiling. Supplemental architecture, 238 Python cases, Ruff and strict type checking pass. The explicit native result and final frozen-head native qualification were reported in `build/issue-865/build-r2/build-summary.md`, which no longer exists.

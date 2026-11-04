@@ -183,3 +183,22 @@ require the source, Meson products and lock; installed identities require the
 source identity plus the conda package record or wheel hash and loaded libraries.
 The Windows production recipe retains independent development and installed
 collections and their A=A controls; these are test inputs, outside the package.
+
+
+The `--cpu-overhead --cpu-blocks 20` mode adds the per-case 1% CPU gate. It
+retains all fifteen cases, fixed main-pilot batches, balanced ABBA/BAAB blocks,
+and A=A controls before and after the main/candidate series. Each sequence
+repetition restarts at cold point 1. The clock brackets the native call and
+returned-object construction, with declarations prepared outside it. F1 and
+Cp each use one fresh serial evaluation per arm run.
+
+`cpu-samples.txt` retains every balanced block; `cpu-call-evidence.jsonl`
+retains the numerical/work evidence for every call. `cpu-decision.csv` gives
+the median CPU log ratio and conservative interval for each case. The native
+reducer uses the third and eighteenth order statistics, clock uncertainty,
+and the larger before/after control uncertainty. Its simultaneous median
+coverage assumes independent stationary blocks. Biased controls or an
+interval overlapping 1% are inconclusive and cannot pass. No sample is
+removed. The ordinary work, numerical, frozen CPU and full-fit gates remain
+required. Keep an inconclusive campaign and fix the host cause before
+repeating the entire campaign.

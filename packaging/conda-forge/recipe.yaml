@@ -1,8 +1,8 @@
 schema_version: 1
 
 context:
-  version: 1.2.1
-  release_sha256: 959bfc2a8ca97b35fc74be03aede5381a2e440baafcfbb51c6b3c7892b05f12e
+  version: 1.3.0
+  release_sha256: 723d6f5512911fa39a891faae46ec7992cb52171dd33151f6884c107c9f9f482
 
 package:
   name: epcsaft
@@ -112,6 +112,8 @@ about:
   license_file:
     - LICENSE
     - NOTICE
+    - data/packets/feos-gross-sadowski-2001/1/packet.toml
+    - data/packets/feos-gross-sadowski-2002/1/packet.toml
     - ipopt-source/Ipopt/LICENSE
     - engine/build/subprojects/CppAD-20250000.3/COPYING
     - engine/build/subprojects/CppAD-20250000.3/epl-2.0.txt

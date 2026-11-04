@@ -272,8 +272,8 @@ The old packet's owner exception does not transfer to the new candidate.
 
 Binary-reference predictions and nominal residuals remain in the
 [selected optimum's held-out results](results/stage-b/optimum-1/held-out/optimum-1/).
-The complete row realizations and native state diagnostics are retained under
-`build/issue-640/stageB/optimum-1/results/`.
+The complete row realizations and native state diagnostics were under
+`build/issue-640/stageB/optimum-1/results/`, which no longer exists.
 
 {{< include results/stage-b/training.md >}}
 

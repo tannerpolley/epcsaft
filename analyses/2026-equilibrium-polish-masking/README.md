@@ -90,8 +90,8 @@ The subsequent diagnosis and authorized reference refresh are recorded below.
 The producer was called through its existing `run` function with `OUT` set to
 `build/issue-720/polish-base/` and an exact copy of the stored `inputs.json`,
 so the historical comparison files were never overwritten. The command and logs
-are `build/issue-720/polish-base.py`, `polish-base.log`, `compare-polish.py`
-and `polish-compare.log`. Copied wheel metadata preserves those original output
+were `build/issue-720/polish-base.py`, `polish-base.log`, `compare-polish.py`
+and `polish-compare.log`, which no longer exist. **Frozen record — not replayable from this repository.** Copied wheel metadata preserves those original output
 paths and hashes. Its installed wheel is the same image as the other #720 runs.
 
 ## Current-equation reference refresh (#754)
@@ -102,8 +102,8 @@ in [#353](https://github.com/tannerpolley/ePC-SAFT/issues/353), and brackets the
 masking trace-inventory correction at [#633](https://github.com/tannerpolley/ePC-SAFT/issues/633).
 The #353 attribution is an inference supported by the source change and numerical
 probes: it cannot be isolated with the published wheels because the earliest
-available wheel already contains the shift. The read-only diagnosis is
-`/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/build/issue-754/diagnosis.md`,
+available wheel already contains the shift. The read-only diagnosis was
+`build/issue-754/diagnosis.md` (no longer present),
 SHA-256 `3e518992ff71c9c5aa0a7a49a7a4fe60abba282900c42ae460c555787ded9140`.
 
 The original reference remains frozen in

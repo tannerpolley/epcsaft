@@ -7,7 +7,7 @@ measured/native compositions, fixed allowances and every unavailable row;
 [diagnostics.json](results/diagnostics.json) retains actual native residuals
 and causes. This is a physical comparison with measured compositions.
 [notebook.qmd](notebook.qmd) computes its tables and plot from retained files.
-Independent delivered review is pending.
+The investigator promoted `0c44f995` for Methane/ethane VLE, k_ij = 0, subject to these limitations: undetermined state and failed comparisons retained. This promotion does not extend to later results or other comparisons in this leaf.
 
 Run from the repository root after preparing this checkout's editable Engine:
 

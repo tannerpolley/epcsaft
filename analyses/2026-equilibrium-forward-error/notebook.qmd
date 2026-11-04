@@ -131,8 +131,10 @@ the existing work controls. Every refusal retains the admitted original
 state and its own estimate; a pre-existing first cause remains first.
 Each case repeats with diagnostics off/on/off. These controlled failures
 verify refusal behavior; they are not additional physical equilibrium cases.
-The exact source transformations and compile commands remain in the main
-checkout's `build/issue-864/build-r4/` for inspection.
+The exact source transformations and compile commands were under
+`build/issue-864/build-r4/`; a copy survives only in
+`build/archive/issue-864-extended-precision-refinement-for-near-2-25f6f70e.tar.zst`,
+with no recorded hashes to verify it.
 
 [The fixed regular inventory](results/mixture-regular-preservation.json)
 retains exact equality of all physical values and recorded work, with zero
@@ -144,8 +146,8 @@ For the declared four-site associating binary at fixed temperature, volume
 and unconstrained amounts, the production association calculation is checked
 against independent binary128 differentiation and implicit site tangents.
 The native probe isolates the existing association contribution for this
-comparison; its source and exact compile command are retained under the main
-checkout's `build/issue-864/build-r3/`. It does not replace a runtime equation
+comparison; its source and exact compile command were under
+`build/issue-864/build-r3/` (see the README). It does not replace a runtime equation
 or association solve. The full residual Helmholtz derivatives, which include
 other contributions, are outside this association-specific allowance.
 
@@ -320,8 +322,9 @@ when diagnostics are off.
 
 The native pull-request check still requires a pull-request number. Its absence
 is a delivery gate, separate from the numerical coverage above. The original command
-logs remain in the main checkout's `build/issue-861/build-r5/`; source-reference
-implementation, qualification and delivery logs are in `build/issue-869/build-r1/`.
+logs were under `build/issue-861/build-r5/` and the source-reference
+implementation, qualification and delivery logs under `build/issue-869/build-r1/`;
+neither exists now.
 The [original provenance](results/provenance.json) describes the endpoint study;
 [source-reference provenance](results/source-reference-provenance.json) retains
 the new input, source and loaded-library identities and accepted design files.
@@ -426,8 +429,8 @@ library identities and unchanged work. The
 [formatted runtime accounting](results/solve-runtime-lines.json) and
 [source/build identities](results/solve-provenance.json) identify the checked
 implementation. Full logs, exact probe source and commands, consumer checks
-and final native lint/sanitizer output are retained in the main checkout
-at `build/issue-862/build-r9/`. This is numerical verification of reporting and
+and final native lint/sanitizer output were under `build/issue-862/build-r9/`,
+which no longer exists. This is numerical verification of reporting and
 unchanged calculations on the retained inputs. It supplies no physical
 validation, parameter uncertainty, nonlinear enclosure or global stability
 certificate. Independent delivered review and investigator promotion remain
@@ -524,5 +527,5 @@ uncertainty, exact opaque optimizer conditioning or global optimality claim.
 Capture and logging can consume elapsed time; this evidence uses nonbinding
 budgets and makes no universal deadline-equivalence claim. Independent
 delivered review and investigator promotion remain outstanding. Exact test
-sources, image identities and full gate logs are retained in the main
-checkout at `build/issue-863/build-r3/`.
+sources, image identities and full gate logs were under `build/issue-863/build-r3/`,
+which no longer exists.

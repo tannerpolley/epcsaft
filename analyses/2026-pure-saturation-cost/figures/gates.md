@@ -1,4 +1,4 @@
-| Check | Outcome | Retained log |
+| Check | Outcome | Log (its worktree no longer exists) |
 |---|---|---|
 | state equivalence and regular work | pass | `/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/equivalence.log` |
 | runtime budget | pass | `/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-854-dedicated-pure-fluid-saturation-path-4/build/issue-854/build-r4/budgets.txt` |

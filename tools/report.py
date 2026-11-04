@@ -140,7 +140,7 @@ def link(path, text):
 
 def analyses():
     index = ROOT / "analyses/README.md"
-    row = re.compile(r"^\| \[([^]]+)\]\(([^)]+)\) \| (.*) \| (\w+) \|$")
+    row = re.compile(r"^\| \[([^]]+)\]\(([^)]+)\) \| (.*) \| ([^|]+) \|$")
     image = re.compile(r"\]\(([^)\s]+\.(?:png|svg|jpe?g|gif|webp))\)", re.IGNORECASE)
     dirty = git("status", "--porcelain", "--", "analyses")
     rows = []

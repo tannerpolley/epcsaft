@@ -4,7 +4,8 @@
 commit `ca719012c31e8b41edcb98ae82a388117b58d343`. Original wheel identities, source
 inputs and retained numerical evidence keep their recorded provenance. Only the
 presentation reader is retained here; the installed-wheel numerical producer and
-baseline rows are under the original issue worktree’s `build/issue-300/`.
+baseline rows were under the original issue worktree’s `build/issue-300/`,
+which no longer exists.
 
 Issue [#300](https://github.com/tannerpolley/ePC-SAFT/issues/300) adds explicit
 supplied-composition evaluation through the existing native stability trial
@@ -17,8 +18,7 @@ owns admission, reconstruction, density selection and unavailable-point meaning.
 The [notebook](notebook.qmd) reads retained numerical qualification and wheel
 identities. `scripts/present.py` only presents those rows; it runs no model.
 The installed-wheel reproduction, native output, baseline binary64 rows and
-ordered supplied-evaluation operands are retained in `build/issue-300/` in the
-issue worktree. The qualification rows here retain every replay scale and error.
+ordered supplied-evaluation operands were under that `build/issue-300/`. The qualification rows here retain every replay scale and error.
 This evidence awaits independent delivered review and is unpromoted for
 manuscript use. It supplies no physical validation or stability conclusion and
 does not complete #234's historical candidate comparisons.

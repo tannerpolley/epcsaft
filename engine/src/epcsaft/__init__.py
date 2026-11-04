@@ -9,9 +9,13 @@ phase and reaction problems, and ``regression`` declares parameter estimation.
 Native result types and exceptions are re-exported from ``_core``.
 """
 
+import logging
 import os
 import sys
+from importlib.metadata import version
 from pathlib import Path
+
+__version__ = version("epcsaft")
 
 _dll_directories: list[object] = []
 if sys.platform == "win32":
@@ -52,16 +56,44 @@ from .eos import (  # noqa: E402
 )
 from .parameters import ParameterError, Parameters  # noqa: E402
 from .reference import Activity, Reference, SolventActivity  # noqa: E402
+from ._log import log as _log  # noqa: E402
 
 ReactionThermochemistry = _core.ReactionThermochemistry
 reaction_thermochemistry_density = _core.reaction_thermochemistry_density
 
-trace = _core.Capture
 Stop = _core.Stop
 Convergence = _core.Convergence
 ConvergenceError = _core.ConvergenceError
 tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
+
+
+def trace(diagnostics: bool | None = None, ipopt_log: str | None = None, ipopt_print_level: int | None = None) -> _core.Capture:
+    """Capture native spans and events, and optionally an Ipopt log, inside a ``with`` block.
+
+    Parameters
+    ----------
+    diagnostics : bool, optional
+        Record detailed observations as well as work spans (default: no).
+    ipopt_log : str, optional
+        Absolute path of a file receiving every Ipopt run in the block (default: none).
+    ipopt_print_level : int, optional
+        Ipopt journal level of that file (J_MAIN is capped at 5). Default: 12 when the
+        ``epcsaft`` logger is enabled for DEBUG, else 5 (one summary line per iteration).
+
+    Returns
+    -------
+    capture : Capture
+        Context manager; read ``spans``, ``events`` and ``trace`` after it closes.
+
+    Notes
+    -----
+    Capture is diagnostic and changes derivative work (ALG-TERMINATION); the
+    ``epcsaft`` logger itself never opens one.
+    """
+    if ipopt_print_level is None:
+        ipopt_print_level = 12 if _log.isEnabledFor(logging.DEBUG) else 5
+    return _core.Capture(bool(diagnostics), ipopt_log or "", ipopt_print_level)
 
 
 def _repr(record: type, *fields: str) -> None:

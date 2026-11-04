@@ -1,60 +1,149 @@
 #!/usr/bin/env python3
-"""Expire old evidence archives in the main checkout's build/archive (owner, 2026-10-22: 83 GB was unacceptable).
+"""Daily cleanup of the main checkout's build/ and finished worktrees (owner, 2026-10-22 and 2026-11-03).
 
 Usage: tools/clean-build [--dry-run]
-Run daily by the user timer epcsaft-clean-build.timer. It deletes regular files directly in build/archive older
-than DAYS whose name carries no open issue or PR number; it never descends, follows a symlink or touches anything
-else. Gate trees need no sweep: tools/check-pr-native removes its own tree when each run ends.
+Run daily by the user timer epcsaft-clean-build.timer. In order:
+1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
+   and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
+2. build/issue-N, once issue N has been closed for DAYS and no tracked file cites build/issue-N: keep only reports
+   (*.md, *.qmd, *.html, *.png of at most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline* copies)
+   and delete everything else. Cited folders stay whole until their evidence moves into the citing analysis.
+3. build/pr-gates/pr-N once pull request N is no longer open.
+4. Regular files directly in build/archive older than DAYS whose name carries no open issue or PR number and
+   that no tracked file cites.
+It never follows a symlink.
 
-Trust assumption (owner, 2026-10-22): only this repository's tools write build/, so nothing swaps build/archive or its
+Trust assumption (owner, 2026-10-22): only this repository's tools write build/, so nothing swaps build/ or its
 ancestors for a symlink while the job runs; three safety reviews (#783) found residual risk only under that adversarial
 case, which the owner accepted.
 """
 import argparse
+from datetime import datetime, timedelta, timezone
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import stat
 import subprocess
 import sys
 import time
 
 DAYS = 3
+REPORT_SUFFIXES = {".md", ".qmd", ".html", ".png"}
+REPORT_MAX_BYTES = 5 * 2**20
+COPY_DIRS = {".venv", "venv", "site-packages", "source", "meson"}
+
+
+def gh_json(root, *args):
+    return json.loads(subprocess.run(["gh", *args], cwd=root, check=True, capture_output=True, text=True).stdout)
+
+
+def keep_reports(folder, dry):
+    """Delete everything under folder except small report files outside environment and checkout copies."""
+    freed = 0
+    for top, dirs, files in os.walk(folder, topdown=True):
+        for name in list(dirs):
+            path = Path(top, name)
+            if path.is_symlink() or name in COPY_DIRS or name.startswith("baseline"):
+                dirs.remove(name)
+                if not path.is_symlink():
+                    freed += sum(f.lstat().st_size for f in path.rglob("*") if f.is_file() and not f.is_symlink())
+                if not dry:
+                    path.unlink() if path.is_symlink() else shutil.rmtree(path)
+        for name in files:
+            path = Path(top, name)
+            info = path.lstat()
+            if stat.S_ISREG(info.st_mode) and path.suffix in REPORT_SUFFIXES and info.st_size <= REPORT_MAX_BYTES:
+                continue
+            freed += info.st_size if stat.S_ISREG(info.st_mode) else 0
+            if not dry:
+                path.unlink()
+    if not dry:
+        for top, dirs, files in os.walk(folder, topdown=False):
+            if top != str(folder) and not os.listdir(top):
+                os.rmdir(top)
+    return freed
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
     dry = parser.parse_args().dry_run
-    root = Path(subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=Path(__file__).resolve().parent,
-                               check=True, capture_output=True, text=True).stdout.splitlines()[0].removeprefix("worktree "))
-    archive = root / "build" / "archive"
-    if archive.is_symlink() or Path(os.path.realpath(archive)) != archive:
-        sys.exit("clean-build: build/archive is or lies behind a symlink; nothing removed")
-    protected = set()
-    for kind in ("issue", "pr"):
-        try:
-            out = subprocess.run(["gh", kind, "list", "--state", "open", "--limit", "1000", "--json", "number"],
-                                 cwd=root, check=True, capture_output=True, text=True).stdout
-            numbers = {item["number"] for item in json.loads(out)}
-        except (OSError, subprocess.CalledProcessError, ValueError):
-            sys.exit(f"clean-build: open {kind}s unknown (gh failed); nothing removed")
-        if len(numbers) >= 1000:
-            sys.exit(f"clean-build: open {kind} list may be truncated; nothing removed")
-        protected |= numbers
-    cutoff, freed = time.time() - DAYS * 86400, 0
-    for item in sorted(archive.iterdir()):
-        info = item.lstat()
-        if not stat.S_ISREG(info.st_mode) or info.st_mtime > cutoff:
+    tools = Path(__file__).resolve().parent
+    porcelain = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=tools,
+                               check=True, capture_output=True, text=True).stdout
+    paths = [line.removeprefix("worktree ") for line in porcelain.splitlines() if line.startswith("worktree ")]
+    root, build = Path(paths[0]), Path(paths[0]) / "build"
+    if build.is_symlink() or Path(os.path.realpath(build)) != build:
+        sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
+
+    if len(paths) > 1:
+        pruned = subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []),
+                                 *paths[1:]], cwd=root, capture_output=True, text=True)
+        print(pruned.stdout + pruned.stderr, end="")
+        blocked = [line for line in (pruned.stdout + pruned.stderr).splitlines()
+                   if line.startswith(("kept /", "archive-worktree:"))]
+        attention = build / "worktrees-to-resolve.md"
+        if not dry and blocked:
+            attention.write_text(f"# Worktrees the {datetime.now():%Y-%m-%d} cleanup kept\n\nFor each: commit the "
+                                 "work (or tag it archive/<branch>-wip) or discard it, then run tools/prune-worktrees "
+                                 "on it.\n\n" + "".join(f"- {line}\n" for line in blocked))
+        elif not dry:
+            attention.unlink(missing_ok=True)
+
+    try:
+        open_issues = {item["number"] for item in gh_json(root, "issue", "list", "--state", "open", "--limit", "1000",
+                                                           "--json", "number")}
+        open_prs = {item["number"] for item in gh_json(root, "pr", "list", "--state", "open", "--limit", "1000",
+                                                        "--json", "number")}
+    except (OSError, subprocess.CalledProcessError, ValueError):
+        sys.exit("clean-build: open issues or PRs unknown (gh failed); nothing removed")
+    if len(open_issues) >= 1000 or len(open_prs) >= 1000:
+        sys.exit("clean-build: open issue or PR list may be truncated; nothing removed")
+    grep = subprocess.run(["git", "grep", "-ohE", r"build/(issue-[0-9]+|archive/[A-Za-z0-9._-]+)"], cwd=root,
+                          capture_output=True, text=True)
+    if grep.returncode > 1:
+        sys.exit("clean-build: cited build/ paths unknown (git grep failed); nothing removed")
+    cited = {int(n) for n in re.findall(r"build/issue-(\d+)", grep.stdout)}
+    cited_archives = set(re.findall(r"build/archive/([A-Za-z0-9._-]+)", grep.stdout))
+    verb = "would free" if dry else "freed"
+    cutoff = datetime.now(timezone.utc) - timedelta(days=DAYS)
+
+    for folder in sorted(build.glob("issue-*")):
+        number = re.fullmatch(r"issue-(\d+)", folder.name)
+        if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_issues | open_prs | cited:
             continue
-        if any(int(token) in protected for token in re.findall(r"\d+", item.name)):
+        try:
+            closed = gh_json(root, "issue", "view", number[1], "--json", "state,closedAt")
+        except (OSError, subprocess.CalledProcessError, ValueError):
+            continue
+        if closed["state"] != "CLOSED" or datetime.fromisoformat(closed["closedAt"].replace("Z", "+00:00")) > cutoff:
+            continue
+        freed = keep_reports(folder, dry)
+        if freed >= 2**20:
+            print(f"{verb} {freed / 2**20:.0f} MiB in build/{folder.name} (reports kept)")
+
+    for folder in sorted((build / "pr-gates").glob("pr-*")):
+        number = re.fullmatch(r"pr-(\d+)", folder.name)
+        if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_prs:
+            continue
+        if not dry:
+            shutil.rmtree(folder)
+        print(f"{'would remove' if dry else 'removed'} build/pr-gates/{folder.name}")
+
+    archive, protected, freed = build / "archive", open_issues | open_prs, 0
+    for item in sorted(archive.iterdir()) if archive.is_dir() and not archive.is_symlink() else []:
+        info = item.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_mtime > time.time() - DAYS * 86400:
+            continue
+        if item.name in cited_archives or any(int(token) in protected for token in re.findall(r"\d+", item.name)):
             continue
         if not dry:
             item.unlink()
         freed += info.st_size
         print(f"{'would remove' if dry else 'removed'} build/archive/{item.name} ({info.st_size / 2**20:.0f} MiB)")
-    print(f"{'would free' if dry else 'freed'} {freed / 2**30:.1f} GiB")
+    print(f"{verb} {freed / 2**30:.1f} GiB in build/archive")
 
 
 if __name__ == "__main__":

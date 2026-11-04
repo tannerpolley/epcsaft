@@ -38,7 +38,7 @@ not decided in Lithium** ([Lithium #237](https://github.com/tannerpolley/Lithium
 DES–TOPO `k_ij=0.0623`, complexes, aqueous strategies and Lithium's fitted
 reaction coordinates are excluded from the density calculation.
 
-Readiness is recorded in `build/issue-789/2026-rezaee/readiness-lithium-r1.md`.
+Readiness was recorded in `build/issue-789/2026-rezaee/readiness-lithium-r1.md`, which no longer exists.
 The native liquid request picks the highest stable root in its finite search;
 where only one stable root exists the Engine reports the actual branch as
 `Unspecified`. This does not establish global stability. Local propagated

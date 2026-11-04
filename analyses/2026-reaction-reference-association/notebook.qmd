@@ -98,7 +98,7 @@ unlike association. No source orientation was inferred from a scheme label.
 The unchanged Engine A=A timing control passes with identical protected states
 and work counts. This qualifies preservation of the unchanged Engine, not the
 cost or transfer behavior of an E4 association candidate. Local checks and full
-evidence are retained in the main checkout's `build/issue-922/`. Numerical limits
+evidence were written to `build/issue-922/`, where only reports survive. Numerical limits
 are predeclared design choices; these calculations estimate no measurement
 uncertainty and establish neither uniqueness nor global stability. The notebook
 has not been promoted for manuscript use. Review and owner disposition remain open.
@@ -141,7 +141,7 @@ All 335 reactive solves meet the retained classified-row, independently
 recomputed fugacity, reaction-affinity, phase-sum and inventory tolerances.
 Positive mechanical slopes and site fractions in (0,1] were checked at both
 returned phases. A0 pressures replay the frozen roots; input differences and
-source hashes are retained in the main checkout's `build/issue-922/e5/`.
+source hashes were written to `build/issue-922/e5/`, where only reports survive.
 Water–CO₂ association is recomputed by the unchanged Wolbach–Sandler declaration
 using the changed water self energy/volume and diameter. Source K is unchanged;
 `reference_C` and `compiled_log_Krho` are retained at common A0 pressures and
@@ -150,8 +150,8 @@ candidate endpoints in each native CSV.
 The candidate work-count condition also fails: B6a increases iteration and
 Hessian counts on 40 rows, B6b on 41 rows, relative to A0. Native counts and
 single-pass CPU times are retained; these times alone do not qualify paired
-candidate cost. The unchanged-Engine key-solve evidence is kept separately in
-`build/issue-922/e5/`. The design stop rule applies to the pressure and
+candidate cost. The unchanged-Engine key-solve evidence was written separately to
+`build/issue-922/e5/`, where only reports survive. The design stop rule applies to the pressure and
 preservation failures. Further candidate x/m, derivative, pure-property and
 changed-water non-MDEA qualification was stopped; no common-default or complete
 numerical qualification is claimed. Unchanged non-MDEA inputs and Engine source

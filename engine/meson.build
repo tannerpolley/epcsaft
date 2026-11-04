@@ -2,7 +2,7 @@ project(
   'epcsaft',
   'c',
   'cpp',
-  version: '1.2.1',
+  version: '1.3.0',
   meson_version: '>=1.8',
   subproject_dir: 'build/subprojects',
   default_options: [
@@ -405,6 +405,10 @@ install_subdir(
 )
 
 executable('reaction_reference_e3', '../analyses/2026-reaction-reference-association/scripts/e3.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
+
+executable('nasrifar_effective_water', '../analyses/reproduction/2010-nasrifar-mdea/scripts/effective_water.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 

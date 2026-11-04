@@ -579,7 +579,7 @@ coverage, finite columns, the residual transformations, weighting, norms and
 correlation identity. At the common chloride-zero geometric-mean and enhanced
 water-attraction points, predictions and weighted water columns reproduce the
 retained stage-one values within the frozen preservation tolerance. The exact
-errors and file-identity checks are retained under `build/issue-795/`.
+errors and file-identity checks were under `build/issue-795/`, which no longer exists.
 The prefit density/reference diagnostic files remain header-only because the
 native point evaluator exposes no such arrays for these requests; no extra
 reference or density result is inferred. Point evaluation time includes native
@@ -796,7 +796,7 @@ The [Sr declaration](inputs/fit-sr.json) and [Ba declaration](inputs/fit-ba.json
 retain the frozen design and readiness hashes, source hashes, conditions,
 starts, bounds, per-start limits, identification constants, accuracy limits
 and isolated generated-header paths. The frozen records and delivery logs
-remain under `build/issue-795/`. The historical H declarations, numerical
+were under `build/issue-795/`, which no longer exists. The historical H declarations, numerical
 results and notebook remain byte-identical; their stored presentation was
 reproduced without a model call.
 

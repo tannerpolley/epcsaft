@@ -10,7 +10,7 @@ Harned, H. S.; Ehlers, R. W. *The Dissociation Constant of Acetic Acid from 0 to
 Zotero parent `2BZC7C6J` was added to collection `YR8SNI5D` through Companion's local `acquire-metadata` operation after inspecting its preview.
 The owner's explicit metadata-only instruction superseded the ordinary acquisition command for this operation.
 No system browser, Connector save, PDF attachment, conversion or bibliography refresh was used.
-The preview and applied response are retained in the main checkout's `build/issue-856/build-r1/`.
+The preview and applied response were written to `build/issue-856/build-r1/`, which no longer exists.
 
 The [indexed primary PDF](https://www.electronicsandbooks.com/edt/manual/Magazine/J/Journal%20of%20the%20American%20Chemical%20Society%20US/1933%20%20%28vol%20055%29/02%20%20%28441-864%29/652-656.pdf), p. 652, Eq. (1), identifies molalities and activity coefficients and extrapolates to zero ionic strength.
 Its final Table II, p. 655, gives the observed and calculated values at 50 °C as `K × 10^5 = 1.633` in both columns.
@@ -82,7 +82,7 @@ No temperature uncertainty or covariance is supplied in the selected constraint.
 ## Executable and numerical reference, E5
 
 The exact accepted main revision, wheel file and hash, installed module origins, native library mappings, build-source record and input hashes are in `results/executable.json`.
-The main checkout's `build/issue-856/build-r1/` retains the wheel, installed-file verification, source hashes, compiler, build log and check logs.
+The wheel, installed-file verification, source hashes, compiler, build log and check logs were under `build/issue-856/build-r1/`, which no longer exists.
 The study uses an installed wheel without an editable-import override.
 Every thermodynamic state, density root, reaction-reference conversion, bubble solve and derivative action is native.
 The finite dilution ladder is an independent solution-verification diagnostic of EqID `reference_limit_terminal_pair`, not the reference used for the primary results.

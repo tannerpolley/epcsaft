@@ -50,8 +50,8 @@ identity and Pitzer coefficients. Li–Ca has no comparator. None of these
 report-only values changes the frozen declaration, limits or packet decision.
 
 Presentation reads retained values and does not import the Engine. The
-readiness design and stage zero are retained in the main checkout's
-`build/issue-640/`; stage A execution evidence is in `build/issue-640/stageA/`.
+readiness design and stage zero were under `build/issue-640/`, and stage A
+execution evidence under `build/issue-640/stageA/`; neither exists now.
 Independent delivered review remains with the lead.
 
 ## Joint Li⁺/Na⁺/Mg²⁺ experiment (stage B)
@@ -71,6 +71,10 @@ declaration. Its `run` action performs the native fit and required evaluations
 under the shared fitting and total elapsed budgets, refusing to replace an
 existing fit. Reproduction requires the declared source and native-library
 identities; a new experimental declaration is a separate authorized action.
+**Frozen record — not replayable from this repository.** `stage_b.py` checks the
+source PDFs, source data CSVs, design and timing records it read from
+`build/issue-640/`, which no longer exist, so the commands below record how the
+retained stage B results were produced.
 
 ```bash
 env -u EPCSAFT_HSL_LIBRARY OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 timeout --signal=TERM 2400 nice -n 10 .venv/bin/python -u analyses/2026-lithium-chloride-refit/scripts/stage_b.py run
@@ -80,8 +84,8 @@ nice -n 10 .venv/bin/python analyses/2026-lithium-chloride-refit/scripts/stage_b
 [Stage B results](results/stage-b/evaluation.json) retain every close optimum's
 verdict. Each optimum directory retains training and held-out row predictions,
 rounding metrics, activity transfers and all eight divalent trace predictions.
-The complete #556 comparison outputs and execution logs are retained under
-`build/issue-640/stageB/`. A budget stop is incomplete numerical evidence and
+The complete #556 comparison outputs and execution logs were under
+`build/issue-640/stageB/`, which no longer exists. A budget stop is incomplete numerical evidence and
 does not establish physical failure or permit a new parameter packet.
 
 The joint fit fails the old chloride rule, both Yao buckets, divalent transfer

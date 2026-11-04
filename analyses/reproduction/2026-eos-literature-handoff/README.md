@@ -37,7 +37,8 @@ The [source selection](inputs/source/literature-targets.csv) gives table/page,
 DOI and removed-test locators; [source checks](results/source-checks.json) retain
 the matching rows and hashes of the existing observation owners. The original
 assertions are readable at `d7738b23d^:engine/tests/`; the full recovered
-assertion and raw-parameter inventories remain in `build/issue-730/` evidence.
+assertion and raw-parameter inventories were under `build/issue-730/`, which no
+longer exists.
 
 The former positive-pressure replay did not compare paper values. Its script,
 `eos_literature_handoff.py`, was removed by #341. The

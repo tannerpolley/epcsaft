@@ -12,8 +12,8 @@ For the full heterogeneous source answer, recover the authors' computed referenc
 
 Upstream update: PR #786 merged on 2026-10-22, and remote main now admits `ideal-gas` without SAFT records and derives reaction targets from species thermochemistry. This removes the upstream #766 capability prerequisite, but does not execute this gas-only benchmark or settle the full heterogeneous source inputs. The task checkout now includes that merged source and has its own prepared editable Engine. Independent readiness is still required before any gas-restriction producer.
 
-A reduced eight-gas numerical-verification design is retained in MAIN at
-`build/issue-789/2023-belov/design-r1.md`. It uses the existing independent
+A reduced eight-gas numerical-verification design was
+`build/issue-789/2023-belov/design-r1.md`, which no longer exists. It uses the existing independent
 restricted reference and explicitly proposes a one-state source-Gibbs encoding,
 without asserting source calorics or a heterogeneous result. The article
 Section 6 identifies the relevant IVTANTHERMO standard pressure as 1 atm;

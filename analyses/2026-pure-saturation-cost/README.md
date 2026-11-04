@@ -22,8 +22,8 @@ candidate calls compile the declaration once outside the timer and start each
 solve afresh inside it. Neither endpoint values nor density roots carry between
 samples. FeOs and Clapeyron keep their ordinary persistent-worker calls.
 
-Source probes and engineering-gate logs are retained in the main checkout's
-`build/issue-854/build-r4/`. Their numerical tables are read by the notebook from
+Source probes and engineering-gate logs were under `build/issue-854/build-r4/`,
+which no longer exists. Their numerical tables are read by the notebook from
 this leaf's `results/`. The image paths identify the prepared checkouts required
 by the calculation; a repeated campaign needs new image and raw-output paths.
 Rendering uses only retained tables:
@@ -42,8 +42,12 @@ criterion is the paired saving against main, using the same-image envelope.
 Fresh comparator costs remain observations rather than acceptance thresholds.
 The guarded controller accepts a new output directory through
 `EPCSAFT_COST_OUTPUT`; its detached-A phase-pressure bridge and compilation
-source are retained with the complete evidence under the main checkout's
-`build/issue-886/build-r2/`. `EPCSAFT_COST_PRESSURES` selects that compiled bridge.
+source were under `build/issue-886/build-r2/`, which no longer exists.
+`EPCSAFT_COST_PRESSURES` selected that compiled bridge. **Frozen record — not replayable from this repository.**
+The later integrate-r6 drivers (`campaign.py`, `compile_pressure.py`,
+`phase_pressures.cpp` and others) survive only in
+`build/archive/issue-886-dedicated-native-pure-fluid-saturation-39806186.tar.zst`,
+with no recorded hashes to verify them.
 Reproduction requires rebuilding the pinned A after its disposable worktree is
 removed. Presentation remains a read of retained results.
 

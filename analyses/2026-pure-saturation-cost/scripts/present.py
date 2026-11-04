@@ -111,7 +111,7 @@ def main():
     ancillary = read('ancillary.csv'); quad = read('ancillary-binary128.csv')
     table('ancillary.md',['Rows','Maximum density relative difference','Maximum pressure relative difference','Binary128 remaining correction at largest segment count'],
           [[len(ancillary),number(max(float(r['density_relative_error']) for r in ancillary)),number(max(float(r['pressure_relative_error']) for r in ancillary)),number(next(r['correction_inf'] for r in quad if r['method']=='B'))]])
-    table('gates.md',['Check','Outcome','Retained log'],[[r['check'],r['outcome'],f"`{r['log']}`" if r['log'] else 'awaiting lead'] for r in read('gates.csv')])
+    table('gates.md',['Check','Outcome','Log (its worktree no longer exists)'],[[r['check'],r['outcome'],f"`{r['log']}`" if r['log'] else 'awaiting lead'] for r in read('gates.csv')])
     b = json.loads((RESULTS/'runtime-additions.json').read_text())
     table('budget.md',['Layer','Gross added runtime lines','Removed runtime lines'],[[name,r['added'],r['removed']] for name,r in b['layers'].items()]+[['Total',b['total_added'],sum(r['removed'] for r in b['layers'].values())]])
     selected = [r for r in ratios if r['comparison'] in ('B/FeOs','B/Clapeyron')]

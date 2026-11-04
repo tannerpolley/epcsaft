@@ -15,6 +15,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any, overload
 
 from . import _core
+from ._log import logged
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
@@ -844,9 +845,11 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
     """
     if controls is None:
         raise ParameterError("fit requires controls: the iteration and time budgets are scientific inputs (ALG-FIT)")
-    return _core.fit(parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()),
-                     controls, list(holds or ()), list(checks or ()),
-                     None if baseline is None else baseline._native, bool(singular_vectors), None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty)
+    return logged(
+        _core.fit,
+        parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()), controls,
+        list(holds or ()), list(checks or ()), None if baseline is None else baseline._native, bool(singular_vectors),
+        None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:

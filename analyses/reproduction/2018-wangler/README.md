@@ -11,8 +11,7 @@ The same-pressure reaction-standard correction gives Table 10 AARDs of
 **96.248872% (S0)** and **89.550063% (S1)**. The original 96.25% and 89.55%
 discrepancies reproduce; the correction does not resolve them. The
 [research notebook](notebook.qmd) presents the conditions, comparisons, uncertainty,
-ranked explanations and limits. It has not been independently reviewed or
-promoted for manuscript use.
+ranked explanations and limits. The investigator promoted `83f95810` for MDEA calibration then failed pressure prediction (D12, a limit), subject to these limitations: root cause unresolved; not a general MDEA or MEA result. This promotion does not extend to later results or other comparisons in this leaf.
 
 ## What is established
 
@@ -114,8 +113,8 @@ verify only term derivatives, never solve equilibrium. Presentation and notebook
 rendering read retained values without model execution.
 
 Rerunning setup restores the per-checkout editable installation. Requested check
-logs and a complete evidence copy are retained in the main checkout at
-`build/issue-857/build-r1/`. No Engine runtime code changes are part of this study.
+logs and a complete evidence copy were under `build/issue-857/build-r1/`, which
+no longer exists. No Engine runtime code changes are part of this study.
 
 ## Historical records
 

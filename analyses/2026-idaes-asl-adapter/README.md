@@ -170,6 +170,36 @@ HSL is never copied into the Engine or retained analysis output.
 [domain rows](results/domain.csv),
 [independent references](results/references.csv), and
 [process rows](results/issue-720/process.csv) retain the rerun.
-Full derivative tables, NL files and solver logs remain under
-`build/issue-720/idaes-explicit-mumps/`; its solver logs confirm MUMPS 5.8.2.
+Full derivative tables, NL files and solver logs were under
+`build/issue-720/idaes-explicit-mumps/`, which no longer exists; those solver
+logs confirmed MUMPS 5.8.2.
 All existing numerical criteria pass, with no reference replacements.
+
+## Generic pressure properties and neutral VLE
+
+The generic IDAES property configuration supplies the standard Flash
+example. `scripts/qualify_properties.py` produces scratch comparisons/logs from
+the current installed Engine. The retained numerical snapshot and upstream
+Ipopt text logs live in `results/properties/`, with source/library identity in
+`summary.json`; the notebook reads those files without solving the model.
+`transitions.json` retains all 60 boundary/offset/smoothing/start results,
+including exact-boundary smoothing bias and active-phase comparisons.
+`thermal-boundary.json` retains the closed-endpoint derivative refusals and
+valid-call/cache recovery, separately from `OutsideInterval`.
+Run from the checkout root with the locked editable environment and external
+upstream IDAES Ipopt/MUMPS:
+
+```bash
+EPCSAFT_BUILD_JOBS=6 agent-heavy .venv/bin/python \
+  analyses/2026-idaes-asl-adapter/scripts/qualify_properties.py
+```
+
+The short `docs/site/examples/idaes-vle-flash.py` prints the phase split and
+native comparisons. Assertions belong to the qualification script. The
+qualification is neutral, classified-mixture-root numerical verification. Each
+phase root must classify as its requested side on its own (T, P, x) isotherm,
+or the call is refused. A component above its own critical temperature is
+admitted when both mixture roots classify; no pure-component critical test is
+applied. Unclassified VLE roots, critical passage and ionic/reacting VLE remain
+excluded. The comparisons do not establish physical validity. The older propane campaign
+above keeps its original conditions and recorded limits.

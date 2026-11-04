@@ -162,7 +162,7 @@ parameter regression is unnecessary for a fixed-input replay.
 
 Live views now separate historical evidence from current capability:
 - `analyses/reproduction/2026-khudaida/README.md` labels its HELD2 discovery campaign as
-  historical on its own wheels. `run-slice.sh khudaida` runs the declared two-liquid
+  historical on its own wheels. `analyses/2026-khudaida-idaes-settler/scripts/run.sh` runs the declared two-liquid
   settler.
 - `analyses/reproduction/2018-wangler/README.md` labels its calculations historical
   (#186): they use retired interfaces and do not run on the current wheel.

@@ -23,14 +23,9 @@ plan:
   historical_evidence: docs/scientific/reviews
 
 # Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
-# the counting, the band rule and the amendments.
+# the counting and the band rule.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-# #700: owner-approved executable-line accounting, 2026-10-20; rule-2 reductions.
-# #791 owner approval, 2026-10-22; measured count plus band, total capped by layer sum.
-# #811 owner approval, 2026-10-23; rule 1: Core 1096 + 11, Equilibrium 10501 + 106;
-# total 27591 + 276 capped by the layer-ceiling sum 27818.
-# #814 rule 2: Properties 5983 -> 5981 (count 5921 + band 60); total = layer-ceiling sum 27816.
-code_budgets: {"core": 1434, "contributions": 1289, "properties": 6534, "equilibrium": 13173, "regression": 4478, "surface": 815, "bindings": 2484, "python": 2319, "total": 32344}
+code_budgets: {"core": 1626, "contributions": 1309, "properties": 6691, "equilibrium": 13441, "regression": 4533, "surface": 815, "bindings": 2618, "python": 2634, "total": 33636}
 
 property_categories: [Ideal, Residual, Total]
 

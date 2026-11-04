@@ -1,7 +1,7 @@
 Source: Ascani (2023), chemical and phase equilibria with an esterification reaction; identity in `inputs/source/source-manifest.csv`.
 
 Reproduced natively in the Engine for #387; the numbers and their interpretation are in `notebook.qmd`,
-computed from `results/`. Not independently reviewed.
+computed from `results/`. The investigator promoted `37de3ed5` for Esterification tie lines, subject to these limitations: partial calibration overlap; phase-count errors disclosed. This promotion does not extend to later results or other comparisons in this leaf.
 
 ## What is compared
 

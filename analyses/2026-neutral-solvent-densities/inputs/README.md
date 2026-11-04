@@ -1,8 +1,7 @@
 # Frozen pure-solvent inputs
 
-The accepted design and readiness review are retained by the lead at
-`build/issue-902/design-p3-r2.md` and `build/issue-902/readiness-p3-r2.md` in the
-main checkout. Issue #916 owns this bounded study. All 19 source hashes in the
+The accepted design and readiness review are the lead's
+`build/issue-902/design-p3-r2.md` and `build/issue-902/readiness-p3-r2.md`. Issue #916 owns this bounded study. All 19 source hashes in the
 supplied `p3-r2-source-hashes.json` were verified before input transcription.
 `input-hashes.json` binds the local calculation snapshot and copied source text.
 
@@ -11,7 +10,11 @@ segment count, diameter (Å), dispersion energy/k (K), association energy/k (K),
 association volume, dipole moment (D), and dipole count. The source tuple is
 fixed; `MIBK-mass` changes only molar mass. `esper-parameters.json` retains the
 two original component records and the complete packet's SHA-256, including its
-source/license records. It is a source excerpt, not a materialized shared packet.
+source/license records. It is a source excerpt, not a materialized shared packet. Public source
+archives omit it, with the Esper packet, because its basis is CC BY-NC 4.0; the
+records are in FeOs `parameters/pcsaft/esper2023.json` at commit
+`af84e3f9da2fac2d102d449cd07cbbb48237617b`, from Esper, Bauer, Rehner and
+Gross (2023), DOI 10.1021/acs.iecr.3c02255.
 The executable consumes the explicit TSV declarations, not the full packet.
 
 TOP is assigned Yu's tuple (Table 2, p.4) to CAS 78-42-2, with the NIST mass

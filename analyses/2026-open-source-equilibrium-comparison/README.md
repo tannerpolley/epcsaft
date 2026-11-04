@@ -10,10 +10,11 @@ qualification-table includes, without running a model calculation. The selected
 critical and bubble/dew reference comparisons remain discrete points; the
 continuous curve retained in `2026-algorithm-illustrations` has a separate
 review boundary. FeOs critical compositions and teqp's polished locus
-compositions remain distinct. The rendered notebook and log are under
+compositions remain distinct. The rendered notebook and log were
 `build/issue-832/render/2026-open-source-equilibrium-comparison/notebook.html`
-and `build/issue-832/render-2026-open-source-equilibrium-comparison.log`.
-Independent delivered review and investigator promotion remain open.
+and `build/issue-832/render-2026-open-source-equilibrium-comparison.log`, which no
+longer exist.
+The investigator promoted `e75c60ad` for FeOs/teqp critical and bubble/dew comparison (F4), subject to these limitations: numerical verification at discrete points; no continuous envelope or global-stability claim. This promotion does not extend to later results or other comparisons in this leaf.
 
 # Current ePC-SAFT and open-source equilibrium comparisons
 

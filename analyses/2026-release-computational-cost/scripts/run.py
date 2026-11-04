@@ -111,7 +111,8 @@ def main():
     if args.mode == 'preflight':
         # Numerical answers and compilation warmups are deliberately outside measurement.
         workers = {name: c.Worker(name, [c.IMAGE['python'] if name == 'Engine-A' else str(c.FEOS), '-u',
-                    str(HERE / 'scripts' / ('engine_worker.py' if name == 'Engine-A' else 'feos_worker.py'))],
+                    *([str(HERE / 'scripts/engine_worker.py')] if name == 'Engine-A'
+                       else [str(ROOT / 'analyses/2026-audit-timing-campaign/scripts/feos_worker.py'), str(HERE / 'inputs/inputs.json')])],
                     31, BUILD / f'preflight-{name}.log') for name in ('Engine-A', 'FeOs')}
         workers['Clapeyron'] = Clapeyron()
         try:

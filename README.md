@@ -86,16 +86,17 @@ unless they say they compare with measurements.
 
 ## Installation
 
-Release 1.2.1 for Linux and Windows (x86-64) is on an interim conda channel
-until the conda-forge package is published:
+Install release 1.3.0 for Linux and Windows (x86-64) from the
+`tannerwpolley` conda channel:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.1
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.0
 ```
 
-The package contains the Engine but not the parameter packets; download the
-[release source archive](https://github.com/tannerpolley/epcsaft/releases) to
-run the examples. To build from source, see
+The conda package includes the FeOs Gross–Sadowski 2001 and 2002 packets.
+Download the matching [release source archive](https://github.com/tannerpolley/epcsaft/releases)
+for other packets and example inputs; load packets from its `data/packets`
+directory with `Parameters.from_packets`. Each packet states its use terms. To build from source, see
 [installation](https://tannerpolley.github.io/epcsaft/installation.html).
 
 ## Documentation

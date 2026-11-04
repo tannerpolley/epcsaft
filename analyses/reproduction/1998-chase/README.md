@@ -7,7 +7,7 @@ reacting states (eighteen species amounts). All values, errors and unchanged
 limits are in [comparison.csv](results/comparison.csv), with native diagnostics
 in [solutions.json](results/solutions.json). The [notebook](notebook.qmd) reads
 these files without running the model. Historical amount references are not
-published measurements. Independent delivered review is pending.
+published measurements. The investigator promoted `3f6b115a` for Ideal-gas thermochemistry, subject to these limitations: bounded. This promotion does not extend to later results or other comparisons in this leaf.
 
 From the repository root, using this checkout's prepared editable Engine:
 

@@ -191,12 +191,6 @@ dispatched by hand, and deploys the built site to GitHub Pages. In any other
 repository it runs only when dispatched by hand: it builds without deploying,
 and uploads the logs if the build fails.
 
-Run a canonical end-to-end workflow with:
-
-```bash
-bash tools/run-slice.sh khudaida
-```
-
 ## Native development
 
 `tools/native-run <program> [case|--list]` rebuilds one native program in the
@@ -518,8 +512,8 @@ official IDAES executable and exact option-file readback.
 
 `eos.property_asl_record(mixture)` constructs the immutable record of the installed
 `epcsaft_pressure_property` external function (#73) for a mixture with document
-parameters, no active parameters and a thermochemistry record in any native form
-(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v2`).
+parameters, no active parameters and optional thermochemistry in any native form
+(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v3`).
 `regression.fitted_parameters` writes the fitted values back into the start
 document's entries, so both records export a fit; a fit the document cannot
 represent (a fitted slot with no entry, a value that does not rebuild bitwise in
@@ -530,9 +524,12 @@ record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
 the lowest). It returns the value, gradient and packed Hessian in physical `q`
 from the native pressure actions plus the exact normalization chain. A zero
 neutral weight follows the exact infinite-dilution limit when the weights sum
-to a positive value. A sole stable root is returned for either phase; the
-public `pressure_actions` diagnostics report `branch` and `stable_root_count`
-for the caller's post-solve audit. Each distinct record is prepared once per process
+to a positive value. A resolved opposite-side root is refused. A sole unclassified root is admitted
+for ordinary property records; `require_phase_identity=True` refuses it for the
+initial classified-root VLE domain. Public `pressure_actions` diagnostics expose
+`branch`, `returned_branch` and `stable_root_count` for the endpoint audit.
+Missing thermochemistry leaves density and ln(phi) available; enthalpy raises
+`MissingThermochemistry`. Each distinct record is prepared once per process
 and kept for its lifetime, as above (`epcsaft_property prepared record <k>`). A failure returns
 nonfinite values with `epcsaft_property:<cause>:<PropertyActionStatus code>:...`,
 the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
@@ -656,3 +653,13 @@ solves) and the diagnostic options-file path when supplied. Fit results' common
 options do not replace heterogeneous row overrides retained by observations.
 Achieved residuals, numerical floors and conditioning remain the evidence for
 assessing a returned value; requested tolerances alone are not error estimates.
+
+### IDAES property package
+
+The optional `epcsaft.idaes` module supplies a `GenericParameterBlock`
+configuration using native ASL properties, FTPx, LogBubbleDew and SmoothVLE.
+See the [process-models guide](../docs/site/guide/process-models.md) for units,
+root-domain restrictions, option-file setup and failure delivery, and run
+`docs/site/examples/idaes-vle-flash.py` from the checkout root for a short
+standard IDAES Flash. Detailed numerical assertions belong to
+`analyses/2026-idaes-asl-adapter/scripts/qualify_properties.py`.

@@ -21,7 +21,7 @@ import feos  # noqa: E402
 import si_units as si  # noqa: E402
 
 feos.set_num_threads(1)
-INPUTS = json.loads((HERE / 'inputs/inputs.json').read_text())
+INPUTS = json.loads(Path(sys.argv[1] if len(sys.argv) > 1 else HERE / 'inputs/inputs.json').read_text())
 T1 = {r['id']: r for r in INPUTS['t1']}
 R = feos.Contributions.Residual
 RHO = si.MOL / si.METER**3

@@ -17,4 +17,5 @@ Use this checkout's prepared editable Engine environment.
 The [run identity](results/run-identity.json) records exact native library, input and producer hashes.
 The [comparison CSV](results/comparison.csv), [chord intervals](results/chords.json), [native readouts](results/native-states.json) and [failures](results/failures.json) own the retained numerical values.
 The notebook reads generated tables and a figure; rendering never runs the model.
-Independent delivered review and investigator promotion remain outstanding.
+Independent delivered review returned **Supported for the limited manuscript disclosure**; the review is `build/issue-974/dilution-review.md`.
+The investigator promoted notebook commit `afef1f7b09cdd7c320076376133fd3e8fc6ad276` for the manuscript disclosure of failed temperature transfer for the declared Held-parameter NaCl model with supplemental Malmberg–Maryott permittivity, subject to the review’s secondary-transcription, sampled-interval, incomplete-uncertainty, higher-temperature extrapolation and partly audited caloric-fitting-history limits.

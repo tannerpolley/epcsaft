@@ -67,20 +67,22 @@ for isobutanol, and `0.0002` for NaCl mole fraction.
 
 ## Reproduce
 
-Build and install the current non-editable wheel, then run the complete slice:
+Build and install the current non-editable wheel, then run the complete slice
+into a new or empty directory; candidates and qualification stay there:
 
 ```bash
-bash tools/run-slice.sh khudaida
+bash analyses/2026-khudaida-idaes-settler/scripts/run.sh <output-dir>
 ```
 
-For inspectable candidates:
+Install the wheel with `bash tools/build-engine.sh --install-wheel`; the script
+validates the data packets, then runs:
 
 ```bash
 .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py \
-  --output-dir /tmp/khudaida-current
+  --output-dir <output-dir>/candidates
 .venv/bin/python analyses/2026-khudaida-idaes-settler/scripts/qualify.py \
-  --results-dir /tmp/khudaida-current \
-  --output-dir /tmp/khudaida-qualification
+  --results-dir <output-dir>/candidates \
+  --output-dir <output-dir>/qualification
 ```
 
 The solver writes identity before numerical work and atomically checkpoints
@@ -115,8 +117,7 @@ option-file hashes, logs, named multipliers, transport rows, refinement
 ladders, endpoint certificates and failure probes are retained. The notebook
 checks those file identities and reports this rerun's maximum stationarity
 and objective. The older manuscript stationarity bound belongs to the older
-revision; it must not be combined with the current rerun. Selection is for
-independent delivered review, with investigator promotion still required.
+revision; it must not be combined with the current rerun. The investigator promoted `e75c60ad` for settler use case (F17), subject to these limitations: fixed T/P, declared local two-liquid branch; current stationarity value; no physical validation or global optimum. This promotion does not extend to later results or other comparisons in this leaf.
 No new model calculation or optimization was run for this curation.
 
 The [live results](results/live/summary.json) use the compiled

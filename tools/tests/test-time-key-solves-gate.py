@@ -101,3 +101,10 @@ work, states = rows()
 next(row for row in states if row['case'] == tool.F1 and row['wheel'] == 'B')['value'] = float('nan')
 assert tool.gate(work, states, expect_change=True)
 print('F1 attempt totals, timer invariance, invalid controls and nonfinite retained states: ok')
+
+
+warning_work, warning_states = rows()
+for row in warning_work:
+    if row['wheel'] == 'B' and row['case'] == CASE:
+        row['conditioning_warnings'] = 1
+assert tool.gate(warning_work, warning_states), 'an ordinary reference with a conditioning warning passed'

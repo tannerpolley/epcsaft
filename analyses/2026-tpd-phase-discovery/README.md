@@ -9,8 +9,7 @@ The [notebook](notebook.qmd) presents the retained numerical evidence. The initi
 amount-weighted correction and exact 100 mol falsifier now pass.
 **The same reviewer returned Supported, with no required defects, at
 `0f9bbe59b13bedc1b0884908ce7ba55be5194224`.** This verdict covers the qualified
-cases and limits below. The notebook remains unpromoted for manuscript use;
-manuscript work was not requested and is not a tool-qualification gate.
+cases and limits below. The investigator promoted `32044004` for Discovery, subject to these limitations: finite trial points; no global claim. This promotion does not extend to later results or other comparisons in this leaf.
 The [review record](../../docs/scientific/reviews/issue-223-delivered-review.md)
 states the final verdict and separate declared-conditioning scope. The 100 mol
 public-reuse failure comes from the lead and retained ordinal-5 diagnostic;
@@ -289,5 +288,4 @@ The [research notebook](notebook.qmd) reads the new results under
 under their original identities. The new provenance records the downloaded
 wheel, its verified hash, the actual installed Engine identity and the declared
 producer. Unavailable portions retain their stopping states and causes.
-Independent delivered review and owner promotion remain open; the manuscript
-is unchanged.
+The manuscript promotion is restricted to the snapshot and use stated above.

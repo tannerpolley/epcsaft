@@ -98,5 +98,4 @@ are read for Table 5; no σ-convention chloride result is recomputed.
 All equilibrium, density, fugacity, reference and osmotic-coefficient
 calculations are native; Python declares inputs and reads results. The one
 exception is the Fig. 4a diagnostic contraction above. The full replay takes under half a
-minute (the exact timing is in `results/run-identity.json`). Not
-independently reviewed or promoted.
+minute (the exact timing is in `results/run-identity.json`). The investigator promoted `2ecfa3a9` for Osmotic coefficients at 273/298 K; 1-butanol/NH₄Cl, subject to these limitations: bounded R07/R08 scope. This promotion does not extend to later results or other comparisons in this leaf.

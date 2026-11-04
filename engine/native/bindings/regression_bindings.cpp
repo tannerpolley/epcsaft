@@ -205,7 +205,8 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure);
     nb::class_<FitCovariance>(module, "FitCovariance")
         EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
-            projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor);
+            projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor)
+        EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
     nb::enum_<MeasuredInputKind>(module, "MeasuredInputKind")
         EPCSAFT_VALUES(MeasuredInputKind, Temperature, Pressure, MoleFraction, Molality);
     nb::class_<MeasuredInput>(module, "MeasuredInput").def(nb::init<>())
@@ -232,7 +233,7 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(FitResult, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure, internal_factor_conditioning);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);

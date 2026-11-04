@@ -214,6 +214,140 @@ print(json.dumps({k: current[k] for k in ('ipopt_version', 'asl_version', 'solve
 [The summary](results/issue-720/summary.json), [domain](results/domain.csv),
 [references](results/references.csv) and
 [process](results/issue-720/process.csv) retain the values. Full derivative tables
-and logs remain in `build/issue-720/idaes-explicit-mumps/`. The external solver
+and logs were under `build/issue-720/idaes-explicit-mumps/`, which no longer exists. The external solver
 environment stays outside the repository; every retained solver log selects
 MUMPS. No historical reference was replaced.
+
+
+## Generic IDAES properties and neutral VLE
+
+The additional qualification uses the existing generic IDAES parameter/state
+blocks, FTPx, LogBubbleDew and SmoothVLE. Density, total enthalpy and component
+log fugacity coefficients and their derivatives run in the native Engine;
+IDAES solves the process balances and phase-equilibrium equations. The short
+standard Flash declaration is separate from the numerical assertions in
+`scripts/qualify_properties.py`.
+
+The retained numerical evidence under `results/properties/` contains
+paired native/IDAES values, errors and tolerances, the smoothing ladder and
+full upstream Ipopt/MUMPS logs. The table below reads those values only.
+
+```{python}
+#| echo: false
+#| output: asis
+root = next(p for p in (Path.cwd(), *Path.cwd().parents) if (p / "ARCHITECTURE.yaml").is_file())
+qualification = root / "analyses/2026-idaes-asl-adapter/results/properties"
+if (qualification / "comparisons.csv").is_file():
+    with (qualification / "comparisons.csv").open() as stream:
+        property_rows = list(csv.DictReader(stream))
+    print("| Case | Quantity | IDAES | Native reference | Absolute difference |")
+    print("|---|---|---:|---:|---:|")
+    selected = {("bubble", "pressure_Pa"), ("checked-interior", "vapor_fraction"),
+                ("checked-interior", "liquid_methane"), ("checked-interior", "vapor_methane"),
+                ("heater", "heat_duty_W")}
+    for row in property_rows:
+        if (row["case"], row["quantity"]) in selected:
+            print(f"| {row['case']} | {row['quantity']} | {row['actual']} | {row['reference']} | {row['error']} |")
+    absent = [float(r["actual"]) for r in property_rows if r["quantity"] == "absent_phase_fraction"]
+    print(f"\nLargest absent-phase fraction at the finest smoothing: {max(absent):.6g}.")
+else:
+    print("The retained qualification files are unavailable; run the retained qualification script to obtain them.")
+```
+
+The bubble point and TP flash use the source-backed neutral methane/ethane
+packet and the same model in both solvers. Native bubble and flash references
+use the retained row tolerance. The derivative-checker log covers first and second
+derivatives at a declared in-domain start; its random reference point
+displacement is disabled, as in the earlier adapter campaign. The solver option files and logs retain and read back the settings actually
+used.
+
+The appearance/disappearance calculation retains the native bubble and dew
+temperatures themselves and each boundary plus/minus 0.1 K and 1 K. Each point
+uses all three smoothing pairs and two starts, giving 60 solves. The starts use
+different vapor fractions, with each boundary's native phase compositions
+perturbed in opposite directions in the methane and ethane fractions.
+The retained start perturbations preserve each composition sum. The exact-boundary rows
+below show the rounded solution rather than substituting an offset state.
+
+```{python}
+#| echo: false
+#| output: asis
+if (qualification / "transitions.json").is_file():
+    transitions = json.loads((qualification / "transitions.json").read_text())
+    print("| Boundary | Native T (K) | eps1 (K) | eps2 (K) | Start vapor fraction | Solved vapor fraction | T_eq minus T (K) |")
+    print("|---|---:|---:|---:|---:|---:|---:|")
+    for r in transitions:
+        if r["offset_K"] == 0:
+            print(f"| {r['boundary']} | {r['boundary_temperature_K']:.12g} | {r['eps_1_K']:g} | {r['eps_2_K']:g} | {r['start_vapor_fraction']:g} | {r['vapor_fraction']:.12g} | {r['T_eq_minus_T_K']:.9g} |")
+    finest = [r for r in transitions if r["eps_1_K"] == 1e-6]
+    exterior = [r for r in finest if r["offset_K"] != 0 and "absent_fraction" in r]
+    print(f"\nThe finest-level exterior probes have maximum absent fraction {max(r['absent_fraction'] for r in exterior):.6g}.")
+    balance = max(abs(v) for r in transitions for v in r["component_balance_mol_s"])
+    print(f"The maximum component-flow residual over all transition solves is {balance:.6g} mol/s.")
+    print("\n| Qualification quantity | Tolerance |\n|---|---:|")
+    for label,quantity in (("Phase fraction", "absent_phase_fraction"), ("Component balance (mol/s)", "methane_balance_mol_s")):
+        sample = next(r for r in property_rows if r["case"].startswith("transition-2-") and r["quantity"] == quantity)
+        print(f"| {label} | {float(sample['tolerance']):g} |")
+    sample = next(r for r in property_rows if r["case"].startswith("transition-2-") and r["quantity"] == "liquid_density")
+    print(f"| Active density, relative | {float(sample['tolerance']) / float(sample['reference']):g} |")
+    sample = next(r for r in property_rows if r["case"].startswith("transition-2-") and r["quantity"] == "liquid_methane" and float(r["reference"]) == .5)
+    print(f"| Active composition, relative | {float(sample['tolerance']) / float(sample['reference']):g} |")
+    print(f"\nThe two start composition perturbations are {sorted({r['start_composition_perturbation'] for r in transitions})} in the methane fraction.")
+    for boundary in ("bubble", "dew"):
+        exact = [r for r in finest if r["boundary"] == boundary and r["offset_K"] == 0]
+        density_error = max(abs(r["active_density"] / r["native_active_density"] - 1) for r in exact)
+        composition_error = max(abs(x / .5 - 1) for r in exact for x in r["active_composition"])
+        print(f"At the exact {boundary} boundary, the finest-level maximum active-density relative error is {density_error:.6g}; the maximum active-composition relative error is {composition_error:.6g}.")
+```
+
+Only the finest smoothing level is used for qualification, with separate
+active-property, phase-fraction and component-flow tolerances shown below.
+The exact-boundary
+phase-fraction reference is zero for the incipient phase; exterior probes use
+a native single-phase state. Interior probes compare against a native two-phase
+flash, retaining both phase compositions and densities in `comparisons.csv`.
+Default and intermediate smoothing rows expose rounding bias and do not replace
+the finest-level checks. A small incipient flow is not an exact phase switch.
+
+```{python}
+#| echo: false
+#| output: asis
+if (qualification / "summary.json").is_file():
+    properties_summary = json.loads((qualification / "summary.json").read_text())
+    bubble_rows = [r for r in property_rows if r["case"] == "bubble" and r["quantity"].endswith("_log_fugacity")]
+    residual = max(float(r["error"]) for r in bubble_rows)
+    gaps = properties_summary["bubble_gaps"]
+    print(f"Native reference row tolerance: {properties_summary['native_reference_row_tolerance']:g}.")
+    option_lines = (qualification / "heater.opt").read_text().splitlines()
+    print("Outer solver settings: " + "; ".join(line for line in option_lines if line.split()[0] in {"tol", "constr_viol_tol", "acceptable_iter"}) + ".")
+    print(f"The bubble maximum absolute log-fugacity residual is {residual:.6g} (limit 1e-8). Its composition gap is {gaps['composition']:.9g} (minimum 1e-3), and its relative density gap is {gaps['relative_density']:.9g} (minimum 1e-2).")
+    for r in properties_summary["phase_diagnostics"]:
+        if r["case"] == "bubble":
+            print(f"The bubble {r['phase']} root returns {r['returned_branch']} with {r['stable_root_count']} stable roots and density {r['molar_density']:.12g} mol/m3.")
+    near_dew = next(r for r in transitions if r["boundary"] == "dew" and r["offset_K"] == -.1)
+    print(f"The admitted near-dew methane/ethane point is {near_dew['temperature_K']:.9g} K.")
+    edge = properties_summary["thermal_boundary"][0]
+    print(f"\nAt the closed {edge['endpoint_temperature_K']:g} K thermal endpoint, total enthalpy is {edge['endpoint_enthalpy_J_mol']:.12g} J/mol before and after derivative refusals. First and second derivative requests retain `ThermalBoundary` in the exception. Valid calls at {edge['recovered_temperature_K']:g} K recover enthalpy {edge['recovered_enthalpy_J_mol']:.12g} J/mol and dh/dT {edge['recovered_dh_dT_J_mol_K']:.12g} J/(mol K), including repeated calls at the cached state.")
+```
+
+The thermal endpoint uses a manufactured constant ideal heat capacity on the
+declared closed interval to verify derivative availability and error
+transport; it is separate from the high-temperature `OutsideInterval` refusal.
+The endpoint value and valid-call recovery agree with native pressure actions
+at the retained scaled property threshold. The heater comparison uses the
+NASA methane record's own datum; neither case compares enthalpy across property
+packages or validates a physical caloric model.
+
+Each phase mixture root must classify as its requested liquid or vapor side
+on its own (T, P, x) isotherm, or the call is refused. A component above its
+own critical temperature is admitted when both mixture roots classify; methane
+at the near-dew point identified below is such a case. This is not a
+pure-component critical test.
+
+This is numerical verification on the declared classified-mixture-root domain,
+with no experimental uncertainty estimate or physical-validation claim.
+Unclassified VLE roots, critical passage, structural zero supports and
+ionic/reacting VLE remain outside qualification. Direct Python errors preserve
+ASL Errmsg; subprocess failures retain native diagnostics in the caller's log.
+Successful single-phase states with an unclassified root report an endpoint
+warning.

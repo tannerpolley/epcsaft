@@ -24,6 +24,14 @@ its low-pressure ideal-limit verification from its extrapolated dense-gas
 prediction. The [propane notebook](examples/propane-parameter-estimation.ipynb)
 calibrates parameters against observations; calibration is not validation.
 
+## Low-pressure saturation closure
+
+At saturation pressures of order 1 Pa or lower, cold liquid-density calculations
+can return a finite density and report convergence while failing relative
+pressure closure. Retained propylene, diethyl ether and toluene examples require
+checking the achieved pressure discrepancy as well as the solve result before
+using the density in an accuracy comparison.
+
 ## Equilibrium specifications and calorics
 
 Declared solves restrict the phases and supports considered. They perform no

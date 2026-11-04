@@ -7,12 +7,18 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import tempfile
+import tomllib
 
 LIMIT = 50 * 1024 * 1024
 HSL = re.compile(r"ma27|ma57|ma77|ma86|ma97|libhsl|coinhsl", re.I)
 JOURNAL = re.compile(r"(?:^|/)(?:sources?|inputs?|library|zotero|mathpix)(?:/|$)|paper|article|journal", re.I)
 PERSONAL = b"/home/tnnrpolley21"
+NONCOMMERCIAL = re.compile(r"\bCC[- ]?BY-NC\b", re.I)
+# Analysis inputs that copy CC BY-NC source data outside data/packets; their READMEs cite the sources.
+NONCOMMERCIAL_PATHS = ("analyses/reproduction/2025-figiel/inputs/source/",
+                       "analyses/2026-neutral-solvent-densities/inputs/esper-parameters.json")
 
 
 def git(root, *args, **kwargs):
@@ -24,6 +30,21 @@ def agent_path(path):
     return (parts[-1] in {"AGENTS.md", "CLAUDE.md"}
             or any(p in {".agents", ".claude", ".codex", ".serena"} for p in parts)
             or parts[:2] == ("docs", "agents"))
+
+
+def packet_bases(root, head, paths):
+    """license_or_use_basis of every data/packets/<id>/<version>/ from its own packet.toml."""
+    bases = {}
+    for packet in sorted({"/".join(p.split("/")[:4]) for p in paths
+                          if p.startswith("data/packets/") and p.count("/") > 3}):
+        try:
+            basis = tomllib.loads(git(root, "show", f"{head}:{packet}/packet.toml").decode())["license_or_use_basis"]
+        except (subprocess.CalledProcessError, UnicodeDecodeError, tomllib.TOMLDecodeError, KeyError) as error:
+            raise SystemExit(f"Packet without a readable use basis: {packet} ({error!r})")
+        if not isinstance(basis, str) or not basis.strip():
+            raise SystemExit(f"Packet without a readable use basis: {packet}")
+        bases[packet] = basis
+    return bases
 
 
 def write_blob(tree, path, mode, content):
@@ -59,6 +80,8 @@ def self_test(parent):
         assert not agent_path("docs/scientific/CONTEXT.md")
         assert not HSL.search("normal/calculation.csv")
         assert JOURNAL.search("inputs/source/example.pdf")
+        assert NONCOMMERCIAL.search("CC-BY-NC-4.0; https://creativecommons.org/licenses/by-nc/4.0/")
+        assert not NONCOMMERCIAL.search("FeOs MIT distribution; for noncommercial scientific use")
     print("snapshot self-check passed")
 
 
@@ -94,6 +117,8 @@ def main():
     if ignored.returncode not in (0, 1):
         raise RuntimeError(ignored.stderr.decode())
     ignored_paths = set(os.fsdecode(ignored.stdout).split("\0")) - {""}
+    bases = packet_bases(root, head, paths)
+    restricted = {packet: basis for packet, basis in bases.items() if NONCOMMERCIAL.search(basis)}
     excluded, replacements, files = [], [], []
     tree = output / "tree"
     tree.mkdir(parents=True)
@@ -107,6 +132,12 @@ def main():
                 continue
             if path.startswith("docs/scientific/latex/"):
                 excluded.append({"path": path, "reason": "manuscript"})
+                continue
+            if "/".join(path.split("/")[:4]) in restricted:
+                excluded.append({"path": path, "reason": "noncommercial packet use basis"})
+                continue
+            if path.startswith(NONCOMMERCIAL_PATHS):
+                excluded.append({"path": path, "reason": "noncommercial source data"})
                 continue
             if path.startswith("build/") or path in ignored_paths:
                 excluded.append({"path": path, "reason": "build/" if path.startswith("build/") else "ignored"})
@@ -153,12 +184,28 @@ def main():
         target = tree / item["path"]
         if target.is_symlink() and not target.resolve().is_relative_to(tree):
             raise ValueError(f"Symlink chain leaves snapshot: {item['path']}")
+    rewritten = ["data/packet-locks.json", "data/docs/parameter-index.md"] if restricted else []
+    if restricted:  # the shipped locks and index describe only the shipped packets
+        locks = json.loads((tree / rewritten[0]).read_text())
+        locks["packets"] = [lock for lock in locks["packets"] if lock["packet_path"] not in restricted]
+        (tree / rewritten[0]).write_text(json.dumps(locks, indent=2) + "\n")
+        (tree / rewritten[1]).write_bytes(
+            subprocess.check_output([sys.executable, str(tree / "data/tools/parameter_index.py")]))
+        for item in files:
+            if item["path"] in rewritten:
+                content = (tree / item["path"]).read_bytes()
+                item.update(bytes=len(content), sha256=hashlib.sha256(content).hexdigest())
     manifest = {"head": head, "tree": str(tree), "file_count": len(files),
                 "size_bytes": sum(item["bytes"] for item in files), "threshold_bytes": LIMIT,
-                "policy": "HEAD only; no Git history or refs; agent configuration, manuscript sources, build/ and every ignored path excluded",
+                "policy": "HEAD only; no Git history or refs; agent configuration, manuscript sources, build/, every ignored path, "
+                          "packets whose use basis is CC BY-NC and the noncommercial analysis inputs excluded",
+                "packet_count": len(bases) - len(restricted),
+                "excluded_packets": [{"packet": p, "use_basis": b} for p, b in restricted.items()],
+                "excluded_paths": list(NONCOMMERCIAL_PATHS),
+                "rewritten_without_excluded_packets": rewritten,
                 "excluded": excluded, "replaced": replacements, "checks": checks, "files": files}
     (output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
-    print(json.dumps({key: manifest[key] for key in ("head", "tree", "file_count", "size_bytes", "checks")}, indent=2))
+    print(json.dumps({key: manifest[key] for key in ("head", "tree", "file_count", "size_bytes", "packet_count", "excluded_packets", "checks")}, indent=2))
 
 
 if __name__ == "__main__":

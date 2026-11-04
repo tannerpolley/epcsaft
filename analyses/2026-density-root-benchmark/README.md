@@ -94,8 +94,7 @@ The [research notebook](notebook.qmd) reads the new results under
 under their original identities. The new provenance records the downloaded
 wheel, its verified hash, the actual installed Engine identity and the declared
 producer. Unavailable portions retain their stopping states and causes.
-Independent delivered review and owner promotion remain open; the manuscript
-is unchanged.
+The investigator promoted `0aad8f08` for Density roots, subject to these limitations: retained markers and distributions only. This promotion does not extend to later results or other comparisons in this leaf.
 
 The #683 preparation attempt stopped at the first state because its historical
 floor diagnostic was unavailable. Its stopping record and notebook account

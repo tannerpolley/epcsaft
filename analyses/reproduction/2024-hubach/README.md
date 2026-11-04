@@ -40,8 +40,8 @@ Full extraction remains **unavailable: charged exchange species and the
 source feed ratio are not decided in Lithium** ([Lithium #237](https://github.com/tannerpolley/Lithium_Extraction/issues/237#issuecomment-6355298159)).
 S11 is retained source evidence only. This comparison does not fit parameters.
 
-The review draft is `build/issue-789/2024-hubach/design-lithium.md` in the main
-checkout. The sole required readiness correction, the dispersion disclosure, is retained
+The review draft was `build/issue-789/2024-hubach/design-lithium.md`, which no
+longer exists. The sole required readiness correction, the dispersion disclosure, is retained
 above and in the declaration; execution follows the task authorization.
 
 The earlier numerical files, where present, remain frozen historical evidence

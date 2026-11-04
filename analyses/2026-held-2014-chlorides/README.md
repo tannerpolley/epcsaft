@@ -191,8 +191,7 @@ concentration rows and 398 signed comparisons, independently replayed 55
 selected states and ten energy-invariance states, and reproduced the Debye
 leading terms. It confirmed the packet/lock/wheel bytes and the stated
 limitations. The later closeout changes only this review record; no scientific
-input, calculation or result changes. This record is not promoted to manuscript
-use.
+input, calculation or result changes. The investigator promoted `0aad8f08` for Divalent limits, subject to these limitations: conventions and snapshots identified separately. This promotion does not extend to later results or other comparisons in this leaf.
 
 ## Current producer diagnosis (#750)
 

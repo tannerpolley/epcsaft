@@ -10,21 +10,26 @@ ordinary and prepared calls on its frozen pre-integration images. The matched in
 A/B images also meet the target in a complete quiet campaign at niceness ten.
 Their numerical refresh and cost evidence remain separate from the earlier
 images. Integrated operands, raw records, image identities and reduced tables
-are retained in `results/integrated-cost/`, with logs and task commands in the
-main checkout’s `build/issue-855/build-r5/`. The earlier paired ranges and control
+are retained in `results/integrated-cost/`; their logs and task commands were
+under `build/issue-855/build-r5/`, which no longer exists. The earlier paired ranges and control
 comparisons remain in `results/ratios.csv`; all ranges are observed, not
 confidence intervals. The integrated result awaits independent delivered review.
 
 `inputs/provenance.json` identifies the frozen declarations, source owners and
 main-checkout evidence. `results/` owns the displayed values. The task-local
-inventory records, original qualification outputs and complete logs remain at
-`build/issue-855/build-r1/` in the main checkout. The reconstructed baseline,
-fresh campaign logs, image identities and reduced tables are retained in
-`build/issue-855/build-r2/`. The seven other measured cases have separate wall/CPU
+inventory records, original qualification outputs and complete logs were under
+`build/issue-855/build-r1/`, and the reconstructed baseline, fresh campaign logs,
+image identities and reduced tables under `build/issue-855/build-r2/`; neither
+exists now. The seven other measured cases have separate wall/CPU
 operands, paired ratios, same-image controls and preserved full states in
-`results/other-*`. Their task adapters, logs and reduction command are retained
-in `build/issue-855/build-r3/`; they reuse the release interleaving, worker and
-`build/issue-855/probe.py:cases` constructors. These are reported costs without
+`results/other-*`. Their task adapters, logs and reduction command were under
+`build/issue-855/build-r3/`; they reused the release interleaving, worker and
+`build/issue-855/probe.py:cases` constructors. Those adapters, `probe.py` and
+the frozen images `scripts/run.py` loads from `build/issue-855/` are lost; of
+the recorded campaign inputs only the #647 ionic falsifier was recovered with
+its SHA-256, as `scripts/historical/f5_ionic.py`.
+**Frozen record — not replayable from this repository.** `scripts/compare.py`, `reduce.py` and `present.py` still read
+the retained records. These are reported costs without
 a speed target. This leaf neither overwrites
 historical analyses nor replaces their numerical constructors or criteria.
 

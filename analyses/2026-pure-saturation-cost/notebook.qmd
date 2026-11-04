@@ -185,8 +185,7 @@ support remain outside this task.
 The gross source accounting uses the unchanged baseline and the pinned
 formatter. Properties remains at its authorized gross allowance; the existing
 layer and total ceilings pass. Source probes, full gate logs, candidate identity
-and the build report are retained under the main checkout's
-`build/issue-854/build-r4/`. This notebook reads the retained tables in
+and the build report were under `build/issue-854/build-r4/`, which no longer exists. This notebook reads the retained tables in
 `results/`; presentation does not rerun thermodynamics or timing.
 
 
@@ -248,8 +247,7 @@ single-host cost observation. Source and parameter uncertainty were not
 estimated. The no-wider-`long double` branch is not exercised on this host.
 Independent delivered review and investigator promotion remain outstanding.
 Full logs, numerical tables, controlled-source drivers and frozen-head native
-lint/sanitizer records are retained in the main checkout's
-`build/issue-886/build-r2/`. Rendering reads retained results and reruns no model
+lint/sanitizer records were under `build/issue-886/build-r2/`, which no longer exists. Rendering reads retained results and reruns no model
 or timing calculation.
 
 
@@ -368,7 +366,7 @@ The formatted runtime count in the retained r5 accounting is within its total ce
 
 These results are numerical verification, with no physical validation or parameter-uncertainty claim. Independent delivered review and the paired whole-call saving decision remain open.
 
-Full source drivers, values and logs are retained in the main checkout’s `build/issue-886/build-r5/`. Detached A is kept at `fb27d881f`; B is the merged candidate.
+Full source drivers, values and logs were under `build/issue-886/build-r5/`; only its reports survive there. Detached A is kept at `fb27d881f`; B is the merged candidate.
 
 
 ## Integration with current main, 29 October
@@ -401,8 +399,8 @@ $-\ln R > C$ test failed. These owner-supplied campaign values are historical
 r5 evidence; no new prepared-call timing campaign or integrated-head speed
 claim is made. Independent delivered review remains the lead’s gate.
 
-Full drivers, loaded-image identities and logs are retained in the main
-checkout’s `build/issue-886/integrate-r6/`.
+Full drivers, loaded-image identities and logs were under
+`build/issue-886/integrate-r6/`; only its reports survive there.
 
 The [A=A key-solve control](results/integrate-r6/key-control.json.gz) and
 [A/B comparison](results/integrate-r6/key-comparison.json.gz) pass with

@@ -24,7 +24,10 @@ Executable shell blocks in analysis READMEs and notebooks advertise current
 commands. Historical calculation methods are named in prose with their exact
 retained wheel or record commit and retired interfaces; their obsolete rerun
 recipes are removed. `tools/check-analysis-layout.py` checks advertised Python
-commands against the current Engine exports without importing a wheel.
+commands against the current Engine exports without importing a wheel. It also
+rejects analysis text claiming evidence is retained under `build/`, and a `build/`
+path with a code suffix inside a fenced command block; it does not catch a bare
+prose citation of a lost `build/` file or a command path that does not exist.
 
 ## Numbers in notebooks
 

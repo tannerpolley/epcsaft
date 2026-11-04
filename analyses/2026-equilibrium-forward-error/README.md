@@ -19,24 +19,28 @@ Python to compile the retained native probes and regenerate endpoint estimates,
 manufactured perturbations, comparison boundaries, density-reference coverage
 and row-error checks. It uses the exact recorded compiler flags and native
 library; the output belongs under `build/`. The original installed/development
-corpus is retained under the main checkout's `build/issue-853/build-r1/`.
+corpus was under `build/issue-853/build-r1/`, which no longer exists, so
+`scripts/compare_854.py` cannot be rerun on it; the retained 853/854 judgment
+tables are frozen.
 Its original physical quantities and criteria were compared by the same
 production reader with native-lifted coordinates added as diagnostic operands.
 
 The source-reference additions use the accepted Route A design for issue
 [#869](https://github.com/tannerpolley/ePC-SAFT/issues/869). Their final native
-probe sources, exact compiler commands, logs and timing controls are retained
-in the main checkout at `build/issue-869/build-r1/`; their numerical tables and
-source hashes are retained here in `results/source-*`. The notebook states the
+probe sources, exact compiler commands, logs and timing controls were under
+`build/issue-869/build-r1/`, which no longer exists. **Frozen record — not replayable from this repository.** Their
+numerical tables and source hashes are in `results/source-*`. The notebook states the
 local estimate's underestimation limits separately from unavailable results.
 
 The solve-observation qualification for [#862](https://github.com/tannerpolley/ePC-SAFT/issues/862)
 is retained in `results/solve-*`. Its native/public cause table and numeric
 records compare the recovered association, callback, polish, discovery,
 continuation, failed Ipopt point and capture-log boundaries against the detached
-baseline. Exact probe inputs, source, compile commands and full logs are retained
-in the main checkout at `build/issue-862/build-r9/`; `solve-provenance.json`
-records their hashes and loaded-library identities. `scripts/present.py` reads
+baseline. Exact probe inputs, source, compile commands and full logs were under
+`build/issue-862/build-r9/`, which no longer exists; `solve-provenance.json`
+records their hashes and loaded-library identities. Three of its 22 recorded
+sources were recovered with matching SHA-256 into `scripts/historical/`; the
+others, including their shared `r1_common.py`, are lost. **Frozen record — not replayable from this repository.** `scripts/present.py` reads
 these retained values only. This reporting qualification introduces no new
 physical accuracy or validation claim.
 
@@ -50,5 +54,8 @@ is retained in `results/mixture-*`, with the original binary64 declarations in
 the existing contribution at the declared four-site mathematical input and
 compares its amount/volume derivatives with binary128 differentiation. Native
 probe sources, instrumentation, compile commands, trace rows and full delivery
-logs remain in the main checkout's `build/issue-864/build-r3/`. The notebook
+logs were under `build/issue-864/build-r3/`, which is gone from the main
+checkout; a copy survives only in
+`build/archive/issue-864-extended-precision-refinement-for-near-2-25f6f70e.tar.zst`, with no recorded
+hashes to verify it. **Frozen record — not replayable from this repository.** The notebook
 states the unmeasured complete-call cost and the remaining review boundary.

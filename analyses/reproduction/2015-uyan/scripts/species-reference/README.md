@@ -35,8 +35,8 @@ input guesses as the source-ledger generator, with only the explicit CO2
 reference declaration added. Source constants stay raw. Earlier tables and
 their unknown wheel identity remain separate. The retained key-solve summary and
 work table identify both wheel hashes and the merged base, and retain work
-counts, state differences and paired timings. The original base wheel also remains under `build/issue-274/base` in
-the delivery worktree; it is not committed.
+counts, state differences and paired timings. The original base wheel was under `build/issue-274/base` in
+the delivery worktree, which no longer exists; it is not committed.
 
 Presentation reads retained values and never evaluates the model:
 

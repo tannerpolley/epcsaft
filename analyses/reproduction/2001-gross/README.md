@@ -7,7 +7,7 @@ The original pure-component pressure and molar-volume AAD values and the binary 
 
 [The research notebook](notebook.qmd) computes its displayed values from retained CSV and JSON files and states the comparison basis, tolerances, numerical stopping points, uncertainty, and coverage.
 It distinguishes numerical verification against paper model curves from physical comparisons against digitized experimental symbols with literature parameters.
-These results have not been independently reviewed or promoted for manuscript use.
+The investigator promoted `e75c60ad` for 78-compound catalogue (F8b); Gross binaries (F9e), subject to these limitations: catalogue breadth is not validation of 78 compounds; two cold numerical exclusions kept. This promotion does not extend to later results or other comparisons in this leaf.
 
 The selected solid-PC-SAFT extraction is retained in
 [model-point-review.csv](inputs/digitized/model-point-review.csv), including old

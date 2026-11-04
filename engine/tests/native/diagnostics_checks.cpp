@@ -385,12 +385,28 @@ void trace_state_case(
 ) {
     epcsaft::HelmholtzModel model(std::move(parameters));
     const auto uncaptured = model.state(temperature, density, composition);
-    epcsaft::core::Capture capture;
-    const auto captured = model.state(temperature, density, composition);
-    const auto trace = capture.take();
-    same_state(uncaptured, captured);
-    CHECK(!trace.spans.empty());
-    CHECK(std::string(trace.spans.front().name) == "state");
+    const auto full = model.evaluate(temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::Hessian);
+    for (bool diagnostics : {false, true}) {
+        epcsaft::core::Capture capture(diagnostics);
+        const auto captured = model.state(temperature, density, composition);
+        const auto trace = capture.take();
+        same_state(uncaptured, captured);
+        CHECK(!trace.spans.empty());
+        CHECK(std::string(trace.spans.front().name) == "state");
+        bool hessian_seen = false;
+        for (const auto& event : trace.events) {
+            if (std::string(event.name) != "hessian") continue;
+            hessian_seen = true;
+            CHECK(diagnostics);
+            CHECK(event.values.size() == full.hessian.size());
+            for (std::size_t i = 0; i < full.hessian.size(); ++i)
+                recording_support::compare("trace-state", "Helmholtz Hessian", "chart", event.values[i], full.hessian[i],
+                    "{}", "Relationship", "explicit-Hessian", "diagnostic versus explicit evaluation",
+                    "reference_or_one", 1e-10, 1e-10, std::abs(event.values[i] - full.hessian[i])
+                        <= 1e-10 * std::max(1.0, std::abs(full.hessian[i])));
+        }
+        CHECK(hessian_seen == diagnostics);
+    }
 }
 
 void trace_activity_case() {
@@ -424,6 +440,16 @@ void trace_invariance() {
     trace_case(properties_support::ethane(), 320.0, 1.0e6, {1.0},
                epcsaft::DensityBranch::Vapor);
     trace_state_case(properties_support::neutral_binary(), 300.0, 1.0, {0.4, 0.6});
+    auto six = properties_support::parameters(6);
+    const auto binary = properties_support::neutral_binary();
+    for (std::size_t i = 0; i < 6; ++i) {
+        six.segment_count[i] = binary.segment_count[i % 2];
+        six.sigma_constant[i] = binary.sigma_constant[i % 2];
+        six.dispersion_energy_over_k[i] = binary.dispersion_energy_over_k[i % 2];
+        six.molar_mass_kg_per_mol[i] = binary.molar_mass_kg_per_mol[i % 2];
+    }
+    trace_state_case(six, 300.0, 1000.0, std::vector<double>(6, 1.0 / 6.0));
+    trace_state_case(properties_support::associating_binary(), 300.0, 1e4, {0.1385, 0.8615});
     trace_activity_case();
 }
 

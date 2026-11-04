@@ -409,6 +409,30 @@ def check_current_commands() -> None:
                             )
 
 
+# build/ is scratch (docs/agents/workflow.md): a study's producer, inputs and command live in its leaf.
+BUILD_RETENTION = re.compile(
+    r"(?:retained|kept|remains?|archived|lives?)\b[^.;]{0,60}?`?(?:\.\./)*build/issue-"
+    r"|main checkout(?:['’]s)?\s*`?build/issue-|build/issue-[^\s`]*`?\s+(?:in|of) the\s+main\s+checkout"
+    r"|in the main checkout\s+(?:at|under)\s+`?build/issue-", re.IGNORECASE)
+BUILD_CODE = re.compile(r"(?:\.\./)*build/[^\s`'\"]*\.(?:py|cpp|hpp|jl|sh|R)\b")
+
+
+def check_build_retention() -> None:
+    for document in sorted(ANALYSES.rglob("*")):
+        parts = document.relative_to(ANALYSES).parts
+        if document.suffix not in {".md", ".qmd"} or "results" in parts or ".quarto" in parts:
+            continue
+        text = document.read_text(encoding="utf-8")
+        claim = BUILD_RETENTION.search(text.replace("\n", " "))
+        if claim:
+            raise SystemExit(f"{document.relative_to(ROOT)}:{text.count(chr(10), 0, claim.start()) + 1}: "
+                             "evidence claimed as retained under build/; move it into the leaf or state it is lost")
+        for block in re.findall(r"```[^\n]*\n(.*?)```", text, re.DOTALL):
+            code = BUILD_CODE.search(block)
+            if code:
+                raise SystemExit(f"{document.relative_to(ROOT)}: command runs {code.group(0)} from build/; "
+                                 "keep the producer in the leaf's scripts/")
+
 for retired in (ROOT / "governance", ROOT / "validation"):
     if retired.exists():
         raise SystemExit(f"retired owner still exists: {retired.relative_to(ROOT)}")
@@ -418,6 +442,7 @@ check_nested_result_shape()
 check_analysis_files()
 check_active_paths()
 check_current_commands()
+check_build_retention()
 
 reproduction = ANALYSES / "reproduction"
 if not reproduction.is_dir() or any(item.is_file() for item in reproduction.iterdir()):

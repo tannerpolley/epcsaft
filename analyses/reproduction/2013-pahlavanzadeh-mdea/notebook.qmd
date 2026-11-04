@@ -47,7 +47,7 @@ Thermodynamics*, DOI [10.1016/j.jct.2012.12.021](https://doi.org/10.1016/j.jct.2
 [Source identities](inputs/source/source-identity.json), primary-table checks,
 manual figure coordinates and calibration are retained in
 [inputs/source](inputs/source/source-locator.md). Raster QA overlays and reading strips
-are retained under `build/issue-736/source/` in the archived evidence. The readings were frozen in
+were under `build/issue-736/source/`, which no longer exists. The readings were frozen in
 Git before prediction. CSV line endings were normalized before prediction;
 acquisition and canonical byte hashes are both recorded. No coordinate reading
 was corrected after prediction. These were hand-confirmed by one investigator,

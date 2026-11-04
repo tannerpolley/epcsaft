@@ -33,7 +33,7 @@ positive. `results/diagnostics.txt` retains native status/cause, the actual
 phase state, all compositions and raw/classified row identities.
 `results/run-identity.json` binds source, mass rows, driver and native library.
 The notebook computes its displays from these files without rerunning the
-Engine. Independent delivered review remains open.
+Engine. The investigator promoted `5839e6d2` for Eight-gas reaction equilibria, subject to these limitations: heterogeneous equilibrium excluded. This promotion does not extend to later results or other comparisons in this leaf.
 
 Source: Belov and Aristova (2023), DOI 10.5541/ijot.1317496, test 1 and article
 Section 6. Exact source file/commit/blob, fetched CRLF and Git-normalized LF

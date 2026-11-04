@@ -799,8 +799,9 @@ reference thermochemistry and fitting have separate responsibilities inside
 the same Engine. Their absence in the current implementation is a transfer
 gap, not a permanent ban on the accepted target. Solids, critical-point
 conditions as an augmented equation system, kinetics and Bjerrum pairing
-require separately justified scientific extensions. Residual multipoles other
-than the optional dipole-dipole term (ADR 0011) remain retired by ADR 0006.
+require separately justified scientific extensions. ADR 0011 admits the optional Gross–Vrabec dipole–dipole term, and ADR 0014
+admits the optional Gross quadrupole–quadrupole term. A model selects either
+term, never both; the dipole–quadrupole cross term remains retired under ADR 0006.
 
 Residual EOS parameters and reference thermochemistry are separately declared
 physical records. Public density/pressure state calls supply temperature and

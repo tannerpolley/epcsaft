@@ -37,6 +37,7 @@ struct Span final {
 
 struct IpoptLog final {
     std::string destination, error;
+    int print_level = 12;  // Ipopt journal level of every category; J_MAIN is capped at 5
     bool attempted = false;
     std::shared_ptr<void> application;
 };
@@ -71,10 +72,51 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
 inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) {
     if (!first) retain_failure(first, std::runtime_error(std::string(cause)), operation);
 }
-inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank) {
-    for (auto& r : records) if (r.basis == rank.basis) { r = rank; return; }
-    records.push_back(rank);
+inline void retain_rank(NumericalRank& target, const NumericalRank& rank,
+    const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
+    auto warning = target.first_conditioning_warning; target = rank;
+    if (warning) target.first_conditioning_warning = std::move(warning);
+    else if (target.first_conditioning_warning && target.first_conditioning_warning->coordinates.empty()) target.first_conditioning_warning->coordinates = point;
+    if (target.first_conditioning_warning && !target.first_conditioning_warning->stage) (target.first_conditioning_warning = std::make_shared<ConditioningObservation>(*target.first_conditioning_warning))->stage = stage;
 }
+inline void retain_rank(std::vector<NumericalRank>& records, const NumericalRank& rank,
+    const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
+    for (auto& r : records) if (r.basis == rank.basis) { retain_rank(r, rank, point, stage); return; }
+    records.emplace_back(); retain_rank(records.back(), rank, point, stage);
+}
+
+inline void retain_rank(std::shared_ptr<NumericalRank>& target, const NumericalRank& rank) {
+    if (!target) target = std::make_shared<NumericalRank>(rank);
+    else retain_rank(*target, rank);
+}
+
+class AssociationObservations final {
+public:
+    static EPC_API AssociationObservations*& current() noexcept;
+    explicit AssociationObservations(bool inherit = false)
+        : previous_(current()), destination_(inherit && previous_ ? previous_->destination_ : &records_),
+          phase_(inherit && previous_ ? previous_->phase_ : std::nullopt) { current() = this; }
+    explicit AssociationObservations(std::size_t phase)
+        : previous_(current()), destination_(previous_ ? previous_->destination_ : &records_), phase_(phase) { if (previous_) current() = this; }
+    ~AssociationObservations() { current() = previous_; }
+    AssociationObservations(const AssociationObservations&) = delete;
+    static void publish(NumericalRank rank, AssociationObservations* owner = current()) {
+        if (!owner) return;
+        if (rank.first_conditioning_warning && owner->phase_)
+            (rank.first_conditioning_warning = std::make_shared<ConditioningObservation>(*rank.first_conditioning_warning))->phase = owner->phase_;
+        retain_rank(*owner->destination_, rank);
+    }
+    template<class Destination> void merge(Destination& target) const {
+        for (const auto& rank : records_) retain_rank(target, rank);
+    }
+    template<class Destination> void drain(Destination& target) { merge(target); records_.clear(); }
+    void forward() const { for (const auto& rank : records_) publish(rank, previous_); }
+private:
+    std::vector<NumericalRank> records_;
+    AssociationObservations* const previous_;
+    std::vector<NumericalRank>* destination_;
+    std::optional<std::size_t> phase_;
+};
 
 template <typename Observation>
 void observe(Trace* trace, Observation&& observation) {
@@ -83,8 +125,13 @@ void observe(Trace* trace, Observation&& observation) {
 
 class Capture final {
 public:
-    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}) : previous_(current_trace()) {
-        if (!ipopt_log.empty()) { trace_.ipopt_log = std::make_shared<IpoptLog>(); trace_.ipopt_log->destination = ipopt_log; }
+    explicit Capture(std::optional<bool> diagnostics = std::nullopt, const std::string& ipopt_log = {}, int ipopt_print_level = 12)
+        : previous_(current_trace()) {
+        if (!ipopt_log.empty()) {
+            trace_.ipopt_log = std::make_shared<IpoptLog>();
+            trace_.ipopt_log->destination = ipopt_log;
+            trace_.ipopt_log->print_level = ipopt_print_level;
+        }
         else if (previous_) trace_.ipopt_log = previous_->ipopt_log;
         trace_.diagnostics = diagnostics ? *diagnostics : previous_ && previous_->diagnostics;
         parent_ = trace_.diagnostics && previous_ ? previous_->current : std::nullopt;

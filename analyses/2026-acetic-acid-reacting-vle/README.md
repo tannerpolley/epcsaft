@@ -6,18 +6,18 @@ The [notebook](notebook.qmd) reports pressure errors, chemistry and permittivity
 controls, numerical verification and conditional input-interval comparisons.
 Historical calibration overlap is unresolved. This case does not test speciation.
 
-The exact accepted-main wheel and its installed environment are retained in the
-main checkout under `build/issue-856/build-r1/`; [executable.json](results/executable.json)
+The exact accepted-main wheel and its installed environment were prepared under
+`build/issue-856/build-r1/`, which no longer exists; [executable.json](results/executable.json)
 identifies that environment, wheel hash, clean Engine source and loaded libraries.
-The native reference diagnostic is retained beside that environment; its exact
-compiler command is `build/issue-856/build-r1/reference-build-command.json`
-in the main checkout and links the installed wheel's native library.
-From this checkout, regenerate with that qualified environment:
+The native reference diagnostic `scripts/reference_ladder.cpp` was compiled beside
+that environment against the installed wheel's native library; its recorded
+compiler command file did not survive. From this checkout, regenerate with an
+environment holding the wheel that `results/executable.json` identifies:
 
 ```bash
 nice -n 10 python3 analyses/2026-acetic-acid-reacting-vle/scripts/extract_measurements.py
-nice -n 10 build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/run.py
-nice -n 10 build/issue-856/build-r1/environment/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/reference_refinement.py
+nice -n 10 <environment>/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/run.py
+nice -n 10 <environment>/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/reference_refinement.py
 nice -n 10 python3 analyses/2026-acetic-acid-reacting-vle/scripts/summarize.py
 nice -n 10 .venv/bin/python analyses/2026-acetic-acid-reacting-vle/scripts/present.py
 ```

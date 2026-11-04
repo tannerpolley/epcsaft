@@ -1,0 +1,46 @@
+Ipopt 3.13.2: option_file_name=/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6/build/issue-977/qualification-r2/heater.opt
+epcsaft_property prepared record 1
+epcsaft_property failure: epcsaft_property:OutsideInterval:2:1; site rank 0; pivot ratio 0; association residual 0 controls=20000,100000,1
+Error evaluating 
+Using option file "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6/build/issue-977/qualification-r2/heater.opt".
+
+
+List of user-set options:
+
+                                    Name   Value                used
+                         acceptable_iter = 0                     yes
+                         constr_viol_tol = 1e-11                 yes
+                   hessian_approximation = exact                 yes
+                           linear_solver = mumps                 yes
+                        option_file_name = /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6/build/issue-977/qualification-r2/heater.opt  yes
+                             print_level = 5                     yes
+                      print_user_options = yes                   yes
+                                     tol = 1e-11                 yes
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+
+This version of Ipopt was compiled from source code available at
+    https://github.com/IDAES/Ipopt as part of the Institute for the Design of
+    Advanced Energy Systems Process Systems Engineering Framework (IDAES PSE
+    Framework) Copyright (c) 2018-2019. See https://github.com/IDAES/idaes-pse.
+
+This version of Ipopt was compiled using HSL, a collection of Fortran codes
+    for large-scale scientific computation.  All technical papers, sales and
+    publicity material resulting from use of the HSL codes within IPOPT must
+    contain the following acknowledgement:
+        HSL, a collection of Fortran codes for large-scale scientific
+        computation. See http://www.hsl.rl.ac.uk.
+******************************************************************************
+
+This is Ipopt version 3.13.2, running with linear solver mumps.
+NOTE: Other linear solvers might be more efficient (see Ipopt documentation).
+
+Number of nonzeros in equality constraint Jacobian...:       20
+Number of nonzeros in inequality constraint Jacobian.:        0
+Number of nonzeros in Lagrangian Hessian.............:        9
+
+"var =" definition 5: Error in function epcsaft_pressure_property:
+	epcsaft_property:OutsideInterval:2:1; site rank 0; pivot ratio 0; association residual 0

@@ -15,8 +15,8 @@ The evidence is numerical verification and timing, pending the lead's review.
 
 The study reuses each wheel's commit-matched declarations from `tools/time-key-solves`
 and the existing competitor, head-to-head and methane/ethane analyses. The
-same-host comparator times and density sequence come from the main checkout's
-`build/issue-533/`. Each retained wheel has an isolated environment; detached
+same-host comparator times and density sequence came from `build/issue-533/`,
+whose files no longer exist. Each retained wheel has an isolated environment; detached
 worktrees supply declaration scripts only. Preparation never compiles a wheel.
 
 The retained campaign was prepared and measured with the historical environments
@@ -53,7 +53,7 @@ bash analyses/2026-engine-performance-history/scripts/render.sh
 
 The render command verifies that the presentation environment contains no
 Engine, records hashes of its inputs, renders a copy under `build/`, checks that
-rendering leaves the retained inputs unchanged, and copies the self-contained HTML into the main checkout's
+rendering leaves its inputs unchanged, and copies the self-contained HTML to
 `build/issue-549/notebook.html`.
 The task checkout's presentation environment is prepared with `uv venv --python
 3.13 build/issue-549/presentation` and `uv pip install --python

@@ -10,6 +10,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <sstream>
 #include <mutex>
 #include <numeric>
 #include <stdexcept>
@@ -326,8 +327,25 @@ struct EquilibriumContext final {
     int order = -1;
 };
 
+std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank>& records) {
+    std::ostringstream out; out.precision(17);
+    for (const auto& record : records) if (record.first_conditioning_warning) {
+        const auto& w = *record.first_conditioning_warning;
+        out << "; conditioning warning: " << w.operation << "; basis " << w.basis << "; norm " << w.norm
+            << "; method " << w.method << "; cause " << w.cause << "; rank " << w.rank << '/' << w.dimension
+            << "; cutoff " << w.threshold << "; condition " << w.condition << "; error " << w.error
+            << "; criterion " << w.criterion << ' ' << w.criterion_value << "; bits " << w.precision_bits
+            << "; attempt/stage/iteration=" << epcsaft::core::optional_number(w.attempt) << '/' << epcsaft::core::optional_number(w.stage) << '/' << w.iteration << "; point " << w.point_kind;
+        for (const auto& [name, values] : {std::pair{"coordinates", &w.coordinates}, {"controls", &w.controls},
+            {"row_scale", &w.row_scale}, {"column_scale", &w.column_scale}}) {
+            out << "; " << name << '='; for (double value : *values) out << value << ',';
+        }
+    }
+    return out.str();
+}
+
 void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
-    const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message
+    const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message + conditioning_warnings(result.rank_records)
         + (result.first_numerical_failure ? "; first refusal: " + epcsaft::core::describe(*result.first_numerical_failure) : "")); };
     const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)
@@ -599,6 +617,7 @@ double equilibrium_amount(arglist* arguments) {
 // d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) are applied here. Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
 struct PropertyContext final {
     std::string record;
+    bool require_phase_identity = false;
     std::unique_ptr<epcsaft::HelmholtzModel> model;
     struct Branch final {
         std::vector<double> q, values;
@@ -610,16 +629,19 @@ struct PropertyContext final {
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v2");
+    reader.field("epcsaft.asl.property.v3");
+    const bool require_phase_identity = reader.integer(1) != 0;
     const auto document = read_document(reader);
     epcsaft::policy::SolverOptions solver_options;
     reader.field("solver_options");
     for (auto& value : solver_options.values) value = reader.number();
-    epcsaft::ThermochemistryRecord thermochemistry;
+    std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
+    if (reader.integer(1) != 0) {
+    thermochemistry.emplace();
     reader.field("standard_pressure");
-    thermochemistry.standard_pressure = reader.number();
+    thermochemistry->standard_pressure = reader.number();
     reader.field("component_intervals");
-    thermochemistry.component_intervals = reader.vector([&] {
+    thermochemistry->component_intervals = reader.vector([&] {
         return reader.vector([&] {
             epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
             item.correlation.source_pressure = reader.number();
@@ -638,8 +660,10 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
             return item;
         });
     });
+    }
     reader.finish();
     auto context = std::make_unique<PropertyContext>();
+    context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<epcsaft::HelmholtzModel>(
         epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry, solver_options);
     context->record = raw;
@@ -687,14 +711,22 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
                 + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
                     : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
         }
+        const auto requested = phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor;
+        const auto returned = batch.diagnostics.returned_branch;
+        if ((!anchor && context.require_phase_identity && returned == epcsaft::DensityBranch::Unspecified)
+            || (returned != epcsaft::DensityBranch::Unspecified && returned != requested))
+            throw std::runtime_error("epcsaft_property:branch_mismatch:requested=" + std::to_string(static_cast<int>(requested))
+                + ":returned=" + std::to_string(static_cast<int>(returned)) + ":T=" + epcsaft::core::optional_number(q[0])
+                + ":P=" + epcsaft::core::optional_number(q[1]) + ":stable_root_count="
+                + (batch.diagnostics.stable_root_count ? std::to_string(*batch.diagnostics.stable_root_count) : "absent"));
         const auto fail = [&](std::size_t row, int k, Status status) {
             if (k < branch.failures[row].first)
-                branch.failures[row] = {k, "epcsaft_property:" + cause(status, "unavailable_derivative") + ":"
+                branch.failures[row] = {k, "epcsaft_property:" + cause(status, status == Status::MissingThermochemistry ? "MissingThermochemistry" : status == Status::OutsideInterval ? "OutsideInterval" : "unavailable_derivative") + ":"
                     + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
-                    + (status == Status::ThermalBoundary ? ": ThermalBoundary at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
-                    + "; site rank " + std::to_string(batch.diagnostics.site_rank)
+                    + ((status == Status::ThermalBoundary || status == Status::OutsideInterval) ? ": thermochemistry interval at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
+                    + ((status == Status::OutsideInterval || status == Status::MissingThermochemistry) ? "" : "; site rank " + std::to_string(batch.diagnostics.site_rank)
                     + "; pivot ratio " + epcsaft::core::optional_number(batch.diagnostics.site_pivot_ratio)
-                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual)
+                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual))
                     + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
         };
         std::vector<double> actions(n);

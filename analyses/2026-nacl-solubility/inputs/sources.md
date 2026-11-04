@@ -40,8 +40,8 @@
   The source pressure is 101325 Pa; the study uses 101300 Pa.
 
 The exact source-file hashes are in `source-hashes.json`.
-The raw source PDFs and NIST JSON remain in the main checkout's `build/issue-858/`;
-this analysis retains their selected numerical rows without duplicating the PDFs.
+The raw source PDFs and NIST JSON were under `build/issue-858/`, which no longer
+exists; this analysis retains their selected numerical rows and hashes.
 Each derived parameter snapshot changes only sodium–water temperature dependence
 and water permittivity from its corresponding packet.
 Its source, identity and locator records describe those changes explicitly.
@@ -86,8 +86,8 @@ Halite lines 336–340 and Sylvite lines 433–437 supply 27.1 and 37.5 cm³/mol
 Native reference transfer retains both source pressures and applies solid-volume
 pressure work exactly once. These fixed volumes have no retained uncertainties.
 The source PDFs, inspected images, interpolation alternatives and downloaded
-database remain in the main checkout's `build/issue-878/`; exact selected source
-hashes are retained in the input file.
+database were under `build/issue-878/`, which no longer exists; exact selected
+source hashes are in the input file.
 
 The declared seven-solve checks require: classified residual ≤1e−10;
 absolute component balance and charge error ≤1e−10 mol; absolute saturation

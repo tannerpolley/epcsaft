@@ -1,0 +1,12 @@
+tol 1e-11
+constr_viol_tol 1e-11
+acceptable_iter 0
+linear_solver mumps
+hessian_approximation exact
+print_user_options yes
+print_level 5
+max_iter 150
+derivative_test second-order
+derivative_test_tol 0.0001
+derivative_test_perturbation 1e-06
+point_perturbation_radius 0

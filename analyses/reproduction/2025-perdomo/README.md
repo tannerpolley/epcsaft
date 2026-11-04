@@ -32,8 +32,8 @@ env -u EPCSAFT_HSL_LIBRARY nice -n 10 env EPCSAFT_BUILD_JOBS=6 \
   bash analyses/reproduction/2025-perdomo/scripts/render.sh
 ```
 
-The standalone [rendered notebook](../../../build/issue-729/render/notebook.html) is
-retained for review. Root-site registration is a lead-owned gate because this
+The standalone rendered notebook was `build/issue-729/render/notebook.html`, which
+no longer exists. Root-site registration is a lead-owned gate because this
 build excludes changes to `analyses/_quarto.yml`.
 
 Perdomo's paper uses SAFT-γ Mie; these calculations use ePC-SAFT. Their source

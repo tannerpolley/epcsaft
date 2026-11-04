@@ -325,7 +325,7 @@ EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, const Co
             const double cutoff = std::numeric_limits<double>::epsilon()
                 * std::max(1.0, std::abs(hold.reference.observed)) / std::max(1.0, std::abs(diameter));
             result.rank = {"hydration energy derivative with respect to Born diameter", 1, std::size_t(std::isfinite(hd) && std::abs(hd) > cutoff), cutoff};
-            record.residual = std::abs(error); record.iterations = iteration + 1; record.rank = result.rank;
+            record.residual = std::abs(error); record.iterations = iteration + 1; record.rank = std::make_shared<core::NumericalRank>(result.rank);
             scope.probe("hydration_iteration", {diameter, error, hd, lower, upper, hold.energy_tolerance, hold.diameter_tolerance}, iteration);
             admit(std::isfinite(hd) && std::abs(hd) > cutoff, core::Stop::singular, "singular hydration derivative");
             result.energy_error = error; result.correction = std::abs(error / hd);

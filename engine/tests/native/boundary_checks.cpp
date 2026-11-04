@@ -1107,9 +1107,18 @@ void check_recovery() {
         rows.push_back({"p02b", true, 239.3700696309195, seed, 2035211.56822574});
     for (const double x : {0.1, 0.2, 0.3}) rows.push_back({"p02b-guess", true, 239.3700696309195, 6.16e6, 2035211.56822574, {x, 1.0 - x}});
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
+    // Recovery and, when it ran (#987), the trial search before it each stay within the 512/2048/1024 caps.
     const auto within_caps = [](const EquilibriumResult& r, const EquilibriumResult& ordinary) {
-        return r.iterations - ordinary.iterations <= 512 && r.evaluations - ordinary.evaluations <= 2048
-            && r.hessian_calls - ordinary.hessian_calls <= 1024 && r.iterations >= ordinary.iterations;
+        std::array<double, 3> test{};
+        if (const auto& t = r.recovery_stability) for (std::size_t k = 0; k < 3; ++k) {
+            const char* driver[] = {"iterations", "evaluations", "hessian_calls"};
+            const char* native[] = {"trial_tangent_plane_iterations", "trial_tangent_plane_evaluations", "trial_tangent_plane_hessian_evaluations"};
+            test[k] = (t->work.count(driver[k]) ? t->work.at(driver[k]) : 0.0) + (t->work.count(native[k]) ? t->work.at(native[k]) : 0.0);
+        }
+        const std::array<double, 3> added{double(r.iterations) - ordinary.iterations - test[0],
+            double(r.evaluations) - ordinary.evaluations - test[1], double(r.hessian_calls) - ordinary.hessian_calls - test[2]};
+        return r.iterations >= ordinary.iterations && added[0] >= 0 && added[0] <= 512 && added[1] <= 2048 && added[2] <= 1024
+            && test[0] <= 512 && test[1] <= 2048 && test[2] <= 1024;
     };
     std::size_t passed = 0, recovered = 0;
     std::string failures;
@@ -1211,14 +1220,59 @@ void check_recovery() {
         if (r.success) deviation = std::max({std::abs(r.amounts[1] / (r.amounts[0] + r.amounts[1]) - f.beta), std::abs(r.mole_fractions[0] - f.x),
             std::abs(r.mole_fractions[2] - f.y), std::abs(r.molar_densities[0] / f.rho_l - 1.0), std::abs(r.molar_densities[1] / f.rho_v - 1.0)});
         const bool refusal = std::isnan(f.beta);
+        // #987: below the dew pressure the trial search finds no descent and recovery is not run.
         record_bool(refusal ? "e4-r/hydrogen-refused" : f.T == 420.0 ? "e4-r/hydrogen-420" : "e4-r/hydrogen-450", "e4-r",
-            refusal ? "hydrogen/toluene at 450 K / 1 MPa stays refused with both causes and no state"
-                    : "hydrogen/toluene without guesses reaches the continuation state within 1e-8",
-            !ordinary.success && within_caps(r, ordinary) && (refusal
-                ? !r.success && !r.has_state() && r.message.rfind(ordinary.message + "; recovery: ", 0) == 0
-                : r.success && deviation <= 1.0e-8),
+            refusal ? "hydrogen/toluene at 450 K / 1 MPa stays refused: no descent in the finite trial set, recovery not run, no state"
+                    : "hydrogen/toluene without guesses reaches the continuation state within 1e-8 after a resolved descent",
+            !ordinary.success && within_caps(r, ordinary) && r.recovery_stability && (refusal
+                ? !r.success && !r.has_state() && r.recovery_stability->no_descent_in_trial_set
+                    && r.message.rfind(ordinary.message + "; tangent-plane search before recovery", 0) == 0
+                    && r.message.find("; recovery: ") == std::string::npos
+                : r.success && deviation <= 1.0e-8 && std::any_of(r.recovery_stability->trials.begin(),
+                    r.recovery_stability->trials.end(), [](const auto& t) { return t.resolved_descent; })),
             recording_support::fields({recording_support::field("deviation", deviation), recording_support::field("message", r.message)}));
     }
+    // #987 caller budgets through the trial search on the coalesced 250 K, 1 bar flash at z = (0.3, 0.7). B: a budget ending
+    // three iterations into the second trial keeps the first trial and the interrupted one and runs no recovery. E: one
+    // ending in the L1 parent records both parents (V1 throws at its start) and starts no trial. Budgets come from unbounded runs.
+    auto vapor = equilibrium_support::flash(2);
+    vapor.phases = {equilibrium_support::phase("L", PhaseKind::Liquid), equilibrium_support::phase("V", PhaseKind::Vapor)};
+    vapor.temperature = FreeValue::fixed(250.0);
+    vapor.feed.values = {0.3, 0.7};
+    const auto flash = epcsaft::equilibrium::compile_problem(model, vapor);
+    const auto bounded = [&](std::size_t iterations, bool recover) {
+        epcsaft::equilibrium::DriverLimits l{iterations, never};
+        auto r = epcsaft::equilibrium::solve_compiled(flash, std::nullopt, nullptr, &l, {}, recover);
+        return std::make_pair(std::move(r), l.consumed);
+    };
+    const auto [first, first_consumed] = bounded(100000, false);
+    const auto [open, open_consumed] = bounded(100000, true);
+    auto single = vapor;
+    single.phases = {equilibrium_support::phase("L1", PhaseKind::Liquid)};
+    const auto l1 = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, single));
+    bool budgets = open.recovery_stability && open.recovery_stability->no_descent_in_trial_set && first.iterations == first_consumed;
+    std::vector<double> counts;
+    if (budgets) {
+        const auto& t = *open.recovery_stability;
+        const auto parents = static_cast<std::size_t>(t.work.at("iterations")), trial = t.trials[0].optimizer.iterations;
+        const std::size_t nb = first_consumed + parents + trial + 3, ne = first_consumed + l1.iterations;
+        const auto [b, b_consumed] = bounded(nb, true);
+        const auto [e, e_consumed] = bounded(ne, true);
+        const std::string exhausted = "; recovery: elapsed work budget exhausted";
+        const auto ends = [&](const std::string& m) { return m.size() >= exhausted.size() && m.compare(m.size() - exhausted.size(), exhausted.size(), exhausted) == 0; };
+        const auto& rb = *b.recovery_stability;
+        const auto& re = *e.recovery_stability;
+        budgets = b.recovery_stability && e.recovery_stability && b_consumed == nb && b.iterations == nb && !rb.completed
+            && rb.trials.size() == 2 && rb.trials[0].evidence == "no_resolved_descent" && rb.trials[1].evidence == "unresolved"
+            && rb.trials[1].optimizer.iterations == 3 && rb.work.at("trial_tangent_plane_iterations") == trial + 3
+            && ends(b.message) && b.convergence.cause == "phases_coalesced"
+            && e_consumed == ne && e.iterations == ne && !re.completed && re.trials.empty()
+            && re.work.at("parent_declarations") == 2 && re.work.at("iterations") == l1.iterations
+            && e.message.find("V1: ") != std::string::npos && ends(e.message);
+        counts = {double(first_consumed), double(parents), double(trial), double(nb), double(b.iterations), double(ne), double(e.iterations)};
+    }
+    record_bool("e4-r/stability-budget", "e4-r", "a caller budget ends the trial search where it is spent, keeps the work done and "
+        "runs no recovery on the spent remainder", budgets, recording_support::fields({recording_support::field("counts", counts)}));
 }
 
 void check_product_residual() {

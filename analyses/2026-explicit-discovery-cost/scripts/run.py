@@ -32,7 +32,7 @@ class Worker(original):
             os.environ['EPCSAFT_COST_SOURCE'] = str(Path(images[arm]['python']).parents[2])
             command = [images[arm]['python'], '-u', str(HERE/'scripts/engine_worker.py')]
         elif label == 'FeOs':
-            command = [str(c.FEOS), '-u', str(ROOT/'analyses/2026-release-computational-cost/scripts/feos_worker.py')]
+            command = [str(c.FEOS), '-u', str(ROOT / 'analyses/2026-audit-timing-campaign/scripts/feos_worker.py'), str(ROOT / 'analyses/2026-release-computational-cost/inputs/inputs.json')]
         super().__init__(label, command, cpu, log)
 
 c.Worker = Worker

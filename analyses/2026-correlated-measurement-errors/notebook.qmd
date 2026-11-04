@@ -78,7 +78,7 @@ are unbiased, so the comparison is mean squared error, with bias and variance
 reported separately.
 
 The method, data and decision rule were frozen in the accepted design
-(`build/issue-572/design.md` of the main checkout, SHA-256
+(`build/issue-572/design.md`, no longer present; SHA-256
 `19689c11ebd01d1d8e177c3666ec6849e4a4cad95d939b736b2e0277e0d4e23b`, issue
 [#572](https://github.com/tannerpolley/ePC-SAFT/issues/572)) before any fitted
 comparison. Draws and bootstrap indices were written and hashed

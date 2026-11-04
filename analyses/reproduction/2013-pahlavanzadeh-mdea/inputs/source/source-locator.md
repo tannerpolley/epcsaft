@@ -8,7 +8,7 @@ incomplete historical transcriptions; Git retains the original files.
 
 The two figure CSVs and their calibration/QA images were copied unchanged from
 accepted design evidence and committed before predictions. The four raster QA
-files now live under `build/issue-736/source/`: `figure-1-overlay.png`,
+files were under `build/issue-736/source/`, which no longer exists: `figure-1-overlay.png`,
 `figure-4-overlay.png`, `figure-1-reading-strip.png` and `figure-4-reading-strips.png`.
 Coordinates, calibration, image hashes and reading chronology remain here; historical
 execution input hashes still describe the files present at those executions. No source readings

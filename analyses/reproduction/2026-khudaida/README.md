@@ -8,7 +8,7 @@ accepted numerical criteria. The computed [notebook](notebook.qmd) compares
 sixteen phase rows and all sixty-four formula coordinates. The grand mean
 absolute deviation meets the approved 0.0161 paper-correlation-scale limit;
 separate standard-uncertainty comparisons do not establish agreement within
-measurement uncertainty. Independent delivered review is pending.
+measurement uncertainty. The investigator promoted `bb2356be` for Salted LLE tie lines, subject to these limitations: measurement-uncertainty limits. This promotion does not extend to later results or other comparisons in this leaf.
 
 [Native results](results/figure-2-diagnostics.json) retain the original source
 feed, pairing, one-mole explicit-species feed, auxiliary and actual states,

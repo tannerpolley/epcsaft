@@ -270,8 +270,9 @@ Inputs include T, composition, target pressure, admissible packing interval,
 root-selection request, numerical policy and declared search budget.
 
 State construction evaluates the full Helmholtz gradient and every row of the
-T, V and active-parameter Hessian columns. Uncaptured construction omits unused
-composition columns; active Core capture retains the complete Hessian payload.
+T, V and active-parameter Hessian columns. Uncaptured and ordinary Core capture
+omit unused composition columns. Diagnostic capture retains the complete Hessian
+payload; only complete Hessian evaluations emit the `hessian` trace event.
 
 Density closure evaluates normalized Taylor coefficients of the shared residual
 Helmholtz equations in volume at fixed temperature and composition. Order two
@@ -1592,7 +1593,15 @@ following the original feasibility path. Only positive amounts supply donors.
 Discovery with free intensives remains outside this method.
 
 Declared solves, continuation, parameter fitting and ASL perform zero trial
-solves. They preserve callback arithmetic/order and counted work. Returned
+solves, with one exception: a public fixed-T/P flash without a caller start whose
+first Ipopt run ends with coalesced phases runs the Full trial set once on its
+lower-objective single-phase declaration before [neutral recovery](#neutral-recovery)
+(owner, 2026-11-03). A completed search without a descent means "no witness in the
+recorded trial set", never a global certificate: a split outside the finite trial
+set is not excluded, and a refused solve does not run recovery, so a case recovery
+could have solved can be refused. Calls outside this exception preserve callback
+arithmetic/order and counted work; the exception adds the search's work and, on a
+refusal, omits recovery's. Returned
 solved-state actions use the fixed discovered declaration without searching.
 Qualification must compare the retained before/after declared numerical values
 bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
@@ -2279,6 +2288,28 @@ increment; Taylor factorial conversion is separate and applied once. The
 [retained numerical notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
 owns the tested cases, tolerances, errors and interpretation limits.
 
+### Difference checks of exact actions
+
+`CompiledSystem.jacobian_difference`, `solved_state_difference` and
+`pressure_action_difference` verify exact derivatives; they are never a
+production derivative. Each returns `DifferenceCheck` records comparing the
+exact action $A$ with the native central difference
+$D = [f(q+hd) - f(q-hd)]/(2h)$. The roundoff scale is $r = (e_+ + e_-)/(2h)$,
+with $e_\pm$ the native evaluation floor at $q \pm hd$ when one exists
+(residual rows) and $\varepsilon|f(q \pm hd)|$ otherwise. The check passes when
+$|D-A| \le \tau|A| + \kappa r$. A zero allowance passes only an exactly
+reproduced zero (ratio 0) and otherwise fails (ratio $+\infty$). Any nonfinite
+operand gives `nonfinite`. Step, $\tau$ and $\kappa$ must be finite and
+positive. The Jacobian check perturbs column $j$ by
+`relative_step * max(1, |x_j|)`, and labels each entry by its row and by
+`coordinate_labels()`. The solved-state check supports fixed T or P, feed
+amounts and declared enthalpy or entropy directions. It re-solves each neighbor
+from the central result and reports `neighbor_unavailable` or `branch_changed`
+when a neighbor fails, changes phase count or solids, or leaves the central
+density's `DENSITY_ANCHOR_LOG_WINDOW`. The property check supports T, P and
+zero-sum composition directions at the central density's branch. Other
+directions return `unsupported_direction`.
+
 ## ALG-REFERENCE
 
 Referenced solved-state third actions admit feed directions only at fixed T/P.
@@ -2691,6 +2722,56 @@ observations. Inspect `capture.trace.ipopt_log_error` and
 `capture.trace.incomplete` for a failed log destination. Diagnostic retention
 does not handle out-of-memory failure specially.
 
+Each `NumericalRank` also carries its latest conditioning `observation` and at
+most one `first_conditioning_warning`. The warning survives later regular or
+unavailable observations through `StageWork`; it is separate from the first
+numerical refusal. Read the observation's operation, basis, norm, method,
+precision and point attribution together with its condition and error.
+
+The owner amendment of 2026-11-02 restricts full condition estimation to
+already-computed factors for the top-level returned state. Nested iterations
+retain cheap rank/pivot checks and existing physical-error/refusal warnings,
+without constructing ordinary condition observations. Property and association
+solves inside fit residual/Jacobian evaluations are nested: the returned fit
+result is its parameter state, whose existing final SVD supplies determination.
+The native evaluator marks this internal context in inherited SolverOptions;
+it is not a caller tolerance or an exposed per-case switch. Direct top-level
+property calls keep their existing-factor endpoint estimates. Rank/pivot
+admission and existing physical-error/refusal warnings run in both contexts.
+The owner's storage amendment retires the uncalled projected-error
+`estimated_linear_error` utility from design r2. The called supplied-factor
+condition estimator and existing exact `linear_error` owner remain; manufactured
+rank-first checks use those actual owners. An unavailable physical-error operand
+does not select the deferred projected-error calculation. Nullable rank records
+in convergence and property diagnostics are stored out of line, allocated only
+when present; copies retain their snapshot lifetime without embedding the full
+record in every trace span or property-action result.
+A sparse nested warning
+is attributed to its `refused_linearization`; it does not report rank or
+conditioning for a later recovered endpoint. Full-pivot supplied-factor
+estimates use the 1-norm after rank admission;
+the reduced pure-fluid estimate retains its infinity-norm operands.
+A condition estimate can underestimate the mathematical condition number.
+A missing physical-error operand remains unavailable rather than zero.
+An empty row-scale vector denotes identity scaling. Warning snapshots allocate
+only when a warning occurs; copying an observation does not allocate an absent
+warning. Enclosing stage and attempt annotation copies a shared warning before
+adding an identifier, preserving the originating record.
+
+`LinearSolveDiagnostics.point_kind` distinguishes endpoint evidence from a
+last linearization. No terminal factorization is added to fill diagnostics.
+An earlier linearization does not establish endpoint accuracy. Rank records
+with `endpoint_factor_unavailable` explicitly lack a current endpoint factor;
+generic-point and last-linearization evidence stays separately labelled.
+No terminal factorization is added. Pure-fluid saturation retains its existing
+returned-state estimate and originating warning; fits retain their final SVD. The scalar
+density error is in log density, conditional on the supplied association
+floor; it does not include a complete equation-of-state roundoff model.
+Final fit conditioning reuses the weighted optimizer-Jacobian SVD, and requires
+rank equal to every fitted column. Internal LM and Ipopt KKT conditioning is
+unavailable. Ipopt callbacks, restoration observations and failed-point
+records retain their existing meanings.
+
 ASL replay uses the same real controls and requested derivative order. Its
 density errors format the existing first cause, falling back to density
 convergence; solved-state action errors retain rank/dimension and present
@@ -2737,9 +2818,13 @@ different basis.
    iteration, restoration marker, termination, factorization and line-search
    message alongside the bounded callback observations. A Newton-only solve
    opens no log. Inspect `capture.trace.ipopt_log_error` if opening fails; this
-   failure leaves the calculation on its original path. J_MAIN uses level 5
-   iteration summaries and other normal categories level 12. An all-category
-   J_MAIN level-12 dump is not qualified on installed Ipopt 3.11.9.
+   failure leaves the calculation on its original path. `ipopt_print_level`
+   sets every category's journal level, with J_MAIN capped at 5 iteration
+   summaries. `epcsaft.trace` uses 5 by default and 12 when the `epcsaft`
+   logger is enabled for DEBUG; native `core::Capture` keeps 12. For the 1 bar
+   methane/ethane L+V rejection (598 iterations) the log is 79.7 kB at level 5
+   and 24.4 MB at level 12. An all-category J_MAIN level-12 dump is not
+   qualified on installed Ipopt 3.11.9.
 5. Interpret each quantity in its own basis. Structural rank, endpoint rank,
    association pivot admission, pressure slope and Ipopt regularization describe
    different operations. Small backward error alone does not bound physical
@@ -2760,6 +2845,38 @@ finite deadlines; no timing identity is claimed.
 
 Requested source-reference estimates follow [ALG-REFERENCE](#alg-reference).
 Their returned method annotation supplies no new termination or admission criterion.
+
+### Rejected points and the `epcsaft` logger
+
+`solver_status` is Ipopt's own return code. `SUCCESS` with `success=False`
+means the optimizer converged and the Engine rejected the point. Every such
+rejection of a converged or floor-converged stop records `Stop::infeasible`
+and a `convergence.cause`: `phases_coalesced`, `phase_disappeared`,
+`solid_classification`, `log_charge_rank`, `local_phase_instability`,
+`caloric_split` or `reduced_hessian_not_positive_definite`. Singular and
+nonfinite stops keep their own stop and publish no new cause; a rank-deficient
+present-solid block stays `singular`. The verdict changes no work, coordinate
+or state.
+
+A topology rejection's message leads with the observation: the declared phases
+that coalesced, with T, P and the phase distance against
+`PHASE_COINCIDENCE_DISTANCE`, or the phase whose amount fell to
+`PHASE_DISAPPEARANCE_AMOUNT` of the feed. A coalesced bubble or dew point names
+a critical limit near those conditions as one possible, untested explanation.
+These leading sentences claim no global stability, nonexistence of a split or
+critical point; `Discover()` searches other phase sets. The earlier technical
+and recovery text follows unchanged after `; `. That inherited text keeps its
+own wording: a recovery continuation whose phases exchange identity between
+accepted states reports "swapped identity between accepted states: passage
+through a critical point". The observation is the identity exchange; no
+critical-point calculation supports the stated explanation.
+
+The `epcsaft` logger is silent until configured. INFO writes one line per
+public equilibrium solve, continuation, multistart or fit (status, stop, cause,
+work, wall time and the message's first clause). DEBUG adds one line per Ipopt
+intermediate callback, collected natively only while DEBUG is enabled, and one
+line per fit iteration from `iteration_costs`/`iteration_seconds`. The logger
+opens no trace capture, so derivative work is identical with DEBUG on or off.
 
 Core CORE1 keeps the numerical domains separate. `EQUILIBRIUM_COMPOSITION_BOX`
 $\beta$ sets the lower box of the intensive `log(x_i)` coordinate inside the
@@ -2917,6 +3034,13 @@ result retains the same convergence record alongside its state. The pre-solve
 and absent criterion; it is neither a solver residual nor a physical
 nonexistence claim. `requested_tolerance_met` is absent for that record.
 
+The retained polish correction operand keeps its existing
+`EQUILIBRIUM_POLISH_CORRECTION` criterion. Its `inner_floor_unavailable`
+cause distinguishes that admission operand from a physical error estimate
+including inner-source floors. Optional attempt and stage identifiers are
+absent when the owning operation does not provide them; chronological stage
+merges fill only absent identifiers and preserve a nested warning's origin.
+
 ## Verification meaning
 
 Numerical checks of the equations and algorithms include caloric identities,
@@ -2937,8 +3061,7 @@ Its cold start is positive on the admitted inventory support, or uses a declared
 positive composition guess. The same Ipopt lifecycle and exact-Jacobian polish
 classify these rows. No EOS density seed, branch admission, neutral recovery or
 pre-Ipopt Newton attempt applies. Previous-result starts are refused before native
-compilation. EqID: `effective_water_amounts` is a deterministic native amount map
-from an available criterion-meeting result, with no further equilibrium iteration.
+compilation.
 
 ### Equilibrium initialization by declaration
 
@@ -3217,6 +3340,29 @@ and cold density-branch admission. Added optimizer iterations and continuation a
 `EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations four times and Hessian callbacks twice
 that, within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
 with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
+
+**Trial search before recovery.** A fixed-T/P flash whose first run coalesced (no ideal gas, no
+solids) first solves the single-phase L1 and V1 declarations and tests the successful one with the
+lower objective (a tie keeps L1) with ALG-STABILITY's Full trial set, as `stability_test` does. The
+search has its own allowance built like recovery's (512 iterations, four and two times that in
+evaluations and Hessian callbacks, within any caller remainder, the caller's deadline); the caller
+remainder is reduced by the search before recovery's allowance is built. Its parent and fallback-trial
+drivers are charged as recovery's own solves are. Each tangent-plane point, tangent-plane Hessian and
+tangent-plane iteration is charged before it starts, after a deadline check, and each finite-split check
+checks the deadline first. Started work is not interrupted: one point (a density root and a gradient),
+one Hessian or one driver callback. Not charged: each seed's reconstruction and density root, each
+evaluated trial's composition reconstruction and phase energy, the finite-split checks (at most nine per
+trial) and the candidate repair; for $n$ components there are at most $2n+3$ seeds. A spent allowance
+ends the search as "search-incomplete: work budget exhausted". A completed search with no resolved
+descent and no unresolved trial (a fallback driver that fails counts as unresolved) refuses: the result
+keeps the first run's status and cause, its message adds the search's verdict, "not a global stability
+certificate: a split outside this finite trial set is not excluded; recovery not run", and its work is
+the first run's plus the search's. Otherwise recovery runs as above and its work is added to the
+search's. Work counts driver iterations plus tangent-plane iterations, driver evaluations plus
+tangent-plane points, and driver Hessian callbacks plus tangent-plane Hessians; the report
+(`result.recovery_stability`) keeps them apart. The search passes recovery no start or changed
+declaration; equal recovered states are a measured property, because the model's differentiation tapes
+are reused by predicate signature.
 This replaces, for this domain only, the earlier rule that a no-start fallback is decided before the target
 solve; the reacting and caloric no-retry rules are unchanged.
 

@@ -65,9 +65,9 @@ preservation evidence for the literal historical scalar reaction targets.
 
 `inputs/lithium-trace/` retains the byte-exact ASL record. The
 `probe.py`/`campaign_probe.py` declaration/readout snapshots, which ran only on
-their identified wheel, were removed by #341 (record commit `21d7a112`). Original native JSON/CSV readouts are losslessly compressed under
-`build/issue-231/lithium-trace/`, with raw differences, log and restoration
-records identified in the compact provenance. `scripts/plot.py --lithium-trace`
+their identified wheel, were removed by #341 (record commit `21d7a112`). Original native JSON/CSV readouts were losslessly compressed under
+`build/issue-231/lithium-trace/`, which no longer exists; raw differences, log and
+restoration records are identified in the compact provenance. `scripts/plot.py --lithium-trace`
 reads the retained endpoint table without rerunning thermodynamics.
 
 ## Named-release rerun (#680)

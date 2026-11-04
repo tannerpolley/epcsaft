@@ -82,3 +82,10 @@ The [NaCl notebook](../examples/aqueous-nacl-activity.ipynb),
 [reference definitions](../theory/algorithms.md#alg-reference) and
 [reference calls](../api/reference.rst) show these operations. They do not
 supply an arbitrary single-ion convention or a global stability proof.
+
+
+Derived state outputs include speed of sound, Joule–Thomson coefficient and
+compressibilities when requested and available. Partial molar volume, enthalpy
+and entropy are also available through the property interfaces. Ideal and total
+calorics require caller-supplied ideal-gas thermochemistry; residual calorics do
+not. Inspect each result's availability before using it.

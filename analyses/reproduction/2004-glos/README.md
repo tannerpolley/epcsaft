@@ -37,6 +37,6 @@ Historical record commits `ca719012c31e8b41edcb98ae82a388117b58d343` and
 For standalone rendering, copy this leaf's notebook, inputs and results byte for
 byte into `build/issue-732/report/`, convert the notebook with `quarto convert`,
 execute only its presentation cells with this checkout's Jupyter kernel, and
-render the resulting `.ipynb` to HTML with execution disabled. The retained
-render and commands are under `build/issue-732/`; the repository Sphinx build
-does not render this notebook. Independent delivered review remains pending.
+render the resulting `.ipynb` to HTML with execution disabled. The original
+render and commands were under `build/issue-732/`, which no longer exists; the repository Sphinx build
+does not render this notebook. The investigator promoted `5912b74b` for Propane saturation against Glos 2004, subject to these limitations: measurement-uncertainty and discrepancy limits stated. This promotion does not extend to later results or other comparisons in this leaf.

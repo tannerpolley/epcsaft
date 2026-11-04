@@ -392,7 +392,7 @@ std::vector<std::vector<double>> balance_basis(
     if (observations && !snapshot.basis.empty()) core::retain_rank(observations->rank_records, snapshot);
     if (rank != matrix.rows()) {
         core::Convergence refusal; refusal.residual = NAN; refusal.stop = core::Stop::singular;
-        if (!snapshot.basis.empty()) refusal.rank = snapshot;
+        if (!snapshot.basis.empty()) refusal.rank = std::make_shared<core::NumericalRank>(snapshot);
         for (std::size_t row = 0; row < reactions.size(); ++row) {
             Eigen::MatrixXd prefix = matrix.topRows(static_cast<Eigen::Index>(row + 1));
             if (numerical_rank(prefix) <= static_cast<Eigen::Index>(row)) {
@@ -528,7 +528,7 @@ std::vector<std::vector<double>> standard_state_series(
         * std::max(1.0, target.norm());
     const auto refuse = [&](double residual, const Eigen::BDCSVD<Eigen::MatrixXd>* factor) {
         core::Convergence r; r.residual = residual; r.stop = core::Stop::infeasible;
-        if (factor) r.rank = core::numerical_rank(*factor, "minimum_norm_standard_state");
+        if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "minimum_norm_standard_state"));
         r.criterion_owner = std::make_shared<policy::Tolerance>(policy::Tolerance{"standard state consistency", criterion,
             policy::Category::AlgorithmTolerance, "sqrt(eps) max(1, norm(target)) J/mol"}); r.criterion = r.criterion_owner.get();
         throw core::DeclarationError("inconsistent standard state", r);

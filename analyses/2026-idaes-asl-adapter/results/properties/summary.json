@@ -1,0 +1,306 @@
+{
+  "qualification_script_sha256": "3aca55f5732dc0aee1a8ad0d24ad80dddbbe5e526b3c0db9a0ed57eda6a400b0",
+  "source_sha": "4c7a1af6fc55745b019981718e13fa9c479dad52",
+  "library_sha256": "c475c0fce6ed191fe3cd1abf7bacaea27ca9c3cfe27f7e3cfb466f022b2a43a6",
+  "phase_diagnostics": [
+    {
+      "case": "interior",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -5.450565367937088e-07,
+      "pressure_density_derivative": 19747.945840126253
+    },
+    {
+      "case": "interior",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 0.0,
+      "pressure_density_derivative": 1179.295454434872
+    },
+    {
+      "case": "bubble",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 1,
+      "pressure_residual_Pa": 1.4505349099636078e-07,
+      "pressure_density_derivative": 13569.336823564632,
+      "molar_density": 19698.500296312843,
+      "temperature_K": 180,
+      "pressure_Pa": 1596859.1113027618,
+      "composition": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "case": "bubble",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 2.3283064365386963e-10,
+      "pressure_density_derivative": 998.1626622316383,
+      "molar_density": 1288.4550705292852,
+      "temperature_K": 180,
+      "pressure_Pa": 1596859.1113027618,
+      "composition": [
+        0.9563602429614724,
+        0.04363975703852765
+      ]
+    },
+    {
+      "case": "checked-interior",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -5.015172064304352e-07,
+      "pressure_density_derivative": 19747.94584012731
+    },
+    {
+      "case": "checked-interior",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.1641532182693481e-10,
+      "pressure_density_derivative": 1179.2954544348165
+    },
+    {
+      "case": "second-start",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -8.228234946727753e-07,
+      "pressure_density_derivative": 19747.945840127162
+    },
+    {
+      "case": "second-start",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 0.0,
+      "pressure_density_derivative": 1179.2954544348165
+    },
+    {
+      "case": "transition-2-0-+0.1-start-0",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.280568540096283e-08,
+      "pressure_density_derivative": 17569.455361113567
+    },
+    {
+      "case": "transition-2-0-+0.1-start-0",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 0.0,
+      "pressure_density_derivative": 1028.6514225708997
+    },
+    {
+      "case": "transition-2-0-+0.1-start-1",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.227017492055893e-07,
+      "pressure_density_derivative": 17569.455361113505
+    },
+    {
+      "case": "transition-2-0-+0.1-start-1",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 0.0,
+      "pressure_density_derivative": 1028.6514225709
+    },
+    {
+      "case": "transition-2-0-+1-start-0",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 1.7462298274040222e-07,
+      "pressure_density_derivative": 17869.270065306904
+    },
+    {
+      "case": "transition-2-0-+1-start-0",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 0.0,
+      "pressure_density_derivative": 1038.6901362781466
+    },
+    {
+      "case": "transition-2-0-+1-start-1",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 8.917413651943207e-08,
+      "pressure_density_derivative": 17869.270065305416
+    },
+    {
+      "case": "transition-2-0-+1-start-1",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 1.1641532182693481e-10,
+      "pressure_density_derivative": 1038.690136278226
+    },
+    {
+      "case": "transition-2-1--1-start-0",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.4470424503087997e-07,
+      "pressure_density_derivative": 15185.41572642185
+    },
+    {
+      "case": "transition-2-1--1-start-0",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 1.1641532182693481e-10,
+      "pressure_density_derivative": 1417.2243703030863
+    },
+    {
+      "case": "transition-2-1--1-start-1",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.314328983426094e-07,
+      "pressure_density_derivative": 15185.415726421787
+    },
+    {
+      "case": "transition-2-1--1-start-1",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 1.1641532182693481e-10,
+      "pressure_density_derivative": 1417.2243703030863
+    },
+    {
+      "case": "transition-2-1--0.1-start-0",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.3352837413549423e-07,
+      "pressure_density_derivative": 15030.626153277037
+    },
+    {
+      "case": "transition-2-1--0.1-start-0",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -1.1641532182693481e-10,
+      "pressure_density_derivative": 1419.2421630757174
+    },
+    {
+      "case": "transition-2-1--0.1-start-1",
+      "phase": "liquid",
+      "returned_branch": "DensityBranch.Liquid",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": -3.3993273973464966e-08,
+      "pressure_density_derivative": 15030.626153277088
+    },
+    {
+      "case": "transition-2-1--0.1-start-1",
+      "phase": "vapor",
+      "returned_branch": "DensityBranch.Vapor",
+      "stable_root_count": 2,
+      "pressure_residual_Pa": 1.1641532182693481e-10,
+      "pressure_density_derivative": 1419.242163075716
+    }
+  ],
+  "bubble_gaps": {
+    "composition": 0.4563602429614724,
+    "relative_density": 0.9345912099323389
+  },
+  "native_reference_row_tolerance": 1e-11,
+  "thermal_boundary": [
+    {
+      "requested_order": 1,
+      "cause": "epcsaft_property:unavailable_derivative:3:1: ThermalBoundary at T=250 K; site rank 0; pivot ratio 0; association residual 0",
+      "endpoint_temperature_K": 250,
+      "endpoint_enthalpy_J_mol": -1466.3804035463102,
+      "recovered_temperature_K": 298.15,
+      "recovered_enthalpy_J_mol": -16.27626317690118,
+      "recovered_dh_dT_J_mol_K": 30.093519951906078,
+      "cache_hit_verified": true
+    },
+    {
+      "requested_order": 2,
+      "cause": "epcsaft_property:unavailable_derivative:3:1: ThermalBoundary at T=250 K; site rank 0; pivot ratio 0; association residual 0",
+      "endpoint_temperature_K": 250,
+      "endpoint_enthalpy_J_mol": -1466.3804035463102,
+      "recovered_temperature_K": 298.15,
+      "recovered_enthalpy_J_mol": -16.27626317690118,
+      "recovered_dh_dT_J_mol_K": 30.093519951906078,
+      "cache_hit_verified": true
+    }
+  ],
+  "failures": [
+    {
+      "cause": "MissingThermochemistry",
+      "message": "epcsaft_property:MissingThermochemistry:1:1; site rank 0; pivot ratio 0; association residual 0"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:T and P must be finite and positive, weights finite and nonnegative"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:weights must have a positive sum"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:missing netstring length"
+    },
+    {
+      "cause": "MissingThermochemistry",
+      "message": "epcsaft_property:MissingThermochemistry:1:1; site rank 0; pivot ratio 0; association residual 0"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:T and P must be finite and positive, weights finite and nonnegative"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:weights must have a positive sum"
+    },
+    {
+      "cause": "invalid_input",
+      "message": "epcsaft_property:invalid_input:missing netstring length"
+    },
+    {
+      "cause": "ThermalBoundary",
+      "requested_order": 1,
+      "observable": "TotalEnthalpy",
+      "message": "epcsaft_property:unavailable_derivative:3:1: ThermalBoundary at T=250 K; site rank 0; pivot ratio 0; association residual 0"
+    },
+    {
+      "cause": "ThermalBoundary",
+      "requested_order": 2,
+      "observable": "TotalEnthalpy",
+      "message": "epcsaft_property:unavailable_derivative:3:1: ThermalBoundary at T=250 K; site rank 0; pivot ratio 0; association residual 0"
+    },
+    {
+      "cause": "branch_mismatch",
+      "message": "epcsaft_property:branch_mismatch:requested=1:returned=0:T=320:P=100000:stable_root_count=1"
+    },
+    {
+      "cause": "OutsideInterval",
+      "message": "epcsaft_property:OutsideInterval:2:1; site rank 0; pivot ratio 0; association residual 0"
+    },
+    {
+      "cause": "branch_mismatch",
+      "message": "epcsaft_property:branch_mismatch:requested=1:returned=2:T=150:P=10000000:stable_root_count=1"
+    },
+    {
+      "cause": "subprocess_OutsideInterval",
+      "message": "Solver (ipopt) did not exit normally; ASL diagnostics: epcsaft_property failure: epcsaft_property:OutsideInterval:2:1; site rank 0; pivot ratio 0; association residual 0 controls=20000,100000,1; \tepcsaft_property:OutsideInterval:2:1; site rank 0; pivot ratio 0; association residual 0; solver log: /home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6/build/issue-977/qualification-r2/outside-thermal.log"
+    }
+  ],
+  "comparisons": 498,
+  "source": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6",
+  "library": "/home/tnnrpolley21/Workspaces/Engineering/ePC-SAFT/.worktrees/issue-977-minimal-idaes-d7e4aaa1878b9ba6/build/engine-meson/shared/libepcsaft_asl.so",
+  "limits": "Neutral binary; each phase mixture density root must classify as its requested liquid or vapor side on its own (T, P, x) isotherm, or the call is refused. A component above its own critical temperature is admitted when both phase roots classify. No pure-component critical test. Unclassified VLE roots, critical passage and ionic/reacting VLE excluded; numerical verification only."
+}

@@ -369,7 +369,7 @@ bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vect
             }
         }
         const auto lu = A.fullPivLu();
-        if (observations) core::retain_rank(observations->rank_records, lu, "ideal_speciation");
+        if (observations) core::retain_rank(observations->rank_records, core::numerical_rank(lu, "ideal_speciation"));
         const Eigen::VectorXd x = lu.solve(rhs);
         double change = std::abs(x(r)), major = 5.0 * change, control = 1.0;
         for (std::size_t j = 0; j < m; ++j) {
@@ -1195,7 +1195,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
                 std::string("boundary seed has no density root: ") + error.what()
             );
         }
-        if (stages) core::retain_first(stages->first_numerical_failure, root.first_numerical_failure);
+        if (stages) { core::retain_first(stages->first_numerical_failure, root.first_numerical_failure);
+            for (const auto& rank : root.rank_records) core::retain_rank(stages->rank_records, rank); }
         // Coexistence needs two stable pure roots only when more than one phase is declared;
         // a single declared pure phase uses the existing unique-root branch rules.
         if (compiled.model->parameters().component_count() == 1

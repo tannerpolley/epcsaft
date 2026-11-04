@@ -7,3 +7,5 @@ reproduction/2015-uyan/scripts/species-reference	frozen species-reference wheel 
 2026-head-to-head-comparisons/scripts/h2h-probes	point-1 term probes evaluate Engine states at import (main 026b3031 wheel); outputs retained in results/h2h-probes
 2026-audit-timing-campaign	frozen 2026-10-15 audit probe scripts under build/audit-2026-10-15, lost with build/ on 2026-10-28; retained results stand, declarations cannot be replayed
 2026-lithium-chloride-refit/scripts/stage_b.py	frozen stage-B evidence and source PDFs under build/issue-640, lost with build/ on 2026-10-28; retained results stand, declarations cannot be replayed
+2026-equilibrium-forward-error/scripts/historical	three #862 probe sources recovered by SHA-256 after the build/ loss; their shared r1_common.py and frozen environment are lost
+2026-figiel-divalent-chlorides/scripts/historical	#209 provisional readers recovered by SHA-256 after the build/ loss; they ran on the recorded wheel and the provisional packet route is frozen

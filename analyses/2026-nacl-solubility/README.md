@@ -127,3 +127,5 @@ For this comparison, finish compiles and solves before 02:15 America/Denver;
 no compiles or solves are allowed during the 02:30–08:00 host campaign.
 The producer refuses to start at or after the cutoff until 08:00.
 The historical commands above retain their original study scope.
+
+The investigator promoted notebook commit `7dfa41bb8cef30cc0c4ab09be6e5bddc3d11a4cd` for the manuscript disclosure of failed temperature transfer, including the falling predicted saturation molality over 298.15–353.15 K against rising measurements, 5.79% AARD and eight disjoint interval comparisons, subject to the limitations stated above.

@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Literal, Protocol, cast
+from typing import Any, Literal, Protocol, cast
 
 from .. import _core
+from .._log import logged
 
 
 class _Species(Protocol):
@@ -69,18 +70,6 @@ class IdealMoleFraction:
 def reaction_activities(model: _Model | IdealMoleFraction, result: _core.EquilibriumResult) -> list[_core.ReactionActivities]:
     """Read native dimensionless species activities and ln Q at the returned state, on each declared basis."""
     return _core.reaction_activities(model._model, result)
-
-
-def effective_water_amounts(
-    model: IdealMoleFraction,
-    result: _core.EquilibriumResult,
-    *,
-    water: str,
-    ions: Sequence[str],
-    molecular_species: Sequence[str],
-) -> dict[str, float]:
-    """Return native effective-water and preserved free molecular amounts in mol."""
-    return _core.effective_water_amounts(model._model, result, water, ions, molecular_species)
 
 
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
@@ -979,7 +968,7 @@ def solve_equilibrium(
     (ALG-EQUILIBRIUM and ALG-STABILITY).
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
-    return _core.solve_equilibrium(model._model, native, start)
+    return logged(_core.solve_equilibrium, model._model, native, start)
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
@@ -1016,6 +1005,30 @@ def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.
 
 
 solved_state_actions = _core.solved_state_actions
+solved_state_difference = _core.solved_state_difference
+
+
+def jacobian_table(compiled: _core.CompiledSystem, point: Sequence[float]) -> dict[str, list[Any]]:
+    """Label ``compiled.jacobian(point)`` by its defining rows and solved-chart coordinates.
+
+    Parameters
+    ----------
+    compiled : CompiledSystem
+        Compiled declaration.
+    point : sequence of float
+        Every solved-chart coordinate, for example ``result.coordinates``.
+
+    Returns
+    -------
+    table : dict
+        ``rows`` (row kind, phase ordinal, row index), ``columns``
+        (``coordinate_labels()``: quantity, phase and model-order component)
+        and ``values``, the row-major Jacobian as nested lists.
+    """
+    values, width = compiled.jacobian(list(point)), len(point)
+    return {"rows": [f"{row.eqid}[{row.phase},{row.index}]" for row in compiled.rows],
+            "columns": compiled.coordinate_labels(),
+            "values": [values[i * width:(i + 1) * width] for i in range(len(compiled.rows))]}
 
 
 Continuation = _core.ContinuationOptions
@@ -1073,7 +1086,7 @@ def continue_equilibrium(
     request.start_result = start_result
     request.parameter_targets = () if parameter_targets is None else parameter_targets
     request.options = options
-    return _core.continue_equilibrium(model._model, request)
+    return logged(_core.continue_equilibrium, model._model, request)
 
 
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None,
@@ -1184,4 +1197,4 @@ def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_
     The native owner enforces shared work limits and retains exhausted-budget
     causes rather than silently retrying without a bound (ALG-EQUILIBRIUM).
     """
-    return _core.solve_equilibrium_starts(model._model, problem._native(model), list(starts), limits)
+    return logged(_core.solve_equilibrium_starts, model._model, problem._native(model), list(starts), limits)

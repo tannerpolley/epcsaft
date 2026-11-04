@@ -473,6 +473,7 @@ inline constexpr std::array<const char*, 6> SOLVER_UNITS = {"1 (mass action)", "
     "1 (classified rows)", "1 (relative cost)", "scaled objective / optimizer coordinate", "1 (relative step)"};
 
 struct SolverOptions final {
+    bool nested_solve = false; // Internal result context; never a caller stopping-tolerance option.
     std::array<std::optional<double>, 6> values{};
     std::array<std::shared_ptr<const Tolerance>, 6> owners{};
 
@@ -497,6 +498,7 @@ struct SolverOptions final {
     }
     SolverOptions resolved(const SolverOptions& inherited) const {
         SolverOptions result = inherited;
+        result.nested_solve = nested_solve || inherited.nested_solve;
         for (std::size_t i = 0; i < values.size(); ++i) {
             if (values[i]) result.values[i] = values[i];
             const double v = result.value(i);

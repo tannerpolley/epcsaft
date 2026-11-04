@@ -191,7 +191,7 @@ The calibrated overlay is retained as `inputs/source/baygi-figures-02-03-overlay
 
 ## Provenance and use
 
-The accepted readiness review inspected main commit `69f61380`; its retained path is `build/issue-725/readiness-r1.md` in the main checkout.
+The accepted readiness review inspected main commit `69f61380`; it was `build/issue-725/readiness-r1.md`, which no longer exists.
 This notebook follows that reviewed design's bounded sigma-cubed comparison and both readiness findings.
 The actual loaded Engine identity is `{python} meta['engine_provenance'][0]`, with Engine source clean at calculation time: `{python} meta['engine_provenance'][1]`.
 The run used this worktree's interpreter, `{python} meta['interpreter']`, and took `{python} f"{meta['wall_seconds']:.6f}"` seconds for the native collection loop.
@@ -200,5 +200,5 @@ Source hashes, exact declarations and all native diagnostics are in `results/cur
 The earlier `results/baygi-pure-saturation.csv` remains historical, with its wheel/input hashes in `results/baygi-pure-saturation-summary.json`.
 Its retired feasibility bound and probes explain those records only.
 The source-linked Table 1/2 CSVs replace the old numbered extraction copies; other source figures and tables remain historical material outside this pure-MEA scope.
-Independent delivered review (`build/issue-725/delivered-r1.md` in the main checkout) returned Supported for this bounded comparison; the notebook has no investigator promotion for manuscript use.
+Independent delivered review (`build/issue-725/delivered-r1.md`, no longer present) returned Supported for this bounded comparison; the notebook has no investigator promotion for manuscript use.
 Site registration requires the parent's edit of `analyses/_quarto.yml`, which is outside this implementor's permitted paths.

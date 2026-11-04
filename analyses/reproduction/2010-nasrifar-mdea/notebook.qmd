@@ -135,7 +135,8 @@ and input rounding are described in the source notes; they cannot supply a
 row pressure band when transducer identity or complete uncertainty is missing.
 
 [Engine #776](https://github.com/tannerpolley/ePC-SAFT/issues/776) owns ideal
-mole-fraction reaction equilibrium and the native effective-water conversion.
+mole-fraction reaction equilibrium; this study's native driver applies the
+effective-water conversion.
 The falsifier is the source R1 water/hydroxide/hydronium ideal equilibrium,
 with positive normalized fractions, charge closure, conserved water-equivalent
 amount and logarithmic mass-action closure at the prescribed residual tolerance.
@@ -155,22 +156,26 @@ remain outside this original-case reproduction.
 ### Engine ideal mole-fraction numerical verification
 
 The delivered Engine checks now provide cold single-liquid speciation with
-ideal mole-fraction activities and native effective-water amounts. The
-following tables read [retained native values](results/ideal-mole-fraction.json.gz)
-from the refreshed `ideal-mole-fraction` check in PR #785; they do not run the
-model. The refreshed values are identical to the original delivered values.
+ideal mole-fraction activities, and the study's native driver
+[`scripts/effective_water.cpp`](scripts/effective_water.cpp) converts those
+results to effective-water amounts. The following tables read
+[retained native values](results/ideal-mole-fraction.json.gz) from the
+`ideal-mole-fraction` Engine check and
+[effective-water values](results/effective-water.json.gz) from that driver;
+they do not run the model. The refreshed values are identical to the original delivered values.
 The native record retains all comparison operands, source-law values, species
 amounts and fractions, rows, endpoint rank, conditioning and consumed work.
 The equations and source locators are owned by
 [ideal mole-fraction reaction equilibrium](../../../engine/docs/equations.md#ideal_mole_fraction_reaction)
-and [effective-water amounts](../../../engine/docs/equations.md#effective_water_amounts).
+and the study's [effective-water conversion](README.md#effective-water-conversion).
 Nasrifar Table 1 supplies the reaction constants; the first left-block rows
 of Kamps Tables 2 and 3 supply the two acid-gas feed declarations. These are
 Engine reference checks, separate from the unavailable paper comparisons above.
 
 ```{python}
 ideal = json.loads(gzip.decompress((root / 'results/ideal-mole-fraction.json.gz').read_bytes()))
-checks = ideal['comparisons']
+effective = json.loads(gzip.decompress((root / 'results/effective-water.json.gz').read_bytes()))
+checks = ideal['comparisons'] + effective['comparisons']
 by_name = {r['comparison_id']: r for r in checks}
 def deviation(name):
     r = by_name[name]
@@ -214,7 +219,7 @@ table(['Case', 'Maximum log mass-action error', 'Maximum inventory/charge error 
 ])
 table(['Comparison', 'Absolute error limit', 'Unit'], [[name, by_name[f'CO2-{name}']['atol'], by_name[f'CO2-{name}']['unit']] for name in ['R1', 'W', 'normalization']])
 table(['Case', 'Effective water / mol', 'Free MDEA / mol', 'Free acid gas / mol', 'Speciated total / mol'], [
-    [gas, data['effective_water_mol'], by_name[f'{gas}-free-MDEA']['model'],
+    [gas, effective['effective_water_mol'][gas], by_name[f'{gas}-free-MDEA']['model'],
      by_name[f'{gas}-free-gas']['model'], by_name[f'{gas}-converted-total']['reference']]
     for gas, data in acid.items()
 ])

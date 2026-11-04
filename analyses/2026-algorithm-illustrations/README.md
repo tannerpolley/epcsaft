@@ -39,5 +39,4 @@ FeOs envelope point. Its quantity columns are errors, not state values.
 numerical error estimates. `tpd.csv` retains direct liquid trial evaluations,
 pressure closure, association diagnostics and tangent-plane distances.
 
-The notebook and figures await independent scientific review and investigator
-promotion for manuscript claims. This leaf does not edit the paper.
+The investigator promoted `d9469473` for Envelope and TPD path, subject to these limitations: numerical illustration only. This promotion does not extend to later results or other comparisons in this leaf.

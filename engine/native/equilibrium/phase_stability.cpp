@@ -67,9 +67,15 @@ void packing_admission(double eta) {
 }
 
 // ALG-STABILITY, EqID michelsen_modified_tangent_plane (all-neutral, non-reacting systems); empty: the driver fallback.
+// `limits` (#987) is charged before every iteration, point and Hessian; a refusal ends the trial with its work so far.
 using TrialPoint = std::pair<PhasePoint, double>;  // composition and packing fraction; dual -ln sum W
 std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
-    const std::vector<double>& seed, double seed_density, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work) {
+    const std::vector<double>& seed, double seed_density, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work,
+    const DriverLimits* limits = nullptr) {
+    // DriverLimits::spend reads no clock: the deadline is checked first.
+    const auto charge = [limits](std::size_t& used, std::size_t cap) {
+        if (limits->check(); !limits->spend(used, cap)) throw std::runtime_error("elapsed work budget exhausted");
+    };
     const auto& S = phase.support;
     const auto n = static_cast<Eigen::Index>(S.size());
     struct Iterate { Eigen::VectorXd W, g; std::vector<double> w; double density = 0.0, objective = 0.0; };
@@ -78,6 +84,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const auto at = [&](Eigen::VectorXd W) {
         Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
+        if (limits) charge(limits->evaluations, limits->evaluation_cap);
         ++o.evaluations;
         if (first && p.w == seed) p.density = seed_density;
         else { const auto root = stability_root(model, T, P, p.w, phase.kind);
@@ -98,7 +105,9 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
         auto p = at(Eigen::Map<const Eigen::VectorXd>(seed.data(), static_cast<Eigen::Index>(seed.size()))(S));
         while (p.g.lpNorm<Eigen::Infinity>() > criterion.value && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
             std::optional<Iterate> q;
+            if (limits) charge(limits->consumed, limits->iterations);
             if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
+                if (limits) charge(limits->hessian_calls, limits->hessian_cap);
                 ++work["trial_tangent_plane_hessian_evaluations"];
                 const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::IsothermalPhaseHessian);
                 core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
@@ -113,8 +122,10 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                     r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
                     return r;
                 });
-                const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
-                if (factor.info() == Eigen::Success && (alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
+                if (factor.info() == Eigen::Success) {
+                    const Eigen::VectorXd alpha = 2.0 * root - factor.solve(root.cwiseProduct(p.g));
+                    if ((alpha.array() > 0.0).all()) q = at((0.5 * alpha).array().square());
+                }
             }
             const bool accepted = q && q->objective <= p.objective;
             o.hessian_calls += accepted;
@@ -135,6 +146,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     } catch (const std::exception& error) { retain_density_failure(o.first_numerical_failure, error, "tangent-plane trial"); }
     ++work["trial_tangent_plane_invocations"];
     work["trial_tangent_plane_iterations"] += o.iterations; work["trial_tangent_plane_newton_steps"] += o.hessian_calls;
+    work["trial_tangent_plane_evaluations"] += o.evaluations;
     return result;
 }
 
@@ -267,7 +279,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     const auto factor = weighted.completeOrthogonalDecomposition();
     report.last_rank = core::numerical_rank(factor, "weighted_amount_correction");
     const auto refuse = [&](const char* cause, double defect) {
-        core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; r.rank = report.last_rank;
+        core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; if (report.last_rank) r.rank = std::make_shared<core::NumericalRank>(*report.last_rank);
         core::retain_first(report.first_numerical_failure, r);
         throw core::DeclarationError(cause, r);
     };
@@ -433,7 +445,7 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
 }
 namespace {
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
-    StabilityReport& report, const StabilityOptions& options) {
+    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits) {
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
@@ -489,6 +501,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     for (std::size_t check = 0; check <= 8; ++check, beta /= 2.0) {
         Quantities split{{"beta_mol", beta}, {"admitted", 0.0}};
         try {
+            if (limits) limits->check();  // #987: a spent budget starts no further split
             const double remaining = at.amount[p] - beta;
             std::vector<double> x(w.size(), 0.0), error(w.size(), 0.0);
             double sum = 0.0, charge = 0.0, inventory_error = 0.0;
@@ -545,7 +558,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
 
 StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
-    const core::Trace& trace, std::vector<std::string>* unsearched = nullptr) {
+    const core::Trace& trace, std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
     StabilityReport report;
     const bool fast = options.mode == DiscoveryMode::Fast;
     bool stopped = false;
@@ -635,8 +648,9 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                         return prior.first == seed && std::abs(std::log(prior.second / eta))
                             <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; })) continue;
                 rooted.emplace_back(seed, eta);
-                if (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget) {
-                    report.message = "search-incomplete: trial budget exhausted";
+                const bool spent = limits && limits->expired();  // #987: the trials so far stand
+                if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
+                    report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { count_stability_work(report.work, trace, begin); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
@@ -651,7 +665,8 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 core::Scope scope("tangent_plane_trial");
                 ++report.work["trial_invocations"];
                 const auto found = native ? tangent_plane_trial(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
-                    trial, report.work) : std::nullopt;
+                    trial, report.work, limits) : std::nullopt;
+                if (limits) limits->check();  // an interrupted trial starts no driver fallback
                 if (native && !found) compile();
                 const auto initial = found ? std::vector<double>{} : trial_coordinates(compiled, seed, eta);
                 if (options.evaluate_supplied_trials) trial.raw_coordinates = initial;
@@ -660,7 +675,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     StageWork prior; prior.observe(trial.optimizer);
                     try {
                         trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
-                            scope, &trial.raw_coordinates, &audit, nullptr, false, {}, false, true);
+                            scope, &trial.raw_coordinates, &audit, limits, false, {}, false, true);
                     } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
                     prior.report_observations(trial.optimizer);
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
@@ -715,19 +730,23 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                     if (!found) q["raw_objective_over_rt"] = trial.optimizer.objective;
                 }
                 trial.evidence = "no_resolved_descent";
-                if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options);
+                if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options, limits);
             } catch (const std::exception& error) {
                 trial.message += "; " + std::string(error.what());
-                if (fast) trial.evidence = "unresolved";
+                trial.evidence = "unresolved";
             }
             report.trials.push_back(std::move(trial));
             if (fast && report.trials.back().resolved_descent) stopped = true;
         }
     }
     report.completed = !stopped;
+    // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
+    // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
     const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
-        return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"; });
+        return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"
+            || (t.evidence == "no_resolved_descent" && !t.optimizer.success); });
     const auto descending = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; });
+    report.no_descent_in_trial_set = report.completed && !report.trials.empty() && !descending && !unresolved;
     if (report.message.empty()) report.message = descending ? "numerically resolved descending split with estimated uncertainty"
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
@@ -747,6 +766,43 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
     core::Capture capture;
     return test_snapshot(c, result, options, {}, capture.trace());
+}
+
+// ALG-STABILITY before neutral recovery (#987): the Full trial set on the lower-objective single-phase L1/V1
+// declaration of the feed, every solve and native trial charged to `limits`. Every outcome returns its report;
+// nothing from it feeds recovery. A failed parent keeps its cause and work.
+StabilityReport recovery_stability(const CompiledSystem& c, const DriverLimits& limits) {
+    StabilityReport parents, report;
+    std::optional<std::pair<CompiledSystem, EquilibriumResult>> best;
+    for (const auto kind : {PhaseKind::Liquid, PhaseKind::Vapor}) {
+        auto single = c.problem;
+        single.phases = {PhaseSpec{kind == PhaseKind::Liquid ? "L1" : "V1", kind}};
+        auto compiled = compile_problem(*c.model, single);
+        EquilibriumResult audit, parent;  // a parent that throws keeps the driver's audit work
+        try { parent = solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, false, &audit); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { parent = audit; parent.message = error.what(); }
+        count_driver(parents.work, parent, "parent_declarations");
+        core::retain_first(parents.first_numerical_failure, parent.first_numerical_failure);
+        if (!parent.success) parents.message += "; " + single.phases[0].name + ": " + parent.message;
+        if (parent.success && (!best || parent.objective < best->second.objective)) best.emplace(std::move(compiled), std::move(parent));
+    }
+    core::Capture capture;
+    try {
+        if (!best) throw std::runtime_error("no single-phase candidate");
+        report = test_snapshot(best->first, best->second, {}, {}, capture.trace(), nullptr, &limits);
+        report.message = " from single-phase " + best->first.problem.phases[0].name + ", "
+            + std::to_string(report.trials.size()) + " trials: " + report.message;
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {  // only before the first trial: the trials' own catches keep theirs
+        report.message = std::string(": ") + error.what();
+        core::retain_failure(report.first_numerical_failure, error, "recovery stability");
+        count_stability_work(report.work, capture.trace());
+    }
+    for (const auto& [name, value] : parents.work) report.work[name] += value;
+    core::retain_first(report.first_numerical_failure, parents.first_numerical_failure, true);
+    report.message = "tangent-plane search before recovery" + report.message + parents.message;
+    return report;
 }
 
 std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& c) {

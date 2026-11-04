@@ -23,10 +23,6 @@
 namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
-// ALG-EQUILIBRIUM: scaled fresh-Newton solve admission, infinity if unresolved.
-EPC_API double polish_forward_bound(const std::vector<double>& jacobian, const std::vector<double>& rows,
-    const std::vector<double>& delta, const std::vector<double>& scale);
-
 enum class PhaseKind { Liquid, Vapor };
 enum class AmountKind { Free, Pinned };
 enum class FeedKind { MoleFractions, Amounts, MassFractions, Molalities };
@@ -154,6 +150,7 @@ struct StabilityOptions final {
     std::vector<double> standard_uncertainty_over_rt;
 };
 struct DiscoveryRecord;
+struct StabilityReport;
 
 // Critical-equation cell seeds (EqID critical_equations): molar density [mol/m^3] and an optional
 // unnormalized amount-perturbation direction u; empty u selects the lowest mode of M at the seed.
@@ -428,6 +425,11 @@ struct CompiledSystem final {
     EPC_API RowUncertainty row_uncertainty(const PhasePoint&) const;
     EPC_API PointEvaluation evaluate_at(const PhasePoint& prepared) const;
     EPC_API std::vector<double> generic_point() const;
+    // Quantity and basis of each solved-chart coordinate, in coordinate order (unknown_count entries).
+    EPC_API std::vector<std::string> coordinate_labels() const;
+    // Each jacobian(point) entry against central differences of evaluate() with h_j = relative_step max(1, |x_j|).
+    EPC_API std::vector<core::DifferenceCheck> jacobian_difference(const std::vector<double>& point, double relative_step,
+        double tau, double kappa) const;
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
     EPC_API std::vector<std::size_t> phase_offsets() const;
     EPC_API std::vector<double> jacobian(const std::vector<double>& point) const;
@@ -583,12 +585,20 @@ struct LinearSolveDiagnostics final {
     double jacobian_inverse_norm = std::numeric_limits<double>::infinity(), condition_estimate = std::numeric_limits<double>::infinity();
     double forward_error_estimate = std::numeric_limits<double>::infinity();
     std::size_t precision_bits = std::numeric_limits<double>::digits, refinement_iterations = 0;
+    std::string point_kind = "last_linearization";
 };
 
 struct IpoptIteration final {
     int mode = 0, iteration = 0, line_search_trials = 0;
     double objective = 0, inf_pr = 0, inf_du = 0, mu = 0, step_norm = 0, regularization = 0, alpha_du = 0, alpha_pr = 0;
 };
+// One Ipopt intermediate callback; `run` counts the Ipopt runs seen by the collecting thread.
+struct IpoptIterationRecord final {
+    std::size_t run = 0;
+    IpoptIteration iteration;
+};
+// The thread's open DEBUG collector, else null; closed it costs one pointer test per callback (#976).
+EPC_API std::vector<IpoptIterationRecord>*& ipopt_iteration_log() noexcept;
 struct IpoptPoint final {
     std::vector<double> tnlp_coordinates, coordinate_scale, tnlp_lower_multipliers, tnlp_upper_multipliers, tnlp_constraint_multipliers;
     std::shared_ptr<const EquilibriumProblem> declaration;
@@ -618,6 +628,7 @@ struct EquilibriumResult final {
     const IdealMoleFraction* ideal_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
+    std::shared_ptr<const StabilityReport> recovery_stability;  // #987: the trial search run before recovery
     bool success = false;
     std::string message;
     std::string solver_status;
@@ -696,6 +707,7 @@ struct StabilityReport final {
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::NumericalRank> last_rank;
     bool completed = false;
+    bool no_descent_in_trial_set = false;  // #987: completed, trials, none descending or unresolved
     std::string message;
     std::vector<StabilityTrial> trials;
     std::vector<double> candidate_coordinates, standard_over_rt, plane_over_rt;
@@ -734,8 +746,6 @@ EPC_API EquilibriumResult solve_equilibrium(
 );
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
-EPC_API std::map<std::string, double> effective_water_amounts(const IdealMoleFraction&, const EquilibriumResult&,
-    const std::string& water, const std::vector<std::string>& ions, const std::vector<std::string>& molecular_species);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 // `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
 struct DriverLimits;
@@ -954,6 +964,11 @@ inline SolvedStateActionStatus solved_state_status(PropertyActionStatus status) 
 }
 
 EPC_API std::string solved_state_observable_id(const SolvedStateObservable& observable);
+// Each observable's first-order action along `direction` against central differences of re-solved neighbors at
+// +-step (verification only). Supported: fixed T or P, Amounts-basis feed, declared enthalpy or entropy.
+EPC_API std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem& compiled,
+    const EquilibriumResult& central, const std::vector<SolvedStateObservable>& observables,
+    const SolvedStateActionDirection& direction, double step, double tau, double kappa);
 
 // Exact first-, second- or third-order mixed directional actions of physical solved-state
 // observables at one accepted result; no nonlinear solve, no compilation, no mutation.

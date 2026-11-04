@@ -177,17 +177,24 @@ inline std::optional<double> admitted_pivot_ratio(const Eigen::FullPivLU<Eigen::
 inline std::vector<double> solve_linear(
     const Eigen::MatrixXd& matrix,
     const std::vector<double>& right_hand_side,
-    double* pivot_ratio = nullptr, std::optional<core::Convergence>* first = nullptr
+    double* pivot_ratio = nullptr, std::optional<core::Convergence>* first = nullptr,
+    std::optional<core::NumericalRank>* record = nullptr, const std::vector<double>& point = {}, std::size_t iteration = 0
 ) {
     const Eigen::FullPivLU<Eigen::MatrixXd> factorization(matrix);
     const auto ratio = admitted_pivot_ratio(factorization);
-    if (!ratio) {
+    if (!ratio || factorization.rank() != matrix.cols()) {
+        if (record && !*record) {
+            auto rank = core::numerical_rank(factorization, "mass_action_site_fractions");
+            core::ConditioningObservation warning{"association", "", "pivot", "rank/pivot", "association_pivot_refusal"};
+            warning.iteration = iteration; warning.point_kind = "refused_linearization";
+            core::observe_conditioning(rank, std::move(warning), point); *record = std::move(rank);
+        }
         if (first) core::retain_first(*first, [&] {
             core::Convergence r;
             const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
             r.residual = Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()).cwiseAbs().maxCoeff();
             r.amplification = pivots.maxCoeff() / pivots.minCoeff();
-            r.rank = core::numerical_rank(factorization, "mass_action_site_fractions");
+            r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(factorization, "mass_action_site_fractions"));
             r.cause = "association Jacobian is ill-conditioned; largest " + core::optional_number(pivots.maxCoeff())
                 + "; smallest " + core::optional_number(pivots.minCoeff()) + "; relative pivot cutoff "
                 + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
@@ -246,11 +253,18 @@ inline std::vector<double> solve_site_fractions(
     core::ResidualHistory history;
     std::size_t evaluations = 0;
     std::optional<double> last_pivot;
+    std::optional<core::NumericalRank> conditioning;
     double residual_norm = std::numeric_limits<double>::infinity();
     auto make_record = [&](double residual, std::size_t iterations,
                            core::Stop stop, bool classify) {
         core::Convergence result;
         result.residual = residual;
+        if (conditioning) result.rank = std::make_shared<core::NumericalRank>(*conditioning);
+        if (result.rank) if (auto& warning = result.rank->first_conditioning_warning) {
+            warning->controls = {temperature, molar_density};
+            warning->controls.insert(warning->controls.end(), mole_fractions.begin(), mole_fractions.end());
+            if (core::AssociationObservations::current()) core::AssociationObservations::publish(*result.rank);
+        }
         core::stopping_criterion(result, options, policy::association);
         result.floor = std::numeric_limits<double>::epsilon() * sites;
         result.amplification = last_pivot;
@@ -338,7 +352,7 @@ inline std::vector<double> solve_site_fractions(
             if (next.empty()) try {
                 double pivot_ratio = 0.0;
                 const auto step = solve_linear(mass_action_jacobian(mole_fractions, parameters, fractions,
-                    number_density, delta, bonded), negative_residual, &pivot_ratio, &first);
+                    number_density, delta, bonded), negative_residual, &pivot_ratio, &first, &conditioning, fractions, iteration);
                 // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.
                 double alpha = 1.0;
                 for (std::size_t a = 0; a < sites; ++a) {

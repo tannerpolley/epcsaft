@@ -1142,6 +1142,29 @@ void check_e2_thermal() {
 void check_pure_saturation() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
+    const HelmholtzModel propane(caloric_specification_checks::propane_parameters());
+    for (const auto& [temperature, observed_move] : std::vector<std::pair<double, double>>{{300, 0}, {375.13, 1.8e-10}, {375.139, 9.5e-9}}) {
+        auto problem = equilibrium_support::bubble_at(temperature); problem.feed.values = {1};
+        const auto result = solve_equilibrium(propane, problem);
+        CHECK(result.success && result.linear_solve_diagnostics);
+        const auto record = std::find_if(result.rank_records.begin(), result.rank_records.end(),
+            [](const auto& r) { return r.basis == "log_density"; });
+        CHECK(record != result.rank_records.end());
+        CHECK(record->observation.available && record->observation.point_kind == "endpoint");
+        CHECK(bool(record->first_conditioning_warning) == (observed_move > 0));
+        if (observed_move > 0) {
+            const auto& warning = *record->first_conditioning_warning;
+            CHECK(warning.precision_bits == 53 && warning.error >= observed_move);
+            CHECK(warning.point_kind == "last_linearization");
+            CHECK(warning.criterion_value == policy::TWO_DENSITY_FORWARD_ERROR.value);
+            CHECK(warning.coordinates.size() == 2 && !warning.controls.empty() && warning.controls.front() == temperature);
+            CHECK(result.linear_solve_diagnostics->precision_bits > 53);
+            CHECK(result.linear_solve_diagnostics->forward_error_estimate < warning.criterion_value);
+        }
+        std::printf("propane_conditioning,%.17g,%zu,%.17g,%.17g\n", temperature, record->observation.precision_bits,
+            record->observation.error, record->first_conditioning_warning ? record->first_conditioning_warning->error : 0);
+    }
+
     const auto compare = [](const std::string& id, double actual, double reference, double scale) {
         const double error = std::abs(actual - reference) / std::max({scale, std::abs(actual), std::abs(reference)});
         recording_support::compare_custom(id.c_str(), "pure_saturation_identity", "scaled", actual, reference,
@@ -1533,6 +1556,7 @@ void check_ideal_gas() {
     const auto c = compile_problem(model, problem);
     auto q = c.generic_point();
     const auto layout = c.prepare(q).shape.front();
+    CHECK(c.coordinate_labels().size() == c.unknown_count() && c.coordinate_labels()[layout.volume] == "ln rho[V] / (mol/m3)");
     q[layout.x[0]] = std::log(0.2); q[layout.x[1]] = std::log(0.6);
     CHECK(layout.amount.has_value());
     q[*layout.amount] = 2;

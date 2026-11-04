@@ -4,8 +4,7 @@ Current native ePC-SAFT predictions are compared with Hamer–Wu's evaluated
 osmotic and molality-scale mean ionic coefficients. Haslam's printed Table 8
 deviations appear alongside these physical comparisons. The [research
 notebook](notebook.qmd) reports deviations, rounding diagnostics, reference
-convergence and the source-average arithmetic audit. Independent delivered
-scientific review and investigator promotion remain open.
+convergence and the source-average arithmetic audit. The investigator promoted `676427c9` for 1:1 salts against Hamer–Wu, subject to these limitations: calibration overlap and pressure limits. This promotion does not extend to later results or other comparisons in this leaf.
 
 The physical comparison uses existing Figiel parameters without refitting,
 water with fully dissociated monovalent ions, formula-unit molality in mol/kg water,

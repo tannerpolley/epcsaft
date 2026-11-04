@@ -571,6 +571,33 @@ void properties_p4() {
             "typed association failure preserves central residual, total and ideal values", "absolute", ok,
             "p4-supplemental", name, "status", "T,rho,x,q", "typed failure");
     }
+    {
+        // Unequal partners retain a real site pivot warning before endpoint factorization refuses.
+        auto parameters = p4_association_stress(3, 1e26);
+        parameters.association_active[1] = parameters.association_active[3] = 1;
+        parameters.association_energy_over_k[1] = parameters.association_energy_over_k[3]
+            = parameters.association_energy_over_k[0];
+        parameters.association_volume[1] = parameters.association_volume[3]
+            = parameters.association_volume[0] * 1e-20; // cross strength 1e6, self strength 1e26
+        epcsaft::HelmholtzModel model(parameters);
+        epcsaft::core::Capture capture(true);
+        const auto batch = model.density_actions(300, 1000, {1},
+            {epcsaft::PropertyObservable::ResidualEnthalpy},
+            {epcsaft::DensityActionDirection{1, 0, {0}, {}}});
+        std::shared_ptr<epcsaft::core::ConditioningObservation> first;
+        for (const auto& span : capture.trace().spans) if (!first && span.convergence && span.convergence->rank)
+            first = span.convergence->rank->first_conditioning_warning;
+        const auto& rank = batch.diagnostics.site_conditioning;
+        CHECK(batch.results[0].status == epcsaft::PropertyActionStatus::AssociationIllConditioned
+            && !batch.results[0].action && batch.diagnostics.site_factorizations == 1
+            && first && rank && rank->first_conditioning_warning
+            && rank->first_conditioning_warning->basis == "mass_action_site_fractions"
+            && rank->first_conditioning_warning->coordinates == first->coordinates
+            && rank->first_conditioning_warning->controls == first->controls
+            && rank->observation.basis == "implicit_site_fractions" && rank->observation.point_kind == "endpoint");
+        std::cout << "directional factorization refusal: T=300 rho=1000 self=1e26 cross=1e6 first="
+            << rank->first_conditioning_warning->basis << " latest=" << rank->observation.basis << '\n';
+    }
     const auto missing_thermochemistry = ethane_model.density_actions(
         300.0, 1000.0, {1.0},
         {epcsaft::PropertyObservable::IdealEnthalpy},

@@ -69,5 +69,4 @@ refitting. It retains every source-specific realized row, and
 to its nominal rows. A source-flag omission cannot remove a native failure.
 The presentation script reads retained numbers without importing the Engine.
 The Quarto project registers this notebook once in its render and sidebar
-lists, with execution disabled. Stage B awaits independent delivered review;
-it has no investigator promotion for manuscript use.
+lists, with execution disabled. The investigator promoted `c3817d27` for Unchanged-parameter failure, subject to these limitations: bounded failure of the fixed declarations. This promotion does not extend to later results or other comparisons in this leaf.

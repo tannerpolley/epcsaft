@@ -109,8 +109,6 @@ stoichiometric coefficients are skipped, and conflicting infinite terms make
 the quotient unavailable. This call supplies no pressure-basis quotient, pH,
 derivative, solid activity, persistent cache or fitting payload.
 
-EqID: `effective_water_amounts` converts a criterion-meeting result to named
-molecular amounts after checking model identity and the complete species partition.
 For the MDEA example, EqID: `mdea_reaction_conserved_amounts` supplies independent
 inventory checks. These are numerical verification of conserved hydronium chemistry,
 not physical validation of ideal ionic activities, reproduction of Figure 15 or

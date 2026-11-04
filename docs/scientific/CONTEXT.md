@@ -180,7 +180,10 @@ and stated limits.
 Only an explicit `stability_test(...)` call tests a declared result, including
 pinned/free-intensive snapshots at solved T/P with frozen actual standards.
 Declared solves, continuation, parameter fitting and ASL incur no implicit trial
-solves. [ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability)
+solves, except the finite trial search a public fixed-T/P flash runs before
+neutral recovery after its first run coalesced (owner, 2026-11-03); it refuses
+without recovery when no recorded trial descends, which is no global certificate
+and can refuse a case recovery would have solved. [ALG-STABILITY](../../engine/docs/science/algorithms.md#alg-stability)
 owns the finite native search through the shared driver. Mechanical/local checks
 and limits on global claims remain required. Caller tolerances govern solve
 requests; available candidates that miss them retain warnings and achieved

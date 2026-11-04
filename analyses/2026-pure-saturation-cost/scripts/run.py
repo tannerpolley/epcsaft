@@ -112,7 +112,7 @@ def main():
                     **{tool: dict(op='t3', case='C1-300', samples=25, warmups=5) for tool in ('FeOs', 'Clapeyron')}))
                 for name, op in [('ordinary', 'release-equilibrium'), ('prepared', 'prepared-equilibrium')]]
         arms = ['Engine-A', 'Engine-control', 'Engine-B', 'Engine-B-control', 'FeOs', 'Clapeyron']
-        workers = {name: Worker(name, [str(c.FEOS), '-u', str(STUDY / 'scripts/feos_worker.py')], 31, BUILD / f'preflight-{name}.log')
+        workers = {name: Worker(name, [str(c.FEOS), '-u', str(ROOT / 'analyses/2026-audit-timing-campaign/scripts/feos_worker.py'), str(ROOT / 'analyses/2026-release-computational-cost/inputs/inputs.json')], 31, BUILD / f'preflight-{name}.log')
                    for name in arms if name != 'Clapeyron'}
         workers['Clapeyron'] = c.Clapeyron()
         preflight = dict(identities={name: w.identity for name, w in workers.items()}, operations={})

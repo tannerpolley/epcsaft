@@ -1,0 +1,7 @@
+tol 1e-11
+constr_viol_tol 1e-11
+acceptable_iter 0
+linear_solver mumps
+hessian_approximation exact
+print_user_options yes
+print_level 5

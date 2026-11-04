@@ -87,6 +87,5 @@ wall-clock time. Batch timing excludes setup and presentation.
 `present.py` and the notebook read results without importing the Engine.
 Experimental source transcription, digitization uncertainty, unresolved model-curve
 misses, and supplemental liquid-only data above the paper's
-temperature range limit the claims. Independent review, investigator promotion
-and remote delivery remain with the lead. Earlier records removed by #341
+temperature range limit the claims. The investigator promoted `e75c60ad` for associating pure and binary (F10a); three-phase (F10b), subject to these limitations: liquid and vapour statistics separate; calibration data marked. This promotion does not extend to later results or other comparisons in this leaf. Earlier records removed by #341
 remain at commit `21d7a112`.

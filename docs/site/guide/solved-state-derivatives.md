@@ -77,3 +77,7 @@ the exact native first action. Those finite differences are numerical
 verification, not the derivative supplied to fitting or process calculations.
 Agreement at that smooth branch does not establish accuracy across a phase
 transition, source extrapolation or experimental validation.
+
+
+Property actions include third-order directional actions where the requested
+observable and its inputs support them. Inspect the returned availability status.

@@ -12,8 +12,8 @@ What do the four 2026-10-15 audits' speed questions (#551â€“#554, merged as T1â€
 cost at current main, against FeOs 0.10.1 and Clapeyron 0.6.29 at identical
 parameters? The [notebook](notebook.qmd) answers each kept question from the
 retained files in `results/` and states, per audit question, whether the finding
-still holds, was fixed by a named issue, or is new. The accepted design is the
-main checkout's `build/issue-578/design.md`; by the owner's 2026-10-16 decision
+still holds, was fixed by a named issue, or is new. The accepted design was
+`build/issue-578/design.md`, which no longer exists; by the owner's 2026-10-16 decision
 the timed commit is current main instead of `517a3450`.
 
 Every Engine interpreter loads the frozen image in `results/image.json` through

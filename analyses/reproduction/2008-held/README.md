@@ -1,6 +1,6 @@
 Held, Cameretti and Sadowski (2008), *Modeling aqueous electrolyte solutions. Part 1. Fully dissociated electrolytes*, DOI [10.1016/j.fluid.2008.06.010](https://doi.org/10.1016/j.fluid.2008.06.010).
 
-The retained calculation compares model traces and measured centres across Figures 1–8. Agreement is partial; the [notebook](notebook.qmd) reads all outcomes from retained results. Original Table 4 observations and aggregate weighting are unavailable, so its populated aggregates remain undetermined. Bare Pauling sizes are structural source evidence. Issue #832 corrects the source ownership described below without another thermodynamic calculation. The revised selection awaits independent delivered review and investigator promotion.
+The retained calculation compares model traces and measured centres across Figures 1–8. Agreement is partial; the [notebook](notebook.qmd) reads all outcomes from retained results. Original Table 4 observations and aggregate weighting are unavailable, so its populated aggregates remain undetermined. Bare Pauling sizes are structural source evidence. Issue #832 corrects the source ownership described below without another thermodynamic calculation. The investigator promoted `e75c60ad` for 19 salts, 45 series (F11b), subject to these limitations: partial reproduction; disagreements and unresolved source exclusions kept; no aggregate accuracy. This promotion does not extend to later results or other comparisons in this leaf.
 
 Run from this checkout after its documented environment setup:
 

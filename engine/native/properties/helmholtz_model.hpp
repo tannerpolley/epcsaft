@@ -50,6 +50,7 @@ struct HelmholtzDerivativeValues final {
     Base gradient_floor = 0.0;
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
+    std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
 };
 
@@ -150,8 +151,10 @@ struct PropertyActionDiagnostics final {
     std::size_t pressure_factorizations = 0, pressure_solves = 0;
     std::size_t thermal_evaluations = 0, recordings = 0, directional_paths = 0, forward_sweeps = 0;
     DensityBranch branch = DensityBranch::Unspecified;
+    DensityBranch returned_branch = DensityBranch::Unspecified;
     std::optional<std::size_t> stable_root_count;
     std::optional<core::Convergence> first_numerical_failure;
+    std::shared_ptr<core::NumericalRank> site_conditioning;
 };
 struct PropertyActionBatch final {
     policy::SolverOptions solver_options;
@@ -234,6 +237,7 @@ struct State final {
     std::optional<std::vector<std::optional<double>>> partial_molar_volume, partial_molar_enthalpy,
         partial_molar_entropy;  // component order
     std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
 };
 
 EPC_API std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
@@ -248,6 +252,7 @@ struct DensityRoot final {
     core::Convergence convergence;
     std::optional<double> negative_slope_density;  // no new EOS evaluation
     std::optional<core::Convergence> first_numerical_failure;
+    std::vector<core::NumericalRank> rank_records;
 };
 
 // Fixed-composition pressure crossings, slope zeros and finite-evaluation brackets (ALG-DENSITY).
@@ -438,6 +443,11 @@ public:
         const std::vector<PressureActionDirection>&,
         std::optional<double> = std::nullopt
     ) const;
+    // Each first-order pressure_actions result along `direction` against central differences of its value at +-step
+    // on the anchored central root (verification only). Supported: T, P and a zero-sum composition direction.
+    EPC_API std::vector<core::DifferenceCheck> pressure_action_difference(double temperature, double pressure,
+        const std::vector<double>& mole_fractions, DensityBranch branch, const std::vector<PropertyObservable>& observables,
+        const PressureActionDirection& direction, double step, double tau, double kappa) const;
     EPC_API double packing_fraction_coefficient(
         double temperature,
         const std::vector<double>& mole_fractions

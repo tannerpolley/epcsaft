@@ -12,8 +12,9 @@ Conda package contents and corresponding source
 The Linux x86-64 / CPython 3.13 package contains the Python package, _core,
 native and ASL libraries, private Ipopt 3.11.9 and the applicable notices.
 It uses conda MUMPS 5.8.2, OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
-nanobind 2.12.0. It contains no parameter packets, analyses, manuscript
-sources, restricted data collections or Coin-HSL.
+nanobind 2.12.0. It contains the feos-gross-sadowski-2001/1 and feos-gross-sadowski-2002/1
+parameter packets with their FeOs MIT notices. It contains no analyses,
+manuscript sources, restricted data collections or Coin-HSL.
 
 Corresponding source is available from the distributor in the source-set
 download alongside each matching binary release at
@@ -95,6 +96,11 @@ Bundled source and coefficient distributions
   https://www.latex-project.org/lppl/
 
 Retained data
+
+The repository retains the CC BY-NC 4.0 items below. Public source archives
+omit them, together with
+analyses/2026-neutral-solvent-densities/inputs/esper-parameters.json, an
+excerpt of the Esper packet.
 
 * analyses/reproduction/2025-figiel/inputs/source/
   figiel-2025-regression-target-ledger.yaml and its SI-derived digitizations:

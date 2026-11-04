@@ -40,6 +40,11 @@ export PKG_CONFIG_PATH="$IPOPT_PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
     --config-settings=setup-args=--wrap-mode=nodownload \
     --config-settings=compile-args=-j"$JOBS" ${engine_verbose:+"$engine_verbose"} \
     ${EPCSAFT_BUILD_DIR:+--config-settings=build-dir="$EPCSAFT_BUILD_DIR"}
+mkdir -p "$SP_DIR/epcsaft/data/packets"
+for packet in feos-gross-sadowski-2001 feos-gross-sadowski-2002; do
+    mkdir -p "$SP_DIR/epcsaft/data/packets/$packet"
+    cp -a "$SRC_DIR/data/packets/$packet/1" "$SP_DIR/epcsaft/data/packets/$packet/"
+done
 if [[ $target_platform == osx-* ]]; then
     install -m755 "$IPOPT_PREFIX/lib/$ipopt_library" "$SP_DIR/epcsaft/"
     # The search path Linux sets with patchelf, then an ad hoc signature: dyld refuses an edited arm64 image unsigned.
