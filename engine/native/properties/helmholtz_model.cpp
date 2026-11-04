@@ -1227,7 +1227,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         result.gradient_floor = maximum * site_residual;
     }
     result.volume_second_derivative = result.hessian[1 * point_size + 1];
-    scope.probe("hessian", result.hessian);
+    if (order == DerivativeOrder::Hessian) scope.probe("hessian", result.hessian);
     scope.probe("volume_second_derivative", result.volume_second_derivative);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
@@ -2217,7 +2217,7 @@ State HelmholtzModel::state(
     require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
     const double volume = 1.0 / molar_density;
     const auto derivatives = evaluate(temperature, volume, mole_fractions,
-        core::current_trace() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
+        scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
     const auto& sites = derivatives.site_fractions;
     const auto [electro, terms] = [&] {
         core::Scope scope("state_residual_recompute"), evaluation("evaluate");
