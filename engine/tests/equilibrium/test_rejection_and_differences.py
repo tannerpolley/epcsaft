@@ -6,18 +6,10 @@ import pytest
 from epcsaft import Mixture, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop
 from epcsaft._core import EquilibriumResult, StabilityReport
 from epcsaft.equilibrium import (
-    Amounts,
-    Phase,
-    Problem,
-    SolvedStateActionDirection,
-    SolvedStateObservable,
-    SolvedStateObservableKind,
-    bubble_point,
-    compile_problem,
-    jacobian_table,
-    solve_equilibrium,
-    solved_state_difference,
+    Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
+    compile_problem, jacobian_table, solve_equilibrium, solved_state_difference,
 )
+
 from tests.packets import PACKETS
 
 UNSUPPORTED_CLAIMS = ("stable phase", "does not exist", "exceeds", "no bubble point exists")
