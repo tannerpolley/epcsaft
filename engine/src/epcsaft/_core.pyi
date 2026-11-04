@@ -3108,6 +3108,7 @@ class IpoptDiagnostics:
 
 class EquilibriumResult:
     rejected_reduction: EquilibriumResult | None
+    recovery_stability: StabilityReport | None
     terminal_numerical_failure: Convergence | None
     last_full_evaluation: Convergence | None
     phase_pressures: list[float]

@@ -150,6 +150,7 @@ struct StabilityOptions final {
     std::vector<double> standard_uncertainty_over_rt;
 };
 struct DiscoveryRecord;
+struct StabilityReport;
 
 // Critical-equation cell seeds (EqID critical_equations): molar density [mol/m^3] and an optional
 // unnormalized amount-perturbation direction u; empty u selects the lowest mode of M at the seed.
@@ -627,6 +628,7 @@ struct EquilibriumResult final {
     const IdealMoleFraction* ideal_identity = nullptr;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
+    std::shared_ptr<const StabilityReport> recovery_stability;  // #987: the trial search run before recovery
     bool success = false;
     std::string message;
     std::string solver_status;
@@ -705,6 +707,7 @@ struct StabilityReport final {
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::NumericalRank> last_rank;
     bool completed = false;
+    bool no_descent_in_trial_set = false;  // #987: completed, trials, none descending or unresolved
     std::string message;
     std::vector<StabilityTrial> trials;
     std::vector<double> candidate_coordinates, standard_over_rt, plane_over_rt;

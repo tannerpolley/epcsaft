@@ -325,6 +325,7 @@ void register_equilibrium(nb::module_& module) {
             return values;
         })
         .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
+        .def_prop_ro("recovery_stability", [](const EquilibriumResult& r) { return r.recovery_stability ? nb::cast(*r.recovery_stability) : nb::none(); })
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)

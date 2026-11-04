@@ -2122,6 +2122,23 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
     DriverLimits work{limits ? std::min(cap, limits->iterations - limits->consumed) : cap,
         limits ? limits->deadline : std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    // ALG-STABILITY (#987): after coalescence at fixed T and P, the finite trial search under the same allowance
+    // construction; no descent in it ends the solve without recovery. It is not a global stability certificate.
+    if (result.topology_event == TopologyEvent::PhasesCoalesced && !compiled.problem.temperature.free
+        && !compiled.problem.pressure.free && !model.parameters().ideal_gas && compiled.problem.solids.empty()) {
+        auto probe = work;  // the same allowance construction; recovery's remainder shrinks by its use below
+        result.recovery_stability = std::make_shared<const StabilityReport>(recovery_stability(compiled, probe));
+        if (limits) limits->consumed += probe.consumed;
+        if (limits) work.iterations = std::min(work.iterations, limits->iterations - limits->consumed);
+        result.iterations += probe.consumed;
+        result.evaluations += probe.evaluations;
+        result.hessian_calls += probe.hessian_calls;
+        result.message += "; " + result.recovery_stability->message;
+        if (result.recovery_stability->no_descent_in_trial_set) {
+            result.message += "; not a global stability certificate: a split outside this finite trial set is not excluded; recovery not run";
+            return selected(std::move(result), limits);
+        }
+    }
     auto recovered = selected(recover_from_source(compiled, work), &work);
     StageWork observations; observations.observe(result); observations.observe(recovered);
     std::move(observations).publish_observations(recovered.success ? recovered : result);
@@ -2131,6 +2148,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     result.hessian_calls += work.hessian_calls;
     if (!recovered.success) { result.message += "; recovery: " + recovered.message; return result; }
     recovered.rejected_reduction = rejected;
+    recovered.recovery_stability = result.recovery_stability;
     recovered.message += "; recovered after: " + result.message;
     recovered.iterations = result.iterations;
     recovered.evaluations = result.evaluations;
