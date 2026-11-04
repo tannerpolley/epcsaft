@@ -490,7 +490,7 @@ class Mixture:
         -------
         checks : list of DifferenceCheck
             One record per result: exact action A, D = (f(+h) - f(-h))/(2h),
-            roundoff r, ``ratio`` = |D - A| / (tau |A| + kappa r) and ``status``
+            roundoff r, ``ratio = |D - A| / (tau |A| + kappa r)`` and ``status``
             ``passed``, ``failed``, ``nonfinite``, ``unsupported_direction``,
             ``neighbor_unavailable`` or ``branch_changed``.
 
