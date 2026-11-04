@@ -275,6 +275,10 @@ def rule_budget_readers_carry_records() -> list[str]:
         if layer_of(path) in {"core", "bindings"}:
             continue
         text = without_comments(path.read_text())
+        # A private piece ("// Included once, by fit.cpp ...") is judged with its one includer's translation unit.
+        includer = re.match(r"// Included once, by (\w+\.cpp)\b", path.read_text())
+        if includer:
+            text += without_comments((path.parent / includer[1]).read_text())
         if budget.search(text) and ("core::Scope" not in text or "Convergence" not in text):
             bad.append(f"{path.relative_to(ROOT)} reads a budget without a convergence record")
     return bad
