@@ -17,7 +17,7 @@ combined document before native construction. These calls are documented in
 [parameter inputs](../api/parameters.rst).
 
 The packet root in the quickstart is `data/packets`; it is a checkout path.
-The conda package also includes the two packets described below. Keep the selected packet versions,
+A conda package built from this source includes the two packets described below. Keep the selected packet versions,
 component order, source locators and caller overrides with the calculation.
 A combined document retains materialization source information. A successful
 load establishes mathematical admission, not the validity of extrapolation.
@@ -82,7 +82,7 @@ as unknown; the [limits](../limits.md) explain this distinction.
 
 ## Installed and downloaded packets
 
-The conda package includes the FeOs Gross–Sadowski 2001 and 2002 packets. Locate
+A conda package built from this source includes the FeOs Gross–Sadowski 2001 and 2002 packets. Locate
 its packet root and select a component explicitly:
 
 ```python
@@ -102,11 +102,12 @@ then pass its `data/packets` directory to `Parameters.from_packets`:
 source_packets = Path("path/to/extracted/source/data/packets")
 xenon = epcsaft.Parameters.from_packets(source_packets, [("feos-esper-2023/1", ["xenon"])])
 ```
- Each packet's `packet.toml` and any
+Each packet's `packet.toml` and any
 `parameters/LICENSE-NOTICE.md` state its use terms; follow those terms. The
 Esper and Rehner packets carry noncommercial terms. Selection and mathematical
 admission do not establish a fit range or validate an extrapolation.
 
-The polar model may instead select a quadrupole–quadrupole contribution. Only
-one polar choice is active; its source mixing-rule limitations are described
-in the [quadrupole decision](../../scientific/decisions/0014-optional-quadrupole-quadrupole-term.md).
+The polar model may select a quadrupole–quadrupole contribution. Only one
+polar choice is active, and dipole–quadrupole mixing is not supported. Gross's
+mixing rule is unsuitable for real mixtures with more than one quadrupolar
+component. The [EOS theory](../theory/eos.md) describes the contribution.
