@@ -95,9 +95,14 @@ hexane = epcsaft.Parameters.from_packets(packets, [("feos-gross-sadowski-2001/1"
 
 The public source archive for the installed version also contains `data/packets`,
 including the Esper 2023 pure-component and Rehner 2023 binary parameter sets.
-Download and extract the matching source archive from the project's releases,
-then pass its `data/packets` directory as the first argument to
-`Parameters.from_packets`, as above. Each packet's `packet.toml` and any
+Download and extract the matching source archive from the [project releases](https://github.com/tannerpolley/epcsaft/releases),
+then pass its `data/packets` directory to `Parameters.from_packets`:
+
+```python
+source_packets = Path("path/to/extracted/source/data/packets")
+xenon = epcsaft.Parameters.from_packets(source_packets, [("feos-esper-2023/1", ["xenon"])])
+```
+ Each packet's `packet.toml` and any
 `parameters/LICENSE-NOTICE.md` state its use terms; follow those terms. The
 Esper and Rehner packets carry noncommercial terms. Selection and mathematical
 admission do not establish a fit range or validate an extrapolation.
