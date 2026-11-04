@@ -1592,7 +1592,13 @@ following the original feasibility path. Only positive amounts supply donors.
 Discovery with free intensives remains outside this method.
 
 Declared solves, continuation, parameter fitting and ASL perform zero trial
-solves. They preserve callback arithmetic/order and counted work. Returned
+solves, with one exception: a public fixed-T/P flash without a caller start whose
+first Ipopt run ends with coalesced phases runs the Full trial set once on its
+lower-objective single-phase declaration before [neutral recovery](#neutral-recovery)
+(owner, 2026-11-03). A completed search without a descent means "no witness in the
+recorded trial set", never a global certificate: a split outside the finite trial
+set is not excluded, and a refused solve does not run recovery, so a case recovery
+could have solved can be refused. They preserve callback arithmetic/order and counted work. Returned
 solved-state actions use the fixed discovered declaration without searching.
 Qualification must compare the retained before/after declared numerical values
 bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
@@ -3338,6 +3344,29 @@ and cold density-branch admission. Added optimizer iterations and continuation a
 `EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations four times and Hessian callbacks twice
 that, within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
 with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
+
+**Trial search before recovery.** A fixed-T/P flash whose first run coalesced (no ideal gas, no
+solids) first solves the single-phase L1 and V1 declarations and tests the successful one with the
+lower objective (a tie keeps L1) with ALG-STABILITY's Full trial set, as `stability_test` does. The
+search has its own allowance built like recovery's (512 iterations, four and two times that in
+evaluations and Hessian callbacks, within any caller remainder, the caller's deadline); the caller
+remainder is reduced by the search before recovery's allowance is built. Its parent and fallback-trial
+drivers are charged as recovery's own solves are. Each tangent-plane point, tangent-plane Hessian and
+tangent-plane iteration is charged before it starts, after a deadline check, and each finite-split check
+checks the deadline first. Started work is not interrupted: one point (a density root and a gradient),
+one Hessian or one driver callback. Not charged: each seed's reconstruction and density root, each
+evaluated trial's composition reconstruction and phase energy, the finite-split checks (at most nine per
+trial) and the candidate repair; for $n$ components there are at most $2n+3$ seeds. A spent allowance
+ends the search as "search-incomplete: work budget exhausted". A completed search with no resolved
+descent and no unresolved trial (a fallback driver that fails counts as unresolved) refuses: the result
+keeps the first run's status and cause, its message adds the search's verdict, "not a global stability
+certificate: a split outside this finite trial set is not excluded; recovery not run", and its work is
+the first run's plus the search's. Otherwise recovery runs as above and its work is added to the
+search's. Work counts driver iterations plus tangent-plane iterations, driver evaluations plus
+tangent-plane points, and driver Hessian callbacks plus tangent-plane Hessians; the report
+(`result.recovery_stability`) keeps them apart. The search passes recovery no start or changed
+declaration; equal recovered states are a measured property, because the model's differentiation tapes
+are reused by predicate signature.
 This replaces, for this domain only, the earlier rule that a no-start fallback is decided before the target
 solve; the reacting and caloric no-retry rules are unchanged.
 

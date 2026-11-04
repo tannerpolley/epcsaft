@@ -203,3 +203,18 @@ owns the schedule and reporting. All finite-descent, uncertainty, charge,
 density-branch and local-state admission criteria remain in force.
 An admitted fast split is a local result; no admitted split in the fast trial
 set establishes neither physical absence nor global stability.
+
+## Addendum: trial search before neutral recovery (2026-11-03)
+
+The owner adopted this scoped amendment to D6/D7 on 2026-11-03, separating it from
+#976 as #987.
+A public fixed-T/P flash without a caller start whose first Ipopt run ends with
+coalesced phases, inside the neutral recovery domain, runs the Full trial set once
+on its lower-objective single-phase declaration before recovery, charged to a
+budget built like recovery's. When the search completes with no resolved descent
+and no unresolved trial, the solve is refused without recovery and keeps Ipopt's
+status. That outcome means no witness in the recorded trial set: a split outside
+the finite set is not excluded, and a refused solve can be one recovery would have
+solved. Every other declared solve, continuation, fitting and ASL keep zero trial
+work. [ALG-EQUILIBRIUM](../../../engine/docs/science/algorithms.md#neutral-recovery)
+owns the procedure, budget and accounting.
