@@ -47,6 +47,13 @@ jobs:
         run: bash tools/setup.sh
       - name: Import
         run: .venv/bin/python -c 'import epcsaft; print(epcsaft.provenance())'
+      # The conda build installs these two packets into the package; the smoke case checks them there.
+      - name: Install the shipped packets
+        run: |
+          for packet in feos-gross-sadowski-2001 feos-gross-sadowski-2002; do
+            mkdir -p "engine/src/epcsaft/data/packets/$packet"
+            cp -a "data/packets/$packet/1" "engine/src/epcsaft/data/packets/$packet/"
+          done
       - name: Smoke case
         run: .venv/bin/python packaging/conda-forge/run_test.py
       - name: Ruff
