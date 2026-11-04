@@ -10,20 +10,19 @@ an installation with a native pressure closure.
 
 ## Conda package
 
-Install release 1.2.1 for Linux (linux-64) and Windows (win-64) from the
+Install release 1.3.0 for Linux (linux-64) and Windows (win-64) from the
 `tannerwpolley` conda channel:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.2.1
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.0
 conda activate epcsaft
 python -c 'import epcsaft; print(epcsaft.__file__)'
 ```
 
 The package contains the Python interface, the native extension and its
 property library, a private Ipopt build with MUMPS, and the third-party
-notices. A conda package built from this source also includes the FeOs
-Gross–Sadowski 2001 and 2002 packets; the released 1.2.1 package does not
-include packets. Wheels do not include the packet tree. For other packets,
+notices. The conda package also includes the FeOs Gross–Sadowski 2001 and
+2002 packets. Wheels do not include the packet tree. For other packets,
 download the matching source archive and pass its `data/packets` directory to
 `Parameters.from_packets`; see [packet selection](guide/parameters-and-models.md#installed-and-downloaded-packets).
 Each packet states its own use terms.
