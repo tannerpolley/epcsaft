@@ -3793,7 +3793,7 @@ def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationO
     The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
     """
     ...
-def property_asl_record(model: Any) -> str:
+def property_asl_record(model: Any, require_phase_identity: bool = False) -> str:
     """Serialize a declared model for native ASL property callbacks.
 
     Parameters

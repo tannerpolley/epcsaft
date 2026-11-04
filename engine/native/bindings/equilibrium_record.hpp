@@ -130,14 +130,17 @@ template <class C> std::vector<double*> ideal_anchors(C& c) {
     return {};
 }
 // Property callbacks: the parameter document and a thermochemistry record, no state.
-inline std::string asl_property_record(const ParameterDocument& d, const ThermochemistryRecord& t, const policy::SolverOptions& solver_options = {}) {
+inline std::string asl_property_record(const ParameterDocument& d, const std::optional<ThermochemistryRecord>& t, const policy::SolverOptions& solver_options, bool require_phase_identity) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.property.v2");
+    w.put("epcsaft.asl.property.v3");
+    w.put(require_phase_identity);
     put_document(w, d);
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
-    w.put("standard_pressure"); w.put(t.standard_pressure); w.put("component_intervals"); w.put(t.component_intervals.size());
-    for (const auto& intervals : t.component_intervals) {
+    w.put(t.has_value());
+    if (!t) return w.finish();
+    w.put("standard_pressure"); w.put(t->standard_pressure); w.put("component_intervals"); w.put(t->component_intervals.size());
+    for (const auto& intervals : t->component_intervals) {
         w.put(intervals.size());
         for (const auto& item : intervals) {
             w.put(item.lower); w.put(item.upper); w.put(item.lower_inclusive); w.put(item.upper_inclusive);
