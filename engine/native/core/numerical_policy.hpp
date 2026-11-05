@@ -393,13 +393,22 @@ inline constexpr Tolerance PACKING_FRACTION_CEILING{"PACKING_FRACTION_CEILING",
     "fluid-coordinate ceiling below close packing",
 };
 
-// Floor of the log-packing chart, shared by the compiled preparation's domain test, the
-// optimizer bounds of multi-phase solves and feasibility cells, and the continuation
-// predictor's domain test so all admit the same coordinates.
+// Admission and the optimizer box are separate (#1004). The admission floor is read by
+// admitted_packing_fraction, the continuation predictor and the numerical-estimate domain;
+// the box floor only by the optimizer bounds of multi-phase solves and feasibility cells,
+// where moving it changes optimizer work (#314).
 inline constexpr Tolerance PACKING_FRACTION_FLOOR{"PACKING_FRACTION_FLOOR",
+    std::numeric_limits<double>::min(),
+    Category::AlgorithmTolerance,
+    "smallest positive normal double, the packing-fraction coordinate floor; evaluability is "
+    "decided by the calculation's own finite-value checks",
+};
+
+inline constexpr Tolerance PACKING_FRACTION_BOX_FLOOR{"PACKING_FRACTION_BOX_FLOOR",
     1.0e-12,
     Category::AlgorithmTolerance,
-    "fluid-coordinate floor of the log-packing chart",
+    "lower ln eta bound of multi-phase and feasibility-cell optimizer boxes; its barrier is the "
+    "#314 trust region",
 };
 
 // Below this reduced screening length the closed form of the finite-size correction
@@ -461,7 +470,7 @@ EPC_POLICY_TABLE(const Tolerance*) ENTRIES[] = {
     &LOG_RATIO_NEAR_UNITY, &FIT_RANK_RECIPROCAL_CONDITION, &FIT_DENSITY_PARAMETER_FRACTION, &ADDITION_MATERIAL_BALANCE, &EQUILIBRIUM_ROW_RESIDUAL,
     &EQUILIBRIUM_TRIAL_LOG_STEP, &EQUILIBRIUM_ACTION_BACKWARD_ERROR, &EQUILIBRIUM_ACTION_FORWARD_ERROR, &EQUILIBRIUM_INNER_TOLERANCE_FACTOR,
     &EQUILIBRIUM_POLISH_STEPS, &TWO_DENSITY_FORWARD_ERROR, &MIXTURE_FORWARD_ERROR, &EQUILIBRIUM_POLISH_CORRECTION, &EQUILIBRIUM_TRACE_MOIETY_FRACTION, &EQUILIBRIUM_START_SPECIATION_STEP, &EQUILIBRIUM_START_PRESSURE_STEP, &EQUILIBRIUM_START_PRESSURE_PASSES, &EQUILIBRIUM_MAX_ITERATIONS, &TANGENT_PLANE_SUBSTITUTIONS, &EQUILIBRIUM_CALORIC_SEED_ITERATIONS, &COOLING_RATIO, &EQUILIBRIUM_RECOVERY_SOURCES, &EQUILIBRIUM_RECOVERY_WORK, &PHASE_COINCIDENCE_DISTANCE, &PACKING_FRACTION_CEILING,
-    &PACKING_FRACTION_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
+    &PACKING_FRACTION_FLOOR, &PACKING_FRACTION_BOX_FLOOR, &SCREENING_SERIES_SWITCH, &FLOOR_MARGIN, &STALL_WINDOW};
 
 // Six stopping controls; defaults remain the policies above. Presence survives inheritance.
 enum SolverOption : std::size_t { association, density, row, function, gradient, parameter };

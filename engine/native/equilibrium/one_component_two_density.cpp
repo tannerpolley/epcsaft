@@ -156,16 +156,12 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
         std::vector<double> u;
         for (std::size_t p = 0; p < offsets.size(); ++p)
             u.push_back(initial[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] - log_c);
-        GibbsMinimizer bounds(c, initial, &scope, limits);
-        std::vector<double> lower(initial.size()), upper(initial.size());
-        if (!bounds.physical_bounds(lower, upper)) {
-            if (limits) limits->check();
-            throw std::runtime_error("one-component two-density bounds unavailable");
-        }
+        // The fluid domain on the coordinate vector alone; the wider-precision lift fills only .point.
         const auto inside = [&](const PhasePoint& at) {
-            for (std::size_t i = 0; i < lower.size(); ++i)
-                if (!std::isfinite(at.point[i]) || at.point[i] < lower[i] || at.point[i] > upper[i]) return false;
-            return true;
+            if (!std::all_of(at.point.begin(), at.point.end(), [](double v) { return std::isfinite(v); })) return false;
+            for (std::size_t p = 0; p < offsets.size(); ++p)
+                if (!admitted_packing_fraction(std::exp(at.point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)]))) return false;
+            return at.point[c.primal_size - 1] > 0.0;
         };
         std::optional<PhasePoint> layout;
         const auto evaluate = [&](const std::vector<double>& logs) {
@@ -192,6 +188,15 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                 record.contraction, false, record.amplification);
         };
         auto at = evaluate(u);
+        {  // One ideal-vapor substitution, ln rho_V += ln f_L - ln f_V; kept only if admitted and lower.
+            auto trial = u;
+            trial[c.problem.phases[0].kind == PhaseKind::Liquid ? 1 : 0] += at.rows[1];
+            try {
+                auto candidate = evaluate(trial);
+                if (inside(candidate.phase) && maximum_abs(candidate.rows) < maximum_abs(at.rows)) { u = trial; at = std::move(candidate); }
+            } catch (const std::bad_alloc&) { throw; }
+            catch (const std::exception& error) { retain(error); }
+        }
         const double tolerance = c.problem.solver_options.value(policy::row);
         bool polishing = false;
         double polish_residual = std::numeric_limits<double>::infinity();

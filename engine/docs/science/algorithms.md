@@ -648,6 +648,16 @@ difference of the full chemical rows after eliminating their common standard
 term and multiplier. EqID `one_component_two_density` defines the rows and exact Jacobian. Their log-density Jacobian retains the derivative of the
 liquid pressure scale. The full rows still determine the caller criterion.
 
+Before the first correction, one ideal-vapor substitution $u_V\leftarrow u_V+F_\mu$
+moves the vapor log density by the chemical row $F_\mu=\ln f_L-\ln f_V$; for an ideal
+dilute vapor $\partial F_\mu/\partial u_V=-1$, so it removes the leading ideal-vapor
+discrepancy of the loop start. It is an initial guess only. It is kept when the
+coordinate test admits it and its reduced maximum row is strictly lower; otherwise the
+loop start stays, and the correction loop, full-row convergence, density ordering,
+branch admission and optimizer fallback are unchanged. The coordinate test reads the
+point alone: finite coordinates, both packing fractions admitted, and a strictly
+positive vapor pressure.
+
 The prospective double endpoint retains the compulsory fresh full correction.
 Its corrected endpoint starts the polish residual history. Further exact
 undamped double corrections continue within the same work limits until the
@@ -1098,12 +1108,16 @@ TNLP callback receives them, and the Engine preserves that original extensive
 Gibbs-objective meaning.
 The compiled preparation enforces each phase's packing domain
 [`PACKING_FRACTION_FLOOR`, `PACKING_FRACTION_CEILING`], so Ipopt cuts back a step
-that leaves it. A Gibbs minimization of exactly one declared phase leaves ln η
+that leaves it. The floor is the smallest positive normal double, a coordinate
+floor rather than an evaluability promise: whether the Helmholtz calculation is
+representable is decided by its own finite-value checks, which refuse the state
+with no result. For N-(2-aminoethyl)ethanolamine vapor at 300 K the measured limit is
+η ≈ 1e-146 to 1e-150 (solved at 1e-146, refused at 1e-150). A Gibbs minimization of exactly one declared phase leaves ln η
 unbounded in the optimizer, because the barrier of bounds on ln η pushes a
 near-spinodal liquid off its branch; for such a solve the packing domain
-is a hard refusal that names the phase, so a state outside it (for example a
-dilute vapor below the floor) is refused rather than returned. Every multi-phase
-solve and every feasibility cell keeps the ln η bounds: their barrier acts as a
+is a hard refusal that names the phase. Every multi-phase
+solve and every feasibility cell keeps ln η bounds at the separate box floor
+`PACKING_FRACTION_BOX_FLOOR` (1e-12), so a phase below it is unreachable there: their barrier acts as a
 trust region on liquid density, and without it mid-dome methane/ethane flashes
 fall to the trivial solution or exhaust the iteration budget, and the envelope's
 critical-straddle corrector lands on the trivial solution. Those solves can
@@ -2734,10 +2748,10 @@ retain cheap rank/pivot checks and existing physical-error/refusal warnings,
 without constructing ordinary condition observations. Property and association
 solves inside fit residual/Jacobian evaluations are nested: the returned fit
 result is its parameter state, whose existing final SVD supplies determination.
-The native evaluator marks this internal context in inherited SolverOptions;
+The native evaluator marks these nested evaluations in inherited SolverOptions;
 it is not a caller tolerance or an exposed per-case switch. Direct top-level
 property calls keep their existing-factor endpoint estimates. Rank/pivot
-admission and existing physical-error/refusal warnings run in both contexts.
+admission and existing physical-error/refusal warnings run in both cases.
 The owner's storage amendment retires the uncalled projected-error
 `estimated_linear_error` utility from design r2. The called supplied-factor
 condition estimator and existing exact `linear_error` owner remain; manufactured
@@ -3288,7 +3302,9 @@ spinodal pressures, so both stable roots exist there; distinct-root, positive-sl
 and branch admission are unchanged. A two-root $P_0$ is kept, and supplied
 coordinates still replace generated ones. When this rule runs and finds no such
 $P_w$, the start keeps $P_0$ and refuses with `no positive mechanical-loop witness
-pressure`; starts the rule does not cover keep the generic coexistence refusal. A missing
+pressure`; starts the rule does not cover keep the generic coexistence refusal.
+The two-density reduction's one ideal-vapor substitution (above) follows either start;
+the loop start and the fallback are otherwise unchanged. A missing
 witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
 No pressure is invented and nothing retries; the rule was qualified on the near-critical

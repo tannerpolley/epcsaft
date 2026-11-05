@@ -457,7 +457,7 @@ bool GibbsMinimizer::get_bounds_info(
         if (compiled_.ideal) continue;
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
         if (!compiled_.log_packing_unbounded()) {
-            x_l[offset] = std::log(policy::PACKING_FRACTION_FLOOR.value);
+            x_l[offset] = std::log(policy::PACKING_FRACTION_BOX_FLOOR.value);
             x_u[offset] = std::log(policy::PACKING_FRACTION_CEILING.value);
         }
         ++offset;

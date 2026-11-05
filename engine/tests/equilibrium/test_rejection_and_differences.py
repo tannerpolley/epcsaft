@@ -1,4 +1,5 @@
 """#976: rejected declared splits carry one verdict; native central differences verify exact derivatives."""
+import math
 from functools import cache
 
 import pytest
@@ -7,10 +8,10 @@ from epcsaft import (
     DensityActionDirection, Mixture, ParameterError, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop,
     ThermochemistryPacket,
 )
-from epcsaft._core import EquilibriumResult, StabilityReport
+from epcsaft._core import EquilibriumResult, EquilibriumStart, EquilibriumWorkLimits, StabilityReport
 from epcsaft.equilibrium import (
     Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
-    compile_problem, jacobian_table, solve_equilibrium, solved_state_difference,
+    compile_problem, jacobian_table, solve_equilibrium, solve_equilibrium_starts, solved_state_difference,
 )
 
 from tests.packets import PACKETS
@@ -145,3 +146,28 @@ def test_ideal_action_beyond_close_packing_refuses() -> None:
     with pytest.raises(ParameterError, match="outside the fluid domain"):
         model.density_actions(300.0, 2.0 * model.molar_density_upper_bound(300.0),
                               observables=(PropertyObservable.IdealEntropy,), directions=(DensityActionDirection(0.0, 1.0),))
+
+
+@pytest.mark.parametrize(("T", "packing"), [(150.0, None), (220.0, None), (300.0, 1e-200)])
+def test_dilute_vapor_saturation_and_unrepresentable_refusal(T: float, packing: float | None) -> None:
+    """#1004: N-(2-aminoethyl)ethanolamine (Esper 2023) saturation with vapor packing below 1e-12 meets
+    P_sat = P0 phi_L(T, P0), P0 = 1e-3 Pa, within 1e-6 (the dropped Poynting and vapor terms are below 3e-10).
+    A supplied vapor packing of 1e-200 at 300 K is not representable and must return no state."""
+    if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
+        pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
+    model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
+    if packing is None:
+        result = solve_equilibrium(model, model.saturation(T))
+        assert result.success, result.message
+        log_phi = model.state(T, P=1e-3, phase="liquid").log_fugacity_coefficient
+        assert log_phi is not None and log_phi[0] is not None
+        reference = 1e-3 * math.exp(log_phi[0])
+        assert result.pressure is not None and abs(result.pressure / reference - 1.0) <= 1e-6
+        return
+    out = solve_equilibrium_starts(model, Problem(phases=[Phase("V", kind="vapor")], T=T, P=1e-192,
+                                                  feed=Amounts({model.component_ids[0]: 1.0})),
+                                   [EquilibriumStart(compositions=[[1.0]], packing_fractions=[packing])],
+                                   EquilibriumWorkLimits(attempts=1))
+    [refused] = out.results
+    assert out.selected is None and refused is not None and not refused.success
+    assert refused.pressure is None and not list(refused.molar_densities) and not list(refused.packing_fractions)
