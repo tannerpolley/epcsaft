@@ -323,6 +323,16 @@ void properties_p2() {
             "absolute", covered, "coefficient-volume-floor", "volume", "error", "T,V,n",
             "error>=achieved-site-residual-floor", "case");
         CHECK(covered);
+        // #1000: the row's active segment count (10 x 4.5354) puts half the stored cap above that geometry's cap.
+        const epcsaft::HelmholtzModel active(associating_parameters, {{epcsaft::ParameterFamily::SegmentCount, {0}}});
+        const double rho = 0.5 * active.molar_density_upper_bound(temperature, composition);
+        const auto center = active.evaluate(temperature, 1.0 / rho, composition, epcsaft::DerivativeOrder::Value);
+        bool refused = false;
+        try {
+            (void)active.residual_coefficient_errors({{temperature, 1.0 / rho, 0.3, 0.7,
+                10.0 * associating_parameters.segment_count[0]}}, center.site_fractions);
+        } catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
     }
     const auto record_zero_support = [&](const char* point,
                                          const epcsaft::HelmholtzModel& model,

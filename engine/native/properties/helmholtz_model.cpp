@@ -1345,12 +1345,14 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     std::vector<double> errors(count, 0.0);
     if (ns == 0) return errors;
     std::lock_guard<std::mutex> lock(mutex_);
-    const auto& p = parameters_;
+    // The tape evaluates the row's active parameters, so the admission and the site system use them too.
+    const auto p = detail::make_tape_parameters<double>(parameters_, active_,
+        {regular[0].begin() + 2 + static_cast<std::ptrdiff_t>(parameters_.component_count()), regular[0].end()});
     double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
     std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
     for (double& x : composition) x /= total;
     const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
-    // association_delta admits the central density before the tape is recorded or replayed.
+    // association_delta admits the central density and geometry before the tape is recorded or replayed.
     const auto lu = properties::site_factorization(sites, composition, p,
         total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3,
         association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter));
