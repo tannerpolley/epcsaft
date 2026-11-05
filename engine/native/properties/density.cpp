@@ -1272,7 +1272,9 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
             throw DiagnosticBudgetExhausted();
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
-        auto point = at_density(series, temperature, pressure, composition, rho, result.evaluations, order);
+        // A fluid-domain refusal is an unavailable point here, like the geometric exit above.
+        auto point = [&] { try { return at_density(series, temperature, pressure, composition, rho, result.evaluations, order); }
+            catch (const std::invalid_argument& error) { throw std::runtime_error(error.what()); } }();
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
             throw std::runtime_error("nonfinite density evaluation");
         return point;

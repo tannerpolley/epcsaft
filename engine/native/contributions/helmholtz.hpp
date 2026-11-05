@@ -224,12 +224,12 @@ Scalar packing_fraction_from_geometry(
     // EqID: close_packing_fraction
     // The one fluid-domain refusal: a non-finite, non-positive or close-packed density reaches no Helmholtz or
     // association term. A recorded AD tape is replayed only after its double site solve passed this check.
-    const auto refuse = [](const auto& value) {
-        if (!(value > 0.0 && value < policy::CLOSE_PACKING_FRACTION.value))
+    const auto refuse = [](const auto& density, const auto& packing) {
+        if (!(density > 0.0 && packing < policy::CLOSE_PACKING_FRACTION.value))
             throw std::invalid_argument("packing fraction outside the fluid domain");
     };
-    if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) refuse(eta);
-    else if constexpr (is_taylor<Scalar>) refuse(eta.c[0]);
+    if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) refuse(molar_density, eta);
+    else if constexpr (is_taylor<Scalar>) refuse(molar_density.c[0], eta.c[0]);
     return eta;
 }
 

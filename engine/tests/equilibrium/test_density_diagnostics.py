@@ -24,8 +24,9 @@ def test_density_crossings_and_finite_domain() -> None:
     assert max(abs(fold.residual) for fold in diagnostic.spinodals) <= 1e-10
     boundary = diagnostic.finite_domain
     assert boundary is not None
-    assert boundary.lower <= cap <= boundary.upper
-    assert (boundary.upper - boundary.lower) / cap <= 1e-13
+    # The close-packing refusal ends the finite domain at the cap, within the rounding of eta = rho * coefficient.
+    assert boundary.lower < boundary.upper <= cap
+    assert (cap - boundary.lower) / cap <= 1e-13
     errors = []
     for rho in (1e-6, 5e-7):
         state = model.state(T, rho=rho)

@@ -500,15 +500,12 @@ void producer_boundaries() {
         nonfinite = error.record.stop == Stop::nonfinite;
     }
 
-    epcsaft::core::Convergence domain_record;
+    // A negative density never reaches the site solve: the fluid-domain owner refuses it first.
     bool domain = false;
     try {
-        (void)epcsaft::solve_site_fractions(
-            300.0, -1.0e8, {0.4, 0.6}, parameters, sigma, diameter,
-            &domain_record);
-    } catch (const epcsaft::core::ConvergenceFailure& error) {
-        domain_record = error.record;
-        domain = error.record.stop == Stop::left_domain;
+        (void)epcsaft::solve_site_fractions(300.0, -1.0e8, {0.4, 0.6}, parameters, sigma, diameter);
+    } catch (const std::invalid_argument&) {
+        domain = true;
     }
 
     // ALG-ASSOCIATION: a full-rank rejected pivot is distinct from final site convergence.
@@ -556,17 +553,13 @@ void producer_boundaries() {
         "Relationship", "constraint-callback", "an unmeasured refusal residual is unavailable", "absolute", 0.0, 0.0,
         unavailable, "native.diagnostics.c3", "C3", "callback", "residual", "trial-coordinates", "no fabricated zero");
     const bool verdict = nonfinite && domain
-        && !std::isfinite(nonfinite_record.residual)
-        && std::isinf(domain_record.residual);
+        && !std::isfinite(nonfinite_record.residual);
     recording_support::compare(
         "producer-boundaries", "typed-stops", "1", verdict ? 1.0 : 0.0, 1.0,
         recording_support::fields({
             recording_support::field("nonfinite_stop",
                                      epcsaft::core::stop_name(nonfinite_record.stop)),
-            recording_support::field("domain_stop",
-                                     epcsaft::core::stop_name(domain_record.stop)),
             recording_support::field("nonfinite_residual", nonfinite_record.residual),
-            recording_support::field("domain_residual", domain_record.residual),
             recording_support::field("T", 300.0),
             recording_support::field("rho_nonfinite", 1.0e4),
             recording_support::field("rho_domain", -1.0e8),

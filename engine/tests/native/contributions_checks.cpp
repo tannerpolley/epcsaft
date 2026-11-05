@@ -490,21 +490,23 @@ void association_equations_match_closed_forms_and_limits() {
     record("limit-zero-strength-energy", "association_helmholtz",
            zero_strength_result.association, 0.0,
            inputs(zero_strength, pure, "limit:zero-strength"), "X=1 gives a_assoc=0");
+    // The smallest positive density: zero itself is outside the fluid domain.
+    const double zero_density = std::numeric_limits<double>::min();
     const auto zero_density_fractions = epcsaft::solve_site_fractions(
-        temperature, 0.0, pure, symmetric, sigma, diameter
+        temperature, zero_density, pure, symmetric, sigma, diameter
     );
     record("limit-zero-density-x", "site_fraction", zero_density_fractions[0], 1.0,
-           recording_support::fields({model_inputs(symmetric, temperature, 0.0, pure),
+           recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
                recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
-           "rho_N=0 gives X=1");
+           "rho_N -> 0 gives X=1");
     const auto zero_density_terms = epcsaft::residual_helmholtz(
-        temperature, 0.0, pure, symmetric, sigma, diameter, zero_density_fractions, 0.0, 0.0
+        temperature, zero_density, pure, symmetric, sigma, diameter, zero_density_fractions, 0.0, 0.0
     );
     record("limit-zero-density-energy", "association_helmholtz",
            zero_density_terms.association, 0.0,
-           recording_support::fields({model_inputs(symmetric, temperature, 0.0, pure),
+           recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
                recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
-           "rho_N=0 and X=1 give a_assoc=0");
+           "rho_N -> 0 and X=1 give a_assoc=0");
     Parameters absent = symmetric;
     absent.site_component = {1};
     absent.site_multiplicity = {1};
