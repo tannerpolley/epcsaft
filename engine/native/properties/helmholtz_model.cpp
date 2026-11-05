@@ -1349,11 +1349,12 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
     std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
     for (double& x : composition) x /= total;
-    ensure_tape(regular[0], sites, predicate_signature(regular[0][0], composition), {}, 0.0, true);
     const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
+    // association_delta admits the central density before the tape is recorded or replayed.
     const auto lu = properties::site_factorization(sites, composition, p,
         total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3,
         association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter));
+    ensure_tape(regular[0], sites, predicate_signature(regular[0][0], composition), {}, 0.0, true);
     std::vector<double> coefficients(count * ns, 0.0), input(width + ns), known(count * ns, 0.0);
     std::copy(sites.begin(), sites.end(), coefficients.begin());
     for (std::size_t k = 0; k < count; ++k) {
@@ -1774,12 +1775,13 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     PropertyActionBatch result;
     std::optional<core::Convergence> first;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
-    std::vector<double> sites, sigma, diameter;
+    std::vector<double> sites;
+    const auto sigma = segment_sigma(temperature, parameters_);
+    require(positive_vector(sigma), "sigma correlation");
+    const auto diameter = segment_diameter(temperature, parameters_, sigma);
+    require(positive_vector(diameter), "segment diameter");
+    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, diameter);  // ideal-only actions too
     if (need_residual) {
-        sigma = segment_sigma(temperature, parameters_);
-        require(positive_vector(sigma), "sigma correlation");
-        diameter = segment_diameter(temperature, parameters_, sigma);
-        require(positive_vector(diameter), "segment diameter");
         require_law_domain(temperature, parameters_);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions,

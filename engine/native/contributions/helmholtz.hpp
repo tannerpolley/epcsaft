@@ -213,9 +213,9 @@ Scalar packing_fraction_from_geometry(
     const ParameterSet& parameters,
     const std::vector<Fixed>& diameter
 ) {
-    if (parameters.ideal_gas) return Scalar(0);
+    // An ideal gas has no segments, so its zero moment leaves only the density check.
     Fixed moment = Fixed(0.0);
-    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+    for (std::size_t component = 0; !parameters.ideal_gas && component < mole_fractions.size(); ++component) {
         moment += mole_fractions[component]
             * parameters.segment_count[component]
             * diameter[component] * diameter[component] * diameter[component];
@@ -223,7 +223,7 @@ Scalar packing_fraction_from_geometry(
     const Scalar eta = (Scalar(PI) / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
     // EqID: close_packing_fraction
     // The one fluid-domain refusal: a non-finite, non-positive or close-packed density reaches no Helmholtz or
-    // association term. A recorded AD tape is replayed only after its double site solve passed this check.
+    // association term. Model entries call it on the central double state before recording or replaying a tape.
     const auto refuse = [](const auto& density, const auto& packing) {
         if (!(density > 0.0 && packing < policy::CLOSE_PACKING_FRACTION.value))
             throw std::invalid_argument("packing fraction outside the fluid domain");

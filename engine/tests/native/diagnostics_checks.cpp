@@ -312,11 +312,12 @@ void association_records() {
     const double q = rho * NUMBER_DENSITY_PER_ANGSTROM3 * delta;
     const double reference = 2.0 / (1.0 + std::sqrt(1.0 + 4.0 * q));
     const std::vector<double> start{0.625}, strength{delta};
+    const auto sigma = segment_sigma(300.0, parameters), diameter = segment_diameter(300.0, parameters, sigma);
     std::size_t default_work = 0;
     for (const double tolerance : {policy::ASSOCIATION_RESIDUAL.value, 1e-8}) {
         policy::SolverOptions request; request.set(policy::association, tolerance);
         const auto options = request.resolved({}); core::Convergence record;
-        const auto x = solve_site_fractions(300.0, rho, {1.0, 0.0}, parameters, {}, {}, &record,
+        const auto x = solve_site_fractions(300.0, rho, {1.0, 0.0}, parameters, sigma, diameter, &record,
             &start, &strength, false, options).at(0);
         const double residual = std::abs(x * (1.0 + q * x) - 1.0);
         const bool strict = tolerance == policy::ASSOCIATION_RESIDUAL.value;

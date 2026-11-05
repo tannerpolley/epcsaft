@@ -3,7 +3,10 @@ from functools import cache
 
 import pytest
 
-from epcsaft import Mixture, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop
+from epcsaft import (
+    DensityActionDirection, Mixture, ParameterError, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop,
+    ThermochemistryPacket,
+)
 from epcsaft._core import EquilibriumResult, StabilityReport
 from epcsaft.equilibrium import (
     Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
@@ -131,3 +134,14 @@ def test_polish_trial_beyond_close_packing_is_a_domain_refusal() -> None:
     densities = [r.first_conditioning_warning.controls[1] for r in result.rank_records
                  if r.basis == "mass_action_site_fractions" and r.first_conditioning_warning is not None]
     assert all(0.0 < d < close_packed for d in densities), densities
+
+
+def test_ideal_action_beyond_close_packing_refuses() -> None:
+    """#1000: an ideal-only action at twice toluene's close-packing density (HDA PC-SAFT, NASA9 at 300 K) refuses
+    like its residual action instead of returning an ideal entropy."""
+    model = Pure(Parameters.from_json(PACKETS / "hda-pc-saft/1/parameters/parameters.json", components=["toluene"]),
+                 thermochemistry=ThermochemistryPacket(
+                     PACKETS / "nasa-glenn-2002-hda-species/1/parameters/nasa9-records.json").select(["toluene"]))
+    with pytest.raises(ParameterError, match="outside the fluid domain"):
+        model.density_actions(300.0, 2.0 * model.molar_density_upper_bound(300.0),
+                              observables=(PropertyObservable.IdealEntropy,), directions=(DensityActionDirection(0.0, 1.0),))

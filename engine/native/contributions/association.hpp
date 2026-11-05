@@ -229,8 +229,7 @@ inline std::vector<double> solve_site_fractions(
 ) {
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
-    // Every double evaluation and tape replay solves its sites here first; a supplied strength was admitted where computed.
-    if (strength == nullptr) (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
+    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         if (record != nullptr) {

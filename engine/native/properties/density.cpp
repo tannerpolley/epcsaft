@@ -137,6 +137,7 @@ public:
         }();
         const auto& [total, composition] = path;
         const Series rho = total / v;
+        (void)packing_fraction_from_geometry(rho0, composition_, parameters_, diameter_);  // before any density term
         // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
         static thread_local std::vector<Series> delta, site_series, residuals;
         static thread_local std::vector<double> strength;
