@@ -137,9 +137,6 @@ public:
         }();
         const auto& [total, composition] = path;
         const Series rho = total / v;
-        if constexpr (!std::is_same_v<Base, double>)
-            if (packing_moments(rho, composition, parameters_, std::vector<Series>(diameter_.begin(), diameter_.end()))[3].c[0] >= policy::CLOSE_PACKING_FRACTION.value)
-                throw std::invalid_argument("packing fraction is at or above close packing");
         // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
         static thread_local std::vector<Series> delta, site_series, residuals;
         static thread_local std::vector<double> strength;

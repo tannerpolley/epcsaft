@@ -220,7 +220,17 @@ Scalar packing_fraction_from_geometry(
             * parameters.segment_count[component]
             * diameter[component] * diameter[component] * diameter[component];
     }
-    return (Scalar(PI) / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
+    const Scalar eta = (Scalar(PI) / 6.0) * molar_density * NUMBER_DENSITY_PER_ANGSTROM3 * moment;
+    // EqID: close_packing_fraction
+    // The one fluid-domain refusal: a non-finite, non-positive or close-packed density reaches no Helmholtz or
+    // association term. A recorded AD tape is replayed only after its double site solve passed this check.
+    const auto refuse = [](const auto& value) {
+        if (!(value > 0.0 && value < policy::CLOSE_PACKING_FRACTION.value))
+            throw std::invalid_argument("packing fraction outside the fluid domain");
+    };
+    if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) refuse(eta);
+    else if constexpr (is_taylor<Scalar>) refuse(eta.c[0]);
+    return eta;
 }
 
 // EqID: packing_moments
@@ -433,12 +443,6 @@ HelmholtzResult<Scalar> residual_helmholtz(
     }
 
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
-    if constexpr (std::is_same_v<Scalar, double>) {
-        // EqID: close_packing_fraction
-        if (zeta[3] >= policy::CLOSE_PACKING_FRACTION.value) {
-            throw std::invalid_argument("packing fraction is at or above close packing");
-        }
-    }
 
     const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
     // EqID: hard_sphere_helmholtz

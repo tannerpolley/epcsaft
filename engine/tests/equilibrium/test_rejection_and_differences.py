@@ -117,3 +117,17 @@ def test_failed_neighbor_is_a_status() -> None:
     [check] = solved_state_difference(compile_problem(methane_ethane(), problem), solve_equilibrium(methane_ethane(), problem),
                                       [pressure], SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], []), 70.0, 1e-8, 10.0)
     assert check.status == "neighbor_unavailable" and check.cause
+
+
+def test_polish_trial_beyond_close_packing_is_a_domain_refusal() -> None:
+    """#1000: N-(2-aminoethyl)ethanolamine (Esper 2023) saturation at 150 K; the polish's damped trial at 1.4e162
+    mol/m³ reached the site solve. No retained warning may carry a density at or above close packing."""
+    if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
+        pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
+    model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
+    result = solve_equilibrium(model, model.saturation(150.0))
+    close_packed = model.molar_density_upper_bound(150.0)
+    # Site-solve warnings report (T, molar density, x).
+    densities = [r.first_conditioning_warning.controls[1] for r in result.rank_records
+                 if r.basis == "mass_action_site_fractions" and r.first_conditioning_warning is not None]
+    assert all(0.0 < d < close_packed for d in densities), densities
