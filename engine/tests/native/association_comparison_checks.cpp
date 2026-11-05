@@ -89,9 +89,13 @@ void association_unit_ceiling() {
         0.0, 0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0,
         0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0, 0.0,
     };
+    // The capture kept no segment geometry. The 99.7 % species is water: its segment number and sigma
+    // (data/packets/held-2014-strategy2) for all six species give packing 0.44, inside the fluid domain.
+    parameters.segment_count = std::vector<double>(6, 1.2047);
+    const std::vector<double> diameter(6, 2.7927);
     epcsaft::core::Convergence convergence;
     const auto fractions = epcsaft::solve_site_fractions(temperature, density, mole_fractions,
-        parameters, {}, {}, &convergence, nullptr, &strength);
+        parameters, {}, diameter, &convergence, nullptr, &strength);
     const auto residuals = epcsaft::association_residuals(density, mole_fractions,
         parameters, fractions, strength);
     double residual = 0.0;
