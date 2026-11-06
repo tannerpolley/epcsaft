@@ -705,6 +705,9 @@ options file or an ineligible declaration. Previous-result, optimizer-transfer
 and bounded calls retain their existing general entry points. Rejection retains
 an owned failed result and continues once from the original start, adding its
 work once without replacing the fallback's own endpoint or linear diagnostics.
+After this complete cold calculation fails, both entries use the same bounded
+pure recovery in the source-recovery owner described below. Successful cold
+calculations return before any source declaration or allowance is constructed.
 The bulk snapshot retains optional absence until a record is evaluated and an
 owning reference to the complete result. Phase pressures are evaluated natively
 at the actually exported densities. Direct pure-state evaluations retain inner
@@ -3425,7 +3428,8 @@ The two-density reduction's one ideal-vapor substitution (above) follows either 
 the loop start and the fallback are otherwise unchanged. A missing
 witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
-No pressure is invented and nothing retries; the rule was qualified on the near-critical
+No pressure is invented by this rule; the complete cold calculation may enter
+the bounded pure recovery below after refusal. The witness rule was qualified on the near-critical
 alcohol saturation states of the [Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md)
 . Final residual and stability checks are unchanged.
 
@@ -3450,7 +3454,33 @@ convergence guarantee.
 
 ### Neutral recovery
 
-<a id="neutral-recovery"></a>**Neutral recovery.** An ordinary neutral, nonreacting, non-associating
+<a id="neutral-recovery"></a>**Pure saturation recovery.** For an ordinary cold call
+eligible for the one-component two-density reduction, including associating fluids,
+the source-recovery owner replaces its former pure cooling/continuation schedule
+with at most four source declarations at `COOLING_RATIO` times target T, its
+reciprocal times T, 1.25 times T, and 1.5 times T, in that order. These are initialization
+choices, not coexistence correlations. Each accepted source supplies at most one
+target solve; a failed or throwing source is never transported. Both the general
+and prepared entries invoke this owner after their original initialization,
+reduction and original-start general fallback fail, including target density
+initialization or admission failure. The mixture recovery below excludes this
+pure domain; two allowances cannot be chained. Explicit starts, optimizer-transfer,
+limited internal calls and optimizer-options overrides retain their existing paths.
+
+Internal source and target solves disable further recovery and share one allowance:
+512 added iterations, 2,048 evaluations and 1,024 Hessian callbacks, including
+failed calls. Each existing lower-level density and association calculation keeps
+its own finite limits. A spent allowance ends all source and target work. The
+returned work adds that cumulative use once to the original cold work, retaining
+both failure causes and no usable state on failure. Allocation failure propagates.
+Accepted source densities are transported into the target's packing chart using
+the target temperature's native packing coefficient, before any redundant target
+cold pressure-root initialization. The existing correction, polish, topology,
+local stability and independent target density-branch admission remain required;
+source anchors never certify target branch existence. No critical estimate or
+implicit global stability search is made.
+
+**Other neutral recovery.** An ordinary neutral, nonreacting, non-associating
 declared L+V solve may perform one bounded continuation recovery only after coincidence, local phase
 instability, local infeasibility or an optimizer iteration limit. A successful ordinary result returns
 unchanged. Recovery uses the existing driver, start mapper, exact predictor/corrector and anchored phase

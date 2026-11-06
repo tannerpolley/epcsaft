@@ -134,9 +134,10 @@ struct DriverLimits final {
         return !exhausted && ++used;
     }
 };
-// ALG-EQUILIBRIUM neutral recovery (#565) of an eligible failed target from the first admitted lower-temperature
-// source and the straight controller; spends `limits`. A refusal has no state and its message is the recovery cause.
+// ALG-EQUILIBRIUM source recovery: the finite pure-temperature schedule or mixture source/continuation;
+// all child calculations spend `limits`. A refusal has no state and retains the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
+EquilibriumResult recover_from_source(const CompiledSystem&, EquilibriumResult);
 // #987: the finite trial search of a coalesced fixed-T/P flash before recovery, charged to `limits`.
 EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const DriverLimits& limits);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);

@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <limits>
 #include <numeric>
@@ -1645,7 +1646,8 @@ ContinuationResult continue_equilibrium(const HelmholtzModel& model, const Conti
     return continue_path(model, request, nullptr, {});
 }
 
-// ALG-EQUILIBRIUM neutral recovery: the first admitted source at T_seed r^j, then fixed-T continuation, or for a
+// ALG-EQUILIBRIUM: pure saturation uses four neighboring sources and direct target transport; mixtures use
+// the first admitted source at T_seed r^j, then fixed-T continuation, or for a
 // free-T boundary a same-source chart correction at the source pressure and fixed-P continuation. Internal
 // declarations carry no guesses; boundary endpoints share one free-intensive seed. No second source after a path stop.
 EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits) {
@@ -1662,6 +1664,30 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     auto source = declared;
     if (free_temperature) source.pressure = FreeValue::variable();
     try {
+        if (one_component_two_density_eligible(target)) {
+            for (double ratio : {policy::COOLING_RATIO.value, 1.0 / policy::COOLING_RATIO.value, 1.25, 1.5}) {
+                limits.check();
+                source.temperature = FreeValue::fixed(target.seed_temperature() * ratio);
+                EquilibriumResult audit;
+                try {
+                    found = solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits, {}, false, &audit);
+                    observations.observe(found);
+                    scope.probe("recovery_source", {source.temperature.value}, 0, found.message.c_str());
+                    if (!found.success) continue;
+                    auto reached = solve_compiled(target, found, nullptr, &limits, {}, false, &audit);
+                    observations.observe(reached);
+                    if (reached.success) return publish(std::move(reached));
+                    refused.message = reached.message;
+                } catch (const std::bad_alloc&) { throw; }
+                catch (const std::exception& error) {
+                    observations.observe(audit);
+                    retain_density_failure(observations.first_numerical_failure, error, "saturation source");
+                    refused.message = error.what();
+                }
+            }
+            if (refused.message.empty()) refused.message = "no admitted saturation source: " + found.message;
+            return publish(std::move(refused));
+        }
         for (int j = 1; j <= static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value) && !found.success; ++j) {
             limits.check();  // the slot is spent before compilation
             source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, j));
@@ -1709,11 +1735,27 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         }
         reached.declaration = std::make_shared<const EquilibriumProblem>(target.problem);
         return publish(std::move(reached));
-    } catch (const std::exception& error) {
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {
         retain_density_failure(observations.first_numerical_failure, error, "source recovery");
         refused.message = error.what();
         return publish(std::move(refused));
     }
+}
+
+EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumResult failed) {
+    if (failed.success || !one_component_two_density_eligible(target) || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) return failed;
+    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    DriverLimits work{cap, std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    auto recovered = recover_from_source(target, work);
+    StageWork observations; observations.observe(failed); observations.observe(recovered);
+    std::move(observations).publish_observations(recovered.success ? recovered : failed);
+    failed.iterations += work.consumed; failed.evaluations += work.evaluations; failed.hessian_calls += work.hessian_calls;
+    if (!recovered.success) { failed.message += "; recovery: " + recovered.message; return failed; }
+    recovered.message += "; recovered after: " + failed.message;
+    recovered.rejected_reduction = failed.rejected_reduction;
+    recovered.iterations = failed.iterations; recovered.evaluations = failed.evaluations; recovered.hessian_calls = failed.hessian_calls;
+    return recovered;
 }
 
 

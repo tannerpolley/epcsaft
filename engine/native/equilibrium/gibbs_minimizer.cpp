@@ -2050,7 +2050,8 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     bool recover, EquilibriumResult* audit, const EquilibriumResult& structural, StageWork stages,
     std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint) {
     const auto& model = *compiled.model;
-    const bool use_start = start.has_value() && usable_start(compiled, *start);
+    const bool pure_source = start && start->success && limits && limits->recovery && one_component_two_density_eligible(compiled);
+    const bool use_start = pure_source || (start.has_value() && usable_start(compiled, *start));
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
@@ -2085,6 +2086,13 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
                 throw;
             }
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+            if (pure_source) {
+                const double shift = std::log(model.packing_fraction_coefficient(compiled.seed_temperature(), {1.0})
+                    / model.packing_fraction_coefficient(*start->temperature, {1.0}));
+                const auto offsets = compiled.phase_offsets();
+                for (std::size_t p = 0; p < offsets.size(); ++p)
+                    initial[offsets[p] + 1 + (compiled.problem.phases[p].is_free() ? 1 : 0)] += shift;
+            }
         }
         if (!original && (newton_eligible(compiled) || (!warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && free_amount_newton_eligible(compiled)))) {
             auto fast = one_component_two_density_eligible(compiled)
@@ -2124,7 +2132,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     result = recover_physical_amounts(compiled, std::move(result), retry_eligible && !admission_refused,
         scope, nullptr, limits, nullptr, nullptr, true);
     result.rejected_reduction = rejected;
-    if (result.success || !recover || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
+    if (result.success || !recover || one_component_two_density_eligible(compiled) || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
         || !recovery_eligible(compiled) || !recovery_trigger(result)) return selected(std::move(result), limits);
     // ALG-EQUILIBRIUM neutral recovery: its own caps, within any caller remainder; both causes and all work are kept.
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
@@ -2246,6 +2254,21 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     if (!compiled.feasible) return structural;
     if (compiled.ideal) return run_driver_once(nullptr, compiled, compiled.generic_point(), structural, scope,
         nullptr, nullptr, limits, false, {}, false, false);
+    const bool pure_recovery = recover && !limits && !start && !warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && one_component_two_density_eligible(compiled);
+    if (pure_recovery) {
+        auto result = structural;
+        try { result = continue_compiled(compiled, start, scope, limits, std::move(warm), recover, &result, structural, {}, std::nullopt, {}, select_endpoint); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            core::retain_failure(result.first_numerical_failure, error, "saturation initialization");
+            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.terminal_numerical_failure = failure->record;
+            result.message = error.what(); result.success = false; clear_state(result);
+            if (!result.last_full_evaluation) result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
+        }
+        result = recover_from_source(compiled, std::move(result));
+        if (audit) *audit = result;
+        return result;
+    }
     const bool critical = recover && !start && !limits && !warm && compiled.problem.critical
         && compiled.n_feed.size() == 1 && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     EquilibriumResult result = structural;
@@ -2257,6 +2280,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
         core::retain_failure(result.first_numerical_failure, error, "critical initialization");
     }
     return critical && !result.success ? recover_critical(compiled, std::move(result), scope) : result;
+
 }
 
 #include "equilibrium/starts.hpp"

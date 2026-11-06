@@ -376,7 +376,7 @@ EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
         core::retain_failure(failed.first_numerical_failure, error, "saturation initialization");
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) failed.terminal_numerical_failure = failure->record;
         stages.report(failed);
-        return failed;
+        return recover_from_source(compiled, std::move(failed));
     }
     auto result = one_component_two_density_attempt(compiled, initial, structural, scope, nullptr);
     if (!result.success) {
@@ -396,6 +396,7 @@ EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
             result.rejected_reduction = rejected;
         }
     } else stages.report(result);
+    if (!result.success) result = recover_from_source(compiled, std::move(result));
     if (result.has_state() && result.phase_pressures.empty()) {
         for (const auto density : result.molar_densities) {
             const auto pure = compiled.model->pure_isothermal(*result.temperature, 1.0 / density);

@@ -1172,6 +1172,53 @@ void check_pure_saturation() {
             "Relationship", "pure_isothermal_projection", "exact reduction, lift or homogeneity", "quantity scale",
             std::isfinite(error) && error <= 1e-10, "pure-saturation");
     };
+    {
+        // Ascani et al. (2022), SI Table S1; matched Clapeyron 0.6.29 saturation at this T.
+        auto butanol = pure_saturation_checks::methanol();
+        butanol.segment_count = {2.751}; butanol.sigma_constant = {3.6139}; butanol.dispersion_energy_over_k = {259.59};
+        butanol.molar_mass_kg_per_mol = {0.0741216};
+        butanol.association_energy_over_k = {0, 2544.56, 2544.56, 0}; butanol.association_volume = {0, 0.00669, 0.00669, 0};
+        HelmholtzModel alcohol(butanol);
+        constexpr double t = 573.9371778776721;
+        auto declaration = pure_saturation_checks::saturation(t);
+        declaration.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+        const auto recovery = compile_problem(alcohol, declaration);
+        for (const auto& r : {solve_equilibrium(alcohol, declaration), solve_saturation(recovery)}) {
+            if (!r.has_state()) throw std::runtime_error("1-butanol saturation: " + r.message);
+            CHECK(r.success && r.requested_tolerance_met.value_or(false));
+            CHECK(r.molar_densities.size() == 2 && r.molar_densities[0] > r.molar_densities[1]);
+            const std::array<double, 3> actual{*r.pressure, r.molar_densities[0], r.molar_densities[1]};
+            const std::array<double, 3> reference{5141286.808530884, 4799.7850551117945, 2489.9985972941704};
+            for (std::size_t i = 0; i < actual.size(); ++i) CHECK(std::abs(actual[i] / reference[i] - 1) <= 1e-8);
+            for (double rho : r.molar_densities) CHECK(alcohol.pure_isothermal(t, 1 / rho).pressure_density_derivative > 0);
+            const auto e = equilibrium_numerical_estimates(alcohol, r);
+            CHECK(e.pressure.available && e.densities[0].available && e.densities[1].available);
+        }
+    }
+    {
+        // Esper et al. (2023) packet; matched Clapeyron 0.6.29, 256-bit saturation reference.
+        auto acid = pure_saturation_checks::methanol();
+        acid.segment_count = {5.73449}; acid.sigma_constant = {2.85689}; acid.dispersion_energy_over_k = {96.27318};
+        acid.molar_mass_kg_per_mol = {0.130099};
+        acid.association_energy_over_k = {0, 4687.23659, 4687.23659, 0}; acid.association_volume = {0, 0.53373, 0.53373, 0};
+        HelmholtzModel acid_model(acid);
+        constexpr double t = 155.05124503036768;
+        auto declaration = pure_saturation_checks::saturation(t);
+        declaration.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+        const auto recovery = compile_problem(acid_model, declaration);
+        for (const auto& r : {solve_equilibrium(acid_model, declaration), solve_saturation(recovery)}) {
+            if (!r.has_state()) throw std::runtime_error("2-methylhexanoic acid saturation: " + r.message);
+            CHECK(r.success && r.requested_tolerance_met.value_or(false));
+            CHECK(r.molar_densities.size() == 2 && r.molar_densities[0] > r.molar_densities[1]);
+            const std::array<double, 3> actual{*r.pressure, r.molar_densities[0], r.molar_densities[1]};
+            const std::array<double, 3> reference{2.788175874050514e-9, 9794.137519856534, 2.1632435484788945e-12};
+            for (std::size_t i = 0; i < actual.size(); ++i) CHECK(std::abs(actual[i] / reference[i] - 1) <= 1e-8);
+            for (double rho : r.molar_densities) CHECK(acid_model.pure_isothermal(t, 1 / rho).pressure_density_derivative > 0);
+            const auto e = equilibrium_numerical_estimates(acid_model, r);
+            CHECK(e.pressure.available && e.densities[0].available && e.densities[1].available);
+            CHECK(e.pressure.resolved && e.densities[0].resolved && e.densities[1].resolved);
+        }
+    }
     for (const auto& [name, parameters, temperature] : std::vector<std::tuple<std::string, Parameters, double>>{
         {"propane", caloric_specification_checks::propane_parameters(), 300},
         {"propane-low-pressure", caloric_specification_checks::propane_parameters(), 110},
