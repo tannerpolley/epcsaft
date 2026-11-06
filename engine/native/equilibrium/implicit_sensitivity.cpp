@@ -72,7 +72,9 @@ SensitivityInfo inspect_sensitivity(
         throw std::invalid_argument("equilibrium Jacobian shape");
     }
     const auto matrix = dense_matrix(jacobian, rows, dimension);
-    const auto lu = matrix.fullPivLu();
+    const auto [row_scale, column_scale] = power_of_two_equilibration(matrix);
+    const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
+    const auto lu = equilibrated.fullPivLu();
     SensitivityInfo result;
     result.equations = rows;
     result.rank = static_cast<std::size_t>(lu.rank());
@@ -110,12 +112,14 @@ std::vector<double> solve_implicit(
     };
     if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, static_cast<const Eigen::FullPivLU<Eigen::MatrixXd>*>(nullptr));
     const auto matrix = dense_matrix(jacobian, rows, dimension);
-    const auto lu = matrix.fullPivLu();
+    const auto [row_scale, column_scale] = power_of_two_equilibration(matrix);
+    const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
+    const auto lu = equilibrated.fullPivLu();
     if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension)
         return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", matrix.allFinite() ? core::Stop::singular : core::Stop::nonfinite, &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
-    const Eigen::MatrixXd result = lu.solve(right);
+    const Eigen::MatrixXd result = column_scale.asDiagonal() * lu.solve(row_scale.asDiagonal() * right);
     const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
         matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
