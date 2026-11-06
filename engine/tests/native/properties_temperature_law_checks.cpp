@@ -3,6 +3,7 @@
 // exact derivatives against step-refined central differences (verification only) and the domain failure.
 #include "properties_checks_shared.hpp"
 #include "regression/observations.hpp"
+#include "regression/fit.hpp"
 #include "surface/parameter_builder.hpp"
 
 namespace properties_checks {
@@ -447,6 +448,43 @@ void temperature_laws() {
                     epcsaft::DensityBranch::Vapor, {h}, {{1.0, 0.0, {0.0, 0.0}, {}}}, std::nullopt); },
                 "invalid evaluated l_ij for pair 0/1 at T = 360");
     }
+    // Identical ethane components: constants and power-zero laws have the same positive-diameter domain.
+    auto pair = properties_support::parameters(2);
+    pair.segment_count = {1.6069, 1.6069}; pair.sigma_constant = {3.5206, 3.5206};
+    pair.dispersion_energy_over_k = {191.42, 191.42}; pair.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    for (double l : {0.0, 0.99, 1.0, 2.0}) {
+        pair.l_ij[1] = pair.l_ij[2] = l;
+        auto law = pair;
+        law.temperature_law_reference_k = {300.0}; law.temperature_law_term_law = {0};
+        law.temperature_law_term_power = {0}; law.temperature_law_coefficient = {l};
+        law.temperature_law_slot = {{static_cast<int>(epcsaft::TemperatureLaw::Lij), 1, 0}};
+        const auto constant_state = [&] { return epcsaft::HelmholtzModel(pair).state(300, 1000, {0.5, 0.5}); };
+        const auto law_state = [&] { return epcsaft::HelmholtzModel(law).state(300, 1000, {0.5, 0.5}); };
+        if (l >= 1) {
+            refused("domain/constant/" + number(l), [&] { (void)constant_state(); }, "invalid evaluated l_ij");
+            refused("domain/law/" + number(l), [&] { (void)law_state(); }, "invalid evaluated l_ij");
+        } else {
+            normalized("domain/valid/" + number(l), "pressure", "Pa", constant_state().pressure,
+                law_state().pressure, 0.0, 1e-10, field("l_ij", l), "constant and law preserve the same state");
+        }
+    }
+    // Reuse the fitting evaluator across a valid center, invalid active trials, and a valid return.
+    pair.l_ij[1] = pair.l_ij[2] = 0;
+    epcsaft::regression::FitRequest request; request.parameters = pair;
+    request.coordinates.coordinates = {{{{ParameterFamily::Lij, {1, 2}}}, 0, 1, -1, 2}};
+    epcsaft::regression::Observation row;
+    row.kind = epcsaft::regression::ObservationKind::Density; row.temperature = 300; row.pressure = 1e5;
+    row.composition = {0.5, 0.5}; row.branch = epcsaft::DensityBranch::Vapor; row.observed = 40;
+    request.observations = {row};
+    epcsaft::regression::FitResult failures;
+    epcsaft::regression::ObservationEvaluator evaluator(request, failures, {0});
+    epcsaft::regression::ObservationEvaluation evaluation;
+    CHECK(evaluator.evaluate({0}, true, evaluation));
+    for (double l : {1.0, 2.0}) {
+        CHECK(!evaluator.evaluate({l}, true, evaluation));
+        CHECK(failures.failures.back().message.find("invalid evaluated l_ij") != std::string::npos);
+    }
+    CHECK(evaluator.evaluate({0.99}, true, evaluation));
     // 5. Law-owned constants are unconsumed; one of value or law per quantity; declared units.
     refused("refuse/kij-under-law", [&] { (void)epcsaft::HelmholtzModel(parameters, {{ParameterFamily::Kij, {1, 2}}}); },
             "unconsumed law-owned coordinate");

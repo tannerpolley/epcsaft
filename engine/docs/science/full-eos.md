@@ -313,7 +313,8 @@ example one volume correction on both cross edges of a component pair) is one
 law and one set of slots. Source validity ranges remain the caller's. An
 evaluated `k_ij` must be finite, `l_ij < 1`, association energy and volume
 nonnegative, at every state: a law leaving that domain is refused with its
-target and temperature, never clamped.
+target and temperature, never clamped. The same finite `l_ij < 1` rule admits
+constant pairs and active fitting trials, preserving positive unlike diameters.
 
 A combining-rule edge that declares a `volume_correction`, or whose self edges
 carry a law, is evaluated at each temperature from its explicit self edges:
@@ -572,6 +573,10 @@ It does not publish the lab's nonunique contribution allocation of `ln Z`.
 The exact residual caloric identities at the state density are
 
 Defining relation: [EqID: `residual_internal_energy`](../equations.md#residual_internal_energy), [EqID: `residual_enthalpy`](../equations.md#residual_enthalpy), [EqID: `residual_heat_capacity_cv`](../equations.md#residual_heat_capacity_cv).
+
+State values and actions evaluate residual enthalpy as residual internal energy
+plus the direct residual pressure-volume term, without subtracting rounded ideal
+terms from the compressibility factor.
 
 With `Z_T = (partial Z/partial T)_(rho_m,x)` and
 `Z_rho = (partial Z/partial rho_m)_(T,x)`,
