@@ -620,6 +620,8 @@ class Problem:
         Total extensive enthalpy constraint in J, on the compiled feed basis.
     entropy_j_per_k : float or None
         Total extensive entropy constraint in J/K, on the compiled feed basis.
+    internal_energy_j : float or None
+        Total internal energy in J; neutral nonreacting UV has both T and P free and requires volume_m3 and complete ideal records.
     volume_m3 : float or None
         Total volume in m³ on the resolved feed basis. Neutral nonreacting TV uses fixed T, free P and declared free phases.
     neutral_reference : NeutralReference or None
@@ -666,6 +668,7 @@ class Problem:
     solver_options: Mapping[str, float] | None = None
     enthalpy_j: float | None = None
     entropy_j_per_k: float | None = None
+    internal_energy_j: float | None = None
     volume_m3: float | None = None
     neutral_reference: NeutralReference | None = None
     critical: _core.CriticalDeclaration | None = None
@@ -694,6 +697,7 @@ class Problem:
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
         native.enthalpy_j = self.enthalpy_j
         native.entropy_j_per_k = self.entropy_j_per_k
+        native.internal_energy_j = self.internal_energy_j
         native.volume_m3 = self.volume_m3
         native.critical = self.critical
         native.spinodal = self.spinodal
@@ -781,7 +785,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     """
     allowed = {
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "solver_options", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3",
+        "row_tolerance", "solver_options", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3", "internal_energy_j",
     }
     if set(mapping) - allowed:
         raise _core.ParameterError("unknown Problem key")
@@ -811,6 +815,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         solver_options=cast(Mapping[str, float] | None, mapping.get("solver_options")),
         enthalpy_j=cast(float | None, mapping.get("enthalpy_j")),
         entropy_j_per_k=cast(float | None, mapping.get("entropy_j_per_k")),
+        internal_energy_j=cast(float | None, mapping.get("internal_energy_j")),
         volume_m3=cast(float | None, mapping.get("volume_m3")),
         neutral_reference=_neutral_reference_from_mapping(mapping.get("neutral_reference")),
     )

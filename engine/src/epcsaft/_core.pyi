@@ -2744,6 +2744,8 @@ class EquilibriumProblem:
     """
     enthalpy_j: float | None
     """Optional extensive enthalpy specification in J on the absolute feed basis; not J/mol."""
+    internal_energy_j: float | None
+    """Total internal energy in J; UV has free T/P, specified volume and complete ideal records."""
     volume_m3: float | None
     """Optional total-volume target in m³ on the absolute feed basis; fixed T and solved P."""
     entropy_j_per_k: float | None
@@ -2878,6 +2880,8 @@ class RowKind:
     """Phase mole-fraction normalization, dimensionless."""
     Enthalpy: RowKind
     """Extensive enthalpy specification in its native dimensionless normalization."""
+    InternalEnergy: RowKind
+    """Extensive internal energy specification divided by feed RT."""
     Entropy: RowKind
     """Extensive entropy specification in its native dimensionless normalization."""
     Volume: RowKind
@@ -3696,13 +3700,15 @@ class SolvedStateActionDirection:
     """
     enthalpy_j: float
     """Increment of the extensive enthalpy target in J."""
+    internal_energy_j: float
+    """Internal-energy target increment in J."""
     volume_m3: float
     """Total-volume target direction in m³; zero if no volume target is declared."""
     entropy_j_per_k: float
     """Increment of the extensive entropy target in J/K."""
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
                  active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...,
-                 enthalpy_j: float = ..., entropy_j_per_k: float = ..., volume_m3: float = ...) -> None:
+                 enthalpy_j: float = ..., entropy_j_per_k: float = ..., volume_m3: float = ..., internal_energy_j: float = ...) -> None:
         """Initialize SolvedStateActionDirection from the declared inputs.
 
         Parameters

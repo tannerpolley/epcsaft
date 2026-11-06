@@ -426,14 +426,14 @@ StandardTerm standard_term(
 void admit_calorics(const CompiledSystem& compiled, double temperature) {
     if (!compiled.has_caloric_condition()) return;
     const auto& p = compiled.problem;
-    if (p.enthalpy_j && p.entropy_j_per_k)
+    if (int(p.enthalpy_j.has_value()) + int(p.entropy_j_per_k.has_value()) + int(p.internal_energy_j.has_value()) != 1)
         throw std::invalid_argument("one extensive caloric condition required");
-    if (!p.temperature.free || p.pressure.free || compiled.pinned_count
+    if (!p.temperature.free || (p.pressure.free != p.internal_energy_j.has_value()) || compiled.pinned_count
         || !p.topology_declared || p.discovery)
         throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
     if (compiled.has_ions || p.source_reference || has_reaction_reference(p))
         throw std::invalid_argument("charged/source-referenced PH/PS unavailable");
-    if (!std::isfinite(p.enthalpy_j ? *p.enthalpy_j : *p.entropy_j_per_k))
+    if (!std::isfinite(p.internal_energy_j ? *p.internal_energy_j : p.enthalpy_j ? *p.enthalpy_j : *p.entropy_j_per_k))
         throw std::invalid_argument("nonfinite caloric target");
     const auto& record = compiled.model->thermochemistry();
     if (!record) throw std::invalid_argument("missing thermochemistry for caloric condition");
@@ -441,10 +441,13 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
         for (auto i : phase.support) {
             const auto& intervals = record->component_intervals[i];
             if (intervals.empty()) throw std::invalid_argument("missing caloric record: " + std::to_string(i));
-            if (std::none_of(intervals.begin(), intervals.end(), [&](const auto& v) {
-                    return ideal_interval_contains(v, temperature); }))
+            const auto selected = std::find_if(intervals.begin(), intervals.end(), [&](const auto& v) {
+                return ideal_interval_contains(v, temperature); });
+            if (selected == intervals.end())
                 throw std::invalid_argument("caloric record outside interval: species " + std::to_string(i)
                     + " at " + std::to_string(temperature) + " K");
+            if (p.internal_energy_j && (temperature == selected->lower || temperature == selected->upper))
+                throw std::invalid_argument("caloric derivative at interval endpoint: species " + std::to_string(i));
         }
 }
 
@@ -511,9 +514,9 @@ IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::siz
         fractions, std::vector<bool>(fractions.size(), true));
 }
 
-std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double);
+std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double, bool = false, std::vector<double>* = nullptr);
 std::vector<double> critical_hessian(const CompiledSystem&, const PhasePoint&, const std::vector<double>&);
-CppAD::ADFun<double> record_geometry(const CompiledSystem&, const PhasePoint&, const StandardTerm&);
+CppAD::ADFun<double> record_geometry(const CompiledSystem&, const PhasePoint&, const StandardTerm&, bool = false);
 std::vector<double> controls(const CompiledSystem&, const PhasePoint&);
 
 std::vector<double> pinned_hessian(
@@ -688,6 +691,7 @@ std::vector<double> controls(const CompiledSystem& compiled, const PhasePoint& p
         result.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
     }
     if (compiled.problem.volume_m3) result.push_back(*compiled.problem.volume_m3);
+    if (compiled.problem.internal_energy_j) result.push_back(*compiled.problem.internal_energy_j);
     return result;
 }
 
@@ -696,7 +700,7 @@ std::vector<double> controls(const CompiledSystem& compiled, const PhasePoint& p
 // N, eta], then the analytic part of each row (the residual gradient terms are added by the
 // model's contractions in row_series).
 CppAD::ADFun<double> record_geometry(
-    const CompiledSystem& compiled, const PhasePoint& prepared, const StandardTerm& standard
+    const CompiledSystem& compiled, const PhasePoint& prepared, const StandardTerm& standard, bool entropy
 ) {
     using AD = CppAD::AD<double>;
     const auto& problem = compiled.problem;
@@ -708,6 +712,16 @@ CppAD::ADFun<double> record_geometry(
     std::vector<AD> u(center.begin(), center.end());
     const std::vector<double> theta_center(center.begin() + static_cast<std::ptrdiff_t>(n + 2 + components),
         center.begin() + static_cast<std::ptrdiff_t>(n + compiled.control_width()));
+    std::vector<double> chemical(components, 0.0);
+    if (entropy) {
+        const auto reference = reference_calorics(compiled, prepared.temperature, prepared.pressure, false, false, false, 0);
+        if (reference.status != SolvedStateActionStatus::Available) throw std::invalid_argument(reference.message);
+        for (std::size_t p = 0; p < prepared.shape.size(); ++p)
+            for (auto i : problem.phases[p].support)
+                chemical[i] = std::log(prepared.composition[p][i] / prepared.volume[p])
+                    + prepared.derivative[p].gradient[2+i] + reference.gibbs.front().column.values[i]
+                    / (GAS_CONSTANT_J_PER_MOL_K * prepared.temperature);
+    }
     CppAD::Independent(u);
     const AD T = problem.temperature.free ? u[compiled.primal_size - compiled.free_intensive_count] : u[n];
     const AD P = problem.pressure.free ? u[compiled.primal_size - 1] : u[n + 1];
@@ -728,6 +742,7 @@ CppAD::ADFun<double> record_geometry(
         if (row.kind == RowKind::Electro) phi[row.phase] = compiled.primal_size + compiled.rank + phi_offset++;
     std::vector<AD> output;
     std::vector<AD> row_values(compiled.rows.size(), AD(0.0));
+    AD material_potential = 0.0;
     const AD delta_T = T - prepared.temperature;
     const AD delta_P = P - prepared.pressure;
     // Adds the exact Taylor term of species g/RT in the free or driven temperature, pressure and parameters.
@@ -768,16 +783,27 @@ CppAD::ADFun<double> record_geometry(
         output.push_back(tape_parameters.ideal_gas ? AD(0.0) : eta);
         if (problem.volume_m3) for (std::size_t r = 0; r < compiled.rows.size(); ++r)
             if (compiled.rows[r].kind == RowKind::Volume)
-                row_values[r] += amount * volume / u.back();
+                row_values[r] += amount * volume / u[u.size() - 1 - problem.internal_energy_j.has_value()];
         if (compiled.has_caloric_condition()) {
-            const bool h = problem.enthalpy_j.has_value();
-            const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0));
+            const bool h = problem.enthalpy_j.has_value(), internal = problem.internal_energy_j.has_value();
+            const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * ((h || internal) ? T : AD(1.0));
             const auto ideal = caloric_ideal(compiled, phase, T, volume, x, prepared.temperature);
-            row_values.back() += amount * (h ? ideal.enthalpy : ideal.entropy) / denominator;
+            row_values.back() += amount * (internal ? ideal.internal_energy : h ? ideal.enthalpy : ideal.entropy) / denominator;
             const AD weight = amount * GAS_CONSTANT_J_PER_MOL_K / denominator;
-            output.push_back(h ? AD(0.0) : -weight);
-            output.push_back(h ? -weight * T * T : -weight * T);
+            output.push_back((h || internal) ? AD(0.0) : -weight);
+            output.push_back((h || internal) ? -weight * T * T : -weight * T);
             output.push_back(h ? -weight * T * volume : AD(0.0));
+            if (entropy) {
+                const double rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
+                AD mu = 0.0;
+                for (auto i : spec.support) mu += chemical[i] * x[i];
+                row_values.back() -= amount * ideal.internal_energy / denominator;
+                row_values.back() += amount * (-ideal.entropy / GAS_CONSTANT_J_PER_MOL_K
+                    + ideal.internal_energy / rt + prepared.pressure * volume / rt);
+                material_potential -= amount * mu;
+                output[output.size()-3] = amount;
+                output[output.size()-2] = amount * T * (1.0 - T / prepared.temperature);
+            }
         }
         if (problem.critical || problem.spinodal) {
             // EqID critical_equations at n = x: D = diag(sqrt(z)) of the moving feed, w = D u, ideal
@@ -849,9 +875,9 @@ CppAD::ADFun<double> record_geometry(
         if (compiled.rows[r].kind == RowKind::Volume) row_values[r] -= 1.0;
     if (problem.loading) row_values.back() = (P - problem.loading->pressure) / problem.loading->pressure;
     if (compiled.has_caloric_condition()) {
-        const bool h = problem.enthalpy_j.has_value();
-        row_values.back() -= u[n + 2 + components + theta_center.size() + (h ? 0 : 1)]
-            / (feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0)));
+        const bool h = problem.enthalpy_j.has_value(), internal = problem.internal_energy_j.has_value();
+        if (!entropy) row_values.back() -= u[internal ? u.size()-1 : n + compiled.control_width() + (h ? 0 : 1)]
+            / (feed_total * GAS_CONSTANT_J_PER_MOL_K * ((h || internal) ? T : AD(1.0)));
     }
     for (std::size_t row = 0; row < compiled.rows.size(); ++row)
         if (compiled.rows[row].kind == RowKind::AzeotropeCondition) {  // EqID azeotrope_condition: ln K below at 0
@@ -870,16 +896,17 @@ CppAD::ADFun<double> record_geometry(
     }
     output.insert(output.end(), row_values.begin(), row_values.end());
     output.insert(output.end(), solid_output.begin(), solid_output.end());
+    if (entropy) output.push_back(material_potential);
     return CppAD::ADFun<double>(u, output);
 }
 
-std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhasePoint& prepared, double weight) {
+std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhasePoint& prepared, double weight, bool entropy, std::vector<double>* magnitude) {
     const std::size_t n = prepared.point.size();
     std::vector<double> result(n * n, 0.0);
     if (weight == 0.0) return result;
     const std::size_t width = compiled.control_width();
     const std::size_t stride = width + 5;
-    auto geometry = record_geometry(compiled, prepared, prepared.standard);
+    auto geometry = record_geometry(compiled, prepared, prepared.standard, entropy);
     using AD = CppAD::AD<double>;
     std::vector<AD> q(prepared.point.begin(), prepared.point.end());
     CppAD::Independent(q);
@@ -890,7 +917,7 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
                                     center.begin() + static_cast<std::ptrdiff_t>(n + width));
     auto active_geometry = geometry.base2ad();
     const auto mapped = active_geometry.Forward(0, input);
-    AD value = mapped.back();
+    AD value = entropy ? mapped[mapped.size()-2] + mapped.back() : mapped.back();
     for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
         const auto& d = prepared.derivative[p];
         std::vector<double> phase_center = {prepared.temperature, prepared.volume[p]};
@@ -909,8 +936,33 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
         value += mapped[p * stride + width + 2] * energy
             + mapped[p * stride + width + 3] * gt + mapped[p * stride + width + 4] * gv;
     }
-    CppAD::ADFun<double> pullback(q, std::vector<AD>{value});
+    CppAD::ADFun<double> pullback(q, std::vector<AD>{value, entropy ? mapped.back() : AD(0.0)});
     result = pullback.Hessian(prepared.point, 0);
+    if (entropy) {
+        const auto material = pullback.Hessian(prepared.point, 1);
+        if (magnitude) { magnitude->resize(result.size());
+            for (std::size_t i=0;i<result.size();++i) (*magnitude)[i]=std::abs(result[i]-material[i])+std::abs(material[i]); }
+        auto gradient = pullback.Jacobian(prepared.point);
+        for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
+            const auto& layout = prepared.shape[p];
+            double normal = 0.0, total = 0.0;
+            for (std::size_t i = 0; i < layout.x.size(); ++i) {
+                normal -= gradient[layout.x[i]];
+                total += prepared.composition[p][compiled.problem.phases[p].support[i]];
+            }
+            for (std::size_t i = 0; i < layout.x.size(); ++i) {
+                const auto j = layout.x[i];
+                const double term = normal * prepared.composition[p][compiled.problem.phases[p].support[i]] / total;
+                gradient[j] += term; result[j*n+j] += term;
+                if (magnitude) (*magnitude)[j*n+j] += std::abs(term);
+            }
+        }
+        double defect = 0.0;
+        for (std::size_t j = 0; j + 1 < compiled.primal_size; ++j)
+            defect = std::max(defect, std::abs(gradient[j]) * (j == compiled.primal_size-2 ? prepared.temperature : 1.0) / compiled.feed_total);
+        if (defect > compiled.problem.solver_options.value(policy::row))
+            throw std::domain_error("entropy Lagrangian stationarity defect: " + std::to_string(defect));
+    }
     const auto values = geometry.Forward(0, center);
     const auto jac = geometry.Jacobian(center);
     for (std::size_t p = 0; p < prepared.shape.size(); ++p) {
@@ -1268,11 +1320,11 @@ static CompiledSystem compile_with_basis(
 ) {
     if (model.parameters().ideal_gas && (request.phases.size() != 1 || request.phases[0].kind != PhaseKind::Vapor
         || request.temperature.free || request.pressure.free || !request.solids.empty() || request.discovery
-        || request.enthalpy_j || request.entropy_j_per_k || request.source_reference || request.critical || request.spinodal || request.envelope
+        || request.enthalpy_j || request.entropy_j_per_k || request.internal_energy_j || request.source_reference || request.critical || request.spinodal || request.envelope
         || request.azeotrope || has_reaction_reference(request) || request.phases[0].packing_guess))
         throw std::invalid_argument("ideal-gas equilibrium requires one vapor at fixed T/P; calorics and phase searches deferred");
     if (std::any_of(request.reactions.begin(), request.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); })
-        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.volume_m3
+        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.internal_energy_j || request.volume_m3
             || !request.solids.empty() || request.source_reference || has_reaction_reference(request)))
         throw std::invalid_argument("species-derived targets require ordinary fixed T/P; calorics and source-reference transfer deferred");
     if (!request.topology_declared) {
@@ -1439,11 +1491,13 @@ static CompiledSystem compile_with_basis(
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
     if (request.volume_m3 && (!std::isfinite(*request.volume_m3) || *request.volume_m3 <= 0.0
-        || request.temperature.free || !request.pressure.free || compiled.pinned_count
-        || !request.topology_declared || request.discovery || compiled.has_reaction || caloric_count
+        || request.temperature.free != request.internal_energy_j.has_value() || !request.pressure.free || compiled.pinned_count
+        || !request.topology_declared || request.discovery || compiled.has_reaction || (caloric_count && !request.internal_energy_j)
         || request.source_reference || !request.solids.empty() || request.critical || request.envelope || request.azeotrope
         || std::any_of(z.begin(), z.end(), [](int v) { return v != 0; })))
         throw std::invalid_argument("TV requires positive total volume, fixed T, free P and declared neutral nonreacting free phases");
+    if (request.internal_energy_j && (!request.volume_m3 || phases.size() > 2))
+        throw std::invalid_argument("UV requires volume and one or two declared phases");
     admit_conditions(compiled);
     if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
@@ -1495,7 +1549,7 @@ static CompiledSystem compile_with_basis(
     for (std::size_t s = 0; s < request.solids.size(); ++s)
         if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
     if (request.volume_m3) compiled.rows.push_back({RowKind::Volume, 0, 0});
-    if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
+    if (caloric_count) compiled.rows.push_back({request.internal_energy_j ? RowKind::InternalEnergy : request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
     compiled.mode_count = (request.critical || request.spinodal) ? components : 0;
     for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.spinodal.has_value() + request.envelope.has_value(); ++i) {
@@ -1591,7 +1645,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     core::Scope scope("compile_problem");
     if (!request.topology_declared || request.discovery || request.phases.size() != 1
         || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
-        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.volume_m3
+        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.internal_energy_j || request.volume_m3
         || request.critical || request.spinodal || request.envelope || request.azeotrope || !request.solids.empty()
         || request.phases[0].packing_guess)
         throw std::invalid_argument("ideal mole-fraction model requires one free liquid at fixed T/P without EOS conditions");
@@ -1768,6 +1822,10 @@ std::vector<std::size_t> CompiledSystem::phase_offsets() const {
     std::vector<std::size_t> result;
     for (const auto& item : layouts(*this)) result.push_back(item.x.front());
     return result;
+}
+
+std::vector<double> CompiledSystem::entropy_hessian_at(const PhasePoint& prepared, std::vector<double>* magnitude) const {
+    return caloric_hessian(*this, prepared, 1.0, true, magnitude);
 }
 
 #include "equilibrium/row_evaluation.hpp"

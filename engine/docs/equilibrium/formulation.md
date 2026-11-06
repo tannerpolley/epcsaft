@@ -7,7 +7,7 @@ A proposed or registered equation is not a capability claim. Declared-phase
 specifications and the explicit native tangent-plane test/fixed-T/P discovery
 path have retained numerical qualification for the stated
 neutral and admitted ionic/reacting cases. These
-retained cases have stated limits; PH/PS and TV use the bounded neutral formulations below; UV remains deferred.
+retained cases have stated limits; PH/PS, TV and UV use the bounded neutral formulations below.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
@@ -204,7 +204,7 @@ Ordinary density-basis reactions retain Δh = t − Tt′ and Δcp = −Tt″:
 constant affinity t = a has Δh = a, while constant K has Δh = 0.
 Charged calorics and source-referenced free-T reactions are excluded.
 
-TV declares positive total `volume_m3` [m³], fixed T, free P, free phase amounts and neutral nonreacting declared supports (`extensive_volume_specification`). The driver solves Helmholtz stationarity as a feasibility system and admits a minimum on the total-volume-conserving tangent through the shared physical Hessian. A homogeneous declaration returns its local branch; it does not discover other phases. TV needs no ideal thermal records. UV and automatic TV phase discovery remain unavailable.
+TV declares positive total `volume_m3` [m³], fixed T, free P, free phase amounts and neutral nonreacting declared supports (`extensive_volume_specification`). The driver solves Helmholtz stationarity as a feasibility system and admits a minimum on the total-volume-conserving tangent through the shared physical Hessian. A homogeneous declaration returns its local branch; it does not discover other phases. TV needs no ideal thermal records. Automatic TV/UV phase discovery remains unavailable. UV additionally declares finite `internal_energy_j` [J], both T and P free, one or two free fluid phases and complete ideal records strictly inside their intervals (`extensive_internal_energy_specification`). It reuses the volume and caloric geometry and qualifies the entropy Lagrangian on the inventory/normalization/U/V tangent, retaining T and excluding P and chemical duals. The reported physical potential is -S_tot/R; missing records and exact interval endpoints are refused.
 
 
 The resolved feed n_feed is the amount basis of the whole problem, and returned

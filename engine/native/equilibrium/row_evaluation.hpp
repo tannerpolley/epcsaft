@@ -226,6 +226,11 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     }
     if constexpr (std::is_same_v<Base, double>) for (std::size_t s = 0; s < solids.size(); ++s)
         if (solids[s].column) result.objective += point[*solids[s].column] * solid_gibbs(prepared, s);
+    if constexpr (std::is_same_v<Base, double>) if (problem.internal_energy_j) {
+        auto entropy = *this;
+        entropy.problem.internal_energy_j.reset(); entropy.problem.entropy_j_per_k = 0.0;
+        result.objective = -entropy.row_series(prepared, {point}, std::vector<double>(control_width()), 0).rows[0].back() * feed_total_at(prepared);
+    }
     return result;
 }
 
@@ -294,18 +299,18 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             terms = wide_math::abs(e.target);
             if (e.kind != EnvelopeCoordinate::LogK) terms += wide_math::abs(wide_math::log(e.kind == EnvelopeCoordinate::LogPressure ? at.pressure : at.temperature));
             else terms += wide_math::abs(wide_math::log(at.composition[0][e.component])) + wide_math::abs(wide_math::log(at.composition[1][e.component]));
-        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy) {
-            const bool enthalpy = row.kind == RowKind::Enthalpy;
-            const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (enthalpy ? at.temperature : 1.0);
-            terms = wide_math::abs(enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
+        } else if (row.kind == RowKind::Enthalpy || row.kind == RowKind::Entropy || row.kind == RowKind::InternalEnergy) {
+            const bool enthalpy = row.kind == RowKind::Enthalpy, internal = row.kind == RowKind::InternalEnergy;
+            const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * ((enthalpy || internal) ? at.temperature : 1.0);
+            terms = wide_math::abs(internal ? *problem.internal_energy_j : enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
             for (std::size_t a = 0; a < at.shape.size(); ++a) {
                 const auto ideal = caloric_ideal(*this, a, at.temperature, at.volume[a], at.composition[a], at.temperature);
                 const double weight = at.amount[a] / feed_total;
-                terms += wide_math::abs(at.amount[a] * (enthalpy ? ideal.enthalpy : ideal.entropy)) / denominator;
+                terms += wide_math::abs(at.amount[a] * (internal ? ideal.internal_energy : enthalpy ? ideal.enthalpy : ideal.entropy)) / denominator;
                 terms += weight * (at.temperature * wide_math::abs(at.derivative[a].gradient[0])
-                    + (enthalpy ? wide_math::abs(at.volume[a] * at.derivative[a].gradient[1]) : wide_math::abs(at.derivative[a].value)));
+                    + (enthalpy ? wide_math::abs(at.volume[a] * at.derivative[a].gradient[1]) : internal ? 0.0 : wide_math::abs(at.derivative[a].value)));
                 inner += weight * (at.temperature * gradient_error[a][0]
-                    + (enthalpy ? wide_math::abs(at.volume[a]) * gradient_error[a][1] : energy_error[a]));
+                    + (enthalpy ? wide_math::abs(at.volume[a]) * gradient_error[a][1] : internal ? 0.0 : energy_error[a]));
             }
         } else if ((row.kind == RowKind::CriticalMode || row.kind == RowKind::SpinodalMode) || row.kind == RowKind::CriticalCubic) {
             const auto& derivative = at.derivative[p];
@@ -836,7 +841,7 @@ RowSeries CompiledSystem::row_series(
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = control_width(), extended = extended_control_width();
     if (state.size() != order + 1 ||
-        (control.size() != width && control.size() != extended - 2 - problem.volume_m3.has_value() && control.size() != extended) ||
+        (control.size() != width && control.size() != extended - 2 - problem.volume_m3.has_value() - problem.internal_energy_j.has_value() && control.size() != extended) ||
         order > (mode_count ? 2u : 3u))  // a third critical coefficient needs E6
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
@@ -878,14 +883,15 @@ RowSeries CompiledSystem::row_series(
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
-        auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(n + width + (has_caloric_condition() ? 2 : 0) + problem.volume_m3.has_value(), 0.0);
+        auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(geometry.Domain(), 0.0);
         std::copy(state[k].begin(), state[k].end(), input.begin());
         if (k == 1) {
             std::copy_n(control.begin(), width, input.begin() + static_cast<std::ptrdiff_t>(n));
-            if (problem.volume_m3 && control.size() == extended) input.back() = control.back();
-            if (has_caloric_condition() && control.size() == extended) {
-                input[n + width] = control[control.size() - 2];
-                input[n + width + 1] = control.back();
+            if (control.size() == extended) {
+                const auto target = extended - 2 - problem.volume_m3.has_value() - problem.internal_energy_j.has_value();
+                if (problem.volume_m3) input[input.size()-1-problem.internal_energy_j.has_value()] = control[target+2];
+                if (problem.internal_energy_j) input.back() = control.back();
+                if (has_caloric_condition()) { input[n+width] = control[target]; input[n+width+1] = control[target+1]; }
             }
         }
         output[k] = geometry.Forward(k, input);

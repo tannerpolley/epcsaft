@@ -2954,6 +2954,20 @@ r_V=\frac{\sum_p N_pv_p-V_{spec}}{V_{spec}},\qquad
 
 $$
 
+## `extensive_internal_energy_specification`
+
+- Section: Equilibrium caloric specifications
+- Status: Exact derivation
+- Source: Paterson, Stenby and Yan (2023), doi:10.1016/j.fluid.2023.113795, Eq. (2), Tables 1–2; `total_internal_energy`, Gross and Sadowski (2001) Eq. (A.46) with H=U+PV
+- Description: Total internal energy U_spec [J], volume V_spec [m³] and neutral nonreacting component inventories [mol] determine free common temperature and pressure on one or two declared fluid phases. Complete ideal thermochemistry is required.
+- Change note: The shared caloric geometry supplies exact U derivatives. Internal energy uses EOS pressure, not the independent common-pressure coordinate before pressure closure. The driver solves the conserved rows and qualifies entropy curvature on their physical tangent. T_* and P_* are held fixed when differentiating the physical Lagrangian; mu_i,* uses the declared thermochemical reference. Its reported potential is -S_tot/R.
+
+$$
+u_p=h_p^{ig}-RT-RT^2(a_p^{res})_T,\qquad
+r_U=\frac{\sum_pN_pu_p-U_{spec}}{N_{feed}RT},\qquad
+\mathcal L_*=-\frac{S_{tot}}{R}+\frac{U_{tot}+P_*V_{tot}-\sum_i\mu_{i,*}n_i}{RT_*}.
+$$
+
 ## `extensive_entropy_specification`
 
 - Section: Equilibrium caloric specifications

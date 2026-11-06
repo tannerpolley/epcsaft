@@ -2,7 +2,7 @@
 
 Use ``Problem`` with explicit temperature (K), pressure (Pa), feed basis and
 phase kinds, then call ``solve_equilibrium`` with a fluid model. Solved free phase amounts use mol; pins use dimensionless feed fractions. Total enthalpy and entropy constraints use J
-and J/K, respectively. A returned stopping reason and equation diagnostics
+and J/K, respectively; neutral UV uses total internal energy in J and volume in m³ with both T and P free. A returned stopping reason and equation diagnostics
 must be inspected before using a solution. Finite phase discovery without a
 descent witness is not a global stability certificate (ALG-STABILITY).
 

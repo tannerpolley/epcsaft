@@ -55,8 +55,8 @@ FIELDS(MeasurementUncertainty, a, b, c, d)
 FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
 // Observation validation refuses discovery, spinodal conditions and solids, so these are not sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
-    auto& [origin, a, b, c, d, e, f, g, h, discovery, j, k, volume_m3, spinodal, l, m, loading, n, o, solids] = item;
-    return std::tie(origin, a, b, c, d, e, f, g, h, j, k, volume_m3, l, m, loading, n, o);
+    auto& [origin, a, b, c, d, e, f, g, h, discovery, j, k, volume_m3, internal_energy_j, spinodal, l, m, loading, n, o, solids] = item;
+    return std::tie(origin, a, b, c, d, e, f, g, h, j, k, volume_m3, internal_energy_j, l, m, loading, n, o);
 }
 // Saturation replies carry physical records and estimates; compiled caches and optimizer memory stay in the worker.
 FIELDS(core::NumericalEstimate, a, b, c, d, e)

@@ -73,8 +73,10 @@ Curvature reduced_curvature_at(
         constraints.conservativeResize(constraints.rows() + 1, n);
         constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, width).leftCols(n);
     }
-    const Eigen::MatrixXd objective = Eigen::Map<const Dense>(compiled.hessian_at(prepared, {}, compiled.problem.volume_m3.has_value()).data(), width, width).topLeftCorner(n, n);
-    const Eigen::MatrixXd weighted = Eigen::Map<const Dense>(
+    std::vector<double> entropy_magnitude;
+    const Eigen::MatrixXd objective = Eigen::Map<const Dense>((compiled.problem.internal_energy_j ? compiled.entropy_hessian_at(prepared, &entropy_magnitude) : compiled.hessian_at(prepared, {}, compiled.problem.volume_m3.has_value())).data(), width, width).topLeftCorner(n, n);
+    Eigen::MatrixXd weighted = Eigen::MatrixXd::Zero(n, n);
+    if (!compiled.problem.internal_energy_j) weighted = Eigen::Map<const Dense>(
         compiled.constraint_hessian_at(prepared, multipliers, compiled.problem.volume_m3.has_value()).data(), width, width).topLeftCorner(n, n);
     const Eigen::MatrixXd hessian = objective + weighted;
     const auto reduce = [n](const Eigen::MatrixXd& h, const Eigen::MatrixXd& a) -> std::pair<double, double> {
@@ -86,7 +88,8 @@ Curvature reduced_curvature_at(
         return {eigen.info() == Eigen::Success ? eigen.eigenvalues()(0) : std::numeric_limits<double>::quiet_NaN(),
                 rank > 0 ? svd.singularValues()(0) / svd.singularValues()(rank - 1) : 1.0};
     };
-    const Eigen::MatrixXd magnitude = objective.cwiseAbs() + weighted.cwiseAbs();
+    Eigen::MatrixXd magnitude = objective.cwiseAbs() + weighted.cwiseAbs();
+    if (!entropy_magnitude.empty()) magnitude = Eigen::Map<const Dense>(entropy_magnitude.data(), width, width).topLeftCorner(n,n);
     const Eigen::VectorXd d = magnitude.diagonal().unaryExpr([](double s) { return s > 0.0 ? 1.0 / std::sqrt(s) : 1.0; });
     const Eigen::MatrixXd scaled = d.asDiagonal() * hessian * d.asDiagonal();
     const auto [equilibrated, kappa] = reduce(scaled, constraints * d.asDiagonal());
@@ -1037,8 +1040,12 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
             physical_weights.push_back(row.kind == RowKind::Moiety
                 ? -compiled.feed_total * full[compiled.primal_size + row.index] : 0.0);
     }
+    if (compiled.problem.internal_energy_j) for (std::size_t p = 0; p < amounts.size(); ++p) {
+        const auto cv = model->state(temperature, 1.0 / volumes[p], compositions[p]).total_isochoric_heat_capacity;
+        if (!cv || !(*cv > 0.0)) throw std::domain_error("UV phase has no positive isochoric heat capacity");
+    }
     Curvature curvature = reduced_curvature_at(compiled, prepared, physical_weights);
-    if (compiled.has_caloric_condition()) {
+    if (compiled.has_caloric_condition() && !compiled.problem.internal_energy_j) {
         const bool pure = model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
         if (pure) {
             if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {

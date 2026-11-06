@@ -52,6 +52,7 @@ void actions();
 void curvature();
 void roundtrips();
 void volume_specification();
+void internal_energy_specification();
 void reactions();
 }  // namespace caloric_specification_checks
 namespace critical_envelope_checks {
@@ -82,6 +83,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.caloric-admission", "caloric-admission", "Automatic_fast"}, caloric_specification_checks::admission, "caloric-specification"},
         {{"native.equilibrium.caloric-actions", "caloric-actions", "Automatic_fast"}, caloric_specification_checks::actions, "caloric-specification"},
         {{"native.equilibrium.caloric-curvature", "caloric-curvature", "Automatic_fast"}, caloric_specification_checks::curvature, "caloric-specification"},
+        {{"native.equilibrium.internal-energy-specification", "internal-energy-specification", "Automatic_fast"}, caloric_specification_checks::internal_energy_specification, "internal-energy-specification"},
         {{"native.equilibrium.volume-specification", "volume-specification", "Automatic_fast"}, caloric_specification_checks::volume_specification, "volume-specification"},
         {{"native.equilibrium.caloric-roundtrips", "caloric-roundtrips", "Automatic_fast"}, caloric_specification_checks::roundtrips, "caloric-specification"},
         {{"native.equilibrium.caloric-reactions", "caloric-reactions", "Automatic_fast"}, caloric_specification_checks::reactions, "caloric-specification"},

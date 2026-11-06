@@ -259,9 +259,9 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, volume_m3, critical, spinodal, envelope, azeotrope, discovery, solids);
+            entropy_j_per_k, volume_m3, internal_energy_j, critical, spinodal, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
-        EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, Volume, CriticalMode,
+        EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, InternalEnergy, Volume, CriticalMode,
             CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
@@ -437,13 +437,13 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(SolvedStateObservable, kind, phase, component, property)
         EPCSAFT_REPR(SolvedStateObservable, "kind", "phase", "component", "property");
     nb::class_<SolvedStateActionDirection>(module, "SolvedStateActionDirection")
-        .def(nb::init<double, double, std::vector<double>, std::vector<double>, std::vector<std::array<double, 4>>, double, double, double>(),
+        .def(nb::init<double, double, std::vector<double>, std::vector<double>, std::vector<std::array<double, 4>>, double, double, double, double>(),
              nb::arg("temperature_k"), nb::arg("pressure_pa"), nb::arg("feed_amounts_mol"),
              nb::arg("active_parameters"),
              nb::arg("reaction_coefficients") = std::vector<std::array<double, 4>>{},
-             nb::arg("enthalpy_j") = 0.0, nb::arg("entropy_j_per_k") = 0.0, nb::arg("volume_m3") = 0.0)
+             nb::arg("enthalpy_j") = 0.0, nb::arg("entropy_j_per_k") = 0.0, nb::arg("volume_m3") = 0.0, nb::arg("internal_energy_j") = 0.0)
         EPCSAFT_READONLY(SolvedStateActionDirection, temperature_k, pressure_pa, feed_amounts_mol, active_parameters,
-            reaction_coefficients, enthalpy_j, entropy_j_per_k, volume_m3);
+            reaction_coefficients, enthalpy_j, entropy_j_per_k, volume_m3, internal_energy_j);
     nb::class_<SolvedStateActionRequest>(module, "SolvedStateActionRequest")
         .def(nb::init<std::vector<SolvedStateObservable>, std::vector<SolvedStateActionDirection>>(), nb::arg("observables"), nb::arg("directions"))
         EPCSAFT_READONLY(SolvedStateActionRequest, observables, directions);

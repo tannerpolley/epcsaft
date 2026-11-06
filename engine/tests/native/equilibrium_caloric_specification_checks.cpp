@@ -260,15 +260,15 @@ void admission() {
     CHECK(actions.results[0].value.has_value());
 }
 
+inline double volume(const EquilibriumResult& r) {
+    double v=0;for(std::size_t p=0;p<r.phase_count;++p)v+=r.amounts[p]/r.molar_densities[p];return v;
+}
 // Paterson (2023), Table 2: conserved total volume, pressure as its solved multiplier.
 void volume_specification() {
     const HelmholtzModel model(properties_support::neutral_binary());
     const std::array<std::array<double,6>,3> references = {{{180,0.00047042881945383514,1e6,0.2945375955329262,0.9244914722077252,0.32615467905619605},
         {190,0.0006523810823353041,1e6,0.21537559277082224,0.8647803491384229,0.43828506711469967},
         {220,0.00044242974279205897,2e6,0.2160681158366867,0.7337137610815471,0.5485062740728838}}};
-    const auto volume = [](const EquilibriumResult& r) {
-        double v=0;for(std::size_t p=0;p<r.phase_count;++p)v+=r.amounts[p]/r.molar_densities[p];return v;
-    };
     for(const auto& ref:references) {
         auto p=binary();p.temperature=FreeValue::fixed(ref[0]);p.pressure=FreeValue::variable(ref[2]);p.volume_m3=ref[1];
         auto r=solve_equilibrium(model,p);
@@ -341,5 +341,122 @@ void volume_specification() {
     compare("TV/pure/P",*tv.pressure,*s.pressure,*s.pressure,1e-8);
     compare("TV/pure/split",tv.amounts[1],0.35,1,1e-8);CHECK(tv.reduced_hessian_minimum>0);
     recording_support::observe("TV/pure/curvature","reduced-Helmholtz-curvature","chart",tv.reduced_hessian_minimum,std::nullopt,"","Observation","exact-Lagrangian-Hessian","pure coexistence retains volume and both free amounts","volume-specification");
+}
+void internal_energy_specification() {
+    const double R=GAS_CONSTANT_J_PER_MOL_K;
+    ThermochemistryRecord thermal; thermal.standard_pressure=1e5;
+    const double s0=R*(2.5+2.5*std::log(298.15)-std::log(1e5/R));
+    for(int i=0;i<2;++i)thermal.component_intervals.push_back({{100,600,false,false,{IdealPolynomial{{2.5*R},298.15,2.5*R*298.15,s0},1e5}}});
+    const HelmholtzModel model(properties_support::neutral_binary(),{},thermal);
+    const auto energy=[](const HelmholtzModel& m,const EquilibriumResult& r) {
+        double value=0;const auto c=m.parameters().component_count();
+        for(std::size_t p=0;p<r.phase_count;++p) {
+            const std::vector<double> x(r.mole_fractions.begin()+p*c,r.mole_fractions.begin()+(p+1)*c);
+            value+=r.amounts[p]* *m.state(*r.temperature,r.molar_densities[p],x).total_internal_energy;
+        }
+        return value;
+    };
+    const auto recover=[&](const HelmholtzModel& m,EquilibriumProblem p,EquilibriumResult ref,double start,const std::string& id) {
+        const double u=energy(m,ref),v=volume(ref),n=std::accumulate(p.feed.values.begin(),p.feed.values.end(),0.0);
+        p.temperature=FreeValue::variable(start);p.pressure=FreeValue::variable(1.05* *ref.pressure);
+        p.internal_energy_j=u;p.volume_m3=v;
+        const auto r=solve_equilibrium(m,p);
+        if(!r.has_state())throw std::runtime_error(id+": "+r.message);
+        compare(id+"/T",*r.temperature,*ref.temperature,*ref.temperature,1e-8);
+        compare(id+"/P",*r.pressure,*ref.pressure,*ref.pressure,1e-8);
+        compare(id+"/U",energy(m,r),u,n*R* *r.temperature,1e-10);
+        compare(id+"/V",volume(r),v,v,1e-10);
+        for(std::size_t j=0;j<r.amounts.size();++j)compare(id+"/N"+std::to_string(j),r.amounts[j],ref.amounts[j],ref.amounts[j],1e-8);
+        for(std::size_t j=0;j<r.mole_fractions.size();++j)compare(id+"/x"+std::to_string(j),r.mole_fractions[j],ref.mole_fractions[j],ref.mole_fractions[j],1e-8);
+        const auto c=m.parameters().component_count();
+        for(std::size_t i=0;i<c;++i){double total=0;for(std::size_t q=0;q<r.phase_count;++q)total+=r.amounts[q]*r.mole_fractions[q*c+i];compare(id+"/balance"+std::to_string(i),total,p.feed.values[i],n,1e-10);}
+        const double entropy=-total(m,r,false)/R;
+        compare(id+"/negative-entropy",r.objective,entropy,std::max(1.0,std::abs(entropy)),1e-8);
+        for(std::size_t j=0;j<r.molar_densities.size();++j)compare(id+"/rho"+std::to_string(j),r.molar_densities[j],ref.molar_densities[j],ref.molar_densities[j],1e-8);
+        CHECK(r.requested_tolerance_met.value_or(false));CHECK(r.reduced_hessian_minimum>0);
+        return std::make_pair(p,r);
+    };
+    const std::array<std::array<double,4>,3> refs={{{180,1e6,-5269.669334777402,0.00047042881945383514},{190,1e6,-4108.403820583579,0.0006523810823353041},{220,2e6,-2131.692379591598,0.00044242974279205897}}};
+    for(const auto& row:refs) {
+        auto p=binary();p.temperature.value=row[0];p.pressure.value=row[1];
+        const auto tp=solve_equilibrium(model,p);CHECK(tp.has_state());
+        compare("UV/reference/U",energy(model,tp),row[2],std::abs(row[2]),1e-8);
+        compare("UV/reference/V",volume(tp),row[3],row[3],1e-8);
+        const auto solved=recover(model,p,tp,1.02*row[0],"UV/"+std::to_string(row[0]));
+        if(row[0]==180) {
+            auto doubled=p;doubled.feed.values={1,1};auto ref=tp;for(auto& n:ref.amounts)n*=2;
+            recover(model,doubled,ref,1.02*row[0],"UV/extensive");
+            const auto c=compile_problem(model,solved.first);auto y=solved.second.coordinates;y[0]+=0.01;
+            std::vector<double> scales(y.size(),1);scales[c.primal_size-2]=180;scales[c.primal_size-1]=1e6;
+            ladder(c,y,scales,"UV/curvature",{0.},1e-6);
+            // In physical amounts and volumes, L_Tz=0, L_TT=Cv/(R T²), L_zz=A_zz/(RT).
+            const auto at=c.prepare(solved.second.coordinates);const auto h=c.entropy_hessian_at(at);
+            const std::size_t width=at.point.size();std::vector<double> tangent(width,0.0);const double dt=1.8;
+            tangent[c.primal_size-2]=dt;double expected=0.0;
+            for(std::size_t phase=0;phase<at.shape.size();++phase) {
+                const auto& shape=at.shape[phase];const double amount=at.amount[phase],vol=amount*at.volume[phase];
+                std::vector<double> amounts(2);for(std::size_t i=0;i<2;++i)amounts[i]=amount*at.composition[phase][i];
+                const double dn[2]={0.03,-0.01},dtotal=dn[0]+dn[1],dv=0.02*vol;
+                const auto derivative=model.evaluate(180,vol,amounts,DerivativeOrder::Hessian);
+                const std::vector<double> move={0,dv,dn[0],dn[1]};
+                for(std::size_t i=0;i<4;++i)for(std::size_t j=0;j<4;++j)expected+=move[i]*derivative.hessian[i*4+j]*move[j];
+                expected+=dn[0]*dn[0]/amounts[0]+dn[1]*dn[1]/amounts[1]-2*dv*dtotal/vol+amount*dv*dv/(vol*vol);
+                const auto state=model.state(180,1/at.volume[phase],at.composition[phase]);
+                expected+=amount* *state.total_isochoric_heat_capacity/(R*180*180)*dt*dt;
+                for(std::size_t i=0;i<2;++i)tangent[shape.x[i]]=dn[i]/amounts[i]-dtotal/amount;
+                tangent[*shape.amount]=dtotal;
+                tangent[shape.volume]=(at.packing[phase].component[0]*dn[0]/amounts[0]+at.packing[phase].component[1]*dn[1]/amounts[1])/at.packing[phase].coefficient
+                    +at.packing[phase].temperature_derivative/at.packing[phase].coefficient*dt-dv/vol;
+            }
+            double actual=0.0;for(std::size_t i=0;i<width;++i)for(std::size_t j=0;j<width;++j)actual+=tangent[i]*h[i*width+j]*tangent[j];
+            compare("UV/entropy-physical-curvature",actual,expected,std::abs(expected),1e-8);
+            auto du=direction(c),dv_control=direction(c);du.internal_energy_j=R*180;dv_control.volume_m3=*solved.first.volume_m3;
+            std::vector<SolvedStateObservable> observables;
+            for(std::size_t phase=0;phase<2;++phase) {
+                observables.push_back({SolvedStateObservableKind::PhaseAmount,phase});
+                observables.push_back({SolvedStateObservableKind::PhaseVolume,phase});
+                observables.push_back({SolvedStateObservableKind::PhaseProperty,phase,0,PropertyObservable::TotalInternalEnergy});
+                for(std::size_t i=0;i<2;++i)observables.push_back({SolvedStateObservableKind::PhaseMoleFraction,phase,i});
+            }
+            const auto actions=solved_state_first_actions(c,solved.second,observables,{du,dv_control});
+            for(std::size_t d=0;d<2;++d) {
+                double energy_action=0,volume_action=0;std::array<double,2> inventory{};
+                for(std::size_t phase=0;phase<2;++phase) {
+                    const auto& a=actions[d].results;const std::size_t offset=5*phase;
+                    for(std::size_t i=0;i<5;++i)CHECK(a[offset+i].action.has_value());
+                    energy_action+=*a[offset].action* *a[offset+2].value+*a[offset].value* *a[offset+2].action;
+                    volume_action+=*a[offset+1].action;
+                    for(std::size_t i=0;i<2;++i)inventory[i]+=*a[offset].action* *a[offset+3+i].value+*a[offset].value* *a[offset+3+i].action;
+                }
+                compare("UV/pair-action/U"+std::to_string(d),energy_action,d==0?R*180:0,R*180,1e-8);
+                compare("UV/pair-action/V"+std::to_string(d),volume_action,d==1?*solved.first.volume_m3:0,*solved.first.volume_m3,1e-8);
+                for(std::size_t i=0;i<2;++i)compare("UV/pair-action/inventory"+std::to_string(d)+std::to_string(i),inventory[i],0,1,1e-8);
+            }
+
+
+        }
+    }
+    auto p=binary();p.phases.erase(p.phases.begin());p.temperature.value=300;p.pressure.value=1e5;
+    const auto tp=solve_equilibrium(model,p);CHECK(tp.has_state());
+    const auto solved=recover(model,p,tp,294,"UV/homogeneous");
+    compare("UV/reference/homogeneous-U",energy(model,tp),3720.0048586268294,3720.0048586268294,1e-8);
+    const auto c=compile_problem(model,solved.first);auto u=direction(c),v=direction(c);u.internal_energy_j=1;v.volume_m3=*solved.first.volume_m3;
+    const auto state=model.state(300,tp.molar_densities[0],{0.5,0.5});const auto eos=model.evaluate(300,1/tp.molar_densities[0],{0.5,0.5},DerivativeOrder::Hessian);
+    const double cv=*state.total_isochoric_heat_capacity,pt=R*(tp.molar_densities[0]-eos.gradient[1]-300*eos.hessian[1]);
+    compare("UV/action/TU",action(c,solved.second,{u}),1/cv,1/cv,1e-8);
+    compare("UV/action/PU",action(c,solved.second,{u},SolvedStateObservableKind::Pressure),pt/cv,std::abs(pt/cv),1e-8);
+    const double tv=(1e5-300*pt)/cv* *solved.first.volume_m3;
+    compare("UV/action/TV",action(c,solved.second,{v}),tv,std::abs(tv),1e-8);
+    compare("UV/action/PV",action(c,solved.second,{v},SolvedStateObservableKind::Pressure),pt*tv-tp.molar_densities[0]*state.pressure_density_derivative,1e5,1e-8);
+    thermal.component_intervals.resize(1);const HelmholtzModel pure(propane_parameters(),{},thermal);
+    auto sat=equilibrium_support::flash(1);sat.temperature=FreeValue::fixed(300);sat.pressure=FreeValue::variable(1e6);
+    sat.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
+    auto sr=solve_equilibrium(pure,sat);CHECK(sr.has_state());sr.amounts={0.6,0.4};sat.phases[1].amount=AmountSpec::free();
+    recover(pure,sat,sr,306,"UV/propane");
+    recover(pure,sat,sr,350,"UV/propane-exterior-seed");
+    auto edge=thermal;edge.component_intervals[0][0].upper=300;edge.component_intervals[0][0].upper_inclusive=true;
+    const HelmholtzModel bounded(propane_parameters(),{},edge);
+    auto q=sat;q.temperature=FreeValue::variable(300);q.internal_energy_j=energy(pure,sr);q.volume_m3=volume(sr);
+    bool refused=false;try{(void)solve_equilibrium(bounded,q);}catch(const std::invalid_argument& e){refused=std::string(e.what()).find("interval endpoint")!=std::string::npos;}CHECK(refused);
 }
 } // namespace caloric_specification_checks
