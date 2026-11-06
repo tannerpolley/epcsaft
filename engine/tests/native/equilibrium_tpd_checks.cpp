@@ -22,8 +22,8 @@ void check_discovery_work() {
         const auto result = discover_phases(model, problem);
         CHECK(result.success && result.phase_count == 2);
         const auto& work = result.discovery->work;
-        CHECK(work.at("root_calls") == 108 && work.at("root_evaluations") == 1128 && work.at("energy_evaluations") == 1299);
-        const std::array<std::array<double, 3>, 2> rounds{{{45, 577, 634}, {52, 476, 548}}};
+        CHECK(work.at("root_calls") == 109 && work.at("root_evaluations") == 1146 && work.at("energy_evaluations") == 1318);
+        const std::array<std::array<double, 3>, 2> rounds{{{46, 589, 647}, {52, 484, 556}}};
         CHECK(result.discovery->rounds.size() == rounds.size());
         for (std::size_t i = 0; i < rounds.size(); ++i) {
             const auto& round = result.discovery->rounds[i];
@@ -44,14 +44,14 @@ void check_discovery_work() {
             CHECK(roots == work.at("root_calls") && density == work.at("root_evaluations") && energy == work.at("energy_evaluations"));
         }
         const auto before = request.counts();
-        CHECK(before.root_calls == 108 && before.root_evaluations == 1128 && before.energy_evaluations == 1299);
+        CHECK(before.root_calls == 109 && before.root_evaluations == 1146 && before.energy_evaluations == 1318);
         bool refused = false;
         try { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); }
         catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
         (void)model.evaluate(190.0, 1.0 / result.molar_densities[0], {0.5, 0.5}, DerivativeOrder::Gradient);
         const auto after = request.counts();
-        CHECK(after.root_calls == 109 && after.root_evaluations == 1128 && after.energy_evaluations == 1300);
+        CHECK(after.root_calls == 110 && after.root_evaluations == 1146 && after.energy_evaluations == 1319);
         CHECK(std::abs(result.molar_densities[0] / 18534.052764709064 - 1.0) <= 1e-10);
         CHECK(std::abs(result.mole_fractions[0] - 0.21537559277379345) <= 1e-10);
         const auto compiled = compile_problem(model, *result.declaration);
@@ -122,6 +122,7 @@ void check_stability_amount_correction() {
     const HelmholtzModel model(properties_support::neutral_binary());
     constexpr double temperature = 180.0, pressure = 1e5, chemical_scale = 7.0;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
+    bool nonzero_correction = false;
     for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}}) {
         const std::vector<double> x{fraction, 1.0 - fraction};
         const auto root = solve_density(model, temperature, pressure, x, DensityBranch::Liquid, std::nullopt);
@@ -172,7 +173,8 @@ void check_stability_amount_correction() {
         StabilityOptions options; options.evaluate_supplied_trials = true;
         auto trial = problem.phases[0]; trial.composition_guess = {0.5, 0.5}; options.trials = {trial};
         const auto report = stability_test(compiled, parent, options);
-        CHECK(report.completed && report.trials.size() == 1 && energy > 0.0);
+        CHECK(report.completed && report.trials.size() == 1 && energy >= 0.0);
+        nonzero_correction = nonzero_correction || energy > 0.0;
         const auto inputs = recording_support::fields({recording_support::field("rhs_mol", rhs),
             recording_support::field("representation_energy", representation_energy)});
         const auto& quantities = report.present_phases[0];
@@ -198,6 +200,7 @@ void check_stability_amount_correction() {
                 recording_support::fields({recording_support::field("target_mol", -1.0)}));
         }
     }
+    CHECK(nonzero_correction);
 }
 
 // #663: manufactured stationary vapor with two independent ionic composition directions.

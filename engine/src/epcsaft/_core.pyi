@@ -1275,6 +1275,7 @@ class VirialCoefficients:
     """C in m⁶/mol²."""
 
 class State:
+    unavailable_properties: list[tuple[str, PropertyActionStatus]]
     rank_records: list[NumericalRank]
     """One homogeneous state with SI molar quantities.
 
@@ -1551,6 +1552,7 @@ class StateStatus:
     DomainError: StateStatus
 
 class StateBatch:
+    unavailable_properties: list[Optional[list[tuple[str, PropertyActionStatus]]]]
     """Ordered State rows and property columns, with scalar SI units and availability."""
     rows: list[Optional[State]]
     status: list[StateStatus]

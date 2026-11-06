@@ -63,7 +63,7 @@ class WideIonic {
         const std::vector<AD> sites{site,site};
         const auto electro=electrolyte_contribution(independent[0],rho,x,rx,p);
         const auto born=born_contribution(independent[0],x,p,electro.bulk_relative_permittivity);
-        const auto terms=residual_helmholtz(independent[0],rho,x,p,sigma,diameter,sites,electro.debye_huckel,born);
+        const auto terms=residual_helmholtz(independent[0],rho,x,p,sigma,diameter,sites,electro.debye_huckel,born, association_products(rho, x, p, sites, delta));
         std::vector<AD> dependent{N*(terms.hard_chain+terms.dispersion+terms.association+terms.debye_huckel+terms.born+terms.dipolar)};
         CppAD::ADFun<Wide> energy(independent,dependent);auto nested=energy.base2ad();
         std::vector<AD> point{Wide(c.problem.temperature.value),Wide(1.8e-5),Wide(rx[0]),Wide(y),Wide(y),Wide(c.parameters.dispersion_energy_over_k[0])};

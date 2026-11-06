@@ -577,6 +577,25 @@ void check_minimax_consistency() {
     request.observations = {gamma, phi, epsilon, energy};
     {
         HelmholtzModel columns(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::Kij, {1, 3}}});
+        // Constructed State qualification isolates consumption; it does not certify mixed producer availability.
+        for (bool reference : {false, true}) {
+            Prediction mixed; mixed.status = ObservationStatus::Available; mixed.value = 1;
+            mixed.state.emplace();
+            mixed.state->bulk_relative_permittivity = 64;
+            mixed.state->permittivity_parameter_derivative = {.0625, .25};
+            mixed.reference_state = mixed.state;
+            mixed.reference_state->permittivity_parameter_derivative[1] = .125;
+            auto& failed_state = reference ? *mixed.reference_state : *mixed.state;
+            failed_state.permittivity_parameter_derivative[0].reset();
+            failed_state.unavailable_properties.emplace_back("permittivity_parameter_derivative[0]", PropertyActionStatus::PressureSingular);
+            const auto gradient = differentiate(columns, epsilon, mixed);
+            CHECK(gradient.status == ObservationStatus::ActionUnavailable);
+            CHECK(gradient.parameter_actions.size() == 2 && !gradient.parameter_actions[0].action);
+            CHECK(gradient.parameter_actions[0].status == PropertyActionStatus::PressureSingular);
+            CHECK(gradient.parameter_actions[1].action && *gradient.parameter_actions[1].action == .001953125);
+            CHECK(gradient.message.find(reference ? "reference" : "sample") != std::string::npos);
+            CHECK(gradient.message.find("permittivity_parameter_derivative[0]") != std::string::npos);
+        }
         auto prediction = predict(columns, energy);
         const auto intact = *prediction.reference;
         auto& failed = prediction.reference->parameter_derivative[0][0];

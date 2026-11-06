@@ -124,6 +124,17 @@ Gross2001 universal constants retained as `A0`, `A1`, `A2`, `B0`, `B1`, `B2` in
 `engine/native/contributions/helmholtz.hpp`, transcribed from Gross2001 Table 1.
 The catalogue defines their interpolation; it does not duplicate the arrays.
 
+For numerical evaluation of Gross2001 A.6--A.8, first form the
+composition moments $M_k=\sum_i x_i m_i d_i^k$ independently of density.
+With $\eta=(\pi/6)\widehat\rho M_3$, $u=1-\eta$,
+$A=M_1M_2/(M_0M_3)$ and $B=M_2^3/(M_0M_3^2)$, evaluate
+$a^{hs}=3A\eta/u+B\eta/u^2+(B-1)\log1p(-\eta)$.
+For $t_{ij}=d_i d_j\zeta_2/(d_i+d_j)$ the contact departure is
+$D_{ij}=\eta/u+3t_{ij}/u^2+2t_{ij}^2/u^3$.
+The chain uses $\log1p(D_{ii})$ directly; other contact consumers use
+$1+D_{ij}$. These are the same mixture equations at positive and zero
+series density, with density powers cancelled before arithmetic.
+
 The pair rules consumed by the admitted bundles are
 
 Defining relation: [EqID: `cross_segment_diameter`](../equations.md#cross_segment_diameter), [EqID: `cross_dispersion_energy`](../equations.md#cross_dispersion_energy), [EqID: `same_sign_ionic_dispersion`](../equations.md#same_sign_ionic_dispersion).

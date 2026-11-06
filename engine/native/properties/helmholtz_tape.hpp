@@ -48,16 +48,6 @@ std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Fixe
         ? born_contribution(temperature, composition, parameters, electrolyte.bulk_relative_permittivity) : Scalar(0)};
 }
 
-// ALG-ASSOCIATION: the stationary potential eliminates the highest implicit site coefficient.
-template <typename Scalar, typename Fixed, typename ParameterSet>
-Scalar stationary_association(Scalar potential, const std::vector<Fixed>& composition,
-    const ParameterSet& parameters, const std::vector<Scalar>& residuals) {
-    for (std::size_t site = 0; site < residuals.size(); ++site)
-        potential -= Scalar(0.5) * composition[static_cast<std::size_t>(parameters.site_component[site])]
-            * parameters.site_multiplicity[site] * residuals[site];
-    return potential;
-}
-
 enum class ParameterFamily {
     SegmentCount,
     SigmaConstant,
@@ -202,19 +192,18 @@ struct HelmholtzTape final {
             // retain the Born first insertion only on the separate ion-free reference tape.
             if (reference_insertion) born = born_contribution(independent[0], composition,
                 tape_parameters, electrolyte.bulk_relative_permittivity);
-            const auto contributions = residual_helmholtz(
-                independent[0], density, composition, tape_parameters, sigma,
-                diameter, sites, electrolyte.debye_huckel, born);
             const auto delta = parameters.ideal_gas ? std::vector<AD>{} : association_delta_values(
                 independent[0], density, composition, tape_parameters, sigma,
                 diameter, tape_parameters.association_energy_over_k,
                 tape_parameters.association_volume);
-            const auto residuals = association_residuals(
-                density, composition, tape_parameters, sites, delta);
-            const auto potential = stationary_association(contributions.association, composition, parameters, residuals);
+            const auto products = association_products(density, composition, tape_parameters, sites, delta);
+            const auto& residuals = products.second;
+            const auto contributions = residual_helmholtz(
+                independent[0], density, composition, tape_parameters, sigma,
+                diameter, sites, electrolyte.debye_huckel, born, products);
             dependent.push_back(total * (
                 contributions.hard_chain + contributions.dispersion
-                + contributions.debye_huckel + contributions.born + potential
+                + contributions.debye_huckel + contributions.born + contributions.association
                 + contributions.dipolar));
             if (!parameters.cation_mixing.empty()) dependent.back() += total * contributions.cation_mixing;
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());

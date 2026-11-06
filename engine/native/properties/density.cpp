@@ -98,7 +98,7 @@ public:
                     target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
         }
         if constexpr (std::is_same_v<Base, double> && !Composition) if (!parameters_.ideal_gas) {
-            const auto packing = composition_moments<3>(composition_, parameters_, diameter_);
+            const auto packing = composition_moments(composition_, parameters_, diameter_);
             moments_ = {packing, dispersion_coefficients(packing[0]), composition_moments(temperature_, composition_, parameters_, sigma_)};
         }
         if (!core::AssociationObservations::current()) observations_.emplace();
@@ -278,8 +278,8 @@ public:
                 floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
             }
             }
-            residuals = association_residuals(rho, composition, parameters_, site_series, delta);
         }
+        const auto products = association_products(rho, composition, parameters_, site_series, delta);
         const auto contributions = [&] {
             if constexpr (Thermal) {
                 // The pure nonassociating thermal request differentiates geometry and pair laws too.
@@ -289,26 +289,25 @@ public:
                 const auto diameter = segment_diameter(temperature, parameters_, sigma);
                 const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_);
                 return residual_helmholtz(temperature, rho, x, parameters_, sigma, diameter,
-                    site_series, electro.first.debye_huckel, electro.second);
+                    site_series, electro.first.debye_huckel, electro.second, products);
             } else {
                 const auto electrostatics = [&] {
                     if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
                     else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
                 }();
                 if constexpr (std::is_same_v<Base, double> && !Composition) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
-                    diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, &moments_);
+                    diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, products, &moments_);
                 else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
                     std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
-                    site_series, electrostatics.first.debye_huckel, electrostatics.second);
+                    site_series, electrostatics.first.debye_huckel, electrostatics.second, products);
             }
         }();
         if (sites_out != nullptr) {
             sites_out->clear();
             for (const auto& x : site_series) sites_out->insert(sites_out->end(), x.c.begin(), x.c.begin() + N);
         }
-        const auto potential = detail::stationary_association(contributions.association, composition, parameters_, residuals);
         auto result = total * (contributions.hard_chain + contributions.dispersion + contributions.debye_huckel
-                         + contributions.born + potential + contributions.dipolar);
+                         + contributions.born + contributions.association + contributions.dipolar);
         if (!parameters_.cation_mixing.empty()) result += total * contributions.cation_mixing;
         return result;
     }

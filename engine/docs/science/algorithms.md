@@ -186,6 +186,19 @@ reciprocal-slot derivatives. The pure packing coefficient has no `k_ij` or
 `l_ij` dependency under `packing_coefficient_parameter_derivative`; their
 energy and cross-diameter dependencies remain on the common Helmholtz tape.
 
+At native State publication, mandatory contribution, residual caloric,
+mechanical, solved-site and available chemical-potential values must be finite.
+Declared bulk permittivity must also be finite. A failed central energy or
+mandatory value throws a named calculation refusal with temperature and molar
+density, including when derived properties were not requested. Earlier numerical
+causes remain intact. Present optional values are finite; a computed nonfinite
+optional is absent with an indexed `Nonfinite` reason in `unavailable_properties`.
+Native pressure-closed parameter columns contain optional entries in unchanged
+active-parameter order. Missing prerequisites propagate their original causes
+into dependent columns and sample/reference fitting actions; an unavailable
+fitting action rejects the observation before Jacobian consumption. Existing
+thermochemistry and component admission reasons retain their meanings.
+
 ## ALG-ASSOCIATION
 
 Optional `trace(diagnostics=True)` observes existing mass-action iterations as
@@ -212,6 +225,22 @@ iteration budget; use Newton's method on the admitted site domain, with
 step control that keeps site fractions in (0,1]. Accept only a finite residual
 meeting the declared criterion. Return nonconvergence, domain escape or a
 singular defining Jacobian explicitly; the last iterate is not success.
+
+For the energy evaluation, use the shared bonded products
+$q_A=\widehat\rho\sum_B x_{i(B)}\nu_B X_B\Delta_{AB}$ and
+$F_A=X_A(1+q_A)-1$. The published association contribution is the
+stationary potential
+$$
+L=\sum_A x_{i(A)}\nu_A\left[-\log1p(q_A)+\frac{X_Aq_A}{2}
++\log1p(F_A)-F_A\right].
+$$
+It equals the documented association energy on the mass-action root and
+its stationary extension off the root. The old raw expression differs by
+$\sum_A x_{i(A)}\nu_A F_A/2$ at an achieved finite residual. Keep the
+$\log1p(F_A)-F_A$ term for the site Hessian and error estimates; no second
+stationary correction is applied. The same scalar expression supplies double,
+automatic differentiation and Taylor evaluation, without recovering a bonded
+fraction by subtracting a rounded site fraction from one.
 
 For the first update, form $q_a=\sum_b K_{ab}$ at $X=1$, with
 $K_{ab}=\widehat\rho x_{i(b)}\nu_b\Delta_{ab}$. Keep that start when

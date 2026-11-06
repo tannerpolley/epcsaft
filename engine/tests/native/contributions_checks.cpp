@@ -146,7 +146,7 @@ epcsaft::HelmholtzResult<double> evaluate(
     );
     return epcsaft::residual_helmholtz(
         temperature, molar_density, x, p, sigma, diameter, sites, 0.0, 0.0
-    );
+    , epcsaft::association_products(molar_density, x, p, sites, epcsaft::association_delta_values(temperature, molar_density, x, p, sigma, diameter, p.association_energy_over_k, p.association_volume)));
 }
 
 // Carnahan-Starling. For one component the log term in the hard-sphere
@@ -275,14 +275,14 @@ void residual_vanishes_at_zero_density() {
     epcsaft::Taylor<2> density;
     density.c[1] = 1.0;
     const auto terms = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
-        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0));
+        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0), {});
     const double v = epcsaft::PI / 6.0 * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3
         * std::pow(0.88 * spheres.sigma_constant[0], 3);
     CHECK(std::abs(terms.hard_chain.c[1] / (4.0 * v) - 1.0) < 1e-14);
     CHECK(std::abs(2.0 * terms.hard_chain.c[2] / (10.0 * v * v) - 1.0) < 1e-14);
     spheres.ideal_gas = true;
     const auto ideal = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
-        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0));
+        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0), {});
     CHECK(ideal.hard_chain.c[1] == 0.0 && ideal.hard_chain.c[2] == 0.0);
     auto associated = p;
     associated.site_component = {0, 0, 1};
@@ -534,7 +534,7 @@ void association_equations_match_closed_forms_and_limits() {
            "rho_N -> 0 gives X=1");
     const auto zero_density_terms = epcsaft::residual_helmholtz(
         temperature, zero_density, pure, symmetric, sigma, diameter, zero_density_fractions, 0.0, 0.0
-    );
+    , epcsaft::association_products(zero_density, pure, symmetric, zero_density_fractions, epcsaft::association_delta_values(temperature, zero_density, pure, symmetric, sigma, diameter, symmetric.association_energy_over_k, symmetric.association_volume)));
     record("limit-zero-density-energy", "association_helmholtz",
            zero_density_terms.association, 0.0,
            recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
@@ -1242,7 +1242,7 @@ void kernels_record_a_tape() {
     const auto residual = epcsaft::residual_helmholtz(
         independent[0], independent[1], composition, p, sigma, diameter,
         no_sites, AD(0.0), AD(0.0)
-    );
+    , {});
     std::vector<AD> dependent = {residual.hard_chain + residual.dispersion};
     CppAD::ADFun<double> tape(independent, dependent);
 

@@ -104,6 +104,7 @@ def test_solvent_mole_weighting_actions(mode: str) -> None:
         exact = action(m, p, ds)
         d = ds[-1]
         rows = []
+        extrapolated = []
         done = [False] * 7
         for rung in range(9):
             h = (0.2 if d.temperature_k else 0.002) / 2**rung
@@ -120,12 +121,16 @@ def test_solvent_mole_weighting_actions(mode: str) -> None:
             rows.append([(a - b) / (2 * h) for a, b in zip(*vals)])
             if rung == 0:
                 continue
+            extrapolated.append([(4 * b - a) / 3 for a, b in zip(rows[-2], rows[-1])])
+            if len(extrapolated) < 2:
+                continue
             for i in range(7):
                 if done[i]:
                     continue
                 a, b = rows[-2][i], rows[-1][i]
-                rich = (4 * b - a) / 3
-                refine = abs(b - a) / 3
+                rich = extrapolated[-1][i]
+                # The compared Richardson value has O(h^4) error; halving h divides it by 16.
+                refine = abs(rich - extrapolated[-2][i]) / 15
                 target = atols[i] + 1e-6 * max(abs(rich), abs(exact[i]))
                 err = abs(exact[i] - rich)
                 done[i] = refine <= target / 4

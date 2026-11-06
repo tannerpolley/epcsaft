@@ -233,7 +233,8 @@ struct State final {
     double molar_density = 0.0;
     double pressure_density_derivative = 0.0;
     std::vector<std::optional<double>> log_fugacity_parameter_derivative;  // component x active, fixed T/P/x
-    std::vector<double> density_parameter_derivative, permittivity_parameter_derivative;
+    std::vector<std::optional<double>> density_parameter_derivative, permittivity_parameter_derivative;
+    std::vector<std::pair<std::string, PropertyActionStatus>> unavailable_properties;
     std::vector<double> site_fractions;
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;

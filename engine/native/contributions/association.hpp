@@ -37,7 +37,6 @@ std::vector<Scalar> association_delta_values(
 ) {
     const std::size_t sites = parameters.site_component.size();
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
-    const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
     // Declared laws, then thermal combining rules over their explicit self edges, give energy and
     // volume at this temperature; without them the stored values are read unchanged.
     const auto laws = temperature_law_values(temperature, parameters);
@@ -80,7 +79,7 @@ std::vector<Scalar> association_delta_values(
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
             // EqID: association_contact
             const Scalar contact = hard_sphere_contact(
-                diameter[i] * diameter[j] / (diameter[i] + diameter[j]), zeta[2], one_minus_eta);
+                diameter[i] * diameter[j] / (diameter[i] + diameter[j]), zeta[2], zeta[3]);
             // Wolbach--Sandler pairs (active == 2): the Gross2002 Eq. 3 size
             // factor times sigma_ij^3 is the geometric-mean diameter cubed.
             const Fixed size_ij = (parameters.association_active[pair] == 2
@@ -107,23 +106,6 @@ inline std::vector<double> association_delta(
         parameters.association_energy_over_k, parameters.association_volume);
 }
 
-// B_a = sum_b x_c(b) n_b X_b Delta_ab, the bonded density of every site a.
-template <typename Scalar, typename ParameterSet, typename Fixed>
-std::vector<Scalar> bonded_densities(
-    const std::vector<Fixed>& mole_fractions,
-    const ParameterSet& parameters,
-    const std::vector<Scalar>& site_fractions,
-    const std::vector<Scalar>& delta
-) {
-    const std::size_t sites = parameters.site_component.size();
-    std::vector<Scalar> bonded(sites, Scalar(0.0));
-    for (std::size_t a = 0; a < sites; ++a)
-        for (std::size_t b = 0; b < sites; ++b)
-            bonded[a] += mole_fractions[static_cast<std::size_t>(parameters.site_component[b])]
-                * parameters.site_multiplicity[b] * site_fractions[b] * delta[a * sites + b];
-    return bonded;
-}
-
 template <typename Scalar, typename ParameterSet, typename Fixed>
 std::vector<Scalar> association_residuals(
     const Scalar& molar_density,
@@ -132,12 +114,7 @@ std::vector<Scalar> association_residuals(
     const std::vector<Scalar>& site_fractions,
     const std::vector<Scalar>& delta
 ) {
-    const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-    auto residuals = bonded_densities(mole_fractions, parameters, site_fractions, delta);
-    // EqID: association_mass_action
-    for (std::size_t a = 0; a < residuals.size(); ++a)
-        residuals[a] = site_fractions[a] * (Scalar(1.0) + number_density * residuals[a]) - Scalar(1.0);
-    return residuals;
+    return association_products(molar_density, mole_fractions, parameters, site_fractions, delta).second;
 }
 
 // EqExclude: numerical iteration mechanics

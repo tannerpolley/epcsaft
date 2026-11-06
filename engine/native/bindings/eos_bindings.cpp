@@ -7,6 +7,7 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/array.h>
 #include <nanobind/stl/optional.h>
+#include <nanobind/stl/pair.h>
 #include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/variant.h>
@@ -242,7 +243,7 @@ void register_eos(nb::module_& module) {
             density_convergence, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
             density_branch, stable_root_count)
-        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, rank_records, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
+        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, unavailable_properties, rank_records, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
             isentropic_compressibility, speed_of_sound, joule_thomson_coefficient, partial_molar_volume,
             partial_molar_enthalpy, partial_molar_entropy)
     nb::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")

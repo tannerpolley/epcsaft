@@ -1,3 +1,7 @@
+#if defined(__linux__)
+#include <quadmath.h>
+#endif
+#include <iostream>
 // P1, F1, M2 and M3: residual properties, caloric ladders, derivatives and limits.
 #include "properties_checks_shared.hpp"
 
@@ -239,6 +243,82 @@ void residual_properties_and_caloric_ladders() {
     recording_support::compare_custom("conditioning/negative-D-other-fields-finite", "residual_properties_finite", "bool", finite_other_outputs ? 1.0 : 0.0, 1.0, recording_support::fields({model_inputs(conditioning_model.parameters(), 280.0, 1.0 / 4000.0, {1.0}), recording_support::field("D", unavailable_D)}), "Availability", "partial_availability", "other residual outputs remain finite when c_p^r is unavailable", "absolute", finite_other_outputs, "p1-conditioning", "negative-D-other-fields-finite");
 }
 void derivatives_and_limits() {
+    {
+#if defined(__linux__)
+    // Gross2001 A.4/A.6/A.7 and the exact one-site mass-action root, in binary128.
+    auto dilute = properties_support::ethane();
+    dilute.segment_count[0] = 1.6069; dilute.sigma_constant[0] = 3.5206;
+    dilute.dispersion_energy_over_k[0] = 191.42;
+    dilute.site_component = {0}; dilute.site_multiplicity = {1}; dilute.association_active = {1};
+    dilute.association_energy_over_k = {1500}; dilute.association_volume = {.03};
+    const std::vector<double> pure_dilute{1.0};
+    const auto dsigma = epcsaft::segment_sigma(300.0, dilute);
+    const auto dd = epcsaft::segment_diameter(300.0, dilute, dsigma);
+    using Wide = __float128;
+    CHECK(FLT128_MANT_DIG == 113);
+    for (double rho : {1e-3, 1e-6, 1e-9, 1e-12, 1e-15, 1e-20, 1e-50, 1e-100, 1e-150, 1e-300}) {
+        const auto delta = epcsaft::association_delta(300, rho, pure_dilute, dilute, dsigma, dd);
+        const auto sites = epcsaft::solve_site_fractions(300, rho, pure_dilute, dilute, dsigma, dd);
+        const auto actual = epcsaft::residual_helmholtz(300.0, rho, pure_dilute, dilute, dsigma, dd,
+            sites, 0.0, 0.0, epcsaft::association_products(rho, pure_dilute, dilute, sites, delta));
+        const Wide eta = Wide(epcsaft::PI) / 6 * Wide(rho) * Wide(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3)
+            * Wide(dilute.segment_count[0]) * Wide(dd[0]) * Wide(dd[0]) * Wide(dd[0]);
+        const Wide u = 1 - eta;
+        const Wide hc = Wide(dilute.segment_count[0]) * (4 * eta - 3 * eta * eta) / (u * u)
+            - Wide(dilute.segment_count[0] - 1) * (log1pq(-eta / 2) - 3 * log1pq(-eta));
+        const Wide K = Wide(rho) * Wide(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3) * Wide(delta[0]);
+        const Wide b = 2 * K / (1 + 2 * K + sqrtq(1 + 4 * K));
+        const Wide assoc = log1pq(-b) + b / 2;
+        const double hc_error = static_cast<double>(fabsq((Wide(actual.hard_chain) - hc) / hc));
+        const double assoc_error = static_cast<double>(fabsq((Wide(actual.association) - assoc) / assoc));
+        std::cout << std::setprecision(17) << "dilute," << rho << ',' << actual.hard_chain << ',' << static_cast<double>(hc)
+            << ',' << hc_error << ',' << actual.association << ',' << static_cast<double>(assoc) << ',' << assoc_error << '\n';
+        CHECK(hc_error <= 1e-10 && assoc_error <= 1e-10);
+    }
+#endif
+    }
+    for (const bool derived : {false, true}) {
+        const epcsaft::HelmholtzModel dilute(properties_support::ethane());
+        for (double rho : {1e-100, 1e-150, 1e-300}) {
+            try {
+                const auto state = dilute.state(300, rho, {1}, derived);
+                CHECK(std::isfinite(state.pressure) && std::isfinite(state.residual_enthalpy));
+                CHECK(std::abs(state.pressure / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300 * rho) - 1) <= 1e-10);
+                CHECK(std::isfinite(state.pressure_density_derivative));
+                std::cout << std::setprecision(17) << "state," << derived << ',' << rho << ',' << state.pressure << ','
+                    << state.residual_enthalpy << ',' << state.pressure_density_derivative << '\n';
+                CHECK(state.density_parameter_derivative.empty());
+            } catch (const std::runtime_error& error) {
+                std::cout << "refusal," << derived << ',' << rho << ',' << error.what() << '\n';
+                CHECK(rho < 1e-100 && std::string(error.what()).find("nonfinite") != std::string::npos);
+            }
+        }
+        bool refused = false;
+        try { (void)dilute.state(std::numeric_limits<double>::denorm_min(), 100, {1}, derived); }
+        catch (const std::exception&) { refused = true; }
+        CHECK(refused);
+        const epcsaft::HelmholtzModel columns(properties_support::ethane(),
+            {{epcsaft::ParameterFamily::SegmentCount, {0}}, {epcsaft::ParameterFamily::DispersionEnergyOverK, {0}}});
+        bool unavailable_closure = false;
+        for (double rho : {1000., 3000., 5000., 8000., 10000.}) {
+            const auto state = columns.state(200, rho, {1}, derived);
+            CHECK(state.permittivity_parameter_derivative.empty());
+            CHECK(state.density_parameter_derivative.size() == 2 && state.log_fugacity_parameter_derivative.size() == 2);
+            if (state.pressure_density_derivative > 0 && state.log_fugacity_coefficient) continue;
+            unavailable_closure = true;
+            for (std::size_t a = 0; a < 2; ++a) {
+                CHECK(!state.density_parameter_derivative[a] && !state.log_fugacity_parameter_derivative[a]);
+                const auto name = "density_parameter_derivative[" + std::to_string(a) + "]";
+                CHECK(std::any_of(state.unavailable_properties.begin(), state.unavailable_properties.end(),
+                    [&](const auto& entry) { return entry.first == name && entry.second != epcsaft::PropertyActionStatus::Available; }));
+            }
+        }
+        CHECK(unavailable_closure);
+        const auto action = dilute.density_actions(300, 1e-100, {1},
+            {epcsaft::PropertyObservable::ResidualEnthalpy}, {{0, 1e-100, {0}, {}}}).results.front();
+        CHECK((action.action && std::isfinite(*action.action)) || action.status != epcsaft::PropertyActionStatus::Available);
+        std::cout << "action,1e-100," << static_cast<int>(action.status) << ',' << action.action.value_or(NAN) << '\n';
+    }
     const std::vector<std::pair<epcsaft::Parameters, std::vector<double>>> cases = {
         {properties_support::neutral_binary(), {0.4, 0.6}},
         {properties_support::associating_binary(), {0.1385, 0.8615}},

@@ -641,11 +641,21 @@ PredictionGradient differentiate(
             double value = 0.0;
             ResidualEnergyAction action;
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
-                value = prediction.state->permittivity_parameter_derivative.at(a);
-                if (prediction.reference_state) {
-                    const auto& ref = *prediction.reference_state;
-                    value = (value - *prediction.value * ref.permittivity_parameter_derivative.at(a)) / ref.bulk_relative_permittivity;
-                }
+                const auto column = [&](const State& state, const char* endpoint) {
+                    const auto entry = a < state.permittivity_parameter_derivative.size()
+                        ? state.permittivity_parameter_derivative[a] : std::optional<double>{};
+                    if (a >= state.permittivity_parameter_derivative.size()) action.status = PropertyActionStatus::CentralPropertyUnavailable;
+                    if (entry) return entry;
+                    const auto field = "permittivity_parameter_derivative[" + std::to_string(a) + "]";
+                    for (const auto& [name, cause] : state.unavailable_properties) if (name == field) action.status = cause;
+                    if (gradient.message.empty()) gradient.message = std::string(endpoint) + ": " + field;
+                    core::retain_first(action.diagnostics.first_numerical_failure, state.first_numerical_failure);
+                    return entry;
+                };
+                const auto sample = column(*prediction.state, "sample");
+                const auto reference = prediction.reference_state && sample ? column(*prediction.reference_state, "reference") : std::optional(0.0);
+                value = sample && reference ? prediction.reference_state
+                    ? (*sample - *prediction.value * *reference) / prediction.reference_state->bulk_relative_permittivity : *sample : NAN;
             } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient) {
                 if (prediction.activity) action = prediction.activity->mean_ionic_parameter_derivative.at(a);
                 value = prediction.activity ? action.action.value_or(NAN) : 0.0;
@@ -670,7 +680,7 @@ PredictionGradient differentiate(
         gradient.status = ObservationStatus::Available;
         for (const auto& action : gradient.parameter_actions) if (!action.action) {
             gradient.status = ObservationStatus::ActionUnavailable;
-            gradient.message = "electrolyte column: native action cause " + std::to_string(int(action.status));
+            if (gradient.message.empty()) gradient.message = "electrolyte column: native action cause " + std::to_string(int(action.status));
             break;
         }
         return gradient;
