@@ -41,6 +41,8 @@ epcsaft.regression
 
 .. autoapifunction:: epcsaft.regression.evaluate_checks
 
+.. autoapifunction:: epcsaft.regression.saturation_pressure_observation
+
 Re-exported names
 -----------------
 

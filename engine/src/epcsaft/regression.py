@@ -23,7 +23,7 @@ from ._core import (
     MeasuredInputKind, MeasuredInput, MeasurementGroup, MeasurementUncertainty, InputReconciliation,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
-from .equilibrium import Discover, Problem
+from .equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem
 from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
@@ -66,7 +66,7 @@ __all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluati
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
-           "measured_input", "measurement_group")
+           "measured_input", "measurement_group", "saturation_pressure_observation")
 
 
 def measured_input(parameters: Parameters, kind: str, *, sigma: float, bounds: tuple[float, float],
@@ -1110,3 +1110,19 @@ def evaluate_checks(parameters: Parameters, observations: Sequence[Observation],
     parameters, separately from weighted fit objectives (ALG-FIT).
     """
     return _core.evaluate_checks(parameters._native, list(observations), list(checks), None if baseline is None else baseline._native, solver_options)
+
+
+def saturation_pressure_observation(parameters: Parameters, *, component: str, T: float,
+                                    observed: float, form: str, scale: float | None = None) -> Observation:
+    """Declare pure saturation pressure (Pa) at T (K), seeded by observed pressure.
+
+    The one-mol feed has liquid L and incipient vapor V pinned to zero.
+    Select a single component in parameters. Residual form is explicit:
+    log_ratio has no scale; difference requires a positive scale in Pa.
+    Native observation admission and fitting remain unchanged.
+    """
+    if parameters.component_ids != (component,):
+        raise ParameterError(f"saturation_pressure_observation requires only component {component!r}; select pure parameters")
+    problem = Problem(T=T, P=Free(observed), feed=Amounts({component: 1.0}),
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))])
+    return observation(parameters, "pressure", problem, observed=observed, form=form, scale=scale)

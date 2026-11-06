@@ -97,6 +97,10 @@ epcsaft.equilibrium.problem
 
 .. autoapifunction:: epcsaft.equilibrium.problem.solve_equilibrium_starts
 
+.. autoapifunction:: epcsaft.equilibrium.problem.tp_flash
+
+.. autoapifunction:: epcsaft.equilibrium.problem.critical_point
+
 Re-exported names
 -----------------
 

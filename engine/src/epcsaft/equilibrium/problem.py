@@ -1198,3 +1198,33 @@ def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_
     causes rather than silently retrying without a bound (ALG-EQUILIBRIUM).
     """
     return logged(_core.solve_equilibrium_starts, model._model, problem._native(model), list(starts), limits)
+
+
+def tp_flash(model: _Model, *, T: float, P: float, feed: Feed) -> _core.EquilibriumResult:
+    """Solve a declared liquid/vapor split at T (K), P (Pa), on the feed basis.
+
+    Returns the existing native result, including unavailable splits and causes.
+    No phase discovery is performed; this is not a global stability certificate.
+    Use Problem for reactions, solids, supports or nondefault phase guesses.
+    """
+    problem = Problem(T=T, P=P, feed=feed,
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")])
+    return solve_equilibrium(model, problem)
+
+
+def critical_point(model: _Model, *, T_guess: float, P_guess: float, rho_guess: float) -> _core.EquilibriumResult:
+    """Solve a pure critical-equation candidate with explicit K, Pa, mol/m³ guesses.
+
+    Requires a Pure model. Returns native critical diagnostics and residuals;
+    a critical candidate is not a global stability certificate.
+    """
+    from ..eos import Pure
+
+    if not isinstance(model, Pure):
+        raise _core.ParameterError("critical_point requires a Pure model with exactly one component")
+    declaration = _core.CriticalDeclaration()
+    declaration.density_guess_mol_per_m3 = rho_guess
+    problem = Problem(T=Free(T_guess), P=Free(P_guess),
+                      feed=Amounts({model.component_ids[0]: 1.0}),
+                      phases=[Phase("F", kind="liquid")], critical=declaration)
+    return solve_equilibrium(model, problem)

@@ -93,6 +93,9 @@ Install release 1.3.0 for Linux and Windows (x86-64) from the
 conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.0
 ```
 
+Try [first saturation and flash](https://tannerpolley.github.io/epcsaft/quickstart.html#first-saturation-and-flash)
+from any directory using the installed packets.
+
 The conda package includes the FeOs Gross–Sadowski 2001 and 2002 packets.
 Download the matching [release source archive](https://github.com/tannerpolley/epcsaft/releases)
 for other packets and example inputs; load packets from its `data/packets`

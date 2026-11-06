@@ -2,7 +2,7 @@
 import math
 import pytest
 from epcsaft import Mixture, Parameters, Pure
-from epcsaft.equilibrium import (Amounts, CriticalDeclaration, EnvelopeCondition, EnvelopeCoordinate, Free, Phase, Pinned,
+from epcsaft.equilibrium import (Amounts, critical_point, CriticalDeclaration, EnvelopeCondition, EnvelopeCoordinate, Free, Phase, Pinned,
                                  Problem, compile_problem, solve_equilibrium)
 from tests.packets import parameters_json
 
@@ -17,6 +17,9 @@ def test_critical_candidate_matches_teqp() -> None:
     # teqp v0.23.2 solve_pure_critical on the same packet (analysis issue-224-sliceB critical-pure.csv).
     assert result.temperature == pytest.approx(375.14002748147936, rel=1e-8), result.message
     assert result.critical is not None and abs(result.critical.eigenvalues[0]) <= result.critical.zero_band
+    candidate = critical_point(model, T_guess=375.0, P_guess=1.0e6, rho_guess=5000.0)
+    assert candidate.temperature == pytest.approx(result.temperature, rel=1e-8), candidate.message
+    assert candidate.critical is not None and abs(candidate.critical.eigenvalues[0]) <= candidate.critical.zero_band
 
 
 def test_envelope_condition_matches_feos_bubble() -> None:

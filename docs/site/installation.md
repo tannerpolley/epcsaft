@@ -27,6 +27,9 @@ download the matching source archive and pass its `data/packets` directory to
 `Parameters.from_packets`; see [packet selection](guide/parameters-and-models.md#installed-and-downloaded-packets).
 Each packet states its own use terms.
 
+Run [first saturation and flash](quickstart.md#first-saturation-and-flash)
+from any directory using only the conda package.
+
 ## Build from source
 
 Building from source is supported on Linux with Python 3.13, `uv`, a C and C++

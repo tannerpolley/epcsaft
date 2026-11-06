@@ -1551,7 +1551,7 @@ DensityRoot solve_density(
     if (anchor_density.has_value() && sibling_root != nullptr)
         throw std::invalid_argument("density sibling requires an unanchored root search");
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature " + core::optional_number(temperature) + " K; need T > 0 K");
-    if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure");
+    if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure " + core::optional_number(pressure) + " Pa; need finite P > 0 Pa");
     model.validate_composition(mole_fractions);
     // EqID: ideal_gas_density
     const double ideal_density = pressure

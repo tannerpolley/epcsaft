@@ -13,6 +13,11 @@ coordinate maps and diagnostic meaning.
 Specify the observation kind, temperature in K, pressure in Pa where fixed,
 composition/feed basis and phase branch. Give the measured value in the
 observation's declared units, including the mass or molar density basis.
+`rg.saturation_pressure_observation(parameters, component="propane", T=300,
+observed=1e6, form="log_ratio")` constructs that pure boundary problem with
+observed pressure as its initial pressure guess, a one-mol feed and an
+incipient vapor pinned to zero. Select only that component in `parameters`.
+The residual form stays explicit; `difference` also requires `scale` in Pa.
 A saturation pressure observation requires a boundary problem; a homogeneous
 density observation requires a pressure-closed state. These are different
 physical predictions even at the same nominal temperature.

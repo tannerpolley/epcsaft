@@ -26,6 +26,7 @@ ammonia-synthesis-equilibrium
 water-isobutanol-discovery
 water-isobutanol-solved-state-actions
 propane-parameter-estimation
+critical-and-continuation
 methane-asl-properties
 idaes-two-liquid-settler
 ```
@@ -40,6 +41,7 @@ idaes-two-liquid-settler
 - {download}`Ammonia synthesis equilibrium <ammonia-synthesis-equilibrium.ipynb>`
 - {download}`Water–isobutanol phase discovery <water-isobutanol-discovery.ipynb>`
 - {download}`Water–isobutanol solved-state actions <water-isobutanol-solved-state-actions.ipynb>`
+- {download}`Critical candidate and bubble continuation <critical-and-continuation.ipynb>`
 - {download}`Propane parameter estimation <propane-parameter-estimation.ipynb>`
 - {download}`Methane ASL properties <methane-asl-properties.ipynb>`
 - {download}`IDAES two-liquid settler <idaes-two-liquid-settler.ipynb>`

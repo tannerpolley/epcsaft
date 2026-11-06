@@ -1,12 +1,45 @@
 # Quickstart
 
-Start Python in the root of the source archive after [installation](installation.md).
-This sequence loads published water parameters, constructs a reusable model,
-and asks the native Engine for a liquid state at 298.15 K and 100,000 Pa.
-The [complete water notebook](examples/parameters-and-water-state.ipynb)
-retains the source description, density prediction and pressure-closure check.
-The [parameter](theory/algorithms.md#alg-parameters) and
-[density algorithms](theory/algorithms.md#alg-density) define the calculation.
+After [installation](installation.md), the first calculation below runs from any
+directory with the conda package. Later examples use the source archive's packets.
+
+## First saturation and flash
+
+The conda package ships `feos-gross-sadowski-2001/1` and
+`feos-gross-sadowski-2002/1`. This example uses the first packet's pure propane,
+methane and ethane records. The second packet supplies associating fluids for
+other calculations. The illustrative binary interaction assumption is explicitly
+$k_{ij}=0$; it is not a fitted methane/ethane interaction.
+
+```python
+from pathlib import Path
+import epcsaft
+from epcsaft import Parameters, Pure, Mixture, equilibrium as eq
+
+packets = Path(epcsaft.__file__).parent / "data" / "packets"
+packet = "feos-gross-sadowski-2001/1"
+propane = Pure(Parameters.from_packets(packets, [(packet, ["propane"])]))
+saturation = eq.solve_equilibrium(propane, propane.saturation(300.0))  # K
+mixture = Mixture(Parameters.from_packets(
+    packets, [(packet, ["methane", "ethane"])],
+    k_ij={("methane", "ethane"): 0.0}))
+problem = eq.Problem(T=250.0, P=3_750_000.0,  # K, Pa
+    feed=eq.Amounts({"methane": 0.3, "ethane": 0.7}),  # mol
+    phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor")])
+flash = eq.solve_equilibrium(mixture, problem)
+assert saturation.success and flash.success
+assert abs(saturation.pressure / 998660.89574 - 1) < 1e-8
+assert abs(flash.amounts[1] - 0.1646593108) < 1e-8
+assert max(map(abs, saturation.classified_residuals)) <= 1e-10
+assert max(map(abs, flash.classified_residuals)) <= 1e-10
+print(saturation.pressure, flash.amounts)  # Pa, mol in L/V order
+```
+
+These are model predictions and numerical checks, with unquantified physical
+uncertainty. A declared liquid/vapor split performs no global stability search.
+On source installations without bundled packets, use the source archive inputs
+below. The equivalent shorter call for the flash is
+`eq.tp_flash(mixture, T=250.0, P=3_750_000.0, feed=problem.feed)`.
 
 ## Parameters, model and state
 

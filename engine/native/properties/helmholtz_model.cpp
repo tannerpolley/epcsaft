@@ -136,6 +136,12 @@ void require(bool condition, const char* field) {
     }
 }
 
+void require_molar_density(double molar_density) {
+    if (!std::isfinite(molar_density) || molar_density <= 0.0)
+        throw std::invalid_argument("invalid molar_density " + core::optional_number(molar_density)
+            + " mol/m^3; need finite rho > 0 mol/m^3");
+}
+
 // Pair constants and each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
 void require_law_domain(double T, const Parameters& parameters) {
     const auto laws = temperature_law_values(T, parameters);
@@ -965,10 +971,11 @@ void HelmholtzModel::validate_composition(
     if (composition.size() != parameters_.component_count())
         throw std::invalid_argument("invalid composition size " + std::to_string(composition.size())
                                     + "; expected " + std::to_string(parameters_.component_count()));
-    require(finite_vector(composition), "composition");
-    require(std::all_of(composition.begin(), composition.end(), [](double value) {
-        return value >= 0.0;
-    }), "composition");
+    for (std::size_t i = 0; i < composition.size(); ++i) {
+        if (!std::isfinite(composition[i]) || composition[i] < 0.0)
+            throw std::invalid_argument("invalid composition[" + std::to_string(i) + "] fraction " + core::optional_number(composition[i])
+                + "; need finite mole fraction >= 0");
+    }
     double total = 0.0;
     for (double value : composition) total += value;
     if (!(std::abs(total - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value))
@@ -2053,7 +2060,7 @@ PropertyActionBatch HelmholtzModel::density_actions(
     const std::vector<DensityActionDirection>& directions
 ) const {
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
-    require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
+    require_molar_density(molar_density);
     validate_composition(mole_fractions);
     require(!observables.empty(), "observables");
     validate_action_request(*this, observables, directions);
@@ -2166,7 +2173,7 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     require(!parameters_.electrolyte_form.declared(), "neutral property electrolyte");
     require(!parameters_.permittivity_form.declared(), "neutral property permittivity");
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
-    require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
+    require_molar_density(molar_density);
 
     const double volume = 1.0 / molar_density;
     const std::vector<double> amounts = {1.0};
@@ -2255,7 +2262,7 @@ State HelmholtzModel::state(
     State result;
     core::Scope scope("state");
     validate_composition(mole_fractions);
-    require(std::isfinite(molar_density) && molar_density > 0.0, "molar_density");
+    require_molar_density(molar_density);
     const double volume = 1.0 / molar_density;
     const auto derivatives = evaluate(temperature, volume, mole_fractions,
         scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);

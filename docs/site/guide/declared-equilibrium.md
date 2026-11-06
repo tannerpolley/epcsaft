@@ -98,3 +98,16 @@ for the one-salt numerical example. See
 
 Neutral critical-equation candidates can be declared through
 `CriticalDeclaration`; a candidate is not a certificate of global phase stability.
+
+## Short declarations
+
+`eq.tp_flash(model, T=250, P=3_750_000, feed=feed)` declares liquid L and vapor V
+at T in K and P in Pa and returns the existing native result. It performs no
+phase discovery and supplies no global stability certificate. Use `Problem`
+for reactions, solids, special supports and nondefault phase guesses.
+
+`eq.critical_point(pure, T_guess=375, P_guess=1e6, rho_guess=5000)` requires a
+`Pure` model and explicit K, Pa and mol/m³ guesses. Inspect the returned critical
+eigenvalues, zero band and residuals: a critical-equation candidate is not a
+global stability certificate. See the runnable
+[critical and continuation recipe](../examples/critical-and-continuation.ipynb).
