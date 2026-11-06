@@ -34,6 +34,37 @@ of the energy. It does not authorize charged physical states. Parameters fixed
 by the request have zero derivatives; dependent combining-rule outputs carry
 the chain from independent coefficients. Discrete topology is not fitted.
 
+## ALG-VIRIAL
+
+For a neutral declaration, evaluate `neutral_virial_coefficients` directly
+with the shared residual contribution equations and `Taylor<2, double>`
+in molar density, seeded with coefficients (0,1,0). Temperature, composition
+and evaluated thermal parameters stay fixed. Return the linear coefficient
+as B and twice the quadratic coefficient as C. No finite density, pressure
+root, or numerical differentiation is used.
+
+The shared density-independent composition moments cancel the removable
+hard-sphere singularity. The internal Taylor packing check admits its zero
+center; ordinary homogeneous states still require strictly positive density.
+For the selected polar family, factor a2=r U and a3=r² V before evaluating
+r U²/(U-r V). Decide absent polar support independently of density. A zero
+pair coefficient on active support with unresolved Padé limit is a named
+numerical refusal, never a fabricated zero coefficient.
+
+Association starts at the exact vacuum solution X=1. At each order k=1,2,
+evaluate the existing mass-action rows with the unknown order-k coefficients
+zero, then set all site coefficients to minus those row coefficients.
+The central site Jacobian is exactly the identity. Replay the completed
+site series through the shared association Helmholtz expression. There is
+no additional nonlinear solve or tolerance. The finite-density stationary
+association and its error estimates retain their existing owners.
+
+Reject any declaration containing a nonzero species charge, even if that
+species has zero composition. Validate temperature, normalized nonnegative
+composition, evaluated geometry and association strengths, and retain named
+nonfinite coefficient failures. Outputs are B (m³/mol) and C (m⁶/mol²);
+thermal/composition actions are not supplied by this request.
+
 ## ALG-CALORICS
 
 Evaluate one explicitly selected source correlation on its declared domain.

@@ -141,6 +141,19 @@ std::vector<Scalar> association_residuals(
 }
 
 // EqExclude: numerical iteration mechanics
+// At vacuum X=1 and the mass-action Jacobian is exactly the identity.
+inline std::vector<Taylor<2>> association_density_coefficients(const Taylor<2>& density,
+    const std::vector<double>& composition, const Parameters& parameters,
+    const std::vector<Taylor<2>>& delta) {
+    std::vector<Taylor<2>> sites(parameters.site_count(), Taylor<2>(1.0));
+    for (std::size_t k = 1; k <= 2; ++k) {
+        const auto rows = association_residuals(density, composition, parameters, sites, delta);
+        for (std::size_t a = 0; a < sites.size(); ++a) sites[a].c[k] = -rows[a].c[k];
+    }
+    return sites;
+}
+
+// EqExclude: numerical iteration mechanics
 // dF_a/dX_b = X_a rho_N x_c(b) n_b Delta_ab + kron_ab (1 + rho_N B_a) for
 // F_a = X_a (1 + rho_N B_a) - 1.
 inline Eigen::MatrixXd mass_action_jacobian(

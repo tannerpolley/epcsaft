@@ -267,6 +267,39 @@ void residual_vanishes_at_zero_density() {
         "Relationship", "limit", "a_res->0 as rho->0", "strict_absolute", 1.0e-3, 0.0,
         std::abs(previous) < 1.0e-3, "p2-limit", "rho-1e-2", "a^{res}",
         "T,\\rho,\\mathbf{x}", "\\lim_{\\rho\\to0}a^{res}=0", "rho");
+    auto spheres = p;
+    spheres.dispersion_energy_over_k.assign(2, 0.0);
+    const std::vector<double> pure = {1.0, 0.0};
+    const auto sigma = epcsaft::segment_sigma(300.0, spheres);
+    const auto diameter = epcsaft::segment_diameter(300.0, spheres, sigma);
+    epcsaft::Taylor<2> density;
+    density.c[1] = 1.0;
+    const auto terms = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
+        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0));
+    const double v = epcsaft::PI / 6.0 * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3
+        * std::pow(0.88 * spheres.sigma_constant[0], 3);
+    CHECK(std::abs(terms.hard_chain.c[1] / (4.0 * v) - 1.0) < 1e-14);
+    CHECK(std::abs(2.0 * terms.hard_chain.c[2] / (10.0 * v * v) - 1.0) < 1e-14);
+    spheres.ideal_gas = true;
+    const auto ideal = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
+        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0));
+    CHECK(ideal.hard_chain.c[1] == 0.0 && ideal.hard_chain.c[2] == 0.0);
+    auto associated = p;
+    associated.site_component = {0, 0, 1};
+    associated.site_multiplicity = {1, 2, 1};
+    associated.association_active.assign(9, 1);
+    associated.association_energy_over_k.assign(9, 1500.0);
+    associated.association_volume.assign(9, 0.03);
+    const auto ds = epcsaft::association_delta_values(300.0, density, x, associated, sigma, diameter,
+        associated.association_energy_over_k, associated.association_volume);
+    const auto sites = epcsaft::association_density_coefficients(density, x, associated, ds);
+    const auto residuals = epcsaft::association_residuals(density, x, associated, sites, ds);
+    for (std::size_t site = 0; site < sites.size(); ++site) {
+        CHECK(residuals[site].c[0] == 0.0);
+        for (std::size_t k = 1; k <= 2; ++k)
+            CHECK(std::abs(residuals[site].c[k]) <= 1e-14 * std::abs(sites[site].c[k]));
+    }
+
 }
 
 // Relabelling the components is not a physical change. This is the check that

@@ -1267,6 +1267,13 @@ class PropertyActionBatch:
     """Density-closure failure record when a ConvergenceFailure was caught. None
     for successful pressure closure and for failures without that record."""
 
+class VirialCoefficients:
+    """Neutral molar-density expansion Z=1+B rho+C rho²+O(rho³)."""
+    second: float
+    """B in m³/mol."""
+    third: float
+    """C in m⁶/mol²."""
+
 class State:
     rank_records: list[NumericalRank]
     """One homogeneous state with SI molar quantities.
@@ -1538,6 +1545,8 @@ class HelmholtzModel:
     -----
     Parameters and optional thermochemistry remain fixed for this model. Active parameters declare exact derivative coordinates; no finite differences are used for calculation. See ALG-DENSITY and ALG-ACTIONS in engine/docs/science/algorithms.md.
     """
+    def virial_coefficients(self, temperature: float, composition: Sequence[float]) -> VirialCoefficients:
+        """Return exact B and C for a neutral declaration at temperature in K."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings with values and provenance."""
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),

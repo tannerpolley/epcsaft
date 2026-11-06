@@ -186,6 +186,8 @@ void register_eos(nb::module_& module) {
             k_pressure, k_density, gibbs_derivatives, status, cause);
     module.def("reaction_thermochemistry_density", &epcsaft::reaction_thermochemistry_density,
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
+    nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
+        EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
     nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
         .def_ro("requested_density_branch", &epcsaft::State::requested_density_branch)
         .def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
@@ -225,6 +227,8 @@ void register_eos(nb::module_& module) {
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
+        .def("virial_coefficients", &epcsaft::HelmholtzModel::virial_coefficients,
+            nb::arg("temperature"), nb::arg("composition"))
         .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
                          const std::vector<double>& composition, bool derived_properties) {
             model.validate_electroneutrality(composition);

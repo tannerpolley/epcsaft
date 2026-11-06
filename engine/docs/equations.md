@@ -366,6 +366,20 @@ $$
 (T-T_{\mathrm{ref},s})^n.
 $$
 
+## `neutral_virial_coefficients`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: [Gross2001], Eq.~(A.22), expanded at fixed temperature and composition; [Chapman1990], Eqs.~(15), (21) for association
+- Description: Neutral homogeneous-fluid expansion in molar density rho_m (mol/m³). B has units m³/mol and C m⁶/mol². Charged declarations are excluded because screening is nonanalytic at vacuum.
+- Change note: Ordinary Taylor coefficients contain the factorial; C is twice the quadratic coefficient of dimensionless molar residual Helmholtz energy.
+
+$$
+Z=1+B\rho_m+C\rho_m^2+O(\rho_m^3),\qquad
+ a^r=B\rho_m+\tfrac12 C\rho_m^2+O(\rho_m^3),\qquad
+ B=a^r_{\rho_m}(0),\quad C=a^r_{\rho_m\rho_m}(0).
+$$
+
 ## `compressibility_factor`
 
 - Section: Thermodynamic properties
@@ -989,7 +1003,7 @@ $$
 - Status: Source equation
 - Source: [Gross2001], Eq.~(A.6)
 - Description: Boublik-Mansoori-Carnahan-Starling-Leland hard-sphere Helmholtz term.
-- Change note: Mirrors the current zeta-based expression.
+- Change note: Cancel density through composition moments before arithmetic at vacuum; the equivalent expression below is regular at zero density.
 
 $$
 a^{hs}=\frac{1}{\zeta_0}\left[
@@ -997,6 +1011,9 @@ a^{hs}=\frac{1}{\zeta_0}\left[
 +\frac{\zeta_2^3}{\zeta_3(1-\zeta_3)^2}
 +\left(\frac{\zeta_2^3}{\zeta_3^2}-\zeta_0\right)
 \ln(1-\zeta_3)\right].
+\qquad M_k=\sum_i x_i m_i d_i^k,\quad
+ A=\frac{M_1M_2}{M_0M_3},\quad Q=\frac{M_2^3}{M_0M_3^2},\quad u=1-\eta,
+\qquad a^{hs}=3A\eta/u+Q\eta/u^2+(Q-1)\operatorname{log1p}(-\eta).
 $$
 
 ## `helmholtz_lagrangian_dual`

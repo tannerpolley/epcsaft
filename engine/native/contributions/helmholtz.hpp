@@ -205,6 +205,22 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
+// EqID: packing_moments
+// Density-independent composition moments, Gross and Sadowski (2001), A.8.
+template <typename Fixed, typename ParameterSet>
+std::array<Fixed, 4> composition_moments(const std::vector<Fixed>& x,
+    const ParameterSet& parameters, const std::vector<Fixed>& diameter) {
+    std::array<Fixed, 4> moments{};
+    for (std::size_t i = 0; i < x.size(); ++i) {
+        Fixed value = x[i] * parameters.segment_count[i];
+        for (auto& moment : moments) {
+            moment += value;
+            value *= diameter[i];
+        }
+    }
+    return moments;
+}
+
 template <typename Scalar, typename ParameterSet, typename Fixed>
 // EqID: packing_fraction
 Scalar packing_fraction_from_geometry(
@@ -229,7 +245,12 @@ Scalar packing_fraction_from_geometry(
             throw std::invalid_argument("packing fraction outside the fluid domain");
     };
     if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) refuse(molar_density, eta);
-    else if constexpr (is_taylor<Scalar>) refuse(molar_density.c[0], eta.c[0]);
+    else if constexpr (is_taylor<Scalar>) {
+        // Analytic series may be centered at vacuum; ordinary physical states remain strictly positive.
+        if (!(molar_density.c[0] >= 0.0 && wide_math::isfinite(molar_density.c[0])
+            && eta.c[0] < policy::CLOSE_PACKING_FRACTION.value))
+            throw std::invalid_argument("packing fraction outside the fluid domain");
+    }
     return eta;
 }
 
@@ -244,15 +265,9 @@ std::array<Scalar, 4> packing_moments(
 ) {
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::array<Scalar, 4> zeta;
-    for (std::size_t order = 0; order < 3; ++order) {
-        Fixed moment = Fixed(0.0);
-        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
-            Fixed power = Fixed(1.0);
-            for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
-            moment += mole_fractions[i] * parameters.segment_count[i] * power;
-        }
-        zeta[order] = (Scalar(PI) / 6.0) * number_density * moment;
-    }
+    const auto moments = composition_moments(mole_fractions, parameters, diameter);
+    for (std::size_t order = 0; order < 3; ++order)
+        zeta[order] = (Scalar(PI) / 6.0) * number_density * moments[order];
     zeta[3] = packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
     return zeta;
 }
@@ -346,14 +361,20 @@ Scalar multipole_helmholtz(
     }
     // EqID: dipolar_second_order
     // EqID: quadrupolar_second_order
-    const Scalar a2 = (quadrupole ? -9.0 * Scalar(PI) / 16.0 : -Scalar(PI)) * number_density * second;
+    const Scalar pair_coefficient = (quadrupole ? -9.0 * Scalar(PI) / 16.0 : -Scalar(PI)) * second;
     // EqID: dipolar_third_order
     // EqID: quadrupolar_third_order
-    const Scalar a3 = (quadrupole ? 9.0 * Scalar(PI) * PI / 16.0 : -4.0 * Scalar(PI) * PI / 3.0) * number_density * number_density * third;
-    // a_polar = A2 / (1 - A3/A2). With every moment absent A2 = A3 = 0 and the Pade factor
-    // is taken as its limit 1; both selected operands avoid 0/0 on the tape.
-    return a2 * scalar_select_less(Scalar(0.0), a2 * a2, a2, Scalar(1.0))
-        / scalar_select_less(Scalar(0.0), a2 * a2, a2 - a3, Scalar(1.0));
+    const Scalar triplet_coefficient = (quadrupole ? 9.0 * Scalar(PI) * PI / 16.0 : -4.0 * Scalar(PI) * PI / 3.0) * third;
+    // Cancel the common density before division; the zero-density series retains the three-body term.
+    if constexpr (is_taylor<Scalar>) {
+        if (number_density.c[0] == 0.0 && pair_coefficient.c[0] == 0.0) {
+            for (const auto i : polar)
+                if (x[i] > Fixed(0.0))
+                    throw std::runtime_error("zero polar pair coefficient: virial limit unresolved");
+        }
+    }
+    return number_density * pair_coefficient * scalar_select_less(Scalar(0.0), pair_coefficient * pair_coefficient, pair_coefficient, Scalar(1.0))
+        / scalar_select_less(Scalar(0.0), pair_coefficient * pair_coefficient, pair_coefficient - number_density * triplet_coefficient, Scalar(1.0));
 }
 
 // EqID: pair_parameter_temperature_law
@@ -446,13 +467,13 @@ HelmholtzResult<Scalar> residual_helmholtz(
 
     const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
     // EqID: hard_sphere_helmholtz
+    const auto moments = composition_moments(mole_fractions, parameters, diameter);
+    const Fixed ratio = moments[2] / moments[3];
+    const Fixed shape = ratio * ratio * moments[2] / moments[0];
     const Scalar hard_sphere =
-        (3.0 * zeta[1] * zeta[2] / one_minus_eta +
-         zeta[2] * zeta[2] * zeta[2] /
-             (zeta[3] * one_minus_eta * one_minus_eta) +
-         (zeta[2] * zeta[2] * zeta[2] / (zeta[3] * zeta[3]) - zeta[0]) *
-             scalar_log(one_minus_eta)) /
-        zeta[0];
+        3.0 * moments[1] * ratio / moments[0] * zeta[3] / one_minus_eta
+        + shape * zeta[3] / (one_minus_eta * one_minus_eta)
+        + (shape - 1.0) * scalar_log1p(-zeta[3]);
 
     // EqID: hard_chain_helmholtz
     Scalar hard_chain = mean_segment_count * hard_sphere;

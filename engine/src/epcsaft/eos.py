@@ -25,6 +25,7 @@ if TYPE_CHECKING:
     from .equilibrium import Problem
 
 State = _core.State
+VirialCoefficients = _core.VirialCoefficients
 IdealPolynomial = _core.IdealPolynomial
 IdealShomate = _core.IdealShomate
 IdealNASA7 = _core.IdealNASA7
@@ -218,6 +219,14 @@ class Mixture:
                 sites = ", ".join(f"{component}/{site}" for component, site in self.site_ids)
                 error.args = (f"{error}; declared association sites: {sites}",)
             raise
+
+    def virial_coefficients(self, T: float, x: Mapping[str, float] | Sequence[float] | None = None) -> VirialCoefficients:
+        """Return exact neutral-model B (m³/mol) and C (m⁶/mol²) at T in K.
+
+        Composition follows component order or component identifiers. Charged
+        declarations refuse even on an ion-free composition face.
+        """
+        return self._model.virial_coefficients(T, self._composition(x))
 
     def state(
         self,

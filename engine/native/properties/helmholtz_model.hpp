@@ -187,6 +187,10 @@ inline double require_component_property(const std::optional<double>& value) {
     if (!value) throw std::invalid_argument("ionic_insertion: absent charged component property");
     return *value;
 }
+struct VirialCoefficients final {
+    double second = 0.0, third = 0.0;
+};
+
 struct State final {
     policy::SolverOptions solver_options;
     double hard_chain = 0.0;
@@ -477,6 +481,7 @@ public:
     PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
     HelmholtzDerivativeValues<WiderScalar> isothermal(WiderScalar temperature, WiderScalar volume,
         const std::vector<WiderScalar>& amounts) const;
+    EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;

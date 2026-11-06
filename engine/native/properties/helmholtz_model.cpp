@@ -925,6 +925,32 @@ HelmholtzModel::HelmholtzModel(
     }
 }
 
+// EqID: neutral_virial_coefficients
+VirialCoefficients HelmholtzModel::virial_coefficients(double temperature, const std::vector<double>& composition) const {
+    require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    validate_composition(composition);
+    if (std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
+        throw std::invalid_argument("virial coefficients require a neutral model: charged declaration is nonanalytic at zero density");
+    const auto sigma = segment_sigma(temperature, parameters_);
+    const auto diameter = segment_diameter(temperature, parameters_, sigma);
+    for (const auto* values : {&sigma, &diameter})
+        require(std::all_of(values->begin(), values->end(), [](double v) { return std::isfinite(v) && v > 0.0; }), "segment geometry");
+    Taylor<2> density;
+    density.c[1] = 1.0;
+    const auto delta = parameters_.ideal_gas ? std::vector<Taylor<2>>{} : association_delta_values(
+        temperature, density, composition, parameters_, sigma, diameter,
+        parameters_.association_energy_over_k, parameters_.association_volume);
+    for (const auto& strength : delta)
+        require(std::isfinite(strength.c[0]) && strength.c[0] >= 0.0, "association strength");
+    const auto sites = association_density_coefficients(density, composition, parameters_, delta);
+    const auto terms = residual_helmholtz(temperature, density, composition, parameters_, sigma, diameter,
+        sites, Taylor<2>(0.0), Taylor<2>(0.0));
+    const auto energy = terms.hard_chain + terms.dispersion + terms.association + terms.dipolar;
+    if (!std::isfinite(energy.c[1])) throw std::runtime_error("nonfinite second virial coefficient");
+    if (!std::isfinite(2.0 * energy.c[2])) throw std::runtime_error("nonfinite third virial coefficient");
+    return {energy.c[1], 2.0 * energy.c[2]};
+}
+
 void HelmholtzModel::validate_composition(
     const std::vector<double>& composition
 ) const {
