@@ -1501,8 +1501,9 @@ The physical coordinate scale $h$ is one for log and multiplier coordinates,
 the feed total for free phase and solid amounts, and $\max(|T|,1\ \mathrm{K})$ or
 $\max(|P|,1\ \mathrm{Pa})$ for free temperature or pressure. The power-of-two
 scales $c$ and then $r$ are the solved-state action's column-then-row
-equilibration, applied to $J\operatorname{diag}(h)$, so the rank decision does not
-depend on the units of $h$. `rank` and `threshold` (Eigen's relative pivot
+equilibration, applied to $J\operatorname{diag}(h)$. The rank decision is made on
+this equilibrated matrix, removing the scale imbalance responsible for the false
+deficiency in the qualified dilute-vapor case. `rank` and `threshold` (Eigen's relative pivot
 cutoff) are those of $A$; `condition` is $\|A\|_\infty\|A^{-1}\|_\infty$,
 `inverse_norm` is $\|A^{-1}\|_\infty$ and `backward_error` is normwise in $A$,
 none of them a norm of the unscaled Jacobian or its inverse.
