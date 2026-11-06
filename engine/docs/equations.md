@@ -2932,6 +2932,22 @@ $$
 r_H=\frac{\sum_p N_p h_p^{tot}-H_{spec}}{N_{feed}RT}.
 $$
 
+## `extensive_volume_specification`
+
+- Section: Equilibrium volume specifications
+- Status: Exact derivation
+- Source: Paterson, Stenby and Yan (2023), doi:10.1016/j.fluid.2023.113795, Eq. (2), Tables 1–2; extensive phase summation
+- Description: Fixed temperature and total volume determine common pressure and the split on declared neutral nonreacting supports. Phase molar volume is v_p [m³/mol], phase amount N_p [mol], and the target is an extensive volume [m³].
+- Change note: The volume row uses the shared packing/amount geometry and its exact derivatives, including the moving target denominator. The physical potential is total Helmholtz energy. The volume constraint is retained in the physical stability tangent; pressure and chemical duals are excluded from that tangent's coordinates.
+
+$$
+r_V=\frac{\sum_p N_pv_p-V_{spec}}{V_{spec}},\qquad
+\frac{\partial r_V}{\partial V_{spec}}=-\frac{\sum_p N_pv_p}{V_{spec}^2},\qquad
+\mathcal L=\frac{A_{tot}+P(\sum_pN_pv_p-V_{spec})}{RT}
+-\sum_i\lambda_i(\sum_pN_px_{pi}-n_{feed,i}).
+
+$$
+
 ## `extensive_entropy_specification`
 
 - Section: Equilibrium caloric specifications

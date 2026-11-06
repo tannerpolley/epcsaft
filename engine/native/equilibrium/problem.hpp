@@ -185,6 +185,7 @@ struct EquilibriumProblem final {
     std::optional<StabilityOptions> discovery;
     std::optional<double> enthalpy_j;
     std::optional<double> entropy_j_per_k;
+    std::optional<double> volume_m3;
     std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
     std::optional<AffineLoading> loading;
@@ -195,7 +196,7 @@ struct EquilibriumProblem final {
 };
 
 enum class RowKind {
-    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, ReactionMassAction,
+    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, Volume, ReactionMassAction,
     CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
 };
 
@@ -210,6 +211,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::ReactionMassAction: return "ideal_mole_fraction_reaction";
     case RowKind::ReactionMolarity: return "ideal_molarity_reaction";
     case RowKind::Chemical: return "chemical_potential_stationarity";
+    case RowKind::Volume: return "extensive_volume_specification";
     case RowKind::Pressure: return "pressure_equality";
     case RowKind::Moiety: return "material_balance";
     case RowKind::Electro: return "phase_electroneutrality";
@@ -442,11 +444,11 @@ struct CompiledSystem final {
         const std::vector<double>& constraint_multipliers = {}
     ) const;
     std::vector<double> hessian_at(
-        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical = false
     ) const;
     // Multiplier-weighted constraint curvature only; the objective curvature is separate.
     EPC_API std::vector<double> constraint_hessian_at(
-        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+        const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical = false
     ) const;
     // Row and physical Taylor coefficients through `order` (at most 3; 2 in a critical cell) along the state
     // coefficients `state` (state[0] is the prepared point) and the control direction.
@@ -477,22 +479,22 @@ struct CompiledSystem final {
     }
 
     bool feasibility_cell() const noexcept {
-        return ideal || pinned_count != 0 || has_caloric_condition() || problem.critical.has_value();
+        return ideal || pinned_count != 0 || has_caloric_condition() || problem.volume_m3 || problem.critical.has_value();
     }
     // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
     bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
 
     // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
     std::size_t condition_count() const noexcept {
-        return has_caloric_condition() + 2 * problem.critical.has_value() + problem.envelope.has_value();
+        return has_caloric_condition() + problem.volume_m3.has_value() + 2 * problem.critical.has_value() + problem.envelope.has_value();
     }
 
     std::size_t mode_offset() const noexcept { return primal_size - free_intensive_count - mode_count; }
 
     // Control direction [T, P, n_feed (C), active parameters (A)]; the extended layout appends the
-    // (a, b, c, d) increments of every reaction law and then the H and S targets.
+    // (a, b, c, d) increments of every reaction law, then H/S and an admitted volume target.
     std::size_t control_width() const noexcept { return 2 + n_feed.size() + (model ? model->active_parameters().size() : 0); }
-    std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + 2; }
+    std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + 2 + problem.volume_m3.has_value(); }
 
     // A free amount is a coordinate seeded at 1 mol; a pinned amount is its fraction of the feed.
     double phase_amount(const PhaseSpec& phase) const noexcept { return phase.is_free() ? 1.0 : phase.amount.fraction * feed_total; }
@@ -849,6 +851,7 @@ struct SolvedStateActionDirection final {
     std::vector<std::array<double, 4>> reaction_coefficients; // increments of (a,b,c,d), evaluated at T(t)
     double enthalpy_j = 0.0;
     double entropy_j_per_k = 0.0;
+    double volume_m3 = 0.0;
 };
 
 struct SolvedStateActionRequest final {

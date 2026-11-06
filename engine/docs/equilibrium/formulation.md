@@ -7,7 +7,7 @@ A proposed or registered equation is not a capability claim. Declared-phase
 specifications and the explicit native tangent-plane test/fixed-T/P discovery
 path have retained numerical qualification for the stated
 neutral and admitted ionic/reacting cases. These
-retained cases have stated limits; PH/PS use the bounded neutral formulation below; UV remains deferred.
+retained cases have stated limits; PH/PS and TV use the bounded neutral formulations below; UV remains deferred.
 Mechanical/local stability checks and truthful global-claim limits apply to
 both declared and discovered results.
 
@@ -189,9 +189,9 @@ residual is normalized by N, so its charge is that criterion amplified by
 N/n₀, like the feed charge. Neither is bounded by the state rule; the largest
 measured is 3.2×10⁻¹⁴, 31 times under the state rule.
 
-For k pinned phase amounts, f free intensives and e independent caloric rows,
+For k pinned phase amounts, f free intensives and e independent extensive specification rows,
 rows minus unknowns = k + e − f; a square system requires f = k + e.
-Ordinary specifications retain Π − k ≤ rank B. PH/PS adds one independent
+Ordinary specifications retain Π − k ≤ rank B. PH/PS or TV adds one independent
 balance, permitting Π − k ≤ rank B + 1. Generic-point rank does not prove
 existence, uniqueness or regularity at the solution. Reject dependent reactions,
 charged feed, impossible supports, inconsistent pins and invalid domains.
@@ -203,6 +203,8 @@ Every consuming state requires complete component records and interval admission
 Ordinary density-basis reactions retain Δh = t − Tt′ and Δcp = −Tt″:
 constant affinity t = a has Δh = a, while constant K has Δh = 0.
 Charged calorics and source-referenced free-T reactions are excluded.
+
+TV declares positive total `volume_m3` [m³], fixed T, free P, free phase amounts and neutral nonreacting declared supports (`extensive_volume_specification`). The driver solves Helmholtz stationarity as a feasibility system and admits a minimum on the total-volume-conserving tangent through the shared physical Hessian. A homogeneous declaration returns its local branch; it does not discover other phases. TV needs no ideal thermal records. UV and automatic TV phase discovery remain unavailable.
 
 
 The resolved feed n_feed is the amount basis of the whole problem, and returned

@@ -557,7 +557,7 @@ struct Path final {
     EquilibriumProblem base;
     std::vector<double> feed_start, feed_target;
     std::vector<double> parameter_start, parameter_target;
-    double t1 = 0.0, p1 = 0.0, h1 = 0.0, s1 = 0.0;  // the start values are base's
+    double t1 = 0.0, p1 = 0.0, h1 = 0.0, s1 = 0.0, v1 = 0.0;  // the start values are base's
 
     EquilibriumProblem at(double q) const {
         EquilibriumProblem problem = base;
@@ -567,6 +567,7 @@ struct Path final {
             problem.feed.values[i] = (1.0 - q) * feed_start[i] + q * feed_target[i];
         if (!problem.temperature.free) problem.temperature = FreeValue::fixed((1.0 - q) * base.temperature.value + q * t1);
         if (!problem.pressure.free) problem.pressure = FreeValue::fixed((1.0 - q) * base.pressure.value + q * p1);
+        if (base.volume_m3) problem.volume_m3 = (1.0 - q) * *base.volume_m3 + q * v1;
         if (base.enthalpy_j) problem.enthalpy_j = (1.0 - q) * *base.enthalpy_j + q * h1;
         if (base.entropy_j_per_k) problem.entropy_j_per_k = (1.0 - q) * *base.entropy_j_per_k + q * s1;
         return problem;
@@ -579,10 +580,12 @@ struct Path final {
         for (std::size_t i = 0; i < feed_start.size(); ++i) result[2 + i] = feed_target[i] - feed_start[i];
         for (std::size_t i = 0; i < parameter_target.size(); ++i)
             result[2 + feed_start.size() + i] = parameter_target[i] - parameter_start[i];
-        if (!base.enthalpy_j && !base.entropy_j_per_k) return result;
+        if (!base.enthalpy_j && !base.entropy_j_per_k && !base.volume_m3) return result;
         result.resize(compiled.extended_control_width(), 0.0);
-        result[result.size() - 2] = base.enthalpy_j ? h1 - *base.enthalpy_j : 0.0;
-        result.back() = base.entropy_j_per_k ? s1 - *base.entropy_j_per_k : 0.0;
+        const auto target = result.size() - 2 - base.volume_m3.has_value();
+        if (base.volume_m3) result.back() = v1 - *base.volume_m3;
+        result[target] = base.enthalpy_j ? h1 - *base.enthalpy_j : 0.0;
+        result[target + 1] = base.entropy_j_per_k ? s1 - *base.entropy_j_per_k : 0.0;
         return result;
     }
 };
@@ -1044,13 +1047,27 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         for (std::size_t i = 0; i < c; ++i) point[mode + i] = u[i] / norm;
         return point;
     }
-    if (compiled.has_caloric_condition()) {
+    if (compiled.problem.volume_m3 && compiled.problem.phases.size() == 1) {
+        const auto at = compiled.prepare(point);
+        const auto& a = at.shape[0];
+        seed_composition(compiled, 0, compiled.feed_composition, point, phase_offsets[0]);
+        point[*a.amount] = compiled.feed_total;
+        const auto rho = compiled.feed_total / *compiled.problem.volume_m3;
+        point[a.volume] = std::log(compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition) * rho);
+        point[compiled.primal_size - 1] = compiled.model->state(compiled.seed_temperature(), rho, compiled.feed_composition).pressure;
+        return point;
+    }
+    if (compiled.has_caloric_condition() || compiled.problem.volume_m3) {
         auto seed_problem = compiled.problem;
+        seed_problem.volume_m3.reset();
         seed_problem.enthalpy_j.reset();
         seed_problem.entropy_j_per_k.reset();
         const bool pure = compiled.model->parameters().component_count() == 1 && seed_problem.phases.size() == 2;
         if (pure) seed_problem.phases[1].amount = AmountSpec::pinned(0.0);
         else seed_problem.temperature = FreeValue::fixed(compiled.seed_temperature());
+        if (compiled.problem.volume_m3) {
+            seed_problem.pressure = pure ? FreeValue::variable(compiled.seed_pressure()) : FreeValue::fixed(compiled.seed_pressure());
+        }
         const auto source = compile_problem(*compiled.model, seed_problem);
         // The seed alone stops at its own budget; a seed without a state is discarded either way (#579).
         auto seed_initial = boundary_start(source, true, limits, stages);
@@ -1072,6 +1089,23 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         if (stages) stages->add(seed);
         if (failure) std::rethrow_exception(failure);
         scope.probe("caloric_seed_cause", {}, 0, seed.message.c_str());
+        if (compiled.problem.volume_m3) {
+            if (!seed.has_state()) return point;
+            point[compiled.primal_size - 1] = *seed.pressure;
+            const auto a = source.prepare(seed.coordinates), b = compiled.prepare(point);
+            for (std::size_t p = 0; p < a.shape.size(); ++p) {
+                for (std::size_t i = 0; i < a.shape[p].x.size(); ++i) point[b.shape[p].x[i]] = seed.coordinates[a.shape[p].x[i]];
+                point[b.shape[p].volume] = seed.coordinates[a.shape[p].volume];
+                point[*b.shape[p].amount] = a.amount[p];
+            }
+            if (pure) {
+                const double split = (*compiled.problem.volume_m3 / compiled.feed_total - a.volume[0]) / (a.volume[1] - a.volume[0]);
+                if (!(split > 0.0 && split < 1.0)) throw std::domain_error("volume target outside declared coexistence interval");
+                point[*b.shape[0].amount] = compiled.feed_total * (1.0 - split);
+                point[*b.shape[1].amount] = compiled.feed_total * split;
+            }
+            return point;
+        }
         const auto inside = [&](double t) {  // every declared species' caloric record admits t
             for (const auto& phase : compiled.problem.phases)
                 for (auto i : phase.support) {
@@ -1146,7 +1180,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     bool corrected = false;
     const auto& problem = compiled.problem;
     correct_dense = correct_dense && compiled.has_reaction && !compiled.model->parameters().ideal_gas
-        && problem.solids.empty() && !problem.discovery && !problem.enthalpy_j && !problem.entropy_j_per_k
+        && problem.solids.empty() && !problem.discovery && !problem.enthalpy_j && !problem.entropy_j_per_k && !problem.volume_m3
         && !problem.azeotrope && !problem.critical && !problem.envelope && !problem.loading
         && problem.phases.size() == 2 && free_phases == 1;
     const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits);
@@ -1224,6 +1258,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
 // support_declared and topology_declared flags) are not compared.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
     if (!(a.source_reference == b.source_reference)) return "source reference declaration differs";
+    if (a.volume_m3.has_value() != b.volume_m3.has_value()) return "volume condition kind differs";
     if (a.enthalpy_j.has_value() != b.enthalpy_j.has_value()
         || a.entropy_j_per_k.has_value() != b.entropy_j_per_k.has_value()) return "caloric condition kind differs";
     if (a.phases.empty() || b.phases.empty()) return "endpoint declares no phases";
@@ -1467,9 +1502,11 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
     path.feed_target = target.n_feed;
     path.t1 = request.target_problem.temperature.value;
     path.p1 = request.target_problem.pressure.value;
+    path.v1 = request.target_problem.volume_m3.value_or(0.0);
     path.h1 = request.target_problem.enthalpy_j.value_or(0.0);
     path.s1 = request.target_problem.entropy_j_per_k.value_or(0.0);
-    const bool moves = request.start_problem.enthalpy_j != request.target_problem.enthalpy_j
+    const bool moves = request.start_problem.volume_m3 != request.target_problem.volume_m3
+        || request.start_problem.enthalpy_j != request.target_problem.enthalpy_j
         || request.start_problem.entropy_j_per_k != request.target_problem.entropy_j_per_k || path.feed_start != path.feed_target
         || (!path.base.temperature.free && path.base.temperature.value != path.t1)
         || (!path.base.pressure.free && path.base.pressure.value != path.p1);

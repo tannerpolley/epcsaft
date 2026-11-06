@@ -39,22 +39,23 @@ Curvature reduced_curvature_at(
     const CompiledSystem& compiled, const PhasePoint& at,
     const std::vector<double>& multipliers
 ) {
-    if (compiled.feasibility_cell() || at.point.empty()) return {};
+    if ((compiled.feasibility_cell() && !compiled.problem.volume_m3) || at.point.empty()) return {};
     auto prepared = at;
     prepared.point.resize(compiled.primal_size);
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
-    const auto n = static_cast<Eigen::Index>(prepared.point.size());
+    const auto width = static_cast<Eigen::Index>(prepared.point.size());
+    const auto n = width - compiled.problem.volume_m3.has_value();
     const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd constraints(0, n);
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
         const auto& item = compiled.rows[row];  // an absent solid's row n_s = 0 constrains
         if (stationarity_row(item.kind) && !(item.kind == RowKind::SolidAffinity && !compiled.solids[item.index].present)) continue;
         constraints.conservativeResize(constraints.rows() + 1, n);
-        constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, n);
+        constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, width).leftCols(n);
     }
-    const Eigen::MatrixXd objective = Eigen::Map<const Dense>(compiled.hessian_at(prepared, {}).data(), n, n);
+    const Eigen::MatrixXd objective = Eigen::Map<const Dense>(compiled.hessian_at(prepared, {}, compiled.problem.volume_m3.has_value()).data(), width, width).topLeftCorner(n, n);
     const Eigen::MatrixXd weighted = Eigen::Map<const Dense>(
-        compiled.constraint_hessian_at(prepared, multipliers).data(), n, n);
+        compiled.constraint_hessian_at(prepared, multipliers, compiled.problem.volume_m3.has_value()).data(), width, width).topLeftCorner(n, n);
     const Eigen::MatrixXd hessian = objective + weighted;
     const auto reduce = [n](const Eigen::MatrixXd& h, const Eigen::MatrixXd& a) -> std::pair<double, double> {
         const auto svd = a.jacobiSvd(Eigen::ComputeFullV);
@@ -80,8 +81,8 @@ Curvature reduced_curvature_at(
 // Returns the refusal, empty when admitted or outside that domain.
 std::string local_phase_instability(const CompiledSystem& compiled, const PhasePoint& prepared) {
     const auto& phases = compiled.problem.phases;
-    if (compiled.has_ions || compiled.has_reaction || phases.size() != 2 || phases[0].kind == phases[1].kind
-        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); })) return {};
+    if (compiled.has_ions || compiled.has_reaction || (!compiled.problem.volume_m3 && (phases.size() != 2 || phases[0].kind == phases[1].kind
+        || std::none_of(phases.begin(), phases.end(), [](const PhaseSpec& phase) { return phase.is_zero_pinned(); })))) return {};
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
@@ -1012,7 +1013,14 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
             result.convergence.stop = core::Stop::singular; clear_state(result); return result;
         }
     }
-    Curvature curvature = reduced_curvature_at(compiled, prepared, result.constraint_multipliers);
+    auto physical_weights = result.constraint_multipliers;
+    if (compiled.problem.volume_m3) {
+        physical_weights.clear();
+        for (const auto& row : compiled.rows) if (!stationarity_row(row.kind))
+            physical_weights.push_back(row.kind == RowKind::Moiety
+                ? -compiled.feed_total * full[compiled.primal_size + row.index] : 0.0);
+    }
+    Curvature curvature = reduced_curvature_at(compiled, prepared, physical_weights);
     if (compiled.has_caloric_condition()) {
         const bool pure = model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
         if (pure) {
@@ -1051,7 +1059,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     result.reduced_hessian_minimum = curvature.minimum;
     scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
     scope.probe("reduced_hessian_band", curvature.band);
-    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition()) && !(curvature.equilibrated > curvature.band)) {
+    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition() || compiled.problem.volume_m3) && !(curvature.equilibrated > curvature.band)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
         const bool singular = curvature.equilibrated >= -curvature.band;
         if (singular || std::isnan(curvature.equilibrated))

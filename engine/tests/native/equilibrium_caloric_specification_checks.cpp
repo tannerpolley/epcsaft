@@ -260,4 +260,86 @@ void admission() {
     CHECK(actions.results[0].value.has_value());
 }
 
+// Paterson (2023), Table 2: conserved total volume, pressure as its solved multiplier.
+void volume_specification() {
+    const HelmholtzModel model(properties_support::neutral_binary());
+    const std::array<std::array<double,6>,3> references = {{{180,0.00047042881945383514,1e6,0.2945375955329262,0.9244914722077252,0.32615467905619605},
+        {190,0.0006523810823353041,1e6,0.21537559277082224,0.8647803491384229,0.43828506711469967},
+        {220,0.00044242974279205897,2e6,0.2160681158366867,0.7337137610815471,0.5485062740728838}}};
+    const auto volume = [](const EquilibriumResult& r) {
+        double v=0;for(std::size_t p=0;p<r.phase_count;++p)v+=r.amounts[p]/r.molar_densities[p];return v;
+    };
+    for(const auto& ref:references) {
+        auto p=binary();p.temperature=FreeValue::fixed(ref[0]);p.pressure=FreeValue::variable(ref[2]);p.volume_m3=ref[1];
+        auto r=solve_equilibrium(model,p);
+        if(!r.has_state())throw std::runtime_error("TV: "+r.message);
+        const std::string id="TV/"+std::to_string(ref[0]);
+        compare(id+"/P",*r.pressure,ref[2],ref[2],1e-8);
+        compare(id+"/x",r.mole_fractions[0],ref[3],ref[3],1e-8);
+        compare(id+"/y",r.mole_fractions[2],ref[4],ref[4],1e-8);
+        compare(id+"/N-vapor",r.amounts[1],ref[5],1,1e-8);
+        compare(id+"/V",volume(r),ref[1],ref[1],1e-10);
+        for(std::size_t i=0;i<2;++i)compare(id+"/n"+std::to_string(i),r.amounts[0]*r.mole_fractions[i]+r.amounts[1]*r.mole_fractions[2+i],0.5,0.5,1e-10);
+        CHECK(r.reduced_hessian_minimum>0);
+        recording_support::observe((id+"/curvature").c_str(),"reduced-Helmholtz-curvature","chart",r.reduced_hessian_minimum,std::nullopt,"","Observation","exact-Lagrangian-Hessian","positive on the total-volume tangent","volume-specification");
+        const auto c=compile_problem(model,p);auto d=direction(c);d.volume_m3=ref[1];
+        std::vector<SolvedStateObservable> o={{SolvedStateObservableKind::Pressure},{SolvedStateObservableKind::PhaseAmount,1},
+            {SolvedStateObservableKind::PhaseMoleFraction,0,0},{SolvedStateObservableKind::PhaseMoleFraction,1,0},
+            {SolvedStateObservableKind::PhaseMolarDensity,0},{SolvedStateObservableKind::PhaseMolarDensity,1}};
+        const auto a=solved_state_actions(c,r,{o,{d}});
+        for(double h:{1e-4,5e-5}) {
+            auto plus=p,minus=p;plus.volume_m3=ref[1]*(1+h);minus.volume_m3=ref[1]*(1-h);
+            const auto rp=solve_equilibrium(model,plus),rm=solve_equilibrium(model,minus);
+            CHECK(rp.has_state()&&rm.has_state());
+            const std::array<double,6> vp={*rp.pressure,rp.amounts[1],rp.mole_fractions[0],rp.mole_fractions[2],rp.molar_densities[0],rp.molar_densities[1]};
+            const std::array<double,6> vm={*rm.pressure,rm.amounts[1],rm.mole_fractions[0],rm.mole_fractions[2],rm.molar_densities[0],rm.molar_densities[1]};
+            for(std::size_t j=0;j<a.results.size();++j){CHECK(a.results[j].action);const double fd=(vp[j]-vm[j])/(2*h);
+                compare(id+"/action/"+std::to_string(j)+"/"+std::to_string(h),*a.results[j].action,fd,std::abs(fd),1e-6);}
+        }
+        if(ref[0]==180) {
+            const auto tp=solve_equilibrium(model,binary());CHECK(tp.has_state());
+            auto inverse=p;inverse.volume_m3=volume(tp);const auto back=solve_equilibrium(model,inverse);CHECK(back.has_state());
+            compare("TV/TP-roundtrip/P",*back.pressure,*tp.pressure,*tp.pressure,1e-8);
+            for(std::size_t i=0;i<tp.mole_fractions.size();++i)compare("TV/TP-roundtrip/x"+std::to_string(i),back.mole_fractions[i],tp.mole_fractions[i],1,1e-8);
+            // The total-volume row and its optimizer-weighted Hessian away from the root.
+            auto y=r.coordinates;y[0]+=0.01;auto scale=std::vector<double>(y.size(),1.0);scale[c.primal_size-1]=ref[2];
+            ladder(c,y,scale,"TV/curvature",{0.});
+            auto twice=p;twice.feed.values={1,1};twice.volume_m3=2*ref[1];const auto rr=solve_equilibrium(model,twice);CHECK(rr.has_state());
+            compare("TV/extensive/P",*rr.pressure,*r.pressure,*r.pressure,1e-10);
+            for(std::size_t i=0;i<2;++i)compare("TV/extensive/N"+std::to_string(i),rr.amounts[i],2*r.amounts[i],2,1e-10);
+        }
+    }
+    auto p=binary();p.temperature=FreeValue::fixed(220);p.volume_m3=0.002;p.pressure=FreeValue::variable();p.phases.erase(p.phases.begin());
+    const auto r=solve_equilibrium(model,p);CHECK(r.has_state());compare("TV/homogeneous/P",*r.pressure,830502.7179639882,830502.7179639882,1e-8);
+    const auto c=compile_problem(model,p);auto d=direction(c);d.volume_m3=*p.volume_m3;
+    const auto state=model.state(220,500,{0.5,0.5});
+    compare("TV/homogeneous/dP",action(c,r,{d},SolvedStateObservableKind::Pressure),-500*state.pressure_density_derivative,500*state.pressure_density_derivative,1e-10);
+    for(bool dew:{false,true}) {
+        const double vb=5.2524821398533176e-5,vd=0.00557698412667614;
+        auto q=binary();q.temperature=FreeValue::fixed(190);q.pressure=FreeValue::variable(dew?270991.0143801206:2095823.2840843329);
+        q.volume_m3=dew?vd:vb;q.phases={q.phases[dew?1:0]};
+        const auto endpoint=solve_equilibrium(model,q);CHECK(endpoint.has_state());
+        compare(dew?"TV/dew/P":"TV/bubble/P",*endpoint.pressure,q.pressure.value,q.pressure.value,1e-8);
+        double previous=1.0;
+        for(double f:{1e-3,1e-4}) {
+            auto near=binary();near.temperature=q.temperature;near.pressure=FreeValue::variable(q.pressure.value*(dew?1.01:0.99));near.volume_m3=dew?vd-f*(vd-vb):vb+f*(vd-vb);
+            const auto rr=solve_equilibrium(model,near);if(!rr.has_state())throw std::runtime_error("TV boundary: "+rr.message);
+            compare("TV/boundary/V",volume(rr),*near.volume_m3,*near.volume_m3,1e-10);
+            const double absent=rr.amounts[dew?0:1];CHECK(absent>0&&absent<previous);previous=absent;
+            recording_support::observe(dew?"TV/dew/limit":"TV/bubble/limit","absent-phase-amount","mol",absent,std::nullopt,
+                recording_support::fields({recording_support::field("fractional_volume_distance",f),recording_support::field("P_Pa",*rr.pressure),recording_support::field("V_m3",*near.volume_m3),recording_support::field("mole_fractions",rr.mole_fractions)}),
+                "Observation","volume-limit","positive amount decreases toward the phase boundary","volume-specification");
+        }
+    }
+
+    const HelmholtzModel pure(propane_parameters());
+    auto sat=equilibrium_support::flash(1);sat.temperature=FreeValue::fixed(300);sat.pressure=FreeValue::variable(1e6);
+    sat.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
+    const auto s=solve_equilibrium(pure,sat);CHECK(s.has_state());
+    sat.phases[1].amount=AmountSpec::free();sat.volume_m3=0.65/s.molar_densities[0]+0.35/s.molar_densities[1];
+    const auto tv=solve_equilibrium(pure,sat);if(!tv.has_state())throw std::runtime_error("pure TV: "+tv.message);
+    compare("TV/pure/P",*tv.pressure,*s.pressure,*s.pressure,1e-8);
+    compare("TV/pure/split",tv.amounts[1],0.35,1,1e-8);CHECK(tv.reduced_hessian_minimum>0);
+    recording_support::observe("TV/pure/curvature","reduced-Helmholtz-curvature","chart",tv.reduced_hessian_minimum,std::nullopt,"","Observation","exact-Lagrangian-Hessian","pure coexistence retains volume and both free amounts","volume-specification");
+}
 } // namespace caloric_specification_checks

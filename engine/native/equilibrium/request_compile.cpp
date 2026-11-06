@@ -505,6 +505,8 @@ IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::siz
 
 std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double);
 std::vector<double> critical_hessian(const CompiledSystem&, const PhasePoint&, const std::vector<double>&);
+CppAD::ADFun<double> record_geometry(const CompiledSystem&, const PhasePoint&, const StandardTerm&);
+std::vector<double> controls(const CompiledSystem&, const PhasePoint&);
 
 std::vector<double> pinned_hessian(
     const CompiledSystem& compiled, const PhasePoint& prepared,
@@ -637,6 +639,16 @@ std::vector<double> pinned_hessian(
             }
         }
     }
+    if (problem.volume_m3) {
+        auto geometry = record_geometry(compiled, prepared, prepared.standard);
+        std::vector<double> weights(geometry.Range(), 0.0);
+        for (std::size_t r = 0; r < compiled.rows.size(); ++r)
+            if (compiled.rows[r].kind == RowKind::Volume)
+                weights[geometry.Range() - compiled.rows.size() - 2 * compiled.solids.size() + r] = multipliers[r];
+        const auto h = geometry.Hessian(controls(compiled, prepared), weights);
+        const auto width = geometry.Domain();
+        for (std::size_t i = 0; i < n; ++i) for (std::size_t j = 0; j < n; ++j) result[i*n+j] += h[i*width+j];
+    }
     if (compiled.has_caloric_condition()) {
         const auto caloric = caloric_hessian(compiled, prepared, multipliers.back());
         for (std::size_t i = 0; i < result.size(); ++i) result[i] += caloric[i];
@@ -667,6 +679,7 @@ std::vector<double> controls(const CompiledSystem& compiled, const PhasePoint& p
         result.push_back(compiled.problem.enthalpy_j.value_or(0.0));
         result.push_back(compiled.problem.entropy_j_per_k.value_or(0.0));
     }
+    if (compiled.problem.volume_m3) result.push_back(*compiled.problem.volume_m3);
     return result;
 }
 
@@ -745,6 +758,9 @@ CppAD::ADFun<double> record_geometry(
         output.insert(output.end(), theta.begin(), theta.end());
         output.push_back(amount);
         output.push_back(tape_parameters.ideal_gas ? AD(0.0) : eta);
+        if (problem.volume_m3) for (std::size_t r = 0; r < compiled.rows.size(); ++r)
+            if (compiled.rows[r].kind == RowKind::Volume)
+                row_values[r] += amount * volume / u.back();
         if (compiled.has_caloric_condition()) {
             const bool h = problem.enthalpy_j.has_value();
             const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * (h ? T : AD(1.0));
@@ -821,6 +837,8 @@ CppAD::ADFun<double> record_geometry(
             row_values[row] += compiled.solids[s].balance[item.index] * solid_output[2 * s];
         row_values[row] /= problem.loading ? feed_total : AD(compiled.feed_total);
     }
+    if (problem.volume_m3) for (std::size_t r = 0; r < compiled.rows.size(); ++r)
+        if (compiled.rows[r].kind == RowKind::Volume) row_values[r] -= 1.0;
     if (problem.loading) row_values.back() = (P - problem.loading->pressure) / problem.loading->pressure;
     if (compiled.has_caloric_condition()) {
         const bool h = problem.enthalpy_j.has_value();
@@ -1244,7 +1262,7 @@ static CompiledSystem compile_with_basis(
         || request.azeotrope || has_reaction_reference(request) || request.phases[0].packing_guess))
         throw std::invalid_argument("ideal-gas equilibrium requires one vapor at fixed T/P; calorics and phase searches deferred");
     if (std::any_of(request.reactions.begin(), request.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); })
-        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+        && (request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.volume_m3
             || !request.solids.empty() || request.source_reference || has_reaction_reference(request)))
         throw std::invalid_argument("species-derived targets require ordinary fixed T/P; calorics and source-reference transfer deferred");
     if (!request.topology_declared) {
@@ -1260,6 +1278,8 @@ static CompiledSystem compile_with_basis(
     compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
     compiled.n_feed = resolve_feed(model, request.feed);
     compiled.has_reaction = !request.reactions.empty();
+    if (request.volume_m3 && request.pressure.absent && *request.volume_m3 > 0.0)
+        compiled.problem.pressure = FreeValue::variable(sum(compiled.n_feed) * GAS_CONSTANT_J_PER_MOL_K * compiled.seed_temperature() / *request.volume_m3);
     const auto& z = model.parameters().charge_number;
     // A neutral feed meets the state rule on its mole fractions; the ions of the excess sign are
     // then scaled so the solved feed carries no charge (formulation.md "Constraints and specification").
@@ -1407,6 +1427,12 @@ static CompiledSystem compile_with_basis(
     compiled.pinned_count = static_cast<std::size_t>(std::count_if(phases.begin(), phases.end(), pinned));
     compiled.free_intensive_count = request.temperature.free + request.pressure.free;
     const std::size_t caloric_count = compiled.has_caloric_condition();
+    if (request.volume_m3 && (!std::isfinite(*request.volume_m3) || *request.volume_m3 <= 0.0
+        || request.temperature.free || !request.pressure.free || compiled.pinned_count
+        || !request.topology_declared || request.discovery || compiled.has_reaction || caloric_count
+        || request.source_reference || !request.solids.empty() || request.critical || request.envelope || request.azeotrope
+        || std::any_of(z.begin(), z.end(), [](int v) { return v != 0; })))
+        throw std::invalid_argument("TV requires positive total volume, fixed T, free P and declared neutral nonreacting free phases");
     admit_conditions(compiled);
     if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
@@ -1417,7 +1443,7 @@ static CompiledSystem compile_with_basis(
             "free temperature or pressure requires a pinned phase amount"
         );
     }
-    if (compiled.problem.phases.size() - compiled.pinned_count > compiled.rank + caloric_count) {
+    if (compiled.problem.phases.size() - compiled.pinned_count > compiled.rank + caloric_count + request.volume_m3.has_value()) {
         throw std::invalid_argument(
             "phase count exceeds balance rank for phase "
             + compiled.problem.phases.back().name
@@ -1457,6 +1483,7 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({RowKind::Normalization, phase, 0});
     for (std::size_t s = 0; s < request.solids.size(); ++s)
         if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
+    if (request.volume_m3) compiled.rows.push_back({RowKind::Volume, 0, 0});
     if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
     compiled.mode_count = request.critical ? components : 0;
@@ -1553,7 +1580,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     core::Scope scope("compile_problem");
     if (!request.topology_declared || request.discovery || request.phases.size() != 1
         || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
-        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k
+        || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.volume_m3
         || request.critical || request.envelope || request.azeotrope || !request.solids.empty()
         || request.phases[0].packing_guess)
         throw std::invalid_argument("ideal mole-fraction model requires one free liquid at fixed T/P without EOS conditions");

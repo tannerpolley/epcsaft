@@ -308,6 +308,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
                     throw std::invalid_argument("nonfinite reaction coefficient direction");
                 else if (v != 0.0 && !problem.standard_gibbs_j_per_mol.empty())
                     throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
+        if (!std::isfinite(direction.volume_m3) || (!problem.volume_m3 && direction.volume_m3 != 0.0))
+            throw std::invalid_argument("invalid volume target direction");
         if (!std::isfinite(direction.enthalpy_j) || !std::isfinite(direction.entropy_j_per_k)
             || (!problem.enthalpy_j && direction.enthalpy_j != 0.0)
             || (!problem.entropy_j_per_k && direction.entropy_j_per_k != 0.0))
@@ -1021,8 +1023,10 @@ static SolvedStateActionBatch evaluate_action(
         scale[source_offset + 4 * r + 1] = center.prepared.temperature;
         scale[source_offset + 4 * r + 3] = 1.0 / center.prepared.temperature;
     }
-    scale[width - 2] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K * center.prepared.temperature;
-    scale[width - 1] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K;
+    const auto target = width - 2 - problem.volume_m3.has_value();
+    if (problem.volume_m3) scale.back() = *problem.volume_m3;
+    scale[target] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K * center.prepared.temperature;
+    scale[target + 1] = compiled.feed_total * GAS_CONSTANT_J_PER_MOL_K;
     std::vector<std::vector<double>> controls;
     std::vector<double> magnitude;
     for (const auto& direction : request.directions) {
@@ -1034,8 +1038,9 @@ static SolvedStateActionBatch evaluate_action(
             std::copy(direction.reaction_coefficients[r].begin(), direction.reaction_coefficients[r].end(),
                       control.begin() +
                           static_cast<std::ptrdiff_t>(source_offset + 4 * r));
-        control[width - 2] = direction.enthalpy_j;
-        control[width - 1] = direction.entropy_j_per_k;
+        control[target] = direction.enthalpy_j;
+        control[target + 1] = direction.entropy_j_per_k;
+        if (problem.volume_m3) control.back() = direction.volume_m3;
         double largest = 0.0;
         for (std::size_t i = 0; i < width; ++i) largest = std::max(largest, std::abs(control[i]) / scale[i]);
         controls.push_back(std::move(control));
@@ -1512,7 +1517,7 @@ std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem&
         && std::all_of(d.reaction_coefficients.begin(), d.reaction_coefficients.end(),
             [&](const auto& c) { return std::all_of(c.begin(), c.end(), zero); })
         && (zero(d.temperature_k) || !p.temperature.free) && (zero(d.pressure_pa) || !p.pressure.free)
-        && (zero(d.enthalpy_j) || p.enthalpy_j) && (zero(d.entropy_j_per_k) || p.entropy_j_per_k)
+        && (zero(d.volume_m3) || p.volume_m3) && (zero(d.enthalpy_j) || p.enthalpy_j) && (zero(d.entropy_j_per_k) || p.entropy_j_per_k)
         && (feed_zero || d.feed_amounts_mol.size() == compiled.n_feed.size());
     std::vector<core::DifferenceCheck> out;
     for (const auto& o : observables) out.push_back({solved_state_observable_id(o), "unsupported_direction"});
@@ -1525,6 +1530,7 @@ std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem&
         auto q = p;
         q.temperature.value += h * d.temperature_k;
         q.pressure.value += h * d.pressure_pa;
+        if (q.volume_m3) *q.volume_m3 += h * d.volume_m3;
         if (q.enthalpy_j) *q.enthalpy_j += h * d.enthalpy_j;
         if (q.entropy_j_per_k) *q.entropy_j_per_k += h * d.entropy_j_per_k;
         if (!feed_zero) {  // the resolved molar feed, whatever the declared basis (design r4)

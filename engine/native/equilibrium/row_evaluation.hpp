@@ -196,6 +196,9 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         } else if (row.kind == RowKind::SolidAffinity) {
             if constexpr (std::is_same_v<Base, double>) { const auto& solid = solids[row.index];
             value = solid.present ? -solid_affinity(prepared, row.index) : point[*solid.column]; }
+        } else if (row.kind == RowKind::Volume) {
+            value = -1.0;
+            for (std::size_t p = 0; p < amount.size(); ++p) value += amount[p] * volume[p] / *problem.volume_m3;
         } else if (condition_row(row.kind)) {
             if constexpr (std::is_same_v<Base, double>) { if (series.empty())
                 series = row_series(prepared, {point}, std::vector<Base>(control_width()), 0).rows[0];
@@ -211,7 +214,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         const auto& derivative = prepared.derivative[phase];
         Base ideal = ideal_mechanical_helmholtz(x[phase], volume[phase], Base(1));
         result.objective += amount[phase] * (
-            derivative.value + ideal + prepared.pressure * volume[phase] / rt
+            derivative.value + ideal + (problem.volume_m3 ? Base(0) : prepared.pressure * volume[phase] / rt)
             #ifdef EPCSAFT_SOFTWARE_WIDER
             + std::inner_product(standard.begin(), standard.end(), x[phase].begin(), 0.0,
                 [](double sum, Base product) { return static_cast<double>(sum + product); }, std::multiplies<Base>{})
@@ -386,6 +389,10 @@ RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointVa
                 for (std::size_t j = 0; j < components; ++j) terms += wide_math::abs(at.amount[a] * B[species][j] * at.composition[a][j]);
             for (const auto& solid : solids) if (solid.column) terms += wide_math::abs(solid.balance[species] * at.point[*solid.column]);
             terms /= feed_total;
+        } else if (row.kind == RowKind::Volume) {
+            terms = 1.0;
+            for (std::size_t a = 0; a < at.amount.size(); ++a)
+                terms += wide_math::abs(at.amount[a] * at.volume[a] / *problem.volume_m3);
         } else if (row.kind == RowKind::Electro || row.kind == RowKind::Normalization) {
             terms = row.kind == RowKind::Normalization ? 1.0 : 0.0;
             for (std::size_t j = 0; j < components; ++j)
@@ -628,6 +635,15 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
                 at(row_index, shape[row.phase].x[local]) =
                     z[problem.phases[row.phase].support[local]]
                     * compositions[row.phase][problem.phases[row.phase].support[local]];
+        } else if (row.kind == RowKind::Volume) {
+            for (std::size_t p = 0; p < shape.size(); ++p) {
+                const auto scale = amount[p] / *problem.volume_m3;
+                at(row_index, *shape[p].amount) = volumes[p] / *problem.volume_m3;
+                at(row_index, shape[p].volume) = -scale * volumes[p];
+                for (std::size_t i = 0; i < shape[p].x.size(); ++i)
+                    at(row_index, shape[p].x[i]) = scale * packings[p].component[problem.phases[p].support[i]] / prepared.eta[p];
+                if (temperature) at(row_index, *temperature) += scale * packings[p].temperature_derivative / prepared.eta[p];
+            }
         } else if (condition_row(row.kind)) {
             if constexpr (std::is_same_v<Base, double>) { std::vector<std::vector<Base>> state = {point, std::vector<Base>(n, 0.0)};
             const std::vector<Base> control(control_width(), 0.0);
@@ -733,13 +749,13 @@ std::vector<double> CompiledSystem::hessian(
 }
 
 std::vector<double> CompiledSystem::hessian_at(
-    const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+    const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
     core::Scope scope("equilibrium_hessian");
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
-    if (feasibility_cell()) return constraint_hessian_at(prepared, constraint_multipliers);
+    if (feasibility_cell() && !physical) return constraint_hessian_at(prepared, constraint_multipliers);
     const double P = prepared.pressure;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
     const auto& standard_value = prepared.standard.derivative[0];
@@ -802,7 +818,7 @@ std::vector<double> CompiledSystem::hessian_at(
         }
     }
     if (!constraint_multipliers.empty()) {
-        const auto weighted = constraint_hessian_at(prepared, constraint_multipliers);
+        const auto weighted = constraint_hessian_at(prepared, constraint_multipliers, physical);
         for (std::size_t index = 0; index < result.size(); ++index) result[index] += weighted[index];
     }
     scope.probe("entries", static_cast<double>(result.size()));
@@ -819,7 +835,7 @@ RowSeries CompiledSystem::row_series(
     const std::size_t components = model->parameters().component_count();
     const std::size_t width = control_width(), extended = extended_control_width();
     if (state.size() != order + 1 ||
-        (control.size() != width && control.size() != extended - 2 && control.size() != extended) ||
+        (control.size() != width && control.size() != extended - 2 - problem.volume_m3.has_value() && control.size() != extended) ||
         order > (problem.critical ? 2u : 3u))  // a third critical coefficient needs E6
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
@@ -861,10 +877,11 @@ RowSeries CompiledSystem::row_series(
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (problem.critical ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
-        auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(n + width + (has_caloric_condition() ? 2 : 0), 0.0);
+        auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(n + width + (has_caloric_condition() ? 2 : 0) + problem.volume_m3.has_value(), 0.0);
         std::copy(state[k].begin(), state[k].end(), input.begin());
         if (k == 1) {
             std::copy_n(control.begin(), width, input.begin() + static_cast<std::ptrdiff_t>(n));
+            if (problem.volume_m3 && control.size() == extended) input.back() = control.back();
             if (has_caloric_condition() && control.size() == extended) {
                 input[n + width] = control[control.size() - 2];
                 input[n + width + 1] = control.back();
@@ -1067,7 +1084,7 @@ RowSeries CompiledSystem::row_series(
 }
 
 std::vector<double> CompiledSystem::constraint_hessian_at(
-    const PhasePoint& prepared, const std::vector<double>& constraint_multipliers
+    const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
     if (ideal) {
         if (!constraint_multipliers.empty() && constraint_multipliers.size() != rows.size())
@@ -1075,7 +1092,7 @@ std::vector<double> CompiledSystem::constraint_hessian_at(
         return ideal_rows(*this, prepared).Hessian(prepared.point,
             constraint_multipliers.empty() ? std::vector<double>(rows.size(), 0.0) : constraint_multipliers);
     }
-    if (feasibility_cell()) return pinned_hessian(*this, prepared, constraint_multipliers);
+    if (feasibility_cell() && !physical) return pinned_hessian(*this, prepared, constraint_multipliers);
     const auto& point = prepared.point;
     const std::size_t n = point.size();
     std::vector<double> result(n * n, 0.0);
@@ -1087,6 +1104,7 @@ std::vector<double> CompiledSystem::constraint_hessian_at(
             throw std::invalid_argument("constraint multiplier count");
         }
         const double weight = constraint_multipliers[multiplier++];
+        if (row.kind == RowKind::Volume) continue;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
             if (row.kind != RowKind::Moiety && row.phase != phase) continue;
             const auto& spec = problem.phases[phase];

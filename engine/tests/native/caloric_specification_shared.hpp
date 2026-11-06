@@ -9,11 +9,12 @@ using namespace epcsaft::equilibrium;
 using namespace equilibrium_checks;
 inline void compare(const std::string& id, double actual, double reference, double scale, double tolerance,
                     const std::string& inputs = "") {
+    const bool volume = id.rfind("TV/", 0) == 0;
     const double error = std::abs(actual-reference)/scale;
     recording_support::compare_custom(id.c_str(),"caloric-specification","SI",actual,reference,
         recording_support::fields({inputs,recording_support::field("scale",scale),
             recording_support::field("error",error),recording_support::field("criterion",tolerance)}),
-        "Relationship","issue-224","PH/PS value or exact derivative falsifier","positive quantity scale",
+        "Relationship",volume ? "Paterson2023/Clapeyron0.6.29" : "issue-224",volume ? "TV value, invariant or exact derivative" : "PH/PS value or exact derivative falsifier","positive quantity scale",
         std::isfinite(error)&&error<=tolerance,"caloric-specification",id.c_str());
 }
 inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const std::vector<double>& scale,const std::string& id,

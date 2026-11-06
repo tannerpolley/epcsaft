@@ -2727,6 +2727,8 @@ class EquilibriumProblem:
     """
     enthalpy_j: float | None
     """Optional extensive enthalpy specification in J on the absolute feed basis; not J/mol."""
+    volume_m3: float | None
+    """Optional total-volume target in m³ on the absolute feed basis; fixed T and solved P."""
     entropy_j_per_k: float | None
     """Optional extensive entropy specification in J/K on the absolute feed basis; not J/(mol K)."""
     critical: Optional[CriticalDeclaration]
@@ -2860,6 +2862,8 @@ class RowKind:
     """Extensive enthalpy specification in its native dimensionless normalization."""
     Entropy: RowKind
     """Extensive entropy specification in its native dimensionless normalization."""
+    Volume: RowKind
+    """Total extensive volume specification in its native dimensionless normalization."""
     CriticalMode: RowKind
     """Critical-mode null-vector equation, native dimensionless normalization."""
     CriticalNormalization: RowKind
@@ -2891,7 +2895,7 @@ class PointEvaluation:
     values: list[float]
     """Length m of defining-row residuals in CompiledSystem.rows order. Most rows are dimensionless; an absent free-solid row is its amount in mol."""
     objective: float
-    """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis; a value alone does not establish equilibrium."""
+    """EOS physical potential in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero. A value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
 
@@ -3261,7 +3265,7 @@ class EquilibriumResult:
     hessian_calls: int
     """Exact Hessian evaluation count."""
     objective: float
-    """Extensive Gibbs objective G/(RT), in mol on the absolute feed basis, at the retained candidate."""
+    """EOS physical potential at the retained candidate, in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero."""
     reduced_hessian_minimum: float
     """Minimum eigenvalue of the native reduced Hessian; local curvature evidence, not a global
     certificate.
@@ -3654,11 +3658,13 @@ class SolvedStateActionDirection:
     """
     enthalpy_j: float
     """Increment of the extensive enthalpy target in J."""
+    volume_m3: float
+    """Total-volume target direction in m³; zero if no volume target is declared."""
     entropy_j_per_k: float
     """Increment of the extensive entropy target in J/K."""
     def __init__(self, temperature_k: float, pressure_pa: float, feed_amounts_mol: Sequence[float],
                  active_parameters: Sequence[float], reaction_coefficients: Sequence[Sequence[float]] = ...,
-                 enthalpy_j: float = ..., entropy_j_per_k: float = ...) -> None:
+                 enthalpy_j: float = ..., entropy_j_per_k: float = ..., volume_m3: float = ...) -> None:
         """Initialize SolvedStateActionDirection from the declared inputs.
 
         Parameters
@@ -3675,6 +3681,8 @@ class SolvedStateActionDirection:
             Initial value of SolvedStateActionDirection.reaction_coefficients; see its attribute description for units and ordering.
         enthalpy_j : float
             Initial value of SolvedStateActionDirection.enthalpy_j; see its attribute description for units and ordering.
+        volume_m3 : float
+            Total-volume target direction in m³.
         entropy_j_per_k : float
             Initial value of SolvedStateActionDirection.entropy_j_per_k; see its attribute description for units and ordering.
 
