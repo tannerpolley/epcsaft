@@ -1714,9 +1714,17 @@ bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
 same compiler, dependencies, inputs, options and thread limits. Report explicit
 discovery/test wall time (median of three same-machine runs), driver roles and
 trial counts separately; no universal wall-time threshold is inferred.
-Explicit native searches own their work capture and pass its trace to the
-counting code. The trace reports work only; no solver decision reads the ambient
-trace. Declared calls retain their existing scopes and perform no trial work.
+Explicit native searches own scoped numerical work counters. Nested searches
+share the request's counters and publish interval differences. The density owner
+charges every entered root solve, including failures. Each energy owner charges
+its evaluation once, also charging a density evaluation while inside a root
+solve. Reused samples are not evaluated or charged again. Request totals include
+initialization, reference work and declarations once; round reports count only
+their own interval. Exceptions restore the enclosing counting interval and density
+depth. Detailed diagnostic traces retain their scopes and failure causes independently.
+Non-detailed capture now exposes spans and events previously hidden by the internal
+counting capture. No solver decision or work count reads the ambient trace. Declared calls retain
+their existing scopes and perform no trial work.
 
 ### Explicit fast discovery
 

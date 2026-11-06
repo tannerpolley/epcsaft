@@ -53,6 +53,51 @@ struct Trace final {
 
 EPC_API Trace*& current_trace() noexcept;
 
+// Numerical work in an explicit search; nested intervals share request-owned counts.
+class CalculationWork final {
+public:
+    struct Counts final {
+        std::size_t root_calls = 0;
+        std::size_t root_evaluations = 0;
+        std::size_t energy_evaluations = 0;
+        std::size_t density_depth = 0;
+    };
+    static EPC_API CalculationWork*& current() noexcept;
+    explicit CalculationWork(bool enabled = true)
+        : previous_(current()), counts_(previous_ ? previous_->counts_ : &owned_), begin_(*counts_) {
+        current() = enabled ? this : nullptr;
+    }
+    ~CalculationWork() { current() = previous_; }
+    CalculationWork(const CalculationWork&) = delete;
+    CalculationWork& operator=(const CalculationWork&) = delete;
+    Counts counts() const {
+        return {counts_->root_calls - begin_.root_calls, counts_->root_evaluations - begin_.root_evaluations,
+            counts_->energy_evaluations - begin_.energy_evaluations};
+    }
+    static void energy_evaluation() {
+        if (auto* work = current()) {
+            ++work->counts_->energy_evaluations;
+            if (work->counts_->density_depth) ++work->counts_->root_evaluations;
+        }
+    }
+    class Density final {
+    public:
+        Density() : counts_(current() ? current()->counts_ : nullptr) {
+            if (counts_) { ++counts_->root_calls; ++counts_->density_depth; }
+        }
+        ~Density() { if (counts_) --counts_->density_depth; }
+        Density(const Density&) = delete;
+        Density& operator=(const Density&) = delete;
+    private:
+        Counts* counts_;
+    };
+private:
+    Counts owned_;
+    CalculationWork* previous_;
+    Counts* counts_;
+    Counts begin_;
+};
+
 inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next, bool earlier = false) {
     if (next && (!first || earlier)) first = next;
 }

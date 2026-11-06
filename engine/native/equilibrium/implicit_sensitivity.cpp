@@ -1366,6 +1366,7 @@ template PhysicalProjection<WiderScalar> physical_projection(const CompiledSyste
 template <typename Base>
 EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr) {
     core::Capture isolated(false);
+    core::CalculationWork excluded(false);
     EquilibriumNumericalEstimates out;
     out.dimension = result.coordinates.size(); out.precision_bits = std::numeric_limits<Base>::digits;
     using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;

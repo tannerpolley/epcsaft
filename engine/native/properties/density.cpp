@@ -128,6 +128,7 @@ public:
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
                        std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0) const {
         using Series = Taylor<N, Base>;
+        core::CalculationWork::energy_evaluation();
         core::Scope entry("pressure_series_residual"), scope("evaluate");
         entry.probe("requested_order", static_cast<double>(N - 1));
         const Base volume = 1.0 / density, rho0 = total_ / volume;
@@ -1602,6 +1603,7 @@ DensityRoot solve_density(
     const std::vector<double>& mole_fractions, DensityBranch branch,
     std::optional<double> anchor_density, DensityRoot* sibling_root
 ) {
+    core::CalculationWork::Density work;
     core::Scope scope("solve_density");
     if (anchor_density.has_value() && sibling_root != nullptr)
         throw std::invalid_argument("density sibling requires an unanchored root search");

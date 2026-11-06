@@ -1049,6 +1049,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     core::AssociationObservations observations(true);
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
     HelmholtzDerivatives result;
+    core::CalculationWork::energy_evaluation();
     core::Scope entry("helmholtz_evaluate_locked"), scope("evaluate");
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
@@ -2224,6 +2225,7 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     std::vector<double> point = {temperature, volume, 1.0};
     const std::vector<double> weight = {1.0};
     auto third = [&](std::size_t direction) {
+        core::CalculationWork::energy_evaluation();
         core::Scope scope("pressure_third_derivative"), evaluation("evaluate");
         scope.probe("direction", static_cast<double>(direction));
         tape_->forward_zero(point, &counters_.forward);
@@ -2313,6 +2315,7 @@ State HelmholtzModel::state(
     }();
     const auto& sites = derivatives.site_fractions;
     const auto [electro, terms] = [&] {
+        core::CalculationWork::energy_evaluation();
         core::Scope scope("state_residual_recompute"), evaluation("evaluate");
         const auto sigma = segment_sigma(temperature, parameters_);
         const auto diameter = segment_diameter(temperature, parameters_, sigma);

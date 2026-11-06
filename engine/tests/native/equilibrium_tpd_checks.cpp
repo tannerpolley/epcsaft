@@ -4,6 +4,67 @@
 
 namespace equilibrium_checks {
 
+// Gross--Sadowski methane/ethane: Full search work must survive nested counting and failed roots.
+void check_discovery_work() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::flash(2);
+    problem.temperature = FreeValue::fixed(190.0);
+    problem.pressure = FreeValue::fixed(1e6);
+    problem.feed.kind = FeedKind::MoleFractions;
+    problem.feed.values = {0.5, 0.5};
+    problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
+    for (int tracing : {0, 1, 2}) {
+        core::CalculationWork request;
+        std::optional<core::Capture> capture;
+        if (tracing) capture.emplace(tracing == 2);
+        const auto result = discover_phases(model, problem);
+        CHECK(result.success && result.phase_count == 2);
+        const auto& work = result.discovery->work;
+        CHECK(work.at("root_calls") == 108 && work.at("root_evaluations") == 1128 && work.at("energy_evaluations") == 1299);
+        const std::array<std::array<double, 3>, 2> rounds{{{45, 577, 634}, {52, 476, 548}}};
+        CHECK(result.discovery->rounds.size() == rounds.size());
+        for (std::size_t i = 0; i < rounds.size(); ++i) {
+            const auto& round = result.discovery->rounds[i];
+            CHECK(round.completed && round.trials.size() == 7);
+            CHECK(round.work.at("root_calls") == rounds[i][0] && round.work.at("root_evaluations") == rounds[i][1]
+                && round.work.at("energy_evaluations") == rounds[i][2]);
+        }
+        if (capture) {
+            std::size_t roots = 0, density = 0, energy = 0;
+            const auto& spans = capture->trace().spans;
+            for (const auto& span : spans) {
+                if (std::string_view(span.name) == "solve_density") ++roots;
+                if (std::string_view(span.name) != "evaluate") continue;
+                ++energy;
+                for (auto parent = span.parent; parent; parent = spans[*parent].parent)
+                    if (std::string_view(spans[*parent].name) == "solve_density") { ++density; break; }
+            }
+            CHECK(roots == work.at("root_calls") && density == work.at("root_evaluations") && energy == work.at("energy_evaluations"));
+        }
+        const auto before = request.counts();
+        CHECK(before.root_calls == 108 && before.root_evaluations == 1128 && before.energy_evaluations == 1299);
+        bool refused = false;
+        try { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); }
+        catch (const std::invalid_argument&) { refused = true; }
+        CHECK(refused);
+        (void)model.evaluate(190.0, 1.0 / result.molar_densities[0], {0.5, 0.5}, DerivativeOrder::Gradient);
+        const auto after = request.counts();
+        CHECK(after.root_calls == 109 && after.root_evaluations == 1128 && after.energy_evaluations == 1300);
+        CHECK(std::abs(result.molar_densities[0] / 18534.052764709064 - 1.0) <= 1e-10);
+        CHECK(std::abs(result.mole_fractions[0] - 0.21537559277379345) <= 1e-10);
+        const auto compiled = compile_problem(model, *result.declaration);
+        const auto before_estimate = request.counts();
+        const auto estimate = equilibrium_numerical_estimates(compiled, result);
+        CHECK(!estimate.residuals.empty());
+        const auto after_estimate = request.counts();
+        CHECK(after_estimate.root_calls == before_estimate.root_calls
+            && after_estimate.root_evaluations == before_estimate.root_evaluations
+            && after_estimate.energy_evaluations == before_estimate.energy_evaluations);
+    }
+}
+
 // #223 acceptance 8/9: numerical conservation and tangent-plane identities in RT units.
 void tpd_compare(const std::string& id, double value, double reference, double tolerance,
                  const std::string& inputs = {}, const char* unit = "1") {

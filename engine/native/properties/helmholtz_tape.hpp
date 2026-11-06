@@ -267,6 +267,7 @@ struct HelmholtzTape final {
         std::vector<std::vector<double>>* output_prefix = nullptr,
         std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr
     ) {
+        core::CalculationWork::energy_evaluation();
         core::Scope scope("implicit_taylor"), evaluation("evaluate");
         scope.probe("derivative_order", static_cast<double>(order));
         const std::size_t input_count = regular_count + site_count;

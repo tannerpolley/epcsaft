@@ -31,23 +31,11 @@ bool descent_resolved(double tpd, double slope, double error_estimate) {
 namespace {
 using Quantities = std::map<std::string, double>;
 
-// Explicit searches alone capture the shared owners' work, including initialization,
-// reference roots, failed roots, branch admission and compiler evaluations.
-void count_stability_work(Quantities& work, const core::Trace& trace, std::size_t begin = 0) {
-    std::size_t roots = 0, density_evaluations = 0, energy_evaluations = 0;
-    for (std::size_t i = begin; i < trace.spans.size(); ++i) {
-        const auto& span = trace.spans[i];
-        if (std::string(span.name) == "solve_density") ++roots;
-        if (std::string(span.name) != "evaluate") continue;
-        ++energy_evaluations;
-        auto parent = span.parent;
-        while (parent) {
-            if (std::string(trace.spans[*parent].name) == "solve_density") { ++density_evaluations; break; }
-            parent = trace.spans[*parent].parent;
-        }
-    }
-    work["root_calls"] = roots; work["root_evaluations"] = density_evaluations;
-    work["energy_evaluations"] = energy_evaluations;
+void report_work(Quantities& work, const core::CalculationWork& interval) {
+    const auto counts = interval.counts();
+    work["root_calls"] = counts.root_calls;
+    work["root_evaluations"] = counts.root_evaluations;
+    work["energy_evaluations"] = counts.energy_evaluations;
 }
 
 void count_driver(Quantities& work, const EquilibriumResult& result, const char* role) {
@@ -558,11 +546,11 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
 
 StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
-    const core::Trace& trace, std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
+    std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
     StabilityReport report;
     const bool fast = options.mode == DiscoveryMode::Fast;
     bool stopped = false;
-    const auto begin = trace.spans.size();
+    core::CalculationWork work;
     if (options.evaluate_supplied_trials && !options.trials)
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
     const auto supports = stability_supports(c, options);
@@ -651,7 +639,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
                 if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
-                    if (!fast) { count_stability_work(report.work, trace, begin); return report; }
+                    if (!fast) { report_work(report.work, work); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
                 const bool native = !c.has_ions && !c.has_reaction && !options.evaluate_supplied_trials;
@@ -753,7 +741,7 @@ StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& 
     if (options.evaluate_supplied_trials) report.message = "supplied trial evaluation; unavailable trials " + std::to_string(unresolved);
     if (!options.trials && std::all_of(supports.front().support.begin(), supports.front().support.end(),
         [&](auto j) { return z[j] != 0; })) report.message += "; no neutral species";
-    count_stability_work(report.work, trace, begin);
+    report_work(report.work, work);
     return report;
 }
 } // namespace
@@ -764,8 +752,7 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability testing is deferred");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
-    core::Capture capture;
-    return test_snapshot(c, result, options, {}, capture.trace());
+    return test_snapshot(c, result, options, {});
 }
 
 // ALG-STABILITY before neutral recovery (#987): the Full trial set on the lower-objective single-phase L1/V1
@@ -787,17 +774,17 @@ StabilityReport recovery_stability(const CompiledSystem& c, const DriverLimits& 
         if (!parent.success) parents.message += "; " + single.phases[0].name + ": " + parent.message;
         if (parent.success && (!best || parent.objective < best->second.objective)) best.emplace(std::move(compiled), std::move(parent));
     }
-    core::Capture capture;
+    core::CalculationWork work;
     try {
         if (!best) throw std::runtime_error("no single-phase candidate");
-        report = test_snapshot(best->first, best->second, {}, {}, capture.trace(), nullptr, &limits);
+        report = test_snapshot(best->first, best->second, {}, {}, nullptr, &limits);
         report.message = " from single-phase " + best->first.problem.phases[0].name + ", "
             + std::to_string(report.trials.size()) + " trials: " + report.message;
     } catch (const std::bad_alloc&) { throw; }
     catch (const std::exception& error) {  // only before the first trial: the trials' own catches keep theirs
         report.message = std::string(": ") + error.what();
         core::retain_failure(report.first_numerical_failure, error, "recovery stability");
-        count_stability_work(report.work, capture.trace());
+        report_work(report.work, work);
     }
     for (const auto& [name, value] : parents.work) report.work[name] += value;
     core::retain_first(report.first_numerical_failure, parents.first_numerical_failure, true);
@@ -840,8 +827,8 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         reference.temperature = FreeValue::fixed(temperature);
         // Sufficient, not necessary, vapor-side evidence: more than one stable root, or a sole root below a negative-slope sample (#423).
         const auto root = [&] {  // the whole added scan counts, work before a throw included
-            core::Capture scan; Quantities scanned;
-            const auto count = [&] { count_stability_work(scanned, scan.trace()); work.evaluations += scanned["root_evaluations"]; };
+            core::CalculationWork scan;
+            const auto count = [&] { work.evaluations += scan.counts().root_evaluations; };
             try { auto found = stability_root(*c.model, temperature, request.pressure.value, c.feed_composition, PhaseKind::Vapor); count(); return found; }
             catch (...) { count(); throw; }
         }();
@@ -916,7 +903,6 @@ std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(
     const auto event = check_topology(c, coordinates);
     if (event.event == TopologyEvent::None) throw std::invalid_argument("no topology removal event");
     const auto at = c.prepare(coordinates, true);
-    work["energy_evaluations"] += at.amount.size();
     std::size_t dropped = event.phase.value_or(event.pair ? event.pair->second : 0);
     std::optional<std::size_t> recipient;
     if (event.pair) recipient = event.pair->first;
@@ -957,8 +943,6 @@ std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(
         packing_admission(c.model->packing_fraction_coefficient(at.temperature, w) / volume);
         if (p == *recipient) {
             const auto root = declared_root(*c.model, at.temperature, at.pressure, w, c.problem.phases[p].kind);
-            ++work["root_calls"];
-            work["root_evaluations"] += root.convergence.evaluations;
             volume = 1.0 / root.molar_density;
         }
         seed.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature, w) / volume));
@@ -980,7 +964,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         || request.temperature.free || request.pressure.free)
         throw std::invalid_argument("discovery requires explicit unknown topology at fixed positive T/P");
     if (!request.solids.empty()) throw std::invalid_argument("Discover() is not admitted with solids");
-    core::Capture capture;
+    core::CalculationWork work;
     const double row_tolerance = request.solver_options.resolved(model.solver_options()).value(policy::row);
     const auto& options = *request.discovery;
     const bool fast = options.mode == DiscoveryMode::Fast;
@@ -1092,7 +1076,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 phase.composition_guess.push_back(best.mole_fractions[p * feed.size() + j]);
             phase.packing_guess = best.packing_fractions[p];
         }
-        count_stability_work(record->work, capture.trace());
+        report_work(record->work, work);
         EquilibriumResult result = best; result.discovery = record;
         if (fast) {
             record->termination = success ? (best.phase_count == 2 ? "admitted_two_phase" : "no_admitted_split") : "incomplete";
@@ -1112,7 +1096,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             const auto used = static_cast<std::size_t>(record->work["trial_invocations"]);
             trial_options.trial_budget = used < *options.trial_budget ? *options.trial_budget - used : 0;
         }
-        auto report = test_snapshot(best_compiled, best, trial_options, removed, capture.trace(), fast ? &record->unsearched : nullptr);
+        auto report = test_snapshot(best_compiled, best, trial_options, removed, fast ? &record->unsearched : nullptr);
         for (const auto& [name, value] : report.work) record->work[name] += value;
         record->rounds.push_back(std::move(report));
         auto& current = record->rounds.back();
