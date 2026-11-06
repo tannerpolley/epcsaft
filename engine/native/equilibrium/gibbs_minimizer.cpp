@@ -1305,9 +1305,9 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             // Bounded damping retains raw contraction; preparation admits only positive finite x.
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
-            // Binary64 uses the first three existing fractions; the fourth belongs to the wide correction.
+            // Newton attempts and wide correction also try the fourth fraction.
             for (const Base damping : {1.0, 0.5, 0.25, 0.125}) {
-                if constexpr (std::is_same_v<Base, double>) if (trial == 3) break;
+                if constexpr (std::is_same_v<Base, double>) if (trial == 3 && !newton) break;
                 const Base alpha = std::min((trial_recovery ? trial_scale : Base(1)) * damping, trial_limit);
                 if (final_correction && alpha != 1.0) break;
                 const auto trial_index = trial++;

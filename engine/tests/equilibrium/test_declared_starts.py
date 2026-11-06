@@ -293,3 +293,29 @@ def test_pure_saturation_default_start_takes_the_loop_pressure(species: Any, ass
         assert abs(x - y) <= 1e-10 * y
     assert result.molar_densities[0] > 2 * result.molar_densities[1]
     assert all(model.state(T, rho=rho, x=[1.]).pressure_density_derivative > 0 for rho in result.molar_densities)
+
+
+def test_water_pentanol_liquid_split() -> None:
+    """Gross and Sadowski (2002), Fig. 10 parameters: liquid split at 298.15 K.
+
+    The 0.99/0.01 starts need a 1/8 Newton step to remain in the composition box.
+    Compare with the retained original-start Ipopt endpoint at the same row criterion.
+    """
+    import json
+    root = Path(__file__).resolve().parents[3]
+    spec = importlib.util.spec_from_file_location("cross_check", root / "analyses/2026-competitor-cross-check/scripts/engine.py")
+    assert spec is not None and spec.loader is not None
+    cross = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cross)
+    inputs = json.loads((root / "analyses/2026-competitor-cross-check/inputs/cases.json").read_text())
+    request = next(q for q in inputs["requests"] if q["id"] == "C4-298.15")
+    model, problem, *_ = cross.prepare(inputs, request, declare_only=True)
+    result = eq.solve_equilibrium(model, problem)
+    assert result.success and result.requested_tolerance_met, result.message
+    assert max(map(abs, result.residuals)) <= 1e-12
+    for value, reference in zip([result.pressure, *result.molar_densities, *result.mole_fractions,
+                                 *result.amounts, result.objective],
+            [101300., 51031.595366008434, 12519.772604220409,
+             .9993566483864802, .0006433516135197952, .31959730095095323, .6804026990490468,
+             .26539200928922485, .7346079907107751, -1.0313331433887805], strict=True):
+        assert value is not None and abs(value-reference) <= 1e-10 * max(1., abs(reference))

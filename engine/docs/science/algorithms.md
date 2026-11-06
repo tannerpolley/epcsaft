@@ -813,8 +813,8 @@ The pure-fluid `TWO_DENSITY_FORWARD_ERROR` target above remains $10^{-10}$.
 Wide coordinates remain wide through all corrections. Use full-pivot rank and
 finite-row/Jacobian/direction checks independently of the free-amount Newton
 predicate; require every trial to stay in the finite admitted box. The ordinary
-double damping fractions remain $(1,1/2,1/4)$; only wide correction also tries
-$1/8$. Above the caller's row criterion, require strict raw-row contraction,
+post-Ipopt double damping fractions remain $(1,1/2,1/4)$; pre-Ipopt Newton
+attempts and wide correction also try $1/8$. Above the caller's row criterion, require strict raw-row contraction,
 including the existing decreasing-ratio rule during extension. Below the
 criterion, the bounded full-correction exception does not establish convergence:
 fresh rows, the physical-radius target, and either a sufficiently small scaled
