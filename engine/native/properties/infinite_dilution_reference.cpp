@@ -126,7 +126,7 @@ double parameter_scale(const HelmholtzModel& model, const std::vector<double>& v
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution) {
+    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution, ReferenceTaylorBatch* batch) {
     const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
     ResidualEnergyAction result;
     const double pressure_scale = state.pressure_density_derivative * state.molar_density;
@@ -148,7 +148,7 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
             }
         }
         const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
-            composition, stoichiometry, direction, order, infinite_dilution);
+            composition, stoichiometry, direction, order, infinite_dilution, nullptr, batch);
         result.status = series.status;
         result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
         result.diagnostics.site_solves += series.diagnostics.site_solves;
@@ -349,10 +349,10 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
 
 ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry,
-    std::size_t a, std::size_t b, std::optional<std::size_t> parameter) {
+    std::size_t a, std::size_t b, std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr) {
     if (trace.pure_state.empty())
         return reference_partial_from_state(model, temperature, trace.composition,
-            stoichiometry, a, b, parameter, trace.state, true);
+            stoichiometry, a, b, parameter, trace.state, true, batch);
     auto dilute = stoichiometry;
     for (std::size_t i = 0; i < dilute.size(); ++i)
         if (trace.pure_state[i]) dilute[i] = 0.0;
@@ -361,7 +361,7 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
     result.action = 0.0;
     if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0.0; })) {
         result = reference_partial_from_state(model, temperature, trace.composition,
-            dilute, a, b, parameter, trace.state, true);
+            dilute, a, b, parameter, trace.state, true, batch);
         if (!result.action) return result;
     }
     for (std::size_t i = 0; i < dilute.size(); ++i) {
@@ -369,7 +369,7 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
         std::vector<double> composition(dilute.size(), 0.0), insertion(dilute.size(), 0.0);
         composition[i] = 1.0; insertion[i] = stoichiometry[i];
         const auto partial = reference_partial_from_state(model, temperature, composition,
-            insertion, a, b, parameter, *trace.pure_state[i]);
+            insertion, a, b, parameter, *trace.pure_state[i], false, batch);
         if (!partial.action) return partial;
         *result.action += *partial.action;
     }
@@ -382,12 +382,12 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
 // EqID: reference_single_insertion_taylor; each requested column uses the same solvent closure.
 NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
-    std::optional<std::size_t> parameter) {
+    std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr) {
     core::Scope scope("reference_column");
     NeutralReferenceReactionDiagnostic::Derivative column;
     column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
     try {
-        const auto partial = reference_partial_from_trace(model, temperature, trace, stoichiometry, a, b, parameter);
+        const auto partial = reference_partial_from_trace(model, temperature, trace, stoichiometry, a, b, parameter, batch);
         column.value = partial.action;
         column.diagnostics = partial.diagnostics;
         column.action_status = partial.status;
@@ -402,7 +402,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference,
     bool pressure_jets,
-    const NeutralReferenceTrace& trace
+    const NeutralReferenceTrace& trace, ReferenceTaylorBatch* batch = nullptr
 ) {
     // EqID: reference_single_insertion_taylor; raw partials at the ion-free solvent state.
     NeutralReferenceReactionDiagnostic result;
@@ -418,7 +418,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             result.message = "neutral reference solvent species " + std::to_string(trace.solvent_index) + ": " + *cause;
             return result;
         }
-        const auto value = reference_partial_from_trace(model, temperature, trace, stoichiometry, 0, 0, std::nullopt);
+        const auto value = reference_partial_from_trace(model, temperature, trace, stoichiometry, 0, 0, std::nullopt, batch);
         result.terminal_contraction = value.action;
         result.diagnostics = value.diagnostics;
         result.density_convergence = trace.state.density_convergence;
@@ -429,7 +429,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         }
         const auto admit = [&](std::size_t a, std::size_t b, std::optional<std::size_t> parameter) {
             return result.lower_derivatives.emplace_back(reference_column(model, temperature, trace, stoichiometry,
-                a, b, parameter)).value;
+                a, b, parameter, batch)).value;
         };
         if (trace.temperature_order > 0) {
             result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt);
@@ -637,6 +637,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         double pressure = 0.0;
         NeutralReferenceTraceResult result;
     };
+    ReferenceTaylorBatch preparation{model, {}};
     std::vector<CachedTrace> cache;
     std::vector<NeutralReferenceReactionDiagnostic> result(stoichiometries.size());
     for (auto& diagnostic : result) diagnostic.solver_options = model.solver_options();
@@ -687,7 +688,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         }
         diagnostic = neutral_reference_from_trace(
             model, temperature, stoichiometries[row], reference,
-            need_jets, *found->result.trace);
+            need_jets, *found->result.trace, &preparation);
         diagnostic.trace = found->result.trace;
         diagnostic.solvent_density = found->result.trace->state.molar_density;
         // Additional consumed columns at the same solvent state.
@@ -698,7 +699,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             for (std::size_t i = 0; i < columns.size(); ++i) {
                 std::vector<double> insertion(columns.size(), 0.0);
                 insertion[i] = 1.0;
-                columns[i] = reference_column(model, temperature, trace, insertion, 0, 0, std::nullopt);
+                columns[i] = reference_column(model, temperature, trace, insertion, 0, 0, std::nullopt, &preparation);
             }
         }
         const auto values = model.active_parameter_values();
@@ -714,7 +715,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                             column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
                             column.value = 0.0;
                         } else {
-                            column = reference_column(model, temperature, trace, stoichiometries[row], a, b, parameter);
+                            column = reference_column(model, temperature, trace, stoichiometries[row], a, b, parameter, &preparation);
                         }
                         if (!column.value) column.message = "reaction " + std::to_string(row) + " C_"
                             + std::to_string(a) + std::to_string(b) + (c ? " coordinate " + std::to_string(coordinate) : "")

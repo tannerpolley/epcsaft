@@ -12,6 +12,7 @@
 #include <deque>
 #include <mutex>
 #include <limits>
+#include <map>
 #include <optional>
 #include <string>
 #include <stdexcept>
@@ -172,6 +173,12 @@ struct PropertyActionBatch final {
 };
 struct ResidualEnergyAction final {
     std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
+};
+class HelmholtzModel;
+struct ReferenceTaylorPreparation;
+struct ReferenceTaylorBatch final {
+    const HelmholtzModel& model;
+    std::map<std::vector<double>, std::shared_ptr<ReferenceTaylorPreparation>> paths;
 };
 // Ordinary Taylor coefficients along a fixed-composition pressure-closed path.
 struct ReferenceTaylor final {
@@ -423,7 +430,7 @@ public:
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     EPC_API ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-        const PressureActionDirection&, std::size_t, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr) const;
+        const PressureActionDirection&, std::size_t, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr, ReferenceTaylorBatch* batch = nullptr) const;
     EPC_API NeutralPropertyDerivatives neutral_property(
         double temperature,
         double molar_density,
@@ -572,7 +579,7 @@ void reference_errors(const HelmholtzModel&, double, const std::vector<double>&,
 EPC_API ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false);
+    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false, ReferenceTaylorBatch* batch = nullptr);
 
 struct SpeciesActivities final {
     std::optional<double> standard_molality_mol_per_kg;

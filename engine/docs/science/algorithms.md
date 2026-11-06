@@ -2451,6 +2451,13 @@ The existing association Jacobian and implicit pressure coefficients supply all
 T/P derivatives through order four and one parameter through T/P order three.
 One amount insertion appears at degree r+1; extraction through degree 2r+1
 cannot contain two such insertions. No ionic-concentration Hessian is required.
+Within one reaction-reference batch, an exact state, exact direction, order,
+insertion mode and error request share the pressure-closed volume path and site
+factorization. The batch is bound to its immutable model and active values;
+contraction extraction and its error estimate remain per insertion. The site
+factorization also serves distinct directions and orders at the exact same
+state and site fractions within that batch. Conditioning
+and pressure-residual evidence accompany reuse. Preparation ends with the batch.
 
 Requested source-reference errors for the dimensionless contraction $C$ and
 its first thermal derivative $C_T$ use local higher-precision re-evaluation plus

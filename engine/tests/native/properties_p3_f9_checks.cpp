@@ -1136,6 +1136,51 @@ void reference_f9() {
 }
 }
 void reference_limits() {
+    // An uncached contraction is the independent numerical path for batch reuse.
+    const auto check_paths = [](const epcsaft::Parameters& parameters) {
+        using namespace epcsaft;
+        HelmholtzModel model(parameters, {{PF::DispersionEnergyOverK, {0}}});
+        ReferenceTaylorBatch batch{model, {}};
+        auto shifted = parameters; shifted.dispersion_energy_over_k[0] *= 1.02;
+        HelmholtzModel other(shifted, {{PF::DispersionEnergyOverK, {0}}});
+        ReferenceTaylorBatch other_batch{other, {}};
+        for (double temperature : {318.15, 323.15}) for (double pressure : {1e5, 2e5})
+            for (const auto& x : {std::vector<double>{0.9,0.1,0,0,0,0,0,0,0},
+                                  std::vector<double>{1,0,0,0,0,0,0,0,0}})
+                for (double sign : {1.0,-1.0}) for (std::size_t order : {0ul,1ul,2ul}) {
+                    const double volume = 1.0 / model.state_at_pressure(temperature, pressure, x, DensityBranch::Liquid).molar_density;
+                    const double other_volume = 1.0 / other.state_at_pressure(temperature, pressure, x, DensityBranch::Liquid).molar_density;
+                    PressureActionDirection direction; direction.temperature = sign * temperature;
+                    direction.pressure = sign * 1e5;
+                    direction.parameter.push_back({PF::DispersionEnergyOverK, {0}, sign});
+                    for (const auto& nu : {std::vector<double>{-1,0,-1,0,0,1,0,1,0},
+                                           std::vector<double>{0,-1,-1,0,1,0,0,1,0}}) {
+                        ReferenceTaylorError expected_error, actual_error;
+                        auto* expected_pointer = order < 2 ? &expected_error : nullptr;
+                        auto* actual_pointer = order < 2 ? &actual_error : nullptr;
+                        const auto expected = model.reference_taylor(temperature, volume, x, nu, direction, order, true, expected_pointer);
+                        const auto interleaved = other.reference_taylor(temperature, other_volume, x, nu, direction, order, true, nullptr, &other_batch);
+                        CHECK(interleaved.status == PropertyActionStatus::Available);
+                        const auto actual = model.reference_taylor(temperature, volume, x, nu, direction, order, true, actual_pointer, &batch);
+                        CHECK(expected.status == PropertyActionStatus::Available && actual.status == expected.status);
+                        for (std::size_t k = 0; k <= order; ++k) {
+                            CHECK(std::abs(actual.contraction[k]-expected.contraction[k]) <= 1e-10*std::max(1.0,std::abs(expected.contraction[k])));
+                            CHECK(actual.volume[k] == expected.volume[k]);
+                            if (actual_pointer) {
+                                CHECK(actual_error.fixed[k] == expected_error.fixed[k]);
+                                CHECK(actual_error.pressure_floor[k] == expected_error.pressure_floor[k]);
+                            }
+                        }
+                        CHECK(actual.diagnostics.site_rank == expected.diagnostics.site_rank);
+                        CHECK(actual.diagnostics.site_pivot_ratio == expected.diagnostics.site_pivot_ratio);
+                        CHECK(actual.diagnostics.pressure_residual == expected.diagnostics.pressure_residual);
+                    }
+                }
+    };
+    auto path_parameters = properties_support::nine_species();
+    check_paths(path_parameters);
+    path_parameters.dispersion_energy_over_k[0] *= 1.01;
+    check_paths(path_parameters);
     const double T=298.15,P=1e5,R=epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     const auto params=properties_support::aqueous_electrolyte();
     epcsaft::HelmholtzModel model(params,{{PF::DispersionEnergyOverK,{0}}});

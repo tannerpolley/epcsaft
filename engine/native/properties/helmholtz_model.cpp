@@ -24,6 +24,16 @@
 
 namespace epcsaft {
 
+struct ReferenceTaylorPreparation final {
+    std::vector<std::vector<double>> path;
+    std::shared_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> factorization;
+    PropertyActionDiagnostics diagnostics;
+    ReferenceTaylorError error;
+    std::vector<double> site_fractions;
+    PropertyActionDiagnostics factorization_diagnostics;
+    double norm = 1.0;
+};
+
 HelmholtzModel::~HelmholtzModel() = default;
 namespace {
 
@@ -1564,7 +1574,8 @@ static auto inverse_log_series(const std::vector<std::vector<double>>& path, std
 
 ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volume,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
-    const PressureActionDirection& direction, std::size_t order, bool infinite_dilution, ReferenceTaylorError* error) const {
+    const PressureActionDirection& direction, std::size_t order, bool infinite_dilution, ReferenceTaylorError* error, ReferenceTaylorBatch* batch) const {
+    require(!batch || &batch->model == this, "reference batch model");
     validate_point(temperature, volume, composition);
     validate_composition(composition);
     require(order <= 4 && stoichiometry.size() == composition.size()
@@ -1605,26 +1616,40 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         require(found != active_.end(), "reference active parameter");
         motion[2 + components + std::size_t(found - active_.begin())] += parameter.value;
     }
+    auto path_key = point;
+    path_key.insert(path_key.end(), motion.begin(), motion.end());
+    path_key.insert(path_key.end(), {direction.pressure, double(order), double(infinite_dilution), double(error != nullptr)});
+    std::shared_ptr<ReferenceTaylorPreparation> prepared;
+    if (batch) if (const auto entry = batch->paths.find(path_key); entry != batch->paths.end())
+        prepared = entry->second;
+    const bool reuse = bool(prepared);
+    if (!prepared) prepared = std::make_shared<ReferenceTaylorPreparation>();
     const double gas = GAS_CONSTANT_J_PER_MOL_K;
     const double pressure = gas * temperature * (1.0 / volume - central.gradient[1]);
     const double pv = gas * temperature * (-1.0 / (volume * volume) - central.hessian[width + 1]);
     result.diagnostics.pressure_density_derivative = -pv * volume * volume;
     if (!wide_math::isfinite(pv) || pv >= 0.0) { result.status = PropertyActionStatus::PressureSingular; return association_result(std::move(result), observations); }
-    double norm = wide_math::abs(direction.pressure) / (-pv * volume);
-    for (std::size_t i = 0; i < width; ++i) {
-        const double scale = i == 0 ? temperature : i == 1 ? volume
-            : i < 2 + components ? 1.0 : std::max(1.0, wide_math::abs(point[i]));
-        norm = std::max(norm, wide_math::abs(motion[i]) / scale);
+    double norm = prepared->norm;
+    if (!reuse) {
+        norm = wide_math::abs(direction.pressure) / (-pv * volume);
+        for (std::size_t i = 0; i < width; ++i) {
+            const double scale = i == 0 ? temperature : i == 1 ? volume
+                : i < 2 + components ? 1.0 : std::max(1.0, wide_math::abs(point[i]));
+            norm = std::max(norm, wide_math::abs(motion[i]) / scale);
+        }
+        if (norm == 0.0) norm = 1.0;
+        prepared->norm = norm;
     }
-    if (norm == 0.0) norm = 1.0;
     for (double& v : motion) v /= norm;
     const auto signature = predicate_signature(temperature, composition);
     if (infinite_dilution) {
-        if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
-            && parameters_.permittivity_solvent_normalized)
-            (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
-        const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
-        (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
+        if (!reuse) {
+            if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+                && parameters_.permittivity_solvent_normalized)
+                (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
+            const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);
+            (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
+        }
         if (!reference_tape_ || reference_tape_->predicates != signature) {
             reference_tape_ = detail::HelmholtzTape::record(parameters_, active_, point,
                 central.site_fractions, signature, {}, 0.0, true, true);
@@ -1635,8 +1660,28 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     auto& tape = infinite_dilution ? *reference_tape_ : *tape_;
     tape.site_values = central.site_fractions;
     observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = association_factorization(parameters_, temperature, 1.0 / volume,
-        central.site_fractions, composition, result.status, result.diagnostics, solver_options_);
+    if (!reuse) {
+        const auto state = batch ? batch->paths.lower_bound(point) : decltype(batch->paths)::iterator{};
+        if (batch && state != batch->paths.end()
+            && std::equal(point.begin(), point.end(), state->first.begin())
+            && state->second->site_fractions == central.site_fractions) {
+            prepared->factorization = state->second->factorization;
+            const auto recordings = result.diagnostics.recordings;
+            result.diagnostics = state->second->factorization_diagnostics;
+            if (result.diagnostics.site_conditioning)
+                result.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*result.diagnostics.site_conditioning);
+            result.diagnostics.recordings = recordings;
+            result.diagnostics.site_factorizations = 0;
+        } else prepared->factorization = association_factorization(parameters_, temperature, 1.0 / volume,
+            central.site_fractions, composition, result.status, result.diagnostics, solver_options_);
+        if (batch) {
+            prepared->site_fractions = central.site_fractions;
+            prepared->factorization_diagnostics = result.diagnostics;
+            if (prepared->factorization_diagnostics.site_conditioning)
+                prepared->factorization_diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*prepared->factorization_diagnostics.site_conditioning);
+        }
+    }
+    const auto& factorization = prepared->factorization;
     if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     const std::size_t insertion_degree = order + 1, degree = 2 * order + 1;
     std::vector<std::vector<double>> path(degree + 1, std::vector<double>(width, 0.0));
@@ -1680,42 +1725,66 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     };
     const auto inverse_log = [&]() { return inverse_log_series<double>(path, order); };
     std::vector<double> u(width, 0.0); u[1] = volume;
-    result.diagnostics.pressure_factorizations = 1;
-    for (std::size_t k = 1; k <= order; ++k) {
-        const auto g = gradient_series(u, k);
-        const auto inverse = inverse_log().first;
-        const double known = gas * (temperature * (inverse[k] - g[k] / volume)
-            + motion[0] * (inverse[k-1] - g[k-1] / volume));
-        path[k][1] = ((k == 1 ? direction.pressure / norm : 0.0) - known) / pv;
-        ++result.diagnostics.pressure_solves;
+    if (reuse) {
+        path = prepared->path;
+        const auto recordings = result.diagnostics.recordings;
+        result.diagnostics = prepared->diagnostics;
+        if (result.diagnostics.site_conditioning)
+            result.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*result.diagnostics.site_conditioning);
+        result.diagnostics.recordings = recordings;
+        result.diagnostics.site_factorizations = result.diagnostics.site_solves = 0;
+        result.diagnostics.pressure_factorizations = result.diagnostics.pressure_solves = 0;
+        result.diagnostics.directional_paths = result.diagnostics.forward_sweeps = 0;
+        if (error) *error = prepared->error;
+    } else {
+        result.diagnostics.pressure_factorizations = 1;
+        for (std::size_t k = 1; k <= order; ++k) {
+            const auto g = gradient_series(u, k);
+            const auto inverse = inverse_log().first;
+            const double known = gas * (temperature * (inverse[k] - g[k] / volume)
+                + motion[0] * (inverse[k-1] - g[k-1] / volume));
+            path[k][1] = ((k == 1 ? direction.pressure / norm : 0.0) - known) / pv;
+            ++result.diagnostics.pressure_solves;
+        }
+        capture_error = error != nullptr;
+        const auto g = gradient_series(u, order);
+        const auto [inverse, logarithm] = inverse_log();
+        const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
+            : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};
+        if (error) {
+            error->temperature_coefficient = motion[0];
+            for (std::size_t k = 0; k <= order; ++k) {
+                const WiderScalar r = gas, t = temperature, v = volume, t1 = motion[0];
+                const auto& wi = wide_series.first;
+                const WiderScalar pressure_wide = k ? r * (t * (wi[k] - paired_wide[k] / v)
+                    + t1 * (wi[k-1] - paired_wide[k-1] / v)) : r * t * (wi[0] - paired_wide[0] / v);
+                const WiderScalar scale = wide_math::abs(r * t) * (wide_math::abs(wi[k]) + paired_scale[k] / v)
+                    + (k ? wide_math::abs(r * t1) * (wide_math::abs(wi[k-1]) + paired_scale[k-1] / v) : 0.0L);
+                error->pressure[k] = k ? gas * (temperature * (inverse[k] - g[k] / volume)
+                    + motion[0] * (inverse[k-1] - g[k-1] / volume)) : gas * temperature * (inverse[0] - g[0] / volume);
+                error->pressure_floor[k] = precision_estimate(error->pressure[k], pressure_wide, scale, operation_count)
+                    + wide_math::abs(gas * temperature / volume) * paired_site[k]
+                    + (k ? wide_math::abs(gas * motion[0] / volume) * paired_site[k-1] : 0.0);
+            }
+        }
+        for (std::size_t k = 1; k <= order; ++k) {
+            const double residual = gas * (temperature * (inverse[k] - g[k] / volume)
+                + motion[0] * (inverse[k-1] - g[k-1] / volume)) - (k == 1 ? direction.pressure / norm : 0.0);
+            result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual,
+                wide_math::abs(residual) / std::max(pressure, wide_math::abs(pv * path[k][1])));
+        }
+        observations.merge(result.diagnostics.site_conditioning);
+        prepared->path = path;
+        prepared->diagnostics = result.diagnostics;
+        if (prepared->diagnostics.site_conditioning)
+            prepared->diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*prepared->diagnostics.site_conditioning);
+        if (error) prepared->error = *error;
+        if (batch) batch->paths.emplace(std::move(path_key), prepared);
     }
     capture_error = error != nullptr;
-    const auto g = gradient_series(u, order);
     const auto [inverse, logarithm] = inverse_log();
     const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
         : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};
-    if (error) {
-        error->temperature_coefficient = motion[0];
-        for (std::size_t k = 0; k <= order; ++k) {
-            const WiderScalar r = gas, t = temperature, v = volume, t1 = motion[0];
-            const auto& wi = wide_series.first;
-            const WiderScalar pressure_wide = k ? r * (t * (wi[k] - paired_wide[k] / v)
-                + t1 * (wi[k-1] - paired_wide[k-1] / v)) : r * t * (wi[0] - paired_wide[0] / v);
-            const WiderScalar scale = wide_math::abs(r * t) * (wide_math::abs(wi[k]) + paired_scale[k] / v)
-                + (k ? wide_math::abs(r * t1) * (wide_math::abs(wi[k-1]) + paired_scale[k-1] / v) : 0.0L);
-            error->pressure[k] = k ? gas * (temperature * (inverse[k] - g[k] / volume)
-                + motion[0] * (inverse[k-1] - g[k-1] / volume)) : gas * temperature * (inverse[0] - g[0] / volume);
-            error->pressure_floor[k] = precision_estimate(error->pressure[k], pressure_wide, scale, operation_count)
-                + wide_math::abs(gas * temperature / volume) * paired_site[k]
-                + (k ? wide_math::abs(gas * motion[0] / volume) * paired_site[k-1] : 0.0);
-        }
-    }
-    for (std::size_t k = 1; k <= order; ++k) {
-        const double residual = gas * (temperature * (inverse[k] - g[k] / volume)
-            + motion[0] * (inverse[k-1] - g[k-1] / volume)) - (k == 1 ? direction.pressure / norm : 0.0);
-        result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual,
-            wide_math::abs(residual) / std::max(pressure, wide_math::abs(pv * path[k][1])));
-    }
     u.assign(width, 0.0);
     std::copy(stoichiometry.begin(), stoichiometry.end(), u.begin() + 2);
     result.contraction = gradient_series(u, order);
