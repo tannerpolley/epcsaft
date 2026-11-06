@@ -544,9 +544,10 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     }
 }
 
-StabilityReport test_snapshot(const CompiledSystem& c, const EquilibriumResult& result,
+StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
+    auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     StabilityReport report;
     const bool fast = options.mode == DiscoveryMode::Fast;
     bool stopped = false;
@@ -758,7 +759,8 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 // ALG-STABILITY before neutral recovery (#987): the Full trial set on the lower-objective single-phase L1/V1
 // declaration of the feed, every solve and native trial charged to `limits`. Every outcome returns its report;
 // nothing from it feeds recovery. A failed parent keeps its cause and work.
-StabilityReport recovery_stability(const CompiledSystem& c, const DriverLimits& limits) {
+StabilityReport recovery_stability(const CompiledSystem& input, const DriverLimits& limits) {
+    auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     StabilityReport parents, report;
     std::optional<std::pair<CompiledSystem, EquilibriumResult>> best;
     for (const auto kind : {PhaseKind::Liquid, PhaseKind::Vapor}) {
@@ -792,8 +794,9 @@ StabilityReport recovery_stability(const CompiledSystem& c, const DriverLimits& 
     return report;
 }
 
-std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& c) {
+std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& input) {
     core::Scope scope("cooling_onset");
+    auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     if (c.ideal) throw std::invalid_argument("ideal cooling onset unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas cooling onset is deferred");
     const auto& request = c.problem;
@@ -957,7 +960,8 @@ std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(
     return {std::move(reduced), std::move(seed)};
 }
 
-EquilibriumResult discover_phases(const HelmholtzModel& model, const EquilibriumProblem& request) {
+EquilibriumResult discover_phases(const HelmholtzModel& model, const EquilibriumProblem& input) {
+    auto request = input; request.phase_calculation = PhaseCalculation::Discovery;
     if (model.parameters().ideal_gas) throw std::invalid_argument("ideal-gas phase discovery is deferred");
     if (!request.discovery || request.topology_declared || !request.phases.empty()
         || !request.temperature.is_positive() || !request.pressure.is_positive()

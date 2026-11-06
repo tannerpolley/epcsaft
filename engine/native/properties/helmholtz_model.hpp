@@ -420,7 +420,7 @@ public:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order
+        DerivativeOrder order, bool isothermal_hessian = false
     ) const;
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
@@ -497,8 +497,10 @@ public:
     const policy::SolverOptions& solver_options() const { return solver_options_; }
     template <typename Base>
     PureIsothermalValues<Base> pure_isothermal(Base temperature, Base volume, Base amount = 1.0) const;
-    HelmholtzDerivativeValues<WiderScalar> isothermal(WiderScalar temperature, WiderScalar volume,
-        const std::vector<WiderScalar>& amounts) const;
+    template <typename Base>
+    HelmholtzDerivativeValues<Base> isothermal(Base temperature, Base volume,
+        const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
+        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
@@ -527,7 +529,7 @@ private:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order
+        DerivativeOrder order, bool isothermal_hessian = false
     ) const;
 
     const policy::SolverOptions solver_options_;

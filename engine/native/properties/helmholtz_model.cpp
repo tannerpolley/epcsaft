@@ -1044,17 +1044,17 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order
+    DerivativeOrder order, bool isothermal_hessian
 ) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order);
+    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian);
 }
 
 HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order
+    DerivativeOrder order, bool isothermal_hessian
 ) const {
     core::AssociationObservations observations(true);
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
@@ -1064,6 +1064,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
+    isothermal_hessian = isothermal_hessian && order == DerivativeOrder::IsothermalPhaseHessian
+        && components == 2 && active_.empty() && !parameters_.ideal_gas
+        && parameters_.dipole_moment_debye.empty() && parameters_.quadrupole_moment_debye_angstrom.empty()
+        && (parameters_.site_component.size() == 2 || parameters_.site_component.size() == 4)
+        && std::all_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z == 0; })
+        && std::all_of(amounts.begin(), amounts.end(), [](double n) { return n > 0.0; });
     const std::size_t point_size = 2 + components + active_.size();
     double total = 0.0;
     for (double amount : amounts) total += amount;
@@ -1233,9 +1239,10 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
     }
     result.hessian.assign(point_size * point_size, 0.0);
+    if (isothermal_hessian) result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization).hessian;
     if (order != DerivativeOrder::PressureSlope) ++counters_.hessian_calls;
     std::vector<double> direction(input_count, 0.0);
-    for (std::size_t offset = 0; offset < width; ++offset) {
+    for (std::size_t offset = 0; !isothermal_hessian && offset < width; ++offset) {
         const std::size_t column = coordinates[offset];
         if (order == DerivativeOrder::StateHessian && column >= 2 && column < 2 + components) continue;
         std::fill(direction.begin(), direction.end(), 0.0);

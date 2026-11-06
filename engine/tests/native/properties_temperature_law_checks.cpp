@@ -309,12 +309,18 @@ void temperature_laws() {
     // 3. Sites, exact actions and central differences at every temperature; pressure witnesses at 320 K.
     const auto active = coefficients();
     const epcsaft::HelmholtzModel model(parameters, active);
+    const epcsaft::HelmholtzModel fixed(parameters);
     const std::array<const char*, 3> outputs = {"a_res", "P", "h_res"}, units = {"1", "Pa", "J/mol"};
     const std::vector<double> t_steps = {0.4, 0.2, 0.1, 0.05, 0.025}, u_steps = {1e-3, 5e-4, 2.5e-4, 1.25e-4};
     // At T = T_r the a2/a3 mixed actions vanish and their T differences carry pure h^2 truncation, so this
     // ladder continues halving to 0.00625 K (lead decision 2026-10-16); the tolerance is unchanged.
     const std::vector<double> mixed_t_steps = {0.4, 0.2, 0.1, 0.05, 0.025, 0.0125, 0.00625};
     for (const double temperature : TEMPERATURES) {
+        const auto taped = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
+        const auto selected = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian, true);
+        CHECK(selected.gradient_floor == taped.gradient_floor && selected.site_fractions == taped.site_fractions);
+        for (std::size_t i = 1; i < 4; ++i) for (std::size_t j = 1; j < 4; ++j)
+            CHECK(close(selected.hessian[4 * i + j], taped.hessian[4 * i + j], 1e-10));
         const auto tag = "four-site/T=" + number(temperature);
         const auto state = model.state(temperature, RHO, X);
         const auto s = epcsaft::segment_sigma(temperature, parameters), dd = epcsaft::segment_diameter(temperature, parameters, s);

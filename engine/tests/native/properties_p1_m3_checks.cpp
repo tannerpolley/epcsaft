@@ -285,6 +285,28 @@ void derivatives_and_limits() {
         CHECK(std::isfinite(gradient.gradient[1]));
         const auto hessian = model.evaluate(temperature, volume, item.second,
                                             epcsaft::DerivativeOrder::Hessian);
+        const auto phase = model.evaluate(temperature, volume, item.second, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
+        const auto selected = model.evaluate(temperature, volume, item.second, epcsaft::DerivativeOrder::IsothermalPhaseHessian, true);
+        CHECK(selected.value == phase.value && selected.gradient == phase.gradient);
+        CHECK(selected.gradient_floor == phase.gradient_floor && selected.site_fractions == phase.site_fractions);
+        CHECK(selected.first_numerical_failure.has_value() == phase.first_numerical_failure.has_value());
+        const auto width = selected.gradient.size();
+        if (item.second.size() == 2) for (double scale : {0.3, 3.0}) {
+            auto amounts = item.second; for (auto& n : amounts) n *= scale;
+            const auto scaled = model.evaluate(temperature, volume * scale, amounts, epcsaft::DerivativeOrder::IsothermalPhaseHessian, true);
+            for (std::size_t i = 1; i < width; ++i) for (std::size_t j = 1; j < width; ++j)
+                CHECK(close(scale * scaled.hessian[i * width + j], selected.hessian[i * width + j], 1e-10));
+        }
+
+        for (std::size_t i = 1; i < 2 + item.second.size(); ++i) {
+            double contraction = 0.0, magnitude = 0.0;
+            for (std::size_t j = 1; j < 2 + item.second.size(); ++j) {
+                CHECK(close(selected.hessian[i * width + j], phase.hessian[i * width + j], 1e-10));
+                const double product = selected.hessian[i * width + j] * (j == 1 ? volume : item.second[j - 2]);
+                contraction += product; magnitude += std::abs(product);
+            }
+            CHECK(std::abs(contraction) <= 1e-10 * std::max(1.0, magnitude));
+        }
         for (std::size_t row = 0; row < gradient.gradient.size(); ++row) {
             for (std::size_t column = row + 1; column < gradient.gradient.size(); ++column) {
                 const double left = hessian.hessian[row * gradient.gradient.size() + column];

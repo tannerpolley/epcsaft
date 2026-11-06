@@ -110,7 +110,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         if (state_only && one_component_two_density_eligible(*this)) {
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
             result.derivative.push_back(result.pure.back().derivative);
-        } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order));
+        } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order,
+            phase_calculation == PhaseCalculation::Declared));
         } else result.derivative.push_back(model->isothermal(result.temperature, result.volume.back(), values));
         if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative.back().first_numerical_failure);
         scope.probe("gradient_floor", double(result.derivative.back().gradient_floor),

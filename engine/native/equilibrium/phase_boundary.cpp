@@ -1659,6 +1659,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     StageWork observations;
     const auto publish = [&](EquilibriumResult result) { std::move(observations).publish_observations(result); return result; };
     auto declared = target.problem;
+    declared.phase_calculation = PhaseCalculation::Discovery;
     for (auto& phase : declared.phases) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
     if (declared.pressure.free) declared.pressure = FreeValue::variable();
     auto source = declared;

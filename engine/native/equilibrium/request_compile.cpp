@@ -1276,6 +1276,7 @@ static CompiledSystem compile_with_basis(
     const std::size_t components = model.parameters().component_count();
     CompiledSystem compiled;
     compiled.model = &model;
+    compiled.phase_calculation = request.phase_calculation;
     compiled.problem = request;
     compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
     compiled.n_feed = resolve_feed(model, request.feed);
@@ -1705,6 +1706,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     EquilibriumProblem request;
     request.temperature = FreeValue::fixed(T); request.pressure = FreeValue::fixed(P);
     request.feed.values = w;
+    request.phase_calculation = PhaseCalculation::Discovery;
     request.phases = {phase};
     request.phases[0].amount = AmountSpec::free();
     request.solver_options.values[policy::row] = policy::EQUILIBRIUM_ROW_RESIDUAL.value;

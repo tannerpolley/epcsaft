@@ -173,7 +173,9 @@ struct AffineLoading final {
     double lower = 0, upper = 0, seed = 0, pressure = 0;
 };
 
+enum class PhaseCalculation { Unknown, Declared, Discovery };
 struct EquilibriumProblem final {
+    PhaseCalculation phase_calculation = PhaseCalculation::Declared;
     std::vector<PhaseSpec> phases;
     FreeValue temperature;
     FreeValue pressure;
@@ -358,6 +360,7 @@ struct CompiledSolid final {
 };
 
 struct CompiledSystem final {
+    PhaseCalculation phase_calculation = PhaseCalculation::Unknown;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::NumericalRank> last_rank;

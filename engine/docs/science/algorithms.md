@@ -1678,6 +1678,35 @@ refusal, before publication. “Unique within the declared search” excludes
 between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
 owns the heat, moving denominator and switch derivative.
 
+
+### Fixed-temperature declared-phase Hessians
+
+Ordinary declared-phase row preparation may evaluate the residual Hessian in
+volume and occupied amounts by second-order Taylor polarization through the
+shared isothermal residual. The initial domain is neutral, nonpolar binary
+PC-SAFT with positive amounts, no active parameter coordinates and two or four
+association sites. Non-associating phases retain taped extraction because the
+polarized Hessian did not preserve their declared-branch stopping decisions. Temperature-dependent inputs are evaluated at the
+requested temperature. Composition directions use the scalar-generic
+`composition_moments`; fixed-composition isotherm moments are not inputs to
+composition derivatives. The pure homogeneous projection remains its owner.
+
+The taped phase prefix still supplies the energy, gradient, central association
+sites, requested-column site sensitivities, rank observations and first failure.
+The gradient floor retains the maximum requested-column absolute site-sensitivity
+sum multiplied by the achieved site residual/floor. The Taylor recurrence uses
+those exact central sites and factorization without another central site solve;
+only Hessian extraction changes. Full, thermal, active-parameter and unavailable
+charts keep the taped calculation. Final full preparation and existing
+publication/curvature sharing remain unchanged.
+
+The declaration carries its calculation origin into compilation before any
+generic-point evaluation. Discovery, stability and recovery descendants retain
+the discovery origin through copies and recompilation and always use taped
+phase derivatives. Removing a discovery option from a local declaration does
+not turn it into an ordinary declared calculation.
+
+
 ## ALG-STABILITY
 
 The explicit native tangent-plane test and fixed-T/P discovery

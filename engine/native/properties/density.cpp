@@ -63,7 +63,7 @@ struct DensityPartition final {
 // temperature and composition terms stay double. The solved site fractions enter with their implicit volume
 // coefficients from the factorized mass action, so the series is the stationary association potential's.
 // It reads no tape and takes no lock.
-template <typename Base = double>
+template <typename Base = double, bool Composition = false>
 class PressureSeries final {
 public:
     PressureSeries(const HelmholtzModel& model, Base temperature, const std::vector<Base>& amounts)
@@ -80,7 +80,7 @@ public:
                 }
                 return mapped;
             }
-        }()), temperature_(temperature), amounts_(std::is_same_v<Base, double> ? std::vector<Base>{} : amounts) {
+        }()), temperature_(temperature), amounts_((std::is_same_v<Base, double> && !Composition) ? std::vector<Base>{} : amounts) {
         for (Base amount : amounts) total_ += amount;
         for (Base amount : amounts) composition_.push_back(amount / total_);
         sigma_ = segment_sigma(temperature, parameters_);
@@ -97,7 +97,7 @@ public:
                     static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
                     target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
         }
-        if constexpr (std::is_same_v<Base, double>) if (!parameters_.ideal_gas) {
+        if constexpr (std::is_same_v<Base, double> && !Composition) if (!parameters_.ideal_gas) {
             const auto packing = composition_moments<3>(composition_, parameters_, diameter_);
             moments_ = {packing, dispersion_coefficients(packing[0]), composition_moments(temperature_, composition_, parameters_, sigma_)};
         }
@@ -126,7 +126,8 @@ public:
     // site solve from a neighbouring solution; `sites` receives the site fractions' coefficients in t (N per site).
     template <std::size_t N, bool Thermal = false>
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
-                       std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0) const {
+                       std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0,
+                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const {
         using Series = Taylor<N, Base>;
         core::CalculationWork::energy_evaluation();
         core::Scope entry("pressure_series_residual"), scope("evaluate");
@@ -135,7 +136,7 @@ public:
         Series v(volume);
         v.c[1] = direction.empty() ? Base(1) : direction[0];
         const auto path = [&] {
-            if constexpr (std::is_same_v<Base, double>) return std::pair<Base, const std::vector<Base>&>(total_, composition_);
+            if constexpr (std::is_same_v<Base, double> && !Composition) return std::pair<Base, const std::vector<Base>&>(total_, composition_);
             else {
                 Series total(0); std::vector<Series> composition;
                 for (std::size_t i = 0; i < amounts_.size(); ++i) {
@@ -156,7 +157,7 @@ public:
         static thread_local Eigen::VectorXd rows, coefficient, cross, unit;
         delta.clear(); strength.clear(); site_series.clear(); residuals.clear();
         if (!parameters_.site_component.empty()) {
-            if constexpr (std::is_same_v<Base, double>)
+            if constexpr (std::is_same_v<Base, double> && !Composition)
                 delta = association_delta_values(temperature_, rho, composition_, parameters_, sigma_, diameter_,
                     parameters_.association_energy_over_k, parameters_.association_volume);
             else delta = association_delta_values(Series(temperature_), rho, composition, parameters_,
@@ -171,6 +172,7 @@ public:
         }
         core::Convergence record;
         const auto sites = [&]() -> std::vector<double> { try {
+            if (prepared) return *start;
             if (strength.empty()) return std::vector<double>{};
             if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
             const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
@@ -187,10 +189,13 @@ public:
         floor = 0.0;
         if (!sites.empty()) {
             static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+            if (!prepared) {
             if constexpr (std::is_same_v<Base, double>)
                 properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
             else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
                 static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
+            }
+            const auto& lu = prepared ? *prepared : factorization;
             const auto count = static_cast<Eigen::Index>(sites.size());
             rows.resize(count); cross.resize(count);
             if constexpr (!std::is_same_v<Base, double>) {
@@ -212,7 +217,7 @@ public:
                         if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
                         if (used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value))
                             throw std::runtime_error("extended association residual/implicit-coefficient floor unresolved");
-                        coefficient = factorization.solve(rows);
+                        coefficient = lu.solve(rows);
                         bool changed = false;
                         for (Eigen::Index i = 0; i < count; ++i) {
                             auto& x = site_series[static_cast<std::size_t>(i)].c[k];
@@ -240,7 +245,7 @@ public:
                             r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
                         rows(static_cast<Eigen::Index>(a)) = static_cast<double>(-r);
                     }
-                    coefficient = factorization.solve(rows);
+                    coefficient = lu.solve(rows);
                     for (Eigen::Index i = 0; i < count; ++i) error[static_cast<std::size_t>(i)].c[k] = Base(coefficient(i));
                     Base defect = 0;
                     for (std::size_t a = 0; a < sites.size(); ++a) {
@@ -261,15 +266,15 @@ public:
             for (std::size_t k = 1; k < N; ++k) {
                 residuals = association_residuals(rho, composition, parameters_, site_series, delta);
                 for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
-                coefficient = factorization.solve(rows);
+                coefficient = lu.solve(rows);
                 for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
-                if (k > 1) continue;
+                if (k > 1 || prepared) continue;
                 for (Eigen::Index s = 0; s < count; ++s) {
                     const auto site = static_cast<std::size_t>(s);
                     cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
                         * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
                 }
-                unit = factorization.solve(Eigen::VectorXd::Ones(count));
+                unit = lu.solve(Eigen::VectorXd::Ones(count));
                 floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
             }
             }
@@ -287,10 +292,10 @@ public:
                     site_series, electro.first.debye_huckel, electro.second);
             } else {
                 const auto electrostatics = [&] {
-                    if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+                    if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
                     else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
                 }();
-                if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
+                if constexpr (std::is_same_v<Base, double> && !Composition) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
                     diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, &moments_);
                 else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
                     std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
@@ -1533,21 +1538,22 @@ HelmholtzDerivatives HelmholtzModel::pure_state_derivatives(double temperature, 
     return d;
 }
 
-HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar temperature, WiderScalar volume,
-    const std::vector<WiderScalar>& amounts) const {
-    using Base = WiderScalar;
+template <typename Base>
+HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Base volume,
+    const std::vector<Base>& amounts, const std::vector<double>* sites,
+    const Eigen::FullPivLU<Eigen::MatrixXd>* prepared) const {
     std::vector<double> declared;
     for (const auto& amount : amounts) declared.push_back(static_cast<double>(amount));
     validate_point(double(temperature), double(volume), declared);
     HelmholtzDerivativeValues<Base> out;
-    const PressureSeries<Base> series(*this, temperature, amounts);
+    const PressureSeries<Base, true> series(*this, temperature, amounts);
     const auto count = amounts.size() + 1, width = count + 1 + active_.size();
     out.gradient.assign(width, 0); out.hessian.assign(width * width, 0); out.gradient_error.assign(width, 0);
     std::vector<Base> diagonal(count), scales(count, 1), direction(count, 0); scales[0] = volume;
     const auto along = [&](std::size_t i, std::size_t j, Base& floor) {
         std::fill(direction.begin(), direction.end(), 0); direction[i] = scales[i];
         if (j < count) direction[j] = scales[j];
-        return series.residual<2>(1 / volume, floor, nullptr, nullptr, direction);
+        return series.template residual<2>(1 / volume, floor, sites, nullptr, direction, Base(0), prepared);
     };
     for (std::size_t i = 0; i < count; ++i) {
         Base floor = 0; const auto energy = along(i, count, floor);
@@ -1567,6 +1573,11 @@ HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar te
     if (series.observations_) series.observations_->merge(out.rank_records);
     return out;
 }
+
+template HelmholtzDerivativeValues<double> HelmholtzModel::isothermal(double, double,
+    const std::vector<double>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
+template HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
+    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
 
 template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 template PureIsothermalValues<WiderScalar> HelmholtzModel::pure_isothermal(WiderScalar, WiderScalar, WiderScalar) const;
