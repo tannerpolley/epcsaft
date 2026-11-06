@@ -43,10 +43,11 @@ and evaluated thermal parameters stay fixed. Return the linear coefficient
 as B and twice the quadratic coefficient as C. No finite density, pressure
 root, or numerical differentiation is used.
 
-The shared density-independent composition moments cancel the removable
-hard-sphere singularity. The internal Taylor packing check admits its zero
+At the exact zero-center Taylor endpoint, shared density-independent
+composition moments cancel the removable hard-sphere singularity. Positive-
+density evaluation retains its existing arithmetic and operation order. The internal Taylor packing check admits its zero
 center; ordinary homogeneous states still require strictly positive density.
-For the selected polar family, factor a2=r U and a3=r² V before evaluating
+At that endpoint for the selected polar family, factor a2=r U and a3=r² V before evaluating
 r U²/(U-r V). Decide absent polar support independently of density. A zero
 pair coefficient on active support with unresolved Padé limit is a named
 numerical refusal, never a fabricated zero coefficient.
