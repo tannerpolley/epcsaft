@@ -97,6 +97,10 @@ public:
                     static_cast<TemperatureLaw>(target), static_cast<std::size_t>(slot),
                     target <= int(TemperatureLaw::Lij) ? parameters_.component_count() : parameters_.site_component.size());
         }
+        if constexpr (std::is_same_v<Base, double>) if (!parameters_.ideal_gas) {
+            const auto packing = composition_moments<3>(composition_, parameters_, diameter_);
+            moments_ = {packing, dispersion_coefficients(packing[0]), composition_moments(temperature_, composition_, parameters_, sigma_)};
+        }
         if (!core::AssociationObservations::current()) observations_.emplace();
         // With one partner per site the mass action's pair step is its exact solution at every density.
         const std::size_t sites = parameters_.site_component.size();
@@ -269,7 +273,7 @@ public:
         }();
         const auto contributions = [&] {
             if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
-                diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second);
+                diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, &moments_);
             else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
                 std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
                 site_series, electrostatics.first.debye_huckel, electrostatics.second);
@@ -288,6 +292,7 @@ public:
 private:
     const HelmholtzModel& model_;
     std::conditional_t<std::is_same_v<Base, double>, const Parameters&, ParameterRecord<Base>> parameters_;
+    IsothermMoments<Base> moments_;
     Base temperature_, total_ = 0.0;
     bool pairs_ = true;
     mutable std::vector<Base> central_sites_;

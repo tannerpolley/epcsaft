@@ -17,6 +17,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <utility>
 
 namespace epcsaft {
 
@@ -215,7 +216,9 @@ std::array<Fixed, Count> composition_moments(const std::vector<Fixed>& x,
         for (std::size_t i = 0; i < x.size(); ++i) {
             Fixed power = Fixed(1.0);
             for (std::size_t exponent = 0; exponent < order; ++exponent) power *= diameter[i];
-            moments[order] += x[i] * parameters.segment_count[i] * power;
+            // EqID: mean_segment_count; preserve its recording without a multiply by one.
+            if constexpr (Count == 1) moments[order] += x[i] * parameters.segment_count[i];
+            else moments[order] += x[i] * parameters.segment_count[i] * power;
         }
     }
     return moments;
@@ -261,11 +264,12 @@ std::array<Scalar, 4> packing_moments(
     const Scalar& molar_density,
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
-    const std::vector<Fixed>& diameter
+    const std::vector<Fixed>& diameter,
+    const std::array<Fixed, 3>* prepared = nullptr
 ) {
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::array<Scalar, 4> zeta;
-    const auto moments = composition_moments<3>(mole_fractions, parameters, diameter);
+    const auto moments = prepared ? *prepared : composition_moments<3>(mole_fractions, parameters, diameter);
     for (std::size_t order = 0; order < 3; ++order)
         zeta[order] = (Scalar(PI) / 6.0) * number_density * moments[order];
     zeta[3] = packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
@@ -456,59 +460,8 @@ Fixed pair_correction(const Fixed& temperature, const ParameterSet& parameters, 
     return k_ij;
 }
 
-template <typename Scalar, typename ParameterSet, typename Fixed>
-HelmholtzResult<Scalar> residual_helmholtz(
-    const Fixed& temperature,
-    const Scalar& molar_density,
-    const std::vector<Fixed>& mole_fractions,
-    const ParameterSet& parameters,
-    const std::vector<Fixed>& sigma,
-    const std::vector<Fixed>& diameter,
-    const std::vector<Scalar>& site_fraction,
-    const Scalar& debye_huckel,
-    const Scalar& born
-) {
-    if (parameters.ideal_gas) return {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
-    const std::size_t size = parameters.segment_count.size();
-    // EqID: angstrom_number_density
-    const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
-    // EqID: mean_segment_count
-    Fixed mean_segment_count = Fixed(0.0);
-    for (std::size_t i = 0; i < size; ++i) {
-        mean_segment_count += mole_fractions[i] * parameters.segment_count[i];
-    }
-
-    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
-
-    const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
-    // EqID: hard_sphere_helmholtz
-    const Scalar hard_sphere = [&]() -> Scalar {
-        if constexpr (is_taylor<Scalar>) {
-            if (molar_density.c[0] == 0.0) {
-                const auto moments = composition_moments(mole_fractions, parameters, diameter);
-                const Fixed ratio = moments[2] / moments[3];
-                const Fixed shape = ratio * ratio * moments[2] / moments[0];
-                return 3.0 * moments[1] * ratio / moments[0] * zeta[3] / one_minus_eta
-                    + shape * zeta[3] / (one_minus_eta * one_minus_eta)
-                    + (shape - 1.0) * scalar_log1p(-zeta[3]);
-            }
-        }
-        // Keep finite-density operation order; the dilute arithmetic rewrite has a separate owner.
-        return (3.0 * zeta[1] * zeta[2] / one_minus_eta +
-         zeta[2] * zeta[2] * zeta[2] /
-             (zeta[3] * one_minus_eta * one_minus_eta) +
-         (zeta[2] * zeta[2] * zeta[2] / (zeta[3] * zeta[3]) - zeta[0]) *
-             scalar_log(one_minus_eta)) /
-        zeta[0];
-    }();
-
-    // EqID: hard_chain_helmholtz
-    Scalar hard_chain = mean_segment_count * hard_sphere;
-    for (std::size_t i = 0; i < size; ++i) {
-        hard_chain -= mole_fractions[i] * (parameters.segment_count[i] - 1.0) *
-            scalar_log(hard_sphere_contact(diameter[i] / Fixed(2.0), zeta[2], one_minus_eta));
-    }
-
+template <typename Fixed>
+std::pair<std::array<Fixed, 7>, std::array<Fixed, 7>> dispersion_coefficients(const Fixed& mean_segment_count) {
     // EqID: dispersion_chain_coefficients
     const Fixed chain_factor_1 =
         (mean_segment_count - 1.0) / mean_segment_count;
@@ -520,23 +473,14 @@ HelmholtzResult<Scalar> residual_helmholtz(
         a[i] = A0[i] + chain_factor_1 * A1[i] + chain_factor_2 * A2[i];
         b[i] = B0[i] + chain_factor_1 * B1[i] + chain_factor_2 * B2[i];
     }
-    // EqID: dispersion_integral_one
-    const Scalar integral_1 = polynomial(a, zeta[3]);
-    // EqID: dispersion_integral_two
-    const Scalar integral_2 = polynomial(b, zeta[3]);
-    const Scalar eta_2 = zeta[3] * zeta[3];
-    const Scalar eta_3 = eta_2 * zeta[3];
-    const Scalar eta_4 = eta_3 * zeta[3];
-    // EqID: dispersion_compressibility_factor
-    const Scalar c1 = Scalar(1.0) /
-        (Scalar(1.0) +
-         mean_segment_count * (8.0 * zeta[3] - 2.0 * eta_2) /
-             (one_minus_eta * one_minus_eta * one_minus_eta * one_minus_eta) +
-         (1.0 - mean_segment_count) *
-             (20.0 * zeta[3] - 27.0 * eta_2 + 12.0 * eta_3 - 2.0 * eta_4) /
-             ((one_minus_eta * (Scalar(2.0) - zeta[3])) *
-              (one_minus_eta * (Scalar(2.0) - zeta[3]))));
+    return {a, b};
+}
 
+// Energy-weighted composition-pair moments for dispersion.
+template <typename Fixed, typename ParameterSet>
+std::array<Fixed, 2> composition_moments(const Fixed& temperature, const std::vector<Fixed>& mole_fractions,
+    const ParameterSet& parameters, const std::vector<Fixed>& sigma) {
+    const std::size_t size = parameters.segment_count.size();
     Fixed first_moment = Fixed(0.0);
     Fixed second_moment = Fixed(0.0);
     const auto laws = temperature_law_values(temperature, parameters);
@@ -568,6 +512,87 @@ HelmholtzResult<Scalar> residual_helmholtz(
                 (temperature * temperature);
         }
     }
+    return {first_moment, second_moment};
+}
+
+template <typename Fixed>
+struct IsothermMoments final {
+    std::array<Fixed, 3> packing;
+    std::pair<std::array<Fixed, 7>, std::array<Fixed, 7>> coefficients;
+    std::array<Fixed, 2> pair;
+};
+
+template <typename Scalar, typename ParameterSet, typename Fixed>
+HelmholtzResult<Scalar> residual_helmholtz(
+    const Fixed& temperature,
+    const Scalar& molar_density,
+    const std::vector<Fixed>& mole_fractions,
+    const ParameterSet& parameters,
+    const std::vector<Fixed>& sigma,
+    const std::vector<Fixed>& diameter,
+    const std::vector<Scalar>& site_fraction,
+    const Scalar& debye_huckel,
+    const Scalar& born,
+    const IsothermMoments<Fixed>* prepared = nullptr
+) {
+    if (parameters.ideal_gas) return {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
+    const std::size_t size = parameters.segment_count.size();
+    // EqID: angstrom_number_density
+    const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
+    const Fixed mean_segment_count = prepared ? prepared->packing[0] : composition_moments<1>(mole_fractions, parameters, diameter)[0];
+
+    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter, prepared ? &prepared->packing : nullptr);
+
+    const Scalar one_minus_eta = Scalar(1.0) - zeta[3];
+    // EqID: hard_sphere_helmholtz
+    const Scalar hard_sphere = [&]() -> Scalar {
+        if constexpr (is_taylor<Scalar>) {
+            if (molar_density.c[0] == 0.0) {
+                const auto moments = composition_moments(mole_fractions, parameters, diameter);
+                const Fixed ratio = moments[2] / moments[3];
+                const Fixed shape = ratio * ratio * moments[2] / moments[0];
+                return 3.0 * moments[1] * ratio / moments[0] * zeta[3] / one_minus_eta
+                    + shape * zeta[3] / (one_minus_eta * one_minus_eta)
+                    + (shape - 1.0) * scalar_log1p(-zeta[3]);
+            }
+        }
+        // Keep finite-density operation order; the dilute arithmetic rewrite has a separate owner.
+        return (3.0 * zeta[1] * zeta[2] / one_minus_eta +
+         zeta[2] * zeta[2] * zeta[2] /
+             (zeta[3] * one_minus_eta * one_minus_eta) +
+         (zeta[2] * zeta[2] * zeta[2] / (zeta[3] * zeta[3]) - zeta[0]) *
+             scalar_log(one_minus_eta)) /
+        zeta[0];
+    }();
+
+    // EqID: hard_chain_helmholtz
+    Scalar hard_chain = mean_segment_count * hard_sphere;
+    for (std::size_t i = 0; i < size; ++i) {
+        hard_chain -= mole_fractions[i] * (parameters.segment_count[i] - 1.0) *
+            scalar_log(hard_sphere_contact(diameter[i] / Fixed(2.0), zeta[2], one_minus_eta));
+    }
+
+    const auto coefficients = prepared ? prepared->coefficients : dispersion_coefficients(mean_segment_count);
+    const auto& [a, b] = coefficients;
+    // EqID: dispersion_integral_one
+    const Scalar integral_1 = polynomial(a, zeta[3]);
+    // EqID: dispersion_integral_two
+    const Scalar integral_2 = polynomial(b, zeta[3]);
+    const Scalar eta_2 = zeta[3] * zeta[3];
+    const Scalar eta_3 = eta_2 * zeta[3];
+    const Scalar eta_4 = eta_3 * zeta[3];
+    // EqID: dispersion_compressibility_factor
+    const Scalar c1 = Scalar(1.0) /
+        (Scalar(1.0) +
+         mean_segment_count * (8.0 * zeta[3] - 2.0 * eta_2) /
+             (one_minus_eta * one_minus_eta * one_minus_eta * one_minus_eta) +
+         (1.0 - mean_segment_count) *
+             (20.0 * zeta[3] - 27.0 * eta_2 + 12.0 * eta_3 - 2.0 * eta_4) /
+             ((one_minus_eta * (Scalar(2.0) - zeta[3])) *
+              (one_minus_eta * (Scalar(2.0) - zeta[3]))));
+
+    const auto moments = prepared ? prepared->pair : composition_moments(temperature, mole_fractions, parameters, sigma);
+    const auto& [first_moment, second_moment] = moments;
     // EqID: dispersion_helmholtz
     const Scalar dispersion =
         -2.0 * Scalar(PI) * number_density * integral_1 * first_moment -

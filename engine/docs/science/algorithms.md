@@ -294,6 +294,13 @@ errors propagate rather than becoming ordinary row refusals.
 
 ## ALG-DENSITY
 
+A pressure-series preparation reuses the composition-moment owner for the
+fixed-temperature/composition packing moments, mean segment count and dispersion pair moments,
+and prepares the dispersion polynomial coefficients once. Every density still
+passes packing-fraction admission. General differentiation charts evaluate the
+same expressions in their original recording order, retaining their temperature,
+composition and parameter dependencies.
+
 Detailed capture emits `density_scan_input` (T/K, P/Pa, lower/upper density in
 mol/m3, interval count), `density_scan_point` (density, reduced residual,
 pressure slope, linked), and `density_scan_skip` (density, attempted node, zero
