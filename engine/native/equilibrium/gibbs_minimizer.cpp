@@ -27,6 +27,26 @@
 namespace epcsaft::equilibrium {
 namespace { constexpr double bound_infinity = 1.0e19; }
 
+HelmholtzSpectrum helmholtz_spectrum(const HelmholtzDerivatives& derivative,
+    const std::vector<double>& x, const std::vector<std::size_t>& support, const std::vector<double>& normalization) {
+    const auto& z = normalization.empty() ? x : normalization;
+    const auto c = static_cast<Eigen::Index>(support.size());
+    const auto width = derivative.gradient.size();
+    HelmholtzSpectrum out;
+    out.matrix.resize(c, c);
+    for (Eigen::Index a = 0; a < c; ++a)
+        for (Eigen::Index b = 0; b < c; ++b)
+            out.matrix(a, b) = std::sqrt(z[support[a]] * z[support[b]])
+                * derivative.hessian[(2 + support[a]) * width + 2 + support[b]] + (a == b ? z[support[a]] / x[support[a]] : 0.0);
+    if (!out.matrix.allFinite()) throw std::domain_error("nonfinite Helmholtz amount Hessian");
+    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(out.matrix);
+    if (eigen.info() != Eigen::Success) throw std::domain_error("Helmholtz eigensolve failed");
+    out.values = eigen.eigenvalues(); out.mode = eigen.eigenvectors().col(0);
+    out.band = (out.matrix * out.mode - out.values(0) * out.mode).norm()
+        + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * out.matrix.norm();
+    return out;
+}
+
 namespace {
 
 // EqID reduced_hessian_stability on the balance nullspace. `minimum` is the smallest eigenvalue in the solved
@@ -86,21 +106,12 @@ std::string local_phase_instability(const CompiledSystem& compiled, const PhaseP
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
-        const auto& derivative = prepared.derivative[phase];
-        const std::size_t width = derivative.gradient.size();
-        const auto c = static_cast<Eigen::Index>(support.size());
-        Eigen::MatrixXd M(c, c);
-        for (Eigen::Index a = 0; a < c; ++a)
-            for (Eigen::Index b = 0; b < c; ++b)
-                M(a, b) = std::sqrt(x[support[a]] * x[support[b]]) * derivative.hessian[(2 + support[a]) * width + 2 + support[b]]
-                    + (a == b ? 1.0 : 0.0);
         const std::string name = "local phase instability: phase " + phases[phase].name;
-        if (!M.allFinite()) return name + " stability matrix is not finite";
-        const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(M);
-        if (eigen.info() != Eigen::Success) return name + " stability eigensolve failed";
-        const double lowest = eigen.eigenvalues()(0);
-        const Eigen::VectorXd v = eigen.eigenvectors().col(0);
-        const double band = (M * v - lowest * v).norm() + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * M.norm();
+        HelmholtzSpectrum spectrum;
+        try { spectrum = helmholtz_spectrum(prepared.derivative[phase], x, support); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { return name + ": " + error.what(); }
+        const double lowest = spectrum.values(0), band = spectrum.band;
         if (lowest < -band) return name + " has lowest eigenvalue " + core::optional_number(lowest)
             + " below the rounding band -" + core::optional_number(band);
     }
@@ -460,6 +471,12 @@ bool GibbsMinimizer::get_bounds_info(
         if (!compiled_.log_packing_unbounded()) {
             x_l[offset] = std::log(policy::PACKING_FRACTION_BOX_FLOOR.value);
             x_u[offset] = std::log(policy::PACKING_FRACTION_CEILING.value);
+        }
+        if (compiled_.problem.spinodal) {
+            const double coefficient = compiled_.model->packing_fraction_coefficient(compiled_.seed_temperature(), compiled_.feed_composition);
+            const auto& scan = spinodal_search(compiled_, limits_);
+            x_l[offset] = std::max(x_l[offset], std::log(coefficient * scan.lower));
+            x_u[offset] = std::min(x_u[offset], std::log(coefficient * scan.upper));
         }
         ++offset;
     }
@@ -1398,6 +1415,15 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     return true;
 }
 
+EquilibriumResult spinodal_search_failure(const CompiledSystem& compiled, EquilibriumResult result, const std::string& cause) {
+    result.success = false; clear_state(result);
+    result.message = cause; result.convergence.stop = core::Stop::left_domain;
+    result.spinodal.emplace();
+    if (compiled.spinodal_search) result.spinodal->search = *compiled.spinodal_search;
+    core::retain_failure(result.first_numerical_failure, cause, "spinodal search");
+    return result;
+}
+
 static EquilibriumResult association_result(EquilibriumResult result, const core::AssociationObservations& observations) {
     observations.merge(result.rank_records);
     return result;
@@ -1496,6 +1522,15 @@ static EquilibriumResult run_driver_once(
         reject_elapsed(result, scope); return association_result(std::move(result), observations); }
     if (limits) ++limits->attempts;
     if (limits && !audit) audit = &limit_audit.emplace(result);
+    if (declared.problem.spinodal) {
+        try { spinodal_search(declared, limits); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            result = spinodal_search_failure(declared, std::move(result), error.what());
+            if (audit) *audit = result;
+            scope.finish(result.convergence); return result;
+        }
+    }
     auto fallback = limits || newton ? initial : std::vector<double>{};
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(declared, std::move(initial), &scope, limits, physical_amounts);
     if (audit) audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
@@ -1799,48 +1834,61 @@ EquilibriumResult run_driver(
 }
 
 
-namespace {
-
 // Direct admission of a critical-equation candidate (EqID critical_equations) in place of the density-root
 // rule, which refuses P_rho = 0: a regular augmented Jacobian and one lowest zero eigenvalue of M, read from the
 // mode rows' u columns, within |lambda| <= ||M u||/||u|| + C eps ||M||, above no resolved negative one. No
 // stability certificate; the record is retained either way.
-BranchCheck admit_critical(const CompiledSystem& compiled, EquilibriumResult& result) {
+BranchCheck admit_null_mode(const CompiledSystem& compiled, EquilibriumResult& result) {
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     const auto n = static_cast<Eigen::Index>(result.coordinates.size()), c = static_cast<Eigen::Index>(compiled.mode_count);
     const auto jacobian = compiled.jacobian(result.coordinates);
     const Eigen::Map<const Dense> J(jacobian.data(), n, n);
-    const Eigen::MatrixXd M = J.block(static_cast<Eigen::Index>(compiled.rows.size()) - c - 2,
-                                      static_cast<Eigen::Index>(compiled.mode_offset()), c, c);
+    const auto prepared = compiled.prepare(result.coordinates);
+    const auto spectrum = helmholtz_spectrum(prepared.derivative[0], prepared.composition[0], compiled.problem.phases[0].support, compiled.feed_composition);
+    const auto& M = spectrum.matrix;
     const Eigen::Map<const Eigen::VectorXd> u(result.coordinates.data() + compiled.mode_offset(), c);
-    const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> spectrum(M, Eigen::EigenvaluesOnly);
     const auto lu = J.fullPivLu();
     const Eigen::VectorXd right = Eigen::VectorXd::Ones(n), solution = lu.solve(right);
     const auto singular = J.jacobiSvd().singularValues();
-    CriticalRecord record;
-    record.eigenvalues.assign(spectrum.eigenvalues().data(), spectrum.eigenvalues().data() + c);
+    HelmholtzModeRecord record;
+    record.eigenvalues.assign(spectrum.values.data(), spectrum.values.data() + c);
     record.mode.assign(u.data(), u.data() + c);
-    record.cubic = result.residuals.back();
     record.zero_band = (M * u).norm() / u.norm() + static_cast<double>(c) * std::numeric_limits<double>::epsilon() * M.norm();
     record.rank = static_cast<std::size_t>(lu.rank());
-    result.last_rank = core::numerical_rank(lu, "critical");
+    result.last_rank = core::numerical_rank(lu, compiled.problem.critical ? "critical" : "diffusive_spinodal");
     record.condition_estimate = singular(0) / singular(n - 1);
     record.backward_error = core::backward_error((J * solution - right).cwiseAbs().maxCoeff(),
         J.cwiseAbs().rowwise().sum().maxCoeff(), solution.cwiseAbs().maxCoeff(), 1.0);
-    result.critical = record;
+    if (compiled.problem.critical) {
+        result.critical.emplace();
+        static_cast<HelmholtzModeRecord&>(*result.critical) = record;
+        result.critical->cubic = result.residuals.back();
+    } else {
+        const auto& selection = spinodal_search(compiled, nullptr, result.molar_densities[0], result.spinodal ? &result.spinodal->search : nullptr);
+        result.spinodal.emplace();
+        static_cast<HelmholtzModeRecord&>(*result.spinodal) = record;
+        result.spinodal->search = selection;
+        result.spinodal->normalized_null_residual = (M * u).norm() / M.norm();
+    }
     BranchCheck outcome;
-    if (record.rank != static_cast<std::size_t>(n) || spectrum.info() != Eigen::Success)
-        outcome.message = "augmented critical Jacobian is singular (rank " + std::to_string(record.rank) + ")";
+    if (record.rank != static_cast<std::size_t>(n))
+        outcome.message = "augmented null-mode Jacobian is singular (rank " + std::to_string(record.rank) + ")";
+    else if (compiled.problem.spinodal && (!((M * u).norm() / M.norm() <= policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+        || std::abs(u.squaredNorm() - 1) > policy::EQUILIBRIUM_ROW_RESIDUAL.value
+        || result.molar_densities[0] < result.spinodal->search.lower || result.molar_densities[0] > result.spinodal->search.upper))
+        outcome.message = "spinodal null mode or density bracket not satisfied";
     else if (!(std::abs(record.eigenvalues[0]) <= record.zero_band))
         outcome.message = "lowest eigenvalue of M is not a resolved zero";
     else if (c > 1 && !(record.eigenvalues[1] > record.zero_band))
         outcome.message = "second eigenvalue of M is not resolved positive";
     else {
         outcome.accepted = true;
-        result.message += "; critical-equation candidate, no stability certificate";
+        result.message += compiled.problem.critical ? "; critical-equation candidate, no stability certificate" : "; diffusive spinodal, no global stability certificate";
     }
     return outcome;
 }
+
+namespace {
 
 // A cold reactive boundary at fixed T and free P: the phases present (nonzero amount) alone, in reaction
 // equilibrium at the pressure seed, are the solution's present phases up to their pressure dependence. Their
@@ -1973,7 +2021,7 @@ EquilibriumResult solve_equilibrium(const IdealMoleFraction& model, const Equili
 bool newton_eligible(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (!compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
-        || compiled.has_caloric_condition() || p.critical || p.envelope || p.azeotrope || p.discovery
+        || compiled.has_caloric_condition() || p.critical || p.spinodal || p.envelope || p.azeotrope || p.discovery
         || compiled.has_reaction || compiled.has_ions || p.phases.size() != 2 || compiled.free_intensive_count != 1) return false;
     const auto& a = p.phases[0]; const auto& b = p.phases[1];
     return a.kind != b.kind && ((a.is_zero_pinned() && b.is_free()) || (b.is_zero_pinned() && a.is_free()));
@@ -1983,7 +2031,7 @@ static bool free_amount_newton_eligible(const CompiledSystem& compiled, bool dis
     const auto& p = compiled.problem;
     if (compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
         || compiled.free_intensive_count != 0 || !p.temperature.is_positive() || !p.pressure.is_positive()
-        || compiled.has_caloric_condition() || p.critical || p.envelope || p.discovery || p.source_reference
+        || compiled.has_caloric_condition() || p.critical || p.spinodal || p.envelope || p.discovery || p.source_reference
         || compiled.has_reaction || compiled.has_ions
         || (p.phases.size() != 2 && !(discovery && p.phases.size() == 1))) return false;
     if (std::any_of(compiled.model->parameters().charge_number.begin(), compiled.model->parameters().charge_number.end(),
@@ -2055,6 +2103,11 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
+    if (compiled.problem.spinodal && start && start->has_state() && start->spinodal) {
+        try { spinodal_search(compiled, limits, start->molar_densities[0], &start->spinodal->search); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { return spinodal_search_failure(compiled, structural, error.what()); }
+    }
     auto cold = start && !use_start ? std::make_optional(compiled) : std::nullopt;
     if (cold && start->phase_count == cold->problem.phases.size()) {
         for (std::size_t phase = 0; phase < start->phase_count; ++phase) {
@@ -2083,6 +2136,10 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             catch (const std::exception& error) {
                 core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
                 if (audit) stages.report_observations(*audit);
+                if (compiled.problem.spinodal && compiled.spinodal_search) {
+                    result = spinodal_search_failure(compiled, structural, error.what());
+                    stages.report(result); return result;
+                }
                 throw;
             }
             if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
@@ -2115,7 +2172,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         if (!result.success) continue;
         BranchCheck branches;
         try {
-            branches = compiled.problem.critical ? admit_critical(compiled, result)
+            branches = compiled.mode_count ? admit_null_mode(compiled, result)
                 : check_density_branches(model, compiled, result, {}, true, scope, limits);
         } catch (const std::bad_alloc&) { throw; }
         catch (const std::exception& error) {
@@ -2286,19 +2343,23 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
 #include "equilibrium/starts.hpp"
 
 EquilibriumResult solve_equilibrium_from_coordinates(
-    const HelmholtzModel& model,
-    const EquilibriumProblem& request,
-    const std::vector<double>& coordinates, std::vector<double>* attempt, const DriverLimits* limits,
-    std::shared_ptr<const OptimizerState> warm, EquilibriumResult* audit
+    const HelmholtzModel& model, const EquilibriumProblem& request, const std::vector<double>& coordinates,
+    std::vector<double>* attempt, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm, EquilibriumResult* audit
+) {
+    const auto compiled = compile_problem(model, request);
+    return solve_equilibrium_from_coordinates(compiled, coordinates, attempt, limits, std::move(warm), audit);
+}
+
+EquilibriumResult solve_equilibrium_from_coordinates(
+    const CompiledSystem& compiled, const std::vector<double>& coordinates, std::vector<double>* attempt,
+    const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm, EquilibriumResult* audit
 ) {
     core::Scope scope("solve_equilibrium");
-    CompiledSystem compiled = compile_problem(model, request);
     EquilibriumResult result = structural_result(compiled, scope);
     if (!compiled.feasible) return result;
-    if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates)) {
+    if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates))
         throw std::invalid_argument("continuation coordinates do not match the compiled layout");
-    }
-    return run_driver(model, compiled, coordinates, std::move(result), scope, attempt, audit, limits, false, std::move(warm), true);
+    return run_driver(*compiled.model, compiled, coordinates, std::move(result), scope, attempt, audit, limits, false, std::move(warm), true);
 }
 
 }  // namespace epcsaft::equilibrium

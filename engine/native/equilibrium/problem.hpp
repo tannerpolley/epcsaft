@@ -154,9 +154,13 @@ struct StabilityReport;
 
 // Critical-equation cell seeds (EqID critical_equations): molar density [mol/m^3] and an optional
 // unnormalized amount-perturbation direction u; empty u selects the lowest mode of M at the seed.
-struct CriticalDeclaration final {
+struct CriticalDeclaration {
     double density_guess_mol_per_m3 = 0.0;
     std::vector<double> mode_guess;
+};
+
+struct SpinodalDeclaration final : CriticalDeclaration {
+    std::vector<double> density_nodes;  // caller-declared connected scan, mol/m^3
 };
 
 // EqID envelope_local_condition: ln(T/1 K) - s, ln(P/1 Pa) - s or ln x_k^inc - ln x_k^feed - s.
@@ -188,6 +192,7 @@ struct EquilibriumProblem final {
     std::optional<double> enthalpy_j;
     std::optional<double> entropy_j_per_k;
     std::optional<double> volume_m3;
+    std::optional<SpinodalDeclaration> spinodal;
     std::optional<CriticalDeclaration> critical;  // one free neutral phase, T and P free
     std::optional<EnvelopeCondition> envelope;    // feed plus a zero-pinned incipient phase
     std::optional<AffineLoading> loading;
@@ -199,7 +204,7 @@ struct EquilibriumProblem final {
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, Volume, ReactionMassAction,
-    CriticalMode, CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
+    CriticalMode, CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
 };
 
 // Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
@@ -222,6 +227,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::Entropy: return "extensive_entropy_specification";
     case RowKind::CriticalMode: case RowKind::CriticalNormalization: case RowKind::CriticalCubic:
         return "critical_equations";
+    case RowKind::SpinodalMode: case RowKind::SpinodalNormalization: return "diffusive_spinodal";
     case RowKind::EnvelopeCondition: return "envelope_local_condition";
     case RowKind::AzeotropeCondition: return "azeotrope_condition";
     case RowKind::SolidAffinity: return "solid_saturation_index";
@@ -359,6 +365,16 @@ struct CompiledSolid final {
     std::optional<NeutralReferenceReactionDiagnostic> reference;
 };
 
+struct SpinodalBracket final { double lower, upper, lower_eigenvalue, upper_eigenvalue; };
+struct SpinodalSearch final {
+    std::vector<SpinodalBracket> brackets;
+    std::vector<DensityDiagnosticPoint> finite_limits;
+    std::vector<double> unresolved_densities;
+    double lower = NAN, upper = NAN, seed = NAN, geometric_cap = NAN;
+    DerivativeOrder evaluation_order = DerivativeOrder::Hessian;
+    std::size_t evaluations = 0;
+};
+
 struct CompiledSystem final {
     PhaseCalculation phase_calculation = PhaseCalculation::Unknown;
     std::optional<core::Convergence> first_numerical_failure;
@@ -382,6 +398,7 @@ struct CompiledSystem final {
     std::vector<Row> rows;
     std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t pinned_count = 0;
+    mutable std::optional<SpinodalSearch> spinodal_search;
     std::size_t mode_count = 0;  // critical eigenvector coordinates u, just before the free intensives
     std::size_t free_intensive_count = 0;
     std::size_t rank = 0;
@@ -482,16 +499,18 @@ struct CompiledSystem final {
     }
 
     bool feasibility_cell() const noexcept {
-        return ideal || pinned_count != 0 || has_caloric_condition() || problem.volume_m3 || problem.critical.has_value();
+        return ideal || pinned_count != 0 || has_caloric_condition() || problem.volume_m3 || (problem.critical.has_value() || problem.spinodal.has_value());
     }
     // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
     bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
 
     // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
     std::size_t condition_count() const noexcept {
-        return has_caloric_condition() + problem.volume_m3.has_value() + 2 * problem.critical.has_value() + problem.envelope.has_value();
+        return has_caloric_condition() + problem.volume_m3.has_value() + 2 * problem.critical.has_value() + problem.spinodal.has_value() + problem.envelope.has_value();
     }
 
+    std::size_t mode_row() const noexcept { return rows.size() - mode_count - 1 - problem.critical.has_value(); }
+    const CriticalDeclaration& mode_seed() const { return problem.critical ? *problem.critical : *problem.spinodal; }
     std::size_t mode_offset() const noexcept { return primal_size - free_intensive_count - mode_count; }
 
     // Control direction [T, P, n_feed (C), active parameters (A)]; the extended layout appends the
@@ -538,10 +557,16 @@ enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
 
 // Spectrum of M, the cubic form and the augmented-Jacobian diagnostics of a critical-equation
 // candidate; it certifies no stability.
-struct CriticalRecord final {
+struct HelmholtzModeRecord {
     std::vector<double> eigenvalues, mode;
-    double cubic = NAN, zero_band = NAN, condition_estimate = NAN, backward_error = NAN;
+    double zero_band = NAN, condition_estimate = NAN, backward_error = NAN;
     std::size_t rank = 0;
+};
+
+struct CriticalRecord final : HelmholtzModeRecord { double cubic = NAN; };
+struct SpinodalRecord final : HelmholtzModeRecord {
+    SpinodalSearch search;
+    double normalized_null_residual = NAN;
 };
 
 struct EquilibriumNumericalEstimates final {
@@ -677,6 +702,7 @@ struct EquilibriumResult final {
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
     std::optional<CriticalRecord> critical;
+    std::optional<SpinodalRecord> spinodal;
     std::vector<double> solid_amounts, solid_affinity_decades;  // per declared solid: mol, and SI_s in decades
 
     bool has_state() const noexcept {

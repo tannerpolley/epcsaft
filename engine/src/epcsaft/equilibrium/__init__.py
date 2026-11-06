@@ -57,6 +57,7 @@ InventoryBound = _core.InventoryBound
 EquilibriumResult = _core.EquilibriumResult
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
+SpinodalDeclaration = _core.SpinodalDeclaration
 CriticalDeclaration = _core.CriticalDeclaration
 EnvelopeCondition = _core.EnvelopeCondition
 EnvelopeCoordinate = _core.EnvelopeCoordinate
@@ -114,6 +115,7 @@ __all__ = (
     "ContinuationResult",
     "ContinuationStop",
     "CriticalDeclaration",
+    "SpinodalDeclaration",
     "EnvelopeCondition",
     "EnvelopeCoordinate",
     "Discover",

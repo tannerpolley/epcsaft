@@ -5,6 +5,7 @@
 #include "equilibrium/problem.hpp"
 
 #include <IpTNLP.hpp>
+#include <Eigen/Dense>
 
 #include <cstddef>
 #include <chrono>
@@ -19,6 +20,15 @@ namespace Ipopt { class TNLPAdapter; }
 
 namespace epcsaft::equilibrium {
 
+struct HelmholtzSpectrum final {
+    Eigen::MatrixXd matrix;
+    Eigen::VectorXd values, mode;
+    double band = NAN;
+};
+EPC_API HelmholtzSpectrum helmholtz_spectrum(const HelmholtzDerivatives&, const std::vector<double>&,
+    const std::vector<std::size_t>&, const std::vector<double>& normalization = {});
+EPC_API const SpinodalSearch& spinodal_search(const CompiledSystem&, const DriverLimits* = nullptr, double anchor = NAN, const SpinodalSearch* carried = nullptr);
+EPC_API EquilibriumResult spinodal_search_failure(const CompiledSystem&, EquilibriumResult, const std::string&);
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0, stage = 0;
     std::optional<core::Convergence> first_numerical_failure;
@@ -104,6 +114,7 @@ struct BranchCheck final {
     std::string message;
 };
 
+EPC_API BranchCheck admit_null_mode(const CompiledSystem&, EquilibriumResult&);
 BranchCheck check_density_branches(
     const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr,
@@ -162,11 +173,11 @@ EquilibriumResult recover_physical_amounts(
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.
 EPC_API EquilibriumResult solve_equilibrium_from_coordinates(
-    const HelmholtzModel& model,
-    const EquilibriumProblem& problem,
-    const std::vector<double>& coordinates, std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr,
-    std::shared_ptr<const OptimizerState> warm = {}, EquilibriumResult* audit = nullptr
-);
+    const CompiledSystem&, const std::vector<double>&, std::vector<double>* = nullptr,
+    const DriverLimits* = nullptr, std::shared_ptr<const OptimizerState> = {}, EquilibriumResult* = nullptr);
+EPC_API EquilibriumResult solve_equilibrium_from_coordinates(
+    const HelmholtzModel&, const EquilibriumProblem&, const std::vector<double>&, std::vector<double>* = nullptr,
+    const DriverLimits* = nullptr, std::shared_ptr<const OptimizerState> = {}, EquilibriumResult* = nullptr);
 
 // Declared seeds carry no thermodynamic declarations: all share the one problem.
 struct EquilibriumStart final {

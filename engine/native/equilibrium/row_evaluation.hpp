@@ -281,7 +281,7 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i]; const auto p = row.phase, species = row.index;
         double& terms = out.terms[i]; double& inner = out.inner[i];
-        if (row.kind == RowKind::CriticalNormalization) {
+        if ((row.kind == RowKind::CriticalNormalization || row.kind == RowKind::SpinodalNormalization)) {
             terms = 1;
             for (std::size_t j = 0; j < mode_count; ++j) terms += std::pow(at.point[mode_offset() + j], 2);
         } else if (row.kind == RowKind::AzeotropeCondition) {
@@ -307,7 +307,7 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
                 inner += weight * (at.temperature * gradient_error[a][0]
                     + (enthalpy ? wide_math::abs(at.volume[a]) * gradient_error[a][1] : energy_error[a]));
             }
-        } else if (row.kind == RowKind::CriticalMode || row.kind == RowKind::CriticalCubic) {
+        } else if ((row.kind == RowKind::CriticalMode || row.kind == RowKind::SpinodalMode) || row.kind == RowKind::CriticalCubic) {
             const auto& derivative = at.derivative[p];
             std::vector<double> point{at.temperature, at.volume[p]}, w(width, 0.0);
             point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
@@ -318,7 +318,7 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
                 path[0] = point; path[1] = direction;
                 return model->residual_coefficient_errors(path, derivative.site_fractions)[order];
             };
-            if (row.kind == RowKind::CriticalMode) {
+            if ((row.kind == RowKind::CriticalMode || row.kind == RowKind::SpinodalMode)) {
                 const double d = wide_math::sqrt(n_feed[species] / feed_total);
                 terms = wide_math::abs(d * w[2 + species] / at.composition[p][species]);
                 for (std::size_t j = 0; j < components; ++j)
@@ -837,7 +837,7 @@ RowSeries CompiledSystem::row_series(
     const std::size_t width = control_width(), extended = extended_control_width();
     if (state.size() != order + 1 ||
         (control.size() != width && control.size() != extended - 2 - problem.volume_m3.has_value() && control.size() != extended) ||
-        order > (problem.critical ? 2u : 3u))  // a third critical coefficient needs E6
+        order > (mode_count ? 2u : 3u))  // a third critical coefficient needs E6
         throw std::invalid_argument("row series shape");
     for (const auto& item : state)
         if (item.size() != n) throw std::invalid_argument("row series state");
@@ -875,7 +875,7 @@ RowSeries CompiledSystem::row_series(
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard);
-    const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (problem.critical ? 2 * components : 0);
+    const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
         auto input = k == 0 ? controls(*this, prepared) : std::vector<double>(n + width + (has_caloric_condition() ? 2 : 0) + problem.volume_m3.has_value(), 0.0);
@@ -1035,10 +1035,10 @@ RowSeries CompiledSystem::row_series(
                         + output[j][offset + 2] * series.gradient[k - j][1];
                 }
         }
-        if (problem.critical) {
+        if (mode_count) {
             // Residual parts of EqID critical_equations through order 2: d_i [F_nn(p) w]_i (E2-E4) and
             // F_nnn(p)[w,w,w] (E3-E5) along p(t), w(t), d(t); a zero direction contributes exactly zero.
-            const std::size_t offset = phase * stride + width + 2, mode = rows.size() - components - 2;
+            const std::size_t offset = phase * stride + width + 2, mode = mode_row();
             std::vector<std::vector<double>> d(order + 1, std::vector<double>(components)),
                 w(order + 1, std::vector<double>(width, 0.0));
             for (std::size_t k = 0; k <= order; ++k)
@@ -1061,11 +1061,13 @@ RowSeries CompiledSystem::row_series(
                 for (std::size_t k = 0; k <= order; ++k)
                     for (std::size_t j = 0; j <= k; ++j) result.rows[k][mode + i] += d[j][i] * g[k - j];
             }
+            if (problem.critical) {
             std::array<double, 3> c{F({w[0], w[0], w[0]}), 0.0, 0.0};
             if (order > 0) c[1] = 3.0 * F({w[0], w[0], w[1]}) + F({w[0], w[0], w[0], p[1]});
             if (order > 1) c[2] = 3.0 * F({w[0], w[0], w[2]}) + 3.0 * F({w[0], w[1], w[1]}) + 3.0 * F({w[0], w[0], w[1], p[1]})
                 + F({w[0], w[0], w[0], p[2]}) + 0.5 * F({w[0], w[0], w[0], p[1], p[1]});
             for (std::size_t k = 0; k <= order; ++k) result.rows[k][mode + components + 1] += c[k];
+            }
         }
         for (std::size_t k = 0; k <= order; ++k) {
             for (std::size_t row = 0; row < rows.size(); ++row) {

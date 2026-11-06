@@ -138,6 +138,7 @@ bool same_state(const Observation& left, const Observation& right) {
 void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared) {
     const auto components = model.parameters().component_count();
+    require(!observation.problem.spinodal && !observation.final_problem.spinodal, "without spinodal conditions");
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
     require(observation.problem.solids.empty() && observation.final_problem.solids.empty(), "without solids");
     require(std::isfinite(observation.observed), "observed value");

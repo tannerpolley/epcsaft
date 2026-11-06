@@ -57,6 +57,7 @@ void reactions();
 namespace critical_envelope_checks {
 void pure_critical();
 void binary_critical();
+void spinodal();
 void curvature();
 void mixture();
 void pure();
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.volume-specification", "volume-specification", "Automatic_fast"}, caloric_specification_checks::volume_specification, "volume-specification"},
         {{"native.equilibrium.caloric-roundtrips", "caloric-roundtrips", "Automatic_fast"}, caloric_specification_checks::roundtrips, "caloric-specification"},
         {{"native.equilibrium.caloric-reactions", "caloric-reactions", "Automatic_fast"}, caloric_specification_checks::reactions, "caloric-specification"},
+        {{"native.equilibrium.diffusive-spinodal", "diffusive-spinodal", "Automatic_fast"}, critical_envelope_checks::spinodal, "critical-envelope"},
         {{"native.equilibrium.critical-pure", "critical-pure", "Automatic_fast"}, critical_envelope_checks::pure_critical, "critical-envelope"},
         {{"native.equilibrium.critical-binary", "critical-binary", "Automatic_fast"}, critical_envelope_checks::binary_critical, "critical-envelope"},
         {{"native.equilibrium.critical-curvature", "critical-curvature", "Automatic_fast"}, critical_envelope_checks::curvature, "critical-envelope"},

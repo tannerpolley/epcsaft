@@ -800,7 +800,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     if (c.ideal) throw std::invalid_argument("ideal cooling onset unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas cooling onset is deferred");
     const auto& request = c.problem;
-    if (c.has_reaction || c.has_ions || request.discovery || request.critical || request.envelope
+    if (c.has_reaction || c.has_ions || request.discovery || request.critical || request.spinodal || request.envelope
         || request.enthalpy_j || request.entropy_j_per_k || !request.temperature.free || request.pressure.free
         || request.phases.size() != 2 || c.feed_composition.size() < 2)
         throw std::invalid_argument("cooling onset requires a neutral fixed-pressure dew declaration");

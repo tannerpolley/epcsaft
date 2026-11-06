@@ -125,7 +125,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     reject_elapsed(result, scope); }
                 if (result.success) {
                     BranchCheck branch;
-                    try { branch = compiled.problem.critical ? admit_critical(compiled, result)
+                    try { branch = compiled.mode_count ? admit_null_mode(compiled, result)
                               : check_density_branches(model, compiled, result, {}, true, scope, &work); }
                     catch (const std::exception& error) { branch.message = error.what(); }
                     if (!branch.accepted || work.expired()) {

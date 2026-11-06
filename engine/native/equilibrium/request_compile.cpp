@@ -29,7 +29,7 @@ std::vector<double> CompiledSystem::optimizer_identity() const {
     append(p.form_identity());
     append(std::vector<std::size_t>{p.component_count(), c.primal_size, c.rank, c.charge_row_count, c.mode_count,
                                    c.free_intensive_count, c.pinned_count});
-    id.push_back(c.feasibility_cell()); id.push_back(c.log_packing_unbounded()); id.push_back(c.problem.critical.has_value());
+    id.push_back(c.feasibility_cell()); id.push_back(c.log_packing_unbounded()); id.push_back(c.problem.critical.has_value()); id.push_back(c.problem.spinodal.has_value());
     id.push_back(c.problem.envelope ? static_cast<int>(c.problem.envelope->kind) : -1);
     id.push_back(c.problem.envelope ? c.problem.envelope->component : 0);
     for (const auto& phase : c.problem.phases) append(phase.support);
@@ -453,7 +453,7 @@ void admit_conditions(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     // An azeotrope cell: binary VLE bubble/dew on the full support of its feed (so a positive one), one of T and P free.
     if (p.azeotrope) {
-        if (p.critical || p.envelope || compiled.has_caloric_condition() || p.discovery || compiled.has_ions
+        if (p.critical || p.spinodal || p.envelope || compiled.has_caloric_condition() || p.discovery || compiled.has_ions
             || compiled.has_reaction || p.source_reference || p.temperature.free == p.pressure.free || p.phases.size() != 2
             || compiled.pinned_count != 1 || !(p.phases[0].is_zero_pinned() || p.phases[1].is_zero_pinned())
             || p.phases[0].kind == p.phases[1].kind || compiled.n_feed.size() != 2 || p.phases[0].support.size() != 2
@@ -462,18 +462,26 @@ void admit_conditions(const CompiledSystem& compiled) {
                 "opposite kinds on its full support, exactly one of T and P free and no other condition");
         return;
     }
-    if (!p.critical && !p.envelope) return;
-    if ((p.critical && p.envelope) || compiled.has_caloric_condition() || !p.temperature.free || !p.pressure.free
+    if (!p.critical && !p.spinodal && !p.envelope) return;
+    if ((int(p.critical.has_value()) + int(p.spinodal.has_value()) + int(p.envelope.has_value()) != 1) || compiled.has_caloric_condition() || p.volume_m3 || p.temperature.free == p.spinodal.has_value() || !p.pressure.free
         || p.discovery || compiled.has_ions || compiled.has_reaction || p.source_reference)
         throw std::invalid_argument("critical and envelope cells require one neutral nonreactive condition with free T and P");
     const auto& support = p.phases[0].support;
-    if (p.critical) {
-        const auto& c = *p.critical;
+    if (compiled.mode_count || p.critical || p.spinodal) {
+        const auto& c = compiled.mode_seed();
         if (p.phases.size() != 1 || !p.phases[0].is_free() || support.size() != compiled.n_feed.size()
             || !(std::isfinite(c.density_guess_mol_per_m3) && c.density_guess_mol_per_m3 > 0.0)
             || (!c.mode_guess.empty() && c.mode_guess.size() != support.size())
             || std::any_of(compiled.feed_composition.begin(), compiled.feed_composition.end(), [](double z) { return !(z > 0.0); }))
             throw std::invalid_argument("critical cell requires one free phase on a positive full support and a density seed");
+        if (p.spinodal) {
+            if (support.size() < 2) throw std::invalid_argument("diffusive spinodal requires a mixture");
+            const auto& nodes = p.spinodal->density_nodes;
+            if (nodes.size() < 2 || !std::is_sorted(nodes.begin(), nodes.end())
+                || std::adjacent_find(nodes.begin(), nodes.end()) != nodes.end()
+                || !std::all_of(nodes.begin(), nodes.end(), [](double r) { return std::isfinite(r) && r > 0; }))
+                throw std::invalid_argument("spinodal requires strictly increasing positive density nodes");
+        }
         return;
     }
     const auto& e = *p.envelope;
@@ -653,7 +661,7 @@ std::vector<double> pinned_hessian(
         const auto caloric = caloric_hessian(compiled, prepared, multipliers.back());
         for (std::size_t i = 0; i < result.size(); ++i) result[i] += caloric[i];
     }
-    if (problem.critical) {
+    if (problem.critical || problem.spinodal) {
         const auto critical = critical_hessian(compiled, prepared, multipliers);
         for (std::size_t i = 0; i < result.size(); ++i) result[i] += critical[i];
     }
@@ -771,10 +779,10 @@ CppAD::ADFun<double> record_geometry(
             output.push_back(h ? -weight * T * T : -weight * T);
             output.push_back(h ? -weight * T * volume : AD(0.0));
         }
-        if (problem.critical) {
+        if (problem.critical || problem.spinodal) {
             // EqID critical_equations at n = x: D = diag(sqrt(z)) of the moving feed, w = D u, ideal
             // Q_ii = 1/n_i and F_iii = -1/n_i^2; row_series adds the residual F_nn w and F_nnn[w,w,w].
-            const std::size_t mode = compiled.rows.size() - components - 2;
+            const std::size_t mode = compiled.mode_row();
             row_values[mode + components] = AD(-1.0);
             for (std::size_t i = 0; i < components; ++i) {
                 const AD u_i = u[compiled.mode_offset() + i], d = CppAD::sqrt(u[n + 2 + i] / feed_total), w = d * u_i;
@@ -782,7 +790,7 @@ CppAD::ADFun<double> record_geometry(
                 output.push_back(w);
                 row_values[mode + i] = d * w / x[i];
                 row_values[mode + components] += u_i * u_i;
-                row_values[mode + components + 1] -= w * w * w / (x[i] * x[i]);
+                if (problem.critical) row_values[mode + components + 1] -= w * w * w / (x[i] * x[i]);
             }
         }
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -930,7 +938,7 @@ std::vector<double> caloric_hessian(const CompiledSystem& compiled, const PhaseP
 // ponytail: primal(primal+1)/2 order-2 series, critical cells only; a pullback if C1-C3 cost matters.
 std::vector<double> critical_hessian(const CompiledSystem& compiled, const PhasePoint& prepared,
                                      const std::vector<double>& multipliers) {
-    const std::size_t n = prepared.point.size(), first = compiled.rows.size() - compiled.mode_count - 2;
+    const std::size_t n = prepared.point.size(), first = compiled.mode_row();
     std::vector<double> result(n * n, 0.0), diagonal(compiled.primal_size, 0.0);
     if (std::all_of(multipliers.begin() + static_cast<std::ptrdiff_t>(first), multipliers.end(),
                     [](double m) { return m == 0.0; })) return result;
@@ -1260,7 +1268,7 @@ static CompiledSystem compile_with_basis(
 ) {
     if (model.parameters().ideal_gas && (request.phases.size() != 1 || request.phases[0].kind != PhaseKind::Vapor
         || request.temperature.free || request.pressure.free || !request.solids.empty() || request.discovery
-        || request.enthalpy_j || request.entropy_j_per_k || request.source_reference || request.critical || request.envelope
+        || request.enthalpy_j || request.entropy_j_per_k || request.source_reference || request.critical || request.spinodal || request.envelope
         || request.azeotrope || has_reaction_reference(request) || request.phases[0].packing_guess))
         throw std::invalid_argument("ideal-gas equilibrium requires one vapor at fixed T/P; calorics and phase searches deferred");
     if (std::any_of(request.reactions.begin(), request.reactions.end(), [](const auto& r) { return r.uses_species_thermochemistry(); })
@@ -1489,11 +1497,11 @@ static CompiledSystem compile_with_basis(
     if (request.volume_m3) compiled.rows.push_back({RowKind::Volume, 0, 0});
     if (caloric_count) compiled.rows.push_back({request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
     // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
-    compiled.mode_count = request.critical ? components : 0;
-    for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.envelope.has_value(); ++i) {
+    compiled.mode_count = (request.critical || request.spinodal) ? components : 0;
+    for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.spinodal.has_value() + request.envelope.has_value(); ++i) {
         const auto kind = request.envelope ? RowKind::EnvelopeCondition : i < components ? RowKind::CriticalMode
             : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
-        compiled.rows.push_back({kind, 0, i});
+        compiled.rows.push_back({request.spinodal ? (i < components ? RowKind::SpinodalMode : RowKind::SpinodalNormalization) : kind, 0, i});
     }
     for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
     if (trial_basis && phases[0].kind == PhaseKind::Vapor && compiled.has_ions)
@@ -1512,7 +1520,7 @@ static CompiledSystem compile_with_basis(
             || request.phases.size() != 2
             || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_zero_pinned() && p.kind == PhaseKind::Vapor; }) != 1
             || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_free() && p.kind == PhaseKind::Liquid; }) != 1
-            || !request.solids.empty() || request.critical || request.envelope
+            || !request.solids.empty() || request.critical || request.spinodal || request.envelope
             || request.azeotrope || compiled.has_caloric_condition() || request.feed.kind != FeedKind::Amounts
             || a.initial.size() != components || a.direction.size() != components
             || !(std::isfinite(a.lower) && std::isfinite(a.upper) && std::isfinite(a.seed)
@@ -1584,7 +1592,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
     if (!request.topology_declared || request.discovery || request.phases.size() != 1
         || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
         || request.temperature.free || request.pressure.free || request.enthalpy_j || request.entropy_j_per_k || request.volume_m3
-        || request.critical || request.envelope || request.azeotrope || !request.solids.empty()
+        || request.critical || request.spinodal || request.envelope || request.azeotrope || !request.solids.empty()
         || request.phases[0].packing_guess)
         throw std::invalid_argument("ideal mole-fraction model requires one free liquid at fixed T/P without EOS conditions");
     validate_intensive_seed(request.temperature, "temperature");

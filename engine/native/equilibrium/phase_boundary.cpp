@@ -612,6 +612,7 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
                 || !std::isfinite(1.0 / coordinate)) return false;
         } else if (!admitted_packing_fraction(coordinate)) return false;
     }
+    offset += compiled.mode_count;
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
     if (compiled.problem.pressure.free && !(y[offset++] > 0.0)) return false;
     return true;
@@ -652,6 +653,7 @@ std::optional<std::pair<std::size_t, std::size_t>> swapped_pair(
 ContinuationStop stop_of(const EquilibriumResult& result, bool& terminal) {
     if (result.topology_event == TopologyEvent::PhaseDisappeared) { terminal = true; return ContinuationStop::phase_disappeared; }
     if (result.topology_event == TopologyEvent::PhasesCoalesced) { terminal = true; return ContinuationStop::phases_coalesced; }
+    if (result.spinodal && !result.success && result.convergence.stop == core::Stop::left_domain) return ContinuationStop::branch_lost;
     switch (result.convergence.stop) {
     case core::Stop::nonfinite: terminal = true; return ContinuationStop::nonfinite;
     case core::Stop::infeasible: terminal = true; return ContinuationStop::infeasible;
@@ -691,8 +693,12 @@ Attempt admit_result(
         return refuse(stop_of(result, outcome.terminal), "supplied state fails the candidate topology predicate");
     }
     BranchCheck branches;
-    try { branches = check_density_branches(model, compiled, result, anchors, initial, scope); }
-    catch (const std::exception& error) { branches.message = error.what(); }
+    try { branches = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(model, compiled, result, anchors, initial, scope); }
+    catch (const std::exception& error) {
+        if (compiled.problem.spinodal && compiled.spinodal_search && !std::isfinite(compiled.spinodal_search->seed))
+            result = spinodal_search_failure(compiled, std::move(result), error.what());
+        branches.message = error.what();
+    }
     if (!branches.accepted) branches.message += "; driver: " + result.message;
     outcome.accepted = branches.accepted;
     outcome.terminal = branches.terminal;
@@ -761,7 +767,18 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
         scope.probe("predictor_projected", static_cast<double>(projected));
         if (inside) {
             EquilibriumResult audit;
-            try { return admit_result(trial, compiled, solve_equilibrium_from_coordinates(trial, problem, predicted, nullptr, limits, std::move(warm), &audit), anchors, false, scope); }
+            if (compiled.problem.spinodal) {
+                try {
+                    const auto& before = spinodal_search(current, limits, anchors[0]);
+                    const auto offset = compiled.phase_offsets()[0] + compiled.feed_composition.size() + 1;
+                    const auto& next = spinodal_search(compiled, limits, anchors[0], &before);
+                    predicted[offset] = std::log(next.seed * trial.packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
+                } catch (const std::bad_alloc&) { throw; }
+                catch (const std::exception& error) {
+                    return admit_result(trial, compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
+                }
+            }
+            try { return admit_result(trial, compiled, solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm), &audit), anchors, false, scope); }
             catch (...) { if (observations) observations->observe(audit); throw; }
         }
         attempt.terminal = false;
@@ -1018,6 +1035,79 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 
 }  // namespace
 
+const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
+    if (compiled.spinodal_search) {
+        if (!std::isfinite(compiled.spinodal_search->seed)) throw std::domain_error("unresolved spinodal search");
+        return *compiled.spinodal_search;
+    }
+    auto& scan = compiled.spinodal_search.emplace();
+    const auto& declaration = *compiled.problem.spinodal;
+    if (!carried) anchor = declaration.density_guess_mol_per_m3;
+    const auto& x = compiled.feed_composition;
+    const double T = compiled.seed_temperature();
+    scan.geometric_cap = compiled.model->molar_density_upper_bound(T, x);
+    const auto sample = [&](double rho) {
+        if (limits) limits->check();
+        ++scan.evaluations;
+        if (!admitted_packing_fraction(compiled.model->packing_fraction_coefficient(T, x) * rho))
+            throw std::domain_error("density outside packing domain (Hessian request)");
+        return helmholtz_spectrum(compiled.model->evaluate(T, 1 / rho, x, DerivativeOrder::Hessian), x,
+            compiled.problem.phases[0].support);
+    };
+    std::optional<HelmholtzSpectrum> previous;
+    double last = NAN;
+    for (double rho : declaration.density_nodes) {
+        std::optional<HelmholtzSpectrum> at;
+        try { at = sample(rho); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            DensityDiagnosticPoint limit;
+            limit.lower = previous ? last : NAN; limit.upper = rho;
+            limit.cause = error.what(); limit.stop = "hessian_unavailable";
+            scan.finite_limits.push_back(std::move(limit));
+        }
+        if (at && std::abs(at->values[0]) <= at->band) { scan.unresolved_densities.push_back(rho); continue; }
+        if (previous && at && ((previous->values[0] > previous->band && at->values[0] < -at->band)
+            || (previous->values[0] < -previous->band && at->values[0] > at->band))) {
+            scan.brackets.push_back({last, rho, previous->values[0], at->values[0]});
+        }
+        previous = std::move(at); last = rho;
+    }
+    double distance = INFINITY;
+    for (const auto& bracket : scan.brackets) {
+        if (carried) {
+            const auto prior = std::find_if(carried->brackets.begin(), carried->brackets.end(),
+                [&](const auto& b) { return b.lower == carried->lower; });
+            if (prior == carried->brackets.end() || std::signbit(prior->lower_eigenvalue) != std::signbit(bracket.lower_eigenvalue)
+                || bracket.lower > carried->upper || bracket.upper < carried->lower) continue;
+            const double middle = std::sqrt(bracket.lower * bracket.upper);
+            if (std::any_of(scan.finite_limits.begin(), scan.finite_limits.end(), [&](const auto& gap) {
+                return gap.upper >= std::min(anchor, middle) && (!std::isfinite(gap.lower) || gap.lower <= std::max(anchor, middle));
+            })) continue;
+        }
+        const double d = std::abs(std::log(std::sqrt(bracket.lower * bracket.upper) / anchor));
+        if (d < distance) { distance = d; scan.lower = bracket.lower; scan.upper = bracket.upper; }
+    }
+    if (!std::isfinite(scan.lower)) throw std::domain_error(carried ? "spinodal search lost the carried crossing" : "no resolved connected spinodal bracket in declared scan");
+    double a = scan.lower, b = scan.upper, fa = sample(a).values[0];
+    for (std::size_t k = 0; k < static_cast<std::size_t>(policy::DENSITY_MAX_ITERATIONS.value); ++k) {
+        const double m = std::sqrt(a * b);
+        HelmholtzSpectrum at;
+        try { at = sample(m); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            DensityDiagnosticPoint limit;
+            limit.lower = a; limit.upper = m; limit.cause = error.what(); limit.stop = "hessian_unavailable";
+            scan.finite_limits.push_back(std::move(limit)); scan.seed = NAN; throw;
+        }
+        scan.seed = m;
+        if (std::abs(at.values[0]) <= at.band || m == a || m == b) break;
+        if (std::signbit(fa) != std::signbit(at.values[0])) b = m;
+        else { a = m; fa = at.values[0]; }
+    }
+    return scan;
+}
+
 // Reduced temperature and packing starts; coefficients are initialization heuristics (ALG-EQUILIBRIUM).
 std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel& model) {
     const auto& p = model.parameters();
@@ -1040,25 +1130,22 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     if (limits) limits->check();
     std::vector<double> point = compiled.generic_point();
     const auto phase_offsets = compiled.phase_offsets();
-    if (compiled.problem.critical) {
+    if (compiled.mode_count) {
         // The declared T and density at the feed, P there, and u declared or the lowest mode of M (the
         // mode rows' u columns at this point).
         const auto& z = compiled.feed_composition;
-        const double t = compiled.seed_temperature(), rho = compiled.problem.critical->density_guess_mol_per_m3;
+        const double t = compiled.seed_temperature(), rho = compiled.problem.spinodal ? spinodal_search(compiled, limits).seed : compiled.mode_seed().density_guess_mol_per_m3;
         const std::size_t c = z.size(), mode = compiled.mode_offset();
         seed_composition(compiled, 0, z, point, phase_offsets[0]);
         point[phase_offsets[0] + c] = compiled.feed_total;
         point[phase_offsets[0] + c + 1] = std::log(compiled.model->packing_fraction_coefficient(t, z) * rho);
-        point[compiled.primal_size - 2] = t;
+        if (compiled.problem.temperature.free) point[compiled.primal_size - 2] = t;
         point[compiled.primal_size - 1] = compiled.model->state(t, rho, z).pressure;
-        auto u = compiled.problem.critical->mode_guess;
+        auto u = compiled.mode_seed().mode_guess;
         if (u.empty()) {
-            const auto jacobian = compiled.jacobian(point);
-            Eigen::MatrixXd M(c, c);
-            for (std::size_t i = 0; i < c; ++i)
-                for (std::size_t j = 0; j < c; ++j) M(i, j) = jacobian[(compiled.rows.size() - c - 2 + i) * point.size() + mode + j];
-            const Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigen(M);
-            u.assign(eigen.eigenvectors().col(0).data(), eigen.eigenvectors().col(0).data() + c);
+            const auto eigen = helmholtz_spectrum(compiled.model->evaluate(t, 1 / rho, z, DerivativeOrder::Hessian),
+                z, compiled.problem.phases[0].support);
+            u.assign(eigen.mode.data(), eigen.mode.data() + c);
         }
         const double norm = std::sqrt(std::inner_product(u.begin(), u.end(), u.begin(), 0.0));
         for (std::size_t i = 0; i < c; ++i) point[mode + i] = u[i] / norm;
@@ -1198,7 +1285,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
     const auto& problem = compiled.problem;
     correct_dense = correct_dense && compiled.has_reaction && !compiled.model->parameters().ideal_gas
         && problem.solids.empty() && !problem.discovery && !problem.enthalpy_j && !problem.entropy_j_per_k && !problem.volume_m3
-        && !problem.azeotrope && !problem.critical && !problem.envelope && !problem.loading
+        && !problem.azeotrope && !problem.critical && !problem.spinodal && !problem.envelope && !problem.loading
         && problem.phases.size() == 2 && free_phases == 1;
     const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
@@ -1274,6 +1361,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
 // seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
 // support_declared and topology_declared flags) are not compared.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
+    if (a.critical.has_value() != b.critical.has_value() || a.spinodal.has_value() != b.spinodal.has_value())
+        return "null-mode declaration differs";
+    if (a.spinodal && (a.spinodal->density_nodes != b.spinodal->density_nodes
+        || a.spinodal->density_guess_mol_per_m3 != b.spinodal->density_guess_mol_per_m3)) return "spinodal search differs";
     if (!(a.source_reference == b.source_reference)) return "source reference declaration differs";
     if (a.volume_m3.has_value() != b.volume_m3.has_value()) return "volume condition kind differs";
     if (a.enthalpy_j.has_value() != b.enthalpy_j.has_value()
@@ -1491,6 +1582,8 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
     if (!declared.empty()) return finish(std::move(result), ContinuationStop::invalid_path, declared);
     CompiledSystem start = compile_problem(model, request.start_problem);
     const bool parameter_path = !request.parameter_targets.empty();
+    if (start.problem.spinodal && (parameter_path || request.start_problem.feed.values != request.target_problem.feed.values))
+        return finish(std::move(result), ContinuationStop::invalid_path, "spinodal continuation holds composition and parameters fixed");
     const auto parameter_start = model.active_parameter_values();
     if (parameter_path && (request.parameter_targets.size() != parameter_start.size()
         || !std::all_of(request.parameter_targets.begin(), request.parameter_targets.end(), [](double v) { return std::isfinite(v); })))
@@ -1537,7 +1630,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
 
     // Initial admission at q = 0.
     std::vector<double> y_current;
-    CompiledSystem current = start;
+    CompiledSystem current;
     std::unique_ptr<HelmholtzModel> current_model;
     {
         core::Scope initial("equilibrium_continuation_initial");
@@ -1545,7 +1638,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         Attempt admitted;
         const auto solve_initial = [&](const std::vector<double>& coordinates) {
             EquilibriumResult audit;
-            try { return solve_equilibrium_from_coordinates(model, request.start_problem, coordinates, nullptr, nullptr, {}, &audit); }
+            try { return solve_equilibrium_from_coordinates(start, coordinates, nullptr, nullptr, {}, &audit); }
             catch (...) { observations.observe(audit); throw; }
         };
         if (request.start_result.has_value()) {
@@ -1563,9 +1656,14 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
                 ? solve_initial(supplied.coordinates) : supplied, anchors, anchors.empty(), initial,
                 !parameter_path);
         } else {
-            admitted = admit_result(model, start,
-                solve_initial(boundary_start(start, true, nullptr, &observations)),
-                anchors, true, initial);
+            EquilibriumResult seed;
+            try { seed = solve_initial(boundary_start(start, true, nullptr, &observations)); }
+            catch (const std::bad_alloc&) { throw; }
+            catch (const std::exception& error) {
+                if (!start.problem.spinodal || !start.spinodal_search || std::isfinite(start.spinodal_search->seed)) throw;
+                seed = spinodal_search_failure(start, structural_result(start, initial), error.what());
+            }
+            admitted = admit_result(model, start, std::move(seed), anchors, true, initial);
         }
         if (!output || !request.start_result || parameter_path) observations.observe(admitted.observations);
         else core::retain_first(observations.first_numerical_failure, admitted.observations.first_numerical_failure);
@@ -1581,6 +1679,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         result.states.push_back(*admitted.result);
         y_current = admitted.result->coordinates;
         anchors = admitted.result->molar_densities;
+        current = start;
     }
 
     double q = 0.0;
@@ -1612,6 +1711,19 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         attempt_scope.probe(continuation_stop_name(attempt.accepted ? ContinuationStop::reached_target : attempt.stop), 1.0);
         if (attempt.convergence.has_value()) attempt_scope.finish(*attempt.convergence);
         if (attempt.accepted) {
+            if (current.problem.spinodal) {
+                const auto first = current.mode_offset();
+                double overlap = 0;
+                for (std::size_t i = 0; i < current.mode_count; ++i) overlap += y_current[first + i] * attempt.result->coordinates[first + i];
+                if (overlap < 0) for (std::size_t i = 0; i < current.mode_count; ++i) {
+                    attempt.result->coordinates[first + i] *= -1;
+                    if (attempt.result->spinodal) attempt.result->spinodal->mode[i] *= -1;
+                    attempt.result->residuals[current.mode_row()+i] *= -1;
+                    attempt.result->classified_residuals[current.mode_row()+i] *= -1;
+                    attempt.result->prepared_endpoint.reset();
+                    attempt.result->optimizer_state.reset();
+                }
+            }
             q = q_try;
             ++result.accepted_steps;
             local_retries = 0;

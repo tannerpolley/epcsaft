@@ -1,6 +1,9 @@
 // Issue 224 B: critical-equation candidates and phase envelopes on the Gross (2001) propane and
 // methane/ethane packets; numerical verification only.
 #include "equilibrium_checks_shared.hpp"
+#include <fstream>
+#include <iomanip>
+#include <cstdlib>
 #include "caloric_specification_inputs.hpp"
 #include "caloric_specification_shared.hpp"
 namespace critical_envelope_checks {
@@ -263,5 +266,157 @@ void azeotrope() {
             recording_support::field("message",r.message),"Observation","typed driver refusal","no certificate that none exists","critical-envelope");
         CHECK(!r.success&&!r.has_state());
     }
+}
+
+// Michelsen's null-mode condition, with Clapeyron 0.6.29 on the same Gross (2001) parameters.
+void spinodal() {
+    const auto compare = [](const std::string& id, double value, double reference, double scale, double tolerance) {
+        const double error=std::abs(value-reference)/scale;
+        recording_support::compare_custom(id.c_str(),"diffusive-spinodal","SI",value,reference,
+            recording_support::fields({recording_support::field("relative_error",error),recording_support::field("criterion",tolerance)}),
+            "Relationship","Clapeyron 0.6.29","neutral fixed-composition spinodal","positive quantity scale",
+            std::isfinite(error)&&error<=tolerance,"diffusive-spinodal",id.c_str());
+    };
+    const HelmholtzModel model(properties_support::neutral_binary());
+    auto cell = [&](double T, double guess) {
+        auto p = critical_cell({0.5,0.5}, T, guess);
+        p.temperature = FreeValue::fixed(T); p.critical.reset(); p.spinodal.emplace();
+        p.spinodal->density_guess_mol_per_m3 = guess;
+        for (int k=0;k<=80;++k) p.spinodal->density_nodes.push_back(100*std::pow(200.,k/80.));
+        return p;
+    };
+    const double reference[3][4] = {
+        {4054.856203725969,3910613.0924964524,12859.059488761855,3405203.649787669},
+        {4652.0793682042395,4563624.675611604,11747.012051799871,5298968.3388277},
+        {5541.783794029926,5414300.1339770015,10197.837043437796,6552596.485374888}};
+    for (int branch=0;branch<2;++branch) {
+        const double guess=branch?13000:4000;
+        for (int t=0;t<3;++t) {
+            const auto p=cell(240+10*t,guess); const auto r=solve_equilibrium(model,p);
+            if (!r.success || !r.spinodal) throw std::runtime_error(r.message);
+            const auto& record=*r.spinodal; CHECK(record.search.brackets.size()==2);
+            const auto id="spinodal/"+std::to_string(t)+"/"+std::to_string(branch);
+            compare(id+"/rho",r.molar_densities[0],reference[t][2*branch],reference[t][2*branch],1e-8);
+            compare(id+"/P",*r.pressure,reference[t][2*branch+1],reference[t][2*branch+1],1e-8);
+            CHECK(record.normalized_null_residual<=1e-10); CHECK(record.eigenvalues[1]>record.zero_band);
+            if (t==1 && branch==0) {
+                const auto c=compile_problem(model,p); std::vector<double> scale(r.coordinates.size(),1);
+                scale[c.primal_size-1]=*r.pressure;
+                caloric_specification_checks::ladder(c,r.coordinates,scale,"spinodal/derivatives",{0.});
+                for (double rho:{6178.625558595775,8966.445735297462}) {
+                    auto wrong=r; const auto offset=c.phase_offsets()[0]+p.feed.values.size()+1;
+                    wrong.coordinates[offset]=std::log(model.packing_fraction_coefficient(250,{0.5,0.5})*rho);
+                    wrong.molar_densities[0]=rho;
+                    CHECK(!admit_null_mode(c,wrong).accepted);
+                    CHECK(wrong.spinodal && wrong.spinodal->eigenvalues[0]<-0.1);
+                }
+            }
+        }
+        auto start=cell(240,guess),target=start; target.temperature=FreeValue::fixed(265.9667440344038);
+        ContinuationRequest request{start,target,std::nullopt,{0.1,1e-7,100,6},{}};
+        const auto trace=continue_equilibrium(model,request);
+        if (!trace.success) throw std::runtime_error(trace.message);
+        const auto& last=trace.states.back();
+        const double density=branch?8669.937445594192:6589.092751365589;
+        compare("spinodal/trace/"+std::to_string(branch),last.molar_densities[0],density,density,1e-8);
+        CHECK(trace.stop!=ContinuationStop::critical_endpoint);
+        if (branch==1) {
+            const auto supplied=solve_equilibrium(model,start);
+            auto hint=cell(240,4000),finish=hint; finish.temperature=FreeValue::fixed(250);
+            const auto retained=continue_equilibrium(model,{hint,finish,supplied,{0.1,1e-7,100,6},{}});
+            if (!retained.success) throw std::runtime_error(retained.message);
+            compare("spinodal/retained-branch",retained.states.back().molar_densities[0],11747.012051799871,11747.012051799871,1e-8);
+        }
+    }
+    // Exhaustive finite grid: independently solved endpoints define each physical branch.
+    std::ofstream csv;
+    if (const char* file=std::getenv("EPCSAFT_SPINODAL_GRID_CSV")) {
+        csv.open(file); CHECK(csv.good()); csv<<std::setprecision(17);
+        csv<<"T_start_K,T_target_K,node_set,branch,step,supplied_start,start_available,target_compatible,success,stop,cause,last_T_K,last_rho_mol_m3,direct_target_rho_mol_m3,states,retries,scan_evaluations,scan_brackets,finite_limits,point_success,point_rho_mol_m3,point_scan_evaluations\n";
+    }
+    std::size_t runs=0, available=0;
+    for (double T : {260.,264.,267.4,267.46,267.47}) for (int direction : {-1,1}) {
+        const double target_T=T+(T==267.47 ? (direction<0 ? -.07 : .001) : direction*.009);
+        double endpoints[2][2];
+        EquilibriumResult intended[2];
+        for (int end=0;end<2;++end) for (int branch=0;branch<2;++branch) {
+            auto p=cell(end?target_T:T,branch?20000:1);
+            for (int k=0;k<=150;++k) p.spinodal->density_nodes.push_back(7000+10.*k);
+            auto& nodes=p.spinodal->density_nodes; std::sort(nodes.begin(),nodes.end()); nodes.erase(std::unique(nodes.begin(),nodes.end()),nodes.end());
+            const auto r=solve_equilibrium(model,p); CHECK(r.success);
+            endpoints[end][branch]=r.molar_densities[0];
+            if (!end) intended[branch]=r;
+        }
+        const double middle=(endpoints[0][0]+endpoints[0][1])/2;
+        const std::vector<std::vector<double>> grids={{7490,7560,8000},{100,7000,7500,8000,15000},{7000,7600,15000},
+            {100,middle,endpoints[0][1]*1.01},{endpoints[0][0]*.99,middle,20000}};
+        for (std::size_t grid=0;grid<grids.size();++grid) for (int branch=0;branch<2;++branch) for (double step : {1.,.1}) for (bool supplied : {false,true}) {
+            ++runs;
+            auto p=cell(T,branch?13000:1); p.spinodal->density_nodes=grids[grid];
+            auto target=p; target.temperature=FreeValue::fixed(target_T);
+            const auto initial=solve_equilibrium(model,p);
+            const bool covered=initial.success && std::abs(initial.molar_densities[0]-endpoints[0][branch])/endpoints[0][branch]<=1e-8;
+            auto coverage=compile_problem(model,p);
+            try { spinodal_search(coverage); } catch (const std::domain_error&) {}
+            CHECK(coverage.spinodal_search);
+            const bool expected_coverage=std::any_of(coverage.spinodal_search->brackets.begin(),coverage.spinodal_search->brackets.end(),
+                [&](const auto& b) { return endpoints[0][branch]>=b.lower && endpoints[0][branch]<=b.upper; });
+            CHECK(covered==expected_coverage);
+            bool compatible=false; ContinuationResult path;
+            if (covered) {
+                ++available;
+                auto compiled=compile_problem(model,target);
+                try { spinodal_search(compiled); } catch (const std::domain_error&) {}
+                CHECK(compiled.spinodal_search);
+                const auto& before=initial.spinodal->search;
+                for (const auto& bracket:compiled.spinodal_search->brackets)
+                    if (endpoints[1][branch]>=bracket.lower && endpoints[1][branch]<=bracket.upper
+                        && bracket.lower<=before.upper && bracket.upper>=before.lower) compatible=true;
+            }
+            path=continue_equilibrium(model,{p,target,supplied?std::make_optional(intended[branch]):std::nullopt,{step,1e-7,100,6},{}});
+            if (covered) {
+                CHECK(!path.states.empty());
+                for (const auto& state:path.states) {
+                    const double rho=state.molar_densities[0],scale=endpoints[1][branch];
+                    CHECK(rho>=std::min(endpoints[0][branch],endpoints[1][branch])-1e-8*scale);
+                    CHECK(rho<=std::max(endpoints[0][branch],endpoints[1][branch])+1e-8*scale);
+                    CHECK(state.spinodal->normalized_null_residual<=1e-10);
+                }
+                if (compatible) CHECK(path.success);
+                if (path.success) CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][branch])/endpoints[1][branch]<=1e-8);
+                else {
+                    CHECK(path.cause_stop==ContinuationStop::branch_lost);
+                    CHECK(path.last_result && path.last_result->spinodal);
+                    CHECK(path.last_result->spinodal->search.evaluations>0);
+                }
+            }
+            if (!covered) {
+                if (supplied || !initial.success) {
+                    CHECK(!path.success); CHECK(path.states.empty());
+                    CHECK(path.stop==ContinuationStop::initial_failure);
+                    CHECK(path.cause_stop==ContinuationStop::branch_lost);
+                    CHECK(path.last_result && path.last_result->spinodal);
+                    CHECK(path.last_result->spinodal->search.evaluations==grids[grid].size());
+                    CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_search->brackets.size());
+                } else {
+                    CHECK(path.success);
+                    CHECK(std::abs(path.states.front().molar_densities[0]-endpoints[0][1-branch])/endpoints[0][1-branch]<=1e-8);
+                    CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][1-branch])/endpoints[1][1-branch]<=1e-8);
+                }
+            }
+            const auto* last=path.states.empty()?nullptr:&path.states.back();
+            if (csv) csv<<T<<','<<target_T<<','<<grid<<','<<branch<<','<<step<<','<<supplied<<','<<covered<<','<<compatible<<','<<path.success<<','
+                <<continuation_stop_name(path.stop)<<','
+                <<(path.cause_stop?continuation_stop_name(*path.cause_stop):"")<<','
+                <<(last?*last->temperature:NAN)<<','<<(last?last->molar_densities[0]:NAN)<<','<<endpoints[1][branch]<<','
+                <<path.states.size()<<','<<path.retries<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.evaluations:0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.brackets.size():0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.finite_limits.size():0)<<','<<initial.success<<','<<(initial.success?initial.molar_densities[0]:NAN)<<','<<(initial.spinodal?initial.spinodal->search.evaluations:0)<<'\n';
+        }
+    }
+    CHECK(runs==400); CHECK(available==320);
+    auto finite=cell(250,4000); finite.spinodal->density_nodes={100,1000,1e7};
+    const auto missing=solve_equilibrium(model,finite);
+    CHECK(!missing.has_state()); CHECK(missing.spinodal);
+    CHECK(missing.spinodal->search.brackets.empty());
+    CHECK(!missing.spinodal->search.finite_limits.empty());
 }
 }  // namespace critical_envelope_checks

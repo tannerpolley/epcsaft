@@ -2530,27 +2530,44 @@ class EnvelopeCondition:
         """
         ...
 
-class CriticalRecord:
-    """Spectrum and conditioning of a critical-equation candidate.
-
-    Notes
-    -----
-    These diagnostics support a local critical-equation candidate; they certify no global phase stability. See critical_equations in engine/docs/equations.md.
-    """
+class HelmholtzModeRecord:
+    """Dimensionless normalized amount-Hessian spectrum and augmented-row numerical diagnostics."""
     eigenvalues: list[float]
-    """Dimensionless eigenvalues of the native scaled stability matrix M, in eigensolver order."""
     mode: list[float]
-    """Critical mode vector in native component/support order, dimensionless after normalization."""
-    cubic: float
-    """Native dimensionless cubic-form contraction along the mode."""
     zero_band: float
-    """Dimensionless numerical zero band used to interpret the spectrum."""
     condition_estimate: float
-    """Dimensionless augmented defining-Jacobian condition estimate."""
     backward_error: float
-    """Dimensionless numerical backward-error estimate."""
     rank: int
-    """Numerical rank of the augmented defining Jacobian, a count."""
+
+class SpinodalDeclaration(CriticalDeclaration):
+    density_nodes: list[float]
+    def __init__(self) -> None: ...
+
+class SpinodalBracket:
+    lower: float
+    upper: float
+    lower_eigenvalue: float
+    upper_eigenvalue: float
+
+class SpinodalSearch:
+    brackets: list[SpinodalBracket]
+    finite_limits: list[DensityDiagnosticPoint]
+    unresolved_densities: list[float]
+    lower: float
+    upper: float
+    seed: float
+    geometric_cap: float
+    evaluation_order: DerivativeOrder
+    evaluations: int
+
+class SpinodalRecord(HelmholtzModeRecord):
+    search: SpinodalSearch
+    normalized_null_residual: float
+
+class CriticalRecord(HelmholtzModeRecord):
+    """Necessary critical-equation candidate; no global phase stability certificate."""
+    cubic: float
+    """Dimensionless F_nnn contraction along the normalized amount mode."""
 
 class ConditioningObservation:
     """Condition and local error evidence at the attributed numerical point."""
@@ -2732,6 +2749,7 @@ class EquilibriumProblem:
     entropy_j_per_k: float | None
     """Optional extensive entropy specification in J/K on the absolute feed basis; not J/(mol K)."""
     critical: Optional[CriticalDeclaration]
+    spinodal: Optional[SpinodalDeclaration]
     """Optional neutral critical-equation declaration."""
     envelope: Optional[EnvelopeCondition]
     """Optional incipient envelope condition."""
@@ -2868,6 +2886,8 @@ class RowKind:
     """Critical-mode null-vector equation, native dimensionless normalization."""
     CriticalNormalization: RowKind
     """Critical-mode normalization, dimensionless."""
+    SpinodalMode: RowKind
+    SpinodalNormalization: RowKind
     CriticalCubic: RowKind
     """Critical cubic-form condition, native dimensionless normalization."""
     EnvelopeCondition: RowKind
@@ -3314,6 +3334,7 @@ class EquilibriumResult:
     topology_pair: Optional[tuple[int, int]]
     """Declared phase-index pair for coalescence, or None without this event."""
     critical: Optional[CriticalRecord]
+    spinodal: Optional[SpinodalRecord]
     """Critical-equation diagnostics, or None outside a retained critical candidate."""
     solid_amounts: list[float]
     """Amount in mol per declared solid, declaration order; empty without retained solid values."""

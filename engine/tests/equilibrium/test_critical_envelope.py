@@ -116,3 +116,20 @@ def test_polish_endpoint_conditioning() -> None:
             assert observation.point_kind == "last_linearization"
         if name == "case-3/VLLE":
             break
+
+
+def test_diffusive_spinodal_transport() -> None:
+    from epcsaft.equilibrium import SpinodalDeclaration
+
+    model = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane")))
+    declaration = SpinodalDeclaration()
+    declaration.density_guess_mol_per_m3 = 4000.0
+    declaration.density_nodes = [100.0 * 200.0 ** (k / 80) for k in range(81)]
+    result = solve_equilibrium(model, Problem(T=250.0, P=Free(1e6), feed=Amounts({"methane": 0.5, "ethane": 0.5}),
+        phases=[Phase("F", kind="liquid")], spinodal=declaration, row_tolerance=1e-11))
+    assert result.success and result.spinodal is not None, result.message
+    assert result.critical is None
+    assert result.molar_densities[0] == pytest.approx(4652.0793682042395, rel=1e-8)
+    assert len(result.spinodal.search.brackets) == 2
+    assert result.spinodal.normalized_null_residual <= 1e-10
+    assert [r.eqid for r in result.rows].count("diffusive_spinodal") == 3

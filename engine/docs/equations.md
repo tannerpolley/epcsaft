@@ -2978,6 +2978,19 @@ $$
 M=DQD,\quad Q=F_{nn},\quad Mu=0,\quad u^{T}u-1=0,\quad c=F_{nnn}[w,w,w]=0.
 $$
 
+## `diffusive_spinodal`
+
+- Section: Equilibrium critical and envelope conditions
+- Status: Source equation
+- Source: Michelsen (1980), Fluid Phase Equilib. 4, 1–10, pp. 7–8, Eqs. 24–26; Heidemann and Khalil (1980), doi:10.1002/aic.690260510; the Hessian and mode normalization of `critical_equations`, without its critical cubic condition
+- Description: At specified T and positive full-support composition x of a neutral nonreacting mixture, find density rho and normalized mode u. At unit amount n=x, V=1/rho, F=A/(RT), Q=F_nn and D=diag(sqrt(x)), M=DQD must have one lowest zero eigenvalue and all other eigenvalues resolved positive. P is the EOS pressure at that state.
+- Change note: The density derivative is r_l=-V D F_nnV D u for l=ln(rho); the mode columns are M. Exact row curvature consumes E4. The fixed-composition fold sets the density derivative of the lowest eigenvalue to zero; it does not generally set the null-mode critical cubic to zero.
+
+$$
+ r=M u=0,\qquad u^T u-1=0,\qquad
+ J_{(\ell,u)}=\begin{bmatrix}-V D F_{nnV}D u&M\\0&2u^T\end{bmatrix}.
+$$
+
 ## `envelope_local_condition`
 
 - Section: Equilibrium critical and envelope conditions

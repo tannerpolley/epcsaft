@@ -1200,7 +1200,7 @@ static SolvedStateActionBatch evaluate_action(
         gate = SolvedStateActionStatus::MissingThermochemistry;
     // A critical cell's row series reaches Taylor order two (five-direction energy contractions);
     // a third-order action needs order three of the critical rows, which needs six-direction ones.
-    if (gate == SolvedStateActionStatus::Available && problem.critical && order > 2)
+    if (gate == SolvedStateActionStatus::Available && (problem.critical || problem.spinodal) && order > 2)
         gate = SolvedStateActionStatus::EnergyOrderUnavailable;
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.

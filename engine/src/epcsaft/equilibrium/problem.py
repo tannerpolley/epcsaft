@@ -624,6 +624,8 @@ class Problem:
         Total volume in m³ on the resolved feed basis. Neutral nonreacting TV uses fixed T, free P and declared free phases.
     neutral_reference : NeutralReference or None
         Source standard-state conversion declaration.
+    spinodal : SpinodalDeclaration or None
+        Neutral fixed-temperature null-mode solve; density nodes bound the finite search.
     critical : CriticalDeclaration or None
         Critical-equation seed, including density in mol/m³; a solved necessary
         condition is not a stability certificate or unique critical point.
@@ -667,6 +669,7 @@ class Problem:
     volume_m3: float | None = None
     neutral_reference: NeutralReference | None = None
     critical: _core.CriticalDeclaration | None = None
+    spinodal: _core.SpinodalDeclaration | None = None
     envelope: _core.EnvelopeCondition | None = None
     azeotrope: bool = False
     solids: Sequence[Solid] = ()
@@ -693,6 +696,7 @@ class Problem:
         native.entropy_j_per_k = self.entropy_j_per_k
         native.volume_m3 = self.volume_m3
         native.critical = self.critical
+        native.spinodal = self.spinodal
         native.envelope = self.envelope
         native.azeotrope = self.azeotrope
         native.temperature = _free_value(self.T)

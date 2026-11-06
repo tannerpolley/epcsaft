@@ -123,6 +123,10 @@ Source: IAPWS TGD9-18, Table 2, p.15 (ideal concentration constants); `engine/do
 The free water amount plus all declared ionic species amounts, used with preserved free molecular amounts.
 Source: Nasrifar and Tafazzol (2010), section 6, p.7627; `analyses/reproduction/2010-nasrifar-mdea/README.md` effective-water conversion.
 
+**Diffusive spinodal**:
+A local stability-limit state at specified temperature and composition with one lowest zero eigenvalue of the normalized Helmholtz amount Hessian and positive remaining eigenvalues. It need not be a mechanical pressure-slope zero or a critical candidate.
+Source: EqID `diffusive_spinodal`; Michelsen (1980), Eqs. 24–26; Heidemann and Khalil (1980)
+
 **State batch**:
 An ordered collection of independently declared homogeneous state evaluations, with stored scalar properties and per-row failure evidence.
 Source: `engine/docs/science/algorithms.md` Independent state arrays; scalar thermodynamic states use Gross and Sadowski (2001), Eqs. A.23, A.33, A.46 and A.48.
@@ -132,3 +136,4 @@ Scope: `engine/`, `docs/site/guide/states-and-properties.md`
 Availability of a declared homogeneous state row or the category of the scalar exception that prevented its evaluation.
 Source: `engine/native/bindings/module.cpp` scalar exception mapping; `engine/docs/science/algorithms.md` Independent state arrays.
 Scope: `engine/`, `docs/site/guide/states-and-properties.md`
+

@@ -243,6 +243,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(nb::init<>())
         EPCSAFT_READWRITE(CriticalDeclaration, density_guess_mol_per_m3, mode_guess);
+    nb::class_<SpinodalDeclaration, CriticalDeclaration>(module, "SpinodalDeclaration")
+        .def(nb::init<>()) EPCSAFT_READWRITE(SpinodalDeclaration, density_nodes);
     nb::enum_<EnvelopeCoordinate>(module, "EnvelopeCoordinate")
         EPCSAFT_VALUES(EnvelopeCoordinate, LogTemperature, LogPressure, LogK);
     nb::class_<EnvelopeCondition>(module, "EnvelopeCondition")
@@ -257,10 +259,10 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, volume_m3, critical, envelope, azeotrope, discovery, solids);
+            entropy_j_per_k, volume_m3, critical, spinodal, envelope, azeotrope, discovery, solids);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, Volume, CriticalMode,
-            CriticalNormalization, CriticalCubic, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
+            CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
         EPCSAFT_REPR(Row, "kind", "phase", "index")
@@ -343,13 +345,21 @@ void register_equilibrium(nb::module_& module) {
             // the returned point from `multipliers`; raw optimizer duals only when a phase amount is pinned.
             constraint_multipliers, residuals, classified_residuals, coordinates, phase_count, iterations, evaluations,
             hessian_calls, objective, reduced_hessian_minimum, convergence, last_rank, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
-            generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
+            generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical, spinodal,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);
+    nb::class_<HelmholtzModeRecord>(module, "HelmholtzModeRecord")
+        EPCSAFT_READONLY(HelmholtzModeRecord, eigenvalues, mode, zero_band, condition_estimate, backward_error, rank);
+    nb::class_<CriticalRecord, HelmholtzModeRecord>(module, "CriticalRecord")
+        EPCSAFT_READONLY(CriticalRecord, cubic);
+    nb::class_<SpinodalBracket>(module, "SpinodalBracket")
+        EPCSAFT_READONLY(SpinodalBracket, lower, upper, lower_eigenvalue, upper_eigenvalue);
+    nb::class_<SpinodalSearch>(module, "SpinodalSearch")
+        EPCSAFT_READONLY(SpinodalSearch, brackets, finite_limits, unresolved_densities, lower, upper, seed, geometric_cap, evaluation_order, evaluations);
+    nb::class_<SpinodalRecord, HelmholtzModeRecord>(module, "SpinodalRecord")
+        EPCSAFT_READONLY(SpinodalRecord, search, normalized_null_residual);
     nb::class_<CriticalSearch>(module, "CriticalSearch")
         EPCSAFT_READONLY(CriticalSearch, seeds, results, added_work, scheduled, budget_exhausted, selected);
-    nb::class_<CriticalRecord>(module, "CriticalRecord")
-        EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     nb::class_<StabilityTrial>(module, "StabilityTrial")
         EPCSAFT_READONLY(StabilityTrial, phase, seed, evidence, message, optimizer, raw_coordinates, raw_residuals,
             composition, split_coordinates, basis, row_transformation, quantities, split_checks, donor,

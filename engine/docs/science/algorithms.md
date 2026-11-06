@@ -3664,6 +3664,60 @@ isobaric heat capacities divide by its zero P_rho and are unavailable
 (`pressure_singular`); a mixture candidate's follow the ordinary pressure-slope
 admission.
 
+A diffusive spinodal cell (`Problem(spinodal=SpinodalDeclaration())`, EqID:
+`diffusive_spinodal`) uses the same mode rows and normalization at fixed T,
+free P and prescribed positive full-support composition, without the cubic row.
+It is a feasibility cell of the same driver, with one net condition. Ions,
+reactions, source references and other conditions are excluded. Ordinary
+positive-pressure and packing domains remain required.
+
+The caller supplies increasing density nodes in mol/m³ and a density guess
+selecting the nearest log-density crossing. The native scan evaluates the
+normalized amount Hessian and its lowest eigensystem through the same
+Hessian-only owner as local phase stability; it does not evaluate a full row
+Jacobian. Signs use the eigenpair band
+$b_\lambda=\lVert Mv-\lambda v\rVert_2+C\epsilon\lVert M\rVert_F$ for normalized v.
+Only connected opposite resolved signs form brackets. Unavailable nodes break
+connectivity and retain the last finite/first unavailable density bounds and
+Hessian/packing cause. This finite scan cannot exclude unsampled narrow
+intervals or later finite islands. A mechanical slope zero is not a bracket
+or admission test: $v^TMv=P_\rho/(RT)$ for $v=\sqrt{x}$ can vanish when M is
+indefinite and nonsingular.
+
+Bisection within the selected bracket supplies the mode and density seed;
+the existing density-refinement iteration budget bounds it. The same driver's
+exact corrector is constrained to that bracket in log packing. The full
+Jacobian and weighted row Hessian consume E3 and E4 respectively; derivative
+failure there does not redefine the Hessian finite domain. The result retains
+its density, pressure, full spectrum, mode, normalized null residual, numerical
+rank/conditioning and backward error, search brackets and finite limits.
+Admission uses the separate null-mode band
+$b_0=\lVert Mu\rVert_2/\lVert u\rVert_2+C\epsilon\lVert M\rVert_F$,
+a lowest eigenvalue within this band, a positive second eigenvalue outside it,
+normalized null and mode-norm residuals at most $10^{-10}$, and a regular
+augmented Jacobian. A failed search returns its retained limits without a state.
+
+Temperature continuation reuses the existing predictor, exact tangent and
+corrector, resolving the same selected connected branch at each temperature.
+The scan first retains only crossings with the accepted crossing direction,
+an overlapping or touching declared density interval, and recorded finite-domain
+connectivity from the accepted density. Among these it selects the nearest to
+that accepted density. The selected scan is owned by the compiled system used for initial seeding,
+initial correction, admission and every advance. The coordinate corrector
+uses that compiled system without recompilation; the fresh model/request
+wrapper delegates to it. Driver bounds and admission call the same selector
+and reuse its cached selection. Accepted initialization copies the compiled
+state only after its selection has been populated. If none is compatible, structured search diagnostics
+and recoverable branch loss reach the existing step controller.
+The search runs before optimizer initialization so its record survives refusal.
+Mode sign is carried in the coordinates used by the next predictor. A singular
+tangent is a diagnosed monotonic-temperature limit, never a critical endpoint.
+The fixed-composition spinodal fold and the critical candidate generally differ:
+the former is stationary in the total-density direction, while the critical
+cubic vanishes in the null direction. Neither simple spinodal admission nor
+continuation certifies global stability. The row-series owner supplies through
+second order; higher solved-state actions are unavailable.
+
 An envelope (EqID: `envelope_local_condition`) declares a free feed phase and a
 zero-pinned incipient phase on one support, free T and P and one selected
 condition: k = 1, f = 2, e = 1, raw T/P chart (Michelsen 1980, pp. 2–4). Its
