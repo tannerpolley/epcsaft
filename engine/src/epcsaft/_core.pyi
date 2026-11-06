@@ -3191,7 +3191,24 @@ class IpoptDiagnostics:
     failed_point: Optional[IpoptPoint]
     """Original TNLP tuple on unsuccessful termination, or None without one."""
 
+class CriticalSearch:
+    """Finite critical starts; original attempt first; every admitted root retained."""
+    seeds: list[list[float]]
+    """Attempted temperature [K] and molar density [mol/m^3]."""
+    results: list[EquilibriumResult]
+    """Ordered attempts, including failures and repeated critical candidates."""
+    added_work: list[list[int]]
+    """Cumulative added iterations, evaluations and Hessian callbacks after each attempt."""
+    scheduled: int
+    """Number of generated seeds; excludes the original declaration."""
+    budget_exhausted: bool
+    """Whether any shared allowance was spent; unattempted suffix stays unsearched."""
+    selected: int | None
+    """First admitted candidate when all admitted candidates agree within numerical estimates."""
+
 class EquilibriumResult:
+    critical_search: CriticalSearch | None
+    """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
     rejected_reduction: EquilibriumResult | None
     recovery_stability: StabilityReport | None
     terminal_numerical_failure: Convergence | None

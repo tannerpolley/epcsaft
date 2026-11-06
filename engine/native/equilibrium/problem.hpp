@@ -586,6 +586,7 @@ auto physical_error(const CompiledSystem& c, const PhasePointValues<Base>& at,
 }
 
 struct OptimizerState;
+struct CriticalSearch;
 struct LinearSolveDiagnostics final {
     std::string system = "one_component_two_density_reduction", reason;
     double residual_norm = std::numeric_limits<double>::infinity(), evaluation_floor = std::numeric_limits<double>::infinity();
@@ -621,6 +622,7 @@ struct IpoptDiagnostics final {
     std::optional<IpoptPoint> failed_point;
 };
 struct EquilibriumResult final {
+    std::shared_ptr<const CriticalSearch> critical_search;
     std::shared_ptr<const EquilibriumResult> rejected_reduction;
     std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation;
     std::vector<double> phase_pressures;
@@ -680,6 +682,16 @@ struct EquilibriumResult final {
     }
 
     double residual_norm() const noexcept { return maximum_abs(residuals); }
+};
+
+// Ordered critical starts and every returned candidate; finite search certifies no stability or uniqueness.
+struct CriticalSearch final {
+    std::vector<std::array<double, 2>> seeds;  // attempted T [K], rho [mol/m^3]; original declaration first
+    std::vector<EquilibriumResult> results;
+    std::vector<std::array<std::size_t, 3>> added_work;  // cumulative iterations, evaluations, Hessian callbacks
+    std::size_t scheduled = 0;  // generated seeds, excluding the original declaration
+    bool budget_exhausted = false;
+    std::optional<std::size_t> selected;
 };
 
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);

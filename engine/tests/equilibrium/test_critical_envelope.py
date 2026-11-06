@@ -22,6 +22,27 @@ def test_critical_candidate_matches_teqp() -> None:
     assert candidate.critical is not None and abs(candidate.critical.eigenvalues[0]) <= candidate.critical.zero_band
 
 
+def test_associating_critical_candidate_after_failed_declared_start() -> None:
+    # Retained numerical baseline: the same packet's critical equations solved from a declared 4*epsilon/k seed.
+    model = Pure(Parameters.from_json(parameters_json("ascani-2022-case-study-2-electrolyte-lle", 3), components=("water",)))
+    declaration = CriticalDeclaration()
+    declaration.density_guess_mol_per_m3 = 9960.986137627624
+    problem = Problem(T=Free(503.19124775), P=Free(1e6), feed=Amounts({"water": 1.0}),
+                      phases=[Phase("F", kind="liquid")], critical=declaration)
+    result = solve_equilibrium(model, problem)
+    assert result.success, result.message
+    assert result.temperature == pytest.approx(699.9801552748312, rel=1e-10)
+    assert result.pressure == pytest.approx(38835718.7905412, rel=1e-10)
+    assert result.critical is not None and result.critical.rank == result.unknown_count
+    assert abs(result.critical.eigenvalues[0]) <= result.critical.zero_band
+    assert max(map(abs, result.classified_residuals)) <= 1e-10
+    search = result.critical_search
+    assert search is not None and search.selected is not None
+    assert all(i <= 512 and e <= 2048 and h <= 1024 for i, e, h in search.added_work)
+    assert all(r.numerical_estimates is not None and r.numerical_estimates.cause == ""
+               for r in search.results if r.success)
+
+
 def test_envelope_condition_matches_feos_bubble() -> None:
     model = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane")))
     condition = EnvelopeCondition()

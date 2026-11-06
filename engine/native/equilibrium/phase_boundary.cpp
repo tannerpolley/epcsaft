@@ -837,7 +837,7 @@ EquilibriumResult critical_candidate(const HelmholtzModel& model, const Compiled
         cell.critical->mode_guess[i] = (state.molar_densities[pin] * state.mole_fractions[pin * c + i]
             - state.molar_densities[1 - pin] * state.mole_fractions[(1 - pin) * c + i])
             / std::sqrt(compiled.feed_composition[i]);
-    return solve_equilibrium(model, cell);
+    return solve_compiled(compile_problem(model, cell));
 }
 
 // Envelope mode of continue_equilibrium (ALG-EQUILIBRIUM; Michelsen 1980 local parametrization in the raw T/P
@@ -1016,6 +1016,22 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 }
 
 }  // namespace
+
+// Reduced temperature and packing starts; coefficients are initialization heuristics (ALG-EQUILIBRIUM).
+std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel& model) {
+    const auto& p = model.parameters();
+    const double theta = p.dispersion_energy_over_k[0], base = theta * (1 + 0.35 * p.segment_count[0]);
+    double energy = 0;
+    for (std::size_t i = 0; i < p.association_active.size(); ++i)
+        if (p.association_active[i] && p.association_volume[i] > 0) energy = std::max(energy, p.association_energy_over_k[i]);
+    std::vector<std::array<double, 2>> seeds{{4 * theta, 0.025}, {3 * theta, 0.04}, {base, 0.12}, {1.5 * base, 0.072}};
+    if (energy > 0) {
+        const double associated = std::max(base, energy / 4);
+        seeds.push_back({associated, 0.025});
+        seeds.push_back({associated, 0.12});
+    }
+    return seeds;
+}
 
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages,
                                    const std::vector<bool>& packed, bool correct_dense) {

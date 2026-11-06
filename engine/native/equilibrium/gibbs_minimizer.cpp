@@ -2164,6 +2164,78 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     return recovered;
 }
 
+// One driver, finite physical starts, and no selection between distinguishable critical candidates.
+static EquilibriumResult recover_critical(const CompiledSystem& compiled, EquilibriumResult original, core::Scope& scope) {
+    auto search = std::make_shared<CriticalSearch>();
+    search->seeds.push_back({compiled.seed_temperature(), compiled.problem.critical->density_guess_mol_per_m3});
+    search->results.push_back(original);
+    search->added_work.push_back({0, 0, 0});
+    const auto seeds = critical_seed_scales(*compiled.model);
+    search->scheduled = seeds.size();
+    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    DriverLimits work{cap, std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    StageWork stages;
+    stages.add(original);
+    bool comparable = true;
+    for (const auto& seed : seeds) {
+        if (work.expired() || work.evaluations >= work.evaluation_cap || work.hessian_calls >= work.hessian_cap) break;
+        auto declaration = compiled.problem;
+        declaration.temperature = FreeValue::variable(seed[0]);
+        declaration.critical->mode_guess.clear();
+        EquilibriumResult result;
+        double rho = NAN;
+        try {
+            rho = seed[1] / compiled.model->packing_fraction_coefficient(seed[0], compiled.feed_composition);
+            declaration.critical->density_guess_mol_per_m3 = rho;
+            const auto cell = compile_problem(*compiled.model, declaration);
+            result = solve_compiled(cell, {}, &scope, &work, {}, false, &result);
+            if (result.success && work.spend(work.evaluations, work.evaluation_cap) && !work.expired()) {
+                result.numerical_estimates = equilibrium_numerical_estimates(cell, result);
+                work.check();
+            }
+        } catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) {
+            core::retain_failure(result.first_numerical_failure, error, "critical start");
+            result.message += std::string("; critical start: ") + error.what();
+        }
+        stages.observe(result);
+        search->seeds.push_back({seed[0], rho});
+        search->results.push_back(std::move(result));
+        search->added_work.push_back({work.consumed, work.evaluations, work.hessian_calls});
+        const auto index = search->results.size() - 1;
+        const auto& current = search->results.back();
+        if (!current.has_state()) continue;
+        const auto& estimate = current.numerical_estimates;
+        if (!estimate || !estimate->cause.empty() || !estimate->temperature.resolved || !estimate->pressure.resolved
+            || estimate->densities.empty() || !estimate->densities[0].resolved) comparable = false;
+        if (!search->selected) search->selected = index;
+        if (!comparable) continue;
+        const auto& b = *estimate;
+        const auto agrees = [](core::Quantity quantity, double x, double y, const core::NumericalEstimate& ex, const core::NumericalEstimate& ey) {
+            return core::compare_equilibrium_quantity(quantity, x, y, 0, ex, ey, {}, core::ComparisonMode::EstimatedError).judgment != "failed";
+        };
+        for (std::size_t i = 1; comparable && i < index; ++i) {
+            const auto& previous = search->results[i];
+            if (!previous.has_state()) continue;
+            const auto& a = *previous.numerical_estimates;
+            comparable = agrees(core::Quantity::Linear, *previous.temperature, *current.temperature, a.temperature, b.temperature)
+                && agrees(core::Quantity::Linear, *previous.pressure, *current.pressure, a.pressure, b.pressure)
+                && agrees(core::Quantity::Positive, previous.molar_densities[0], current.molar_densities[0], a.densities[0], b.densities[0]);
+        }
+    }
+    search->budget_exhausted = work.expired() || work.evaluations >= work.evaluation_cap || work.hessian_calls >= work.hessian_cap;
+    if (!comparable) search->selected.reset();
+    auto result = search->selected ? search->results[*search->selected] : std::move(original);
+    if (!search->selected) { result.success = false; clear_state(result); }
+    result.message += search->selected ? "; finite critical start search" : "; critical starts unresolved or no admitted candidate";
+    if (search->budget_exhausted) result.message += "; critical start allowance exhausted";
+    result.iterations = work.consumed;
+    result.evaluations = work.evaluations;
+    result.hessian_calls = work.hessian_calls;
+    stages.report(result);
+    result.critical_search = std::move(search);
+    return result;
+}
+
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
                                  core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
                                  bool recover, EquilibriumResult* audit, bool select_endpoint) {
@@ -2174,7 +2246,17 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     if (!compiled.feasible) return structural;
     if (compiled.ideal) return run_driver_once(nullptr, compiled, compiled.generic_point(), structural, scope,
         nullptr, nullptr, limits, false, {}, false, false);
-    return continue_compiled(compiled, start, scope, limits, std::move(warm), recover, audit, structural, {}, std::nullopt, {}, select_endpoint);
+    const bool critical = recover && !start && !limits && !warm && compiled.problem.critical
+        && compiled.n_feed.size() == 1 && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    EquilibriumResult result = structural;
+    try { result = continue_compiled(compiled, start, scope, limits, std::move(warm), recover, critical ? &result : audit,
+        structural, {}, std::nullopt, {}, select_endpoint); }
+    catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) {
+        if (!critical) throw;
+        result.message = error.what();
+        core::retain_failure(result.first_numerical_failure, error, "critical initialization");
+    }
+    return critical && !result.success ? recover_critical(compiled, std::move(result), scope) : result;
 }
 
 #include "equilibrium/starts.hpp"

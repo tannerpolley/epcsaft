@@ -329,6 +329,7 @@ void register_equilibrium(nb::module_& module) {
             values["diagnostics"] = self;
             return values;
         })
+        .def_prop_ro("critical_search", [](const EquilibriumResult& r) { return r.critical_search ? nb::cast(*r.critical_search) : nb::none(); })
         .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
         .def_prop_ro("recovery_stability", [](const EquilibriumResult& r) { return r.recovery_stability ? nb::cast(*r.recovery_stability) : nb::none(); })
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
@@ -345,6 +346,8 @@ void register_equilibrium(nb::module_& module) {
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
             solid_amounts, solid_affinity_decades);
+    nb::class_<CriticalSearch>(module, "CriticalSearch")
+        EPCSAFT_READONLY(CriticalSearch, seeds, results, added_work, scheduled, budget_exhausted, selected);
     nb::class_<CriticalRecord>(module, "CriticalRecord")
         EPCSAFT_READONLY(CriticalRecord, eigenvalues, mode, cubic, zero_band, condition_estimate, backward_error, rank);
     nb::class_<StabilityTrial>(module, "StabilityTrial")

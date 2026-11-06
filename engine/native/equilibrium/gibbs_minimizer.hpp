@@ -61,6 +61,7 @@ EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<E
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 EPC_API std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {}, bool correct_dense = false);
+std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel&);
 struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;

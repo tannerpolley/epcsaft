@@ -3552,6 +3552,32 @@ dense tensor or second row evaluator. The seed takes T and density from the
 declaration, P from the state there and, without a mode seed, the lowest
 eigenvector of M read from the mode rows' u columns.
 
+A successful declared pure-fluid critical attempt returns without extra work. After a cold
+single-component attempt fails, one native initializer supplies at most six additional
+starts to the same driver. With theta = epsilon/k_B, Tb = theta (1 + 0.35 m),
+and E the largest active positive-volume self-association energy over k_B, the ordered
+(T, eta) starts are (4 theta, 0.025), (3 theta, 0.04), (Tb, 0.12),
+(1.5 Tb, 0.072), (max(Tb, E/4), 0.025), (max(Tb, E/4), 0.12).
+The last two are omitted without active association. Density is eta divided by the
+existing temperature-dependent packing coefficient; pressure and mode use the same
+critical initialization as a declared start. These coefficients are heuristic guesses,
+not a critical-temperature correlation. Bell and Deiters (2023), Section 2 and Section 4,
+Figure 1, support reduced T/theta and number density times sigma cubed and the dependence
+of nonassociating critical coordinates on m; they do not derive these guesses or an
+association correction. Clapeyron's SAFT `x0_crit_pure` likewise uses physical scales.
+
+All generated attempts share `EQUILIBRIUM_RECOVERY_WORK` (512) iterations, four times
+as many driver evaluations and twice as many Hessian callbacks, with the existing
+200-iteration per-attempt cap. Returned-point numerical estimates spend the same
+evaluation allowance using the ordinary critical-row producer. The result's
+`critical_search` retains every attempted T/density, result and cumulative added work,
+including the original failure, repeated candidates and an exhausted allowance's
+unattempted suffix. Every admitted pair must agree in T, P and density under the
+native estimated-error comparison with zero ordinary allowance. Otherwise no ordinary
+state is selected. The selected index is explicit; finite search proves neither
+uniqueness nor stability. Supplied starts, limited internal solves, optimizer overrides,
+mixtures and caller-owned continuation retain their existing initialization.
+
 Admission replaces the positive-slope density-root rule only for a critical
 cell (a pure-fluid root has P_rho = 0; a mixture root generally does not):
 the augmented Jacobian must have full rank, and
