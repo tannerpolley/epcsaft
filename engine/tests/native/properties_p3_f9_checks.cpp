@@ -25,6 +25,72 @@ void p3_compare(const std::string& id, const char* quantity, const char* unit,
 }
 
 void properties_thermochemistry_p3() {
+    // A live parameter coordinate retains the exact taped reference for the pure thermal chart.
+    for (bool thermal_sigma : {false, true}) {
+        auto parameters = properties_support::ethane();
+        if (thermal_sigma) {
+            parameters.sigma_term_component = {0}; parameters.sigma_term_amplitude = {0.15};
+            parameters.sigma_term_exponent = {-0.003};
+        }
+        for (const auto& [form, correlation] : p3_forms()) {
+            const auto record = p3_record(correlation);
+            epcsaft::HelmholtzModel model(parameters, {}, record);
+            epcsaft::HelmholtzModel taped(parameters, {{epcsaft::ParameterFamily::SegmentCount, {0}}}, record);
+            for (double T : {std::nextafter(250.0, 0.0), 250.0, std::nextafter(250.0, 300.0),
+                             300.0, std::nextafter(350.0, 300.0), 350.0, std::nextafter(350.0, 400.0)}) {
+                for (double rho : {10.0, 10000.0}) {
+                    const auto a = model.state(T, rho, {1.0}, true), b = taped.state(T, rho, {1.0}, true);
+                    const std::string point = std::string(form) + "/" + epcsaft::core::optional_number(T) + "/"
+                        + std::to_string(rho) + "/" + std::to_string(thermal_sigma);
+                    const auto inputs = recording_support::fields({recording_support::field("T_K", T),
+                        recording_support::field("rho_mol_m3", rho), recording_support::field("thermal_sigma", thermal_sigma)});
+                    const auto same = [&](const char* quantity, const char* unit, double value, double reference) {
+                        p3_compare("pure-T-V/" + point + "/" + quantity, quantity, unit, value, reference,
+                            inputs, "pure-T-V", point.c_str(), 1.0e-10);
+                    };
+                    same("residual_helmholtz", "1", a.residual_helmholtz, b.residual_helmholtz);
+                    same("compressibility_factor", "1", a.compressibility_factor, b.compressibility_factor);
+                    same("pressure", "Pa", a.pressure, b.pressure);
+                    same("residual_entropy", "J/(mol K)", a.residual_entropy, b.residual_entropy);
+                    same("residual_internal_energy", "J/mol", a.residual_internal_energy, b.residual_internal_energy);
+                    same("residual_enthalpy", "J/mol", a.residual_enthalpy, b.residual_enthalpy);
+                    same("residual_isochoric_heat_capacity", "J/(mol K)", a.residual_isochoric_heat_capacity, b.residual_isochoric_heat_capacity);
+                    same("pressure_density_derivative", "J/mol", a.pressure_density_derivative, b.pressure_density_derivative);
+                    CHECK(a.thermochemistry_status == b.thermochemistry_status);
+                    for (const auto member : std::array{
+                        &epcsaft::State::residual_isobaric_heat_capacity,
+                        &epcsaft::State::ideal_enthalpy,
+                        &epcsaft::State::ideal_internal_energy,
+                        &epcsaft::State::ideal_entropy,
+                        &epcsaft::State::ideal_isobaric_heat_capacity,
+                        &epcsaft::State::ideal_isochoric_heat_capacity,
+                        &epcsaft::State::total_enthalpy,
+                        &epcsaft::State::total_internal_energy,
+                        &epcsaft::State::total_entropy,
+                        &epcsaft::State::total_isobaric_heat_capacity,
+                        &epcsaft::State::total_isochoric_heat_capacity,
+                        &epcsaft::State::isothermal_compressibility,
+                        &epcsaft::State::isobaric_expansivity,
+                        &epcsaft::State::heat_capacity_ratio,
+                        &epcsaft::State::isentropic_compressibility,
+                        &epcsaft::State::speed_of_sound,
+                        &epcsaft::State::joule_thomson_coefficient,
+                    }) {
+                        CHECK((a.*member).has_value() == (b.*member).has_value());
+                        if (a.*member) CHECK(close(*(a.*member), *(b.*member), 1.0e-10));
+                    }
+                    same("mu_over_RT", "1", *a.residual_chemical_potential_over_rt[0], *b.residual_chemical_potential_over_rt[0]);
+                    if (a.log_fugacity_coefficient) same("ln_phi", "1", *(*a.log_fugacity_coefficient)[0], *(*b.log_fugacity_coefficient)[0]);
+                    if ((*a.partial_molar_volume)[0]) same("partial_volume", "m3/mol", *(*a.partial_molar_volume)[0], 1.0 / rho);
+                    if ((*a.partial_molar_enthalpy)[0]) {
+                        same("pure_partial_h", "J/mol", *(*a.partial_molar_enthalpy)[0], *a.total_enthalpy);
+                        same("pure_partial_s", "J/(mol K)", *(*a.partial_molar_entropy)[0], *a.total_entropy);
+                        same("h=u+Pv", "J/mol", *a.total_enthalpy, *a.total_internal_energy + a.pressure / rho);
+                    }
+                }
+            }
+        }
+    }
     const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     const double temperature = 320.0;
     const double density = 1000.0;

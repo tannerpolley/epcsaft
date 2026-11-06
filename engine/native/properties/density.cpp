@@ -114,12 +114,19 @@ public:
     std::optional<core::AssociationObservations> observations_;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
+    bool thermal_chart_resolved(Base density) const {
+        const auto zeta = packing_moments(density, composition_, parameters_, diameter_);
+        const Base cube = zeta[2] * zeta[2] * zeta[2], volume = 1.0 / density;
+        // The finite-density hard-sphere expression loses relative coefficients in subnormal cubes.
+        return cube >= std::numeric_limits<Base>::min() && wide_math::isfinite(volume * volume);
+    }
+
 
     // Coefficients of A_res/(RT) in t at V = 1/density + t, and the association gradient floor. `start` begins the
     // site solve from a neighbouring solution; `sites` receives the site fractions' coefficients in t (N per site).
-    template <std::size_t N>
+    template <std::size_t N, bool Thermal = false>
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
-                       std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}) const {
+                       std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0) const {
         using Series = Taylor<N, Base>;
         core::Scope entry("pressure_series_residual"), scope("evaluate");
         entry.probe("requested_order", static_cast<double>(N - 1));
@@ -267,16 +274,27 @@ public:
             }
             residuals = association_residuals(rho, composition, parameters_, site_series, delta);
         }
-        const auto electrostatics = [&] {
-            if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
-            else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
-        }();
         const auto contributions = [&] {
-            if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
-                diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, &moments_);
-            else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
-                std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
-                site_series, electrostatics.first.debye_huckel, electrostatics.second);
+            if constexpr (Thermal) {
+                // The pure nonassociating thermal request differentiates geometry and pair laws too.
+                Series temperature(temperature_); temperature.c[1] = temperature_direction;
+                const std::vector<Series> x(composition_.begin(), composition_.end());
+                const auto sigma = segment_sigma(temperature, parameters_);
+                const auto diameter = segment_diameter(temperature, parameters_, sigma);
+                const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_);
+                return residual_helmholtz(temperature, rho, x, parameters_, sigma, diameter,
+                    site_series, electro.first.debye_huckel, electro.second);
+            } else {
+                const auto electrostatics = [&] {
+                    if constexpr (std::is_same_v<Base, double>) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+                    else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
+                }();
+                if constexpr (std::is_same_v<Base, double>) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
+                    diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, &moments_);
+                else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
+                    std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
+                    site_series, electrostatics.first.debye_huckel, electrostatics.second);
+            }
         }();
         if (sites_out != nullptr) {
             sites_out->clear();
@@ -299,6 +317,22 @@ private:
     mutable std::size_t used_ = 0;
     std::vector<Base> composition_, sigma_, diameter_, amounts_;
 };
+
+// EqID: one_component_two_density
+// Euler homogeneity supplies every amount derivative from the six independent T/V entries.
+template <typename Base>
+void project_pure(HelmholtzDerivativeValues<Base>& d, Base volume, Base amount,
+                  std::size_t width, const std::array<Base, 6>& c) {
+    d.value = c[0];
+    d.gradient.assign(width, 0.0); d.hessian.assign(width * width, 0.0);
+    d.gradient[0] = c[1]; d.gradient[1] = c[2];
+    d.gradient[2] = (d.value - volume * c[2]) / amount;
+    d.hessian[0] = c[3]; d.hessian[1] = d.hessian[width] = c[4];
+    d.volume_second_derivative = d.hessian[width + 1] = c[5];
+    d.hessian[2] = d.hessian[2 * width] = (c[1] - volume * c[4]) / amount;
+    d.hessian[width + 2] = d.hessian[2 * width + 1] = -volume * c[5] / amount;
+    d.hessian[2 * width + 2] = volume * volume * c[5] / (amount * amount);
+}
 
 PressurePoint at_density(const PressureSeries<>& series, double temperature, double pressure,
                          const std::vector<double>& composition, double density,
@@ -1465,21 +1499,37 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     if (series.observations_) series.observations_->merge(d.rank_records);
     if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
-    const std::size_t width = 3 + active_.size();
-    d.value = energy.c[0];
-    d.gradient.assign(width, 0.0); d.hessian.assign(width * width, 0.0);
-    d.gradient[1] = energy.c[1];
-    d.gradient[2] = (d.value - volume * d.gradient[1]) / amount;
-    d.volume_second_derivative = 2.0 * energy.c[2];
-    d.hessian[width + 1] = d.volume_second_derivative;
-    d.hessian[width + 2] = d.hessian[2 * width + 1] = -volume * d.volume_second_derivative / amount;
-    d.hessian[2 * width + 2] = volume * volume * d.volume_second_derivative / (amount * amount);
+    project_pure(d, volume, amount, 3 + active_.size(),
+        std::array<Base, 6>{energy.c[0], 0.0, energy.c[1], 0.0, 0.0, 2.0 * energy.c[2]});
     for (std::size_t i = 0; i < sites.size(); i += 2) d.site_fractions.push_back(static_cast<double>(sites[i]));
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     result.pressure = rt * (amount / volume - d.gradient[1]);
     result.chemical_potential_over_rt = wide_math::log(amount / volume) + d.gradient[2];
     result.pressure_density_derivative = rt * (1.0 + volume * volume * d.volume_second_derivative / amount);
     return result;
+}
+
+HelmholtzDerivatives HelmholtzModel::pure_state_derivatives(double temperature, double volume) const {
+    core::Scope scope("evaluate");
+    const PressureSeries<> series(*this, temperature, {1.0});
+    if (!series.thermal_chart_resolved(1.0 / volume))
+        return evaluate(temperature, volume, {1.0},
+            scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
+    double floor = 0.0;
+    // Scaled linear directions recover E_TV by exact second-order polarization.
+    const auto t = series.residual<2, true>(1.0 / volume, floor, nullptr, nullptr, {0.0}, temperature);
+    const auto v = series.residual<2, true>(1.0 / volume, floor, nullptr, nullptr, {volume});
+    const auto tv = series.residual<2, true>(1.0 / volume, floor, nullptr, nullptr, {volume}, temperature);
+    const std::array<double, 6> c{t.c[0], t.c[1] / temperature, v.c[1] / volume,
+        2.0 * t.c[2] / (temperature * temperature),
+        (tv.c[2] - t.c[2] - v.c[2]) / (temperature * volume), 2.0 * v.c[2] / (volume * volume)};
+    if (!std::all_of(c.begin(), c.end(), [](double value) { return std::isfinite(value); }))
+        throw std::runtime_error("nonfinite pure thermal derivatives");
+    HelmholtzDerivatives d;
+    project_pure(d, volume, 1.0, 3, c);
+    scope.probe("gradient", d.gradient);
+    if (scope.diagnostics_on()) scope.probe("hessian", d.hessian);
+    return d;
 }
 
 HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar temperature, WiderScalar volume,

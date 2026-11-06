@@ -515,6 +515,7 @@ private:
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
+    HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,
         double volume,

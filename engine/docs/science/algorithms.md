@@ -333,6 +333,24 @@ T, V and active-parameter Hessian columns. Uncaptured and ordinary Core capture
 omit unused composition columns. Diagnostic capture retains the complete Hessian
 payload; only complete Hessian evaluations emit the `hessian` trace event.
 
+For one neutral, nonassociating component with exactly unit mole fraction and
+fixed parameters, State obtains
+its residual gradient and Hessian from the shared volume-series owner. Three
+scaled linear directions, T, V and T+V, give E, E_T, E_V, E_TT, E_TV and E_VV
+by algebraically exact second-order polarization, subject to floating-point
+rounding. Euler homogeneity supplies E_n=(E-V E_V)/n,
+E_Tn=(E_T-V E_TV)/n, E_Vn=-V E_VV/n and E_nn=V² E_VV/n².
+Temperature-dependent geometry and pair laws carry the Taylor temperature.
+The existing State owner assembles all caloric and response quantities from
+these entries. Mixtures, thermal association, ideal-only declarations and
+active parameter columns retain the taped calculation; higher-order actions
+retain their existing derivative owners. The thermal chart also retains the
+tape when the shared hard-sphere zeta_2 cubed product is below the smallest
+normal scalar value, or volume squared is unrepresentable; these arithmetic
+limits preserve relative dilute caloric coefficients without a density cutoff.
+Fixed-T pure requests use the same
+Euler projection without computing thermal entries.
+
 Density closure evaluates normalized Taylor coefficients of the shared residual
 Helmholtz equations in volume at fixed temperature and composition. Order two
 supplies pressure and slope; order three adds pressure curvature. Association

@@ -2219,7 +2219,7 @@ J=\begin{pmatrix}K_L-F_P&-rK_V\\K_L&-K_V\end{pmatrix},\qquad
 E(v+t)=c_0+c_1t+c_2t^2+\cdots,\quad
 P=RT(\rho-c_1),\quad M=u+c_0-vc_1,\quad K=1+2c_2/\rho^2,
 \\
-E_n=(E-VE_V)/n,\quad E_{Vn}=-VE_{VV}/n,\quad E_{nn}=V^2E_{VV}/n^2.
+E_n=(E-VE_V)/n,\quad E_{Tn}=(E_T-VE_{TV})/n,\quad E_{Vn}=-VE_{VV}/n,\quad E_{nn}=V^2E_{VV}/n^2.
 $$
 
 ## `residual_enthalpy`

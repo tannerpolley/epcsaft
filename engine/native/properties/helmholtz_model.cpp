@@ -2301,8 +2301,16 @@ State HelmholtzModel::state(
     validate_composition(mole_fractions);
     require_molar_density(molar_density);
     const double volume = 1.0 / molar_density;
-    const auto derivatives = evaluate(temperature, volume, mole_fractions,
-        scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
+    const auto derivatives = [&] {
+        if (parameters_.component_count() == 1 && mole_fractions[0] == 1.0 && !parameters_.ideal_gas
+            && parameters_.charge_number[0] == 0.0 && parameters_.site_component.empty() && active_.empty()) {
+            validate_point(temperature, volume, mole_fractions);
+            require_law_domain(temperature, parameters_);
+            return pure_state_derivatives(temperature, volume);
+        }
+        return evaluate(temperature, volume, mole_fractions,
+            scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
+    }();
     const auto& sites = derivatives.site_fractions;
     const auto [electro, terms] = [&] {
         core::Scope scope("state_residual_recompute"), evaluation("evaluate");
