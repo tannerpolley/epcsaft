@@ -2234,7 +2234,10 @@ G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
 + D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
 (E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
 owner; it also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
-power-of-two diagonals (column maxima, then row maxima) and factorised; each
+power-of-two diagonals (column maxima, then row maxima) and factorised.
+The first-sensitivity solve and rank inspection use this same equilibration and
+relative pivot threshold. First sensitivities solve $A z = -R F_\theta v$ and
+return $y = C z$, retaining the backward-error check in the original equations; each
 coefficient solves A z_k = R b_k, is refined once with the defect R b_k - A z_k
 accumulated in double-double (FMA TwoProduct and TwoSum, the compensated dot
 product Dot2 of Ogita, Rump and Oishi, 2005: as accurate as twice the working

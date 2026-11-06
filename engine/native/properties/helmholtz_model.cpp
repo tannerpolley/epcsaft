@@ -136,10 +136,13 @@ void require(bool condition, const char* field) {
     }
 }
 
-// Each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
+// Pair constants and each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
 void require_law_domain(double T, const Parameters& parameters) {
     const auto laws = temperature_law_values(T, parameters);
     const std::size_t sites = parameters.site_component.size(), components = parameters.segment_count.size();
+    for (std::size_t i = 0; i < components; ++i)
+        for (std::size_t j = i + 1; j < components; ++j)
+            (void)pair_correction(T, parameters, laws, TemperatureLaw::Lij, i, j);
     for (const auto& [kind, slot, law] : parameters.temperature_law_slot)  // kinds 3, 4 own site-pair slots
         temperature_law_value(T, parameters, laws, TemperatureLaw(kind), slot, kind > 2 ? sites : components);
 }
@@ -165,6 +168,11 @@ Jet jet_multiply(const Jet& left, const Jet& right) {
         }
     }
     return result;
+}
+// EqID: residual_enthalpy; residual internal energy plus the residual pressure-volume term.
+Jet residual_enthalpy(const Jet& internal, const Jet& temperature, const Jet& volume, const Jet& phi_v) {
+    return jet_add(internal, jet_scale(jet_multiply(jet_multiply(temperature, volume), phi_v),
+        -GAS_CONSTANT_J_PER_MOL_K));
 }
 Jet jet_inverse(const Jet& value) {
     if (value.empty() || !std::isfinite(value.front()) || value.front() == 0.0)
@@ -389,8 +397,7 @@ PropertyJets property_jets(
         internal = jet_scale(jet_multiply(temperature_square, phi_t), -gas_constant);
     }
     if (u) result.residual[1] = internal;
-    if (h) result.residual[0] = jet_add(internal, jet_scale(
-        jet_multiply(jet_multiply(temperature, volume), phi_v), -gas_constant));
+    if (h) result.residual[0] = residual_enthalpy(internal, temperature, volume, phi_v);
     if (s) result.residual[2] = jet_scale(jet_add(
         phi, jet_multiply(temperature, phi_t)), -gas_constant);
     if (cv || cp) result.residual[4] = jet_scale(jet_add(
@@ -2351,8 +2358,8 @@ State HelmholtzModel::state(
     // EqID: residual_internal_energy
     result.residual_internal_energy = -GAS_CONSTANT_J_PER_MOL_K * temperature * temperature * phi_t;
     // EqID: residual_enthalpy
-    result.residual_enthalpy = GAS_CONSTANT_J_PER_MOL_K * temperature
-        * (-temperature * phi_t + z - 1.0);
+    result.residual_enthalpy = residual_enthalpy(
+        {result.residual_internal_energy}, {temperature}, {volume}, {phi_v}).front();
     // EqID: residual_heat_capacity_cv
     result.residual_isochoric_heat_capacity = GAS_CONSTANT_J_PER_MOL_K * cv_over_r;
     if (std::isfinite(dpressure_drho) && dpressure_drho > 0.0) {

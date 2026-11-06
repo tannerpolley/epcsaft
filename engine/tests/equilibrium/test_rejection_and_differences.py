@@ -6,11 +6,11 @@ import pytest
 
 from epcsaft import (
     DensityActionDirection, Mixture, ParameterError, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop,
-    ThermochemistryPacket,
+    ThermochemistryPacket, _core,
 )
 from epcsaft._core import EquilibriumResult, EquilibriumStart, EquilibriumWorkLimits, StabilityReport
 from epcsaft.equilibrium import (
-    Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
+    Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
     compile_problem, equilibrium_numerical_estimates, jacobian_table, solve_equilibrium, solve_equilibrium_starts,
     solved_state_difference,
 )
@@ -70,7 +70,7 @@ def test_recoverable_flash_keeps_recovery() -> None:
     result = solve_equilibrium(methane_ethane(), problem)
     report = result.recovery_stability
     assert report is not None and result.success and any(t.resolved_descent for t in report.trials)
-    assert list(result.amounts) == [0.08578566729375602, 0.914214332706244]  # before #987, 71 / 144 / 92 work
+    assert list(result.amounts) == [0.08578566729375332, 0.9142143327062465]  # equilibrated tangent; 71 / 144 / 92 recovery work
     assert work(result) == tuple(a + b for a, b in zip((71, 144, 92), charged(report)))
 
 
@@ -151,6 +151,18 @@ def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
     assert estimate.cause == "" and estimate.rank == estimate.dimension
     assert all(e.available and e.resolved and math.isfinite(e.absolute) for e in (estimate.pressure, *estimate.densities))
     assert result.pressure is not None and estimate.pressure.absolute <= 1e-11 * result.pressure
+    compiled = compile_problem(model, model.saturation(150.0))
+    tangent = _core.sensitivity(compiled, result.coordinates, [1.0, 0.0, 0.0])
+    pressure_index = compiled.coordinate_labels().index("P / Pa")
+    request = SolvedStateActionRequest([SolvedStateObservable(SolvedStateObservableKind.Pressure, 0, 0)],
+                                       [SolvedStateActionDirection(1.0, 0.0, [0.0], [])])
+    action = _core.solved_state_actions(compiled, result, request)
+    assert action.diagnostics.rank == estimate.rank
+    derivative = action.results[0].action
+    assert derivative is not None
+    assert tangent[pressure_index] == pytest.approx(derivative, rel=1e-10, abs=0.0)
+    [check] = solved_state_difference(compiled, result, request.observables, request.directions[0], 0.001, 1e-6, 10.0)
+    assert check.status == "passed"
     problem = model.saturation(300.0)
     state, compiled = solve_equilibrium(model, problem), compile_problem(model, problem)
     k = compiled.coordinate_labels().index("P / Pa")

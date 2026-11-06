@@ -179,6 +179,24 @@ void residual_properties_and_caloric_ladders() {
         }
     }
 
+    const epcsaft::HelmholtzModel ethane(properties_support::ethane());
+    for (double rho : {1e-3, 1e-6, 1e-9, 1e-12, 1e-15, 1e-20, 1e-50, 1e-100}) {
+        const auto state = ethane.state(300, rho, {1});
+        const auto derivatives = ethane.evaluate(300, 1 / rho, {1}, epcsaft::DerivativeOrder::Hessian);
+        const double reference = gas_constant * 300 * (-300 * derivatives.gradient[0] - derivatives.gradient[1] / rho);
+        const auto inputs = model_inputs(ethane.parameters(), 300, 1 / rho, {1});
+        recording_support::compare(("dilute-enthalpy/" + recording_support::number(rho)).c_str(),
+            "residual_enthalpy", "J/mol", state.residual_enthalpy, reference, inputs,
+            "Identity", "residual_enthalpy", "direct residual identity retains the dilute term", "reference_scale", 0,
+            1e-10, std::abs(state.residual_enthalpy / reference - 1) <= 1e-10, "p1-dilute-enthalpy");
+    }
+
+    for (double rho : {1e-12, 1e-15}) {
+        const auto state = ethane.state(300, rho, {1});
+        const auto action = ethane.density_actions(300, rho, {1}, {epcsaft::PropertyObservable::ResidualEnthalpy}, {{1, 0, {0}, {}}});
+        CHECK(action.results[0].value && std::abs(*action.results[0].value / state.residual_enthalpy - 1) <= 1e-10);
+    }
+
     epcsaft::HelmholtzModel dilute_model(properties_support::neutral_binary());
     const std::vector<double> dilute_composition = {0.4, 0.6};
     const std::array<double, 4> dilute_densities = {10.0, 1.0, 0.1, 0.01};
