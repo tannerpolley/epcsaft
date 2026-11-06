@@ -832,7 +832,50 @@ void unreactive() {
 }
 #endif
 
+inline void partial_ion_records() {
+    // A+ = C+, with B- unconstrained: (0,0,f(T)) changes neutral H and S.
+    auto parameters = properties_support::neutral_ternary();
+    parameters.charge_number = {1, 1, -1};
+    parameters.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    parameters.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    parameters.permittivity_form = PermittivityForm::ComponentMixing;
+    parameters.relative_permittivity = {78, 78, 78};
+    parameters.packing_diameter_angstrom = {2.5, 2.5, 2.5};
+    parameters.debye_huckel_diameter_angstrom = {2.5, 2.5, 2.5};
+    auto problem = equilibrium_support::flash(3);
+    problem.feed.values = {1, 1, 2};
+    problem.reactions = {{"A+=C+", {-1, 1, 0}, 1.0, std::nullopt, std::nullopt, std::nullopt}};
+    ThermochemistryRecord records;
+    records.standard_pressure = 1e5;
+    records.component_intervals.resize(3);
+    records.component_intervals[0] = {{200, 400, true, true,
+        {IdealPolynomial{{30}, 298.15, 100, 10}, 1e5}}};
+    records.component_intervals[1] = records.component_intervals[0];
+    for (bool complete : {false, true}) {
+        if (complete) records.component_intervals[2] = records.component_intervals[0];
+        HelmholtzModel model(parameters, {}, records);
+        const auto compiled = compile_problem(model, problem);
+        const auto ref = reference_calorics(compiled, 298.15, 1e5, true, false, false, 2);
+        std::printf("partial-ion-records complete=%d status=%d reason=%s\n", complete, int(ref.status), ref.message.c_str());
+        if (!complete) {
+            CHECK(ref.status == SolvedStateActionStatus::ReferenceUnavailable);
+            CHECK(ref.message.find("undetermined neutral calorics") != std::string::npos);
+        } else {
+            CHECK(ref.status == SolvedStateActionStatus::Available);
+            double H = 0, S = 0;
+            for (std::size_t i = 0; i < 3; ++i) {
+                H += problem.feed.values[i] * (column(ref, 0, 0, i) - 298.15 * column(ref, 1, 0, i) + R * 298.15);
+                S += problem.feed.values[i] * (-column(ref, 1, 0, i) + R * (1 + std::log(R * 298.15 / 1e5)));
+            }
+            std::printf("partial-ion-records H_J=%.17g S_J_per_K=%.17g\n", H, S);
+            CHECK(std::abs(H - 400) <= 400e-12);
+            CHECK(std::abs(S - 40) <= 40e-12);
+        }
+    }
+}
+
 inline void dependency_checks() {
+    partial_ion_records();
     auto c = input(false, true);
     HelmholtzModel model(c.parameters, c.active, c.records);
     const auto compiled = compile_problem(model, c.problem);

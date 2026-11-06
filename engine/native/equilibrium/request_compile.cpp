@@ -1063,6 +1063,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         return refuse(SolvedStateActionStatus::MissingThermochemistry,
                       "reference calorics need record anchors");
     std::vector<std::size_t> derived;
+    bool supplied_ion = false;
     std::vector<AD> T = {temperature}, output;
     std::vector<std::optional<IdealCorrelation>> selected(components);
     for (std::size_t i = 0; i < components; ++i) {
@@ -1077,6 +1078,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
             return refuse(SolvedStateActionStatus::OutsideInterval, "record excludes temperature");
         result.thermal_boundary |= temperature == found->lower || temperature == found->upper;
         selected[i] = found->correlation;
+        supplied_ion |= model.parameters().charge_number[i] != 0.0;
     }
     // One exact correlation tape supplies record g_rho and reaction source g through the consumed order.
     CppAD::Independent(T);
@@ -1131,10 +1133,10 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         derived.empty() ? Eigen::Index(0) : Eigen::Index(derived.size()) - decomposition.rank();
     if (nullity > 1 ||
         (nullity == 1 &&
-         (charge.norm() == 0.0 ||
+         (supplied_ion || charge.norm() == 0.0 ||
           (matrix * charge).norm() > std::sqrt(std::numeric_limits<double>::epsilon()) * charge.norm())))
         return refuse(SolvedStateActionStatus::ReferenceUnavailable,
-                      "record-less calorics undetermined beyond charge gauge; rank " + std::to_string(decomposition.rank())
+                      "undetermined neutral calorics: record-less freedom exceeds full charge gauge; rank " + std::to_string(decomposition.rank())
                       + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold()));
     result.reaction_map.assign(rows, std::vector<double>(components, 0.0));
     for (std::size_t r = 0; r < rows; ++r) {

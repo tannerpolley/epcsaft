@@ -2606,7 +2606,12 @@ individual column admission is not a bound on an ill-conditioned quotient.
 
 A missing column refuses only the outputs and action directions consuming it,
 with its derivative, reaction, coordinate and original cause retained. Supplied
-records must be consistent with each consumed reaction derivative. A source
+records must be consistent with each consumed reaction derivative. Embed the
+record-less null space with zeros on supplied species and require it to lie in
+the full charge span (EqID: `reference_species_calorics`). Any supplied ion
+fixes that gauge, requiring full column rank of the record-less block; otherwise
+only a single charge-proportional null direction is admissible. Refuse any
+remaining freedom as undetermined neutral calorics. A source
 motion must lie in the range of the record-less-species stoichiometric system;
 check the combined direction, not each unit coordinate in isolation. Never
 silently project an incompatible source motion into a least-squares caloric

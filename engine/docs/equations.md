@@ -2646,14 +2646,14 @@ $$
 - Section: Reference thermochemistry / Declared derivations
 - Status: Exact derivation
 - Source: Gibbs-Helmholtz and Gibbs derivatives, using standard_pressure_density_conversion and the anchored Gibbs construction
-- Description: Supplied species records anchor density-standard Gibbs energy, enthalpy and entropy. Record-less species and every consumed derivative are completed through the same stoichiometric system. Its remaining null space must be the charge gauge, which cancels in electroneutral phases and neutral directions. The chemical rows' minimum-norm representative preserves affinities but cannot replace these caloric anchors.
+- Description: Supplied species records anchor density-standard Gibbs energy, enthalpy and entropy. Record-less species and every consumed derivative are completed through the same stoichiometric system. Its remaining null space, embedded into the full species vector with zeros on supplied-record coordinates, must lie in the full charge span, which cancels in electroneutral phases and neutral directions. The chemical rows' minimum-norm representative preserves affinities but cannot replace these caloric anchors.
 - Change note: The completion checks consistency with supplied records on the selected smooth interval. Each raw derivative retains its own admission status. The bounded reference inventory is T/P order at most four and T/P order at most three with one EOS-coordinate derivative. Source coefficients are evaluated at the path temperature. Missing anchors, an undetermined neutral combination, or a singular chart cannot be supplied by a gauge. Numerical availability is qualified by the retained notebook, not by this equation definition.
 
 $$
 g_{\rho,i}^{\circ}=h_{P,i}^{\circ}-T s_{P,i}^{\circ}
  +RT\ln\frac{RT\rho_0}{P_0}\quad(i\in S),\qquad \rho_0=1\ \mathrm{mol/m^3},\\
 \boldsymbol\nu_D\mathbf f_D^{\circ}=\Delta_r\mathbf f_\rho-\boldsymbol\nu_S\mathbf f_S^{\circ},
-\qquad\mathcal N(\boldsymbol\nu_D)\subseteq\operatorname{span}(\mathbf z_D),\\
+\qquad\mathbf E_D\mathcal N(\boldsymbol\nu_D)\subseteq\operatorname{span}(\mathbf z),\\
 L=\ln K_\rho=\ln K_{src}+A+C,\qquad
 \Delta_r g_\rho=-RTL,\quad\Delta_r h_\rho=RT^2L_T,\quad
 \Delta_r s_\rho=R(L+TL_T),\quad\Delta_r c_{p,\rho}=R(2TL_T+T^2L_{TT}),\\
@@ -2661,6 +2661,12 @@ h=\sum_i x_i(g_{\rho,i}^{\circ}-Tg_{\rho,i,T}^{\circ}+RT)+h^{res},\\
 s=\sum_i x_i\left[-g_{\rho,i,T}^{\circ}+R-R\ln\frac{x_i\rho}{\rho_0}\right]+s_{TV}^{res},
 \qquad c_p=\sum_i x_i(-Tg_{\rho,i,TT}^{\circ}+R)+c_p^{res}.
 $$
+
+Here $\mathbf E_D$ embeds record-less coordinates into the full species vector,
+with zeros on supplied coordinates. A supplied ionic record fixes the global
+charge gauge, so $\boldsymbol\nu_D$ must then have full column rank. When all
+supplied species are neutral, a one-dimensional null space proportional to
+$\mathbf z_D$ remains admissible.
 
 For a raw T/P derivative of a reaction reference, all lower product terms remain:
 
