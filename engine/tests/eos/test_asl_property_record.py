@@ -3,12 +3,15 @@ exports. The callback equals the native pressure actions bitwise (value, T/P gra
 from __future__ import annotations
 
 import csv
+import os
+import shutil
+import subprocess
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
 import pytest
-from pyomo.environ import ExternalFunction  # type: ignore[import-untyped]
+from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective, Var  # type: ignore[import-untyped]
 
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
@@ -139,3 +142,26 @@ def test_every_thermochemistry_form_exports(form: Any) -> None:
                  thermochemistry=record(form, upper=450.0))
     assert all((model.state(T, P=1.0e3, phase="vapor").ideal_isobaric_heat_capacity or 0.0) > 0.0 for T in (250.0, 350.0, 450.0))
     assert_callback_equals_native(model)
+
+
+def test_external_ampl_caller_exits_normally(tmp_path: Path) -> None:
+    """The external AMPL solver unloads its library before its thread-exit notifications."""
+    executable = shutil.which("ipopt") or str(Path.home() / ".idaes/bin/ipopt")
+    if not Path(executable).is_file():
+        pytest.skip("external AMPL Ipopt executable unavailable")
+    model = Pure(Parameters.from_json(parameters_json("gross-2001-propane", 3), components=["propane"]))
+    problem = ConcreteModel()
+    problem.pressure = Var(initialize=1.0e6, bounds=(0.9e6, 1.1e6))
+    problem.fixed_pressure = Constraint(expr=problem.pressure == 1.0e6)
+    library = str(Path(_core.__file__).with_name("libepcsaft_asl.so"))
+    problem.density = ExternalFunction(library=library,
+                                      function="epcsaft_pressure_property")
+    problem.objective = Objective(expr=problem.density(300.0, problem.pressure, 1.0,
+                                                         property_asl_record(model), "0", "1"))
+    problem.write(str(tmp_path / "pressure.nl"), format="nl")
+    (tmp_path / "ipopt.opt").write_text("linear_solver mumps\n")
+    result = subprocess.run([executable, "pressure.nl", "-AMPL"], cwd=tmp_path, env={**os.environ, "AMPLFUNC": library},
+                            capture_output=True, text=True, check=False)
+    assert result.returncode == 0, result.stdout + result.stderr
+    solution = (tmp_path / "pressure.sol").read_text()
+    assert "Optimal Solution Found" in solution

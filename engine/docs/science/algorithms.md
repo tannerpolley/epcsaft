@@ -310,6 +310,12 @@ row anchor. The collection retains the complete State or a typed exception
 category, unchanged cause and available convergence records for each row in
 input order. Property columns gather stored values without evaluating again.
 
+CppAD calling slots become reusable only after all thread-local destructors finish.
+The bounded future registry retains its shared states for the process lifetime,
+so an external AMPL host can unload the library before delayed thread-exit
+notifications release their references. Model and tape storage still follows
+same-thread destruction; this retention does not retain evaluated models.
+
 A failed scalar state attempt discards its cached current and previous replay
 tapes after local mutex guards unwind. Each recording site arms its own abort
 guard only after `CppAD::Independent` succeeds and disarms when ADFun takes

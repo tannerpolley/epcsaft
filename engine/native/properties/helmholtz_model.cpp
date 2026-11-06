@@ -29,7 +29,8 @@
 
 namespace {
 std::mutex cppad_slots_mutex;
-std::array<std::future<void>, CPPAD_MAX_NUM_THREADS> cppad_slots;
+// Keep notification states alive when an AMPL host unloads this image before thread exit.
+auto& cppad_slots = *new std::array<std::future<void>, CPPAD_MAX_NUM_THREADS>;
 bool cppad_parallel_enabled = false;
 bool cppad_in_parallel() { return cppad_parallel_enabled; }
 
