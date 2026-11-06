@@ -927,6 +927,7 @@ HelmholtzModel::HelmholtzModel(
 
 // EqID: neutral_virial_coefficients
 VirialCoefficients HelmholtzModel::virial_coefficients(double temperature, const std::vector<double>& composition) const {
+    core::Scope scope("virial_coefficients");
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     validate_composition(composition);
     if (std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
