@@ -24,6 +24,11 @@ namespace epcsaft::detail {
 
 using AD = CppAD::AD<double>;
 
+struct RecordingOwner final {
+    bool active = true;
+    ~RecordingOwner() { if (active) AD::abort_recording(); }
+};
+
 using TapeParameters = ParameterRecord<AD>;
 
 template <class ParameterSet>
@@ -163,6 +168,7 @@ struct HelmholtzTape final {
             independent.insert(independent.end(), site_fractions.begin(), site_fractions.end());
         }
         CppAD::Independent(independent);
+        RecordingOwner recording;
 
         std::vector<AD> amounts(
             independent.begin() + 2,
@@ -228,6 +234,7 @@ struct HelmholtzTape final {
         }
         auto result = std::make_unique<HelmholtzTape>();
         result->function = CppAD::ADFun<double>(independent, dependent);
+        recording.active = false;
         result->function.optimize("no_cumulative_sum_op");
         result->predicates = std::move(predicates);
         result->regular_count = point_size;

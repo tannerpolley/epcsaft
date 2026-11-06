@@ -24,6 +24,22 @@ namespace nb = nanobind;
 
 namespace {
 
+template <class Getter>
+nb::list state_column(const epcsaft::StateBatch& batch, Getter get) {
+    nb::list result;
+    for (const auto& row : batch.rows) result.append(row ? nb::cast(get(*row)) : nb::none());
+    return result;
+}
+template <class Value>
+void state_field(nb::class_<epcsaft::State>& scalar, nb::class_<epcsaft::StateBatch>& batch,
+    const char* name, Value epcsaft::State::*member) {
+    scalar.def_ro(name, member);
+    batch.def_prop_ro(name, [member](const epcsaft::StateBatch& value) {
+        return state_column(value, [member](const epcsaft::State& row) { return row.*member; });
+    });
+}
+#define STATE_FIELD(T, name) state_field(state, batch, #name, &T::name);
+
 // Match scalar __bool__ conversion; containers' __len__ alone is insufficient.
 bool interval_inclusive(nb::handle value) {
     const auto* number = Py_TYPE(value.ptr())->tp_as_number;
@@ -188,12 +204,33 @@ void register_eos(nb::module_& module) {
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
     nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
-    nb::class_<epcsaft::State>(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.")
-        .def_ro("requested_density_branch", &epcsaft::State::requested_density_branch)
-        .def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
+    nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
+        EPCSAFT_VALUES(epcsaft::StateStatus, Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError);
+    nb::class_<epcsaft::StateBatch> batch(module, "StateBatch");
+    batch EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, failure_record)
+        .def_rw("cause", &epcsaft::StateBatch::cause)
+        .def_prop_ro("first_numerical_failure", [](const epcsaft::StateBatch& value) {
+            std::vector<std::optional<epcsaft::core::Convergence>> result;
+            for (std::size_t k = 0; k < value.rows.size(); ++k)
+                result.push_back(value.rows[k] ? value.rows[k]->first_numerical_failure : value.failure_first[k]);
+            return result;
+        });
+    nb::class_<epcsaft::State> state(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.");
+    state.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
         .def_prop_ro("density_branch_mismatch", &epcsaft::State::density_branch_mismatch)
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7)
-        EPCSAFT_READONLY(epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
+        .def_ro("first_numerical_failure", &epcsaft::State::first_numerical_failure)
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7);
+    state_field(state, batch, "requested_density_branch", &epcsaft::State::requested_density_branch);
+    batch.def_prop_ro("returned_density_branch", [](const epcsaft::StateBatch& v) {
+        return state_column(v, [](const epcsaft::State& r) { return r.returned_density_branch(); });
+    }).def_prop_ro("density_branch_mismatch", [](const epcsaft::StateBatch& v) {
+        return state_column(v, [](const epcsaft::State& r) { return r.density_branch_mismatch(); });
+    }).def_prop_ro("solver_options", [](const epcsaft::StateBatch& v) {
+        nb::list result;
+        for (const auto& row : v.rows) result.append(row ? epcsaft::bindings::solver_options_view(row->solver_options, 7) : nb::none());
+        return result;
+    });
+        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
             // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
             residual_chemical_potential_over_rt, component_property_status,
@@ -202,12 +239,12 @@ void register_eos(nb::module_& module) {
             ideal_internal_energy, ideal_entropy, ideal_isobaric_heat_capacity, ideal_isochoric_heat_capacity,
             total_enthalpy, total_internal_energy, total_entropy, total_isobaric_heat_capacity,
             total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions,
-            density_convergence, first_numerical_failure, thermochemistry_status,
+            density_convergence, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
             density_branch, stable_root_count)
-        EPCSAFT_READONLY(epcsaft::State, rank_records, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
+        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, rank_records, isothermal_compressibility, isobaric_expansivity, heat_capacity_ratio,
             isentropic_compressibility, speed_of_sound, joule_thomson_coefficient, partial_molar_volume,
-            partial_molar_enthalpy, partial_molar_entropy);
+            partial_molar_enthalpy, partial_molar_entropy)
     nb::class_<epcsaft::DensityDiagnosticPoint>(module, "DensityDiagnosticPoint")
         EPCSAFT_READONLY(epcsaft::DensityDiagnosticPoint, molar_density, packing_fraction, pressure,
             pressure_density_derivative, lower, upper, residual, mechanical_sign, linked, declared, cause, stop);
@@ -218,7 +255,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
             evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop, first_numerical_failure);
     nb::class_<epcsaft::SweepCounters>(module, "SweepCounters")
-        EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings);
+        EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings, directional_paths, maximum_energy_order);
     nb::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
         .def("__init__", [](epcsaft::HelmholtzModel* self, epcsaft::Parameters p, std::vector<epcsaft::ActiveParameter> a,
                          std::optional<epcsaft::ThermochemistryRecord> t, nb::object options) {
@@ -235,6 +272,7 @@ void register_eos(nb::module_& module) {
             return model.state(temperature, molar_density, composition, derived_properties);
         }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"),
              nb::arg("derived_properties") = false)
+        .def("states", &epcsaft::HelmholtzModel::states)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
                                     double temperature, double molar_density,

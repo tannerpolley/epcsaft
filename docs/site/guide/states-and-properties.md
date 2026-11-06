@@ -89,3 +89,36 @@ compressibilities when requested and available. Partial molar volume, enthalpy
 and entropy are also available through the property interfaces. Ideal and total
 calorics require caller-supplied ideal-gas thermochemistry; residual calorics do
 not. Inspect each result's availability before using it.
+
+## Arrays of independent states
+
+`Mixture.states` and `Pure.states` evaluate declared rows sequentially in one
+native call. Temperature is a one-dimensional sequence in K. Specify exactly
+one of `rho` (mol/m³) and `P` (Pa), either a shared scalar or one value per row.
+Composition is a shared component-order vector, a shared name mapping, or a
+matrix with one component-order vector per row. A mixture requires composition;
+a pure fluid can omit it. There is no Cartesian product or implicit continuation.
+
+```python
+result = mixture.states([280.0, 300.0], rho=200.0, x=[0.4, 0.6])
+pressures = result.pressure  # Pa, one list entry per declared row
+```
+
+Each property column has the same name and units as on `State`. Columns are
+ordinary Python lists, assembled from stored native states when read. Component
+and association-site lists preserve their scalar ordering. `rows` contains the
+stored `State` or `None`; `status` and `cause` explain a failed row. A failed row
+has `None` in every property column. Missing ideal calorics, absent charged
+insertions and unrequested derived properties retain the scalar `None` values
+and diagnostics without discarding valid residual properties. Set
+`derived_properties=True` to request the same derived outputs as scalar `state`.
+
+A shared `phase` selects the pressure-density branch using the scalar rules.
+Every pressure row starts without an anchor; previous rows never initialize a
+later density solve. Density declarations retain the scalar behavior for phase.
+A failed physical row leaves other rows available. Structural errors, such as
+array lengths or composition widths that disagree, reject the declaration.
+`failure_record` and `first_numerical_failure` retain available native failure
+evidence. `DomainError` identifies a scalar domain refusal (Python `ValueError`),
+including nonfinite ideal-gas density closure. A returned homogeneous state does
+not establish global phase stability. No speed advantage is implied by batching.

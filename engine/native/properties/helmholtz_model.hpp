@@ -244,6 +244,14 @@ struct State final {
     std::vector<core::NumericalRank> rank_records;
 };
 
+enum class StateStatus { Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError };
+struct StateBatch final {
+    std::vector<std::optional<State>> rows;
+    std::vector<StateStatus> status;
+    std::vector<std::string> cause;
+    std::vector<std::optional<core::Convergence>> failure_record, failure_first;
+};
+
 EPC_API std::optional<std::array<double, 2>> superancillary_densities(const class HelmholtzModel&, double temperature);
 
 struct DensityRoot final {
@@ -422,6 +430,9 @@ public:
         NeutralProperty property,
         DerivativeOrder order
     ) const;
+    EPC_API StateBatch states(const std::vector<double>& temperature, const std::vector<double>& input,
+        const std::vector<std::vector<double>>& composition, bool at_pressure, DensityBranch branch,
+        bool derived_properties = false) const;
     EPC_API State state(
         double temperature,
         double molar_density,
@@ -515,6 +526,7 @@ private:
     Parameters parameters_;
     std::vector<ActiveParameter> active_;
     std::optional<ThermochemistryRecord> thermochemistry_;
+    void reset_state_tapes() const;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> reference_tape_;

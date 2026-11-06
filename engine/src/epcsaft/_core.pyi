@@ -1528,6 +1528,8 @@ class DensityDiagnostics:
     """Earliest observed site or density refusal during this search."""
 
 class SweepCounters:
+    directional_paths: int
+    maximum_energy_order: int
     """Cumulative derivative work counts for a HelmholtzModel."""
     forward: int
     """Number of forward derivative sweeps."""
@@ -1537,6 +1539,75 @@ class SweepCounters:
     """Number of Hessian evaluations."""
     recordings: int
     """Number of automatic-differentiation recordings."""
+
+class StateStatus:
+    """Availability or scalar exception category for a declared state row."""
+    Available: StateStatus
+    ParameterError: StateStatus
+    DeclarationError: StateStatus
+    ConvergenceError: StateStatus
+    DensityStructureError: StateStatus
+    EosError: StateStatus
+    DomainError: StateStatus
+
+class StateBatch:
+    """Ordered State rows and property columns, with scalar SI units and availability."""
+    rows: list[Optional[State]]
+    status: list[StateStatus]
+    cause: list[str]
+    failure_record: list[Optional[Convergence]]
+    rank_records: list[Optional[list[NumericalRank]]]
+    solver_options: list[Optional[list[dict[str, Any]]]]
+    hard_chain: list[Optional[float]]
+    dispersion: list[Optional[float]]
+    association: list[Optional[float]]
+    debye_huckel: list[Optional[float]]
+    born: list[Optional[float]]
+    cation_mixing: list[Optional[float]]
+    dipolar: list[Optional[float]]
+    bulk_relative_permittivity: list[Optional[float]]
+    residual_helmholtz: list[Optional[float]]
+    compressibility_factor: list[Optional[float]]
+    pressure: list[Optional[float]]
+    residual_chemical_potential_over_rt: list[Optional[list[Optional[float]]]]
+    log_fugacity_coefficient: list[Optional[Optional[list[Optional[float]]]]]
+    component_property_status: list[Optional[list[PropertyActionStatus]]]
+    log_fugacity_parameter_derivative: list[Optional[list[Optional[float]]]]
+    residual_entropy: list[Optional[float]]
+    residual_internal_energy: list[Optional[float]]
+    residual_enthalpy: list[Optional[float]]
+    residual_isochoric_heat_capacity: list[Optional[float]]
+    residual_isobaric_heat_capacity: list[Optional[Optional[float]]]
+    ideal_enthalpy: list[Optional[Optional[float]]]
+    ideal_internal_energy: list[Optional[Optional[float]]]
+    ideal_entropy: list[Optional[Optional[float]]]
+    ideal_isobaric_heat_capacity: list[Optional[Optional[float]]]
+    ideal_isochoric_heat_capacity: list[Optional[Optional[float]]]
+    total_enthalpy: list[Optional[Optional[float]]]
+    total_internal_energy: list[Optional[Optional[float]]]
+    total_entropy: list[Optional[Optional[float]]]
+    total_isobaric_heat_capacity: list[Optional[Optional[float]]]
+    total_isochoric_heat_capacity: list[Optional[Optional[float]]]
+    molar_density: list[Optional[float]]
+    pressure_density_derivative: list[Optional[float]]
+    site_fractions: list[Optional[list[float]]]
+    density_convergence: list[Optional[Optional[Convergence]]]
+    thermochemistry_status: list[Optional[ThermochemistryStatus]]
+    density_branch: list[Optional[DensityBranch]]
+    requested_density_branch: list[Optional[DensityBranch]]
+    returned_density_branch: list[Optional[DensityBranch]]
+    density_branch_mismatch: list[Optional[bool]]
+    stable_root_count: list[Optional[Optional[int]]]
+    isothermal_compressibility: list[Optional[Optional[float]]]
+    isobaric_expansivity: list[Optional[Optional[float]]]
+    heat_capacity_ratio: list[Optional[Optional[float]]]
+    isentropic_compressibility: list[Optional[Optional[float]]]
+    speed_of_sound: list[Optional[Optional[float]]]
+    joule_thomson_coefficient: list[Optional[Optional[float]]]
+    partial_molar_volume: list[Optional[Optional[list[Optional[float]]]]]
+    partial_molar_enthalpy: list[Optional[Optional[list[Optional[float]]]]]
+    partial_molar_entropy: list[Optional[Optional[list[Optional[float]]]]]
+    first_numerical_failure: list[Optional[Optional[Convergence]]]
 
 class HelmholtzModel:
     """Native Helmholtz EOS, exact actions and pressure closure.
@@ -1570,6 +1641,7 @@ class HelmholtzModel:
             None.
         """
         ...
+    def states(self, temperature: Sequence[float], input: Sequence[float], composition: Sequence[Sequence[float]], at_pressure: bool, branch: DensityBranch, derived_properties: bool) -> StateBatch: ...
     def state(self, temperature: float, molar_density: float, mole_fractions: Sequence[float],
               derived_properties: bool = False) -> State:
         """Evaluate one homogeneous state on the density chart.

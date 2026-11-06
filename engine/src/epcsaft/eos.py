@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from .equilibrium import Problem
 
 State = _core.State
+StateBatch = _core.StateBatch
+StateStatus = _core.StateStatus
 VirialCoefficients = _core.VirialCoefficients
 IdealPolynomial = _core.IdealPolynomial
 IdealShomate = _core.IdealShomate
@@ -215,10 +217,72 @@ class Mixture:
         try:
             yield
         except EosError as error:
-            if "association Jacobian is singular" in str(error):
-                sites = ", ".join(f"{component}/{site}" for component, site in self.site_ids)
-                error.args = (f"{error}; declared association sites: {sites}",)
+            error.args = (self._association_message(str(error)),)
             raise
+
+    def _association_message(self, message: str) -> str:
+        if "association Jacobian is singular" in message:
+            sites = ", ".join(f"{component}/{site}" for component, site in self.site_ids)
+            return f"{message}; declared association sites: {sites}"
+        return message
+
+    def states(
+        self, T: Sequence[float], *, rho: float | Sequence[float] | None = None,
+        P: float | Sequence[float] | None = None,
+        x: Sequence[float] | Mapping[str, float] | Sequence[Sequence[float]] | None = None,
+        phase: str | None = None, derived_properties: bool | None = None,
+    ) -> StateBatch:
+        """Evaluate independent homogeneous states in one native call.
+
+        Parameters
+        ----------
+        T : sequence of float
+            Row-aligned absolute temperatures in K.
+        rho : float or sequence of float, optional
+            Shared or row-aligned molar density in mol/m³. Specify rho or P.
+        P : float or sequence of float, optional
+            Shared or row-aligned pressure in Pa. Specify rho or P.
+        x : sequence or mapping, optional
+            Shared mole fractions or an N-by-C component-order matrix.
+            Pure defaults to (1,); a mixture requires composition.
+        phase : {'liquid', 'vapor', None}, optional
+            Shared pressure-density branch, with no preceding-row anchor.
+        derived_properties : bool, optional
+            Request the scalar derived properties on every row.
+
+        Returns
+        -------
+        StateBatch
+            Ordered stored States, property list columns in scalar SI units,
+            and per-row exception categories, causes and numerical records.
+            Failed rows have None values; optional outputs retain scalar availability.
+
+        Raises
+        ------
+        ParameterError
+            Structural inputs disagree, composition is missing, or phase is unknown.
+        TypeError
+            Numeric arrays cannot be converted to the declared shapes.
+
+        Notes
+        -----
+        Physical refusals affect only their row. There is no implicit
+        continuation or global phase-stability claim.
+        """
+        if (rho is None) == (P is None):
+            raise ParameterError("exactly one of rho or P is required")
+        branch = _branch(phase)
+        value = rho if rho is not None else P
+        values = cast(Sequence[float], value) if hasattr(value, "__iter__") else (cast(float, value),)
+        if hasattr(value, "__iter__") and len(values) != len(T):
+            raise ParameterError("invalid state input array length")
+        matrix = x is not None and not isinstance(x, Mapping) and len(x) > 0 and hasattr(x[0], "__iter__")
+        if matrix and len(cast(Sequence[Sequence[float]], x)) != len(T):
+            raise ParameterError("invalid composition array length")
+        composition = cast(Sequence[Sequence[float]], x) if matrix else (self._composition(cast(Any, x)),)
+        result = self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
+        result.cause = [self._association_message(message) for message in result.cause]
+        return result
 
     def virial_coefficients(self, T: float, x: Mapping[str, float] | Sequence[float] | None = None) -> VirialCoefficients:
         """Return exact neutral-model B (m³/mol) and C (m⁶/mol²) at T in K.

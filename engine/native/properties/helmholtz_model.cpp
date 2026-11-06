@@ -2252,12 +2252,49 @@ NeutralPropertyDerivatives HelmholtzModel::neutral_property(
     return result;
 }
 
+void HelmholtzModel::reset_state_tapes() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    tape_.reset(); previous_tape_.reset();
+}
+
+StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const std::vector<double>& input,
+    const std::vector<std::vector<double>>& composition, bool at_pressure, DensityBranch branch, bool derived) const {
+    core::Scope scope("states");
+    const auto count = temperature.size();
+    require(input.size() == 1 || input.size() == count, "state input array length");
+    require(composition.size() == 1 || composition.size() == count, "composition array length");
+    for (const auto& row : composition) require(row.size() == parameters_.component_count(), "composition row width");
+    StateBatch result;
+    result.rows.resize(count); result.status.resize(count, StateStatus::Available); result.cause.resize(count);
+    result.failure_record.resize(count); result.failure_first.resize(count);
+    for (std::size_t k = 0; k < count; ++k) {
+        const auto fail = [&](StateStatus status, const std::exception& error,
+            std::optional<core::Convergence> record = {}, std::optional<core::Convergence> first = {}) {
+            result.status[k] = status; result.cause[k] = error.what();
+            result.failure_record[k] = std::move(record); result.failure_first[k] = std::move(first);
+        };
+        try {
+            const auto& x = composition[composition.size() == 1 ? 0 : k];
+            validate_electroneutrality(x);
+            const double value = input[input.size() == 1 ? 0 : k];
+            result.rows[k] = at_pressure ? state_at_pressure(temperature[k], value, x, branch, {}, derived)
+                : state(temperature[k], value, x, derived);
+        } catch (const core::DeclarationError& e) { fail(StateStatus::DeclarationError, e, e.record);
+        } catch (const core::ConvergenceFailure& e) { fail(StateStatus::ConvergenceError, e, e.record, e.first_numerical_failure);
+        } catch (const DensityStructureError& e) { fail(StateStatus::DensityStructureError, e, e.first_numerical_failure, e.first_numerical_failure);
+        } catch (const std::invalid_argument& e) { fail(StateStatus::ParameterError, e);
+        } catch (const std::domain_error& e) { fail(StateStatus::DomainError, e);
+        } catch (const std::runtime_error& e) { fail(StateStatus::EosError, e); }
+    }
+    return result;
+}
+
 State HelmholtzModel::state(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
     bool derived_properties
-) const {
+) const try {
     core::AssociationObservations observations(true);
     State result;
     core::Scope scope("state");
@@ -2349,10 +2386,12 @@ State HelmholtzModel::state(
             const auto values = active_parameter_values();
             input.insert(input.end(), values.begin(), values.end());
             CppAD::Independent(input);
+            detail::RecordingOwner recording;
             const auto record = detail::make_tape_parameters(parameters_, active_, {input.begin() + 1, input.end()});
             const auto eps = bulk_relative_permittivity(detail::AD(temperature), input[0],
                 std::vector<detail::AD>(mole_fractions.begin(), mole_fractions.end()), record);
             CppAD::ADFun<double> tape(input, std::vector<detail::AD>{eps});
+            recording.active = false;
             std::vector<double> point{molar_density};
             point.insert(point.end(), values.begin(), values.end());
             const auto jacobian = tape.Jacobian(point);
@@ -2464,6 +2503,8 @@ State HelmholtzModel::state(
     return result;
 }
 
+catch (...) { reset_state_tapes(); throw; }
+
 DensityBranch State::returned_density_branch() const {
     return properties::density_side(density_branch, molar_density, negative_slope_density);
 }
@@ -2480,7 +2521,7 @@ State HelmholtzModel::state_at_pressure(
     DensityBranch branch,
     std::optional<double> anchor_density,
     bool derived_properties
-) const {
+) const try {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
@@ -2502,6 +2543,7 @@ State HelmholtzModel::state_at_pressure(
     scope.finish(root.convergence);
     return result;
 }
+catch (...) { reset_state_tapes(); throw; }
 
 double HelmholtzModel::packing_fraction_coefficient(
     double temperature,

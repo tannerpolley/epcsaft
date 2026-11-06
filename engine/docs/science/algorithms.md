@@ -272,6 +272,26 @@ Positive-order sweeps recompute the requested directions while preserving order
 zero. This changes neither the implicit derivative equations nor their admission
 criteria.
 
+### Independent state arrays
+
+A declared state array evaluates each row sequentially through the scalar
+`state` or `state_at_pressure` owner. Scalar temperature/density/composition
+admission and electroneutrality apply per row; pressure rows have no preceding
+row anchor. The collection retains the complete State or a typed exception
+category, unchanged cause and available convergence records for each row in
+input order. Property columns gather stored values without evaluating again.
+
+A failed scalar state attempt discards its cached current and previous replay
+tapes after local mutex guards unwind. Each recording site arms its own abort
+guard only after `CppAD::Independent` succeeds and disarms when ADFun takes
+ownership. Thus failure cleanup cannot abort an unrelated recording. Successful
+rows retain the scalar tape reuse and derivative work. Association observation
+scopes restore the previous owner on unwinding. Pressure-series thread-local
+vectors are cleared before use, double site factorizations recomputed, and
+coefficient buffers overwritten by their existing owner; no cross-row seed or
+additional density search is introduced. Allocation and unrelated programming
+errors propagate rather than becoming ordinary row refusals.
+
 ## ALG-DENSITY
 
 Detailed capture emits `density_scan_input` (T/K, P/Pa, lower/upper density in
