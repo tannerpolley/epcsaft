@@ -1318,7 +1318,7 @@ PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const Phas
     const auto pressure = c.primal_size - 1, temperature = c.primal_size - c.free_intensive_count;
     out.values[0] = at.temperature; out.values[1] = at.pressure;
     if (c.problem.loading) { out.values[outputs - 1] = at.point[c.loading_column()]; out.gradient(outputs - 1, c.loading_column()) = 1; }
-    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = std::max(wide_math::abs(at.pressure), Base(1)); }
+    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = pressure_scale(at.pressure); }
     if (c.problem.temperature.free) { out.gradient(0, temperature) = 1; out.scale[temperature] = std::max(wide_math::abs(at.temperature), Base(1)); }
     for (const auto& solid : c.solids) if (solid.column) out.scale[*solid.column] = c.feed_total;
     for (std::size_t p = 0; p < at.shape.size(); ++p) {

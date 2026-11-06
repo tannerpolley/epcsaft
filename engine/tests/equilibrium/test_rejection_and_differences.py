@@ -139,8 +139,9 @@ def test_polish_trial_beyond_close_packing_is_a_domain_refusal() -> None:
 
 
 def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
-    """#1007: at N-(2-aminoethyl)ethanolamine's (Esper 2023) 150 K saturation, P = 1.4e-16 Pa puts -Z_V/P = -7e15
-    in the 1 Pa pressure column; unequilibrated, Eigen's pivot-relative threshold called the nonsingular rows rank 2."""
+    """#1007: at N-(2-aminoethyl)ethanolamine's (Esper 2023) 150 K saturation, P = 1.4e-16 Pa, the estimate once
+    called the nonsingular rows rank 2. #1008: with the pressure scale h_P = P its pressure radius is 4.2e-13 P, not
+    the 11 P of a 1 Pa floor. At 300 K a zero or negative pressure coordinate refuses before it becomes a scale."""
     if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
         pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
     model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
@@ -149,6 +150,14 @@ def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
     estimate = equilibrium_numerical_estimates(model, result)
     assert estimate.cause == "" and estimate.rank == estimate.dimension
     assert all(e.available and e.resolved and math.isfinite(e.absolute) for e in (estimate.pressure, *estimate.densities))
+    assert result.pressure is not None and estimate.pressure.absolute <= 1e-11 * result.pressure
+    problem = model.saturation(300.0)
+    state, compiled = solve_equilibrium(model, problem), compile_problem(model, problem)
+    k = compiled.coordinate_labels().index("P / Pa")
+    for P in (0.0, -1.0):
+        x = [P if i == k else q for i, q in enumerate(state.coordinates)]
+        assert compiled.numerical_estimates(x, 300.0, P, state.amounts, state.mole_fractions, state.molar_densities,
+                                            state.packing_fractions).cause == "nonpositive_or_nonfinite_pressure"
 
 
 def test_ideal_action_beyond_close_packing_refuses() -> None:

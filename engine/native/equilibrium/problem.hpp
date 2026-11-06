@@ -556,9 +556,14 @@ struct PhysicalProjection final {
     Vector values, scale;
 };
 template <typename Base> PhysicalProjection<Base> physical_projection(const CompiledSystem&, const PhasePointValues<Base>&);
+// A pressure becomes a coordinate or output scale only when finite and positive (#1008).
+template <typename Base> Base pressure_scale(Base pressure) {
+    if (!(wide_math::isfinite(pressure) && pressure > 0)) throw std::domain_error("nonpositive_or_nonfinite_pressure");
+    return pressure;
+}
 template <typename Base, typename Vector>
 Base physical_radius(const CompiledSystem& c, const PhasePointValues<Base>& at, const Vector& error) {
-    Base radius = error[1] / std::max(wide_math::abs(at.pressure), Base(1));
+    Base radius = error[1] / pressure_scale(at.pressure);
     for (Eigen::Index i = 2; i < error.size(); ++i)
         radius = std::max(radius, error[i] / ((i - 2) % (3 + c.n_feed.size()) == 2 ? Base(c.feed_total) : Base(1)));
     return radius;

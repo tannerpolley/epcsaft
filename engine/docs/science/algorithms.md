@@ -769,7 +769,7 @@ activate this mixture correction.
 
 At the selected point, use its retained prepared derivatives and matching rows
 and Jacobian. The shared physical error radius is the maximum of pressure error
-relative to $\max(|P|,1\,\mathrm{Pa})$, log-density and log-packing errors,
+relative to $P$, log-density and log-packing errors,
 absolute composition errors, and phase-amount errors relative to feed amount.
 An available finite radius above `MIXTURE_FORWARD_ERROR` ($10^{-7}$), with more
 long-double significand bits than double, triggers the shared correction body
@@ -1498,8 +1498,11 @@ admission and attempt selection. For the canonical defining residuals $F$ and
 their exact Jacobian $J$, the endpoint calculation uses
 $A=\operatorname{diag}(r)\,J\operatorname{diag}(h\odot c)$.
 The physical coordinate scale $h$ is one for log and multiplier coordinates,
-the feed total for free phase and solid amounts, and $\max(|T|,1\ \mathrm{K})$ or
-$\max(|P|,1\ \mathrm{Pa})$ for free temperature or pressure. The power-of-two
+the feed total for free phase and solid amounts, $P$ for a free pressure,
+which must be finite and positive or the estimate refuses with
+`nonpositive_or_nonfinite_pressure`, and $\max(|T|,1\ \mathrm{K})$ for a free
+temperature. The pressure scale is the componentwise rounding level of a
+floating-point coordinate. The power-of-two
 scales $c$ and then $r$ are the solved-state action's column-then-row
 equilibration, applied to $J\operatorname{diag}(h)$. The rank decision is made on
 this equilibrated matrix, removing the scale imbalance responsible for the false
