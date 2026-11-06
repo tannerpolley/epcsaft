@@ -515,6 +515,9 @@ bounded search and its stable-root list: the sibling is the opposite extreme
 stable root, or the same unbranched root when only one exists. Anchored requests
 cannot supply a sibling. Boundary initialization shares its two feed requests;
 changed phase compositions still resolve their own roots with the same checks.
+Pure two-density branch admission reuses both stable roots of that shared search
+without anchored re-solves, retaining the corrected-density, positive-slope,
+residual, root-count, branch-order and displacement checks.
 
 ```text
 scan deterministically in log density within the admitted packing domain,

@@ -1339,7 +1339,7 @@ DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const
 
 namespace {
 
-// Corrected-phase branch identity: the corrected density and the anchored locally unique
+// Corrected-phase branch identity: the corrected density and the selected stable
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
 BranchCheck density_branches_at(
@@ -1376,7 +1376,8 @@ BranchCheck density_branches_at(
                 anchor = root.molar_density;
                 if (limits) limits->check();
             }
-            root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
+            if (!initial || !roots)
+                root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
             if (limits) limits->check();
         } catch (const std::exception& error) {
             outcome.message = "phase " + spec.name + " has no locally unique anchored root: " + error.what();
