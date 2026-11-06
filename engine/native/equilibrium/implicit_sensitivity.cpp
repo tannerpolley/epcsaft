@@ -15,6 +15,8 @@
 #include <numeric>
 #include <stdexcept>
 #include <string>
+#include <tuple>
+#include <utility>
 
 namespace epcsaft::equilibrium {
 namespace {
@@ -44,6 +46,16 @@ using core::backward_error;
 using core::compensated_defect;
 
 bool square_and_numeric(const Eigen::MatrixXd& matrix) { return matrix.rows() == matrix.cols() && matrix.allFinite(); }
+
+// Exact power-of-two column then row equilibration of a; a zero line keeps scale one. Returns {row, column}.
+template <typename Matrix>
+std::pair<Eigen::Matrix<typename Matrix::Scalar, Eigen::Dynamic, 1>, Eigen::Matrix<typename Matrix::Scalar, Eigen::Dynamic, 1>>
+power_of_two_equilibration(const Matrix& a) {
+    using Real = typename Matrix::Scalar;
+    const auto power = [](Real value) { using std::exp2, std::log2, std::round; return value > 0 ? Real(exp2(-round(log2(value)))) : Real(1); };
+    const Eigen::Matrix<Real, Eigen::Dynamic, 1> column = a.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
+    return {(a * column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power), column};
+}
 
 }  // namespace
 
@@ -1156,10 +1168,7 @@ static SolvedStateActionBatch evaluate_action(
             if (!square_and_numeric(center.jacobian)) {
                 shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
             } else {
-                // Exact power-of-two column then row equilibration; a zero line keeps scale one.
-                const auto power = [](double value) { return value > 0.0 ? std::exp2(-std::round(std::log2(value))) : 1.0; };
-                center.column = center.jacobian.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
-                center.row = (center.jacobian * center.column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power);
+                std::tie(center.row, center.column) = power_of_two_equilibration(center.jacobian);
                 center.jacobian = center.row.asDiagonal() * center.jacobian * center.column.asDiagonal();
                 center.lu = center.jacobian.fullPivLu();
                 batch.diagnostics.state_factorizations = 1;
@@ -1417,7 +1426,9 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         const Vector inner = Eigen::Map<const Vector>(uncertainty.inner.data(), n);
         const Vector eta = core::canonical_row_floor(j, h, terms, inner);
         out.physical_scale = narrow_values(h.data(), h.data() + n); out.row_floor = narrow_values(eta.data(), eta.data() + n);
-        const auto e = core::linear_error(j, f, g, eta, Vector::Ones(n), h);
+        // Equilibrate J diag(h) before the rank decision; eta stays from the physical h.
+        const auto [row, column] = power_of_two_equilibration(Matrix(j * h.asDiagonal()));
+        const auto e = core::linear_error(j, f, g, eta, row, h.cwiseProduct(column));
         out.rank = e.rank; out.threshold = static_cast<double>(e.threshold); out.condition = static_cast<double>(e.condition);
         out.inverse_norm = static_cast<double>(e.inverse_norm); out.backward_error = static_cast<double>(e.backward);
         if (!e.cause.empty()) { out.cause = e.cause; return out; }

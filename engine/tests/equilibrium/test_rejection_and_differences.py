@@ -11,7 +11,8 @@ from epcsaft import (
 from epcsaft._core import EquilibriumResult, EquilibriumStart, EquilibriumWorkLimits, StabilityReport
 from epcsaft.equilibrium import (
     Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
-    compile_problem, jacobian_table, solve_equilibrium, solve_equilibrium_starts, solved_state_difference,
+    compile_problem, equilibrium_numerical_estimates, jacobian_table, solve_equilibrium, solve_equilibrium_starts,
+    solved_state_difference,
 )
 
 from tests.packets import PACKETS
@@ -135,6 +136,19 @@ def test_polish_trial_beyond_close_packing_is_a_domain_refusal() -> None:
     densities = [r.first_conditioning_warning.controls[1] for r in result.rank_records
                  if r.basis == "mass_action_site_fractions" and r.first_conditioning_warning is not None]
     assert all(0.0 < d < close_packed for d in densities), densities
+
+
+def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
+    """#1007: at N-(2-aminoethyl)ethanolamine's (Esper 2023) 150 K saturation, P = 1.4e-16 Pa puts -Z_V/P = -7e15
+    in the 1 Pa pressure column; unequilibrated, Eigen's pivot-relative threshold called the nonsingular rows rank 2."""
+    if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
+        pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
+    model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
+    result = solve_equilibrium(model, model.saturation(150.0))
+    assert result.success, result.message
+    estimate = equilibrium_numerical_estimates(model, result)
+    assert estimate.cause == "" and estimate.rank == estimate.dimension
+    assert all(e.available and e.resolved and math.isfinite(e.absolute) for e in (estimate.pressure, *estimate.densities))
 
 
 def test_ideal_action_beyond_close_packing_refuses() -> None:
