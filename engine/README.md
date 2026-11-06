@@ -206,6 +206,16 @@ code changes (see [Checks](#checks)).
 
 ## C++ usage and debugging
 
+Native parallel work requires one model and its compiled problems per worker.
+Construct, evaluate, reset and destroy each model and its CppAD-backed objects
+on the same worker thread. Sharing or transferring these objects across native
+threads is unsupported; pass plain inputs and returned numerical values instead.
+Serial warm-up is not required. The native library prepares CppAD at load time
+and assigns a slot to each calling thread until that thread exits. The limit is
+48 live calling threads, including the loading thread; exhaustion raises
+`CppAD thread slots exhausted`. Slots are reused only after all thread-local
+destructors finish. A mutex around one model does not replace this ownership rule.
+
 `tests/native/surface_example.cpp` is an ordinary Python-free caller of the
 native shared library. It includes only `surface/parameter_builder.hpp` and
 `equilibrium/problem.hpp` and shows, in order: a `ParameterDocument` with

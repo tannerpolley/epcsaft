@@ -13,6 +13,8 @@
 #include <array>
 #include <bitset>
 #include <cmath>
+#include <chrono>
+#include <future>
 #include <limits>
 #include <numeric>
 #include <map>
@@ -21,6 +23,44 @@
 #include <string>
 #include <tuple>
 #include <utility>
+
+namespace {
+std::mutex cppad_slots_mutex;
+std::array<std::future<void>, CPPAD_MAX_NUM_THREADS> cppad_slots;
+bool cppad_parallel_enabled = false;
+bool cppad_in_parallel() { return cppad_parallel_enabled; }
+
+std::size_t cppad_thread_num() {
+    thread_local const std::size_t slot = [] {
+        std::lock_guard<std::mutex> lock(cppad_slots_mutex);
+        for (std::size_t index = 0; index < cppad_slots.size(); ++index) {
+            auto& exited = cppad_slots[index];
+            if (!exited.valid() || exited.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                std::promise<void> completion;
+                exited = completion.get_future();
+                // Readiness follows all thread-local destructors, including later CppAD use.
+                completion.set_value_at_thread_exit();
+                return index;
+            }
+        }
+        throw std::runtime_error("CppAD thread slots exhausted (maximum 48 live threads)");
+    }();
+    return slot;
+}
+
+// Configure the library's CppAD statics before any worker can record a tape.
+const bool cppad_initialized = [] {
+    static std::once_flag once;
+    std::call_once(once, [] {
+        cppad_thread_num();
+        CppAD::thread_alloc::parallel_setup(
+            CPPAD_MAX_NUM_THREADS, cppad_in_parallel, cppad_thread_num);
+        CppAD::parallel_ad<double>();
+        cppad_parallel_enabled = true;
+    });
+    return true;
+}();
+}  // namespace
 
 namespace epcsaft {
 
