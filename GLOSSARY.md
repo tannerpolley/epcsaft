@@ -66,6 +66,10 @@ Source: Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation
 Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof.
 Source: equilibrium formulation; #223 adopted D9
 
+**Stability requirement**:
+A declared finite-search condition on a candidate parameter set: a resolved descending trial violates it; a completed search without a witness supplies bounded numerical evidence only. Failed or undetermined searches supply no stable value.
+Source: EqID `tangent_plane_distance`; ALG-STABILITY; ALG-FIT
+
 **Proved instability witness**:
 Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient.
 Source: equilibrium formulation

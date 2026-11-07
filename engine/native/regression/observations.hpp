@@ -18,7 +18,7 @@ namespace epcsaft::regression {
 enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy
+    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -68,6 +68,9 @@ struct Observation final {
     double observed = 0.0;
     ResidualForm form = ResidualForm::Difference;
     double scale = 1.0;
+    equilibrium::StabilityOptions stability_options;
+    std::optional<equilibrium::EquilibriumProblem> pressure_reference;
+    double pressure_ratio = 1.0;
 };
 
 struct HydrationHold final {
@@ -118,6 +121,9 @@ struct Prediction final {
     std::shared_ptr<equilibrium::SaturationSearch> saturation;
     std::optional<double> saturation_loading, endpoint_loading, added_amount, enthalpy_difference;
     std::string cap_branch;
+    std::shared_ptr<equilibrium::StabilityMeasure> stability;
+    std::shared_ptr<Prediction> pressure_reference;
+    std::vector<double> stability_raw_gradient;
     std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
 };
 
@@ -132,6 +138,7 @@ struct PredictionGradient final {
     std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
+    std::vector<double> raw_minimum;
 };
 struct ObservationInputDirection final {
     equilibrium::SolvedStateActionDirection state;
@@ -144,7 +151,9 @@ bool same_state(const Observation& left, const Observation& right);
 EPC_API void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);
 EPC_API void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
-using ReferenceCache = std::vector<std::pair<Observation, InfiniteDilutionReference>>;
+struct ReferenceCache : std::vector<std::pair<Observation, InfiniteDilutionReference>> {
+    std::vector<std::pair<Observation, Prediction>> pressures;
+};
 EPC_API Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start = std::nullopt,

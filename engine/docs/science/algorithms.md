@@ -1760,6 +1760,34 @@ density-dependent ionic/reacting cases, explicit density-independent
 charged-search refusals and unchanged declared work. Method adoption is recorded in
 [ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md).
 
+### Stability requirements in parameter fitting
+
+A declared stability observation consumes this same Full optimized trial search.
+It adds no trial schedule or thermodynamic owner. The reported signed measure
+is the raw minimum $\tau$ on a resolved descending branch, and zero on a
+completed search with no witness. The raw minimum and its numerical uncertainty
+remain separate: reported zero is no certificate of a nonnegative exact distance.
+A parent refusal, incomplete or empty schedule, unsuccessful final trial
+optimizer, or undetermined trial evidence makes the requirement unavailable.
+A retained descending witness does not waive these availability conditions.
+
+The original parent standards and conserved-plane multipliers precede supported
+amount repair. Their exact fitted-coordinate actions follow the defining-row
+recurrence and shared factorization of ALG-ACTIONS. Trial composition is held
+fixed for the envelope action; pressure stationarity cancels the trial-volume
+response. The EOS partial, actual standard/reference/source-law actions, parent
+density and speciation response, and conserved-plane response all contribute.
+Parent row uncertainty is projected through the same admitted linear system;
+trial energy, plane contraction roundoff, feasibility, declared standard
+uncertainty and donor/plane discrepancy remain numerical estimates in the reduced
+molar basis. Split errors retain their extensive basis.
+
+Repeated stationary trials use the existing composition/root coincidence rule.
+Distinct minima with overlapping value intervals are unresolved ties. Current-point ties, support/root boundaries and unresolved resolution events refuse the local derivative. Between-evaluation changes retain both optimizer coordinate vectors, both minimizing trials, both classifications and the event kind in the fit result. Once the new Full search resolves a unique stationary branch at its own point, its exact local action is admitted; no derivative is formed across the interval between the points. The resolution transition
+may jump from negative $\tau$ to zero at nonzero $\tau$; no smoothing is used.
+These are finite-search numerical requirements, without a global certificate
+or physical-validation claim.
+
 ### Explicit calls and solved snapshots
 
 `Discover()` dispatches natively before declared compilation, only at fixed
@@ -1773,7 +1801,7 @@ following the original feasibility path. Only positive amounts supply donors.
 Discovery with free intensives remains outside this method.
 
 Declared solves, continuation, parameter fitting and ASL perform zero trial
-solves, with one exception: a public fixed-T/P flash without a caller start whose
+solves, except caller-declared stability penalty observations under ALG-FIT and a public fixed-T/P flash without a caller start whose
 first Ipopt run ends with coalesced phases runs the Full trial set once on its
 lower-objective single-phase declaration before [neutral recovery](#neutral-recovery)
 (owner, 2026-11-03). A completed search without a descent means "no witness in the
@@ -2767,6 +2795,25 @@ Ceres remains the primary least-squares owner. An explicit `MinimaxRequest`
 selects native constrained estimation; a failed least-squares check never selects
 it automatically. The same native sequence owns declared starts and shared
 iteration/elapsed budgets for both methods.
+
+A `Stability` observation declares a liquid parent and Full optimized
+`StabilityOptions`, with a zero target, Difference form, positive dimensionless
+scale and positive caller weight. Its Ceres residual is
+$r_s=\sqrt{w_s}m_s/s_s$. Its one-half-squared cost is reported separately from
+data and measured-input costs. Stability requirements are excluded from
+measurement whitening and statistical covariance claims. A failed search is a
+failed evaluation, never a stable zero. Ordinary observations invoke no trial
+search. Same-point residual/Jacobian requests reuse the recorded search.
+
+An optional declared pressure-reference problem sets $P=cP^*(u)$ with fixed
+$c>0$. Native evaluation shares equivalent references and differentiates the
+reference Pressure observable, then chains $P_u=cP^*_u$ through parent and trial
+actions. No Python callbacks or pressure searches are introduced.
+
+A finite penalty does not enforce a hard inequality. Final acceptance requires
+a fresh Full search at the returned parameters for every stability state. A
+remaining witness fails that requirement; unavailable final evidence makes the
+candidate unusable. Current-point unresolved branch or resolution events interrupt Ceres. A transition detected between evaluations is recorded in `stability_transitions` with both coordinate vectors, both minimizing trials and classifications, and its kind. A newly resolved unique stationary branch supplies its own exact local action even after such a transition. This admits neither smoothing, interpolation nor a second search, and makes no smoothness claim across the two points.
 
 Use the [parameter regression formulation](../regression/science/pure-saturation-regression.md)
 for observation algebra, weights, parameter coordinates and uncertainty.

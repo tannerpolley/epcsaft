@@ -20,6 +20,7 @@
 
 // ALG-STABILITY: the explicit tangent-plane test and fixed-T/P phase discovery.
 namespace epcsaft::equilibrium {
+thread_local std::optional<std::size_t> stability_stop_trial_for_test;
 
 double present_phase_residual_distance(double chemical_contraction, double pressure_row) {
     return chemical_contraction - pressure_row;
@@ -68,7 +69,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const auto n = static_cast<Eigen::Index>(S.size());
     struct Iterate { Eigen::VectorXd W, g; std::vector<double> w; double density = 0.0, objective = 0.0; };
     auto& o = trial.optimizer;
-    bool first = true;
+    bool first = true, stopped_for_test = false;
     const auto at = [&](Eigen::VectorXd W) {
         Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
@@ -118,13 +119,19 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             const bool accepted = q && q->objective <= p.objective;
             o.hessian_calls += accepted;
             p = accepted ? std::move(*q) : at(p.W.array() * (-p.g.array()).exp());
+            if (stability_stop_trial_for_test == static_cast<std::size_t>(work["trial_invocations"])
+                && p.g.lpNorm<Eigen::Infinity>() > criterion.value
+                && p.W.dot(p.g) / p.W.sum() - std::log(p.W.sum()) < 0.0) { stopped_for_test = true; break; }
         }
         const double residual = p.g.lpNorm<Eigen::Infinity>();
         const auto stop = core::classify(residual, criterion, std::nullopt, std::nullopt, true);  // converged or the cap
         o.convergence = core::Convergence{residual, &criterion, std::nullopt, std::nullopt, std::nullopt, o.iterations,
             o.evaluations, stop, nullptr};
-        if (o.convergence.stop == core::Stop::converged) {
-            o.success = true; o.message = trial.message = "Michelsen tangent-plane trial " + core::describe(o.convergence);
+        if (stopped_for_test) {
+            o.convergence.cause = "selected trial stopping control";
+        }
+        if (o.convergence.stop == core::Stop::converged || stopped_for_test) {
+            o.success = !stopped_for_test; o.message = trial.message = "Michelsen tangent-plane trial " + core::describe(o.convergence);
             o.packing_fractions = {model.packing_fraction_coefficient(T, p.w) * p.density};
             for (auto i : S) trial.raw_coordinates.push_back(std::log(p.w[i]));
             trial.raw_coordinates.insert(trial.raw_coordinates.end(), {1.0, std::log(o.packing_fractions[0])});
@@ -136,6 +143,35 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     work["trial_tangent_plane_iterations"] += o.iterations; work["trial_tangent_plane_newton_steps"] += o.hessian_calls;
     work["trial_tangent_plane_evaluations"] += o.evaluations;
     return result;
+}
+
+bool same_stationary_trial(const StabilityTrial& a, const StabilityTrial& b, bool same_kind = true) {
+    return a.phase.support == b.phase.support && (!same_kind || a.phase.kind == b.phase.kind)
+        && largest_difference(a.composition, b.composition) <= policy::PHASE_COINCIDENCE_DISTANCE.value
+        && std::abs(std::log(a.quantities.at("volume_m3_per_mol") / b.quantities.at("volume_m3_per_mol")))
+            <= policy::PHASE_COINCIDENCE_DISTANCE.value;
+}
+
+// The density owner's stable root of w within the anchor window of v, else none (#423).
+std::optional<DensityRoot> anchored_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& w,
+    double v, PhaseKind kind, Quantities& q, const std::string& prefix) {
+    DensityRoot sibling;
+    auto root = solve_density(model, T, P, w, kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor,
+        std::nullopt, &sibling);
+    if (std::abs(std::log(root.molar_density * v)) > policy::DENSITY_ANCHOR_LOG_WINDOW.value) root = sibling;
+    const double displacement = q[prefix + "root_log_displacement"] = std::abs(std::log(root.molar_density * v));
+    q[prefix + "root_residual"] = root.convergence.residual;
+    if (!(displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value && root.convergence.residual <= root.convergence.criterion->value))
+        return std::nullopt;
+    return root;
+}
+
+void retain_density_side(const HelmholtzModel& model, double T, double P, const std::vector<double>& w,
+    double v, PhaseKind kind, Quantities& q) {
+    const auto root = anchored_root(model, T, P, w, v, kind, q, "identity_");
+    if (!root) throw std::invalid_argument("stability density branch unresolved");
+    const auto side = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
+    q["density_side"] = static_cast<double>(side == DensityBranch::Unspecified ? (kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor) : side);
 }
 
 // Reduced energy and Euler/association estimates use unit-mol amount columns and the SI volume column.
@@ -338,20 +374,6 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     }
     report.present_phases = candidate.quantities;
     return candidate;
-}
-
-// The density owner's stable root of w within the anchor window of v, else none (#423).
-std::optional<DensityRoot> anchored_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& w,
-    double v, PhaseKind kind, Quantities& q, const std::string& prefix) {
-    DensityRoot sibling;
-    auto root = solve_density(model, T, P, w, kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor,
-        std::nullopt, &sibling);
-    if (std::abs(std::log(root.molar_density * v)) > policy::DENSITY_ANCHOR_LOG_WINDOW.value) root = sibling;
-    const double displacement = q[prefix + "root_log_displacement"] = std::abs(std::log(root.molar_density * v));
-    q[prefix + "root_residual"] = root.convergence.residual;
-    if (!(displacement <= policy::DENSITY_ANCHOR_LOG_WINDOW.value && root.convergence.residual <= root.convergence.criterion->value))
-        return std::nullopt;
-    return root;
 }
 
 // Density-independent permittivity is a condensed-liquid correlation: a charged trial counts only on its own liquid side.
@@ -756,6 +778,69 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     return test_snapshot(c, result, options, {});
 }
 
+StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    core::Scope scope("stability_measure");
+    StabilityMeasure out;
+    if (options.mode != DiscoveryMode::Full || options.evaluate_supplied_trials)
+        throw std::invalid_argument("stability requirements need Full optimized trials");
+    out.report = stability_test(c, result, options);
+    if (!out.report.completed || out.report.trials.empty()) { out.cause = "incomplete trial schedule"; return out; }
+    for (std::size_t i = 0; i < out.report.trials.size(); ++i) {
+        const auto& t = out.report.trials[i];
+        const auto at = t.quantities.find("tpd_over_rt");
+        if (!t.optimizer.success || at == t.quantities.end() || !std::isfinite(at->second)
+            || (t.evidence != "no_resolved_descent" && !t.resolved_descent)) {
+            out.cause = "failed final trial optimizer or undetermined evidence: " + std::to_string(i);
+        }
+        if (at == t.quantities.end() || !std::isfinite(at->second)) continue;
+        if (!out.raw_minimum || at->second < *out.raw_minimum) {
+            out.raw_minimum = at->second; out.minimizing_trial = i;
+        }
+    }
+    if (!out.cause.empty()) return out;
+    try {
+        const auto at = c.prepare(result.coordinates, true);
+        for (std::size_t p = 0; p < out.report.present_phases.size(); ++p)
+            retain_density_side(*c.model, at.temperature, at.pressure, at.composition[p], at.volume[p],
+                c.problem.phases[p].kind, out.report.present_phases[p]);
+        for (auto& t : out.report.trials)
+            retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
+                t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities);
+    } catch (const std::exception& error) { out.cause = error.what(); return out; }
+    std::vector<SolvedStateObservable> plane;
+    for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
+    SolvedStateActionDirection zero; zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
+    zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
+    const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
+    std::vector<double> error(out.report.trials.size());
+    for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
+        auto& t = out.report.trials[j];
+        error[j] = energy_estimate(t.quantities);
+        for (std::size_t i = 0; i < t.composition.size(); ++i) {
+            if (!actions.results[i].numerical_error) { out.cause = "parent plane uncertainty unavailable"; return out; }
+            error[j] += t.composition[i] * (*actions.results[i].numerical_error
+                + (options.standard_uncertainty_over_rt.empty() ? 0.0 : options.standard_uncertainty_over_rt[i])
+                + std::numeric_limits<double>::epsilon() * std::abs(out.report.plane_over_rt[i]));
+        }
+        for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
+            if (t.quantities.count(name)) error[j] += std::abs(t.quantities.at(name));
+        t.quantities["plane_value_error_estimate_over_rt"] = error[j];
+    }
+    const auto best = *out.minimizing_trial; out.uncertainty = error[best];
+    const auto& minimum = out.report.trials[best];
+    for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
+        const auto& t = out.report.trials[j];
+        if (t.quantities.at("tpd_over_rt") - *out.raw_minimum > error[j] + error[best]) continue;
+        out.minima.push_back(j);
+        const bool same = same_stationary_trial(t, minimum, false);
+        if (!same) out.event = "distinct stationary minima have overlapping value intervals";
+    }
+    if (!out.event.empty()) { out.cause = out.event; return out; }
+    out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;
+    out.available = true;
+    return out;
+}
+
 // ALG-STABILITY before neutral recovery (#987): the Full trial set on the lower-objective single-phase L1/V1
 // declaration of the feed, every solve and native trial charged to `limits`. Every outcome returns its report;
 // nothing from it feeds recovery. A failed parent keeps its cause and work.
@@ -1110,10 +1195,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             const auto& trial = current.trials[i];
             const bool duplicate = std::any_of(descending.begin(), descending.end(), [&](auto j) {
                 const auto& prior = current.trials[j];
-                return prior.phase.support == trial.phase.support && prior.phase.kind == trial.phase.kind
-                    && largest_difference(prior.composition, trial.composition) <= policy::PHASE_COINCIDENCE_DISTANCE.value
-                    && std::abs(std::log(prior.quantities.at("volume_m3_per_mol") / trial.quantities.at("volume_m3_per_mol")))
-                        <= policy::PHASE_COINCIDENCE_DISTANCE.value;
+                return same_stationary_trial(prior, trial);
             });
             if (!duplicate) descending.push_back(i);
         }

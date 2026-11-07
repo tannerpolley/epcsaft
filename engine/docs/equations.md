@@ -2398,7 +2398,7 @@ $$
 - Status: Exact derivation
 - Source: [Michelsen1982] Part I; [Pereira2012] Eq. 12; [Perdomo2025] §3.3 Eqs. 37–40; [Ascani2022] §3.3 Eqs. 33–35
 - Description: Reduced molar tangent-plane distance at fixed positive T/P, normalized charge-neutral composition w on support S and molar volume v in m³/mol; e is the all-ones vector and z contains charge numbers. The mechanical reduced energy includes residual and ideal-density Helmholtz energy plus Pv/RT; s is the dimensionless density-standard offset and π the chemical balance plane.
-- Change note: Freeze standards including reference transfer and gauge at the solved snapshot. Chemical λ is dimensionless here, unlike dimensional chemical_potential_stationarity. A negative plane value needs feasible donor withdrawal and error qualification; finite search supplies no global certificate.
+- Change note: Freeze standards including reference transfer and gauge at the solved snapshot. Chemical λ is dimensionless here, unlike dimensional chemical_potential_stationarity. A negative plane value needs feasible donor withdrawal and error qualification; finite search supplies no global certificate. The envelope derivative assumes a unique stationary trial on fixed support and parent/root branch; normalization and charge multipliers cancel the composition response and pressure stationarity cancels the trial-volume response. EOS, standard/reference/source-law actions and parent density/speciation/plane actions use the original parent before amount repair. ALG-STABILITY owns resolution, ties and event refusal; no derivative is assigned across a resolution jump.
 
 $$
 \begin{aligned}
@@ -2406,7 +2406,9 @@ $$
 s_i=\frac{g^\circ_{i,\rho}(T,P)}{RT},\qquad \boldsymbol\pi=\mathbf B^{\mathsf T}\boldsymbol\lambda,\\
 t(\mathbf w,v)&=\widetilde g(\mathbf w,v)+\mathbf w^{\mathsf T}(\mathbf s-\boldsymbol\pi),\qquad
 \mathbf e^{\mathsf T}\mathbf w=1,\quad \mathbf z^{\mathsf T}\mathbf w=0,\quad
-w_i>0\ (i\in S),\ w_i=0\ (i\notin S).
+w_i>0\ (i\in S),\ w_i=0\ (i\notin S),\\
+\tau(u)&=t(\mathbf w^*,v^*;y(u),u),\qquad
+\frac{d\tau}{du_k}=t_{u_k}+t_y y_{u_k}+t_T T_{u_k}+t_P P_{u_k},\qquad F_y y_{u_k}=-F_{u_k}.
 \end{aligned}
 $$
 

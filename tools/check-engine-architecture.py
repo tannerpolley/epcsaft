@@ -40,9 +40,10 @@ CATEGORY_ONE = {
 }
 CONSTANTS_HOME = "core/physical_constants.hpp"
 
-# Phase stability is reachable from equilibrium, never from a parameter fit: a
-# fit runs against declared phases so its residuals stay differentiable.
-STABILITY_SYMBOLS = ("stability_test", "discover_phases", "StabilityOptions")
+# Declared stability requirements consume the existing measure through observations only.
+# The options cross worker transport; no fit owns trial search or discovery.
+STABILITY_SYMBOLS = ("stability_test", "discover_phases", "StabilityOptions", "stability_measure")
+STABILITY_HOMES = {"StabilityOptions": {"observations.hpp", "fit_worker.hpp"}, "stability_measure": {"observations.cpp"}}
 
 INCLUDE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
 # Unanchored on purpose: a constexpr sharing a name across two translation
@@ -151,7 +152,7 @@ def rule_regression_stays_below_stability() -> list[str]:
             continue
         text = path.read_text()
         for symbol in STABILITY_SYMBOLS:
-            if symbol in text:
+            if symbol in text and path.name not in STABILITY_HOMES.get(symbol, set()):
                 bad.append(f"{path.relative_to(ROOT)} reaches {symbol}")
     return bad
 

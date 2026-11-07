@@ -157,6 +157,24 @@ row.kind = regression.ObservationKind.LogEquilibriumConstant
 row.reaction = "named_reaction"
 ```
 
+## Stability requirement rows
+
+`Stability` is a dimensionless numerical requirement, with a declared liquid
+parent and Full optimized trial options under ALG-STABILITY. It consumes the
+existing tangent-plane search. Its reported value is the raw reduced molar
+minimum on a resolved descending branch and zero only on a completed search
+without a witness; raw minimum, uncertainty, trial evidence and unavailable
+causes remain explicit. Difference form uses target zero and a positive
+caller scale. A positive penalty weight contributes
+$w_s m_s^2/(2s_s^2)$ separately from data and measured-input costs.
+
+These rows are excluded from measurement whitening and statistical covariance
+claims. An optional declared pressure-reference problem and fixed positive
+ratio prescribe $P=cP^*(u)$ with the native exact reference/parent action chain.
+Unavailable search evidence fails evaluation. An unresolved minimizing or resolution event at the current point refuses the local Jacobian. A between-evaluation transition is recorded with both points, minimizing trials and classifications; a newly resolved unique stationary branch supplies its exact local action. No smoothing or interpolation is supplied.
+Final stability acceptance uses a fresh Full search. A finite penalty can
+retain a witness and therefore fail that acceptance even when Ceres converges.
+
 ## Parameter coordinates (R1)
 
 An EOS physical coordinate is exactly the Properties active-parameter coordinate:

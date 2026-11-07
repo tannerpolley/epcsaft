@@ -516,7 +516,7 @@ IdealMixtureValue<Scalar> caloric_ideal(const CompiledSystem& compiled, std::siz
 
 std::vector<double> caloric_hessian(const CompiledSystem&, const PhasePoint&, double, bool = false, std::vector<double>* = nullptr);
 std::vector<double> critical_hessian(const CompiledSystem&, const PhasePoint&, const std::vector<double>&);
-CppAD::ADFun<double> record_geometry(const CompiledSystem&, const PhasePoint&, const StandardTerm&, bool = false);
+CppAD::ADFun<double> record_geometry(const CompiledSystem&, const PhasePoint&, const StandardTerm&, bool = false, bool = false);
 std::vector<double> controls(const CompiledSystem&, const PhasePoint&);
 
 std::vector<double> pinned_hessian(
@@ -700,7 +700,7 @@ std::vector<double> controls(const CompiledSystem& compiled, const PhasePoint& p
 // N, eta], then the analytic part of each row (the residual gradient terms are added by the
 // model's contractions in row_series).
 CppAD::ADFun<double> record_geometry(
-    const CompiledSystem& compiled, const PhasePoint& prepared, const StandardTerm& standard, bool entropy
+    const CompiledSystem& compiled, const PhasePoint& prepared, const StandardTerm& standard, bool entropy, bool plane
 ) {
     using AD = CppAD::AD<double>;
     const auto& problem = compiled.problem;
@@ -896,6 +896,11 @@ CppAD::ADFun<double> record_geometry(
     }
     output.insert(output.end(), row_values.begin(), row_values.end());
     output.insert(output.end(), solid_output.begin(), solid_output.end());
+    if (plane) for (std::size_t i = 0; i < components; ++i) {
+        AD value = add_standard(AD(0.0), i);
+        for (std::size_t k = 0; k < compiled.rank; ++k) value -= compiled.B[k][i] * u[compiled.primal_size + k];
+        output.push_back(value);
+    }
     if (entropy) output.push_back(material_potential);
     return CppAD::ADFun<double>(u, output);
 }

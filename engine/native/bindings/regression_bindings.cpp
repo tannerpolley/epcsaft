@@ -117,7 +117,7 @@ m._serve_fit(channel)
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
-            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy, SaturationCappedAdditionEnthalpy);
+            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability);
     nb::enum_<ResidualForm>(module, "ResidualForm")
         EPCSAFT_VALUES(ResidualForm, Difference, LogRatio);
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
@@ -128,7 +128,7 @@ m._serve_fit(channel)
         .def(nb::init<>())
         EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, finite_solute_molalities,
             reference_composition, branch, problem, final_problem, feed_amount, basis_amount, loading_cap, loading_bounds, loading_grid, reaction, phase, species,
-            denominator_phase, denominator_species, mass_basis, observed, form, scale);
+            denominator_phase, denominator_species, mass_basis, observed, form, scale, stability_options, pressure_reference, pressure_ratio);
     nb::enum_<CheckMetric>(module, "CheckMetric")
         EPCSAFT_VALUES(CheckMetric, AbsoluteDifference, AbsoluteLog10Ratio);
     nb::class_<HydrationHold>(module, "HydrationHold")
@@ -163,9 +163,9 @@ m._serve_fit(channel)
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met, first_numerical_failure, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, saturation_loading_gradient, endpoint_loading_gradient);
+            requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, saturation_loading_gradient, endpoint_loading_gradient);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, status, message, parameter_actions, first_numerical_failure, saturation_loading_gradient, endpoint_loading_gradient);
+        EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, saturation_loading_gradient, endpoint_loading_gradient);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")
@@ -228,9 +228,12 @@ m._serve_fit(channel)
             physical_values, jacobian, multipliers, physical_multipliers, z_lower, z_upper, physical_z_lower,
             physical_z_upper, lower_distances, upper_distances, hold_multipliers, full_stationarity, root_errors,
             slack_groups, slack_rows, active_lower, active_upper, hold_causes, rows, frozen_checks, ipopt_diagnostics);
+    nb::class_<StabilityTransition>(module, "StabilityTransition")
+        EPCSAFT_READONLY(StabilityTransition, observation, previous_optimizer, optimizer, previous_trial, trial,
+            previous_classification, classification, kind);
     nb::class_<FitResult>(module, "FitResult")
         EPCSAFT_SOLVER_OPTIONS(FitResult, 63)
-        EPCSAFT_READONLY(FitResult, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
+        EPCSAFT_READONLY(FitResult, stability_transitions, stability_predictions, data_cost, stability_cost, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
             iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure, internal_factor_conditioning);
@@ -271,7 +274,7 @@ m._serve_fit(channel)
        nb::arg("errors"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     nb::class_<ObservationEvaluation>(module, "ObservationEvaluation")
         EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, 63)
-        EPCSAFT_READONLY(ObservationEvaluation, saturation_predictions, predictions, gradient, optimizer_gradient, chart,
+        EPCSAFT_READONLY(ObservationEvaluation, data_cost, stability_cost, stability_predictions, saturation_predictions, predictions, gradient, optimizer_gradient, chart,
             residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values, first_numerical_failure, first_numerical_failure_observation);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,

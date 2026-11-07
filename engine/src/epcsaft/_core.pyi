@@ -2384,6 +2384,8 @@ class StabilityTrial:
 
 class StabilityReport:
     """Finite tangent-plane trial evidence for one candidate."""
+    no_descent_in_trial_set: bool
+
     completed: bool
     """Whether the declared finite search completed; does not certify global stability."""
     message: str
@@ -4308,7 +4310,7 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
     ...
 
 class ObservationKind:
-    """Measured or source-reported quantity supplied to native parameter estimation.
+    """Observation quantity or numerical requirement supplied to native parameter estimation.
 
     Notes
     -----
@@ -4316,6 +4318,8 @@ class ObservationKind:
 
     See ALG-FIT and engine/docs/regression/science/pure-saturation-regression.md for observation algebra, bases and admission. Parameter fitting is calibration, not independent physical validation.
     """
+    Stability: ObservationKind
+
     SaturationCappedAdditionEnthalpy: ObservationKind
 
     MeanIonicActivityCoefficient: ObservationKind
@@ -4422,6 +4426,10 @@ class Observation:
     -----
     Only the fields consumed by kind define its observation. A failed prediction is unavailable with a cause, never a successful zero residual. Endpoint reaction/reference identities and component balances must match for AdditionEnthalpy.
     """
+    stability_options: StabilityOptions
+    pressure_reference: Optional[EquilibriumProblem]
+    pressure_ratio: float
+
     basis_amount: float
     loading_cap: float
     loading_bounds: tuple[float, float]
@@ -4489,6 +4497,10 @@ class Observation:
 
 class Prediction:
     """One native observation prediction with physical units and failure evidence."""
+    stability: Optional[StabilityMeasure]
+    pressure_reference: Optional[Prediction]
+    stability_raw_gradient: list[float]
+
     saturation: Optional[SaturationSearch]
     saturation_loading: Optional[float]
     endpoint_loading: Optional[float]
@@ -4533,6 +4545,8 @@ class PredictionGradient:
     -----
     These are prediction columns, not residual or weighted columns. A missing derivative is not a numerical zero.
     """
+    raw_minimum: list[float]
+
     value: list[float]
     """Physical prediction partials in model active-parameter order, with requested
     reaction-coordinate columns where the consumer supplies them; unit divided by each native
@@ -5088,6 +5102,11 @@ class FitResult:
     -----
     Only positive-weight objective rows enter least-squares trial values/rank/variance. Zero-weight rows receive final reporting and checks. Fitted parameters are candidates; neither convergence nor covariance proves independent physical validation. See ALG-FIT.
     """
+    stability_transitions: list[StabilityTransition]
+    stability_predictions: list[Optional[Prediction]]
+    data_cost: float
+    stability_cost: float
+
     saturation_predictions: list[Optional[Prediction]]
 
     first_numerical_failure: Optional[Convergence]
@@ -5543,6 +5562,10 @@ class ObservationEvaluation:
     -----
     For Difference, dr/dv=(dy/dv)/scale; for LogRatio, dr/dv=(dy/dv)/prediction. These point-reader prediction columns must not be confused with weighted Ceres residual columns. See ALG-FIT.
     """
+    stability_predictions: list[Optional[Prediction]]
+    data_cost: float
+    stability_cost: float
+
     saturation_predictions: list[Optional[Prediction]]
 
     first_numerical_failure: Optional[Convergence]
@@ -5931,3 +5954,31 @@ class SaturationSearch:
     """Iterations, evaluations, Hessian callbacks and driver attempts spent before this search."""
     uniqueness_scope: str
     detection_limits: str
+
+
+class StabilityMeasure:
+    """Full-search reduced molar distance and finite numerical evidence."""
+    report: StabilityReport
+    raw_minimum: Optional[float]
+    value: Optional[float]
+    uncertainty: Optional[float]
+    minimizing_trial: Optional[int]
+    minima: list[int]
+    cause: str
+    event: str
+    available: bool
+
+
+def stability_measure(compiled: CompiledSystem, result: EquilibriumResult,
+                      options: StabilityOptions = ...) -> StabilityMeasure: ...
+
+
+class StabilityTransition:
+    observation: int
+    previous_optimizer: list[float]
+    optimizer: list[float]
+    previous_trial: Optional[StabilityTrial]
+    trial: Optional[StabilityTrial]
+    previous_classification: str
+    classification: str
+    kind: str

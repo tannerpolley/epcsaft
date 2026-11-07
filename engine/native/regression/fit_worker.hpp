@@ -46,7 +46,11 @@ FIELDS(equilibrium::ReactionSpec, a, b, c, d, e, f)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
-FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z)
+FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
+FIELDS(equilibrium::StabilityOptions, a, b, c, d, e, f)
+FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o)
+FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)
+FIELDS(equilibrium::StabilityMeasure, a, b, c, d, e, f, g, h, i)
 FIELDS(HydrationHold, a, b, c, d, e, f)
 FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
@@ -78,7 +82,7 @@ auto fields(equilibrium::EquilibriumResult& v) {
 auto fields(Prediction& v) {
     return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,
         v.saturation, v.saturation_loading, v.endpoint_loading, v.added_amount, v.cap_branch,
-        v.saturation_loading_gradient, v.endpoint_loading_gradient);
+        v.saturation_loading_gradient, v.endpoint_loading_gradient, v.stability, v.pressure_reference, v.stability_raw_gradient);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {

@@ -833,7 +833,7 @@ std::vector<double> CompiledSystem::hessian_at(
 
 RowSeries CompiledSystem::row_series(
     const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
-    const std::vector<double>& control, std::size_t order
+    const std::vector<double>& control, std::size_t order, bool plane
 ) const {
     core::Scope scope("equilibrium_row_series");
     if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
@@ -879,7 +879,7 @@ RowSeries CompiledSystem::row_series(
         : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
-    auto geometry = record_geometry(*this, prepared, standard);
+    auto geometry = record_geometry(*this, prepared, standard, false, plane);
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);
     for (std::size_t k = 0; k <= order; ++k) {
@@ -902,11 +902,14 @@ RowSeries CompiledSystem::row_series(
     result.pressure.assign(order + 1, 0.0);
     if (problem.loading) for (const auto& coefficient : state) result.loading.push_back(coefficient[loading_column()]);
     result.phase.resize(problem.phases.size());
+    if (plane) result.standard_minus_plane.assign(components, std::vector<double>(order + 1));
     const std::size_t row_offset = problem.phases.size() * stride;
     const std::size_t temperature_index = primal_size - free_intensive_count;
     result.solid_amount.assign(solids.size(), std::vector<double>(order + 1));
     result.solid_affinity = result.solid_amount;
     for (std::size_t k = 0; k <= order; ++k) {
+        if (plane) for (std::size_t i = 0; i < components; ++i)
+            result.standard_minus_plane[i][k] = output[k][row_offset + rows.size() + 2 * solids.size() + i];
         for (std::size_t row = 0; row < rows.size(); ++row) result.rows[k][row] = output[k][row_offset + row];
         for (std::size_t s = 0; s < solids.size(); ++s) {
             result.solid_amount[s][k] = output[k][row_offset + rows.size() + 2 * s];
@@ -958,6 +961,7 @@ RowSeries CompiledSystem::row_series(
             }
             const auto species =
                 species_standard_slopes(prepared.temperature, components, problem.reactions, targets);
+            if (plane) for (std::size_t i = 0; i < components; ++i) result.standard_minus_plane[i][k] += species[i];
             for (std::size_t row = 0; row < rows.size(); ++row)
                 if (rows[row].kind == RowKind::Chemical)
                     result.rows[k][row] += species[rows[row].index];

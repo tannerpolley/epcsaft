@@ -84,6 +84,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                 if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
                 problems.push_back(&observation.problem);
                 if (addition(observation.kind)) problems.push_back(&observation.final_problem);
+        if (observation.pressure_reference) problems.push_back(&*observation.pressure_reference);
             }
             for (const auto* problem_pointer : problems) {
                 const auto& problem = *problem_pointer;
@@ -222,6 +223,7 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     for (auto& observation : observations) {
         problems.push_back(&observation.problem);
         if (addition(observation.kind)) problems.push_back(&observation.final_problem);
+        if (observation.pressure_reference) problems.push_back(&*observation.pressure_reference);
     }
     // Assign absolute coefficients before adding shifts, independent of declaration order.
     for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {

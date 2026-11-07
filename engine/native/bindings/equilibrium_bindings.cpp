@@ -366,10 +366,13 @@ void register_equilibrium(nb::module_& module) {
             resolved_descent);
     nb::class_<StabilityReport>(module, "StabilityReport")
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,
-            plane_over_rt, present_phases, work);
+            plane_over_rt, present_phases, work, no_descent_in_trial_set);
+    nb::class_<StabilityMeasure>(module, "StabilityMeasure")
+        EPCSAFT_READONLY(StabilityMeasure, report, raw_minimum, value, uncertainty, minimizing_trial, minima, cause, event, available);
     nb::class_<DiscoveryRecord>(module, "DiscoveryRecord")
         EPCSAFT_READONLY(DiscoveryRecord, mode, termination, unsearched, declaration, candidate, rounds, declarations, declaration_roles,
             declaration_attempt_coordinates, work);
+    module.def("stability_measure", &stability_measure, nb::arg("compiled"), nb::arg("result"), nb::arg("options") = StabilityOptions{});
     module.def("cooling_onset", &cooling_onset, nb::arg("compiled"));
     module.def("stability_test", &stability_test, nb::arg("compiled"), nb::arg("central"),
         nb::arg("options") = StabilityOptions{});

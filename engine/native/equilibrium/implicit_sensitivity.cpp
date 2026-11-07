@@ -203,11 +203,11 @@ bool is_solid_kind(SolvedStateObservableKind kind) {
 bool is_phase_kind(SolvedStateObservableKind kind) {
     return kind != SolvedStateObservableKind::Temperature && kind != SolvedStateObservableKind::Pressure
         && kind != SolvedStateObservableKind::Loading && kind != SolvedStateObservableKind::SystemEnthalpy
-        && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity && !is_solid_kind(kind);
+        && kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity && kind != SolvedStateObservableKind::SpeciesStandardMinusPlane && !is_solid_kind(kind);
 }
 
 bool has_component(SolvedStateObservableKind kind) {
-    return kind == SolvedStateObservableKind::PhaseComponentAmount
+    return kind == SolvedStateObservableKind::SpeciesStandardMinusPlane || kind == SolvedStateObservableKind::PhaseComponentAmount
         || kind == SolvedStateObservableKind::PhaseMoleFraction
         || kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt
         || kind == SolvedStateObservableKind::PhaseLogActivity;
@@ -383,7 +383,7 @@ SolvedStateActionStatus energy_status(PropertyActionStatus status) {
 // The coefficient recurrence: J y_k = -[t^k] F(y(t), q(t)) with y_k unknown set to zero,
 // re-evaluated after each solve so the retained residual is the owned row residual.
 Path follow(const CompiledSystem& compiled, const Center& center, const std::vector<double>& control,
-            std::size_t order, SolvedStateActionDiagnostics& diagnostics) {
+            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane = false) {
     Path path;
     const std::size_t n = center.prepared.point.size();
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
@@ -392,7 +392,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     // The series through order k, or false with the path refused when a reference is unavailable.
     const auto rows_through = [&](const std::vector<std::vector<double>>& prefix, std::size_t k, RowSeries& series) {
         try {
-            series = compiled.row_series(center.prepared, prefix, control, k);
+            series = compiled.row_series(center.prepared, prefix, control, k, plane);
             return true;
         } catch (const std::invalid_argument& error) {
             if (!is_reference_unavailable(error)) throw;
@@ -494,6 +494,7 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
     switch (observable.kind) {
     case SolvedStateObservableKind::SystemEnthalpy:
         return system_enthalpy_series(model, series, maps, calorics, result, diagnostics);
+    case SolvedStateObservableKind::SpeciesStandardMinusPlane: return series.standard_minus_plane.at(observable.component);
     case SolvedStateObservableKind::Temperature: return series.temperature;
     case SolvedStateObservableKind::Loading: return series.loading;
     case SolvedStateObservableKind::Pressure: return series.pressure;
@@ -876,6 +877,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     switch (observable.kind) {
     case SolvedStateObservableKind::SystemEnthalpy: return "system.enthalpy";
     case SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity: return "system.isobaric_heat_capacity";
+    case SolvedStateObservableKind::SpeciesStandardMinusPlane: return "standard_minus_plane" + component;
     case SolvedStateObservableKind::Temperature: return "temperature";
     case SolvedStateObservableKind::Loading: return "loading";
     case SolvedStateObservableKind::Pressure: return "pressure";
@@ -1050,6 +1052,8 @@ static SolvedStateActionBatch evaluate_action(
         controls.push_back(std::move(control));
         magnitude.push_back(largest);
     }
+    const bool plane = std::any_of(request.observables.begin(), request.observables.end(), [](const auto& o) {
+        return o.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane; });
     const bool reference_problem = !compiled.reference_diagnostics.empty();
     const ReferenceCalorics *calorics = nullptr;
     const auto other_caloric = [](const auto &o) {
@@ -1083,7 +1087,7 @@ static SolvedStateActionBatch evaluate_action(
     if (shared->central_results.empty()) {
         // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
-        const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0);
+        const auto base = compiled.row_series(center.prepared, {center.prepared.point}, no_control, 0, plane);
         std::vector<PhaseMap> base_maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase)
             base_maps.push_back(phase_map(model, base.phase[phase], base.temperature, components));
@@ -1220,6 +1224,27 @@ static SolvedStateActionBatch evaluate_action(
     };
     if (gate != SolvedStateActionStatus::Available)
         return apply_state_gate(gate);
+    if (plane) {
+        const auto n = central.coordinates.size();
+        Eigen::MatrixXd projection = Eigen::MatrixXd::Zero(components, n);
+        std::vector<double> unit(n), control(width);
+        for (std::size_t j = 0; j < n; ++j) {
+            unit[j] = 1.0;
+            const auto series = compiled.row_series(center.prepared, {central.coordinates, unit}, control, 1, true);
+            for (std::size_t i = 0; i < components; ++i) projection(i, j) = series.standard_minus_plane[i][1] * center.column[j];
+            unit[j] = 0.0;
+        }
+        const auto estimates = central.numerical_estimates ? *central.numerical_estimates
+            : equilibrium_numerical_estimates(compiled, central, &center.prepared);
+        if (estimates.row_floor.size() != n) return apply_state_gate(SolvedStateActionStatus::IllConditioned, "plane row estimates unavailable");
+        const Eigen::VectorXd f = center.row.cwiseProduct(Eigen::Map<const Eigen::VectorXd>(central.residuals.data(), n));
+        const Eigen::VectorXd floor = center.row.cwiseAbs().cwiseProduct(Eigen::Map<const Eigen::VectorXd>(estimates.row_floor.data(), n));
+        const Eigen::VectorXd ones = Eigen::VectorXd::Ones(n);
+        const auto error = core::linear_error(center.jacobian, f, projection, floor, ones, ones, &center.lu);
+        if (!error.cause.empty()) return apply_state_gate(SolvedStateActionStatus::IllConditioned, error.cause);
+        for (auto& item : batch.results) if (item.observable.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane)
+            item.numerical_error = error.radius[item.observable.component];
+    }
     if (zero) {
         for (auto& item : batch.results)
             if (item.status == SolvedStateActionStatus::Available && item.value.has_value()) item.action = 0.0;
@@ -1238,7 +1263,7 @@ static SolvedStateActionBatch evaluate_action(
             for (std::size_t i = 0; i < width; ++i) control[i] += sign * controls[j][i] / magnitude[j];
         }
         core::Scope path_scope("solved_state_action_path");
-        const auto path = follow(compiled, center, control, order, batch.diagnostics);
+        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane);
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;

@@ -347,6 +347,7 @@ struct RowSeries final {
     std::vector<std::vector<double>> rows;
     std::vector<double> temperature, pressure, loading;
     std::vector<PhaseSeries> phase;
+    std::vector<std::vector<double>> standard_minus_plane; // species, Taylor coefficient; requested projections only
     std::array<std::vector<std::vector<double>>, 3> reaction_shift; // L, L_T, L_TT Taylor coefficients
     std::vector<std::vector<double>> solid_amount, solid_affinity;  // [solid][k]: n_s and A_s/RT
     PropertyActionStatus energy = PropertyActionStatus::Available;
@@ -477,7 +478,7 @@ struct CompiledSystem final {
     // coefficients `state` (state[0] is the prepared point) and the control direction.
     EPC_API RowSeries row_series(
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
-        const std::vector<double>& control, std::size_t order
+        const std::vector<double>& control, std::size_t order, bool plane = false
     ) const;
 
     std::size_t loading_column() const noexcept { return primal_size - free_intensive_count - 1; }
@@ -765,6 +766,16 @@ struct StabilityReport final {
     std::vector<std::map<std::string, double>> present_phases;
     std::map<std::string, double> work;
 };
+struct StabilityMeasure final {
+    StabilityReport report;
+    std::optional<double> raw_minimum, value, uncertainty;
+    std::optional<std::size_t> minimizing_trial;
+    std::vector<std::size_t> minima;
+    std::string cause, event;
+    bool available = false;
+};
+EPC_API StabilityMeasure stability_measure(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
+
 struct DiscoveryRecord final {
     DiscoveryMode mode = DiscoveryMode::Full;
     std::string termination;
@@ -859,6 +870,7 @@ EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProble
 enum class SolvedStateObservableKind {
     Temperature,
     Pressure,
+    SpeciesStandardMinusPlane,
     PhaseAmount,
     PhaseComponentAmount,
     PhaseMoleFraction,
@@ -945,6 +957,7 @@ struct SolvedStateActionResult final {
     std::size_t order = 0;
     std::optional<double> value;
     std::optional<double> action;
+    std::optional<double> numerical_error;
     SolvedStateActionStatus status = SolvedStateActionStatus::CentralSolveUnavailable;
     std::optional<PropertyActionDiagnostics> property_diagnostics;
     std::optional<std::string> diagnostic_message;

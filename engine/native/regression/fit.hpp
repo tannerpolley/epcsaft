@@ -140,6 +140,15 @@ struct FitCovariance final {
     std::optional<double> variance_factor;  // sum(w r^2) / (n_w - rank) over the n_w rows with w > 0
 };
 
+struct StabilityTransition final {
+    std::size_t observation = 0;
+    std::vector<double> previous_optimizer, optimizer;
+    std::optional<equilibrium::StabilityTrial> previous_trial, trial;
+    std::string previous_classification, classification, kind;
+};
+EPC_API StabilityTransition stability_transition(std::size_t, const std::vector<double>&, const Prediction&,
+    const std::vector<double>&, const Prediction&);
+
 struct FitResult final {
     std::string internal_factor_conditioning = "unavailable_internal_LM_or_KKT";
     policy::SolverOptions solver_options;
@@ -149,10 +158,12 @@ struct FitResult final {
     std::string termination = "not_run";
     std::string message;
     bool usable = false;  // a finite candidate point with values was published; status says how it terminated
+    double data_cost = 0.0, stability_cost = 0.0;
     std::vector<double> optimizer;
     std::vector<double> physical;  // one value per physical row of the coordinate set
     Parameters parameters;
-    std::vector<std::optional<Prediction>> saturation_predictions;
+    std::vector<std::optional<Prediction>> saturation_predictions, stability_predictions;
+    std::vector<StabilityTransition> stability_transitions;
     std::vector<double> predictions;
     std::vector<double> residuals;           // declared form, unweighted
     std::vector<double> weighted_residuals;  // sqrt(w) r, the optimizer residual; whitened under a declared matrix
@@ -181,13 +192,13 @@ struct FitResult final {
 
 struct ObservationEvaluation final {
     policy::SolverOptions solver_options;
-    std::vector<std::optional<Prediction>> saturation_predictions;
+    std::vector<std::optional<Prediction>> saturation_predictions, stability_predictions;
     std::vector<double> predictions, residuals, gradient, weighted, optimizer_gradient;
     // Public point columns: optimizer_gradient is dy/dv; this field is dr/dv at unit weight (with uncertainty, the
     // complete standardized and, under a declared matrix, whitened objective columns).
     std::vector<double> residual_optimizer_gradient;
     std::vector<ObservationStatus> statuses;
-    double cost = 0.0;
+    double cost = 0.0, data_cost = 0.0, stability_cost = 0.0;
     std::optional<core::Convergence> first_numerical_failure;
     std::size_t first_numerical_failure_observation = 0;
     EvaluatedCoordinates chart;

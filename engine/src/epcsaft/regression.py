@@ -23,7 +23,7 @@ from ._core import (
     MeasuredInputKind, MeasuredInput, MeasurementGroup, MeasurementUncertainty, InputReconciliation,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
-from .equilibrium import Amounts, Discover, Free, Phase, Pinned, Problem
+from .equilibrium import StabilityOptions, Amounts, Discover, Free, Phase, Pinned, Problem
 from .parameters import ParameterError, Parameters
 
 _FAMILIES = {
@@ -60,7 +60,7 @@ _KINDS = {
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
 }
-__all__ = ("MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
+__all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
@@ -1126,3 +1126,24 @@ def saturation_pressure_observation(parameters: Parameters, *, component: str, T
     problem = Problem(T=T, P=Free(observed), feed=Amounts({component: 1.0}),
                       phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))])
     return observation(parameters, "pressure", problem, observed=observed, form=form, scale=scale)
+
+
+def stability(parameters: Parameters, problem: Problem, *, scale: float,
+              options: StabilityOptions | None = None, pressure_reference: Problem | None = None,
+              pressure_ratio: float | None = None) -> Observation:
+    """Declare a dimensionless Full-search stability requirement (ALG-STABILITY/ALG-FIT).
+
+    The target is zero in Difference form; scale is positive and dimensionless,
+    and fit supplies a positive penalty weight. Options must request Full
+    optimized trials. A pressure reference prescribes P = pressure_ratio * P*;
+    both parent and reference are native equilibrium declarations. Failed or
+    unresolved searches supply no stable zero. A finite penalty is no global
+    stability certificate and can leave a resolved witness at the endpoint.
+    """
+    result = Observation()
+    result.kind, result.problem, result.scale = ObservationKind.Stability, problem._native(parameters), scale
+    result.stability_options = StabilityOptions() if options is None else options
+    result.pressure_reference = None if pressure_reference is None else pressure_reference._native(parameters)
+    if pressure_ratio is not None:
+        result.pressure_ratio = pressure_ratio
+    return result

@@ -352,7 +352,8 @@ regression_checks = executable(
         'tests/native/regression_f1_j1_checks.cpp',
         'tests/native/regression_j2_inventory_checks.cpp',
         'tests/native/regression_reaction_checks.cpp',
-        'tests/native/regression_measurement_checks.cpp'),
+        'tests/native/regression_measurement_checks.cpp',
+        'tests/native/regression_stability_checks.cpp'),
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep] + quadmath_dep,
@@ -364,6 +365,7 @@ regression_checks = executable(
 )
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
+test('regression/Automatic_fast/stability-requirement', regression_checks, args: ['stability-requirement'])
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
 test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 

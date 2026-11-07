@@ -103,6 +103,7 @@ double residual_slope(const Observation& observation, double value) {
 }
 
 bool same_state(const Observation& left, const Observation& right) {
+    if (left.kind == ObservationKind::Stability || right.kind == ObservationKind::Stability) return false;
     if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
         return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
             && (left.kind == ObservationKind::BulkRelativePermittivity) == (right.kind == ObservationKind::BulkRelativePermittivity)
@@ -138,6 +139,16 @@ bool same_state(const Observation& left, const Observation& right) {
 void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared) {
     const auto components = model.parameters().component_count();
+    if (observation.kind == ObservationKind::Stability) {
+        require(observation.form == ResidualForm::Difference && observation.observed == 0.0, "zero Difference stability requirement");
+        require(observation.stability_options.mode == equilibrium::DiscoveryMode::Full
+            && !observation.stability_options.evaluate_supplied_trials, "Full optimized stability trials");
+        require(!observation.problem.pressure.free && std::all_of(observation.problem.phases.begin(), observation.problem.phases.end(),
+            [](const auto& p) { return p.kind == equilibrium::PhaseKind::Liquid; }), "declared liquid parent at fixed pressure");
+        require(std::isfinite(observation.pressure_ratio) && observation.pressure_ratio > 0.0, "positive pressure ratio");
+        if (observation.pressure_reference) { auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
+            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); validate(reference, model); }
+    }
     require(!observation.problem.spinodal && !observation.final_problem.spinodal, "without spinodal conditions");
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
     require(observation.problem.solids.empty() && observation.final_problem.solids.empty(), "without solids");
@@ -497,7 +508,20 @@ Prediction predict(
     }
     equilibrium::EquilibriumResult solved;
     try {
-        if (!result.compiled) result.compiled = equilibrium::compile_problem(model, observation.problem);
+        auto problem = observation.problem;
+        if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
+            auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
+            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset();
+            if (references) for (const auto& entry : references->pressures) if (same_state(reference, entry.first))
+                result.pressure_reference = std::make_shared<Prediction>(entry.second);
+            if (!result.pressure_reference) {
+                result.pressure_reference = std::make_shared<Prediction>(predict(model, reference));
+                if (references && result.pressure_reference->value) references->pressures.emplace_back(reference, *result.pressure_reference);
+            }
+            if (!result.pressure_reference->value) throw std::runtime_error("pressure reference: " + result.pressure_reference->message);
+            problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
+        }
+        if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const std::runtime_error& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;
@@ -527,6 +551,14 @@ Prediction predict(
 }
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
+    if (observation.kind == ObservationKind::Stability) {
+        if (!result.stability) result.stability = std::make_shared<equilibrium::StabilityMeasure>(
+            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+        result.unit = "1";
+        if (!result.stability->available) { result.value.reset(); result.residual.reset();
+            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
+        finish(result, observation, *result.stability->value); return;
+    }
     if (electrolyte_observation(observation.kind)) {
         double value = 0.0;
         result.unit = "1";
@@ -824,6 +856,43 @@ std::vector<PredictionGradient> differentiate_group(
         }
     }
     for (const auto& input : inputs) directions.push_back(input.state);
+    if (observations.front()->kind == ObservationKind::Stability) {
+        PredictionGradient out; const auto& measure = *prediction.stability;
+        if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
+        const auto& row = *observations.front();
+        using Kind = equilibrium::SolvedStateObservableKind;
+        if (prediction.pressure_reference) {
+            const auto& reference = *prediction.pressure_reference;
+            auto reference_row = row; reference_row.kind = ObservationKind::EquilibriumPressure;
+            reference_row.problem = *row.pressure_reference; reference_row.pressure_reference.reset();
+            const auto gradient = differentiate_group(model, {&reference_row}, reference, coordinates, inputs).front();
+            if (gradient.status != ObservationStatus::Available) { out.message = "pressure reference: " + gradient.message; return {out}; }
+            for (std::size_t k = 0; k < directions.size(); ++k) directions[k].pressure_pa = row.pressure_ratio * gradient.value.at(k);
+        }
+        std::vector<equilibrium::SolvedStateObservable> plane{{Kind::Temperature}, {Kind::Pressure}};
+        for (std::size_t i = 0; i < components; ++i) plane.push_back({Kind::SpeciesStandardMinusPlane, 0, i});
+        const auto actions = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved, plane, directions);
+        const auto& trial = measure.report.trials[*measure.minimizing_trial];
+        const double T = *prediction.solved->temperature, P = *prediction.solved->pressure;
+        const double v = trial.quantities.at("volume_m3_per_mol"), rt = GAS_CONSTANT_J_PER_MOL_K * T;
+        for (std::size_t k = 0; k < directions.size(); ++k) {
+            const auto& d = directions[k];
+            for (const auto& action : actions[k].results) if (!action.action) {
+                out.message = "parent plane/intensive action unavailable"; return {out};
+            }
+            std::vector<double> tangent(2 + components + active_width, 0.0); tangent[0] = *actions[k].results[0].action;
+            std::copy(d.active_parameters.begin(), d.active_parameters.end(), tangent.begin() + 2 + components);
+            const auto eos = model.evaluate(T, v, trial.composition, DerivativeOrder::Gradient);
+            double value = std::inner_product(tangent.begin(), tangent.end(), eos.gradient.begin(), 0.0)
+                + v / rt * (*actions[k].results[1].action - P / T * tangent[0]);
+            for (std::size_t i = 0; i < components; ++i) {
+                value += trial.composition[i] * *actions[k].results[i + 2].action;
+            }
+            out.raw_minimum.push_back(value); out.value.push_back(*measure.value == 0.0 ? 0.0 : value);
+            out.state_diagnostics.push_back(actions[k].diagnostics);
+        }
+        out.status = ObservationStatus::Available; return {out};
+    }
     if (addition(observations.front()->kind)) {
         auto item = *observations.front();
         const bool capped = item.kind == ObservationKind::SaturationCappedAdditionEnthalpy;

@@ -13,6 +13,7 @@ struct MeasurementChart final {
         require(!request.minimax, "uncertainty with minimax is unsupported");
         require(uncertainty.output_sigma.size() == membership.size(), "missing output sigma");
         for (std::size_t i = 0; i < membership.size(); ++i) {
+            if (request.observations[i].kind == ObservationKind::Stability) continue;
             const double weight = request.weights.empty() ? 1.0 : request.weights.at(i);
             require(weight == 0.0 || weight == 1.0, "uncertainty requires unit positive relative weights");
             require(request.observations[i].form == ResidualForm::Difference, "physical-unit Gaussian errors require Difference, not LogRatio");
@@ -33,6 +34,7 @@ struct MeasurementChart final {
                 require(row < membership.size() && membership[row] == membership.size(), "overlapping measurement groups");
                 membership[row] = g;
                 const auto& item = request.observations[row];
+                require(item.kind != ObservationKind::Stability, "stability requirements are not measurements");
                 require(!addition(item.kind) && item.kind != ObservationKind::SolvationGibbsEnergy
                     && item.kind != ObservationKind::TransferGibbsEnergy && item.kind != ObservationKind::BulkRelativePermittivity
                     && item.kind != ObservationKind::FeedEnthalpy && item.kind != ObservationKind::SystemEnthalpy
@@ -144,7 +146,7 @@ struct MeasurementChart final {
         require(!uncertainty.covariance || !uncertainty.correlation, "declares both covariance and correlation");
         std::vector<double> deviations;
         for (std::size_t i = 0; i < membership.size(); ++i)
-            if (request.weights.empty() || request.weights[i] > 0.0) { rows.push_back(i); deviations.push_back(uncertainty.output_sigma[i]); }
+            if (request.observations[i].kind != ObservationKind::Stability && (request.weights.empty() || request.weights[i] > 0.0)) { rows.push_back(i); deviations.push_back(uncertainty.output_sigma[i]); }
         for (std::size_t c = 0; c < groups.size(); ++c) { rows.push_back(membership.size() + c); deviations.push_back(sigma[c]); }
         const auto m = static_cast<Eigen::Index>(rows.size());
         require(matrix->size() == rows.size() * rows.size(), "measurement matrix dimension");
