@@ -5910,12 +5910,17 @@ class ReactionActivities:
     cause: str
     reference_pressure_pa: float | None
     log_quotient: float | None
+    standard_pressure_pa: float | None
+    log_pressure_quotient: float | None
+    log_pressure_quotient_actions: list[float | None]
+    pressure_cause: str
     species: SpeciesActivities
 
 @overload
 def reaction_activities(model: HelmholtzModel, result: EquilibriumResult) -> list[ReactionActivities]: ...
 @overload
 def reaction_activities(model: IdealMoleFraction, result: EquilibriumResult) -> list[ReactionActivities]: ...
+def solid_activities(result: EquilibriumResult) -> list[float | None]: ...
 
 class AffineLoading:
     """Declared n(alpha)=initial+alpha*direction, mol; positive loading bounds in mol/mol and target pressure in Pa."""

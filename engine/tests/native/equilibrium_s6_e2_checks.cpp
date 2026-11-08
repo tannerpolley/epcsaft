@@ -1718,6 +1718,7 @@ void check_species_thermochemistry() {
     CHECK(read.log_quotient && std::abs(*read.log_quotient - source.ln_k_density) <= 1e-10);
     const double pressure_q = *read.log_quotient + std::log(GAS_CONSTANT_J_PER_MOL_K * 500 / 100000);
     CHECK(std::abs(pressure_q - source.ln_k_pressure) <= 1e-10);
+    CHECK(read.log_pressure_quotient && std::abs(*read.log_pressure_quotient - source.ln_k_pressure) <= 1e-10 && read.standard_pressure_pa == 100000);
     for (const auto& v : model.state(500, solved.molar_densities[0], solved.mole_fractions).residual_chemical_potential_over_rt) CHECK(v && *v == 0);
     auto candidate = solved;
     const auto snapshot_point = c.prepare(solved.coordinates);
@@ -1827,6 +1828,74 @@ void check_species_thermochemistry() {
         if(k==0) for(std::size_t i=0;i<nu.size();++i) mapped-=nu[i]*std::log(prepared.composition[0][i]/prepared.volume[0]);
         CHECK(close_with_tolerance(std::pow(T,k)*mapped,std::pow(T,k)*reference_reduced[k],1e-10));
         std::printf("thermal-derivative,%zu,actual=%.17g,reference=%.17g,scaled_error=%.17g,reduced=%.17g,reduced_reference=%.17g,reduced_scaled_error=%.17g\n",k,actual.gibbs_derivatives[k],expected[k],scale*(actual.gibbs_derivatives[k]-expected[k]),mapped,reference_reduced[k],std::pow(T,k)*(mapped-reference_reduced[k]));
+    }
+}
+} // namespace equilibrium_checks
+
+namespace equilibrium_checks {
+// EqIDs reaction_activity_quotient (pressure basis) and standard_pressure_density_conversion on a reacting vapor-liquid case:
+// ln Q_P = ln K + dnu ln(RT/P0) in both phases, and the reader's first actions against central differences at three steps.
+void check_pressure_basis_quotient() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const double P0 = 1e5, R = GAS_CONSTANT_J_PER_MOL_K;
+    ThermochemistryRecord record{P0, {}};
+    for (int i = 0; i < 3; ++i) record.component_intervals.push_back({{100, 500, true, true, {IdealPolynomial{{33.59}, 298.15, 0.0, 0.0}, P0}}});
+    const std::vector<double> nu = {0, -2, 1};
+    auto problem = equilibrium_support::flash(3);
+    problem.phases = {equilibrium_support::phase("V", PhaseKind::Vapor), equilibrium_support::phase("L", PhaseKind::Liquid)};
+    problem.temperature.value = 180.0; problem.pressure.value = 1e5;
+    problem.solver_options.values[policy::row] = 1e-10;
+    // Place the declared species-thermochemistry constant at the nonreactive liquid's quotient by shifting species C's reference enthalpy.
+    HelmholtzModel plain(properties_support::neutral_ternary(), {}, record);
+    const auto probe = solve_equilibrium(plain, problem);
+    CHECK(probe.success);
+    auto reactive = problem;
+    reactive.reactions = {{"2B=C", nu, {}, {}, {}, {}}};
+    auto declared = probe;
+    declared.declaration = std::make_shared<EquilibriumProblem>(reactive);
+    const double T = *probe.temperature, P = *probe.pressure, dnu = -1.0;
+    const double target = *reaction_activities(plain, declared)[1].log_quotient;  // liquid-phase density-basis ln Q
+    record.component_intervals[2][0].correlation.form = IdealPolynomial{{33.59}, 298.15, R * T * (reaction_thermochemistry_density(record, nu, T).ln_k_density - target), 0.0};
+    HelmholtzModel model(properties_support::neutral_ternary(), {}, record);
+    const auto solved = solve_equilibrium(model, reactive);
+    CHECK(solved.success && solved.phase_count == 2);
+    const auto source = reaction_thermochemistry_density(record, nu, T);
+    CHECK(source.status == ThermochemistryStatus::Available);
+    const double ln_kp = source.ln_k_pressure;
+    const auto rows = reaction_activities(model, solved);
+    CHECK(rows.size() == 2);
+    for (std::size_t p = 0; p < 2; ++p) {
+        const auto& row = rows[p];
+        CHECK(row.log_pressure_quotient && row.standard_pressure_pa == P0 && row.pressure_cause.empty());
+        std::printf("pressure-basis,phase=%zu,lnQ_P=%.17g,lnK_P=%.17g,difference=%.3e,x=%.6g/%.6g/%.6g\n", p, *row.log_pressure_quotient,
+            ln_kp, *row.log_pressure_quotient - ln_kp, solved.mole_fractions[3 * p], solved.mole_fractions[3 * p + 1], solved.mole_fractions[3 * p + 2]);
+        CHECK(std::abs(*row.log_pressure_quotient - ln_kp) <= 1e-8);
+        CHECK(std::abs(*row.log_pressure_quotient - *row.log_quotient - dnu * std::log(R * T / P0)) <= 1e-12);
+        const std::vector<double> x(solved.mole_fractions.begin() + 3 * p, solved.mole_fractions.begin() + 3 * p + 3);
+        const auto branch = p == 0 ? DensityBranch::Vapor : DensityBranch::Liquid;
+        const auto ln_qp = [&](double t, double pressure, const std::vector<double>& y) {
+            const auto state = model.state_at_pressure(t, pressure, y, branch, solved.molar_densities[p]);
+            double q = 0.0;
+            for (std::size_t i = 0; i < 3; ++i) if (nu[i] != 0) q += nu[i] * ((*state.log_fugacity_coefficient)[i].value() + std::log(y[i]) + std::log(pressure / P0));
+            return q;
+        };
+        CHECK(row.log_pressure_quotient_actions.size() == 5);
+        for (std::size_t k = 0; k < 5; ++k) {
+            const double action = row.log_pressure_quotient_actions[k].value();
+            const double base = k == 0 ? 0.05 : k == 1 ? 2.5e2 : 1e-3 * x[k - 2];
+            double previous = INFINITY;
+            for (const double h : {base, base / 2, base / 4}) {
+                auto yp = x, ym = x;
+                if (k > 1) for (std::size_t i = 0; i < 3; ++i) { const double d = (i == k - 2) - x[i]; yp[i] += h * d; ym[i] -= h * d; }
+                const double difference = (ln_qp(T + (k == 0) * h, P + (k == 1) * h, yp) - ln_qp(T - (k == 0) * h, P - (k == 1) * h, ym)) / (2 * h);
+                const double error = std::abs(difference - action);
+                std::printf("pressure-basis-action,phase=%zu,k=%zu,h=%.4g,action=%.12g,difference=%.12g,error=%.3e\n", p, k, h, action, difference, error);
+                CHECK(error <= 1e-6 * std::abs(action) + 1e-8);
+                CHECK(error <= previous / 2 + 1e-9 * (1 + std::abs(action)));  // error falls with the step, or sits at roundoff (slack term)
+                previous = error;
+            }
+        }
     }
 }
 } // namespace equilibrium_checks

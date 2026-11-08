@@ -72,6 +72,11 @@ def reaction_activities(model: _Model | IdealMoleFraction, result: _core.Equilib
     return _core.reaction_activities(model._model, result)
 
 
+def solid_activities(result: _core.EquilibriumResult) -> list[float | None]:
+    """Activity of each declared pure solid: 1.0 when present on its pure-solid standard state, otherwise None."""
+    return _core.solid_activities(result)
+
+
 @dataclass(slots=True, eq=False, repr=False, match_args=False)
 class Free:
     """Declare a free temperature, pressure or phase amount.

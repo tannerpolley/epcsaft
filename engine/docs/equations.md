@@ -1762,13 +1762,14 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Chemical-potential definition on one declared standard-state basis
-- Description: Products-positive reaction quotient from dimensionless activities on one identified basis. Activities and the equilibrium constant must use the same basis.
-- Change note: Zero activities may have limiting values, but logarithmic insertion derivatives are not implied.
+- Description: Products-positive reaction quotient from dimensionless activities on one identified basis. Activities and the equilibrium constant must use the same basis. On the pressure basis the activities are fugacity ratios $f_i/P^\circ$ at a declared standard pressure; $f_i=x_i\rho RT\exp(\mu^{\mathrm{res}}_i/RT)$ gives $\ln Q_P=\ln Q_\rho+\Delta\nu\ln(RT/P^\circ)$ with $\Delta\nu=\sum_i\nu_i$, equal to $\ln K_P$ at equilibrium by standard_pressure_density_conversion. A present pure solid has activity one on its pure-solid standard state (solid_standard_gibbs).
+- Change note: Zero activities may have limiting values, but logarithmic insertion derivatives are not implied. The pressure-basis quotient's first actions are partial derivatives at the phase state along $T$, $P$ and $\mathbf e_j-\mathbf x$, from the exact log-fugacity actions.
 
 $$
 \mu_i=\mu_i^{\circ,b}+RT\ln a_i^{b},\qquad
 \ln Q_b=\sum_i\nu_i\ln a_i^{b},\qquad
-\ln K_b=-\frac{\sum_i\nu_i\mu_i^{\circ,b}}{RT}.
+\ln K_b=-\frac{\sum_i\nu_i\mu_i^{\circ,b}}{RT},\qquad
+\ln Q_P=\sum_i\nu_i\ln\frac{f_i}{P^\circ}.
 $$
 
 ## `ideal_mole_fraction_reaction`

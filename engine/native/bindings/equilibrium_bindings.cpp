@@ -177,7 +177,8 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(SpeciesActivities, log_activities, activities, causes, solvent_index, standard_molality_mol_per_kg);
     nb::class_<ReactionActivities>(module, "ReactionActivities")
         EPCSAFT_READONLY(ReactionActivities, phase_index, reaction_index, basis, cause, reference_pressure_pa,
-            log_quotient, species);
+            log_quotient, standard_pressure_pa, log_pressure_quotient, log_pressure_quotient_actions, pressure_cause, species);
+    module.def("solid_activities", &solid_activities, nb::arg("result"));
     module.def("reaction_activities", nb::overload_cast<const HelmholtzModel&, const EquilibriumResult&>(&reaction_activities), nb::arg("model"), nb::arg("result"));
     module.def("reaction_activities", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(&reaction_activities), nb::arg("model"), nb::arg("result"));
     module.attr("EOS_STANDARD_STATE_ID") = EOS_STANDARD_STATE_ID;

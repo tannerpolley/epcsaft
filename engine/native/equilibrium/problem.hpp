@@ -738,10 +738,16 @@ struct ReactionActivities final {
     std::size_t phase_index = 0, reaction_index = 0;
     std::string basis, cause;
     std::optional<double> reference_pressure_pa, log_quotient;
+    // Pressure basis (EOS models): P0, ln Q_P = ln prod (f_i/P0)^nu_i, and its partial actions along T, P and e_j - x (amount j).
+    std::optional<double> standard_pressure_pa, log_pressure_quotient;
+    std::vector<std::optional<double>> log_pressure_quotient_actions;
+    std::string pressure_cause;
     SpeciesActivities species;
 };
 EPC_API std::vector<ReactionActivities> reaction_activities(const HelmholtzModel&, const EquilibriumResult&);
 EPC_API std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction&, const EquilibriumResult&);
+// Per declared solid: 1 when present, absent otherwise.
+EPC_API std::vector<std::optional<double>> solid_activities(const EquilibriumResult&);
 
 struct StabilityTrial final {
     PhaseSpec phase;

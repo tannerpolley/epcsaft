@@ -106,8 +106,15 @@ unavailable quotient. A finite log value survives activity exponentiation
 underflow or overflow, with the activity absent. A structural zero has activity
 zero and log activity negative infinity when its reference exists. Zero
 stoichiometric coefficients are skipped, and conflicting infinite terms make
-the quotient unavailable. This call supplies no pressure-basis quotient, pH,
-derivative, solid activity, persistent cache or fitting payload.
+the quotient unavailable. On an EOS model each row also carries the pressure-basis
+quotient $\ln Q_P=\ln Q_\rho+\Delta\nu\ln(RT/P^\circ)$, with $P^\circ$ the reaction's
+`reference_pressure_pa` or else the thermochemistry record's standard pressure
+(`standard_pressure_pa`; with neither, `pressure_cause` names the absence). At
+equilibrium it equals $\ln K_P$ in every phase. `log_pressure_quotient_actions` lists
+its partial derivatives at the phase state along $T$, $P$ and $\mathbf e_j-\mathbf x$ (amount $j$
+at fixed $T$, $P$); an action that cannot be evaluated is empty and `pressure_cause` names the
+refusal. `solid_activities` returns 1 for each present pure
+solid and no value for an absent one. pH, a persistent cache and a fitting payload are not supplied.
 
 For the MDEA example, EqID: `mdea_reaction_conserved_amounts` supplies independent
 inventory checks. These are numerical verification of conserved hydronium chemistry,

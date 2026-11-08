@@ -15,7 +15,7 @@ from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, _core
 from epcsaft.equilibrium import (
     Free, Molalities, NeutralReference, Phase, Pinned, Problem, ReactionLogPolynomial, ReactionReference,
     ReferenceSourceBasis, Solid, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
-    SolvedStateObservableKind as Kind, compile_problem, solve_equilibrium, solved_state_actions,
+    SolvedStateObservableKind as Kind, compile_problem, solid_activities, solve_equilibrium, solved_state_actions,
 )
 from tests.native_inputs import same
 from tests.packets import parameters_json
@@ -75,6 +75,7 @@ def test_halite_solubility_and_complementarity(evidence: Any) -> None:
     same(evidence, "halite/F2/ln-ion-product", reference_log_ip(m_s), 0.0, rtol=0.0, atol=1e-9,
          method="Reference.activity at the solved molality", claim="the saturation row imposes 2 ln(m g) = ln K")
     assert saturated.solid_affinity_decades[0] == pytest.approx(0.0, abs=1e-10)
+    assert solid_activities(saturated) == [1.0]
     excess = solve(7.5)
     same(evidence, "halite/F3/feed-invariant-molality", liquid_molality(excess), m_s, rtol=1e-8, atol=0.0,
          method="native solves at 6.5 and 7.5 mol/kg", claim="the saturated liquid is feed invariant")
@@ -83,6 +84,7 @@ def test_halite_solubility_and_complementarity(evidence: Any) -> None:
              rtol=0.0, atol=1e-10 * feed, method="element balance", claim="n_s is the feed excess")
     dilute = solve(5.0)
     assert dilute.solid_amounts == [0.0]
+    assert solid_activities(dilute) == [None]
     assert dilute.solid_affinity_decades[0] < 0.0
 
 

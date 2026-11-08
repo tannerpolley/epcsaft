@@ -13,5 +13,6 @@ def test_reaction_activities() -> None:
     assert row.species.activities == result.mole_fractions
     assert row.species.activities[2] == 0 and row.species.log_activities[2] == -float("inf")
     assert row.species.causes == ["", "", ""] and row.log_quotient is not None and not row.cause
+    assert row.log_pressure_quotient is None and row.log_pressure_quotient_actions == [] and not row.pressure_cause
     with pytest.raises(ValueError, match="model/result mismatch"):
         reaction_activities(IdealMoleFraction(["A", "B", "C"], [0, 0, 0]), result)

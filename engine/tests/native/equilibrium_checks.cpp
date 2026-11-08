@@ -7,6 +7,7 @@ void check_discovery_work();
 void check_s1();
 void check_ideal_gas();
 void check_species_thermochemistry();
+void check_pressure_basis_quotient();
 void check_ideal_mole_fraction();
 void check_ideal_molarity();
 void check_s2();
@@ -79,6 +80,7 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.equilibrium.discovery-work", "discovery-work", "Automatic_fast"}, check_discovery_work},
         {{"native.equilibrium.species-thermochemistry", "species-thermochemistry", "Automatic_fast"}, check_species_thermochemistry},
+        {{"native.equilibrium.pressure-basis-quotient", "pressure-basis-quotient", "Automatic_fast"}, check_pressure_basis_quotient},
         {{"native.equilibrium.ideal-gas", "ideal-gas", "Automatic_fast"}, check_ideal_gas},
         {{"native.equilibrium.caloric-admission", "caloric-admission", "Automatic_fast"}, caloric_specification_checks::admission, "caloric-specification"},
         {{"native.equilibrium.caloric-actions", "caloric-actions", "Automatic_fast"}, caloric_specification_checks::actions, "caloric-specification"},
