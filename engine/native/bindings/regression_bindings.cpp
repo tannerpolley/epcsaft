@@ -176,10 +176,10 @@ m._serve_fit(channel)
         EPCSAFT_READWRITE(CoordinateTarget, family, indices, coefficient);
     nb::class_<Coordinate>(module, "Coordinate")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(Coordinate, targets, reaction, origin, scale, lower, upper);
+        EPCSAFT_READWRITE(Coordinate, reaction, origin, scale, lower, upper) EPCSAFT_COPIED(Coordinate, targets);
     nb::class_<CoordinateSet>(module, "CoordinateSet")
         .def(nb::init<>())
-        .def_rw("coordinates", &CoordinateSet::coordinates)
+        EPCSAFT_COPIED(CoordinateSet, coordinates)
         .def("active", [](const CoordinateSet& set) { return set.active_parameters(); })
         .def("tie", [](const CoordinateSet& set) { return set.tie(); })
         .def("start", &CoordinateSet::start, nb::arg("parameters"), nb::arg("observations") = std::vector<Observation>{},
@@ -212,9 +212,9 @@ m._serve_fit(channel)
     nb::class_<MeasuredInput>(module, "MeasuredInput").def(nb::init<>())
         EPCSAFT_READWRITE(MeasuredInput, kind, species, sigma, lower, upper, unit);
     nb::class_<MeasurementGroup>(module, "MeasurementGroup").def(nb::init<>())
-        EPCSAFT_READWRITE(MeasurementGroup, rows, inputs, dependent_species, feed_total_mol);
+        EPCSAFT_READWRITE(MeasurementGroup, rows, dependent_species, feed_total_mol) EPCSAFT_COPIED(MeasurementGroup, inputs);
     nb::class_<MeasurementUncertainty>(module, "MeasurementUncertainty").def(nb::init<>())
-        EPCSAFT_READWRITE(MeasurementUncertainty, groups, output_sigma, covariance, correlation);
+        EPCSAFT_READWRITE(MeasurementUncertainty, output_sigma, covariance, correlation) EPCSAFT_COPIED(MeasurementUncertainty, groups);
     nb::class_<InputReconciliation>(module, "InputReconciliation")
         EPCSAFT_READONLY(InputReconciliation, values, corrections, penalties, jacobian, row_groups, column_groups,
             column_inputs, output_cost, input_cost);

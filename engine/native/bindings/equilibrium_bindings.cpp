@@ -239,8 +239,9 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(DiscoveryMode, Full, Fast, FastTested);
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, trials, declaration_budget, trial_budget,
-            standard_uncertainty_over_rt);
+        EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, declaration_budget, trial_budget,
+            standard_uncertainty_over_rt)
+        EPCSAFT_COPIED(StabilityOptions, trials);
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(nb::init<>())
         EPCSAFT_READWRITE(CriticalDeclaration, density_guess_mol_per_m3, mode_guess);
@@ -257,10 +258,10 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_rw("row_tolerance", [](const EquilibriumProblem& v) { return v.solver_options.value(policy::row); },
             [](EquilibriumProblem& v, nb::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, 4); }, nb::for_setter(nb::arg("value").none()))
         .def(nb::init<>())
-        EPCSAFT_READWRITE(EquilibriumProblem, phases, temperature, pressure, feed, reactions)
+        EPCSAFT_READWRITE(EquilibriumProblem, temperature, pressure, feed) EPCSAFT_COPIED(EquilibriumProblem, phases, reactions, solids)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, volume_m3, internal_energy_j, critical, spinodal, envelope, azeotrope, discovery, solids);
+            entropy_j_per_k, volume_m3, internal_energy_j, critical, spinodal, envelope, azeotrope, discovery);
     nb::enum_<RowKind>(module, "RowKind")
         EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, InternalEnergy, Volume, CriticalMode,
             CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);

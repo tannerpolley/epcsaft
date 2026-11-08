@@ -108,7 +108,7 @@ void register_thermal_inputs(nb::module_& module) {
             [field](IdealInterval& v, nb::handle value) { v.*field = interval_inclusive(value); }, nb::for_setter(nb::arg("value").none()));
     nb::class_<ThermochemistryRecord>(module, "ThermochemistryRecord")
         .def(nb::init<double, std::vector<std::vector<IdealInterval>>>(), nb::arg("standard_pressure"), nb::arg("component_intervals"))
-        EPCSAFT_READWRITE(ThermochemistryRecord, standard_pressure, component_intervals);
+        EPCSAFT_READWRITE(ThermochemistryRecord, standard_pressure) EPCSAFT_COPIED(ThermochemistryRecord, component_intervals);
     nb::class_<ReactionLogPolynomial>(module, "ReactionLogPolynomial")
         .def(nb::init<double, double, double, double, double, double, double, std::string, double, double>(), nb::arg("a"), nb::arg("b"), nb::arg("c"), nb::arg("d"),
             nb::arg("reference_temperature"), nb::arg("temperature_min"),
@@ -137,8 +137,7 @@ void register_eos(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_component, site_multiplicity, base_choice,
             association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice)
-        // Copies: references into the vector dangle once the setter replaces it.
-        .def_rw("entries", &epcsaft::ParameterDocument::entries, nb::rv_policy::copy);
+        EPCSAFT_COPIED(epcsaft::ParameterDocument, entries);
     module.def("build_parameters", &epcsaft::build_parameters);
     module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
     module.def("fitted_document", &epcsaft::fitted_document);

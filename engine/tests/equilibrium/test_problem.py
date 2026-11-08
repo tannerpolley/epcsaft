@@ -406,8 +406,9 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
         for x, y in zip([full.pressure, *full.amounts], [reduced.pressure, *reduced.amounts], strict=True):
             assert abs(x - y) <= 1e-10 * max(abs(x), abs(y))
     options = equilibrium.StabilityOptions()
-    options.trials = [_core.PhaseSpec()]
-    options.trials[0].kind = _core.PhaseKind.Vapor
+    vapor_trial = _core.PhaseSpec()
+    vapor_trial.kind = _core.PhaseKind.Vapor
+    options.trials = [vapor_trial]
     salt_default = equilibrium.bubble_point(liquid=Phase("L", kind="liquid"), T=373.15, feed=cases[0][2])
     salt_result = solve_equilibrium(salt, salt_default)
     report = equilibrium.stability_test(equilibrium.compile_problem(salt, salt_default), salt_result, options)
