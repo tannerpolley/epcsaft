@@ -37,6 +37,7 @@ void check_phase_removal_inventory();
 void check_tangent_plane_curvature();
 void check_tangent_plane_admission();
 void check_trace_ion_curvature();
+void check_solve_error_curvature();
 void check_stability_amount_correction();
 void check_trial_refinement();
 void check_normalized_reaction_affinity();
@@ -102,6 +103,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
+        {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},
         {{"native.equilibrium.stability-amount-correction", "stability-amount-correction", "Automatic_fast"}, check_stability_amount_correction},
         {{"native.equilibrium.trial-refinement", "trial-refinement", "Automatic_fast"}, check_trial_refinement},
         {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},

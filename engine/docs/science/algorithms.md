@@ -1464,16 +1464,41 @@ is unresolved. `reduced_hessian_minimum` stays the unscaled smallest eigenvalue,
 the physical log-chart curvature (`N x_B` for a trace isomer). Its sign carries
 information only above its own rounding. The band is a first-order estimate,
 not a rigorous bound. It covers rounding of the assembled Hessian and nullspace,
-but not cancellation inside the objective curvature sum or the returned point's
-own solve error. That error generally exceeds `tau`: at a row residual near
-`1e-12` the equilibrated minimum moves by order `1e-13`. It decides the outcome
-only when `|lambda_min(D H D)|` is below it, which happens near a genuinely
-degenerate state. Take two identical ethane pseudo-species with an isomerisation
-at 200 K and 5 MPa, at the `k_ij` where the symmetric state's curvature vanishes.
-Adjacent `k_ij` values give equilibrated minima of about `+5e-14` (row residual
-`1.3e-12`) and `-9e-14` (row residual `9e-16`) against a band of `5e-15`. There
-the decision follows the returned point, not the exact equilibrium, and the typed
-indeterminate outcome is reached only when the solve error is at rounding level. Diagnostic
+but not cancellation inside the objective curvature sum. The returned point's
+own solve error is a separate term. Let `d = -J^{-1} F` be the next Newton
+correction of the full row system at the returned point `x`: the full-pivot LU of
+the numerical rows, with free pivots set to zero when `J` is rank deficient. Its
+first-order effect on the certificate needs third Lagrangian derivatives, so the
+certificate is recomputed at `x + d` with `D` held at its `x` value and the
+weights taken from the moved multipliers and amounts:
+
+$$
+e=\left|\lambda_{\min}(x+d;\,D(x))-\lambda_{\min}(x;\,D(x))\right|.
+$$
+
+That costs one preparation, so a cheap estimate gates it:
+`G = ||D S D||_F (||d_primal / s||_inf + ||w(x + d) - w(x)||_inf / ||w(x)||_inf)`,
+with `s` the polish's coordinate scale (phase amounts, free T and P) and `w` the
+constraint weights. Only where `|lambda_min(D H D)| <= tau + G` is `e` evaluated;
+elsewhere `e = 0` and no work count changes. The margin is `tau + e`, the two
+terms reported separately: above it the point is stable, below its negative "not
+positive definite", otherwise indeterminate. A nonfinite `d`, or a corrected point
+that preparation refuses, gives `e = +inf`. A caloric mixture recertifies its
+fixed-T,P problem rebuilt at `T + dT`, with no weight term in `G`; the (U,V)
+certificate has none either. The gate assumes that `D H D` changes by at most its
+own size per unit scaled coordinate. Measured `e/G` is at most `1.4e-3` over 150
+MEA liquid states and `1e-7` to `7e-5` at near-degenerate states. `e` covers one
+correction and compares its endpoints only: it can miss a crossing whose endpoints
+agree within the margin, and can mark a same-sign pair indeterminate. Take two
+identical ethane pseudo-species with an isomerisation at 200 K and 5 MPa, at the
+`k_ij` where the symmetric state's curvature vanishes. At `k_ij = 0.12810288983397305`
+a returned point with row residual `1.6e-14` has equilibrated minimum `+2.6e-13`
+against `tau = 5.7e-15`, but `||d_primal / s||_inf = 3.5e-4`, `G = 1.7e-3` and
+`e = 1.2e-8`: indeterminate, not stable. Along `x + t d` its curvature is negative
+between `t ≈ 0.003` and `0.008`. At `k_ij = 0.12810288983397294` a point with
+`-8.9e-14` has `e = 1.0e-7`: indeterminate, not rejected. The ionic liquid-liquid
+and unloaded-MEA key solves and the 150 MEA states skip the recertification by at
+least seven decades. Diagnostic
 residual summaries reuse the certified row values. For a no-site EOS Hessian,
 each unit-direction `Forward(1)`/`Reverse(2)` sweep supplies a Hessian column;
 the first sweep's even entries supply the gradient, including active-parameter

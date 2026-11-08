@@ -52,26 +52,26 @@ namespace {
 // EqID reduced_hessian_stability on the balance nullspace. `minimum` is the smallest eigenvalue in the solved
 // chart. The decision reads the congruent equilibration D = diag(S)^-1/2, S = |objective| + |weighted constraint|
 // curvature, whose inertia is the same, against the rounding band eps (n ||DSD|| + 2 kappa(AD) ||DHD||)
-// (ALG-EQUILIBRIUM, #159): trace log-chart directions have curvature far below eps ||H||.
-struct Curvature final { double minimum = 0.0, equilibrated = 1.0, band = 0.0; };
+// (ALG-EQUILIBRIUM, #159): trace log-chart directions have curvature far below eps ||H||. `jacobian` holds the
+// physical rows at `at`, assembled here when empty; `frozen` replaces D to recertify a corrected point (#1064).
+struct Curvature final { double minimum = 0.0, equilibrated = 1.0, band = 0.0, magnitude = 0.0; Eigen::VectorXd d; };
 
-Curvature reduced_curvature_at(
-    const CompiledSystem& compiled, const PhasePoint& at,
-    const std::vector<double>& multipliers
-) {
+Curvature reduced_curvature_at(const CompiledSystem& compiled, const PhasePoint& at, const std::vector<double>& multipliers,
+    std::vector<double>& jacobian, const Eigen::VectorXd* frozen = nullptr) {
     if ((compiled.feasibility_cell() && !compiled.problem.volume_m3) || at.point.empty()) return {};
+    if (jacobian.empty()) jacobian = compiled.jacobian_at(at);
     auto prepared = at;
     prepared.point.resize(compiled.primal_size);
     using Dense = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
     const auto width = static_cast<Eigen::Index>(prepared.point.size());
     const auto n = width - compiled.problem.volume_m3.has_value();
-    const auto jacobian = compiled.jacobian_at(prepared);
+    const auto stride = static_cast<Eigen::Index>(jacobian.size() / compiled.rows.size());
     Eigen::MatrixXd constraints(0, n);
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
         const auto& item = compiled.rows[row];  // an absent solid's row n_s = 0 constrains
         if (stationarity_row(item.kind) && !(item.kind == RowKind::SolidAffinity && !compiled.solids[item.index].present)) continue;
         constraints.conservativeResize(constraints.rows() + 1, n);
-        constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * prepared.point.size(), 1, width).leftCols(n);
+        constraints.bottomRows(1) = Eigen::Map<const Dense>(jacobian.data() + row * stride, 1, stride).leftCols(n);
     }
     std::vector<double> entropy_magnitude;
     const Eigen::MatrixXd objective = Eigen::Map<const Dense>((compiled.problem.internal_energy_j ? compiled.entropy_hessian_at(prepared, &entropy_magnitude) : compiled.hessian_at(prepared, {}, compiled.problem.volume_m3.has_value())).data(), width, width).topLeftCorner(n, n);
@@ -90,12 +90,44 @@ Curvature reduced_curvature_at(
     };
     Eigen::MatrixXd magnitude = objective.cwiseAbs() + weighted.cwiseAbs();
     if (!entropy_magnitude.empty()) magnitude = Eigen::Map<const Dense>(entropy_magnitude.data(), width, width).topLeftCorner(n,n);
-    const Eigen::VectorXd d = magnitude.diagonal().unaryExpr([](double s) { return s > 0.0 ? 1.0 / std::sqrt(s) : 1.0; });
+    Eigen::VectorXd d = magnitude.diagonal().unaryExpr([](double s) { return s > 0.0 ? 1.0 / std::sqrt(s) : 1.0; });
+    if (frozen) d = *frozen;
     const Eigen::MatrixXd scaled = d.asDiagonal() * hessian * d.asDiagonal();
     const auto [equilibrated, kappa] = reduce(scaled, constraints * d.asDiagonal());
-    const double rounding = static_cast<double>(n) * (d.asDiagonal() * magnitude * d.asDiagonal()).norm();
+    const double dsd = (d.asDiagonal() * magnitude * d.asDiagonal()).norm(), rounding = static_cast<double>(n) * dsd;
     return {reduce(hessian, constraints).first, equilibrated,
-            std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm())};
+            std::numeric_limits<double>::epsilon() * (rounding + 2.0 * kappa * scaled.norm()), dsd, d};
+}
+
+// Extensive-objective constraint weights from the row multipliers of `point`: a material row (B n - b)/N_feed
+// carries -N_feed lambda_j, a charge row sum z x carries -n_p phi_p (zero when `moiety_only`), and a free-amount
+// phase's normalization row is zero because the objective and material rows obey joint extensive homogeneity in
+// amount, composition and volume, together with stationarity in the free amount.
+std::vector<double> constraint_weights(const CompiledSystem& compiled, const PhasePoint& at, const std::vector<double>& point,
+    bool moiety_only) {
+    std::vector<double> out;
+    std::size_t electro = 0;
+    const auto multiplier = point.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size);
+    for (const auto& row : compiled.rows) {
+        if (stationarity_row(row.kind)) continue;
+        out.push_back(row.kind == RowKind::Moiety ? -compiled.feed_total * multiplier[row.index] : 0.0);
+        if (row.kind != RowKind::Electro || moiety_only) continue;
+        const auto& free = at.shape[row.phase].amount;
+        out.back() = -(free ? point[*free] : at.amount[row.phase]) * multiplier[compiled.rank + electro++];
+    }
+    return out;
+}
+
+// The polish's coordinate scale: a free phase amount, a free temperature and a free pressure by their own values.
+template <typename Base>
+auto coordinate_scale(const CompiledSystem& compiled, const PhasePointValues<Base>& at, Eigen::Index width) {
+    auto scale = Eigen::Matrix<Base, Eigen::Dynamic, 1>::Ones(width).eval();
+    for (std::size_t p = 0; p < at.shape.size(); ++p)
+        if (at.shape[p].amount && at.amount[p] > 0.0) scale(static_cast<Eigen::Index>(*at.shape[p].amount)) = at.amount[p];
+    auto intensive = static_cast<Eigen::Index>(compiled.primal_size - compiled.free_intensive_count);
+    if (compiled.problem.temperature.free) scale(intensive++) = at.temperature;
+    if (compiled.problem.pressure.free) scale(intensive) = at.pressure;
+    return scale;
 }
 
 // Local phase stability (ALG-EQUILIBRIUM, #352) of a neutral nonreacting liquid/vapor pair with an incipient
@@ -951,15 +983,19 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
             topology_failure = "rank-deficient classified equations with present solids: " + present;
         }
     }
+    // One full-width physical row Jacobian at the returned point and one LU of its numerical rows serve the
+    // charge rank, the Newton correction and the certificate.
+    using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+    const auto n = static_cast<Eigen::Index>(full.size());
+    std::vector<double> physical;
+    Eigen::FullPivLU<Matrix> numerical;
+    const auto factor = [&] { if (physical.empty()) physical = compiled.jacobian_at(prepared); numerical.compute(Eigen::Map<const Matrix>(compiled.numerical_rows(prepared, physical, full.size()).data(), n, n)); };
     if (!compiled.log_charge_rows.empty()) {
-        const auto physical = compiled.jacobian_at(prepared);
-        const auto numerical = compiled.numerical_rows(prepared, physical, full.size());
-        const auto n = static_cast<Eigen::Index>(full.size());
-        using Matrix = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
+        factor();
         const auto raw = Eigen::Map<const Matrix>(physical.data(), n, n).fullPivLu();
         const auto physical_rank = raw.rank();
         core::retain_rank(result.rank_records, core::conditioning(raw, "raw_charge_endpoint", 0, "endpoint"), full);
-        result.last_rank = core::conditioning(Eigen::Map<const Matrix>(numerical.data(), n, n).fullPivLu(), "log_charge", 0, "endpoint");
+        result.last_rank = core::conditioning(numerical, "log_charge", 0, "endpoint");
         const auto numerical_rank = static_cast<Eigen::Index>(result.last_rank->rank);
         scope.probe("charge_endpoint_ranks", {static_cast<double>(physical_rank), static_cast<double>(numerical_rank)});
         if (numerical_rank != n) { topology_ok = false; cause = "log_charge_rank"; topology_failure = "rank-deficient log-charge equations"; }
@@ -1003,25 +1039,11 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     }
     if (compiled.ideal) result.mole_fractions = compositions[0];
     result.multipliers.assign(full.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), full.end());
-    // Extensive-objective constraint multipliers at the returned (polished) point, from the row
-    // multipliers: a material row (B n - b)/N_feed carries -N_feed lambda_j, a charge row sum z x
-    // carries -n_p phi_p, and a free-amount phase's normalization row is zero because the
-    // objective and material rows obey joint extensive homogeneity in amount, composition
-    // and volume, together with stationarity in the free amount. The raw
-    // optimizer values stay a trace probe.
-    if (!compiled.feasibility_cell()) {
-        std::size_t electro = 0;
-        for (const auto& row : compiled.rows) {
-            if (row.kind == RowKind::Moiety) {
-                result.constraint_multipliers.push_back(-compiled.feed_total * full[compiled.primal_size + row.index]);
-            } else if (row.kind == RowKind::Electro) {
-                result.constraint_multipliers.push_back(
-                    -prepared.amount[row.phase] * full[compiled.primal_size + compiled.rank + electro++]);
-            } else if (!stationarity_row(row.kind)) {
-                result.constraint_multipliers.push_back(0.0);
-            }
-        }
-    }
+    // Constraint multipliers at the returned (polished) point; the raw optimizer values stay a trace probe.
+    const bool moiety_only = compiled.problem.volume_m3.has_value();
+    std::vector<double> physical_weights;
+    if (!compiled.feasibility_cell() || moiety_only) physical_weights = constraint_weights(compiled, prepared, full, moiety_only);
+    if (!compiled.feasibility_cell()) result.constraint_multipliers = physical_weights;
     result.coordinates = full;
     if (expired()) { result.message = "elapsed work budget exhausted"; reject_elapsed(result, scope); return result; }
     if (compiled.ideal) {
@@ -1033,66 +1055,92 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
             result.convergence.stop = core::Stop::singular; clear_state(result); return result;
         }
     }
-    auto physical_weights = result.constraint_multipliers;
-    if (compiled.problem.volume_m3) {
-        physical_weights.clear();
-        for (const auto& row : compiled.rows) if (!stationarity_row(row.kind))
-            physical_weights.push_back(row.kind == RowKind::Moiety
-                ? -compiled.feed_total * full[compiled.primal_size + row.index] : 0.0);
-    }
     if (compiled.problem.internal_energy_j) for (std::size_t p = 0; p < amounts.size(); ++p) {
         const auto cv = model->state(temperature, 1.0 / volumes[p], compositions[p]).total_isochoric_heat_capacity;
         if (!cv || !(*cv > 0.0)) throw std::domain_error("UV phase has no positive isochoric heat capacity");
     }
-    Curvature curvature = reduced_curvature_at(compiled, prepared, physical_weights);
-    if (compiled.has_caloric_condition() && !compiled.problem.internal_energy_j) {
-        const bool pure = model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2;
-        if (pure) {
-            if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
-                result.success = false;
-                infeasible("caloric_split");
-                result.message = "caloric coexistence requires an interior distinct split";
-                clear_state(result);
-                return result;
-            }
-            result.message += "; coexistence equality root; fixed-TP Gibbs split is analytically flat";
-        } else {
-            auto diagnostic = compiled.problem;
-            diagnostic.enthalpy_j.reset();
-            diagnostic.entropy_j_per_k.reset();
-            diagnostic.temperature = FreeValue::fixed(temperature);
-            auto tp = compile_problem(*model, diagnostic);
-            auto restricted = tp.generic_point();
-            const auto layout = tp.prepare(restricted, false, &result.first_numerical_failure).shape;
-            for (std::size_t p = 0; p < layout.size(); ++p) {
-                for (std::size_t i = 0; i < layout[p].x.size(); ++i)
-                    restricted[layout[p].x[i]] = full[prepared.shape[p].x[i]];
-                restricted[layout[p].volume] = full[prepared.shape[p].volume];
-                restricted[*layout[p].amount] = amounts[p];
-            }
-            restricted.resize(tp.primal_size);
-            restricted = add_multipliers(tp, restricted, &result);
-            std::vector<double> weights;
-            for (const auto& row : tp.rows) {
-                if (row.kind == RowKind::Chemical || row.kind == RowKind::Pressure) continue;
-                weights.push_back(row.kind == RowKind::Moiety ? -tp.feed_total * restricted[tp.primal_size + row.index] : 0.0);
-            }
-            curvature = reduced_curvature_at(tp, tp.prepare(restricted, false, &result.first_numerical_failure), weights);
+    const bool caloric = compiled.has_caloric_condition() && !compiled.problem.internal_energy_j;
+    const bool restricted = caloric && !(model->parameters().component_count() == 1 && compiled.problem.phases.size() == 2);
+    if (caloric && !restricted) {
+        if (!(amounts[0] > 0.0 && amounts[1] > 0.0) || volumes[0] == volumes[1]) {
+            result.success = false;
+            infeasible("caloric_split");
+            result.message = "caloric coexistence requires an interior distinct split";
+            clear_state(result);
+            return result;
         }
+        result.message += "; coexistence equality root; fixed-TP Gibbs split is analytically flat";
+    }
+    // The certificate at the returned point, or at a moved point under frozen D. A caloric mixture certifies its
+    // fixed-T,P Gibbs problem, rebuilt by one construction at either point.
+    const auto certify = [&](const PhasePoint& at, const std::vector<double>& point, EquilibriumResult* observed,
+        const Eigen::VectorXd* frozen) {
+        std::vector<double> jacobian;
+        if (!restricted) return reduced_curvature_at(compiled, at, frozen ? constraint_weights(compiled, at, point, moiety_only) : physical_weights, frozen ? jacobian : physical, frozen);
+        auto diagnostic = compiled.problem;
+        diagnostic.enthalpy_j.reset();
+        diagnostic.entropy_j_per_k.reset();
+        diagnostic.temperature = FreeValue::fixed(at.temperature);
+        const auto tp = compile_problem(*model, diagnostic);
+        auto* failure = observed ? &observed->first_numerical_failure : nullptr;
+        auto point_tp = tp.generic_point();
+        const auto layout = tp.prepare(point_tp, false, failure).shape;
+        const auto phase_amounts = frozen ? check_topology(compiled, point).amounts : amounts;
+        for (std::size_t p = 0; p < layout.size(); ++p) {
+            for (std::size_t i = 0; i < layout[p].x.size(); ++i) point_tp[layout[p].x[i]] = point[at.shape[p].x[i]];
+            point_tp[layout[p].volume] = point[at.shape[p].volume];
+            point_tp[*layout[p].amount] = phase_amounts[p];
+        }
+        point_tp.resize(tp.primal_size);
+        point_tp = add_multipliers(tp, point_tp, observed);
+        const auto at_tp = tp.prepare(point_tp, false, failure);
+        return reduced_curvature_at(tp, at_tp, constraint_weights(tp, at_tp, point_tp, true), jacobian, frozen);
+    };
+    const Curvature curvature = certify(prepared, full, &result, nullptr);
+    // Solve error (ALG-EQUILIBRIUM): the next Newton correction d = -J^-1 F of the returned point moves the
+    // certificate by e = |lambda~(x + d; D(x)) - lambda~(x)|, recertified only where |lambda~| <= tau + G.
+    const bool decides = !compiled.feasibility_cell() || compiled.has_caloric_condition() || compiled.problem.volume_m3;
+    double change = NAN, estimate = 0.0, step = 0.0;
+    std::string refused;
+    if (decides && curvature.d.size() != 0 && !std::isnan(curvature.equilibrated)) {
+        if (numerical.rows() != n) factor();  // the row system is square: rows match the KKT coordinates
+        const auto rows = compiled.numerical_rows(prepared, result.residuals);
+        const Eigen::VectorXd delta = numerical.solve(-Eigen::Map<const Eigen::VectorXd>(rows.data(), n));
+        const auto primal = static_cast<Eigen::Index>(compiled.primal_size);
+        const Eigen::VectorXd scaled = delta.head(primal).cwiseQuotient(coordinate_scale(compiled, prepared, n).head(primal));
+        step = delta.allFinite() ? scaled.lpNorm<Eigen::Infinity>() : INFINITY;
+        auto moved = full;
+        for (Eigen::Index i = 0; i < n; ++i) moved[static_cast<std::size_t>(i)] += delta(i);
+        const auto weights = constraint_weights(compiled, prepared, moved, moiety_only);
+        const auto size = static_cast<Eigen::Index>(physical_weights.size());  // relative weight step; none for caloric or (U,V)
+        const Eigen::Map<const Eigen::VectorXd> before(physical_weights.data(), size), after(weights.data(), size);
+        const double norm = before.lpNorm<Eigen::Infinity>(), shift = (after - before).lpNorm<Eigen::Infinity>();
+        estimate = curvature.magnitude * (step + (norm > 0.0 && !restricted && !compiled.problem.internal_energy_j ? shift / norm : 0.0));
+        if (!(std::abs(curvature.equilibrated) > curvature.band + estimate)) {
+            change = std::isinf(step) ? INFINITY : moved == full ? 0.0 : NAN;
+            if (std::isnan(change)) try {
+                change = std::abs(curvature.equilibrated - certify(compiled.prepare(moved), moved, nullptr, &curvature.d).equilibrated);
+            } catch (const std::bad_alloc&) { throw; }
+            catch (const std::exception& error) { refused = std::string("; corrected point refused: ") + error.what(); }
+            if (std::isnan(change)) change = INFINITY;
+        }
+        scope.probe("reduced_hessian_correction", {change, estimate, step, std::isnan(change) ? 0.0 : 1.0});
     }
     result.reduced_hessian_minimum = curvature.minimum;
     scope.probe("reduced_hessian_equilibrated", curvature.equilibrated);
     scope.probe("reduced_hessian_band", curvature.band);
-    if ((!compiled.feasibility_cell() || compiled.has_caloric_condition() || compiled.problem.volume_m3) && !(curvature.equilibrated > curvature.band)) {
+    const double margin = curvature.band + (std::isnan(change) ? 0.0 : change);
+    if (decides && !(curvature.equilibrated > margin)) {
         // Inside the band the inertia is unresolved at working precision: a typed singular outcome, not a noise sign.
-        const bool singular = curvature.equilibrated >= -curvature.band;
+        const bool singular = curvature.equilibrated >= -margin;
         if (singular || std::isnan(curvature.equilibrated))
             result.convergence.stop = singular ? core::Stop::singular : core::Stop::nonfinite;
         infeasible("reduced_hessian_not_positive_definite");
         result.success = false;
         result.message = std::string("reduced_hessian_stability ") + (singular ? "is indeterminate" : "is not positive definite")
             + ": equilibrated minimum " + core::optional_number(curvature.equilibrated)
-            + ", rounding band " + core::optional_number(curvature.band);
+            + ", rounding band " + core::optional_number(curvature.band) + ", solve-error change " + (std::isnan(change)
+                ? "not evaluated (estimate " + core::optional_number(estimate) : core::optional_number(change) + " (Newton correction " + core::optional_number(step)) + ")" + refused;
         clear_state(result);
         return result;
     }
@@ -1273,16 +1321,9 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 if (log_step > policy::EQUILIBRIUM_TRIAL_LOG_STEP.value)
                     trial_limit = policy::EQUILIBRIUM_TRIAL_LOG_STEP.value / log_step;
             }
-            Vector scale = Vector::Ones(n);
+            const Vector scale = coordinate_scale(compiled, at, n);
             bool positive = true;
-            for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) {
-                const auto i = static_cast<Eigen::Index>(*at.shape[p].amount);
-                positive = positive && at.amount[p] > 0.0;
-                if (at.amount[p] > 0.0) scale(i) = at.amount[p];
-            }
-            auto intensive = static_cast<Eigen::Index>(compiled.primal_size - compiled.free_intensive_count);
-            if (compiled.problem.temperature.free) scale(intensive++) = at.temperature;
-            if (compiled.problem.pressure.free) scale(intensive) = at.pressure;
+            for (std::size_t p = 0; p < at.shape.size(); ++p) if (at.shape[p].amount) positive = positive && at.amount[p] > 0.0;
             Eigen::Index controlling = 0;
             const Base scaled_correction = delta.allFinite() ? delta.cwiseQuotient(scale).cwiseAbs().maxCoeff(&controlling)
                 : std::numeric_limits<double>::infinity();

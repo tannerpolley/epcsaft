@@ -115,6 +115,68 @@ void check_trace_ion_curvature() {
     }
 }
 
+// #1064: identical-ethane A <=> B (K = 1), 200 K, 5 MPa, one liquid. At these pinned returned points the reaction
+// direction's curvature vanishes and the next Newton correction moves it across zero, so the certificate is
+// indeterminate, not stable (...305) or not positive definite (...294). Provenance: run_driver from generic_point()
+// (...305) and from the k_ij = 0 symmetric solution (...294) on main 6bb19aec5. k_ij = 0.128 stays stable.
+void check_solve_error_curvature() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto model = [](double k_ij) {
+        auto parameters = properties_support::parameters(2);
+        const auto ethane = properties_support::ethane();
+        for (int i = 0; i < 2; ++i) {
+            parameters.segment_count[i] = ethane.segment_count[0]; parameters.sigma_constant[i] = ethane.sigma_constant[0];
+            parameters.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+            parameters.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+        }
+        parameters.k_ij[1] = parameters.k_ij[2] = k_ij;
+        return HelmholtzModel(parameters);
+    };
+    const auto compile = [](const HelmholtzModel& model) {
+        auto problem = equilibrium_support::flash(2);
+        problem.temperature = FreeValue::fixed(200.0); problem.pressure = FreeValue::fixed(5e6);
+        problem.feed.values = {0.5, 0.5};
+        problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+        problem.reactions = {{"A=B", {-1.0, 1.0}, 1.0}};
+        return compile_problem(model, problem);
+    };
+    for (const auto& [k_ij, x] : {std::pair{0.12810288983397305, std::vector<double>{-0.69314520195878637, -0.69314915916501896, 1, -0.99495932258743236, 4.8046732691199043}},
+                                  std::pair{0.12810288983397294, std::vector<double>{-0.69314718090402094, -0.69314718021586963, 1, -0.994959322587603, 4.8046732691199026}}}) {
+        const auto pair = model(k_ij);
+        const auto compiled = compile(pair);
+        const auto at = compiled.prepare(x);
+        core::Capture capture(true);
+        core::Scope scope("solve-error-curvature");
+        auto candidate = structural_result(compiled, scope);
+        candidate.residuals = compiled.evaluate_at(at).values;
+        candidate.classified_residuals = compiled.classified_residuals(at, candidate.residuals);
+        candidate.convergence.stop = core::Stop::converged; candidate.requested_tolerance_met = true; candidate.success = true;
+        const auto result = publish_candidate(compiled, at, candidate, scope);
+        double minimum = NAN, band = NAN;
+        std::vector<double> correction;
+        for (const auto& event : capture.trace().events) {
+            const std::string name = event.name;
+            if (name == "reduced_hessian_equilibrated") minimum = event.values[0];
+            if (name == "reduced_hessian_band") band = event.values[0];
+            if (name == "reduced_hessian_correction") correction = event.values;
+        }
+        const auto id = "solve-error-curvature/" + recording_support::number(k_ij);
+        const bool recertified = correction.size() == 4 && correction[3] == 1.0;
+        const bool indeterminate = !result.success && result.convergence.stop == core::Stop::singular
+            && result.message.find("is indeterminate") != std::string::npos;
+        const bool ok = recertified && correction[0] > std::abs(minimum) - band && indeterminate;
+        recording_support::observe((id + "/change").c_str(), "solve-error-change", "1", recertified ? correction[0] : NAN, std::nullopt,
+            recording_support::fields({recording_support::field("minimum", minimum), recording_support::field("band", band),
+                recording_support::field("estimate", recertified ? correction[1] : NAN), recording_support::field("correction", recertified ? correction[2] : NAN)}),
+            "Relationship", "reduced_hessian_stability", "change exceeds |minimum| - band: indeterminate");
+        CHECK(ok);
+    }
+    const auto stable = model(0.128);
+    const auto control = solve_compiled(compile(stable));
+    CHECK(control.success && control.evaluations == 8);  // main 4d26cd7ea: 8 evaluations, 6 iterations
+}
+
 // #664: manufactured isomerisation; one-row closed form for ALG-STABILITY amount correction.
 void check_stability_amount_correction() {
     using namespace epcsaft;
