@@ -1231,7 +1231,8 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 core::retain_rank(result.rank_records, *result.last_rank, narrow_values(full.begin(), full.end()));
             else core::retain_rank(result.rank_records, *result.last_rank);
             if (scope.diagnostics_on()) scope.probe("numerical_rank", {double(result.last_rank->rank), double(result.last_rank->dimension), result.last_rank->threshold}, 0, "numerical");
-            if (lu.rank() != n) { stop("Jacobian rank"); break; }
+            // An optimizer polish keeps a rank-deficient full-pivot step: a free trace ion split under the absolute charge row (#1071).
+            if ((guarded_newton || !compiled.log_charge_rows.empty()) && lu.rank() != n) { stop("Jacobian rank"); break; }
             const auto retain_error = [&](Base error, const policy::Tolerance& criterion, const char* cause) {
                 auto observation = result.last_rank->observation;
                 observation.error = double(error); observation.criterion = criterion.name;

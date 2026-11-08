@@ -577,3 +577,26 @@ def test_source_reference_numerical_error() -> None:
     comparison = compare_equilibrium_quantity(Quantity.Linear, 1.0, 2.0, 1e-10,
         error.pressure, error.pressure, ComparisonEligibility(), ComparisonMode.EstimatedError)
     assert comparison.judgment == 'failed'
+
+
+def test_ascani_ions_in_both_liquids_meet_row_tolerance() -> None:
+    """Ascani acetic acid/water/toluene, acid feed 0.002 mol, H+ and acetate supported in both liquids (#1071).
+
+    The trace organic cation/anion split leaves the polish Jacobian numerically rank 20/21; the cold solve still
+    meets the row tolerance and reproduces the retained sweep's first row.
+    """
+    import csv
+    import importlib.util
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[3] / "analyses/2026-ascani-carboxylic-acid-lle"
+    spec = importlib.util.spec_from_file_location("ascani_declaration", root / "scripts/run.py")
+    assert spec is not None and spec.loader is not None
+    ascani = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ascani)
+    result = solve_equilibrium(ascani.model("organic-eps"), ascani.problem(0.002, True))
+    assert result.requested_tolerance_met, result.message
+    retained = next(csv.DictReader((root / "results/sweep-both-organic-eps.csv").open()))
+    x = result.mole_fractions
+    for value, column in ((x[2], "x_acetic-acid_aq"), (x[4], "x_acetate-anion_aq"), (x[8], "x_acetic-acid_org")):
+        assert value == pytest.approx(float(retained[column]), rel=1e-10)

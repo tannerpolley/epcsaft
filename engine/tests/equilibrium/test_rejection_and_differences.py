@@ -65,14 +65,15 @@ def test_single_phase_flash_verdict() -> None:
 def test_recoverable_flash_keeps_recovery() -> None:
     """F7: at 240 K and 4.535 MPa the search finds a resolved descending split, so the unchanged recovery runs; the
     recovered state includes the equilibrated tangent. The search work and one additional eighth-step evaluation in the
-    subsequently refused Newton attempt are added."""
+    subsequently refused Newton attempt are added. Its rank-9/10 optimizer polish takes three steps to the raw criterion
+    rather than stopping on Jacobian rank (#1071)."""
     problem = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")], T=240.0, P=4535437.839536398,
                       feed=Amounts({"methane": 0.7, "ethane": 0.3}))
     result = solve_equilibrium(methane_ethane(), problem)
     report = result.recovery_stability
     assert report is not None and result.success and any(t.resolved_descent for t in report.trials)
-    assert list(result.amounts) == [0.08578566729375485, 0.914214332706245]  # equilibrated tangent; 71 / 144 / 92 recovery work
-    assert work(result) == tuple(a + b for a, b in zip((71, 145, 92), charged(report)))
+    assert list(result.amounts) == [0.08578566729375485, 0.914214332706245]  # equilibrated tangent; 71 / 150 / 92 recovery work
+    assert work(result) == tuple(a + b for a, b in zip((71, 150, 92), charged(report)))
 
 
 def test_bubble_point_above_coalescence_verdict() -> None:
