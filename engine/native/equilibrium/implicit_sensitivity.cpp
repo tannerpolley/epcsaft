@@ -327,13 +327,14 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
     const bool referenced = !compiled.reference_diagnostics.empty();
     std::size_t eos_parameter_directions = 0;
+    bool source_directions = false;
     for (const auto &d : request.directions) {
         bool parameter = false;
         for (double v : d.active_parameters) parameter |= v != 0.0;
         eos_parameter_directions += std::size_t(parameter);
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
-                parameter |= v != 0.0;
+                parameter |= v != 0.0, source_directions |= v != 0.0;
         for (double v : d.solid_log_k) parameter |= v != 0.0;
         if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
@@ -343,6 +344,10 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     // The solid's ln K^rho carries dC_s/dtheta only; its second parameter derivative is not compiled.
     if (!problem.solids.empty() && eos_parameter_directions > 1)
         throw std::invalid_argument("solids admit at most one EOS-parameter direction in a second or higher action");
+    // Every observable of an anchored PH/PS cell follows its caloric row, whose g carries one EOS-parameter
+    // coordinate; the row has no reaction-law source shift.
+    if (compiled.anchored_calorics() && (eos_parameter_directions > 1 || source_directions))
+        throw std::invalid_argument("anchored PH/PS admits at most one EOS-parameter direction and no reaction-law direction");
     if (central.rows.size() != compiled.rows.size() || central.phase_count != problem.phases.size())
         throw std::invalid_argument("central result does not match the compiled system");
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -1070,7 +1075,7 @@ static SolvedStateActionBatch evaluate_action(
     }
     const bool plane = std::any_of(request.observables.begin(), request.observables.end(), [](const auto& o) {
         return o.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane; });
-    const bool reference_problem = !compiled.reference_diagnostics.empty();
+    const bool reference_problem = !compiled.reference_diagnostics.empty() || compiled.anchored_calorics();
     const ReferenceCalorics *calorics = nullptr;
     const auto other_caloric = [](const auto &o) {
         return o.kind == SolvedStateObservableKind::PhaseGibbsMolarVolume ||

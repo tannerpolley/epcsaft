@@ -5,7 +5,8 @@ These methods consume the [equation definitions](../equations.md),
 Algorithm IDs below are stable references.
 Sections state required methods; not every required action is available yet.
 The [limits page](https://tannerpolley.github.io/epcsaft/limits.html) lists what the installed package supports.
-PH/PS uses the neutral caloric specifications below; neutral critical-equation
+PH/PS uses the caloric specifications below, including charged and source-referenced
+reacting declarations through the anchored completion of ALG-REFERENCE; neutral critical-equation
 candidates and phase envelopes use ALG-EQUILIBRIUM; UV remains future work. The
 explicit native fixed-T/P discovery and tangent-plane testing path in
 ALG-STABILITY has retained numerical qualification on the stated neutral and
@@ -1570,6 +1571,17 @@ calorics, amounts, raw T, packing and moving feed normalization; residual energy
 contractions remain with Properties. The target controls are H [J] and S [J/K],
 with partial rows −1/(N_feed RT) and −1/(N_feed R), including their higher chains.
 A nonzero absent-condition control is invalid; zero is permitted for either kind.
+A source-referenced declaration, or one with record-less supported species, takes
+the ideal part from the anchored Gibbs columns of ALG-REFERENCE, computed at each
+prepared point through T order three with a source reference (four without) and
+composed as a local Taylor polynomial in T, P and the active parameters. Row
+series add pressure and parameter columns on first need; a motion that reads an
+unavailable column is refused with its cause. The row uncertainty propagates the
+anchored g and g_T numerical errors. Such a cell admits at most one EOS-parameter
+direction and no reaction-law direction in an action, since its g carries one
+parameter coordinate and its row has no source-law shift. The seed takes the
+anchored ideal part with the frozen residual fields, and its temperature admission
+is the anchored completion itself.
 
 An ordinary fixed-T seed uses the same driver and frozen C_f = Σ N_p cp,p:
 T1 = T0 + (H_spec − H0)/C_f, or T1 = T0 exp((S_spec − S0)/C_f).
@@ -2793,7 +2805,8 @@ A3 keeps the standards and frozen partials constant while composing the full
 amount/composition products. The defining rows retain their minimum-norm
 representative; the caloric Gibbs completion retains the supplied record anchors.
 The two representatives preserve the same affinities but their T/P derivatives
-are not interchangeable (EqID: `reference_species_calorics`).
+are not interchangeable (EqID: `reference_species_calorics`). PH/PS caloric rows
+use the anchored completion at every free-T point (ALG-EQUILIBRIUM).
 
 The existing value and lower-slope admission remains: first thermal and EOS
 slopes use the value criterion at their physical scales; the second thermal

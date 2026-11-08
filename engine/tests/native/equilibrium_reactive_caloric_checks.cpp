@@ -1,9 +1,11 @@
 #include "reactive_caloric_shared.hpp"
+#include "caloric_specification_shared.hpp"
 #include "binary128_support.hpp"
 #include "equilibrium_support.hpp"
 
 #include <chrono>
 #include <cstring>
+#include <functional>
 #include <map>
 #include <memory>
 #include <numeric>
@@ -925,6 +927,13 @@ inline void partial_ion_records() {
         HelmholtzModel model(parameters, {}, records);
         const auto compiled = compile_problem(model, problem);
         const auto ref = reference_calorics(compiled, 298.15, 1e5, true, false, false, 2);
+        auto ph = problem;
+        ph.temperature = FreeValue::variable(298.15);
+        ph.enthalpy_j = 0.0;
+        std::string cause;
+        try { const auto c = compile_problem(model, ph); (void)c.prepare(c.generic_point()); } catch (const std::exception& e) { cause = e.what(); }
+        std::printf("partial-ion-records PH complete=%d cause=%s\n", complete, cause.c_str());
+        CHECK(complete ? cause.empty() : cause.find("undetermined neutral calorics") != std::string::npos);
         std::printf("partial-ion-records complete=%d status=%d reason=%s\n", complete, int(ref.status), ref.message.c_str());
         if (!complete) {
             CHECK(ref.status == SolvedStateActionStatus::ReferenceUnavailable);
@@ -1245,5 +1254,206 @@ void cheap() {
     const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
     Actions actions(compiled,solved,q);identities(c,model,compiled,actions,q,center,context(c,solved,center.phase));
 }
+
+// PH/PS on the charged packets (I-sys, I-fix, a recorded salt) at 1 bar and 2.5 times the feed: H and S of the driven TP
+// state recover it; dT/dH = 1/(N_f c_P,eq) and dT/dS = T/(N_f c_P,eq) against a separately compiled driven-TP apparent Cp.
+namespace caloric_ph_ps {
+inline void near(const std::string& id, double actual, double reference, double scale, double tolerance) {
+    caloric_specification_checks::compare("charged-PH-PS/" + id, actual, reference, scale, tolerance);
+}
+inline Direction blank(const CompiledSystem& c) {
+    Direction d;
+    d.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
+    d.active_parameters.assign(c.model->active_parameters().size(), 0.0);
+    return d;
+}
+inline SolvedStateActionResult read(const CompiledSystem& c, const EquilibriumResult& r, Observable o, std::vector<Direction> ds) {
+    auto item = solved_state_actions(c, r, {{o}, ds}).results[0];
+    if (item.status != SolvedStateActionStatus::Available)
+        throw std::runtime_error("charged PH/PS read: " + item.diagnostic_message.value_or(solved_state_status_name(item.status)));
+    return item;
+}
+// Anchored extensive H (system observable) and S (phase amounts times total entropy) of a solved state, J and J/K.
+inline std::array<double, 2> extensive(const CompiledSystem& c, const EquilibriumResult& r) {
+    std::array<double, 2> out{*read(c, r, {SolvedStateObservableKind::SystemEnthalpy}, {blank(c)}).value, 0.0};
+    for (std::size_t p = 0; p < r.phase_count; ++p)
+        out[1] += r.amounts[p] * *read(c, r, {SolvedStateObservableKind::PhaseProperty, p, 0, PropertyObservable::TotalEntropy}, {blank(c)}).value;
+    return out;
+}
+inline EquilibriumProblem caloric(EquilibriumProblem p, bool h, double target, double guess) {
+    p.temperature = FreeValue::variable(guess);
+    p.solver_options.values[epcsaft::policy::row] = 1e-11;
+    (h ? p.enthalpy_j : p.entropy_j_per_k) = target;
+    return p;
+}
+inline double first(const CompiledSystem& c, const EquilibriumResult& r, bool h) {
+    auto d = blank(c);
+    (h ? d.enthalpy_j : d.entropy_j_per_k) = 1.0;
+    return *read(c, r, {SolvedStateObservableKind::Temperature}, {d}).action;
+}
+// Endpoint recovery, defining rows, reaction affinities on the density basis and the inverse equilibrium Cp.
+inline EquilibriumResult recover(const HelmholtzModel& m, const EquilibriumProblem& tp, bool h, double guess, const std::string& id) {
+    const auto tc = compile_problem(m, tp);
+    const auto ref = solve_compiled(tc);
+    CHECK(ref.has_state());
+    const double target = extensive(tc, ref)[h ? 0 : 1];
+    const auto c = compile_problem(m, caloric(tp, h, target, guess));
+    const auto r = solve_compiled(c);
+    if (!r.has_state()) throw std::runtime_error(id + ": " + r.message);
+    near(id + "/T", *r.temperature, *ref.temperature, *ref.temperature, 1e-8);
+    for (std::size_t i = 0; i < r.amounts.size(); ++i)
+        near(id + "/amount-" + std::to_string(i), r.amounts[i], ref.amounts[i], std::max(1.0, ref.amounts[i]), 1e-8);
+    for (std::size_t i = 0; i < r.mole_fractions.size(); ++i)
+        near(id + "/x-" + std::to_string(i), r.mole_fractions[i], ref.mole_fractions[i], ref.mole_fractions[i], 1e-8);
+    near(id + "/rows", maximum_abs(r.classified_residuals), 0.0, 1.0, 1e-10);
+    // A_r/RT = sum_i nu_ri (chemical row i): the moiety and charge multipliers cancel on nu.
+    for (std::size_t k = 0; k < tp.reactions.size(); ++k)
+        for (std::size_t p = 0; p < r.phase_count; ++p) {
+            double affinity = 0.0;
+            for (std::size_t row = 0; row < c.rows.size(); ++row)
+                if (c.rows[row].kind == RowKind::Chemical && c.rows[row].phase == p)
+                    affinity += tp.reactions[k].stoichiometry[c.rows[row].index] * r.residuals[row];
+            near(id + "/affinity-" + std::to_string(k) + "-" + std::to_string(p), affinity, 0.0, 1.0, 1e-10);
+        }
+    const double T = *r.temperature, feed = c.feed_total;
+    near(id + "/closure", extensive(c, r)[h ? 0 : 1], target, feed * R * (h ? T : 1.0), 1e-10);
+    auto driven = tp;
+    driven.temperature = FreeValue::fixed(T);
+    const auto dc = compile_problem(m, driven);
+    const auto dr = solve_compiled(dc);
+    CHECK(dr.has_state());
+    const double cp = *read(dc, dr, {SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity}, {blank(dc)}).value;
+    const double expected = (h ? 1.0 : T) / (feed * cp);
+    near(id + "/inverse-cp", first(c, r, h), expected, std::abs(expected), 1e-6);
+    return r;
+}
+// Exact second action against centered differences of the exact first action dT/dtarget re-solved along the moving
+// direction, with Richardson refinement, at 1e-6 of the action scale.
+inline void second(const std::string& id, double exact, double step, const std::function<double(double)>& first_at) {
+    double previous = 0.0, best = std::numeric_limits<double>::infinity();
+    for (int rung = 0; rung < 6; ++rung) {
+        const double h = std::ldexp(step, -rung), reference = (first_at(h) - first_at(-h)) / (2.0 * h);
+        const double scale = std::max(std::abs(exact), std::abs(reference));
+        best = std::min(best, std::abs(exact - reference) / scale);
+        if (rung) best = std::min(best, std::abs(exact - (4.0 * reference - previous) / 3.0) / scale);
+        recording_support::observe(("charged-PH-PS/" + id + "/rung-" + std::to_string(rung)).c_str(), "second-action", "K",
+            exact, reference, recording_support::fields({recording_support::field("step", h)}), "Observation",
+            "lower-exact-action-difference", "re-solved first action", "caloric-specification");
+        previous = reference;
+    }
+    near(id, best, 0.0, 1.0, 1e-6);
+}
+inline std::string refusal(const std::function<void()>& call) {
+    try { call(); } catch (const std::exception& e) { return e.what(); }
+    return "";
+}
+inline Case scaled(bool fixed, double T) {
+    auto c = input(true, fixed);
+    for (auto& n : c.problem.feed.values) n *= 2.5;
+    c.problem.temperature.value = T;
+    return c;
+}
+void run() {
+    // Recorded nonreacting salt: Na+ and Cl- carry manufactured records; a T-dependent charge gauge leaves every state.
+    auto salt = input(true, false);
+    salt.problem.reactions.clear();
+    salt.problem.feed.values = {2.5, 0.05, 0.05};
+    std::vector<EquilibriumResult> gauge;
+    for (double shift : {0.0, 1.0}) {
+        auto records = salt.records;
+        records.component_intervals[1] = {{200.0, 500.0, true, true, {IdealPolynomial{{30.0 + 7.0 * shift}, 298.15, -240000.0 + 900.0 * shift, 59.0 + 4.0 * shift}, 1e5}}};
+        records.component_intervals[2] = {{200.0, 500.0, true, true, {IdealPolynomial{{-120.0 - 7.0 * shift}, 298.15, -167000.0 - 900.0 * shift, 56.0 - 4.0 * shift}, 1e5}}};
+        const HelmholtzModel m(salt.parameters, salt.active, records);
+        for (double T : {298.15, 318.15}) for (bool h : {true, false}) {
+            auto p = salt.problem;
+            p.temperature.value = T;
+            const auto r = recover(m, p, h, T + 5.0, "salt/" + std::to_string(int(T)) + (h ? "/H" : "/S") + (shift ? "/gauge" : ""));
+            if (T == 298.15 && h) gauge.push_back(r);
+        }
+    }
+    for (std::size_t i = 0; i < gauge[0].mole_fractions.size(); ++i)
+        near("salt/gauge-x-" + std::to_string(i), gauge[1].mole_fractions[i], gauge[0].mole_fractions[i], gauge[0].mole_fractions[i], 1e-10);
+    near("salt/gauge-T", *gauge[1].temperature, *gauge[0].temperature, *gauge[0].temperature, 1e-10);
+    for (bool fixed : {false, true}) {
+        const std::string tag = fixed ? "I-fix" : "I-sys";
+        for (double T : {298.15, 318.15}) for (bool h : {true, false}) {
+            const auto c = scaled(fixed, T);
+            const HelmholtzModel m(c.parameters, c.active, c.records);
+            recover(m, c.problem, h, T + 5.0, tag + "/" + std::to_string(int(T)) + (h ? "/H" : "/S"));
+        }
+        // A conserved-moiety shift of the water record, delta g_w = da - T db with a cp shift: the completion moves each ion by
+        // half of it, so H and S move by M (delta h_w, delta s_w), M = n_w + (n_Na + n_Cl)/2 of the feed; states are unchanged.
+        const auto c = scaled(fixed, 298.15);
+        auto shifted = c.records;
+        shifted.component_intervals[0][0].correlation.form = IdealPolynomial{{33.59 + 3.0}, 298.15, -241826.0 + 1000.0, 188.83 + 5.0};
+        const HelmholtzModel m(c.parameters, c.active, c.records), moved(c.parameters, c.active, shifted);
+        const double M = c.problem.feed.values[0] + 0.5 * (c.problem.feed.values[1] + c.problem.feed.values[2]);
+        const auto tc = compile_problem(m, c.problem);
+        const auto tr = solve_compiled(tc);
+        const auto base = extensive(tc, tr);
+        for (bool h : {true, false}) {
+            const auto q = caloric(c.problem, h, base[h ? 0 : 1], 303.15);
+            const auto r = solve_compiled(compile_problem(m, q));
+            const double T = *r.temperature, dh = 1000.0 + 3.0 * (T - 298.15), ds = 5.0 + 3.0 * std::log(T / 298.15);
+            const auto shifted_target = caloric(c.problem, h, base[h ? 0 : 1] + M * (h ? dh : ds), 303.15);
+            const auto rs = solve_compiled(compile_problem(moved, shifted_target));
+            CHECK(r.has_state() && rs.has_state());
+            near(tag + "/moiety-shift-T" + (h ? "/H" : "/S"), *rs.temperature, T, T, 1e-10);
+            for (std::size_t i = 0; i < r.mole_fractions.size(); ++i)
+                near(tag + "/moiety-shift-x-" + std::to_string(i) + (h ? "/H" : "/S"), rs.mole_fractions[i], r.mole_fractions[i], r.mole_fractions[i], 1e-10);
+        }
+        // Actions of the H cell: exact rows and weighted curvature off the solution, then one check or refusal per family.
+        const auto q = caloric(c.problem, true, base[0], 303.15);
+        const auto pc = compile_problem(m, q);
+        const auto pr = solve_compiled(pc);
+        auto y = pr.coordinates;
+        y[pc.primal_size - 1] *= 1.01;
+        y[0] += 0.02;
+        for (std::size_t j = pc.primal_size; j < y.size(); ++j) y[j] += 0.11 + 0.13 * j;
+        std::vector<double> scale(y.size(), 1.0);
+        scale[pc.primal_size - 1] = y[pc.primal_size - 1];
+        caloric_specification_checks::ladder(pc, y, scale, "charged-PH-PS/" + tag + "/curvature", {0.0, 0.5, 1.0}, 1e-6);
+        auto dH = blank(pc), dn = blank(pc), dtheta = blank(pc), dP = blank(pc), source = blank(pc);
+        dH.enthalpy_j = pc.feed_total * R * 298.15;
+        dn.feed_amounts_mol[1] = dn.feed_amounts_mol[2] = 2.5e-6;
+        dtheta.active_parameters[0] = 1.0;
+        dP.pressure_pa = 1e4;
+        source.reaction_coefficients = {{1.0, 0.0, 0.0, 0.0}};
+        const auto exact = [&](std::vector<Direction> ds) { return *read(pc, pr, {SolvedStateObservableKind::Temperature}, ds).action; };
+        const auto at = [&](const Case& v, const EquilibriumProblem& problem) {
+            const HelmholtzModel shifted_model(v.parameters, v.active, v.records);
+            const auto sc = compile_problem(shifted_model, problem);
+            const auto sr = solve_equilibrium_from_coordinates(shifted_model, problem, pr.coordinates);
+            CHECK(sr.has_state());
+            return first(sc, sr, true) * dH.enthalpy_j;
+        };
+        second(tag + "/A2/H-H", exact({dH, dH}), 0.02, [&](double s) { auto v = q; *v.enthalpy_j += s * dH.enthalpy_j; return at(c, v); });
+        second(tag + "/A2/H-feed", exact({dH, dn}), 0.02, [&](double s) {
+            auto v = q; v.feed.values[1] += s * dn.feed_amounts_mol[1]; v.feed.values[2] += s * dn.feed_amounts_mol[2]; return at(c, v); });
+        second(tag + "/A2/H-epsilon", exact({dH, dtheta}), 0.02, [&](double s) {
+            auto v = c; v.parameters.dispersion_energy_over_k[0] += s; return at(v, q); });
+        second(tag + "/A2/H-P", exact({dH, dP}), 0.02, [&](double s) { auto v = q; v.pressure.value += s * dP.pressure_pa; return at(c, v); });
+        for (const auto& ds : std::vector<std::vector<Direction>>{{dH, source}, {dtheta, dtheta}}) {
+            const auto cause = refusal([&] { (void)exact(ds); });
+            near(tag + "/refused-" + std::string(ds[0].reaction_coefficients.empty() && ds[1].reaction_coefficients.empty() ? "parameter-pair" : "source"),
+                 cause.find("anchored PH/PS admits at most one EOS-parameter direction and no reaction-law direction") != std::string::npos, 1, 1, 0);
+        }
+    }
+    // Named refusals: partial ion records, conflicting ion records and internal energy.
+    auto c = scaled(false, 298.15);
+    auto conflicting = c.records;
+    conflicting.component_intervals[1] = conflicting.component_intervals[2] = conflicting.component_intervals[0];
+    const HelmholtzModel conflict(c.parameters, c.active, conflicting);
+    const auto prepared = [](const HelmholtzModel& model, const EquilibriumProblem& problem) {
+        return refusal([&] { const auto compiled = compile_problem(model, problem); (void)compiled.prepare(compiled.generic_point()); });
+    };
+    near("refused-conflicting-records", prepared(conflict, caloric(c.problem, true, -6e5, 303.15))
+        .find("supplied records inconsistent with reaction") != std::string::npos, 1, 1, 0);
+    const HelmholtzModel m(c.parameters, c.active, c.records);
+    auto uv = caloric(c.problem, true, -6e5, 303.15);
+    uv.enthalpy_j.reset(); uv.internal_energy_j = -6e5; uv.volume_m3 = 5e-5; uv.pressure = FreeValue::variable(1e5);
+    near("refused-internal-energy", prepared(m, uv).find("declared neutral nonreacting free phases") != std::string::npos, 1, 1, 0);
+}
+}  // namespace caloric_ph_ps
 #include "reactive_cp_checks.hpp"
 } // namespace reactive_caloric_checks

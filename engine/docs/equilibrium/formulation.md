@@ -204,12 +204,16 @@ existence, uniqueness or regularity at the solution. Reject dependent reactions,
 charged feed, impossible supports, inconsistent pins and invalid domains.
 
 PH/PS declares exactly one extensive H_spec [J] or S_spec [J/K], free T and
-fixed P, free phase amounts and neutral declared supports. EqIDs:
+fixed P and free phase amounts. EqIDs:
 `extensive_enthalpy_specification`, `extensive_entropy_specification`.
-Every consuming state requires complete component records and interval admission.
-Ordinary density-basis reactions retain Δh = t − Tt′ and Δcp = −Tt″:
-constant affinity t = a has Δh = a, while constant K has Δh = 0.
-Charged calorics and source-referenced free-T reactions are excluded.
+A neutral declaration with complete component records uses them directly, with
+interval admission at every consuming state. Ordinary density-basis reactions
+retain Δh = t − Tt′ and Δcp = −Tt″: constant affinity t = a has Δh = a, while
+constant K has Δh = 0. A source-referenced declaration, or one whose supports
+include record-less species, uses the record-anchored Gibbs completion
+(`reference_species_calorics`) at every free-T point: it requires consistent
+records, determined neutral combinations and admitted record and source-law
+intervals. Charged declarations follow either path.
 
 TV declares positive total `volume_m3` [m³], fixed T, free P, free phase amounts and neutral nonreacting declared supports (`extensive_volume_specification`). The driver solves Helmholtz stationarity as a feasibility system and admits a minimum on the total-volume-conserving tangent through the shared physical Hessian. A homogeneous declaration returns its local branch; it does not discover other phases. TV needs no ideal thermal records. Automatic TV/UV phase discovery remains unavailable. UV additionally declares finite `internal_energy_j` [J], both T and P free, one or two free fluid phases and complete ideal records strictly inside their intervals (`extensive_internal_energy_specification`). It reuses the volume and caloric geometry and qualifies the entropy Lagrangian on the inventory/normalization/U/V tangent, retaining T and excluding P and chemical duals. The reported physical potential is -S_tot/R; missing records and exact interval endpoints are refused.
 

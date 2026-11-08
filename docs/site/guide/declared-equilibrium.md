@@ -78,11 +78,14 @@ reached path and the stopping cause. An earlier accepted state does not mean
 the requested endpoint was reached. Ordinary path fractions differ from
 logarithmic envelope coordinates; inspect the continuation records.
 
-Admitted neutral PH and PS problems keep pressure fixed and temperature free,
+Admitted PH and PS problems keep pressure fixed and temperature free,
 with declared free phase amounts. Supply one extensive target:
-`enthalpy_j` in J or `entropy_j_per_k` in J/K, and thermal records for every
-consuming species. Charged and source-referenced PH/PS declarations are
-unavailable; UV is deferred. These limits follow the
+`enthalpy_j` in J or `entropy_j_per_k` in J/K. Nonreacting problems need thermal
+records for every consuming species. Reacting problems, charged or neutral and
+with or without a source reference, may leave species without records when the
+reactions and the remaining records determine every neutral combination; only the ionic charge gauge may
+stay free. Such a problem, or one with a source reference, admits at most one EOS-parameter direction and no
+reaction-law direction in its solved-state actions. UV is deferred. These limits follow the
 [caloric formulation](../theory/equilibrium.md) and are collected in
 [limits](../limits.md); the TP notebook does not qualify caloric specifications.
 

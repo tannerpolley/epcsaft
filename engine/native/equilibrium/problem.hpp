@@ -314,6 +314,7 @@ struct StandardTerm final {
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 };
 
+struct ReferenceCalorics;
 // One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.
 template <typename Base>
 struct PhasePointValues final {
@@ -333,6 +334,8 @@ struct PhasePointValues final {
     // first parameter-driven row series at this point and reused by every later direction.
     mutable std::optional<StandardTerm> parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
+    // An anchored PH/PS cell's g jets at this centre; row_series adds pressure or parameter columns on demand.
+    mutable std::shared_ptr<const ReferenceCalorics> calorics;
 };
 using PhasePoint = PhasePointValues<double>;
 
@@ -509,6 +512,9 @@ struct CompiledSystem final {
     bool has_caloric_condition() const noexcept {
         return problem.enthalpy_j.has_value() || problem.entropy_j_per_k.has_value() || problem.internal_energy_j.has_value();
     }
+
+    // PH/PS completes record-less species from reactions or carries a source reference (EqID reference_species_calorics).
+    bool anchored_calorics() const;
 
     // Apparent Cp is defined at driven T and P, or at free T with fixed P and an enthalpy target alone.
     bool admits_apparent_cp() const noexcept {
@@ -974,6 +980,34 @@ EPC_API ReferenceCalorics reference_calorics(const CompiledSystem &compiled, dou
                                      bool heat_capacity, bool pressure_slope = false,
                                      bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false,
                                      const std::vector<std::size_t> &pair_coordinates = {});
+// Per unit x of one phase: ideal h = sum x(g - T g_T + RT), s = sum x(R - g_T - R ln(x/v rho0)) and cp = sum x(R - T g_TT)
+// from the Taylor polynomial of the anchored g at its centre in (dT, dP, dtheta), exact through the computed order.
+// Unavailable columns are skipped; their consumers refuse the motions that read them.
+template <typename Scalar>
+IdealMixtureValue<Scalar> anchored_ideal(const ReferenceCalorics& c, const std::vector<std::size_t>& support,
+    const std::vector<Scalar>& x, const Scalar& volume, const Scalar& T, const Scalar& dT,
+    const Scalar& dP = Scalar(0.0), const std::vector<Scalar>& dtheta = {}) {
+    const Scalar R = Scalar(GAS_CONSTANT_J_PER_MOL_K);
+    IdealMixtureValue<Scalar> out;
+    for (const auto i : support) {
+        std::array<Scalar, 3> g{Scalar(0.0), Scalar(0.0), Scalar(0.0)};  // g, g_T, g_TT
+        for (const auto& e : c.gibbs) {
+            if (e.column.status != SolvedStateActionStatus::Available || e.second_parameter || (e.parameter && *e.parameter >= dtheta.size())) continue;
+            Scalar w = Scalar(e.column.values[i]);
+            for (std::size_t k = 1; k <= e.pressure_order; ++k) w *= dP / Scalar(double(k));
+            if (e.parameter) w *= dtheta[*e.parameter];
+            for (std::size_t m = 0; m < 3 && m <= e.temperature_order; ++m) {
+                Scalar term = w;
+                for (std::size_t k = 1; k <= e.temperature_order - m; ++k) term *= dT / Scalar(double(k));
+                g[m] += term;
+            }
+        }
+        out.enthalpy += x[i] * (g[0] - T * g[1] + R * T);
+        out.entropy += x[i] * (R - g[1] - R * scalar_log(x[i] / volume));
+        out.isobaric_heat_capacity += x[i] * (R - T * g[2]);
+    }
+    return out;
+}
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;

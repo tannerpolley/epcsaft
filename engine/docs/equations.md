@@ -2954,8 +2954,8 @@ $$
 - Section: Equilibrium caloric specifications
 - Status: Exact derivation
 - Source: `total_enthalpy`, extensive phase summation and resolved-feed normalization
-- Description: Fixed pressure and one extensive enthalpy target H_spec [J] determine free temperature and phase amounts on declared neutral supports.
-- Change note: Same-density total calorics use the supplied component anchors and standard pressure; the denominator uses the current feed and temperature.
+- Description: Fixed pressure and one extensive enthalpy target H_spec [J] determine free temperature and phase amounts on declared supports.
+- Change note: Same-density total calorics use the supplied component anchors and standard pressure; the denominator uses the current feed and temperature. Source-referenced or record-less supports take each species' ideal part from the anchored g of `reference_species_calorics`, h_i = g_i - T g_i,T + RT, as a local Taylor polynomial at the current point.
 
 $$
 r_H=\frac{\sum_p N_p h_p^{tot}-H_{spec}}{N_{feed}RT}.
@@ -2996,8 +2996,8 @@ $$
 - Section: Equilibrium caloric specifications
 - Status: Exact derivation
 - Source: `total_entropy`, extensive phase summation and resolved-feed normalization
-- Description: Fixed pressure and one extensive entropy target S_spec [J/K] determine free temperature and phase amounts on declared neutral supports.
-- Change note: Same-density ideal and residual entropy share the supplied component anchors and standard pressure; zero pinned amounts contribute zero.
+- Description: Fixed pressure and one extensive entropy target S_spec [J/K] determine free temperature and phase amounts on declared supports.
+- Change note: Same-density ideal and residual entropy share the supplied component anchors and standard pressure; zero pinned amounts contribute zero. Source-referenced or record-less supports use s_i = R - g_i,T - R ln(x_i rho/rho_0) from the anchored g of `reference_species_calorics`.
 
 $$
 r_S=\frac{\sum_p N_p s_p^{tot}-S_{spec}}{N_{feed}R}.

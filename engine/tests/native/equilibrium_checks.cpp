@@ -75,6 +75,7 @@ void cp_f3();
 void run(bool ionic, bool fixed);
 void unreactive();
 void boundary(bool nonidentical, bool free_temperature, bool fixed);
+namespace caloric_ph_ps { void run(); }
 }  // namespace reactive_caloric_checks
 
 int main(int argc, char** argv) {
@@ -121,6 +122,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F2", "reactive-caloric-F2", "Explicit"}, reactive_caloric_checks::cp_f2, "reactive-cp"},
         {{"native.equilibrium.reactive-cp-F1", "reactive-cp-F1", "Explicit"}, [] {for(bool ionic:{false,true}) for(bool fixed:{false,true}) reactive_caloric_checks::cp_f1(ionic,fixed);}, "reactive-cp"},
         {{"native.equilibrium.reactive-cp-F3", "reactive-cp-F3", "Explicit"}, reactive_caloric_checks::cp_f3, "reactive-cp"},
+        {{"native.equilibrium.reactive-caloric-ph-ps", "reactive-caloric-ph-ps", "Explicit"}, reactive_caloric_checks::caloric_ph_ps::run, "caloric-specification"},
 #if defined(__linux__)
         {{"native.equilibrium.reactive-caloric-E-sys", "reactive-caloric-E-sys", "Explicit"}, [] {reactive_caloric_checks::run(false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-E-fix", "reactive-caloric-E-fix", "Explicit"}, [] {reactive_caloric_checks::run(false,true);}, "reactive-caloric"},

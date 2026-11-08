@@ -1215,7 +1215,11 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             }
             return point;
         }
+        const bool anchored = compiled.anchored_calorics();
         const auto inside = [&](double t) {  // every declared species' caloric record admits t
+            if (anchored) try {  // records, reaction laws and completion
+                return reference_calorics(compiled, t, compiled.seed_pressure(), false, false, false, 1).status == SolvedStateActionStatus::Available;
+            } catch (const std::invalid_argument&) { return false; }
             for (const auto& phase : compiled.problem.phases)
                 for (auto i : phase.support) {
                     const auto& intervals = compiled.model->thermochemistry()->component_intervals[i];
@@ -1251,6 +1255,13 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
                 point[*b.amount] = prepared.amount[p];
                 if (cooled) continue;
                 const auto state = compiled.model->state(T, seed.molar_densities[p], prepared.composition[p]);
+                if (destination.calorics) {  // anchored ideal plus the residual parts of the frozen phase
+                    const auto ideal = anchored_ideal(*destination.calorics, compiled.problem.phases[p].support,
+                        prepared.composition[p], 1.0 / seed.molar_densities[p], T, 0.0);
+                    values.push_back(compiled.problem.enthalpy_j ? ideal.enthalpy + state.residual_enthalpy : ideal.entropy + state.residual_entropy);
+                    capacities.push_back(ideal.isobaric_heat_capacity + state.residual_isobaric_heat_capacity.value_or(std::numeric_limits<double>::quiet_NaN()));
+                    continue;
+                }
                 const auto& value = compiled.problem.enthalpy_j ? state.total_enthalpy : state.total_entropy;
                 if (!value) throw std::invalid_argument("caloric seed state has no finite total caloric value");
                 values.push_back(*value);

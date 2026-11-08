@@ -199,7 +199,7 @@ The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-f
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
-Declared neutral PH/PS specifications use extensive caloric balances and exact
+Declared PH/PS specifications, including charged and source-referenced reacting ones, use extensive caloric balances and exact
 controls/actions in the existing driver. Declared neutral UV reuses the volume and caloric rows with both T/P free and complete smooth ideal records. Caloric properties/actions
 consumed by MEA and the absorber remain current requirements. Fitting uses
 density, total molar isobaric heat capacity with fixed thermochemistry,
@@ -220,7 +220,7 @@ remaining work.
 - The single Ipopt driver uses exact curvature for admitted TP, bubble/dew and
   vapor-fraction specifications at fixed T or P, with the scoped Newton attempt
   in the [ADR 0009 amendment](decisions/0009-general-platform-one-driver.md). Phase fractions and absolute
-  phase amounts are distinct. Neutral PH/PS and declared nonreacting UV use the same driver; explicit native
+  phase amounts are distinct. PH/PS and declared nonreacting UV use the same driver; explicit native
   fixed-T/P discovery has retained numerical qualification on the stated cases.
 - Requests declare phase counts, types and supports or explicitly select fixed-T/P
   discovery. Discover at initialization, then reuse its declared topology where

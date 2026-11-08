@@ -84,8 +84,8 @@ Engine; selected Engine checks run setup first.
 and readiness checks. It excludes analysis reproductions and slow or expensive
 numerical evidence. Both gates run strict mypy over `engine/src` and `engine/tests`, so
 pytest alone misses type errors in a test edit.
-`check-affected.sh` runs the 19 Explicit cases (16 binary128 reactive-caloric
-and reactive-cp cases, 2 envelope traces and the reacting Cp fit) only when their code
+`check-affected.sh` runs the 20 Explicit cases (16 binary128 reactive-caloric
+and reactive-cp cases, the charged PH/PS case, 2 envelope traces and the reacting Cp fit) only when their code
 changes; request them with
 `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
 

@@ -120,6 +120,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     }
     result.standard = standard_term(
         *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
+    if constexpr (std::is_same_v<Base, double>) if (anchored_calorics())
+        result.calorics = caloric_reference(*this, result.temperature, result.pressure);
     return result;
 }
 
@@ -303,9 +305,18 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             const bool enthalpy = row.kind == RowKind::Enthalpy, internal = row.kind == RowKind::InternalEnergy;
             const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * ((enthalpy || internal) ? at.temperature : 1.0);
             terms = wide_math::abs(internal ? *problem.internal_energy_j : enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
+            // Anchored g and g_T carry the reference and completion errors of their owner.
+            const auto errors = at.calorics ? reference_calorics(*this, at.temperature, at.pressure, false, false, false, 1, true) : ReferenceCalorics{};
+            if (!errors.numerical_error_cause.empty()) { out.cause = errors.numerical_error_cause; continue; }
             for (std::size_t a = 0; a < at.shape.size(); ++a) {
-                const auto ideal = caloric_ideal(*this, a, at.temperature, at.volume[a], at.composition[a], at.temperature);
+                const auto& support = problem.phases[a].support;
+                const auto ideal = at.calorics ? anchored_ideal(*at.calorics, support, at.composition[a], at.volume[a], at.temperature, 0.0)
+                                               : caloric_ideal(*this, a, at.temperature, at.volume[a], at.composition[a], at.temperature);
                 const double weight = at.amount[a] / feed_total;
+                for (std::size_t i = 0; at.calorics && i < support.size(); ++i) {
+                    const auto& e0 = errors.gibbs[0].column.numerical_error, &e1 = errors.gibbs[1].column.numerical_error;
+                    inner += at.amount[a] * at.composition[a][support[i]] * (enthalpy ? e0[support[i]] + at.temperature * e1[support[i]] : e1[support[i]]) / denominator;
+                }
                 terms += wide_math::abs(at.amount[a] * (internal ? ideal.internal_energy : enthalpy ? ideal.enthalpy : ideal.entropy)) / denominator;
                 terms += weight * (at.temperature * wide_math::abs(at.derivative[a].gradient[0])
                     + (enthalpy ? wide_math::abs(at.volume[a] * at.derivative[a].gradient[1]) : internal ? 0.0 : wide_math::abs(at.derivative[a].value)));
@@ -884,6 +895,20 @@ RowSeries CompiledSystem::row_series(
         : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
+    if (prepared.calorics) {
+        // Pressure and parameter columns join the anchored g at this centre on first need; a motion that reads an
+        // unavailable column is refused with its cause.
+        const auto& gibbs = prepared.calorics->gibbs;
+        const bool has_pressure = std::any_of(gibbs.begin(), gibbs.end(), [](const auto& e) { return e.pressure_order > 0; });
+        const bool has_parameters = std::any_of(gibbs.begin(), gibbs.end(), [](const auto& e) { return e.parameter.has_value(); });
+        if ((control[1] != 0.0 && !has_pressure) || (parameter_jets && !has_parameters))
+            prepared.calorics = caloric_reference(*this, prepared.temperature, prepared.pressure,
+                                                  has_pressure || control[1] != 0.0, has_parameters || parameter_jets);
+        for (const auto& e : prepared.calorics->gibbs)
+            if (e.column.status != SolvedStateActionStatus::Available
+                && ((e.pressure_order && control[1] != 0.0) || (e.parameter && active_control[*e.parameter] != 0.0)))
+                throw std::invalid_argument("reference_unavailable: caloric " + e.column.message);
+    }
     auto geometry = record_geometry(*this, prepared, standard, false, plane);
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);
     std::vector<std::vector<double>> output(order + 1);

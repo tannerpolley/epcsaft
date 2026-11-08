@@ -461,12 +461,11 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
     if (!p.temperature.free || (p.pressure.free != p.internal_energy_j.has_value()) || compiled.pinned_count
         || !p.topology_declared || p.discovery)
         throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
-    if (compiled.has_ions || p.source_reference || has_reaction_reference(p))
-        throw std::invalid_argument("charged/source-referenced PH/PS unavailable");
     if (!std::isfinite(p.internal_energy_j ? *p.internal_energy_j : p.enthalpy_j ? *p.enthalpy_j : *p.entropy_j_per_k))
         throw std::invalid_argument("nonfinite caloric target");
     const auto& record = compiled.model->thermochemistry();
     if (!record) throw std::invalid_argument("missing thermochemistry for caloric condition");
+    if (compiled.anchored_calorics()) return;  // caloric_reference admits records, intervals and completion
     for (const auto& phase : p.phases)
         for (auto i : phase.support) {
             const auto& intervals = record->component_intervals[i];
@@ -479,6 +478,20 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
             if (p.internal_energy_j && (temperature == selected->lower || temperature == selected->upper))
                 throw std::invalid_argument("caloric derivative at interval endpoint: species " + std::to_string(i));
         }
+}
+
+// The anchored g of a PH/PS cell at (T, P): every pure-T column through the row and curvature order (3 with a source
+// reference, whose row series stop at order 2; else 4) must exist, else the callback is refused with its cause.
+std::shared_ptr<const ReferenceCalorics> caloric_reference(const CompiledSystem& c, double T, double P,
+                                                           bool pressure = false, bool parameters = false) {
+    auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, false, pressure, parameters,
+        c.reference_diagnostics.empty() ? 4 : 3));
+    if (result->status != SolvedStateActionStatus::Available)
+        throw std::invalid_argument("caloric reference at " + std::to_string(T) + " K: " + result->message);
+    for (const auto& e : result->gibbs)
+        if (!e.pressure_order && !e.parameter && e.column.status != SolvedStateActionStatus::Available)
+            throw std::invalid_argument("caloric reference at " + std::to_string(T) + " K: " + e.column.message);
+    return result;
 }
 
 // Critical and envelope cells: one condition, neutral, nonreactive, T and P free.
@@ -822,7 +835,10 @@ CppAD::ADFun<double> record_geometry(
         if (compiled.has_caloric_condition()) {
             const bool h = problem.enthalpy_j.has_value(), internal = problem.internal_energy_j.has_value();
             const AD denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * ((h || internal) ? T : AD(1.0));
-            const auto ideal = caloric_ideal(compiled, phase, T, volume, x, prepared.temperature);
+            std::vector<AD> d_theta(theta.size());
+            for (std::size_t a = 0; a < theta.size(); ++a) d_theta[a] = theta[a] - theta_center[a];
+            const auto ideal = prepared.calorics ? anchored_ideal(*prepared.calorics, spec.support, x, volume, T, delta_T, delta_P, d_theta)
+                                                 : caloric_ideal(compiled, phase, T, volume, x, prepared.temperature);
             row_values.back() += amount * (internal ? ideal.internal_energy : h ? ideal.enthalpy : ideal.entropy) / denominator;
             const AD weight = amount * GAS_CONSTANT_J_PER_MOL_K / denominator;
             output.push_back((h || internal) ? AD(0.0) : -weight);
@@ -1135,6 +1151,15 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 }
 
 }  // namespace
+
+bool CompiledSystem::anchored_calorics() const {
+    if (!has_caloric_condition() || ideal || !model->thermochemistry()) return false;
+    if (has_reaction_reference(problem)) return true;
+    for (const auto& phase : problem.phases)
+        for (const auto i : phase.support)
+            if (model->thermochemistry()->component_intervals[i].empty()) return true;
+    return false;
+}
 
 // EqID: reference_species_calorics
 // Supplied ideal-gas records fix h and cp of their species; record-less species solve

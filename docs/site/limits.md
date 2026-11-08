@@ -42,8 +42,9 @@ one-temperature comparison with separate complementarity and balance checks.
 
 Neutral PH/PS specifications require fixed pressure, free temperature,
 declared free phase amounts, one extensive enthalpy or entropy target and
-complete consuming thermal records. Charged or source-referenced PH/PS is
-unavailable. UV remains deferred. A reacting thermal calculation additionally
+complete consuming thermal records, or, for reacting declarations, records
+that with the reactions determine every neutral caloric combination. Declarations with a source reference or a record-less species admit no reaction-law action direction
+and at most one EOS-parameter direction. UV remains deferred. A reacting thermal calculation additionally
 requires consistent reaction and caloric standards; supplying contradictory
 standards is an error. The
 [caloric algorithm](theory/algorithms.md#alg-calorics) and
