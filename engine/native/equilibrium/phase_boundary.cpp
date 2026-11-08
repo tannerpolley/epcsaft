@@ -1928,6 +1928,7 @@ void admit_loading_search(SaturationSearch& out) {
     compare_loading_candidates(out, {});
     for (std::size_t i = 0; i < out.nodes.size(); ++i) {
         const auto& a = out.nodes[i];
+        if (!std::isfinite(a.mismatch)) continue;  // unsolved node: its own cause and unexamined_gap stand
         if (!std::isfinite(a.slope) || a.slope == 0) out.causes.push_back("unresolved_slope_reversal");
         if (!i) continue;
         const auto& b = out.nodes[i - 1]; const auto delta = a.mismatch - b.mismatch;
@@ -1954,6 +1955,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     SaturationSearch out; out.grid = grid; out.declaration = affine;
     out.work_at_entry = {work.consumed, work.evaluations, work.hessian_calls, work.attempts};
     const auto fail = [&](const std::string& cause) { out.causes.push_back(cause); };
+    const auto fail_at = [&](double alpha, const std::string& cause) { fail("loading " + core::optional_number(alpha) + ": " + cause); };
     const auto solve = [&](double loading, double lower, double upper, double target,
                            const std::optional<EquilibriumResult>& start, bool composed) {
         if (work.attempt_cap && work.attempts >= work.attempt_cap) work.exhausted = true;
@@ -1981,7 +1983,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                 out.nodes.empty() ? std::nullopt : std::make_optional(out.nodes.back().state), false);
             SaturationNode node; node.loading = alpha; node.state = std::move(state);
             out.nodes.push_back(std::move(node)); auto& n = out.nodes.back();
-            if (!n.state.success || !n.state.has_state()) { fail(n.state.message); fail("unexamined_gap"); break; }
+            if (!n.state.success || !n.state.has_state()) { fail_at(alpha, n.state.message); fail("unexamined_gap"); break; }
             n.mismatch = *n.state.pressure - affine.pressure;
             auto begun = Clock::now();
             n.estimates = equilibrium_numerical_estimates(c, n.state);
@@ -1997,7 +1999,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                 n.action_cause = action.empty() || action[0].results.empty() ? "action_unavailable" : solved_state_status_name(action[0].results[0].status);
                 if (!action.empty() && !action[0].results.empty())
                     n.action_cause += ":" + action[0].results[0].diagnostic_message.value_or("");
-                fail(n.action_cause); fail("unexamined_gap"); break;
+                fail_at(alpha, n.action_cause); fail("unexamined_gap"); break;
             }
             n.slope = *action[0].results[0].action;
             auto local = c.problem;
@@ -2009,8 +2011,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
             const auto local_errors = equilibrium_numerical_estimates(augmented, mapped);
             n.estimates.loading = local_errors.loading;
             n.local_estimates = local_errors;
-            if (!usable(local_errors.loading)) { fail(local_errors.cause); fail("unexamined_gap"); break; }
-            if (!usable(n.estimates.pressure)) { fail(n.estimates.cause); fail("unexamined_gap"); break; }
+            if (!usable(local_errors.loading)) { fail_at(alpha, local_errors.cause); fail("unexamined_gap"); break; }
+            if (!usable(n.estimates.pressure)) { fail_at(alpha, n.estimates.cause); fail("unexamined_gap"); break; }
         }
         if (out.nodes.size() == grid.size() && out.causes.empty()) {
             for (std::size_t i = 0; i < out.nodes.size(); ++i) {

@@ -1457,11 +1457,34 @@ void check_kuranov_row_11() {
         std::abs(*replay.pressure / *r.pressure-1));
 }
 
+// #1073: at 333.15 K the B1 incipient phase gains water along the bubble curve until its isotherm has a
+// loop (x_water near 0.08, 10^4 mol/m3); its 0.5 GPa root then lies on the dense side, so the declared
+// vapor-incipient curve ends between 1.40 and 1.45 mol CO2/mol MDEA and the search names that loading.
+void check_merkley_b1_vapor_end() {
+#include "fixtures/merkley_b1_333.inc"
+    AffineLoading affine{p.feed.values, std::vector<double>(p.feed.values.size(), 0.0), 1.0, 1.5, 0, 1121000.0};
+    affine.initial[co2] = 0; affine.direction[co2] = 1;
+    std::vector<double> grid;
+    for (int i = 0; i <= 10; ++i) grid.push_back(1.0 + 0.05 * i);
+    const auto search = search_loading(model, p, affine, grid);
+    for (const auto& cause : search.causes) std::cerr << "saturation cause: " << cause << '\n';
+    CHECK(search.nodes.size() == 10 && !search.accepted && !search.complete);
+    for (std::size_t i = 0; i + 1 < search.nodes.size(); ++i)
+        CHECK(search.nodes[i].state.success && search.nodes[i].mismatch > 0 && search.nodes[i].slope > 0);
+    const auto& last = search.nodes[8].state;
+    CHECK(last.molar_densities[1] > last.molar_densities[0]);
+    CHECK(!search.nodes[9].state.success && search.causes.size() == 2 && search.causes[1] == "unexamined_gap");
+    CHECK(search.causes[0].rfind("loading 1.45: phase V has no locally unique anchored root: vapor branch not admitted", 0) == 0);
+    std::printf("merkley-b1-vapor-end P(1.40)=%.17g rho=%.17g,%.17g cause=%s\n", *last.pressure,
+        last.molar_densities[0], last.molar_densities[1], search.causes[0].c_str());
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.boundary.kuranov-row-11", "kuranov-row-11"}, check_kuranov_row_11},
+        {{"native.boundary.merkley-b1-vapor-end", "merkley-b1-vapor-end"}, check_merkley_b1_vapor_end},
         {{"native.boundary.product-residual", "product-residual"}, check_product_residual},
         {{"native.boundary.saturation-refusals", "saturation-refusals"}, check_saturation_refusals},
         {{"native.boundary.saturation-loading", "saturation-loading"}, check_saturation_loading},
