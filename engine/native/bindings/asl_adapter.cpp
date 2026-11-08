@@ -412,6 +412,30 @@ std::vector<epcsaft::ActiveParameter> read_active(RecordReader& reader) {
     });
 }
 
+// The writers' put_reaction and put_source_reference records.
+eq::ReactionSpec read_reaction(RecordReader& reader) {
+    eq::ReactionSpec r;
+    r.name = reader.next();
+    r.stoichiometry = reader.vector([&] { return reader.number(); });
+    const auto target = reader.next();
+    if (target == "K") r.equilibrium_constant = reader.number();
+    else if (target == "affinity") r.affinity_j_per_mol = reader.number();
+    else if (target == "correlation") {
+        auto& c = r.correlation.emplace();
+        for (double* v : eq::law_fields(c)) *v = reader.number();
+        c.standard_state_id = reader.next();
+    } else reject("unsupported reaction target");
+    if (reader.integer(1) != 0) r.reference = {reader.optional([&] { return reader.number(); }), epcsaft::ReferenceSourceBasis(reader.integer(1))};
+    return r;
+}
+
+std::optional<epcsaft::NeutralReferenceDeclaration> read_source_reference(RecordReader& reader) {
+    reader.field("source_reference");
+    if (reader.integer(1) == 0) return std::nullopt;  // braced initialization reads left to right
+    return epcsaft::NeutralReferenceDeclaration{reader.optional([&] { return reader.integer(); }), reader.vector([&] { return reader.number(); }),
+        reader.number(), reader.vector([&] { return epcsaft::SpeciesReference(reader.integer(2)); })};
+}
+
 // The block put_thermochemistry writes.
 std::optional<epcsaft::ThermochemistryRecord> read_thermochemistry(RecordReader& reader) {
     if (reader.integer(1) == 0) return std::nullopt;
@@ -480,27 +504,10 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         return phase;
     });
     reader.field("reactions");
-    problem.reactions = reader.vector([&] {
-        eq::ReactionSpec r;
-        r.name = reader.next();
-        r.stoichiometry = reader.vector([&] { return reader.number(); });
-        const auto target = reader.next();
-        if (target == "K") r.equilibrium_constant = reader.number();
-        else if (target == "affinity") r.affinity_j_per_mol = reader.number();
-        else if (target == "correlation") {
-            auto& c = r.correlation.emplace();
-            for (double* v : eq::law_fields(c)) *v = reader.number();
-            c.standard_state_id = reader.next();
-        } else reject("unsupported reaction target");
-        if (reader.integer(1) != 0) r.reference = {reader.optional([&] { return reader.number(); }), epcsaft::ReferenceSourceBasis(reader.integer(1))};
-        return r;
-    });
+    problem.reactions = reader.vector([&] { return read_reaction(reader); });
     reader.field("standard_gibbs_j_per_mol");
     problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
-    reader.field("source_reference");
-    if (reader.integer(1) != 0)  // braced initialization reads left to right
-        problem.source_reference = {reader.optional([&] { return reader.integer(); }), reader.vector([&] { return reader.number(); }),
-            reader.number(), reader.vector([&] { return epcsaft::SpeciesReference(reader.integer(2)); })};
+    problem.source_reference = read_source_reference(reader);
     reader.field("topology_declared");
     problem.topology_declared = reader.integer(1) != 0;
     reader.field("solver_options");
@@ -724,7 +731,8 @@ double equilibrium_enthalpy(arglist* arguments) { return equilibrium_observable(
 // (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
 // directions b_j = Pe_j - x sigma_j, sigma_j = 1'Pe_j, supply the value and actions; only dx/dw_j = b_j/s and the exact
 // chain d2x/dw_j dw_k = -(sigma_k dx/dw_j + sigma_j dx/dw_k)/s are applied here. Rows: 0 density, 1 total enthalpy,
-// 2 + i ln(phi_i). A theta column is one native parameter direction at fixed (T, P, x); x does not depend on theta.
+// 2 + i ln(phi_i), 2 + C + s the solid row l_s. A theta column is one native parameter direction at fixed (T, P, x); x does
+// not depend on theta.
 struct PropertyContext final {
     std::string record;
     bool require_phase_identity = false;
@@ -734,12 +742,14 @@ struct PropertyContext final {
         std::vector<std::vector<double>> gradients, hessians;
         std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
         int order = -1;
-    } branches[2];  // liquid (highest stable root), vapor (lowest)
+    } branches[2], solid_rows;  // liquid (highest stable root), vapor (lowest); solid rows need no density root
+    std::vector<eq::SolidSpec> solids;
+    std::optional<epcsaft::NeutralReferenceDeclaration> reference;
 };
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v4");
+    reader.field("epcsaft.asl.property.v5");
     const bool require_phase_identity = reader.integer(1) != 0;
     const auto document = read_document(reader);
     epcsaft::policy::SolverOptions solver_options;
@@ -747,11 +757,20 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     for (auto& value : solver_options.values) value = reader.number();
     const auto active = read_active(reader);
     const auto thermochemistry = read_thermochemistry(reader);
-    reader.finish();
     auto context = std::make_unique<PropertyContext>();
+    reader.field("solids");
+    const auto count = reader.integer();
+    if (count > 0) context->reference = read_source_reference(reader);
+    for (std::size_t s = 0; s < count; ++s) {
+        const auto r = read_reaction(reader);
+        if (!r.correlation) reject("ASL solid rows require a ln K(T) law");
+        context->solids.push_back({r.name, r.stoichiometry, r.equilibrium_constant, r.correlation, r.reference, reader.number(), {}});
+    }
+    reader.finish();
     context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<HelmholtzModel>(
         epcsaft::build_parameters(document), active, thermochemistry, solver_options);
+    eq::admit_solid_declarations(*context->model, context->reference, context->solids);
     context->record = raw;
     return context;
 }
@@ -857,6 +876,61 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     branch.order = order;
 }
 
+// EqID solid_standard_gibbs on the record basis: l_s = ln K^rho_s(T, P0) + V_s (P - P0)/RT - dnu ln(P/(RT rho0)), rho0 =
+// 1 mol/m^3, so sum_i nu_i (ln x_i + ln phi_i) = l_s at saturation. It depends on (T, P, theta) only.
+void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int order) {
+    auto& rows = context.solid_rows;
+    if (rows.q == q && rows.order >= order) return;
+    const std::size_t S = context.solids.size(), n = q.size(), first = n - context.model->active_parameters().size();
+    const std::vector<double> theta(q.begin() + first, q.end());
+    if (theta != context.model->active_parameter_values()) context.model = model_at(*context.model, theta);
+    std::vector<std::size_t> pairs(order >= 2 ? n - first : 0);
+    std::iota(pairs.begin(), pairs.end(), 0);
+    rows = {q, std::vector<double>(S), std::vector<std::vector<double>>(S, std::vector<double>(n)),
+            std::vector<std::vector<double>>(S, std::vector<double>(n * (n + 1) / 2)), std::vector<std::pair<int, std::string>>(S, {3, ""}), order};
+    const double T = q[0], P = q[1], RT = epcsaft::GAS_CONSTANT_J_PER_MOL_K * T;
+    for (std::size_t s = 0; s < S; ++s) {
+        const auto& solid = context.solids[s];
+        const auto row = std::to_string(first + s) + ": solid " + solid.name + ": ";
+        const auto fail = [&](int k, const char* cause, const std::string& detail) {
+            if (k < rows.failures[s].first) rows.failures[s] = {k, "epcsaft_property:" + (cause + (":" + row)) + detail};
+        };
+        const double P0 = *solid.reference->reference_pressure_pa;
+        eq::SolidLogK law;
+        try {  // the reference is evaluated at its fixed source pressure, so it is independent of P
+            law = eq::solid_log_k(*context.model, T, P0, context.reference, {solid}, std::max(order, 0), order >= 1 && first < n, pairs)[0];
+        } catch (const std::exception& error) {
+            const bool outside = T < solid.correlation->temperature_min || T > solid.correlation->temperature_max;
+            fail(0, outside ? "OutsideInterval" : "unavailable_derivative", error.what());
+            continue;
+        }
+        const auto& C = law.reference;
+        const double V = solid.molar_volume_m3_per_mol, dnu = std::accumulate(solid.stoichiometry.begin(), solid.stoichiometry.end(), 0.0);
+        rows.values[s] = law.ln_k + law.scale + *C.terminal_contraction + V * (P - P0) / RT - dnu * std::log(P / RT);
+        // A requested column the reference owner did not admit fails the row at its order.
+        const auto column = [&](int k, std::size_t a, std::optional<std::size_t> i = {}, std::optional<std::size_t> j = {}) {
+            const auto v = C.derivative_value(a, 0, i, j);
+            if (!v) fail(k, "unavailable_derivative", "reference column d^" + std::to_string(a) + "/dT; " + C.message);
+            return v.value_or(0.0);
+        };
+        auto& g = rows.gradients[s];
+        const auto h = [&](std::size_t i, std::size_t j) -> double& { return rows.hessians[s][j * (j + 1) / 2 + i]; };  // i <= j
+        if (order >= 1) {
+            g[0] = *law.slope + column(1, 1) - V * (P - P0) / (RT * T) + dnu / T;
+            g[1] = V / RT - dnu / P;
+            for (std::size_t k = first; k < n; ++k) g[k] = column(1, 0, k - first);
+        }
+        if (order < 2) continue;
+        h(0, 0) = *law.curvature + column(2, 2) + 2.0 * V * (P - P0) / (RT * T * T) - dnu / (T * T);
+        h(0, 1) = -V / (RT * T);
+        h(1, 1) = dnu / (P * P);
+        for (std::size_t k = first; k < n; ++k) {
+            h(0, k) = column(2, 1, k - first);
+            for (std::size_t l = first; l <= k; ++l) h(l, k) = column(2, 0, l - first, k - first);
+        }
+    }
+}
+
 double pressure_property(arglist* arguments) {
     static Prepared<PropertyContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
@@ -868,7 +942,7 @@ double pressure_property(arglist* arguments) {
         auto& context = prepared.find(record, "property", [&] { return prepare_property(record); });
         const std::size_t c = context.model->parameters().component_count();
         if (std::size_t(n) != 2 + c + context.model->active_parameters().size()) reject("argument count differs");
-        const auto row = selector(arguments, n + 1, 2 + c), phase = selector(arguments, n + 2, 2);
+        const auto row = selector(arguments, n + 1, 2 + c + context.solids.size()), phase = selector(arguments, n + 2, 2);
         const std::vector<double> q(arguments->ra, arguments->ra + n);
         // Zero weights are admitted: the component enters at its exact infinite-dilution limit.
         for (std::size_t i = 0; i < q.size(); ++i)  // a parameter may be negative (k_ij)
@@ -876,12 +950,14 @@ double pressure_property(arglist* arguments) {
                 reject("T and P must be finite and positive, weights finite and nonnegative, parameters finite");
         if (!(std::accumulate(q.begin() + 2, q.begin() + 2 + c, 0.0) > 0.0)) reject("weights must have a positive sum");
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
-        evaluate_property(context, phase, q, order);
-        const auto& branch = context.branches[phase];
-        if (branch.failures[row].first <= order) throw std::runtime_error(branch.failures[row].second);
-        if (arguments->derivs != nullptr) std::copy(branch.gradients[row].begin(), branch.gradients[row].end(), arguments->derivs);
-        if (arguments->hes != nullptr) std::copy(branch.hessians[row].begin(), branch.hessians[row].end(), arguments->hes);
-        return branch.values[row];
+        const bool solid = row >= 2 + c;
+        solid ? evaluate_solids(context, q, order) : evaluate_property(context, phase, q, order);
+        const auto& branch = solid ? context.solid_rows : context.branches[phase];
+        const auto r = solid ? row - 2 - c : row;
+        if (branch.failures[r].first <= order) throw std::runtime_error(branch.failures[r].second);
+        if (arguments->derivs != nullptr) std::copy(branch.gradients[r].begin(), branch.gradients[r].end(), arguments->derivs);
+        if (arguments->hes != nullptr) std::copy(branch.hessians[r].begin(), branch.hessians[r].end(), arguments->hes);
+        return branch.values[r];
     } catch (const std::invalid_argument& error) {
         callback_error = std::string("epcsaft_property:invalid_input:") + error.what();
     } catch (const std::exception& error) {

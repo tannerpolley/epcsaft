@@ -550,8 +550,12 @@ official IDAES executable and exact option-file readback.
 `eos.property_asl_record(mixture)` constructs the immutable record of the installed
 `epcsaft_pressure_property` external function (#73) for a mixture with document
 parameters, optional active parameters and optional thermochemistry in any native form
-(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v4`,
+(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v5`,
 which lists each active parameter's family and native slots in model order).
+`property_asl_record(mixture, solids=..., neutral_reference=...)` also carries pure
+solids, each with its ln K(T) law (a scalar K is refused, because every row has a T
+column; declare a constant law on its interval instead) and the neutral reference
+of its source basis.
 `regression.fitted_parameters` writes the fitted values back into the start
 document's entries, so both records export a fit; a fit the document cannot
 represent (a fitted slot with no entry, a value that does not rebuild bitwise in
@@ -560,7 +564,7 @@ arguments are `q = (T K, P Pa, w_1..w_C, theta_1..theta_m)` with `x = w / sum(w)
 `theta` the active parameters in their native family units (k_ij and l_ij -, eps/k K,
 sigma Å, dielectric volume m3/mol; finite, and possibly negative), then the strings
 record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
-`ln(phi_i)`) and phase (`0` liquid, the highest stable density root; `1` vapor,
+`ln(phi_i)`, `2 + C + s` the solid row `l_s`) and phase (`0` liquid, the highest stable density root; `1` vapor,
 the lowest). It returns the value, gradient and packed Hessian in physical `q`
 from the native pressure actions plus the exact normalization chain; a `theta` column
 is one native parameter-direction action at fixed `(T, P, x)`. At another `theta` the
@@ -593,6 +597,18 @@ such a record as one `AqueousPhase` with `Cation`, `Anion` and `Solvent`
 components and refuses vapor or VLE phases; it passes weights and rows in record
 order. A start with an ion fraction within Ipopt's `bound_push` of zero is no
 longer neutral after the push and is refused.
+
+The solid row is `l_s(T, P; theta) = ln K_s^rho(T, P°) + V_s (P - P°)/RT - Δν ln(P/(RT rho0))`,
+`rho0` = 1 mol/m3, with `ln K_s^rho(T, P°)` the same source law, common-molality scale and
+infinite-dilution reference contraction the native solid row uses (EqID `solid_standard_gibbs`).
+It needs no density root, is the same for both phase selectors and has exact first and second
+derivatives in `(T, P, theta)`; its weight columns are zero. A present solid satisfies
+`Σ_i ν_i (ln x_i + ln phi_i) = l_s`, which `epcsaft.idaes.solid_saturation(state, phase, s)`
+returns as `ln 10 SI_s` for the `solids` given to `property_configuration`. The flowsheet
+owns the solid amount, its material balance and whether the solid is present; the Engine
+adds no presence logic, and a complementarity pairing is not qualified. A temperature
+outside the law's interval returns `OutsideInterval` naming the solid; an unavailable
+reference column returns `unavailable_derivative` with the native message.
 
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and

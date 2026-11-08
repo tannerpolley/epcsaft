@@ -176,9 +176,13 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
 
 
 def property_configuration(
-    model: Any, *, phases: tuple[str, ...], state_bounds: dict[str, Any], temperature_ref: float, pressure_ref: float
+    model: Any, *, phases: tuple[str, ...], state_bounds: dict[str, Any], temperature_ref: float, pressure_ref: float,
+    solids: tuple[Any, ...] | None = None, neutral_reference: Any = None,
 ) -> dict[str, Any]:
     """Declare a GenericParameterBlock; starts and state bounds are caller inputs.
+
+    Each declared ``Solid`` (with its ln K(T) law; a scalar K is refused) adds the record row read by
+    ``solid_saturation``; solids require the ``NeutralReference`` of their source basis.
 
     A record with charged components admits only phases=("liquid",), declared as an AqueousPhase with
     Cation/Anion/Solvent components; the adapter refuses non-electroneutral weights.
@@ -196,13 +200,17 @@ def property_configuration(
     charged = any(charge.values())
     if charged and phases != ("liquid",):
         raise ValueError("a charged record admits only phases=('liquid',); an ion-free vapor record is out of scope")
-    record = property_asl_record(model)
-    equilibrium_record = property_asl_record(model, require_phase_identity=True) if len(phases) == 2 else record
+    solids = tuple(solids or ())
+    native = [s._native(model) for s in solids]
+    reference = neutral_reference._native(model) if neutral_reference else None
+    record = property_asl_record(model, solids=native, neutral_reference=reference)
+    equilibrium_record = property_asl_record(model, True, native, reference) if len(phases) == 2 else record
     options = {
         "library": str(asl_library()),
         "record": record,
         "equilibrium_record": equilibrium_record,
         "model": model,
+        "solids": solids,
     }
     pair = ("vapor", "liquid")
     config = dict(
@@ -232,6 +240,22 @@ def property_configuration(
             phases_in_equilibrium=[pair], phase_equilibrium_state={pair: SmoothVLE}, bubble_dew_method=LogBubbleDew
         )
     return config
+
+
+def solid_saturation(state: Any, phase: str, s: int) -> Any:
+    """sum_i nu_i (ln x_i + ln phi_i) - l_s of declared solid s: ln 10 times its saturation index, zero when present.
+
+    l_s(T, P; theta) is the record's solid row: ln K on the 1 mol/m3 density basis at the source pressure plus
+    V_s (P - P0)/RT, minus sum(nu) ln(P/(RT rho0)). The flowsheet owns the solid amount and its presence.
+    """
+    options = state.params.get_phase(phase).config.equation_of_state_options
+    ids, x = options["model"].component_ids, {j: state.mole_frac_phase_comp[phase, j] for j in state.component_list}
+
+    def row(r: int) -> Any:
+        return PressureProperties._at(state, phase, r, state.temperature, state.pressure, x, True)
+
+    nu = options["solids"][s].formula
+    return sum(v * (log(x[j]) + row(2 + ids.index(j))) for j, v in nu.items() if v) - row(2 + len(ids) + s)
 
 
 def check_state(state: Any, phase: str) -> Any:

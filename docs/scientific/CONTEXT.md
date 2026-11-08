@@ -65,7 +65,9 @@ The [Khudaida analysis](../../analyses/2026-khudaida-idaes-settler/README.md) ow
 the nonreactive qualification. Its pressure-property function transports pressure-chart
 density, total enthalpy and component `ln(phi_i)` with exact first/second
 derivatives in `(T, P, w)` and the model's active EOS parameters; [#73](https://github.com/tannerpolley/ePC-SAFT/issues/73)
-owns its qualification. An explicit affine feed map, supports, reaction
+owns its qualification. It also returns each declared pure solid's saturation
+right side `l_s(T, P; theta)`, so a flowsheet writes the solid's saturation row with the
+`ln(phi_i)` rows; the flowsheet owns the solid amount and its presence. An explicit affine feed map, supports, reaction
 targets and phase-identity criterion are caller inputs, not application
 selectors. Each downstream application must qualify its own chemistry, input
 chart, nonlinear process chain and operating domain; neither reference qualifies

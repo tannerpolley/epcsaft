@@ -386,7 +386,10 @@ saturation row or n_s = 0, so the classified declaration is square. A
 `Pinned(0)` solid adds no coordinate and reports SI_s only. Solids require fixed
 T and P and a neutral reference; PH/PS, critical, envelope, azeotrope, pinned
 free-intensive cells, discovery, stability trials, continuation, caloric and
-stability fit observations, and ASL records refuse them; composition, amount-ratio,
+stability fit observations, and the ASL equilibrium record refuse them; the ASL
+property record supplies each declared solid's
+ℓ_s = ln K_s^ρ(T, P°) + V_s(P − P°)/RT − Δν ln(P/(RT ρ°)), ρ° = 1 mol/m³, the right side of
+Σ_i ν_{s,i}(ln x_i + ln φ_i) = ℓ_s for a present solid, with exact (T, P, θ) derivatives. Composition, amount-ratio,
 partial-pressure and phase-density fit observations admit them (ALG-FIT). Solid solutions and kinetics are not
 expressible.
 

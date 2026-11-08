@@ -105,6 +105,31 @@ template <class Law> auto law_fields(Law& c) {
     return std::array{&c.a, &c.b, &c.c, &c.d, &c.reference_temperature, &c.temperature_min, &c.temperature_max, &c.e, &c.f};
 }
 
+// One reaction record: name, nu, its target, then the reference flag, P0 (empty: system pressure) and the
+// ReferenceSourceBasis index.
+inline void put_reaction(AslRecordWriter& w, const ReactionSpec& r) {
+    if (r.equilibrium_constant.has_value() + r.affinity_j_per_mol.has_value() + r.correlation.has_value() != 1)
+        throw std::invalid_argument("ASL requires exactly one reaction target: K, affinity or correlation");
+    w.put(r.name); w.vector(r.stoichiometry);
+    w.put(r.correlation ? "correlation" : r.equilibrium_constant ? "K" : "affinity");
+    if (const auto& c = r.correlation) {
+        for (const double* v : law_fields(*c)) w.put(*v);
+        w.put(c->standard_state_id);
+    } else w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);
+    w.put(r.reference.has_value());
+    if (r.reference) w.optional(r.reference->reference_pressure_pa), w.put(std::size_t(r.reference->source_basis));
+}
+
+// Neutral-reference flag; then solvent index (empty: none), solute molality ratios, m0 and SpeciesReference indices.
+inline void put_source_reference(AslRecordWriter& w, const std::optional<NeutralReferenceDeclaration>& s) {
+    w.put("source_reference"), w.put(s.has_value());
+    if (s) {
+        w.optional(s->solvent_index), w.vector(s->solute_molality_ratios), w.put(s->standard_molality_mol_per_kg);
+        w.put(s->species_reference.size());
+        for (auto v : s->species_reference) w.put(std::size_t(v));
+    }
+}
+
 // Thermochemistry interval forms, in IdealCorrelation variant order; each writes its coefficients, then its anchors.
 inline const std::array<std::string, 5> ideal_tags = {"polynomial", "shomate", "nasa7", "nasa9", "dippr107"};
 inline const std::array<decltype(IdealCorrelation::form), 5> ideal_forms = {IdealPolynomial{}, IdealShomate{}, IdealNASA7{}, IdealNASA9{}, IdealDIPPR107{}};
@@ -147,27 +172,9 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
         w.optional(phase.packing_guess);
     }
     w.put("reactions"); w.put(p.reactions.size());
-    for (const auto& r : p.reactions) {
-        if (r.equilibrium_constant.has_value() + r.affinity_j_per_mol.has_value() + r.correlation.has_value() != 1)
-            throw std::invalid_argument("ASL requires exactly one reaction target: K, affinity or correlation");
-        w.put(r.name); w.vector(r.stoichiometry);
-        w.put(r.correlation ? "correlation" : r.equilibrium_constant ? "K" : "affinity");
-        if (const auto& c = r.correlation) {
-            for (const double* v : law_fields(*c)) w.put(*v);
-            w.put(c->standard_state_id);
-        } else w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);
-        // Reference flag; then P0 (empty: system pressure) and the ReferenceSourceBasis index.
-        w.put(r.reference.has_value());
-        if (r.reference) w.optional(r.reference->reference_pressure_pa), w.put(std::size_t(r.reference->source_basis));
-    }
+    for (const auto& r : p.reactions) put_reaction(w, r);
     w.put("standard_gibbs_j_per_mol"); w.vector(p.standard_gibbs_j_per_mol);
-    // Neutral-reference flag; then solvent index (empty: none), solute molality ratios, m0 and SpeciesReference indices.
-    w.put("source_reference"), w.put(p.source_reference.has_value());
-    if (const auto& s = p.source_reference) {
-        w.optional(s->solvent_index), w.vector(s->solute_molality_ratios), w.put(s->standard_molality_mol_per_kg);
-        w.put(s->species_reference.size());
-        for (auto v : s->species_reference) w.put(std::size_t(v));
-    }
+    put_source_reference(w, p.source_reference);
     w.put("topology_declared"); w.put(p.topology_declared); w.put("solver_options");
     const auto effective = p.solver_options.resolved(solver_options);
     for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));
@@ -183,17 +190,26 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
 }
 
 // Property callbacks: the parameter document, the active parameters in model order (their values are the document's),
-// and a thermochemistry record, no state.
+// a thermochemistry record and the declared solids (each one row of l_s), no state.
 inline std::string asl_property_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active,
-    const std::optional<ThermochemistryRecord>& t, const policy::SolverOptions& solver_options, bool require_phase_identity) {
+    const std::optional<ThermochemistryRecord>& t, const policy::SolverOptions& solver_options, bool require_phase_identity,
+    const std::vector<SolidSpec>& solids = {}, const std::optional<NeutralReferenceDeclaration>& reference = std::nullopt) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.property.v4");
+    w.put("epcsaft.asl.property.v5");
     w.put(require_phase_identity);
     put_document(w, d);
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
     put_active(w, active);
     put_thermochemistry(w, t);
+    // Every solid row has a T column, so an isothermal K is declared as a constant law on its interval.
+    w.put("solids"); w.put(solids.size());
+    if (!solids.empty() && !reference) throw std::invalid_argument("ASL solid rows require a neutral reference");
+    if (!solids.empty()) put_source_reference(w, reference);
+    for (const auto& solid : solids) {
+        if (!solid.correlation) throw std::invalid_argument("ASL solid rows require a ln K(T) law");
+        put_reaction(w, solid_law(solid)), w.put(solid.molar_volume_m3_per_mol);
+    }
     return w.finish();
 }
 }  // namespace epcsaft::equilibrium

@@ -153,12 +153,15 @@ void register_equilibrium(nb::module_& module) {
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
-    module.def("property_asl_record", [](nb::object model, bool require_phase_identity) {
+    module.def("property_asl_record", [](nb::object model, bool require_phase_identity, const std::vector<SolidSpec>& solids,
+            const std::optional<NeutralReferenceDeclaration>& neutral_reference) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        return asl_property_record(document, native.active_parameters(), native.thermochemistry(), native.solver_options(), require_phase_identity);
-    }, nb::arg("model"), nb::arg("require_phase_identity") = false);
+        return asl_property_record(document, native.active_parameters(), native.thermochemistry(), native.solver_options(),
+            require_phase_identity, solids, neutral_reference);
+    }, nb::arg("model"), nb::arg("require_phase_identity") = false, nb::arg("solids") = std::vector<SolidSpec>{},
+       nb::arg("neutral_reference").none() = nb::none());
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
     module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;
     nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")

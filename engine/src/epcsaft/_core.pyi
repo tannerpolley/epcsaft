@@ -4017,7 +4017,7 @@ def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationO
     The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
     """
     ...
-def property_asl_record(model: Any, require_phase_identity: bool = False) -> str:
+def property_asl_record(model: Any, require_phase_identity: bool = False, solids: Sequence[SolidSpec] = ..., neutral_reference: NeutralReferenceDeclaration | None = None) -> str:
     """Serialize a declared model for native ASL property callbacks.
 
     Parameters
@@ -4026,11 +4026,15 @@ def property_asl_record(model: Any, require_phase_identity: bool = False) -> str
         Python model/declaration exposing the source parameter document, optional thermochemistry and numerical options consumed by the native record writer.
     require_phase_identity : bool
         Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
+    solids : Sequence[SolidSpec]
+        Pure solids, each with a ln K(T) correlation (a scalar K is refused); each adds one solid row.
+    neutral_reference : NeutralReferenceDeclaration or None
+        Source-basis neutral reference, required when solids are given.
 
     Returns
     -------
     str
-        Native record string containing the parameter and thermochemistry declarations.
+        Native record string containing the parameter, thermochemistry and solid declarations.
 
     Notes
     -----

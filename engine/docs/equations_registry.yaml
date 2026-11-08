@@ -1494,7 +1494,7 @@ equations:
     source: "dissolution S(s) = Σ_i ν_{s,i} A_i with Σ_i ν_{s,i} μ_i° − μ_s° = −RT ln K_s; the density-basis constant from `neutral_reaction_reference_transfer` at the source standard pressure P°"
     status: "Exact derivation"
     description: "Standard Gibbs energy of a pure stoichiometric solid at unit activity on its pure-solid standard state, with g_i the compiled fluid standard vector, ln K_s^ρ the sourced dissolution constant converted on the charge-neutral fluid-side stoichiometry at the declared reference pressure P°, and V_s the declared solid molar volume."
-    change_note: "P° is required, so ∂g_s/∂P = V_s exactly at fixed T; a transfer at system pressure would add the dissolved ions' infinite-dilution partial molar volume. Only ln K_s is physical: a shift of g_i along the balance row space moves the objective by a constant. ln K_s^ρ is linear in T about the solved temperature (first-order T actions)."
+    change_note: "P° is required, so ∂g_s/∂P = V_s exactly at fixed T; a transfer at system pressure would add the dissolved ions' infinite-dilution partial molar volume. Only ln K_s is physical: a shift of g_i along the balance row space moves the objective by a constant. ln K_s^ρ is linear in T about the solved temperature (first-order T actions). The ASL property record's solid row is ℓ_s = ln K_s^ρ(T, P°) + V_s(P − P°)/RT − Δν ln(P/(RTρ°)), ρ° = 1 mol/m³, so a present solid satisfies Σ_i ν_{s,i}(ln x_i + ln φ_i) = ℓ_s."
     math: "g_s(T,P)=\\sum_i\\nu_{s,i}\\,g_i(T)+RT\\ln K_s^{\\rho}(T,P^\\circ)+V_s\\,(P-P^\\circ)."
   - eqid: "solvent_mole_weighted_bulk_permittivity"
     section: "Electrolyte dielectric and Debye--Huckel relations"

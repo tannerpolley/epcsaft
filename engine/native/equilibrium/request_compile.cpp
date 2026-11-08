@@ -1099,58 +1099,75 @@ void admit_pins(CompiledSystem& compiled) {
     }
 }
 
-// EqID solid_standard_gibbs: ln K^rho(T, P0) from the one reaction-reference owner at the declared source
-// pressure P0, so the pressure slope of g_s is V_s alone. Fixed T and P exclude PH/PS, critical, envelope,
-// azeotrope and pinned cells.
+// A present solid's row uses ln K^rho_s(T, P0) from solid_log_k, so the pressure slope of g_s is V_s alone. Fixed T and
+// P exclude PH/PS, critical, envelope, azeotrope and pinned cells.
 void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
     const auto& p = compiled.problem;
     if (p.solids.empty()) return;
-    const auto& model = *compiled.model;
-    const auto& z = model.parameters().charge_number;
-    std::vector<std::vector<double>> nu;
-    std::vector<ReactionReference> references;
     for (const auto& solid : p.solids) {
         const auto refuse = [&](const std::string& cause) { return std::invalid_argument("solid " + solid.name + ": " + cause); };
-        const auto& v = solid.stoichiometry;
-        if (v.size() != z.size() || std::all_of(v.begin(), v.end(), [](double x) { return x == 0.0; })
-            || std::abs(std::inner_product(v.begin(), v.end(), z.begin(), 0.0)) > std::sqrt(std::numeric_limits<double>::epsilon()))
-            throw refuse("stoichiometry must be nonzero, charge neutral and of component width");
-        for (std::size_t i = 0; i < v.size(); ++i)
-            if (v[i] != 0.0 && !covered[i]) throw refuse("species " + std::to_string(i) + " has no phase support");
-        if (solid.equilibrium_constant.has_value() == solid.correlation.has_value()
-            || (solid.equilibrium_constant && !(std::isfinite(*solid.equilibrium_constant) && *solid.equilibrium_constant > 0.0)))
-            throw refuse("needs exactly one of a positive equilibrium constant or a correlation");
-        if (!solid.reference || !solid.reference->reference_pressure_pa || !p.source_reference)
-            throw refuse("needs a neutral reference and reference_pressure_pa, the source standard pressure");
-        if (!(std::isfinite(solid.molar_volume_m3_per_mol) && solid.molar_volume_m3_per_mol > 0.0))
-            throw refuse("molar volume must be positive and finite");
+        for (std::size_t i = 0; i < std::min(solid.stoichiometry.size(), covered.size()); ++i)
+            if (solid.stoichiometry[i] != 0.0 && !covered[i]) throw refuse("species " + std::to_string(i) + " has no phase support");
         if (solid.amount.kind == AmountKind::Pinned && solid.amount.fraction != 0.0) throw refuse("amount must be Free or Pinned(0)");
-        nu.push_back(v);
-        references.push_back(*solid.reference);
     }
-    const double T = p.temperature.value;
-    const auto diagnostics = reaction_references(model, T, p.pressure.value, *p.source_reference, nu, references, false, std::nullopt, 1);
+    const auto laws = solid_log_k(*compiled.model, p.temperature.value, p.pressure.value, p.source_reference, p.solids);
     for (std::size_t s = 0; s < p.solids.size(); ++s) {
-        const auto& solid = p.solids[s];
-        const auto& reference = diagnostics[s];
-        if (reference.status != NeutralReferenceStatus::Available || !reference.terminal_contraction)
-            throw std::invalid_argument("reference_unavailable: solid " + solid.name + " " + reference.message);
-        const double ln_k = solid.correlation ? evaluate_reaction_properties(*solid.correlation, T).ln_k
-                                              : std::log(*solid.equilibrium_constant);
-        const double scale = solid.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
-            ? reaction_reference_log_scale(model, *p.source_reference, solid.stoichiometry) : 0.0;
-        CompiledSolid item{std::nullopt, matvec(compiled.B, solid.stoichiometry), ln_k + scale + *reference.terminal_contraction,
-                           std::nullopt, false};
+        const auto& law = laws[s];
+        CompiledSolid item{std::nullopt, matvec(compiled.B, p.solids[s].stoichiometry),
+                           law.ln_k + law.scale + *law.reference.terminal_contraction, std::nullopt, false};
         // A scalar K carries no temperature law: its T actions are refused.
-        if (solid.correlation && reference.terminal_contraction_temperature_derivative)
-            item.log_k_slope = evaluate_reaction_properties(*solid.correlation, T).derivative
-                + *reference.terminal_contraction_temperature_derivative;
-        item.reference = reference;
+        if (law.slope && law.reference.terminal_contraction_temperature_derivative)
+            item.log_k_slope = *law.slope + *law.reference.terminal_contraction_temperature_derivative;
+        item.reference = law.reference;
         compiled.solids.push_back(std::move(item));
     }
 }
 
 }  // namespace
+
+void admit_solid_declarations(const HelmholtzModel& model, const std::optional<NeutralReferenceDeclaration>& declaration,
+                              const std::vector<SolidSpec>& solids) {
+    const auto& z = model.parameters().charge_number;
+    for (const auto& solid : solids) {
+        const auto refuse = [&](const std::string& cause) { return std::invalid_argument("solid " + solid.name + ": " + cause); };
+        const auto& v = solid.stoichiometry;
+        if (v.size() != z.size() || std::all_of(v.begin(), v.end(), [](double x) { return x == 0.0; })
+            || std::abs(std::inner_product(v.begin(), v.end(), z.begin(), 0.0)) > std::sqrt(std::numeric_limits<double>::epsilon()))
+            throw refuse("stoichiometry must be nonzero, charge neutral and of component width");
+        if (solid.equilibrium_constant.has_value() == solid.correlation.has_value()
+            || (solid.equilibrium_constant && !(std::isfinite(*solid.equilibrium_constant) && *solid.equilibrium_constant > 0.0)))
+            throw refuse("needs exactly one of a positive equilibrium constant or a correlation");
+        if (!solid.reference || !solid.reference->reference_pressure_pa || !declaration)
+            throw refuse("needs a neutral reference and reference_pressure_pa, the source standard pressure");
+        if (!(std::isfinite(solid.molar_volume_m3_per_mol) && solid.molar_volume_m3_per_mol > 0.0))
+            throw refuse("molar volume must be positive and finite");
+    }
+}
+
+std::vector<SolidLogK> solid_log_k(const HelmholtzModel& model, double temperature, double pressure,
+    const std::optional<NeutralReferenceDeclaration>& declaration, const std::vector<SolidSpec>& solids,
+    std::size_t temperature_order, bool parameter_jets, const std::vector<std::size_t>& pairs) {
+    admit_solid_declarations(model, declaration, solids);
+    std::vector<std::vector<double>> nu;
+    std::vector<ReactionReference> references;
+    for (const auto& solid : solids) nu.push_back(solid.stoichiometry), references.push_back(*solid.reference);
+    const auto diagnostics = reaction_references(model, temperature, pressure, *declaration, nu, references, false, std::nullopt,
+                                                 temperature_order, parameter_jets, 0, nullptr, pairs);
+    std::vector<SolidLogK> result;
+    for (std::size_t s = 0; s < solids.size(); ++s) {
+        const auto& solid = solids[s];
+        if (diagnostics[s].status != NeutralReferenceStatus::Available || !diagnostics[s].terminal_contraction)
+            throw std::invalid_argument("reference_unavailable: solid " + solid.name + " " + diagnostics[s].message);
+        auto& item = result.emplace_back(SolidLogK{0.0, 0.0, std::nullopt, std::nullopt, diagnostics[s]});
+        if (solid.correlation) {
+            const auto law = evaluate_reaction_properties(*solid.correlation, temperature);
+            item.ln_k = law.ln_k, item.slope = law.derivative, item.curvature = law.second_derivative;
+        } else item.ln_k = std::log(*solid.equilibrium_constant);
+        if (solid.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+            item.scale = reaction_reference_log_scale(model, *declaration, solid.stoichiometry);
+    }
+    return result;
+}
 
 bool CompiledSystem::anchored_calorics() const {
     if (!has_caloric_condition() || ideal || !model->thermochemistry()) return false;

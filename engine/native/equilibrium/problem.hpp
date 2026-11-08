@@ -560,6 +560,19 @@ EPC_API CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
 EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
+
+// EqID solid_standard_gibbs: ln K^rho_s(T, P0) = ln_k + scale + C_s, with C_s the reference contraction at the source
+// pressure P0. slope and curvature (d ln K_src/dT, d2/dT2) exist only for a correlation: a scalar K has no T law.
+struct SolidLogK final {
+    double ln_k = 0.0, scale = 0.0;
+    std::optional<double> slope, curvature;
+    NeutralReferenceReactionDiagnostic reference;
+};
+// Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
+void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
+std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,
+    const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&, std::size_t temperature_order = 1,
+    bool parameter_jets = false, const std::vector<std::size_t>& pairs = {});
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
 CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 

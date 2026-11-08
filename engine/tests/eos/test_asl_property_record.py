@@ -23,7 +23,7 @@ from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
 from epcsaft.eos import ParameterActionDirection, ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
-from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem
+from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equilibrium
 from tests.native_inputs import p3_forms, record
 from tests.packets import PACKETS, parameters_json
 from tests.regression.test_temperature_laws import _document
@@ -185,14 +185,14 @@ def charged(name: str) -> Mixture:
     return Mixture(Parameters.from_json(parameters_json(*CHARGED[name][0]), components=CHARGED[name][1]), thermochemistry=record(form, form, form))
 
 
-def aqueous_package(model: Mixture) -> Any:
+def aqueous_package(model: Mixture, **declared: Any) -> Any:
     from idaes.core import FlowsheetBlock  # type: ignore[import-untyped]
     from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock  # type: ignore[import-untyped]
     from epcsaft.idaes import property_configuration
     m = ConcreteModel()
     m.fs = FlowsheetBlock(dynamic=False)
     m.fs.props = GenericParameterBlock(**property_configuration(model, phases=("liquid",), temperature_ref=298.15, pressure_ref=1.0e5,
-        state_bounds={"flow_mol": (0, 1, 10), "temperature": (273.15, 298.15, 373.15), "pressure": (5e4, 1e5, 1e6)}))
+        state_bounds={"flow_mol": (0, 1, 10), "temperature": (273.15, 298.15, 373.15), "pressure": (5e4, 1e5, 1e6)}, **declared))
     return m
 
 
@@ -422,3 +422,101 @@ def test_parameter_estimation_ipopt_round_trip(tmp_path: Path) -> None:
     assert result.solver.error_rc == 0
     for got, want in zip(m.fs.props.epcsaft_active_parameter.values(), THETA_STAR, strict=True):
         assert abs(value(got) - want) <= 1e-6 * max(abs(want), 1.0)
+
+
+# Halite, Held 2014 strategy 2 with the Clarke and Glew 1985 law (tests/equilibrium/test_pure_solid.py declarations).
+HALITE_STATES = {(298.15, 101325.0): 2.9798907485513784, (308.15, 5.0e6): -4.222988528574211, (288.15, 2.0e5): 1.0162202782260785}
+
+
+def halite() -> tuple[Mixture, str, Any, Any]:
+    from tests.equilibrium import test_pure_solid as hs
+    model = hs.held(active=tuple(item for _, item, _ in hs.PARAMETERS))
+    declared = hs.problem(10.0)
+    solid, reference = declared.solids[0], declared.neutral_reference
+    assert reference is not None
+    return model, property_asl_record(model, solids=[solid._native(model)], neutral_reference=reference._native(model)), solid, reference
+
+
+def test_halite_solid_row_values() -> None:
+    """F1: the solid row l_s at three (T, P) and the saturation residual sum nu (ln x + ln phi) - l_s at each native
+    saturated liquid (10 mol/kg feed)."""
+    from tests.equilibrium import test_pure_solid as hs
+    model, text, _, _ = halite()
+    theta = model._model.active_parameter_values
+    for (T, P), target in HALITE_STATES.items():
+        result = solve_equilibrium(model, hs.problem(10.0, temperature=T, pressure=P))
+        assert result.success, result.message
+        x = result.mole_fractions[:3]
+        q = [T, P, *x, *theta]
+        row = property_fgh(text, q, 5, 0)[0]
+        assert row == pytest.approx(target, rel=1e-12, abs=0.0)
+        residual = np.log(x[1]) + np.log(x[2]) + property_fgh(text, q, 3, 0)[0] + property_fgh(text, q, 4, 0)[0] - row
+        assert abs(residual) <= 1e-12, (T, P, residual)
+
+
+def test_halite_solid_row_derivatives() -> None:
+    """F2, verification only: the exact (T, P, theta) gradient and Hessian of l_s at 298.15 K / 101325 Pa against central
+    differences at h x {4, 1, 0.25} (T 1e-3 K, P 10 Pa, theta 1e-5 max(1, |theta|)), charged-record criterion; weight
+    columns are exactly zero."""
+    model, text, _, _ = halite()
+    q = np.array([298.15, 101325.0, 0.9, 0.05, 0.05, *model._model.active_parameter_values])
+    _, gradient, hessian = property_fgh(text, q, 5, 2)
+    # L' + C_T + 2/T from the Clarke and Glew law and the reference owner's C_T = 4.535300259138e-02 /K.
+    assert gradient[0] == pytest.approx(0.057281431319578, rel=1e-12, abs=0.0)
+    assert gradient[1] == pytest.approx(-1.9727533317e-05, rel=1e-9, abs=0.0)
+    assert gradient[5:] == pytest.approx([-0.026460606675, -6.717131305308, 10.122788806475], rel=1e-10, abs=0.0)
+    assert not gradient[2:5].any() and not hessian[2:5].any()
+    eps, columns = float(np.finfo(float).eps), (0, 1, 5, 6, 7)
+    for b in columns:
+        h0 = 1e-3 if b == 0 else 10.0 if b == 1 else 1e-5 * max(1.0, abs(q[b]))
+        for h in (4 * h0, h0, 0.25 * h0):
+            plus, minus = property_fgh(text, q + h * np.eye(8)[b], 5, 1), property_fgh(text, q - h * np.eye(8)[b], 5, 1)
+            pairs = [(gradient[b], plus[0], minus[0], 1e-6)]
+            pairs += [(hessian[a, b], plus[1][a], minus[1][a], 1e-5) for a in columns]
+            for exact, fp, fm, tau in pairs:
+                assert abs((fp - fm) / (2 * h) - exact) <= tau * abs(exact) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (b, h)
+
+
+def test_halite_saturation_ipopt(tmp_path: Path) -> None:
+    """F3: an IDAES aqueous state at 298.15 K / 101325 Pa, 1 mol of solution with Na+ = Cl-, molality started at 5 mol/kg,
+    solves solid_saturation == 0 to the native saturated molality (intensive, so the basis is free). T, P and theta are fixed: this qualifies the row
+    value and its wiring; F2 owns the columns."""
+    from idaes.core.solvers import get_solver
+    from idaes.core.util.model_statistics import degrees_of_freedom  # type: ignore[import-untyped]
+    from epcsaft.idaes import asl_library, solid_saturation, solve_with_diagnostics
+    from tests.equilibrium import test_pure_solid as hs
+    solver = get_solver()
+    if not solver.available(exception_flag=False):
+        pytest.skip("IDAES Ipopt executable unavailable")
+    solver.options["tol"] = 1e-12
+    os.environ["AMPLFUNC"] = "\n".join(filter(None, (os.environ.get("AMPLFUNC"), str(asl_library()))))
+    model, _, solid, reference = halite()
+    m = aqueous_package(model, solids=(solid,), neutral_reference=reference)
+    m.fs.sb = m.fs.props.build_state_block([0], defined_state=True)
+    sb = m.fs.sb[0]
+    sb.temperature.fix(298.15)
+    sb.pressure.fix(101325.0)
+    start = 5.0 * hs.MW  # mol Na+ per mol water
+    for j, v in zip(model.component_ids, (1.0, start, start), strict=True):
+        sb.mole_frac_comp[j].set_value(v / (1.0 + 2.0 * start))
+        sb.mole_frac_phase_comp["liquid", j].set_value(v / (1.0 + 2.0 * start))
+    sb.flow_mol.fix(1.0)
+    sb.neutral = Constraint(expr=sb.mole_frac_comp["sodium-cation"] == sb.mole_frac_comp["chloride-anion"])
+    sb.closure = Constraint(expr=sum(sb.mole_frac_comp.values()) == 1.0)
+    sb.saturation = Constraint(expr=solid_saturation(sb, "liquid", 0) == 0.0)
+    assert degrees_of_freedom(m) == 0
+    log = tmp_path / "ipopt.log"
+    result = solve_with_diagnostics(solver, m, logfile=log)
+    assert "epcsaft_property failure" not in log.read_text()
+    assert result.solver.error_rc == 0
+    molality = value(sb.mole_frac_comp["sodium-cation"]) / (value(sb.mole_frac_comp["water"]) * hs.MW)
+    assert molality == pytest.approx(6.29890460910619, rel=1e-10, abs=0.0)
+
+
+def test_scalar_k_solid_refused() -> None:
+    """F4: every solid row carries a T column, so a scalar-K solid is refused when the record is built."""
+    model, _, solid, reference = halite()
+    native = solid._native(model)
+    native.correlation, native.equilibrium_constant = None, 2.0
+    with pytest.raises(ValueError, match=r"ASL solid rows require a ln K\(T\) law"):
+        property_asl_record(model, solids=[native], neutral_reference=reference._native(model))
