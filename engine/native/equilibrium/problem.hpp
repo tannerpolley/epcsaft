@@ -304,6 +304,7 @@ struct StandardTerm final {
     // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
     std::vector<std::vector<double>> parameter_derivative, temperature_parameter_derivative,
         pressure_parameter_derivative;
+    std::vector<std::vector<double>> solid_parameter_derivative;  // [s][a] d ln K^rho_s/dtheta_a; empty unless requested
     // parameter_pair_derivative[i][j][k] is d2(g_k/RT)/dtheta_a dtheta_b, a and b from pair_coordinates[i], [j].
     std::vector<std::size_t> pair_coordinates;
     std::vector<std::vector<std::vector<double>>> parameter_pair_derivative;

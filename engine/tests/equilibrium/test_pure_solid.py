@@ -11,11 +11,12 @@ from typing import Any
 
 import pytest
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, _core
+from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Parameters, _core
 from epcsaft.equilibrium import (
     Free, Molalities, NeutralReference, Phase, Pinned, Problem, ReactionLogPolynomial, ReactionReference,
     ReferenceSourceBasis, Solid, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
     SolvedStateObservableKind as Kind, compile_problem, solid_activities, solve_equilibrium, solved_state_actions,
+    solved_state_first_actions,
 )
 from tests.native_inputs import same
 from tests.packets import parameters_json
@@ -32,10 +33,18 @@ V_SOLID = 27.1e-6
 MEASURED = 6.1476  # mol/kg, Table 17A
 
 
+def held(shift: tuple[str, float] = ("", 0.0), active: tuple[ActiveParameter, ...] = ()) -> Mixture:
+    """The Held 2014 set with one document coefficient shifted by an absolute amount."""
+    document = json.loads(parameters_json("held-2014-strategy2", 1).read_text())
+    for record in (*document["components"], *document["pairs"]):
+        for item in record["coefficients"]:
+            item["value"]["magnitude"] += shift[1] if item["identity"] == shift[0] else 0.0
+    return Mixture(Parameters.from_mapping(document, components=list(SPECIES)), active_parameters=list(active))
+
+
 @cache
 def model() -> Mixture:
-    document = json.loads(parameters_json("held-2014-strategy2", 1).read_text())
-    return Mixture(Parameters.from_mapping(document, components=list(SPECIES)))
+    return held()
 
 
 def problem(molality: float, amount: Free | Pinned = Free(), temperature: float = T, pressure: float = P) -> Problem:
@@ -155,6 +164,38 @@ def test_present_branch_actions(evidence: Any) -> None:
     for name, value in zip(("Na", "s"), second):
         same(evidence, f"halite/F5/second/{name}", value, 0.0, rtol=0.0, atol=1e-10,
              method="saturated amounts are linear in the water feed", claim="second feed action")
+
+
+# Document identity, active parameter (k_ij by flat pair indices) and its Held 2014 value.
+PARAMETERS = (("component/sodium-cation/dispersion_energy_over_k", ActiveParameter(ParameterFamily.DispersionEnergyOverK, (1,)), 230.0),
+              ("component/chloride-anion/segment_diameter", ActiveParameter(ParameterFamily.SigmaConstant, (2,)), 2.756),
+              ("pair/chloride-anion/water/k_ij", ActiveParameter(ParameterFamily.Kij, (2, 6)), -0.25))
+
+
+def test_present_branch_parameter_actions(evidence: Any) -> None:
+    """F5: exact dm_s/dtheta, including the solid's dC_s/dtheta, against central differences of rebuilt-model solves."""
+    mixture = held(active=tuple(item for _, item, _ in PARAMETERS))
+    center = solve_equilibrium(mixture, problem(6.5))
+    assert center.success, center.message
+    directions = [SolvedStateActionDirection(0.0, 0.0, [0.0] * 3, [float(j == k) for j in range(3)]) for k in range(3)]
+    batches = solved_state_first_actions(compile_problem(mixture, problem(6.5)), center,
+                                         [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)], directions)
+    for (identity, _, value), batch in zip(PARAMETERS, batches):
+        exact = batch.results[0].action
+        assert exact is not None, batch.results[0].status
+        for step, rtol in ((1e-3, 1e-5), (1e-4, 1e-7), (1e-5, 1e-7)):
+            h = step * max(1.0, abs(value))
+            fd = (liquid_molality(solve_equilibrium(held((identity, h)), problem(6.5)))
+                  - liquid_molality(solve_equilibrium(held((identity, -h)), problem(6.5)))) / (2 * h)
+            same(evidence, f"halite/F5/dm_dtheta/{identity}/{step}", exact, fd, rtol=rtol, atol=0.0,
+                 method=f"central difference of native solves, h = {h:.3g}",
+                 claim="ln K^rho_s carries dC_s/dtheta of the source-basis conversion")
+    # dC_s/dtheta is compiled to first order: two parameter directions are refused, one with a feed direction is not.
+    compiled, sodium = compile_problem(mixture, problem(6.5)), [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)]
+    feed = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [0.0] * 3)
+    with pytest.raises(ValueError, match="at most one EOS-parameter direction"):
+        solved_state_actions(compiled, center, SolvedStateActionRequest(sodium, directions[:1] * 2))
+    assert solved_state_actions(compiled, center, SolvedStateActionRequest(sodium, [directions[0], feed])).results[0].action is not None
 
 
 def test_halite_pressure_reference(evidence: Any) -> None:

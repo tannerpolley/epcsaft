@@ -3937,7 +3937,10 @@ actions rebuild the classification from the central amounts (present exactly
 when n_s > 0) and are one-sided at the onset kink; T and P directions are
 admitted through order one, feed directions through the general order. The
 solid's ln K^ρ is compiled once at fixed T at the source pressure, with its first
-T slope where the reference admits it; a scalar K refuses T actions.
+T slope where the reference admits it; a scalar K refuses T actions. An
+EOS-parameter direction adds ∂C_s/∂θ of the source-basis conversion, requested
+from the same reference owner only when the direction moves a parameter;
+second and higher actions admit at most one EOS-parameter direction.
 
 ### Cation-mixing coordinates
 

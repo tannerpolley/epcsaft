@@ -268,6 +268,24 @@ static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd
         + (w * defect).cwiseAbs() + application.cwiseAbs() + eps * (s.cwiseAbs() + w.cwiseAbs() * b.cwiseAbs());
 }
 
+// A solid's ln K^rho = ln K_src + scale + C_s(theta) at its source pressure; only C_s moves with theta.
+std::vector<std::vector<double>> solid_parameter_derivative(const CompiledSystem& c, double T, double P,
+                                                            const std::vector<double>& control) {
+    const auto& solids = c.problem.solids;
+    if (solids.empty() || std::none_of(control.begin(), control.end(), [](double v) { return v != 0.0; })) return {};
+    std::vector<std::vector<double>> nu, result(solids.size());
+    std::vector<ReactionReference> refs;
+    for (const auto& solid : solids) nu.push_back(solid.stoichiometry), refs.push_back(*solid.reference);
+    const auto d = reaction_references(*c.model, T, P, *c.problem.source_reference, nu, refs, false, {}, 0, true);
+    for (std::size_t s = 0; s < solids.size(); ++s)
+        for (std::size_t a = 0; a < control.size(); ++a) {
+            if (control[a] != 0.0 && !d[s].derivative_value(0, 0, a))
+                throw std::invalid_argument("reference_unavailable: solid " + solids[s].name + " " + d[s].derivative_cause(0, 0, a));
+            result[s].push_back(d[s].derivative_value(0, 0, a).value_or(0.0));
+        }
+    return result;
+}
+
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
     bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {},
@@ -406,6 +424,7 @@ StandardTerm standard_term(
                 error->absolute[k].assign(mapped.data(), mapped.data() + mapped.size());
             }
         }
+        result.solid_parameter_derivative = solid_parameter_derivative(compiled, temperature, pressure, active_control);
         return result;
     }
     const auto gibbs = standard_state_series(
@@ -429,6 +448,7 @@ StandardTerm standard_term(
             result.derivative[k][species] = value / GAS_CONSTANT_J_PER_MOL_K;
         }
     }
+    result.solid_parameter_derivative = solid_parameter_derivative(compiled, temperature, pressure, active_control);
     return result;
 }
 
@@ -869,6 +889,8 @@ CppAD::ADFun<double> record_geometry(
         const auto& spec = problem.solids[s];
         AD affinity = -(solid.log_k + solid.log_k_slope.value_or(0.0) * delta_T + spec.molar_volume_m3_per_mol
             * (P - *spec.reference->reference_pressure_pa) / (GAS_CONSTANT_J_PER_MOL_K * T));
+        for (std::size_t a = 0; !standard.solid_parameter_derivative.empty() && a < theta.size(); ++a)
+            affinity -= standard.solid_parameter_derivative[s][a] * (theta[a] - theta_center[a]);
         for (std::size_t i = 0; i < components; ++i)
             if (spec.stoichiometry[i] != 0.0) affinity -= spec.stoichiometry[i] * add_standard(AD(0.0), i);
         for (std::size_t j = 0; j < compiled.rank; ++j) affinity += u[compiled.primal_size + j] * solid.balance[j];

@@ -880,7 +880,7 @@ RowSeries CompiledSystem::row_series(
         } catch (const std::invalid_argument&) {}
     }
     const auto& standard = reference_diagnostics.empty()
-        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
+        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false, false, active_control)
         : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
