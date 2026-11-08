@@ -469,7 +469,7 @@ evaluate the returned point still raises `EosError` or `ParameterError`; handle 
 For an equilibrium at fixed T and P of two declared free phases (two liquids, or a liquid and a vapor whose declared
 support holds only zero-charge components), `equilibrium.asl_record`
 constructs the immutable record consumed by the installed
-`epcsaft_equilibrium_phase_component_amount` external function:
+`epcsaft_equilibrium_phase_component_amount` and `epcsaft_equilibrium_system_enthalpy` external functions:
 
 ```python
 from epcsaft import Mixture, Parameters, equilibrium as eq
@@ -485,11 +485,15 @@ feed_offset, feed_matrix = [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]  # one control p
 anchor_controls, identity_component, minimum_gap = [0.7, 0.3], 1, 0.1  # isobutanol: x_L1 - x_L2 > 0.1
 record = eq.asl_record(model, problem, continuation, feed_offset,
                        feed_matrix, anchor_controls, identity_component, minimum_gap)
-# Pyomo ExternalFunction: (T, P, *controls, *theta, record, "0" or "1", str(component_index))
+# Pyomo ExternalFunction: (T, P, *controls, *theta, record, "0" or "1", str(component_index)) for an amount,
+# (T, P, *controls, *theta, record) for the system enthalpy
 print(len(record))                                            # characters in the encoded record
 ```
 
-Controls and returned amounts are mol on the caller's declared batch basis.
+Controls and returned amounts are mol on the caller's declared batch basis. The system enthalpy is the total
+enthalpy of the same solved state in J on that basis: neutral species take their ideal-gas part from the model
+thermochemistry and ions theirs from the reaction references, so its zero is the declared thermochemistry's formation
+basis at its standard pressure, and an energy balance needs every stream on that basis.
 The real arguments are `q = (T [K], P [Pa], controls, theta)`: the problem's T and P
 are the anchor values, and finite positive T and P move the fixed intensives. Theta
 holds the model's active EOS parameters in `active_parameters()` order and native
@@ -509,11 +513,13 @@ references, the problem's neutral reference and explicit standard Gibbs values a
 transported. At a moved T a scalar K and an affinity stay constant, as in the native
 problem, and a T outside a correlation's interval is the native refusal. With an
 explicit standard Gibbs value and a T-varying target the native refuses every T
-action (`missing_thermochemistry`); values are unaffected. Version 6 carries explicit
-base-EOS and association selections, the active parameters, each phase's kind, the
-reaction laws and references and the neutral reference; earlier records are rejected
-without guessed defaults. Model thermochemistry records and species-thermochemistry
-reaction targets are rejected rather than silently omitted.
+action (`missing_thermochemistry`); values are unaffected. Version 7 carries explicit
+base-EOS and association selections, the active parameters, the model thermochemistry
+in the property record's form, each phase's kind, the reaction laws and references and
+the neutral reference; earlier records are rejected without guessed defaults.
+Species-thermochemistry reaction targets are rejected rather than silently omitted.
+Without model thermochemistry the enthalpy function returns `missing_thermochemistry`;
+the amount function is unaffected.
 
 For an observable `y(T, P, n, theta)`, the callback returns the gradient and the packed
 lower-triangle Hessian in `q`: native T and P actions in their columns, `J_y B` and
@@ -521,7 +527,8 @@ lower-triangle Hessian in `q`: native T and P actions in their columns, `J_y B` 
 actions in the theta columns, including every mixed entry. The native actions own the
 ln K(T), reaction-reference and density chains in T and P. E5 owns these implicit actions, not a finite-difference
 callback. Pyomo owns any additional control products, ratios and process units.
-Each new `q` is first solved directly from the record's declared guesses in the
+Both functions share one solved state per record and `q`, and each fills only its own
+rows: an enthalpy refusal fails only the enthalpy function. Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap
 checks admit it. Otherwise it continues from the immutable anchor: a parameter
 continuation at the anchor T, P and feed moves theta, then one continuation moves

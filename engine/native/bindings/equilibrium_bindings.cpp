@@ -486,13 +486,12 @@ void register_equilibrium(nb::module_& module) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        if (native.thermochemistry()) throw std::invalid_argument("ASL record requires explicit problem reaction references");
         const auto p = nb::cast<EquilibriumProblem>(problem.attr("_native")(model));
         if (!p.solids.empty()) throw std::invalid_argument("ASL record does not carry solids");
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
         compile_problem(native, p);
-        return asl_record(document, native.active_parameters(), p, continuation, map, native.solver_options());
+        return asl_record(document, native.active_parameters(), native.thermochemistry(), p, continuation, map, native.solver_options());
     }, nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record

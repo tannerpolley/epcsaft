@@ -4,8 +4,9 @@ equal the direct Engine (bitwise at theta0 and for a record with no active param
 columns match central differences (verification only). F3: two temperatures recover theta* through Ipopt. F4: where the
 liquids merge the callback names the cause, and the next calls recover. M1-M3 repeat F1-F3 on a declared vapor-liquid
 pair: the packet-3 MEA/CO2/water flash (charged, reacting liquid; neutral vapor support) at 318.15 K and 5918.5286 Pa.
-R1-R3 move T and P on the reference MEA declaration, whose ln K(T) laws, reaction references and neutral reference the
-record carries."""
+R1-R3 move T and P on the reference MEA declaration, whose ln K(T) laws, reaction references, neutral reference and model
+thermochemistry the record carries. E1-E4 check its system enthalpy callback: the direct Engine, central differences, an
+adiabatic flash through Ipopt, and the record without thermochemistry."""
 from __future__ import annotations
 
 import dataclasses
@@ -29,7 +30,7 @@ from tests.packets import parameters_json
 NAMES, G0, G1, TP0 = ("water", "isobutanol"), (0.7, 0.3), (0.7, 0.285), (298.15, 1.0e5)
 THETA0, THETA_STAR, THETA_MERGED = (-0.0071, 257.13), (-0.0021, 258.13), (-0.0371, 257.13)
 OPTIONS = eq.Continuation(initial_step=0.05, minimum_step=1e-3, max_steps=200, max_retries_per_step=5)
-FUNCTION = "epcsaft_equilibrium_phase_component_amount"
+FUNCTION, ENTHALPY = "epcsaft_equilibrium_phase_component_amount", "epcsaft_equilibrium_system_enthalpy"
 
 
 def mixture(theta: Any = None, active: bool = True) -> Mixture:
@@ -54,26 +55,28 @@ def record(model: Mixture, T: float = 298.15) -> str:
     return eq.asl_record(model, problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
 
 
-def fgh(text: str, q: Any, row: int, order: int, components: int = 2) -> tuple[float, Any, Any]:
-    """Row p*components + c at q; the Hessian unpacked from the lower triangle i + j(j+1)/2."""
+def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2) -> tuple[float, Any, Any]:
+    """Row p*components + c at q, or the system enthalpy for row None; the Hessian unpacked from the lower triangle i + j(j+1)/2."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
-    callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
-    v, g, h = callback.evaluate_fgh([*q, text, str(row // components), str(row % components)], fgh=order)
+    callback = PropertyExternalFunction(library=str(asl_library()), function=ENTHALPY if row is None else FUNCTION)
+    v, g, h = callback.evaluate_fgh([*q, text] if row is None else [*q, text, str(row // components), str(row % components)], fgh=order)
     n = len(q)
     hessian = np.array([[h[min(i, j) + max(i, j) * (max(i, j) + 1) // 2] for j in range(n)] for i in range(n)]) if order == 2 else None
     return float(v), np.array(g[:n]) if order else None, hessian
 
 
-def native(model: Mixture, feed: Any, target: eq.Problem | None = None) -> list[list[float]]:
+def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy: bool = False) -> list[list[float]]:
     """Per row: value, first actions, second actions (i <= j, packed order) over (T, P, feed, theta), from solve_equilibrium
-    and solved_state_actions; the feed controls are the first len(feed) components."""
+    and solved_state_actions; the feed controls are the first len(feed) components. The rows are the phase-component
+    amounts, or the system enthalpy alone."""
     target = target or problem(feed)
     central = eq.solve_equilibrium(model, target)
     compiled = _core.compile_problem(model._model, target._native(model))
     k, n, m = len(feed), len(central.mole_fractions) // 2, len(model._model.active_parameter_values)
     e = np.eye(2 + k + m).tolist()
     d = [eq.SolvedStateActionDirection(c[0], c[1], c[2:2 + k] + [0.0] * (n - k), c[2 + k:]) for c in e]
-    observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, c) for p in range(2) for c in range(n)]
+    observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.SystemEnthalpy)] if enthalpy else [
+        eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, c) for p in range(2) for c in range(n)]
 
     def batch(*directions: Any) -> Any:
         return _core.solved_state_actions(compiled, central, eq.SolvedStateActionRequest(observables, list(directions))).results
@@ -81,10 +84,10 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None) -> list[
     zero = batch(eq.SolvedStateActionDirection(0.0, 0.0, [0.0] * n, [0.0] * m))
     first = [batch(d[i]) for i in range(2 + k + m)]
     second = [batch(d[i], d[j]) for j in range(2 + k + m) for i in range(j + 1)]
-    return [[zero[r].value, *(b[r].action for b in first), *(b[r].action for b in second)] for r in range(2 * n)]
+    return [[zero[r].value, *(b[r].action for b in first), *(b[r].action for b in second)] for r in range(len(observables))]
 
 
-def callback_row(text: str, q: Any, row: int, components: int = 2) -> list[float]:
+def callback_row(text: str, q: Any, row: int | None, components: int = 2) -> list[float]:
     v, g, h = fgh(text, q, row, 2, components)
     return [v, *g, *(h[i, j] for j in range(len(q)) for i in range(j + 1))]
 
@@ -261,21 +264,21 @@ def test_vapor_support_refusals() -> None:
     callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
     for edited, cause in ((text.replace(vapor, "1:V,5:vapor,1:4,1:0,1:1,1:2,1:3,"), contract),
                           (text.replace("1:L,6:liquid,", "1:L,5:vapor,"), contract),
-                          (text.replace("equilibrium.v6", "equilibrium.v5"), "")):
+                          (text.replace("equilibrium.v7", "equilibrium.v6"), "")):
         with pytest.raises(RuntimeError, match="epcsaft_equilibrium:.*" + cause):
             callback.evaluate([MEA_T, MEA_P, *U0, edited, "0", "3"])
 
 
-# R: the reference MEA declaration (engine/data/reference/mea-nominally-unloaded, without model thermochemistry, which the
-# record refuses) with a declared liquid + vapor pair at 353.15 K and 45 kPa; q = (T, P, u_CO2, u_MEA, u_water), the
-# loading of the Hilliard (2008) Cp row. Both phases guess the anchor's own solved compositions.
+# R: the reference MEA declaration (engine/data/reference/mea-nominally-unloaded, with its ideal calorics unless stated)
+# with a declared liquid + vapor pair at 353.15 K and 45 kPa; q = (T, P, u_CO2, u_MEA, u_water), the loading of the
+# Hilliard (2008) Cp row. Both phases guess the anchor's own solved compositions.
 R_Q0 = (353.15, 45000.0, 0.358, 1.0, 7.929776437398854)
 
 
 @functools.cache
-def reference_mea() -> tuple[Mixture, Any]:
+def reference_mea(thermochemistry: bool = True) -> tuple[Mixture, Any]:
     """The model and target(q), the declared problem at q."""
-    model, reactions, reference, guess, _ = _reference_mea(thermochemistry=False)
+    model, reactions, reference, guess, _ = _reference_mea(thermochemistry)
 
     def target(q: Any, liquid: Any = guess, vapor: Any = (0.01, 0.002, 0.988)) -> eq.Problem:
         return eq.Problem(T=q[0], P=q[1], row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
@@ -286,8 +289,8 @@ def reference_mea() -> tuple[Mixture, Any]:
     return model, lambda q: target(q, x[:C], x[C:C + 3])
 
 
-def reference_record() -> str:
-    model, target = reference_mea()
+def reference_record(thermochemistry: bool = True) -> str:
+    model, target = reference_mea(thermochemistry)
     options = eq.Continuation(initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8)
     return eq.asl_record(model, target(R_Q0), options, [0.0] * C, np.eye(C, 3).tolist(), list(R_Q0[2:]), 1, 0.01)
 
@@ -308,23 +311,27 @@ def test_reference_record_equals_direct_engine() -> None:
                 assert got == pytest.approx(want[row], rel=1e-12, abs=0.0), (q, row)
 
 
-def test_reference_columns_match_central_differences() -> None:
-    """R2, verification only: T at {1e-3, 2.5e-4, 6.25e-5} K, P at {0.45, 0.1125, 0.028125} Pa and feed j at
-    1e-5 u_j x {16, 4, 1} mol; at 2.5e-6 u_water the re-solve noise in the P action (1e-13 relative) exceeds the 10 eps
-    allowance on the small P-u_water entries. Each value difference meets |D - A| <= 1e-6 |A| + 10 eps (|f+| + |f-|)/2h against its
-    gradient entry, and each first-action difference meets it with tau 1e-5 against its Hessian entry, so every second
-    action, including T-T, T-P and P-P, is checked from both of its columns."""
+def central_differences(rows: list[int | None], feed_step: float) -> None:
+    """Verification only: T at {1e-3, 2.5e-4, 6.25e-5} K, P at {0.45, 0.1125, 0.028125} Pa and feed j at feed_step u_j
+    x {1, 1/4, 1/16} mol. Each value difference meets |D - A| <= 1e-6 |A| + 10 eps (|f+| + |f-|)/2h against its gradient
+    entry, and each first-action difference meets it with tau 1e-5 against its Hessian entry, so every second action,
+    including T-T, T-P and P-P, is checked from both of its columns."""
     text, eps, q = reference_record(), float(np.finfo(float).eps), np.array(R_Q0)
-    exact = [fgh(text, q, row, 2, C) for row in range(2 * C)]
-    for b, h0 in enumerate((1e-3, 0.45, *(1.6e-4 * u for u in R_Q0[2:]))):
+    exact = [fgh(text, q, row, 2, C) for row in rows]
+    for b, h0 in enumerate((1e-3, 0.45, *(feed_step * u for u in R_Q0[2:]))):
         for h in (h0, h0 / 4, h0 / 16):
-            plus, minus = ([fgh(text, q + s * h * np.eye(5)[b], row, 1, C) for row in range(2 * C)] for s in (1, -1))
-            for row, (_, gradient, hessian) in enumerate(exact):
-                pairs = [(gradient[b], plus[row][0], minus[row][0], 1e-6)]
-                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(5)]
+            plus, minus = ([fgh(text, q + s * h * np.eye(5)[b], row, 1, C) for row in rows] for s in (1, -1))
+            for k, (_, gradient, hessian) in enumerate(exact):
+                pairs = [(gradient[b], plus[k][0], minus[k][0], 1e-6)]
+                pairs += [(hessian[a, b], plus[k][1][a], minus[k][1][a], 1e-5) for a in range(5)]
                 for exact_value, fp, fm, tau in pairs:
-                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (rows[k], b, h)
 
+
+def test_reference_columns_match_central_differences() -> None:
+    """R2: every amount row with feed steps 1e-5 u_j x {16, 4, 1} mol; at 2.5e-6 u_water the re-solve noise in the P
+    action (1e-13 relative) exceeds the 10 eps allowance on the small P-u_water entries."""
+    central_differences(list(range(2 * C)), 1.6e-4)
 
 def test_reference_temperature_pressure_ipopt_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """R3: with u fixed at the anchor, Ipopt (tol 1e-10, "Optimal Solution Found" only) frees T in [353.15, 354.15] K and
@@ -354,3 +361,76 @@ def test_reference_temperature_pressure_ipopt_round_trip(tmp_path: Path, monkeyp
     assert check_optimal_termination(solve_with_diagnostics(solver, m, logfile=log))
     assert "Optimal Solution Found" in log.read_text() and "epcsaft_equilibrium failure" not in log.read_text()  # not "Acceptable"
     assert abs(value(m.T) - 353.65) <= 6e-9 and abs(value(m.P) - 45500.0) <= 1.1e-5, (value(m.T), value(m.P))
+
+
+H_ANCHOR = float.fromhex("-0x1.28afb4ecf2407p+21")  # -2430454.6156964335 J, the direct native SystemEnthalpy at R_Q0
+
+
+def test_reference_enthalpy_equals_direct_engine() -> None:
+    """E1: the system enthalpy (J) with its gradient and packed Hessian over q equals solve_equilibrium plus
+    solved_state_actions on the declared problem bitwise at the anchor, where H = -2430454.6156964335 J, and to 1e-12
+    relative at (353.65 K, 45500 Pa) and there with u_CO2 0.36 mol; each order returns the same value."""
+    model, target = reference_mea()
+    text = reference_record()
+    for q, bitwise in ((R_Q0, True), ((353.65, 45500.0, *R_Q0[2:]), False), ((353.65, 45500.0, 0.36, *R_Q0[3:]), False)):
+        values = [fgh(text, q, None, order, C)[0] for order in (0, 1)]  # before any Hessian at q
+        got, want = callback_row(text, q, None, C), native(model, q[2:], target(q), enthalpy=True)[0]
+        assert values == [got[0]] * 2
+        if bitwise:
+            assert got[0] == H_ANCHOR and [x.hex() for x in got] == [float(x).hex() for x in want]
+        else:
+            assert got == pytest.approx(want, rel=1e-12, abs=0.0), q
+
+
+def test_reference_enthalpy_matches_central_differences() -> None:
+    """E2: the system enthalpy with feed steps 1e-5 u_j x {4, 1, 0.25} mol."""
+    central_differences([None], 4e-5)
+
+
+def test_reference_adiabatic_flash_ipopt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """E3: at 45 kPa and the anchor feed, Ipopt (tol 1e-10, "Optimal Solution Found" only) frees T in [353.15, 354.15] K
+    from 353.15 K with H/H* = 1, H* = -2399045.378695539 J the direct native enthalpy at 353.65 K, and y equal to the vapor
+    CO2 amount, so both callbacks read one state per q. With dH/dT / H* = -0.0295 1/K both rows stay unscaled, and the
+    bounds (tol + 1e-12)/|dg/dT| and |da/dT| dT + tol + 1e-12 a* round up to 3.5e-9 K and 1.9e-10 mol about
+    (353.65 K, a* = 0.040325995174790685 mol). The external AMPL Ipopt exits with code 0 and reports no callback failure."""
+    from idaes.core.solvers import get_solver
+    from epcsaft.idaes import asl_library, solve_with_diagnostics
+    solver, executable = get_solver(), shutil.which("ipopt") or str(Path.home() / ".idaes/bin/ipopt")
+    if not solver.available(exception_flag=False) or not Path(executable).is_file():
+        pytest.skip("Ipopt executable unavailable")
+    library = str(asl_library())
+    monkeypatch.setenv("AMPLFUNC", library)
+    text = reference_record()
+    m = ConcreteModel()
+    m.T, m.y = Var(initialize=353.15, bounds=(353.15, 354.15)), Var(initialize=0.0)
+    m.enthalpy = ExternalFunction(library=library, function=ENTHALPY)
+    m.amount = ExternalFunction(library=library, function=FUNCTION)
+    m.energy = Constraint(expr=m.enthalpy(m.T, R_Q0[1], *R_Q0[2:], text) / float.fromhex("-0x1.24da2b079186ep+21") == 1)
+    m.co2 = Constraint(expr=m.y == m.amount(m.T, R_Q0[1], *R_Q0[2:], text, "1", "0"))
+    m.write(str(tmp_path / "adiabatic.nl"), format="nl")
+    (tmp_path / "ipopt.opt").write_text("linear_solver mumps\ntol 1e-10\nacceptable_iter 0\n")
+    external = subprocess.run([executable, "adiabatic.nl", "-AMPL"], cwd=tmp_path, capture_output=True, text=True, check=False)
+    assert external.returncode == 0 and "epcsaft_equilibrium failure" not in external.stderr, external.stdout + external.stderr
+    assert "Optimal Solution Found" in (tmp_path / "adiabatic.sol").read_text()
+    solver.options["tol"] = 1e-10
+    log = tmp_path / "ipopt.log"
+    assert check_optimal_termination(solve_with_diagnostics(solver, m, logfile=log))
+    assert "Optimal Solution Found" in log.read_text() and "epcsaft_equilibrium failure" not in log.read_text()  # not "Acceptable"
+    assert abs(value(m.T) - 353.65) <= 3.5e-9 and abs(value(m.y) - 0.040325995174790685) <= 1.9e-10, (value(m.T), value(m.y))
+
+
+def test_record_without_thermochemistry_refuses_only_enthalpy() -> None:
+    """E4: the record with its thermochemistry block replaced by the absent flag is the record of the model without
+    thermochemistry. There the enthalpy callback names missing_thermochemistry at orders 0, 1 and 2, and after each refusal
+    the amount rows at that order equal those of the record with thermochemistry bitwise."""
+    with_block, without = reference_record(), reference_record(False)
+    start, end = with_block.index("1:1,17:standard_pressure,"), with_block.index("20:continuation_options,")
+    assert with_block[:start] + "1:0," + with_block[end:] == without
+    for order in (0, 1, 2):
+        with pytest.raises(RuntimeError) as failure:
+            fgh(without, R_Q0, None, order, C)
+        assert str(failure.value).startswith("epcsaft_equilibrium:missing_thermochemistry:system.enthalpy:"), str(failure.value)
+        assert "reference calorics need record anchors" in str(failure.value)
+        for row in range(2 * C):
+            got, want = (np.concatenate([np.ravel(x) for x in fgh(t, R_Q0, row, order, C) if x is not None]) for t in (without, with_block))
+            assert got.tobytes() == want.tobytes(), (order, row)

@@ -329,9 +329,12 @@ struct EquilibriumContext final {
     eq::EquilibriumResult anchor_result;
     std::unique_ptr<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
-    std::vector<double> feed, values;
-    std::vector<std::vector<double>> gradients, hessians;
-    int order = -1;
+    std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
+    struct Rows final {
+        std::vector<double> values;
+        std::vector<std::vector<double>> gradients, hessians;
+        int order = -1;  // highest order filled at `feed`
+    } rows[2];  // 0: the 2C phase-component amounts, 1: the system enthalpy
 };
 
 std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank>& records) {
@@ -409,6 +412,35 @@ std::vector<epcsaft::ActiveParameter> read_active(RecordReader& reader) {
     });
 }
 
+// The block put_thermochemistry writes.
+std::optional<epcsaft::ThermochemistryRecord> read_thermochemistry(RecordReader& reader) {
+    if (reader.integer(1) == 0) return std::nullopt;
+    epcsaft::ThermochemistryRecord thermochemistry;
+    reader.field("standard_pressure");
+    thermochemistry.standard_pressure = reader.number();
+    reader.field("component_intervals");
+    thermochemistry.component_intervals = reader.vector([&] {
+        return reader.vector([&] {
+            epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
+            item.correlation.source_pressure = reader.number();
+            const auto tag = reader.next();
+            const auto form = std::find(eq::ideal_tags.begin(), eq::ideal_tags.end(), tag) - eq::ideal_tags.begin();
+            if (form == 5) reject("unknown ASL thermochemistry form " + tag);
+            item.correlation.form = eq::ideal_forms[form];
+            std::visit([&](auto& c) {
+                const auto count = reader.integer();
+                if constexpr (std::is_same_v<decltype(c), epcsaft::IdealPolynomial&>) c.coefficients.resize(count);
+                if (count != c.coefficients.size()) reject("invalid ASL interval");
+                for (double& value : c.coefficients) value = reader.number();
+                if (reader.integer() != eq::ideal_anchors(c).size()) reject("invalid ASL interval");
+                for (double* value : eq::ideal_anchors(c)) *value = reader.number();
+            }, item.correlation.form);
+            return item;
+        });
+    });
+    return thermochemistry;
+}
+
 // The model at theta, by the slot assignment of CoordinateSet::apply, in model.active_parameters() order.
 auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
     auto parameters = model.parameters();
@@ -420,7 +452,7 @@ auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v6");
+    reader.field("epcsaft.asl.equilibrium.v7");
     const auto document = read_document(reader);
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
@@ -474,6 +506,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     reader.field("solver_options");
     for (auto& value : problem.solver_options.values) value = reader.number();
     const auto active = read_active(reader);
+    const auto thermochemistry = read_thermochemistry(reader);
     reader.field("continuation_options");
     context->options.initial_step = reader.number();
     context->options.minimum_step = reader.number();
@@ -489,12 +522,15 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     context->map.identity_component = reader.integer();
     context->map.minimum_gap = reader.number();
     reader.finish();
-    context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, std::nullopt, problem.solver_options);
+    context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, thermochemistry, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
-    const auto rows = 2 * document.component_ids.size(), n = 2 + context->map.anchor.size() + active.size();
-    context->values.resize(rows);
-    context->gradients.assign(rows, std::vector<double>(n));
-    context->hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
+    const std::size_t counts[2] = {2 * document.component_ids.size(), 1}, n = 2 + context->map.anchor.size() + active.size();
+    for (int kind = 0; kind < 2; ++kind) {
+        auto& rows = context->rows[kind];
+        rows.values.resize(counts[kind]);
+        rows.gradients.assign(counts[kind], std::vector<double>(n));
+        rows.hessians.assign(counts[kind], std::vector<double>(n * (n + 1) / 2));
+    }
     context->anchor_result = eq::solve_equilibrium(*context->model, problem);
     require_central(*context, context->anchor_result, observable);
     context->record = raw;
@@ -567,12 +603,17 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     require_central(context, context.central, observable);
     context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
     context.feed = q;
-    context.order = -1;
+    for (auto& rows : context.rows) rows.order = -1;
 }
 
-eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates) {
+// One native batch of one kind's rows; an unavailable row fails only its own kind's callback.
+// ponytail: a caller reading both kinds at a new q pays both batches (185 ms Hessian against 116 ms combined); the upgrade is
+// one combined batch with per-row failure orders, as PropertyContext::Branch::failures keeps, which could also fill the
+// amount rows from an enthalpy call when they are all available.
+eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates, int kind) {
     eq::SolvedStateActionRequest request;
-    for (std::size_t phase = 0; phase < 2; ++phase)
+    if (kind == 1) request.observables.push_back({eq::SolvedStateObservableKind::SystemEnthalpy});
+    for (std::size_t phase = 0; kind == 0 && phase < 2; ++phase)
         for (std::size_t component = 0; component < context.map.offset.size(); ++component)
             request.observables.push_back({eq::SolvedStateObservableKind::PhaseComponentAmount, phase, component});
     const auto controls = context.map.anchor.size();
@@ -598,7 +639,7 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
                 + (item.property_diagnostics && item.property_diagnostics->first_numerical_failure
                     ? "; " + epcsaft::core::describe(*item.property_diagnostics->first_numerical_failure) : ""));
         }
-        context.values[row] = *item.value;
+        context.rows[kind].values[row] = *item.value;
     }
     return batch;
 }
@@ -618,16 +659,19 @@ double report_failure(arglist* arguments, const char* callback) {
     return invalid_value();
 }
 
-double equilibrium_amount(arglist* arguments) {
+// kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J. Both kinds share one
+// solved state per record and q.
+double equilibrium_observable(arglist* arguments, int kind) {
     static Prepared<EquilibriumContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
     std::string observable = "request";
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        const int n = argument_count(arguments, 3, 128, "equilibrium callback requires real q and three strings");
-        const auto p = selector(arguments, n + 1, 2), c = selector(arguments, n + 2, 64);
-        observable = eq::solved_state_observable_id({eq::SolvedStateObservableKind::PhaseComponentAmount, p, c});
+        const int n = argument_count(arguments, kind == 0 ? 3 : 1, 128, "equilibrium callback requires real q and the record");
+        const auto p = kind == 0 ? selector(arguments, n + 1, 2) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
+        observable = eq::solved_state_observable_id(kind == 0 ? eq::SolvedStateObservable{eq::SolvedStateObservableKind::PhaseComponentAmount, p, c}
+            : eq::SolvedStateObservable{eq::SolvedStateObservableKind::SystemEnthalpy});
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "equilibrium", [&] { return prepare_equilibrium(record, observable); });
         const auto controls = 2 + context.map.anchor.size();  // T, P and the feed controls
@@ -638,28 +682,29 @@ double equilibrium_amount(arglist* arguments) {
             if (!std::isfinite(q[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
             if (i < controls && (i < 2 ? q[i] <= 0.0 : q[i] < 0.0)) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        if (context.order < 0 || context.feed != q) select_state(context, q, observable);
+        if (!context.compiled || context.feed != q) select_state(context, q, observable);
+        auto& rows = context.rows[kind];
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
-        if (order == 0 && context.order < 0) actions(context, {-1});
-        if (order >= 1 && context.order < 1) {
+        if (order == 0 && rows.order < 0) actions(context, {-1}, kind);
+        if (order >= 1 && rows.order < 1) {
             for (int i = 0; i < n; ++i) {
-                const auto batch = actions(context, {i});
-                for (std::size_t row = 0; row < context.values.size(); ++row) context.gradients[row][i] = *batch.results[row].action;
+                const auto batch = actions(context, {i}, kind);
+                for (std::size_t row = 0; row < rows.values.size(); ++row) rows.gradients[row][i] = *batch.results[row].action;
             }
         }
-        if (order >= 2 && context.order < 2) {
+        if (order >= 2 && rows.order < 2) {
             std::size_t packed = 0;
             for (int j = 0; j < n; ++j) for (int i = 0; i <= j; ++i) {
-                const auto batch = actions(context, {i, j});
-                for (std::size_t row = 0; row < context.values.size(); ++row) context.hessians[row][packed] = *batch.results[row].action;
+                const auto batch = actions(context, {i, j}, kind);
+                for (std::size_t row = 0; row < rows.values.size(); ++row) rows.hessians[row][packed] = *batch.results[row].action;
                 ++packed;
             }
         }
-        context.order = std::max(context.order, order);
+        rows.order = std::max(rows.order, order);
         const auto row = p * context.map.offset.size() + c;
-        if (arguments->derivs != nullptr) std::copy(context.gradients[row].begin(), context.gradients[row].end(), arguments->derivs);
-        if (arguments->hes != nullptr) std::copy(context.hessians[row].begin(), context.hessians[row].end(), arguments->hes);
-        return context.values[row];  // Absolute phase-component mol on the caller's declared batch basis.
+        if (arguments->derivs != nullptr) std::copy(rows.gradients[row].begin(), rows.gradients[row].end(), arguments->derivs);
+        if (arguments->hes != nullptr) std::copy(rows.hessians[row].begin(), rows.hessians[row].end(), arguments->hes);
+        return rows.values[row];  // On the caller's declared absolute batch basis.
     } catch (const EquilibriumFailure& error) {
         callback_error = error.what();
     } catch (const std::exception& error) {
@@ -668,9 +713,12 @@ double equilibrium_amount(arglist* arguments) {
     } catch (...) {
         callback_error = EquilibriumFailure(ActionStatus::Nonfinite, observable).what();
     }
-    for (const auto& item : prepared.contexts) item->order = -1;
+    for (const auto& item : prepared.contexts) item->compiled.reset();  // every record re-solves at its next call
     return report_failure(arguments, "epcsaft_equilibrium");
 }
+
+double equilibrium_amount(arglist* arguments) { return equilibrium_observable(arguments, 0); }
+double equilibrium_enthalpy(arglist* arguments) { return equilibrium_observable(arguments, 1); }
 
 // Pressure-chart property callback (#73): q = (T, P, w_1..w_C, theta_1..theta_m), u = Pw with P = I - zz'/z'z the charge-null projector
 // (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
@@ -698,32 +746,7 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     reader.field("solver_options");
     for (auto& value : solver_options.values) value = reader.number();
     const auto active = read_active(reader);
-    std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
-    if (reader.integer(1) != 0) {
-    thermochemistry.emplace();
-    reader.field("standard_pressure");
-    thermochemistry->standard_pressure = reader.number();
-    reader.field("component_intervals");
-    thermochemistry->component_intervals = reader.vector([&] {
-        return reader.vector([&] {
-            epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
-            item.correlation.source_pressure = reader.number();
-            const auto tag = reader.next();
-            const auto form = std::find(eq::ideal_tags.begin(), eq::ideal_tags.end(), tag) - eq::ideal_tags.begin();
-            if (form == 5) reject("unknown ASL thermochemistry form " + tag);
-            item.correlation.form = eq::ideal_forms[form];
-            std::visit([&](auto& c) {
-                const auto count = reader.integer();
-                if constexpr (std::is_same_v<decltype(c), epcsaft::IdealPolynomial&>) c.coefficients.resize(count);
-                if (count != c.coefficients.size()) reject("invalid ASL interval");
-                for (double& value : c.coefficients) value = reader.number();
-                if (reader.integer() != eq::ideal_anchors(c).size()) reject("invalid ASL interval");
-                for (double* value : eq::ideal_anchors(c)) *value = reader.number();
-            }, item.correlation.form);
-            return item;
-        });
-    });
-    }
+    const auto thermochemistry = read_thermochemistry(reader);
     reader.finish();
     auto context = std::make_unique<PropertyContext>();
     context->require_phase_identity = require_phase_identity;
@@ -887,6 +910,10 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
     exports->Addfunc(
         "epcsaft_equilibrium_phase_component_amount", equilibrium_amount,
         FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -5, nullptr, exports
+    );
+    exports->Addfunc(
+        "epcsaft_equilibrium_system_enthalpy", equilibrium_enthalpy,
+        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -3, nullptr, exports
     );
     exports->Addfunc(
         "epcsaft_pressure_property", pressure_property,

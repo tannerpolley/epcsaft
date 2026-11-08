@@ -105,10 +105,38 @@ template <class Law> auto law_fields(Law& c) {
     return std::array{&c.a, &c.b, &c.c, &c.d, &c.reference_temperature, &c.temperature_min, &c.temperature_max, &c.e, &c.f};
 }
 
-inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active, const EquilibriumProblem& p,
+// Thermochemistry interval forms, in IdealCorrelation variant order; each writes its coefficients, then its anchors.
+inline const std::array<std::string, 5> ideal_tags = {"polynomial", "shomate", "nasa7", "nasa9", "dippr107"};
+inline const std::array<decltype(IdealCorrelation::form), 5> ideal_forms = {IdealPolynomial{}, IdealShomate{}, IdealNASA7{}, IdealNASA9{}, IdealDIPPR107{}};
+template <class C> std::vector<double*> ideal_anchors(C& c) {
+    if constexpr (std::is_same_v<C, IdealShomate>) return {&c.formation_enthalpy};
+    if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) return {&c.reference_temperature, &c.reference_enthalpy, &c.reference_entropy};
+    return {};
+}
+// The presence flag, then the standard pressure and each component's intervals; the property record's block.
+inline void put_thermochemistry(AslRecordWriter& w, const std::optional<ThermochemistryRecord>& t) {
+    w.put(t.has_value());
+    if (!t) return;
+    w.put("standard_pressure"); w.put(t->standard_pressure); w.put("component_intervals"); w.put(t->component_intervals.size());
+    for (const auto& intervals : t->component_intervals) {
+        w.put(intervals.size());
+        for (const auto& item : intervals) {
+            w.put(item.lower); w.put(item.upper); w.put(item.lower_inclusive); w.put(item.upper_inclusive);
+            w.put(item.correlation.source_pressure); w.put(ideal_tags[item.correlation.form.index()]);
+            std::visit([&](auto c) {
+                w.vector(std::vector<double>(c.coefficients.begin(), c.coefficients.end()));
+                w.put(ideal_anchors(c).size());
+                for (const double* value : ideal_anchors(c)) w.put(*value);
+            }, item.correlation.form);
+        }
+    }
+}
+
+inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active,
+                              const std::optional<ThermochemistryRecord>& t, const EquilibriumProblem& p,
                               const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v6");
+    w.put("epcsaft.asl.equilibrium.v7");
     put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
@@ -144,6 +172,7 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
     const auto effective = p.solver_options.resolved(solver_options);
     for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));
     put_active(w, active);
+    put_thermochemistry(w, t);
     w.put("continuation_options"); w.put(options.initial_step); w.put(options.minimum_step);
     w.put(options.max_steps); w.put(options.max_retries_per_step);
     w.put("feed_offset"); w.vector(map.offset); w.put("feed_matrix"); w.put(map.matrix.size());
@@ -153,14 +182,6 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
     return w.finish();
 }
 
-// Thermochemistry interval forms, in IdealCorrelation variant order; each writes its coefficients, then its anchors.
-inline const std::array<std::string, 5> ideal_tags = {"polynomial", "shomate", "nasa7", "nasa9", "dippr107"};
-inline const std::array<decltype(IdealCorrelation::form), 5> ideal_forms = {IdealPolynomial{}, IdealShomate{}, IdealNASA7{}, IdealNASA9{}, IdealDIPPR107{}};
-template <class C> std::vector<double*> ideal_anchors(C& c) {
-    if constexpr (std::is_same_v<C, IdealShomate>) return {&c.formation_enthalpy};
-    if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) return {&c.reference_temperature, &c.reference_enthalpy, &c.reference_entropy};
-    return {};
-}
 // Property callbacks: the parameter document, the active parameters in model order (their values are the document's),
 // and a thermochemistry record, no state.
 inline std::string asl_property_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active,
@@ -172,21 +193,7 @@ inline std::string asl_property_record(const ParameterDocument& d, const std::ve
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
     put_active(w, active);
-    w.put(t.has_value());
-    if (!t) return w.finish();
-    w.put("standard_pressure"); w.put(t->standard_pressure); w.put("component_intervals"); w.put(t->component_intervals.size());
-    for (const auto& intervals : t->component_intervals) {
-        w.put(intervals.size());
-        for (const auto& item : intervals) {
-            w.put(item.lower); w.put(item.upper); w.put(item.lower_inclusive); w.put(item.upper_inclusive);
-            w.put(item.correlation.source_pressure); w.put(ideal_tags[item.correlation.form.index()]);
-            std::visit([&](auto c) {
-                w.vector(std::vector<double>(c.coefficients.begin(), c.coefficients.end()));
-                w.put(ideal_anchors(c).size());
-                for (const double* value : ideal_anchors(c)) w.put(*value);
-            }, item.correlation.form);
-        }
-    }
+    put_thermochemistry(w, t);
     return w.finish();
 }
 }  // namespace epcsaft::equilibrium
