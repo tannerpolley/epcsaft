@@ -2309,6 +2309,14 @@ as in the state. With two or three directions the batch also carries the mixed
 density action `d^k rho`. Equilibrium solved-state requests do not admit this
 observable.
 
+`Model.log_fugacity_terms(T, rho, x)` splits the same `d(A_res/RT)/dn_i` by residual
+Helmholtz term (EqID: `log_fugacity_coefficient_terms`). It records one tape of
+`n a_k` per term from the shared `residual_helmholtz` contraction at the solved site
+fractions and reads the first amount derivatives, so no term has a second formula. It
+returns the terms and `ln Z` with `Z = 1 - V phi_V`, evaluated at the given density; the
+terms minus `ln Z` reproduce the state's `ln(phi_i)` to roundoff. It runs only on request,
+never on a solve path.
+
 Use the same residual-potential/mass-action tape and a single factorization of
 the accepted unweighted site Jacobian for the batch. Obtain each implicit site
 Taylor coefficient from the defining mass-action coefficient, then reuse each

@@ -5,22 +5,7 @@
 namespace properties_checks {
 void cation_mixing() {
     using namespace epcsaft;
-    auto base = properties_support::parameters(4);
-    base.segment_count = {1.2047, 1, 1, 1};
-    base.sigma_constant = {2.7927, 2.8, 3, 2.756};
-    base.dispersion_energy_over_k = {353.95, 230, 230, 170};
-    base.molar_mass_kg_per_mol = {0.01801528, 0.00694, 0.024305, 0.035453};
-    base.charge_number = {0, 1, 2, -1};
-    base.packing_diameter_angstrom = {0, 2.5, 2.5, 2.5};
-    base.debye_huckel_diameter_angstrom = {0, 3, 3, 3};
-    base.relative_permittivity = {78.09, 0, 0, 0};
-    base.electrolyte_form = ElectrolyteForm::DebyeHuckel;
-    base.ionic_dispersion = IonicDispersion::ExcludeSameSign;
-    base.permittivity_form = PermittivityForm::IonSuppression;
-    auto p = base;
-    p.cation_mixing = {{0, 1, 2, 3}};
-    p.cation_pair_mixing = {-0.2};
-    p.cation_triple_mixing = {0.02};
+    const auto base = properties_support::li_mg_cl_water(false), p = properties_support::li_mg_cl_water();
     const std::vector<ActiveParameter> active = {{ParameterFamily::CationPairMixing, {0}}, {ParameterFamily::CationTripleMixing, {0}}};
     const double T = 298.15, mass = p.molar_mass_kg_per_mol[0];
     const HelmholtzModel plain(base), mixed(p, active);

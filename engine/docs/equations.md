@@ -1197,6 +1197,19 @@ $$
 \ln\phi_i=\frac{\mu_i^r}{RT}-\ln Z.
 $$
 
+## `log_fugacity_coefficient_terms`
+
+- Section: Thermodynamic properties
+- Status: Exact derivation
+- Source: Term-wise split of `residual_chemical_potential` in `log_fugacity_coefficient`; [Gross2001], Eq.~(A.32)
+- Description: Contribution of each residual Helmholtz term $k$ to the component log fugacity coefficient; $\ln Z$ is reported once.
+- Change note: Read on request at a temperature-density state. Association is stationary in the site fractions, so the partial derivative at the converged sites equals the total derivative.
+
+$$
+\ln\phi_i=\sum_k\frac{\partial\left(n\,a_k\right)}{\partial n_i}\bigg|_{T,V,n_{j\ne i}}-\ln Z,\qquad
+k\in\{hc,disp,assoc,DH,Born,dd,mix\}.
+$$
+
 ## `log_fugacity_density_derivative`
 
 - Section: Thermodynamic properties

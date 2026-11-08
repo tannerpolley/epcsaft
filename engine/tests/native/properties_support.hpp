@@ -95,6 +95,28 @@ inline epcsaft::Parameters associating_binary() {
     return p;
 }
 
+// #658 manufactured aqueous Li/Mg/Cl liquid; `mixing` adds the cation pair (-0.2) and triple (0.02) corrections.
+inline epcsaft::Parameters li_mg_cl_water(bool mixing = true) {
+    auto p = parameters(4);
+    p.segment_count = {1.2047, 1, 1, 1};
+    p.sigma_constant = {2.7927, 2.8, 3, 2.756};
+    p.dispersion_energy_over_k = {353.95, 230, 230, 170};
+    p.molar_mass_kg_per_mol = {0.01801528, 0.00694, 0.024305, 0.035453};
+    p.charge_number = {0, 1, 2, -1};
+    p.packing_diameter_angstrom = {0, 2.5, 2.5, 2.5};
+    p.debye_huckel_diameter_angstrom = {0, 3, 3, 3};
+    p.relative_permittivity = {78.09, 0, 0, 0};
+    p.electrolyte_form = epcsaft::ElectrolyteForm::DebyeHuckel;
+    p.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+    p.permittivity_form = epcsaft::PermittivityForm::IonSuppression;
+    if (mixing) {
+        p.cation_mixing = {{0, 1, 2, 3}};
+        p.cation_pair_mixing = {-0.2};
+        p.cation_triple_mixing = {0.02};
+    }
+    return p;
+}
+
 inline epcsaft::Parameters aqueous_electrolyte() {
     auto p = parameters(3);
     p.segment_count = {1.2047, 1.0, 1.0};

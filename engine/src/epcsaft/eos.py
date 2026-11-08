@@ -28,6 +28,7 @@ State = _core.State
 StateBatch = _core.StateBatch
 StateStatus = _core.StateStatus
 VirialCoefficients = _core.VirialCoefficients
+LogFugacityTerms = _core.LogFugacityTerms
 VirialCoefficientActions = _core.VirialCoefficientActions
 IdealPolynomial = _core.IdealPolynomial
 IdealShomate = _core.IdealShomate
@@ -293,6 +294,14 @@ class Mixture:
         """
         return self._model.virial_coefficients(T, self._composition(x))
 
+    def log_fugacity_terms(self, T: float, rho: float, x: Mapping[str, float] | Sequence[float] | None = None) -> LogFugacityTerms:
+        """Return each residual Helmholtz term's share of ln phi_i at T (K), rho (mol/m³) and x.
+
+        Every field holds ``d(n a_k)/dn_i`` per component, dimensionless; ln phi_i is their sum
+        minus ``log_compressibility_factor`` (ln Z, reported once). Charged components
+        on an ion-free support are None, as in ``State.log_fugacity_coefficient``.
+        """
+        return self._model.log_fugacity_terms(T, rho, self._composition(x))
     def virial_coefficient_actions(
         self, T: float, x: Mapping[str, float] | Sequence[float] | None = None, *, temperature_direction: float | None = None,
         composition_direction: Mapping[str, float] | Sequence[float] | None = None,

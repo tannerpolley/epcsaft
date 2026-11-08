@@ -2737,6 +2737,63 @@ State HelmholtzModel::state(
 
 catch (...) { reset_state_tapes(); throw; }
 
+// EqID: log_fugacity_coefficient_terms -- one CppAD tape of n a_k per term from the shared residual_helmholtz call.
+LogFugacityTerms HelmholtzModel::log_fugacity_terms(
+    double temperature, double molar_density, const std::vector<double>& mole_fractions
+) const {
+    core::Scope scope("log_fugacity_terms");
+    using detail::AD;
+    validate_electroneutrality(mole_fractions);
+    require_molar_density(molar_density);
+    const double volume = 1.0 / molar_density;
+    validate_point(temperature, volume, mole_fractions);
+    require_law_domain(temperature, parameters_);
+    const auto sigma = segment_sigma(temperature, parameters_);
+    const auto diameter = segment_diameter(temperature, parameters_, sigma);
+    const auto sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
+        nullptr, nullptr, nullptr, false, solver_options_);
+    std::vector<double> point{volume};
+    point.insert(point.end(), mole_fractions.begin(), mole_fractions.end());
+    std::vector<AD> input(point.begin(), point.end());
+    CppAD::Independent(input);
+    detail::RecordingOwner recording;
+    const auto parameters = detail::make_tape_parameters(parameters_, {}, std::vector<AD>{});
+    const AD t(temperature);
+    AD total(0.0);
+    for (std::size_t i = 1; i < input.size(); ++i) total += input[i];
+    const AD density = total / input[0];
+    std::vector<AD> composition;
+    for (std::size_t i = 1; i < input.size(); ++i) composition.push_back(input[i] / total);
+    const auto sigma_ad = segment_sigma(t, parameters);
+    const auto diameter_ad = segment_diameter(t, parameters, sigma_ad);
+    const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters);
+    const std::vector<AD> site(sites.begin(), sites.end());
+    const auto delta = parameters_.ideal_gas ? std::vector<AD>{} : association_delta_values(t, density, composition,
+        parameters, sigma_ad, diameter_ad, parameters.association_energy_over_k, parameters.association_volume);
+    const auto a = residual_helmholtz(t, density, composition, parameters, sigma_ad, diameter_ad, site,
+        electrolyte.debye_huckel, born, association_products(density, composition, parameters, site, delta));
+    CppAD::ADFun<double> function(input, std::vector<AD>{total * a.hard_chain, total * a.dispersion,
+        total * a.association, total * a.debye_huckel, total * a.born, total * a.dipolar, total * a.cation_mixing});
+    recording.active = false;
+    const auto jacobian = function.Jacobian(point);
+    const std::size_t width = point.size();
+    double phi_v = 0.0;
+    for (std::size_t k = 0; k < 7; ++k) phi_v += jacobian[k * width];
+    const double z = 1.0 - volume * phi_v;
+    require(std::isfinite(z) && z > 0.0, "compressibility factor");
+    LogFugacityTerms result;
+    result.log_compressibility_factor = std::log(z);
+    const bool charged = detail::charged_support(mole_fractions, parameters_);
+    std::vector<std::optional<double>>* const fields[] = {&result.hard_chain, &result.dispersion,
+        &result.association, &result.debye_huckel, &result.born, &result.dipolar, &result.cation_mixing};
+    for (std::size_t k = 0; k < 7; ++k) {
+        fields[k]->resize(mole_fractions.size());
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            if (!ionic_insertion_value(parameters_, mole_fractions, i, charged)) (*fields[k])[i] = jacobian[k * width + 1 + i];
+    }
+    return result;
+}
+
 DensityBranch State::returned_density_branch() const {
     return properties::density_side(density_branch, molar_density, negative_slope_density);
 }

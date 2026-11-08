@@ -256,6 +256,12 @@ struct State final {
     std::vector<core::NumericalRank> rank_records;
 };
 
+// d(n a_k)/dn_i at constant T, V and n_j for each residual Helmholtz term k; ln phi_i is their sum minus ln Z.
+struct LogFugacityTerms final {
+    std::vector<std::optional<double>> hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing;
+    double log_compressibility_factor = 0.0;
+};
+
 enum class StateStatus { Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError };
 struct StateBatch final {
     std::vector<std::optional<State>> rows;
@@ -451,6 +457,8 @@ public:
         const std::vector<double>& mole_fractions,
         bool derived_properties = false
     ) const;
+    EPC_API LogFugacityTerms log_fugacity_terms(
+        double temperature, double molar_density, const std::vector<double>& mole_fractions) const;
     EPC_API State state_at_pressure(
         double temperature,
         double pressure,

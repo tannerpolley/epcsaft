@@ -205,6 +205,9 @@ void register_eos(nb::module_& module) {
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
     nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
+    nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms")
+        EPCSAFT_READONLY(epcsaft::LogFugacityTerms, hard_chain, dispersion, association, debye_huckel, born, dipolar,
+            cation_mixing, log_compressibility_factor);
     nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions")
         EPCSAFT_READONLY(epcsaft::VirialCoefficientActions, second, third, second_action, third_action);
     nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
@@ -277,6 +280,8 @@ void register_eos(nb::module_& module) {
             return model.state(temperature, molar_density, composition, derived_properties);
         }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"),
              nb::arg("derived_properties") = false)
+        .def("log_fugacity_terms", &epcsaft::HelmholtzModel::log_fugacity_terms,
+            nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"))
         .def("states", &epcsaft::HelmholtzModel::states)
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,

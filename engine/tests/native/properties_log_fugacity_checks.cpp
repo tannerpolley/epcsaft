@@ -210,12 +210,111 @@ void insertion_statuses() {
         dipolar_ok, "log-fugacity", "insertion/absent-dipolar-family", "status", "T,P,x", "support_change");
 }
 
+// Per-term ln(phi_i): the terms (without ln Z) sum to the state's residual chemical potential mu_i/RT, ln Z matches
+// the state's, and each term equals a central difference of n a_k with respect to n_i at fixed T and V
+// (verification only; the sites are re-solved at every point). mu_i/RT = sum_k d(n a_k)/dn_i carries no
+// cancellation, so it is held to a few units of roundoff of its terms. ln Z = ln(1 - V sum_k d(n a_k)/dV)
+// cancels in 1 - Z for liquids (Z ~ 7e-4 for water), so its allowance carries sum_k |V d(n a_k)/dV| / Z.
+void term_by_term() {
+    using Fixture = std::tuple<const char*, Parameters, double, double, std::vector<double>>;
+    auto polar = properties_support::associating_binary();
+    polar.dipole_moment_debye = {1.5, 0.0};
+    polar.dipole_count = {1.0, 0.0};
+    const auto& cation = properties_support::li_mg_cl_water();  // pair and triple cation-mixing corrections nonzero
+    std::vector<double> moles = {1.0 / cation.molar_mass_kg_per_mol[0], 0.2, 0.4, 1.0};  // 1 mol/kg of salt, balanced
+    const double total_moles = std::accumulate(moles.begin(), moles.end(), 0.0);
+    for (double& n : moles) n /= total_moles;
+    const std::array<Fixture, 4> fixtures = {{
+        {"nacl-water", properties_support::aqueous_electrolyte(), 298.15, 1.0e5, {0.98, 0.01, 0.01}},
+        {"associating", properties_support::associating_binary(), 313.15, 1.0e5, {0.1, 0.9}},
+        {"associating-polar", polar, 313.15, 1.0e5, {0.1, 0.9}},
+        {"cation-mixing", cation, 298.15, 1.0e5, moles}}};
+    const std::array<const char*, 7> names = {"hard_chain", "dispersion", "association", "debye_huckel", "born",
+        "dipolar", "cation_mixing"};
+    const std::array<double State::*, 7> energies = {&State::hard_chain, &State::dispersion, &State::association,
+        &State::debye_huckel, &State::born, &State::dipolar, &State::cation_mixing};
+    const std::array<std::vector<std::optional<double>> LogFugacityTerms::*, 7> fields = {&LogFugacityTerms::hard_chain,
+        &LogFugacityTerms::dispersion, &LogFugacityTerms::association, &LogFugacityTerms::debye_huckel,
+        &LogFugacityTerms::born, &LogFugacityTerms::dipolar, &LogFugacityTerms::cation_mixing};
+    constexpr double EPS = std::numeric_limits<double>::epsilon(), SUM_C = 16.0, LN_Z_C = 16.0, FD_TOLERANCE = 1.0e-8,
+                     FD_SLACK = 1.0e-10;
+    for (const auto& [name, parameters, T, P, x] : fixtures) {
+        const HelmholtzModel model(parameters);
+        const double rho = model.state_at_pressure(T, P, x, DensityBranch::Liquid).molar_density;
+        const auto state = model.state(T, rho, x);
+        const auto terms = model.log_fugacity_terms(T, rho, x);
+        const auto inputs = recording_support::fields({recording_support::field("T_K", T),
+            recording_support::field("rho", rho), recording_support::field("x", x)});
+        // sum_k |V d(n a_k)/dV| = sum_k |rho da_k/drho| at N = 1, by a central difference (scale only).
+        double volume_scale = 0.0;
+        for (const auto energy : energies) {
+            constexpr double H = 1.0e-4;
+            volume_scale += std::abs((model.state(T, rho * (1.0 + H), x).*energy - model.state(T, rho * (1.0 - H), x).*energy)
+                / (2.0 * H));
+        }
+        const double ln_z = std::log(state.compressibility_factor);
+        const double ln_z_allowance = LN_Z_C * EPS * volume_scale / state.compressibility_factor;
+        std::printf("lnZ %s Z=%.6e sum|V dnak/dV|=%.6e model=%.17g state=%.17g diff=%.3e allowance=%.3e ratio=%.3f\n", name,
+            state.compressibility_factor, volume_scale, terms.log_compressibility_factor, ln_z,
+            terms.log_compressibility_factor - ln_z, ln_z_allowance,
+            std::abs(terms.log_compressibility_factor - ln_z) / (EPS * volume_scale / state.compressibility_factor));
+        recording_support::compare_custom((std::string("log-fugacity-terms/ln-z/") + name).c_str(), "log_compressibility_factor",
+            "1", terms.log_compressibility_factor, ln_z, inputs, "Relationship", "state-at-density",
+            "ln Z equals the state's, within LN_Z_C eps sum_k |V d(n a_k)/dV| / Z", "absolute",
+            std::abs(terms.log_compressibility_factor - ln_z) <= ln_z_allowance, "log-fugacity-terms", "ln-z");
+        for (std::size_t i = 0; i < x.size(); ++i) {
+            double sum = 0.0, scale = 0.0;
+            for (const auto field : fields) {
+                sum += (terms.*field)[i].value();
+                scale += std::abs((terms.*field)[i].value());
+            }
+            const double reference = state.residual_chemical_potential_over_rt[i].value();
+            const bool ok = std::abs(sum - reference) <= SUM_C * EPS * scale;
+            std::printf("sum %s i=%zu sum=%.17g mu=%.17g diff=%.3e term_scale=%.6e ratio=%.3f\n", name, i, sum, reference,
+                sum - reference, scale, std::abs(sum - reference) / (EPS * scale));
+            recording_support::compare_custom((std::string("log-fugacity-terms/sum/") + name + "/" + std::to_string(i)).c_str(),
+                "sum_terms", "1", sum, reference, inputs, "Relationship",
+                "state-at-density", "the per-term values sum to the residual chemical potential over RT within SUM_C eps sum_k |term_k|",
+                "absolute", ok, "log-fugacity-terms", "sum");
+            for (std::size_t k = 0; k < 7; ++k) {
+                // Central difference of n a_k in n_i at n = x (N = 1), V = 1/rho, steps 2e-3, 1e-3, 5e-4 of x_i. The
+                // error must fall as h^2 and the Richardson value of the two finest steps must match to FD_TOLERANCE.
+                const double value = (terms.*fields[k])[i].value(), scale = std::max(1.0, std::abs(value));
+                std::array<double, 3> difference{};
+                for (std::size_t s = 0; s < 3; ++s) {
+                    const double h = (2.0e-3 / double(1 << s)) * x[i];
+                    const auto energy = [&, i = i](double shift) {
+                        auto n = x;
+                        n[i] += shift;
+                        double amount = 0.0;
+                        for (const double v : n) amount += v;
+                        auto fraction = n;
+                        for (double& v : fraction) v /= amount;
+                        return amount * (model.state(T, amount * rho, fraction).*energies[k]);
+                    };
+                    difference[s] = (energy(h) - energy(-h)) / (2.0 * h);
+                }
+                const double richardson = (4.0 * difference[2] - difference[1]) / 3.0;
+                const double e0 = std::abs(difference[0] - value) / scale, e1 = std::abs(difference[1] - value) / scale,
+                             e2 = std::abs(difference[2] - value) / scale, er = std::abs(richardson - value) / scale;
+                std::printf("fd %s i=%zu %s value=%.12e relerr=%.3e %.3e %.3e richardson=%.3e\n", name, i, names[k], value,
+                    e0, e1, e2, er);
+                recording_support::compare_custom((std::string("log-fugacity-terms/fd/") + name + "/" + std::to_string(i)
+                        + "/" + names[k]).c_str(), "term_vs_central_difference", "1", richardson, value, inputs,
+                    "Relationship", "central-difference", "the term equals the Richardson-extrapolated central difference of n a_k in n_i",
+                    "absolute", er <= FD_TOLERANCE && e2 <= e1 + FD_SLACK && e1 <= e0 + FD_SLACK, "log-fugacity-terms", "fd");
+            }
+        }
+    }
+}
+
 }  // namespace
 
 void log_fugacity_actions() {
     exact_identities();
     neutral_infinite_dilution_limit();
     insertion_statuses();
+    term_by_term();
 }
 
 }  // namespace properties_checks

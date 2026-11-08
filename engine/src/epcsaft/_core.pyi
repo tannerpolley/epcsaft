@@ -1274,6 +1274,18 @@ class VirialCoefficients:
     third: float
     """C in m⁶/mol²."""
 
+class LogFugacityTerms:
+    """d(n a_k)/dn_i at constant T, V and n_j for each residual Helmholtz term k, per component (None for ionic insertion).
+
+    Their sum over terms minus ``log_compressibility_factor`` is ln phi_i."""
+    hard_chain: list[Optional[float]]
+    dispersion: list[Optional[float]]
+    association: list[Optional[float]]
+    debye_huckel: list[Optional[float]]
+    born: list[Optional[float]]
+    dipolar: list[Optional[float]]
+    cation_mixing: list[Optional[float]]
+    log_compressibility_factor: float
 class VirialCoefficientActions:
     """B and C with their derivatives along a (temperature, zero-sum composition) direction."""
     second: float
@@ -1629,6 +1641,8 @@ class HelmholtzModel:
     """
     def virial_coefficients(self, temperature: float, composition: Sequence[float]) -> VirialCoefficients:
         """Return exact B and C for a neutral declaration at temperature in K."""
+    def log_fugacity_terms(self, temperature: float, molar_density: float, mole_fractions: Sequence[float]) -> LogFugacityTerms:
+        """Return each residual Helmholtz term's contribution to ln phi_i and ln Z at a T-rho state."""
     def virial_coefficient_actions(self, temperature: float, composition: Sequence[float], temperature_direction: float, composition_direction: Sequence[float]) -> VirialCoefficientActions:
         """Return B, C and their exact derivatives along a direction; the composition direction sums to zero."""
     solver_options: list[dict[str, Any]]
