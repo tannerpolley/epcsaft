@@ -304,6 +304,9 @@ struct StandardTerm final {
     // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
     std::vector<std::vector<double>> parameter_derivative, temperature_parameter_derivative,
         pressure_parameter_derivative;
+    // parameter_pair_derivative[i][j][k] is d2(g_k/RT)/dtheta_a dtheta_b, a and b from pair_coordinates[i], [j].
+    std::vector<std::size_t> pair_coordinates;
+    std::vector<std::vector<std::vector<double>>> parameter_pair_derivative;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
 };
 
@@ -478,7 +481,8 @@ struct CompiledSystem final {
     // coefficients `state` (state[0] is the prepared point) and the control direction.
     EPC_API RowSeries row_series(
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
-        const std::vector<double>& control, std::size_t order, bool plane = false
+        const std::vector<double>& control, std::size_t order, bool plane = false,
+        bool parameter_pairs = false  // two or more directions carry parameter increments
     ) const;
 
     std::size_t loading_column() const noexcept { return primal_size - free_intensive_count - 1; }

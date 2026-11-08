@@ -171,7 +171,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
     std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, bool pressure_jets,
     const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure = nullptr,
-    std::size_t temperature_order = 0, bool parameter_jets = false, std::size_t reference_order = 0) {
+    std::size_t temperature_order = 0, bool parameter_jets = false, std::size_t reference_order = 0,
+    const std::vector<std::size_t>& pairs = {}) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
         throw std::invalid_argument("reference_unavailable: source reference declaration is missing");
@@ -212,7 +213,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference, stoichiometries, references, pressure_jets,
-        solvent_anchor, temperature_order, parameter_jets, reference_order);
+        solvent_anchor, temperature_order, parameter_jets, reference_order, nullptr, pairs);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -270,7 +271,7 @@ static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
     bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {},
-    StandardTerm::NumericalError* error = nullptr
+    StandardTerm::NumericalError* error = nullptr, const std::vector<std::size_t>& pairs = {}
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
@@ -298,7 +299,7 @@ StandardTerm standard_term(
                 *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
                 &compiled.reference_diagnostics,
                 thermal, parameter_jets,
-                parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0);
+                parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0, pairs);
             gibbs = standard_state_series(temperature, components, reactions, {}, 0, nullptr, error ? &inverse : nullptr).front();
         }
         StandardTerm result;
@@ -313,16 +314,18 @@ StandardTerm standard_term(
         // owner as s. A referenced row has s_r = -ln K_rho, so its slope is -(source slope + slope
         // of C); an unadmitted slope of C refuses the direction. Only pure T slopes move the source.
         const auto species_slope = [&](std::vector<double> values, const std::string& name, std::size_t a,
-                                       std::size_t b = 0, std::optional<std::size_t> parameter = std::nullopt) {
+                                       std::size_t b = 0, std::optional<std::size_t> parameter = std::nullopt,
+                                       std::optional<std::size_t> second = std::nullopt) {
             const std::size_t source_order = !parameter && b == 0 ? a : 0;
             for (const auto& diagnostic : diagnostics) {
                 const std::size_t row = diagnostic.reaction_index;
-                const std::optional<double> slope = diagnostic.derivative_value(a, b, parameter);
+                const std::optional<double> slope = diagnostic.derivative_value(a, b, parameter, second);
                 if (!slope) {
-                    const auto cause = diagnostic.derivative_cause(a, b, parameter);
+                    const auto cause = diagnostic.derivative_cause(a, b, parameter, second);
                     throw std::invalid_argument("reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
                         + " C_" + std::to_string(a) + std::to_string(b)
-                        + (parameter ? " coordinate " + std::to_string(*parameter) : "") + " (" + name + "): " + cause);
+                        + (parameter ? " coordinate " + std::to_string(*parameter) : "")
+                        + (second ? "," + std::to_string(*second) : "") + " (" + name + "): " + cause);
                 }
                 const auto& source = problem.reactions[row].correlation;
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
@@ -359,6 +362,13 @@ StandardTerm standard_term(
             if (order > 1 && pressure_jets)
                 result.pressure_parameter_derivative[a] = species_slope(zero, "P parameter derivative", 0, 1, a);
         }
+        // d2s/dtheta_a dtheta_b = -W d2C/dtheta_a dtheta_b, stored symmetric over the requested pairs.
+        result.pair_coordinates = pairs;
+        result.parameter_pair_derivative.assign(pairs.size(), std::vector<std::vector<double>>(pairs.size()));
+        for (std::size_t i = 0; i < pairs.size(); ++i)
+            for (std::size_t j = i; j < pairs.size(); ++j)
+                result.parameter_pair_derivative[i][j] = result.parameter_pair_derivative[j][i]
+                    = species_slope(zero, "parameter pair derivative", 0, 0, pairs[i], pairs[j]);
         // EqIDs: neutral_reaction_reference_pressure_jet, standard_state_transfer_temperature_pressure_derivative.
         if (pressure_jets) {
             result.pressure_derivative = species_slope(zero, "pressure derivative", 0, 1);
@@ -764,6 +774,11 @@ CppAD::ADFun<double> record_geometry(
                 slope += standard.pressure_parameter_derivative[a][species] * delta_P;
             value += slope * (theta[a] - theta_center[a]);
         }
+        const auto& pairs = standard.pair_coordinates;
+        for (std::size_t i = 0; i < pairs.size(); ++i)
+            for (std::size_t j = 0; j < pairs.size(); ++j)
+                value += 0.5 * standard.parameter_pair_derivative[i][j][species]
+                    * (theta[pairs[i]] - theta_center[pairs[i]]) * (theta[pairs[j]] - theta_center[pairs[j]]);
         return value;
     };
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {

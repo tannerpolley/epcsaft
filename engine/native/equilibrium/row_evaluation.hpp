@@ -833,7 +833,7 @@ std::vector<double> CompiledSystem::hessian_at(
 
 RowSeries CompiledSystem::row_series(
     const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
-    const std::vector<double>& control, std::size_t order, bool plane
+    const std::vector<double>& control, std::size_t order, bool plane, bool parameter_pairs
 ) const {
     core::Scope scope("equilibrium_row_series");
     if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
@@ -851,6 +851,10 @@ RowSeries CompiledSystem::row_series(
     const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
     const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
         [](double value) { return value != 0.0; });
+    // With two parameter-bearing directions the polarised paths need d2s/dtheta2 on the coordinates they move.
+    std::vector<std::size_t> pairs;
+    for (std::size_t a = 0; parameter_pairs && a < active_control.size(); ++a)
+        if (active_control[a] != 0.0) pairs.push_back(a);
     for (std::size_t s = 0; control[0] != 0.0 && s < solids.size(); ++s)
         if (!solids[s].log_k_slope)
             throw std::invalid_argument("reference_unavailable: solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
@@ -866,18 +870,19 @@ RowSeries CompiledSystem::row_series(
     const auto parameter_cache_ready = [&] {
         return prepared.parameter_standard.has_value()
             && !(order > 1 && pressure_jets && prepared.parameter_standard->pressure_parameter_derivative.empty())
-            && !(order > 1 && temperature_jets && prepared.parameter_standard->temperature_parameter_derivative.empty());
+            && !(order > 1 && temperature_jets && prepared.parameter_standard->temperature_parameter_derivative.empty())
+            && prepared.parameter_standard->pair_coordinates == pairs;
     };
     if (reuse && parameter_jets && !parameter_cache_ready()) {
         try {
             prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, std::max<std::size_t>(order, 1),
-                pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0));
+                pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0), nullptr, pairs);
         } catch (const std::invalid_argument&) {}
     }
     const auto& standard = reference_diagnostics.empty()
         ? standard_term(*this, prepared.temperature, prepared.pressure, order, false)
         : !reuse || (parameter_jets && !parameter_cache_ready())
-            ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control)
+            ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;
     auto geometry = record_geometry(*this, prepared, standard, false, plane);
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);

@@ -38,6 +38,7 @@ class WideIonic {
     struct Inputs {const Parameters& parameters;const ThermochemistryRecord& records;const EquilibriumProblem& problem;} c;
     CppAD::ADFun<Wide> fluid,reference,reference_coarse;
     Wide max_pressure_residual=0,max_pressure_floor=0;
+    double salt_fraction;Wide sodium;  // the tapes' constant eps/k of Na+, a second active coordinate when declared
     struct State {
         Wide v,a,at,av,att,vt,vp,C,ct,ctt,cp,ctp,cpp,cy;
         std::array<Wide,3> mu;
@@ -54,7 +55,7 @@ class WideIonic {
             const auto dst=detail::family_values(p,f,src.second);
             for(std::size_t i=0;i<src.second;++i) dst.first[i]=AD(Wide(src.first[i]));
         }
-        p.dispersion_energy_over_k[0]=independent[5];
+        p.dispersion_energy_over_k[0]=independent[5];p.dispersion_energy_over_k[1]=AD(sodium);
         const AD N=independent[2]+independent[3]+independent[4],rho=N/independent[1];
         const std::vector<AD> x{independent[2]/N,independent[3]/N,independent[4]/N};
         const auto sigma=segment_sigma(independent[0],p),diameter=segment_diameter(independent[0],p,sigma);
@@ -133,15 +134,18 @@ public:
     double pressure_residual() const {return double(max_pressure_residual);}
     double pressure_limit() const {return double(max_pressure_floor);}
     // `salt_fraction` is the ion mole fraction y of the double solve that seeds the fluid tape.
+    void record_tapes() {
+        fluid=record(salt_fraction);reference=record(c.parameters.molar_mass_kg_per_mol[0]*1e-14);
+        reference_coarse=record(c.parameters.molar_mass_kg_per_mol[0]*1e-12);
+    }
     WideIonic(const Parameters& parameters,const ThermochemistryRecord& records,const EquilibriumProblem& problem,double salt_fraction)
-        :c{parameters,records,problem} {
+        :c{parameters,records,problem},salt_fraction(salt_fraction),sodium(parameters.dispersion_energy_over_k[1]) {
         CHECK(c.parameters.site_component==std::vector<int>({0,0}));
         CHECK(c.parameters.site_multiplicity==std::vector<int>({1,1}));
         CHECK(c.parameters.association_active==std::vector<int>({0,1,1,0}));
         CHECK(c.parameters.association_energy_over_k[1]==c.parameters.association_energy_over_k[2]);
         CHECK(c.parameters.association_volume[1]==c.parameters.association_volume[2]);
-        fluid=record(salt_fraction);reference=record(c.parameters.molar_mass_kg_per_mol[0]*1e-14);
-        reference_coarse=record(c.parameters.molar_mass_kg_per_mol[0]*1e-12);
+        record_tapes();
     }
     std::vector<Wide> values(const std::vector<Quantity>& q,const std::vector<NamedDirection>& ds,double factor,std::size_t mask,
                              const EquilibriumResult& solved,double rho) {
@@ -150,13 +154,16 @@ public:
         std::array<Wide,3> feed{Wide(c.problem.feed.values[0]),Wide(c.problem.feed.values[1]),Wide(c.problem.feed.values[2])};
         const auto& law=*c.problem.reactions[0].correlation;
         std::array<Wide,4> coeff{Wide(law.a),Wide(law.b),Wide(law.c),Wide(law.d)};
+        Wide na=c.parameters.dispersion_energy_over_k[1];
         for(std::size_t k=0;k<ds.size();++k) {
             const Wide scale=Wide((mask>>k)&1?1:-1)*Wide(ds[k].step)*Wide(factor);const auto& d=ds[k].value;
             T+=scale*d.temperature_k;P+=scale*d.pressure_pa;epsilon+=scale*d.active_parameters[0];
+            if(d.active_parameters.size()>1) na+=scale*d.active_parameters[1];
             for(std::size_t i=0;i<3;++i) feed[i]+=scale*d.feed_amounts_mol[i];
             for(std::size_t i=0;i<4;++i) coeff[i]+=scale*d.reaction_coefficients[0][i];
         }
         CHECK(feed[1]==feed[2]);
+        if(na!=sodium) {sodium=na;record_tapes();}
         const Wide mass=c.parameters.molar_mass_kg_per_mol[0],m=Wide(1e-14);
         const Wide ys=mass*m/(1+2*mass*m);const auto& source=*c.problem.reactions[0].reference;const bool fixed=source.reference_pressure_pa.has_value();
         const Wide sourceP=fixed?Wide(*source.reference_pressure_pa):P;

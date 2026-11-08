@@ -2041,14 +2041,17 @@ $$
 - Section: Equilibrium / Reaction standard states
 - Status: Exact derivation
 - Source: Implicit differentiation of the pressure closure in an active EOS coordinate at fixed temperature, reference pressure and ion-free solvent composition of the neutral reaction reference
-- Description: First derivative in an active EOS parameter theta, at fixed temperature and reference pressure, of the returned reference limit. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slope is -dC/dtheta. It maps to species through the same minimum-norm owner as the value and enters each chemical row linearly in theta at the solved state.
-- Change note: One active coordinate at fixed T/P and ion-free solvent fractions. The parameter scale used in polarization is max(abs(theta),1) in native units, with max(abs(d_V),1e-3 m3/mol) for dielectric volume. Scaling is restored after extraction; it introduces no approximation or column admission tolerance. Referenced enthalpy additionally consumes `standard_state_transfer_temperature_parameter_derivative`; heat capacity consumes `reference_mixed_temperature_pressure_derivatives`.
+- Description: First and mixed second derivatives in active EOS parameters theta_a, theta_b, at fixed temperature and reference pressure, of the returned reference limit. psi=Ares/(RT) is evaluated at N=1 mol and V=1/rho. ln K_src and the molality scale A are parameter independent, so the target slopes are -dC/dtheta_a and -d2C/dtheta_a dtheta_b. They map to species through the same minimum-norm owner as the value and enter each chemical row as the first- and second-order Taylor terms in theta at the solved state.
+- Change note: One or two active coordinates at fixed T/P and ion-free solvent fractions. The parameter scale used in polarization is max(abs(theta),1) in native units, with max(abs(d_V),1e-3 m3/mol) for dielectric volume; a pair column scales by the product of its two coordinate scales. Scaling is restored after extraction; it introduces no approximation or column admission tolerance. The second derivatives are evaluated only for a second-order action with two or more parameter-bearing directions, and only on the coordinates those directions move; with one such direction the second-order term cancels between the polarised paths. Referenced enthalpy additionally consumes `standard_state_transfer_temperature_parameter_derivative`; heat capacity consumes `reference_mixed_temperature_pressure_derivatives`.
 
 $$
 p_\theta=-RT\psi_{V\theta},\quad V_\theta=-p_\theta/p_V,\qquad
 \left.\frac{dC}{d\theta}\right|_{T,P}=\sum_i\nu_i\psi_{n_i\theta}+C_VV_\theta,\\
 \frac{\partial\ln K_\rho}{\partial\theta}=\left.\frac{dC}{d\theta}\right|_{T,P},\qquad
-\frac{\partial s_r}{\partial\theta}=-\left.\frac{dC_r}{d\theta}\right|_{T,P}.
+\frac{\partial s_r}{\partial\theta}=-\left.\frac{dC_r}{d\theta}\right|_{T,P},\\
+C_{\theta_a\theta_b}=\sum_i\nu_i\left(\psi_{n_i\theta_a\theta_b}+\psi_{n_iV\theta_a}V_{\theta_b}+\psi_{n_iV\theta_b}V_{\theta_a}+\psi_{n_iVV}V_{\theta_a}V_{\theta_b}\right)+\frac{\Delta\nu\,V_{\theta_a}V_{\theta_b}}{V^2}+C_VV_{\theta_a\theta_b},\\
+p_VV_{\theta_a\theta_b}=-\left(p_{\theta_a\theta_b}+p_{V\theta_a}V_{\theta_b}+p_{V\theta_b}V_{\theta_a}+p_{VV}V_{\theta_a}V_{\theta_b}\right),\qquad
+\frac{\partial^2s_r}{\partial\theta_a\partial\theta_b}=-C_{r,\theta_a\theta_b}.
 $$
 
 ## `standard_state_transfer_temperature_parameter_derivative`
@@ -2151,7 +2154,7 @@ $$
 - Section: Properties / Reaction references
 - Status: Exact derivation
 - Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction
-- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. No repeated parameter derivatives or dilution-composition derivatives are consumed.
+- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. The only repeated parameter derivatives are the fixed-T/P pairs of `standard_state_transfer_parameter_derivative`; no dilution-composition derivatives are consumed.
 - Change note: Each column differentiates the returned analytic reference at the ion-free solvent state using `reference_single_insertion_taylor`. Columns retain independent action diagnostics and causes. The existing scaled comparison with `reference_limit_terminal_pair` is qualification evidence only; no terminal sequence is evaluated in runtime.
 
 $$

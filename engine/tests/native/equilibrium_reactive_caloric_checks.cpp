@@ -102,7 +102,7 @@ inline std::vector<NamedDirection> directions(const Case& c) {
     return result;
 }
 
-inline std::vector<Quantity> quantities(std::size_t n) {
+inline std::vector<Quantity> quantities(std::size_t n,bool calorics=true) {
     std::vector<Quantity> q;
     auto put=[&](const char* name,const char* unit,double atol,SolvedStateObservableKind kind,std::size_t component=0) {
         Observable o;o.kind=kind;o.component=component;q.push_back({name,unit,atol,o});
@@ -123,6 +123,7 @@ inline std::vector<Quantity> quantities(std::size_t n) {
             q.back().name += "-"+std::to_string(i);
         }
     }
+    if(!calorics) return q;
     const char* names[]={"h","u_G","s","cp","cv_G"};
     for(std::size_t family:{0U,10U}) for(std::size_t k=0;k<5;++k) {
         Observable o;o.kind=SolvedStateObservableKind::PhaseProperty;o.property=static_cast<PropertyObservable>(family+k);
@@ -316,7 +317,8 @@ public:
             key+=";";
         }
         auto found=cache.find(key);if(found!=cache.end()) return found->second;
-        std::vector<Observable> os;for(std::size_t i=0;i+4<q.size();++i) os.push_back(q[i].observable);
+        const std::size_t products=q.back().name=="V_G"?4:0;
+        std::vector<Observable> os;for(std::size_t i=0;i+products<q.size();++i) os.push_back(q[i].observable);
         Direction z;z.feed_amounts_mol.assign(compiled.n_feed.size(),0);z.active_parameters.assign(compiled.model->active_parameters().size(),0);
         const auto batch=solved_state_actions(compiled,solved,{os,ds.empty()?std::vector<Direction>{z}:ds});
         diagnostics=batch.diagnostics;
@@ -328,7 +330,7 @@ public:
             result.push_back(*v);
         }
         const std::size_t n=index(q,"n");
-        for(const auto& name:{"total-h","total-u_G","total-s","v_G"}) {
+        for(const auto& name:{"total-h","total-u_G","total-s","v_G"}) if(products) {
             const auto k=index(q,name);double product=0;
             if(ds.empty()) {result.push_back(result[n]*result[k]);continue;}
             for(std::size_t mask=0;mask<(1U<<ds.size());++mask) {
@@ -376,7 +378,7 @@ struct Difference {
 };
 inline Difference difference(const Case& c,const std::vector<NamedDirection>& ds,double factor,
                              const std::vector<Quantity>& q,const EquilibriumResult& anchor,WideNeutral* wide,WideIonic* ionic) {
-    const bool first_difference=(c.problem.temperature.free||c.problem.pressure.free)&&ds.size()==2;
+    const bool first_difference=!wide&&!ionic&&ds.size()==2;
     const auto perturbed=first_difference?std::vector<NamedDirection>{ds.back()}:ds;
     Difference out;out.value.assign(q.size(),0);out.rounding.assign(q.size(),0);
     std::vector<Wide> sum(q.size(),0);Wide denominator=1;
@@ -427,15 +429,16 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
     }
     const auto exact=actions.get(request);const auto diagnostics=actions.diagnostics;
     const auto sigma=scale(actions,ds,q.size());
-    const bool free_chart=c.problem.temperature.free||c.problem.pressure.free;
-    CHECK(free_chart==(!wide&&!ionic));
+    // Without a binary128 oracle (free charts, non-identical E-sys pairs) the reference differences exact first actions.
+    const bool free_chart=c.problem.temperature.free||c.problem.pressure.free,first_actions=!wide&&!ionic;
+    CHECK(!free_chart||first_actions);
     std::vector<std::vector<NamedDirection>> orders{ds};
-    if(free_chart&&ds.size()==2&&ds[0].name!=ds[1].name) orders.push_back({ds[1],ds[0]});
+    if(first_actions&&ds.size()==2&&ds[0].name!=ds[1].name) orders.push_back({ds[1],ds[0]});
     struct Reference {double rich=0,refinement=0,target=0;std::size_t rung=0;bool resolved=false;std::string row;};
     std::vector<std::vector<Reference>> references(orders.size(),std::vector<Reference>(q.size()));
     const auto id_for=[&](std::size_t i,std::size_t rung) {return std::string(free_chart?"F6/":"F1/")+c.name+"/A"
         +std::to_string(ds.size())+"/"+label+"/"+q[i].name+"/rung-"+std::to_string(rung);};
-    const char* method=free_chart&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values";
+    const char* method=first_actions&&ds.size()==2?"native-centered-first-actions":"native-centered-rebuilt-values";
     for(std::size_t order=0;order<orders.size();++order) {
         auto coarse=difference(c,orders[order],1.0,q,center.solved,wide,ionic);
         for(std::size_t rung=0;rung<6;++rung) {
@@ -446,13 +449,13 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
                 const double target=q[i].atol+1e-6*std::max(std::abs(rich),sigma[i]);
                 const bool resolved=refinement<=target/4;
                 const auto row=recording_support::fields({inputs,literal_directions,recording_support::field("directions",label),
-                    recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",free_chart?53:113),recording_support::field("D_h",double(coarse.value[i])),
+                    recording_support::field("fine_step_factor",factor),recording_support::field("oracle_precision_bits",first_actions?53:113),recording_support::field("D_h",double(coarse.value[i])),
                     recording_support::field("D_h2",double(fine.value[i])),recording_support::field("Richardson",rich),
                     recording_support::field("refinement",refinement),recording_support::field("sigma",sigma[i]),
                     recording_support::field("atol",q[i].atol),recording_support::field("target",target),
                     recording_support::field("resolved",resolved),
                     recording_support::field("rounding_over_step",fine.rounding[i]),recording_support::field("oracle_residual",fine.residual),
-                    free_chart?recording_support::fields({recording_support::field("oracle_pressure_residual",fine.pressure_residual),
+                    first_actions?recording_support::fields({recording_support::field("oracle_pressure_residual",fine.pressure_residual),
                         recording_support::field("oracle_site_residual",fine.site_residual),
                         recording_support::field("oracle_minimum_v_G",fine.minimum_v),recording_support::field("oracle_maximum_v_G_P",fine.maximum_vp)})
                     :recording_support::fields({recording_support::field("wide_pressure_residual_Pa",fine.precise_pressure_residual),
@@ -490,7 +493,7 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             recording_support::field("error",std::abs(exact[i]-r.rich)),recording_support::field("error_over_target",std::abs(exact[i]-r.rich)/r.target)});
         const auto id=id_for(i,r.rung);
         recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],r.rich,row,
-            "Relationship",method,free_chart&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
+            "Relationship",method,first_actions&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
             "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric",id.c_str());
     }
 }
@@ -697,8 +700,9 @@ inline void product_identities(const Case& c,Actions& actions,const std::vector<
 inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std::vector<NamedDirection>& basis) {
     std::vector<std::vector<NamedDirection>> result;
     for(const auto& a:basis) result.push_back({a});
+    // Two EOS-parameter directions run in parameter_pair(); two law directions are refused.
     for(std::size_t i=0;i<basis.size();++i) for(std::size_t j=i;j<basis.size();++j)
-        if(!(basis[i].parameter&&basis[j].parameter)) result.push_back({basis[i],basis[j]});
+        if(!(basis[i].parameter&&basis[j].parameter)||basis[i].name!=basis[j].name) result.push_back({basis[i],basis[j]});
     const std::size_t theta=c.ionic?4:3,kappa=theta+1;
     auto combined=[&](std::size_t a,std::size_t b,const char* label) {
         NamedDirection d{label,std::min(basis[a].step,basis[b].step),add(basis[a].value,basis[b].value),basis[a].chart,
@@ -719,6 +723,53 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
 }
 
 #if defined(__linux__)
+// Two EOS-parameter directions need d2C/dtheta_a dtheta_b: single coordinates (eps0, eps1) on E-sys
+// and (eps_w, eps_Na) on I-sys, and the tied E-sys (epsilon, epsilon). E-sys species differ once
+// eps0 != eps1, outside the identical-species binary128 oracle, so that pair differences exact first
+// actions. Caloric observables and two law directions are refused, never returned as numbers.
+inline void parameter_pair(bool ionic) {
+    auto c=input(ionic,false);
+    if(ionic) c.active.push_back({ParameterFamily::DispersionEnergyOverK,{1}});
+    HelmholtzModel model(c.parameters,c.active,c.records);
+    const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
+    if(!solved.has_state()) throw std::runtime_error(c.name+" pair center: "+solved.message);
+    const auto q=quantities(c.parameters.component_count(),false);const auto center=values(model,compiled,solved,q);
+    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    Actions actions(compiled,solved,q);
+    const auto basis=directions(c);const auto& tied=basis[ionic?4:3];
+    std::vector<NamedDirection> e;
+    for(std::size_t a=0;a<2;++a) {auto d=zero(c);d.active_parameters[a]=1;e.push_back({"epsilon-"+std::to_string(a),0.02,d,{d},true});}
+    if(ionic) {WideIonic oracle(c.parameters,c.records,c.problem,center.solved.mole_fractions[1]);ladder(c,actions,e,q,center,inputs,nullptr,&oracle);}
+    else {
+        ladder(c,actions,e,q,center,inputs);
+        WideNeutral oracle(c);ladder(c,actions,{tied,tied},q,center,inputs,&oracle);
+        const auto action=actions.get({tied.value,tied.value});const auto sigma=scale(actions,{tied,tied},q.size());
+        for(const auto* name:{"x-0","x-1"}) {
+            const auto i=index(q,name);const double target=q[i].atol+64*std::numeric_limits<double>::epsilon()*sigma[i];
+            recording_support::compare_custom(("F1/"+c.name+"/analytic-zero/epsilon+epsilon/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),
+                action[i],0,recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
+                "Relationship","identical-ethane-analytic-zero","Tied EOS directions leave identical species without a composition response",
+                "abs(action)<=atol+64*epsilon*sigma",std::abs(action[i])<=target,"reactive-caloric");
+        }
+    }
+    const auto ab=actions.get({e[0].value,e[1].value}),ba=actions.get({e[1].value,e[0].value});
+    const auto sigma=scale(actions,e,q.size());
+    for(std::size_t i=0;i<q.size();++i) {
+        const double target=q[i].atol+64*std::numeric_limits<double>::epsilon()*sigma[i];
+        recording_support::compare_custom(("F1/"+c.name+"/symmetry/epsilon-0+epsilon-1/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),
+            ab[i],ba[i],recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
+            "Relationship","swapped-directions","A2 is symmetric in its two parameter directions",
+            "abs(A_ab-A_ba)<=atol+64*epsilon*sigma",std::abs(ab[i]-ba[i])<=target,"reactive-caloric");
+    }
+    std::vector<Observable> calorics;for(const auto& item:quantities(c.parameters.component_count()))
+        if(item.observable.kind==SolvedStateObservableKind::PhaseProperty||item.observable.kind==SolvedStateObservableKind::PhaseGibbsMolarVolume) calorics.push_back(item.observable);
+    for(const auto& item:solved_state_actions(compiled,solved,{calorics,{e[0].value,e[1].value}}).results)
+        CHECK(item.status==SolvedStateActionStatus::ReferenceUnavailable&&!item.action);
+    bool refused=false;const auto& law=basis.back().value;
+    try {(void)solved_state_actions(compiled,solved,{{q[0].observable},{law,law}});} catch(const std::invalid_argument&) {refused=true;}
+    CHECK(refused);
+}
+
 void run(bool ionic,bool fixed) {
     const auto c=input(ionic,fixed);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
@@ -770,6 +821,7 @@ void run(bool ionic,bool fixed) {
             }
         }
     }
+    if(!fixed) parameter_pair(ionic);
 }
 
 // P4 composition chain for U: x=n/N has an analytic derivative for every

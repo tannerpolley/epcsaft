@@ -324,21 +324,22 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     }
     // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
     const bool referenced = !compiled.reference_diagnostics.empty();
-    std::size_t parameter_directions = 0;
+    std::size_t law_directions = 0;
     for (const auto &d : request.directions) {
-        bool parameter = false;
+        bool parameter = false, law = false;
         for (double v : d.active_parameters) parameter |= v != 0.0;
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
-                parameter |= v != 0.0;
-        parameter_directions += std::size_t(parameter);
+                law |= v != 0.0;
+        parameter |= law;
+        law_directions += std::size_t(law);
         if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
              problem.pressure.free))
             throw std::invalid_argument("a referenced third-order action admits only feed directions at fixed T and P");
     }
-    if (referenced && request.directions.size() == 2 && parameter_directions > 1)
-        throw std::invalid_argument("a referenced second-order action admits at most one parameter or reaction-law direction");
+    if (referenced && request.directions.size() == 2 && law_directions > 1)
+        throw std::invalid_argument("a referenced second-order action admits at most one reaction-law direction");
     if (central.rows.size() != compiled.rows.size() || central.phase_count != problem.phases.size())
         throw std::invalid_argument("central result does not match the compiled system");
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -382,7 +383,7 @@ SolvedStateActionStatus energy_status(PropertyActionStatus status) {
 // The coefficient recurrence: J y_k = -[t^k] F(y(t), q(t)) with y_k unknown set to zero,
 // re-evaluated after each solve so the retained residual is the owned row residual.
 Path follow(const CompiledSystem& compiled, const Center& center, const std::vector<double>& control,
-            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane = false) {
+            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane = false, bool parameter_pairs = false) {
     Path path;
     const std::size_t n = center.prepared.point.size();
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
@@ -391,7 +392,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     // The series through order k, or false with the path refused when a reference is unavailable.
     const auto rows_through = [&](const std::vector<std::vector<double>>& prefix, std::size_t k, RowSeries& series) {
         try {
-            series = compiled.row_series(center.prepared, prefix, control, k, plane);
+            series = compiled.row_series(center.prepared, prefix, control, k, plane, parameter_pairs);
             return true;
         } catch (const std::invalid_argument& error) {
             if (!is_reference_unavailable(error)) throw;
@@ -1258,6 +1259,13 @@ static SolvedStateActionBatch evaluate_action(
     std::vector<double> accumulated(batch.results.size(), 0.0);
     std::vector<bool> usable(batch.results.size(), true);
     const std::size_t paths = std::size_t(1) << (order - 1);
+    const bool parameter_pairs = std::count_if(request.directions.begin(), request.directions.end(), [](const auto& d) {
+        return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double v) { return v != 0.0; }); }) > 1;
+    // Caloric standards compose Gibbs columns with at most one parameter (standard_series).
+    for (auto& item : batch.results)
+        if (reference_problem && parameter_pairs && caloric(item.observable) && item.status == SolvedStateActionStatus::Available)
+            refuse(item, SolvedStateActionStatus::ReferenceUnavailable, "reference_unavailable: caloric second-order "
+                   "actions in two parameter directions need second parameter Gibbs columns", false);
     for (std::size_t mask = 0; mask < paths; ++mask) {
         std::vector<double> control(width, 0.0);
         double weight = 1.0;
@@ -1267,7 +1275,7 @@ static SolvedStateActionBatch evaluate_action(
             for (std::size_t i = 0; i < width; ++i) control[i] += sign * controls[j][i] / magnitude[j];
         }
         core::Scope path_scope("solved_state_action_path");
-        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane);
+        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs);
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;

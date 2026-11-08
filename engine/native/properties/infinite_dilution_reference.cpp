@@ -126,12 +126,18 @@ double parameter_scale(const HelmholtzModel& model, const std::vector<double>& v
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution, ReferenceTaylorBatch* batch) {
-    const std::size_t order = temperature_order + pressure_order + std::size_t(parameter.has_value());
+    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution, ReferenceTaylorBatch* batch,
+    std::optional<std::size_t> second_parameter) {
+    const std::size_t thermal = temperature_order + pressure_order;
+    const std::size_t order = thermal + std::size_t(parameter.has_value()) + std::size_t(second_parameter.has_value());
     ResidualEnergyAction result;
     const double pressure_scale = state.pressure_density_derivative * state.molar_density;
-    const double theta_scale = parameter ? parameter_scale(model, model.active_parameter_values(), *parameter) : 1.0;
-    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order)) * theta_scale;
+    const std::array<std::optional<std::size_t>, 2> slots{parameter, second_parameter};
+    std::array<double, 2> theta_scale{1.0, 1.0};
+    for (std::size_t k = 0; k < 2; ++k)
+        if (slots[k]) theta_scale[k] = parameter_scale(model, model.active_parameter_values(), *slots[k]);
+    const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order))
+        * theta_scale[0] * theta_scale[1];
     double contraction = 0.0;
     const std::size_t paths = order ? std::size_t(1) << (order - 1) : 1;
     for (std::size_t mask = 0; mask < paths; ++mask) {
@@ -143,8 +149,8 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
             if (j < temperature_order) direction.temperature += sign * temperature;
             else if (j < temperature_order + pressure_order) direction.pressure += sign * pressure_scale;
             else {
-                const auto& active = model.active_parameters()[*parameter];
-                direction.parameter.push_back({active.family, active.indices, sign * theta_scale});
+                const auto& active = model.active_parameters()[*slots[j - thermal]];
+                direction.parameter.push_back({active.family, active.indices, sign * theta_scale[j - thermal]});
             }
         }
         const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
@@ -349,10 +355,11 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
 
 ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry,
-    std::size_t a, std::size_t b, std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr) {
+    std::size_t a, std::size_t b, std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr,
+    std::optional<std::size_t> second = std::nullopt) {
     if (trace.pure_state.empty())
         return reference_partial_from_state(model, temperature, trace.composition,
-            stoichiometry, a, b, parameter, trace.state, true, batch);
+            stoichiometry, a, b, parameter, trace.state, true, batch, second);
     auto dilute = stoichiometry;
     for (std::size_t i = 0; i < dilute.size(); ++i)
         if (trace.pure_state[i]) dilute[i] = 0.0;
@@ -361,7 +368,7 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
     result.action = 0.0;
     if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0.0; })) {
         result = reference_partial_from_state(model, temperature, trace.composition,
-            dilute, a, b, parameter, trace.state, true, batch);
+            dilute, a, b, parameter, trace.state, true, batch, second);
         if (!result.action) return result;
     }
     for (std::size_t i = 0; i < dilute.size(); ++i) {
@@ -369,7 +376,7 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
         std::vector<double> composition(dilute.size(), 0.0), insertion(dilute.size(), 0.0);
         composition[i] = 1.0; insertion[i] = stoichiometry[i];
         const auto partial = reference_partial_from_state(model, temperature, composition,
-            insertion, a, b, parameter, *trace.pure_state[i], false, batch);
+            insertion, a, b, parameter, *trace.pure_state[i], false, batch, second);
         if (!partial.action) return partial;
         *result.action += *partial.action;
     }
@@ -382,12 +389,12 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
 // EqID: reference_single_insertion_taylor; each requested column uses the same solvent closure.
 NeutralReferenceReactionDiagnostic::Derivative reference_column(const HelmholtzModel& model, double temperature,
     const NeutralReferenceTrace& trace, const std::vector<double>& stoichiometry, std::size_t a, std::size_t b,
-    std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr) {
+    std::optional<std::size_t> parameter, ReferenceTaylorBatch* batch = nullptr, std::optional<std::size_t> second = std::nullopt) {
     core::Scope scope("reference_column");
     NeutralReferenceReactionDiagnostic::Derivative column;
-    column.temperature_order = a; column.pressure_order = b; column.parameter = parameter;
+    column.temperature_order = a; column.pressure_order = b; column.parameter = parameter; column.second_parameter = second;
     try {
-        const auto partial = reference_partial_from_trace(model, temperature, trace, stoichiometry, a, b, parameter, batch);
+        const auto partial = reference_partial_from_trace(model, temperature, trace, stoichiometry, a, b, parameter, batch, second);
         column.value = partial.action;
         column.diagnostics = partial.diagnostics;
         column.action_status = partial.status;
@@ -602,7 +609,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     std::size_t temperature_order,
     bool parameter_jets,
     std::size_t reference_order,
-    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values
+    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values,
+    const std::vector<std::size_t>& pair_coordinates
 ) {
     core::Scope scope("reaction_references");
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
@@ -624,6 +632,8 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         double(declaration.species_reference.size()), double(stoichiometries.size())};
     inputs.insert(inputs.end(), declaration.solute_molality_ratios.begin(), declaration.solute_molality_ratios.end());
     for (const auto species : declaration.species_reference) inputs.push_back(double(species));
+    inputs.push_back(double(pair_coordinates.size()));
+    for (const auto coordinate : pair_coordinates) inputs.push_back(double(coordinate));
     for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
         inputs.push_back(double(stoichiometries[row].size()));
         inputs.insert(inputs.end(), stoichiometries[row].begin(), stoichiometries[row].end());
@@ -723,6 +733,15 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                         diagnostic.derivatives.push_back(std::move(column));
                     }
                 }
+        // d2C/dtheta_a dtheta_b (EqID: reference_single_insertion_taylor), only for requested coordinate pairs.
+        for (std::size_t i = 0; i < pair_coordinates.size(); ++i)
+            for (std::size_t j = i; j < pair_coordinates.size(); ++j) {
+                auto column = reference_column(model, temperature, trace, stoichiometries[row], 0, 0,
+                    pair_coordinates[i], &preparation, pair_coordinates[j]);
+                if (!column.value) column.message = "reaction " + std::to_string(row) + " C_00 coordinates "
+                    + std::to_string(pair_coordinates[i]) + "," + std::to_string(pair_coordinates[j]) + ": " + column.message;
+                diagnostic.derivatives.push_back(std::move(column));
+            }
 
     }
     if (species_values) for (std::size_t r = 0; r < result.size(); ++r) {

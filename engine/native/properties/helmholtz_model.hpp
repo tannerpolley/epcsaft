@@ -383,7 +383,7 @@ struct NeutralReferenceReactionDiagnostic final {
     std::string message;
     struct Derivative final {
         std::size_t temperature_order = 0, pressure_order = 0;
-        std::optional<std::size_t> parameter;
+        std::optional<std::size_t> parameter, second_parameter;  // second_parameter >= parameter
         PropertyActionDiagnostics diagnostics;
         std::optional<double> value;
         std::string message;
@@ -391,12 +391,13 @@ struct NeutralReferenceReactionDiagnostic final {
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
     std::vector<Derivative> lower_derivatives;
-    // d^(a+b+[p]) C / dT^a dP^b [dtheta_p], nullopt where it was not admitted or not requested.
-    std::optional<double> derivative_value(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+    // d^(a+b+[p]+[q]) C / dT^a dP^b [dtheta_p] [dtheta_q], nullopt where it was not admitted or not requested.
+    std::optional<double> derivative_value(std::size_t a, std::size_t b, std::optional<std::size_t> p,
+        std::optional<std::size_t> q = std::nullopt) const {
         const auto parameter = [&p](const std::vector<std::optional<double>>& v) {
             return *p < v.size() ? v[*p] : std::nullopt; };
-        if (p && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
-        if (p && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
+        if (p && !q && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
+        if (p && !q && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
         if (!p && a + b == 0) return terminal_contraction;
         if (!p && a == 1 && b == 0) return terminal_contraction_temperature_derivative;
         if (!p && a == 2 && b == 0) return terminal_contraction_temperature_second_derivative;
@@ -404,13 +405,16 @@ struct NeutralReferenceReactionDiagnostic final {
         if (!p && a == 0 && b == 2) return terminal_contraction_pressure_second_derivative;
         if (!p && a == 1 && b == 1) return terminal_contraction_temperature_pressure_derivative;
         for (const auto& column : derivatives)
-            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p) return column.value;
+            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p
+                && column.second_parameter == q) return column.value;
         return std::nullopt;
     }
-    std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p) const {
+    std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p,
+        std::optional<std::size_t> q = std::nullopt) const {
         for (const auto* columns : {&lower_derivatives, &derivatives})
             for (const auto& column : *columns)
-                if (column.temperature_order == a && column.pressure_order == b && column.parameter == p && !column.value)
+                if (column.temperature_order == a && column.pressure_order == b && column.parameter == p
+                    && column.second_parameter == q && !column.value)
                     return column.message;
         return message;
     }
@@ -596,7 +600,8 @@ void reference_errors(const HelmholtzModel&, double, const std::vector<double>&,
 EPC_API ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
-    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false, ReferenceTaylorBatch* batch = nullptr);
+    std::optional<std::size_t> parameter, const State& state, bool infinite_dilution = false, ReferenceTaylorBatch* batch = nullptr,
+    std::optional<std::size_t> second_parameter = std::nullopt);
 
 struct SpeciesActivities final {
     std::optional<double> standard_molality_mol_per_kg;
@@ -625,7 +630,8 @@ EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
     bool parameter_jets = false,  // dC/dtheta for every active parameter
     std::size_t reference_order = 0,  // consumed C3/C4 and one-theta columns; 0 preserves lower work
-    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values = nullptr
+    std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values = nullptr,
+    const std::vector<std::size_t>& pair_coordinates = {}  // ascending; d2C/dtheta_a dtheta_b for a <= b among them
 );
 
 // Fugacity-based Henry constant H_i^px = lim f_i/x_i = RT rho0 exp(L_i) of a neutral solute in one
