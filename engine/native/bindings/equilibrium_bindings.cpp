@@ -381,7 +381,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(TopologyEvent, PhaseDisappeared, PhasesCoalesced);
     auto continuation_stops = nb::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
-         value <= static_cast<int>(ContinuationStop::critical_endpoint); ++value) {
+         value <= static_cast<int>(ContinuationStop::turning_point); ++value) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }

@@ -210,7 +210,7 @@ EPC_API EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& m
 enum class ContinuationStop {
     reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
     phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
-    step_too_small, budget_exhausted, critical_endpoint
+    step_too_small, budget_exhausted, critical_endpoint, turning_point
 };
 
 EPC_API const char* continuation_stop_name(ContinuationStop stop) noexcept;

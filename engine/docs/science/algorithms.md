@@ -1654,7 +1654,15 @@ accepted coordinates up to the caller's retry allowance and minimum step;
 invalid paths, nonfinite operands, infeasible solves, a singular implicit
 tangent at the accepted state (halving cannot change it), typed
 disappearance/coalescence and a corrected density outside the branch window
-are terminal. Passage through a critical point between consecutive accepted
+are terminal. A path that ends at the minimum step or the retry allowance
+reports `turning_point` instead when the squared path component of the unit
+tangent, $w = 1/(1 + \lVert dy/ds \rVert^2)$, extrapolated linearly in `s` from
+the last two accepted states, reaches zero no later than the first failed
+attempt from the last accepted state. Near a quadratic turning point (fold) of
+the declared branch, $w$ is linear in `s` and vanishes at the fold, so the
+accepted prefix ends within one attempted step of it; the message carries the
+extrapolated `s` and the step failure it replaces. The method does not
+pass the fold. Passage through a critical point between consecutive accepted
 states, where every nonzero component of a pair's inter-phase difference vector
 (delta ln eta and each delta x_i) changes sign, is that pair's coalescence:
 terminal `phases_coalesced` with the pair named and the swapped state retained

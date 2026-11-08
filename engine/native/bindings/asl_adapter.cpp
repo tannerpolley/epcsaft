@@ -494,7 +494,7 @@ ActionStatus continuation_status(eq::ContinuationStop stop) {
     switch (stop) {
     case Stop::invalid_path: case Stop::infeasible: return ActionStatus::DefiningEquationsNotSatisfied;
     case Stop::singular_jacobian: return ActionStatus::RankDeficient;
-    case Stop::branch_lost: case Stop::phase_disappeared: return ActionStatus::PhaseBoundaryNotDifferentiable;
+    case Stop::branch_lost: case Stop::phase_disappeared: case Stop::turning_point: return ActionStatus::PhaseBoundaryNotDifferentiable;
     case Stop::phases_coalesced: return ActionStatus::NonuniqueCoalescedPhases;
     case Stop::left_domain: return ActionStatus::OutsideInterval;
     case Stop::nonfinite: return ActionStatus::Nonfinite;

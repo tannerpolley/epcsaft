@@ -15,10 +15,11 @@ from epcsaft import (
     PropertyObservable, ThermochemistryRecord,
 )
 from epcsaft.equilibrium import (
-    Amounts, EOS_STANDARD_STATE_ID, Free, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial,
+    Amounts, Continuation, ContinuationStop, EOS_STANDARD_STATE_ID, Free, NeutralReference, Phase, Problem,
+    Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis, SolvedStateActionDirection, SolvedStateActionRequest,
     SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
-    compile_problem, solve_equilibrium, solved_state_actions, solved_state_first_actions,
+    compile_problem, continue_equilibrium, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
 from tests.native_inputs import ETHANE, parameters, same
 from tests.packets import parameters_json
@@ -492,6 +493,32 @@ def _reference_mea() -> tuple[Any, list[Reaction], NeutralReference, list[float]
     guess = request["continuation"]["state"]["phases"][0]["mole_fractions"]
     reference = NeutralReference(solvent="water", solute_molality_ratios=ratios, standard_molality_mol_per_kg=1.0)
     return model, reactions, reference, guess, system
+
+
+@pytest.mark.parametrize(("temperature", "pressure", "fold"), [(353.15, 20e3, 40862.5), (358.15, 45e3, 355.6175)])
+def test_mea_liquid_vapor_continuation_stops_at_its_turning_point(temperature: float, pressure: float, fold: float) -> None:
+    """The reacting liquid + vapor branch of the CO2/MEA/water feed 0.358/1/7.93 mol from 353.15 K, 45 kPa folds. With
+    the vapor amount pinned near 5.35 mol and P (or T) free, its lowest pressure at 353.15 K is 40,862.5 Pa and its
+    highest temperature at 45 kPa is 355.6175 K, so 20 kPa and 358.15 K have no state on it. Continuation toward
+    either names the turning point, ending within one accepted step of the fold."""
+    model, reactions, reference, guess, _ = _reference_mea()
+    feed = Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0, 0, 0, 0, 0, 0))))
+
+    def problem(T: float, P: float, liquid: list[float], vapor: list[float]) -> Problem:
+        return Problem(T=T, P=P, feed=feed, reactions=reactions, neutral_reference=reference, row_tolerance=1e-10,
+                       topology_declared=True, phases=[
+                           Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=liquid),
+                           Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=vapor)])
+
+    cold = solve_equilibrium(model, problem(353.15, 45e3, guess, [0.01, 0.002, 0.988]))
+    liquid, vapor = list(cold.mole_fractions[:9]), list(cold.mole_fractions[9:12])
+    start = problem(353.15, 45e3, liquid, vapor)
+    path = continue_equilibrium(model, start, problem(temperature, pressure, liquid, vapor), Continuation(
+        initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8), solve_equilibrium(model, start))
+    assert path.stop == ContinuationStop.turning_point, path.message
+    before, last = (state.pressure if pressure != 45e3 else state.temperature for state in path.states[-2:])
+    assert before is not None and last is not None
+    assert abs(last - fold) <= abs(last - before), (before, last, fold)
 
 
 def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:

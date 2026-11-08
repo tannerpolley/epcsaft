@@ -1591,6 +1591,7 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
     case ContinuationStop::step_too_small: return "step_too_small";
     case ContinuationStop::budget_exhausted: return "budget_exhausted";
     case ContinuationStop::critical_endpoint: return "critical_endpoint";
+    case ContinuationStop::turning_point: return "turning_point";
     }
     return "unknown";
 }
@@ -1721,6 +1722,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
     double dq = options.initial_step;
     std::size_t local_retries = 0;
     bool transfer = true;
+    double w = NAN, w_before = NAN, q_before = NAN, q_failed = 1.0;  // turning-point record
     while (true) {
         if (q >= 1.0) return finish(std::move(result), ContinuationStop::reached_target, "");
         if (result.accepted_steps >= options.max_steps)
@@ -1736,7 +1738,9 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
         Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
-            return sensitivity(current, y_current, path.lever(current), failure);
+            auto tangent = sensitivity(current, y_current, path.lever(current), failure);
+            w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
+            return tangent;
         }, q_try - q, anchors, parameter_path, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted)
@@ -1759,6 +1763,8 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
                     attempt.result->optimizer_state.reset();
                 }
             }
+            w_before = w;
+            q_before = q;
             q = q_try;
             ++result.accepted_steps;
             local_retries = 0;
@@ -1777,11 +1783,16 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         core::retain_failure(observations.first_numerical_failure, attempt.message, "continuation admission");
         reject(result, attempt, q_try);
         if (attempt.terminal) return finish(std::move(result), attempt.stop, attempt.message);
+        if (local_retries == 0) q_failed = q_try;
         const double halved = dq / 2.0;
-        if (halved < options.minimum_step)
-            return finish(std::move(result), ContinuationStop::step_too_small, attempt.message);
-        if (local_retries >= options.max_retries_per_step)
-            return finish(std::move(result), ContinuationStop::budget_exhausted, attempt.message);
+        if (halved < options.minimum_step || local_retries >= options.max_retries_per_step) {
+            // ALG-EQUILIBRIUM turning point: w = 1/(1 + |dy/ds|^2) of the last two accepted states vanishes by the first failed s.
+            const double fold = q + (q - q_before) * w / (w_before - w);
+            const auto stop = halved < options.minimum_step ? ContinuationStop::step_too_small : ContinuationStop::budget_exhausted;
+            if (!(w_before > w && w > 0.0 && fold <= q_failed)) return finish(std::move(result), stop, attempt.message);
+            return finish(std::move(result), ContinuationStop::turning_point, "path component of the tangent vanishes at s "
+                + std::to_string(fold) + "; " + continuation_stop_name(stop) + ": " + attempt.message);
+        }
         dq = halved;
         ++local_retries;
         ++result.retries;

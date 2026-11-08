@@ -3455,6 +3455,8 @@ class ContinuationStop:
     """A step/work/retry budget was exhausted."""
     critical_endpoint: ContinuationStop
     """Envelope tracing reached its declared critical stopping condition."""
+    turning_point: ContinuationStop
+    """Steps failed where the tangent's path component extrapolates to zero: a fold of the declared branch."""
 
 class ContinuationOptions:
     """Step and retry controls for continuation and phase envelopes.
