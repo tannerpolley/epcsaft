@@ -1,12 +1,15 @@
 """The ASL equilibrium record on the engine/README.md water/isobutanol record (298.15 K, 1e5 Pa, feed (0.7, 0.3) mol) with
-k_ij(isobutanol, water) and isobutanol eps/k active, q = (u_water, u_isobutanol, k_ij, eps/k). F1: values and exact actions
+k_ij(isobutanol, water) and isobutanol eps/k active, q = (T, P, u_water, u_isobutanol, k_ij, eps/k). F1: values and exact actions
 equal the direct Engine (bitwise at theta0 and for a record with no active parameters; 1e-12 relative at theta*). F2: the
 columns match central differences (verification only). F3: two temperatures recover theta* through Ipopt. F4: where the
 liquids merge the callback names the cause, and the next calls recover. M1-M3 repeat F1-F3 on a declared vapor-liquid
-pair: the packet-3 MEA/CO2/water flash (charged, reacting liquid; neutral vapor support) at 318.15 K and 5918.5286 Pa."""
+pair: the packet-3 MEA/CO2/water flash (charged, reacting liquid; neutral vapor support) at 318.15 K and 5918.5286 Pa.
+R1-R3 move T and P on the reference MEA declaration, whose ln K(T) laws, reaction references and neutral reference the
+record carries."""
 from __future__ import annotations
 
 import dataclasses
+import functools
 import json
 import shutil
 import subprocess
@@ -20,10 +23,10 @@ from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Var, chec
 from epcsaft import Mixture, Parameters, _core, regression
 from epcsaft import equilibrium as eq
 from tests.equilibrium.test_declared_starts import _mea_flash
-from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS, _mea_mapping
+from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS, _mea_mapping, _reference_mea
 from tests.packets import parameters_json
 
-NAMES, G0, G1 = ("water", "isobutanol"), (0.7, 0.3), (0.7, 0.285)
+NAMES, G0, G1, TP0 = ("water", "isobutanol"), (0.7, 0.3), (0.7, 0.285), (298.15, 1.0e5)
 THETA0, THETA_STAR, THETA_MERGED = (-0.0071, 257.13), (-0.0021, 258.13), (-0.0371, 257.13)
 OPTIONS = eq.Continuation(initial_step=0.05, minimum_step=1e-3, max_steps=200, max_retries_per_step=5)
 FUNCTION = "epcsaft_equilibrium_phase_component_amount"
@@ -62,22 +65,22 @@ def fgh(text: str, q: Any, row: int, order: int, components: int = 2) -> tuple[f
 
 
 def native(model: Mixture, feed: Any, target: eq.Problem | None = None) -> list[list[float]]:
-    """Per row: value, first actions, second actions (i <= j, packed order), from solve_equilibrium and solved_state_actions;
-    the feed controls are the first len(feed) components."""
+    """Per row: value, first actions, second actions (i <= j, packed order) over (T, P, feed, theta), from solve_equilibrium
+    and solved_state_actions; the feed controls are the first len(feed) components."""
     target = target or problem(feed)
     central = eq.solve_equilibrium(model, target)
     compiled = _core.compile_problem(model._model, target._native(model))
     k, n, m = len(feed), len(central.mole_fractions) // 2, len(model._model.active_parameter_values)
-    e = np.eye(k + m).tolist()
-    d = [eq.SolvedStateActionDirection(0.0, 0.0, column[:k] + [0.0] * (n - k), column[k:]) for column in e]
+    e = np.eye(2 + k + m).tolist()
+    d = [eq.SolvedStateActionDirection(c[0], c[1], c[2:2 + k] + [0.0] * (n - k), c[2 + k:]) for c in e]
     observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, c) for p in range(2) for c in range(n)]
 
     def batch(*directions: Any) -> Any:
         return _core.solved_state_actions(compiled, central, eq.SolvedStateActionRequest(observables, list(directions))).results
 
     zero = batch(eq.SolvedStateActionDirection(0.0, 0.0, [0.0] * n, [0.0] * m))
-    first = [batch(d[i]) for i in range(k + m)]
-    second = [batch(d[i], d[j]) for j in range(k + m) for i in range(j + 1)]
+    first = [batch(d[i]) for i in range(2 + k + m)]
+    second = [batch(d[i], d[j]) for j in range(2 + k + m) for i in range(j + 1)]
     return [[zero[r].value, *(b[r].action for b in first), *(b[r].action for b in second)] for r in range(2 * n)]
 
 
@@ -91,9 +94,9 @@ def test_record_equals_direct_engine() -> None:
     Engine bitwise, and each order returns the same value; at theta* (G0, G1) they match the edited packet to 1e-12."""
     model, inactive = mixture(), mixture(active=False)
     assert model._model.active_parameter_values == list(THETA0)
-    cases = [(record(model), [*G0, *THETA0], native(model, G0), True)]
-    cases += [(record(inactive), list(G), native(inactive, G), True) for G in (G0, G1)]
-    cases += [(record(model), [*G, *THETA_STAR], native(mixture(THETA_STAR), G), False) for G in (G0, G1)]
+    cases = [(record(model), [*TP0, *G0, *THETA0], native(model, G0), True)]
+    cases += [(record(inactive), [*TP0, *G], native(inactive, G), True) for G in (G0, G1)]
+    cases += [(record(model), [*TP0, *G, *THETA_STAR], native(mixture(THETA_STAR), G), False) for G in (G0, G1)]
     for text, q, want, bitwise in cases:
         values = [[fgh(text, q, row, order)[0] for row in range(4)] for order in (0, 1)]  # before any Hessian at q
         got = [callback_row(text, q, row) for row in range(4)]
@@ -108,14 +111,14 @@ def test_record_equals_direct_engine() -> None:
 def test_columns_match_central_differences() -> None:
     """F2, verification only: feed (h 1e-5 mol), k_ij (h 1e-5) and eps/k (h 1e-3 K) at h x {4, 1, 0.25}: every gradient
     entry (tau 1e-6) and every Hessian entry with a parameter (tau 1e-5) meet |D - A| <= tau|A| + 10 eps (|f+| + |f-|)/2h."""
-    text, eps, q = record(mixture()), float(np.finfo(float).eps), np.array([*G0, *THETA0])
+    text, eps, q = record(mixture()), float(np.finfo(float).eps), np.array([*TP0, *G0, *THETA0])
     exact = [fgh(text, q, row, 2) for row in range(4)]
-    for b, h0 in ((0, 1e-5), (1, 1e-5), (2, 1e-5), (3, 1e-3)):
+    for b, h0 in ((2, 1e-5), (3, 1e-5), (4, 1e-5), (5, 1e-3)):
         for h in (4 * h0, h0, 0.25 * h0):
-            plus, minus = ([fgh(text, q + s * h * np.eye(4)[b], row, 1) for row in range(4)] for s in (1, -1))
+            plus, minus = ([fgh(text, q + s * h * np.eye(6)[b], row, 1) for row in range(4)] for s in (1, -1))
             for row, (_, gradient, hessian) in enumerate(exact):
                 pairs = [(gradient[b], plus[row][0], minus[row][0], 1e-6)]
-                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(4) if b >= 2 or a >= 2]
+                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(2, 6) if b >= 4 or a >= 4]
                 for exact_value, fp, fm, tau in pairs:
                     assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
 
@@ -135,7 +138,7 @@ def test_parameter_estimation_ipopt_round_trip(tmp_path: Path, monkeypatch: pyte
     m.theta = Var([0, 1], initialize=dict(enumerate(THETA0)))
     m.amount = ExternalFunction(library=library, function=FUNCTION)
     for k, (T, target) in enumerate(zip((298.15, 348.15), targets, strict=True)):
-        m.add_component(f"target_{k}", Constraint(expr=m.amount(*G0, m.theta[0], m.theta[1], record(model, T), "1", "1") / target == 1))
+        m.add_component(f"target_{k}", Constraint(expr=m.amount(T, TP0[1], *G0, m.theta[0], m.theta[1], record(model, T), "1", "1") / target == 1))
     m.write(str(tmp_path / "estimate.nl"), format="nl")
     (tmp_path / "ipopt.opt").write_text("linear_solver mumps\n")
     external = subprocess.run([executable, "estimate.nl", "-AMPL"], cwd=tmp_path, capture_output=True, text=True, check=False)
@@ -155,14 +158,14 @@ def test_merged_liquids_name_the_cause_and_recover() -> None:
     from epcsaft.idaes import PropertyExternalFunction, asl_library
     model = mixture()
     text = record(model)
-    star, start = [callback_row(text, [*G0, *THETA_STAR], row) for row in range(4)], native(model, G0)
+    star, start = [callback_row(text, [*TP0, *G0, *THETA_STAR], row) for row in range(4)], native(model, G0)
     callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
     with pytest.raises(RuntimeError) as failure:
-        callback.evaluate([*G0, *THETA_MERGED, text, "1", "1"])
+        callback.evaluate([*TP0, *G0, *THETA_MERGED, text, "1", "1"])
     assert str(failure.value).startswith("epcsaft_equilibrium:phase_boundary_not_differentiable:")
     assert "parameter continuation: phase_disappeared" in str(failure.value)
-    assert [[x.hex() for x in callback_row(text, [*G0, *THETA_STAR], row)] for row in range(4)] == [[x.hex() for x in r] for r in star]
-    assert [[x.hex() for x in callback_row(text, [*G0, *THETA0], row)] for row in range(4)] == [[float(x).hex() for x in r] for r in start]
+    assert [[x.hex() for x in callback_row(text, [*TP0, *G0, *THETA_STAR], row)] for row in range(4)] == [[x.hex() for x in r] for r in star]
+    assert [[x.hex() for x in callback_row(text, [*TP0, *G0, *THETA0], row)] for row in range(4)] == [[float(x).hex() for x in r] for r in start]
 
 
 
@@ -201,20 +204,20 @@ def test_vapor_liquid_record_equals_direct_engine() -> None:
         amounts = [direct.amounts[p] * direct.mole_fractions[p * C + c] for p in range(2) for c in range(C)]
         want = native(model, u, mea_problem(u))
         for row in range(2 * C):
-            got = callback_row(text, u, row, C)
+            got = callback_row(text, [MEA_T, MEA_P, *u], row, C)
             assert got[0] == pytest.approx(amounts[row], rel=1e-12, abs=0.0), (u, row)
             assert got[1:] == pytest.approx(want[row][1:], rel=1e-12, abs=0.0), (u, row)
-        assert [callback_row(text, u, C + c, C)[0] for c in range(3, C)] == [0.0] * 6
+        assert [callback_row(text, [MEA_T, MEA_P, *u], C + c, C)[0] for c in range(3, C)] == [0.0] * 6
 
 
 def test_vapor_liquid_columns_match_central_differences() -> None:
     """M2, verification only: each feed control at h = 1e-4 u0 x {1, 1/4, 1/16}; every gradient entry meets
     |D - A| <= 1e-6 |A| + 10 max(eps, row_tolerance) (|f+| + |f-|)/2h, since a re-solve reproduces amounts to its row tolerance."""
-    text, noise, q = mea_record(mea_model()), 10 * max(float(np.finfo(float).eps), 1e-12), np.array(U0)
+    text, noise, q = mea_record(mea_model()), 10 * max(float(np.finfo(float).eps), 1e-12), np.array([MEA_T, MEA_P, *U0])
     exact = [fgh(text, q, row, 1, C)[1] for row in range(2 * C)]
-    for b in range(3):
-        for h in (1e-4 * U0[b] * s for s in (1.0, 0.25, 0.0625)):
-            plus, minus = ([fgh(text, q + s * h * np.eye(3)[b], row, 0, C)[0] for row in range(2 * C)] for s in (1, -1))
+    for b in range(2, 5):
+        for h in (1e-4 * U0[b - 2] * s for s in (1.0, 0.25, 0.0625)):
+            plus, minus = ([fgh(text, q + s * h * np.eye(5)[b], row, 0, C)[0] for row in range(2 * C)] for s in (1, -1))
             for row, gradient in enumerate(exact):
                 fp, fm = plus[row], minus[row]
                 assert abs((fp - fm) / (2 * h) - gradient[b]) <= 1e-6 * abs(gradient[b]) + noise * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
@@ -233,7 +236,7 @@ def test_vapor_liquid_ipopt_round_trip(tmp_path: Path, monkeypatch: pytest.Monke
     m = ConcreteModel()
     m.u = Var(initialize=U0[0], bounds=(2.3, 2.9))
     m.amount = ExternalFunction(library=library, function=FUNCTION)
-    m.target = Constraint(expr=m.amount(m.u, *U0[1:], mea_record(mea_model()), "0", "3") == 6.302671442747203)
+    m.target = Constraint(expr=m.amount(MEA_T, MEA_P, m.u, *U0[1:], mea_record(mea_model()), "0", "3") == 6.302671442747203)
     m.write(str(tmp_path / "roundtrip.nl"), format="nl")
     (tmp_path / "ipopt.opt").write_text("linear_solver mumps\n")
     external = subprocess.run([executable, "roundtrip.nl", "-AMPL"], cwd=tmp_path, capture_output=True, text=True, check=False)
@@ -258,6 +261,96 @@ def test_vapor_support_refusals() -> None:
     callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
     for edited, cause in ((text.replace(vapor, "1:V,5:vapor,1:4,1:0,1:1,1:2,1:3,"), contract),
                           (text.replace("1:L,6:liquid,", "1:L,5:vapor,"), contract),
-                          (text.replace("equilibrium.v5", "equilibrium.v4"), "")):
+                          (text.replace("equilibrium.v6", "equilibrium.v5"), "")):
         with pytest.raises(RuntimeError, match="epcsaft_equilibrium:.*" + cause):
-            callback.evaluate([*U0, edited, "0", "3"])
+            callback.evaluate([MEA_T, MEA_P, *U0, edited, "0", "3"])
+
+
+# R: the reference MEA declaration (engine/data/reference/mea-nominally-unloaded, without model thermochemistry, which the
+# record refuses) with a declared liquid + vapor pair at 353.15 K and 45 kPa; q = (T, P, u_CO2, u_MEA, u_water), the
+# loading of the Hilliard (2008) Cp row. Both phases guess the anchor's own solved compositions.
+R_Q0 = (353.15, 45000.0, 0.358, 1.0, 7.929776437398854)
+
+
+@functools.cache
+def reference_mea() -> tuple[Mixture, Any]:
+    """The model and target(q), the declared problem at q."""
+    model, reactions, reference, guess, _ = _reference_mea(thermochemistry=False)
+
+    def target(q: Any, liquid: Any = guess, vapor: Any = (0.01, 0.002, 0.988)) -> eq.Problem:
+        return eq.Problem(T=q[0], P=q[1], row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
+                          feed=eq.Amounts(dict(zip(_MEA, (*q[2:], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), strict=True))),
+                          phases=[eq.Phase("L", kind="liquid", support=_MEA, amount=eq.Free(), composition_guess=list(liquid)),
+                                  eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Free(), composition_guess=list(vapor))])
+    x = eq.solve_equilibrium(model, target(R_Q0)).mole_fractions
+    return model, lambda q: target(q, x[:C], x[C:C + 3])
+
+
+def reference_record() -> str:
+    model, target = reference_mea()
+    options = eq.Continuation(initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8)
+    return eq.asl_record(model, target(R_Q0), options, [0.0] * C, np.eye(C, 3).tolist(), list(R_Q0[2:]), 1, 0.01)
+
+
+def test_reference_record_equals_direct_engine() -> None:
+    """R1: at the anchor every row's value, gradient and packed Hessian over q equal solve_equilibrium plus
+    solved_state_actions on the declared problem bitwise; at (353.65 K, 45500 Pa), and there with u_CO2 0.36 mol, they
+    equal the direct solve of the declared target to 1e-12 relative."""
+    model, target = reference_mea()
+    text = reference_record()
+    for q, bitwise in ((R_Q0, True), ((353.65, 45500.0, *R_Q0[2:]), False), ((353.65, 45500.0, 0.36, *R_Q0[3:]), False)):
+        want = native(model, q[2:], target(q))
+        for row in range(2 * C):
+            got = callback_row(text, q, row, C)
+            if bitwise:
+                assert [x.hex() for x in got] == [float(x).hex() for x in want[row]], (q, row)
+            else:
+                assert got == pytest.approx(want[row], rel=1e-12, abs=0.0), (q, row)
+
+
+def test_reference_columns_match_central_differences() -> None:
+    """R2, verification only: T at {1e-3, 2.5e-4, 6.25e-5} K, P at {0.45, 0.1125, 0.028125} Pa and feed j at
+    1e-5 u_j x {16, 4, 1} mol; at 2.5e-6 u_water the re-solve noise in the P action (1e-13 relative) exceeds the 10 eps
+    allowance on the small P-u_water entries. Each value difference meets |D - A| <= 1e-6 |A| + 10 eps (|f+| + |f-|)/2h against its
+    gradient entry, and each first-action difference meets it with tau 1e-5 against its Hessian entry, so every second
+    action, including T-T, T-P and P-P, is checked from both of its columns."""
+    text, eps, q = reference_record(), float(np.finfo(float).eps), np.array(R_Q0)
+    exact = [fgh(text, q, row, 2, C) for row in range(2 * C)]
+    for b, h0 in enumerate((1e-3, 0.45, *(1.6e-4 * u for u in R_Q0[2:]))):
+        for h in (h0, h0 / 4, h0 / 16):
+            plus, minus = ([fgh(text, q + s * h * np.eye(5)[b], row, 1, C) for row in range(2 * C)] for s in (1, -1))
+            for row, (_, gradient, hessian) in enumerate(exact):
+                pairs = [(gradient[b], plus[row][0], minus[row][0], 1e-6)]
+                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(5)]
+                for exact_value, fp, fm, tau in pairs:
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
+
+
+def test_reference_temperature_pressure_ipopt_round_trip(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """R3: with u fixed at the anchor, Ipopt (tol 1e-10, "Optimal Solution Found" only) frees T in [353.15, 354.15] K and
+    P in [44000, 46000] Pa from the anchor and recovers (353.65 K, 45500 Pa) from the vapor CO2 and liquid carbonate amounts
+    there, each relative to its target, within |J*^-1| (tol + 1e-12) rounded up: 6e-9 K and 1.1e-5 Pa. The external AMPL
+    Ipopt exits with code 0 and reports no callback failure."""
+    from idaes.core.solvers import get_solver
+    from epcsaft.idaes import asl_library, solve_with_diagnostics
+    solver, executable = get_solver(), shutil.which("ipopt") or str(Path.home() / ".idaes/bin/ipopt")
+    if not solver.available(exception_flag=False) or not Path(executable).is_file():
+        pytest.skip("Ipopt executable unavailable")
+    library = str(asl_library())
+    monkeypatch.setenv("AMPLFUNC", library)
+    text = reference_record()
+    m = ConcreteModel()
+    m.T, m.P = Var(initialize=353.15, bounds=(353.15, 354.15)), Var(initialize=45000.0, bounds=(44000.0, 46000.0))
+    m.amount = ExternalFunction(library=library, function=FUNCTION)
+    m.co2 = Constraint(expr=m.amount(m.T, m.P, *R_Q0[2:], text, "1", "0") / 0.03306804468947244 == 1)
+    m.carbonate = Constraint(expr=m.amount(m.T, m.P, *R_Q0[2:], text, "0", "6") / 0.0006570839846201848 == 1)
+    m.write(str(tmp_path / "roundtrip.nl"), format="nl")
+    (tmp_path / "ipopt.opt").write_text("linear_solver mumps\ntol 1e-10\nacceptable_iter 0\n")
+    external = subprocess.run([executable, "roundtrip.nl", "-AMPL"], cwd=tmp_path, capture_output=True, text=True, check=False)
+    assert external.returncode == 0 and "epcsaft_equilibrium failure" not in external.stderr, external.stdout + external.stderr
+    assert "Optimal Solution Found" in (tmp_path / "roundtrip.sol").read_text()
+    solver.options["tol"] = 1e-10
+    log = tmp_path / "ipopt.log"
+    assert check_optimal_termination(solve_with_diagnostics(solver, m, logfile=log))
+    assert "Optimal Solution Found" in log.read_text() and "epcsaft_equilibrium failure" not in log.read_text()  # not "Acceptable"
+    assert abs(value(m.T) - 353.65) <= 6e-9 and abs(value(m.P) - 45500.0) <= 1.1e-5, (value(m.T), value(m.P))

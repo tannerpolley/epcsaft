@@ -456,9 +456,10 @@ def test_zero_feed_ions_allow_provisional_flash_start() -> None:
         assert abs(balance) <= 1e-12 * sum(feed.values()), (row, balance)
 
 
-def _reference_mea() -> tuple[Any, list[Reaction], NeutralReference, list[float], dict[str, Any]]:
-    """The Engine-owned reference declaration engine/data/reference/mea-nominally-unloaded: model with ideal
-    calorics, reactions, the application's neutral reference, the shipped liquid guess and the reaction system."""
+def _reference_mea(thermochemistry: bool = True) -> tuple[Any, list[Reaction], NeutralReference, list[float], dict[str, Any]]:
+    """The Engine-owned reference declaration engine/data/reference/mea-nominally-unloaded: model (with ideal
+    calorics unless thermochemistry is False), reactions, the application's neutral reference, the shipped liquid guess
+    and the reaction system."""
     root = Path(__file__).resolve().parents[2] / "data" / "reference"
     request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
     system = request["reaction_system"]
@@ -479,7 +480,7 @@ def _reference_mea() -> tuple[Any, list[Reaction], NeutralReference, list[float]
                for k in range(4)]
     lower, upper = mea["range_k"]
     intervals[1] = [IdealInterval(lower, upper, True, True, IdealCorrelation(IdealPolynomial(shifted, centre, 0.0, 0.0), p0))]
-    model = Mixture(Parameters.from_mapping(mapping), thermochemistry=ThermochemistryRecord(p0, intervals))
+    model = Mixture(Parameters.from_mapping(mapping), thermochemistry=ThermochemistryRecord(p0, intervals) if thermochemistry else None)
     reactions = []
     for record in system["engine_reactions"]:
         law, reference = record["engine_correlation"], record["engine_reference"]

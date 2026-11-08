@@ -26,7 +26,7 @@ struct AslFeedMap {
         require(offset.size() == n && matrix.size() == n && problem.feed.values.size() == n);
         require(identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0);
         require(!problem.temperature.free && !problem.pressure.free && problem.feed.kind == FeedKind::Amounts);
-        require(problem.phases.size() == 2 && problem.topology_declared && !problem.source_reference);
+        require(problem.phases.size() == 2 && problem.topology_declared);
         // At least one liquid; a vapor's declared support holds only zero-charge components.
         require(problem.phases[0].kind == PhaseKind::Liquid || problem.phases[1].kind == PhaseKind::Liquid);
         for (const auto& p : problem.phases) {
@@ -72,6 +72,7 @@ public:
         if (values.size() > 64) throw std::invalid_argument("ASL record vector exceeds 64");
         put(values.size()); for (const auto& v : values) put(v);
     }
+    template<class T> void optional(const std::optional<T>& v) { vector(v ? std::vector<T>{*v} : std::vector<T>{}); }
     std::string finish() const {
         if (text_.size() > 4 * 1024 * 1024) throw std::invalid_argument("ASL record exceeds 4 MiB");
         return text_;
@@ -99,10 +100,15 @@ inline void put_active(AslRecordWriter& w, const std::vector<ActiveParameter>& a
     for (const auto& a : active) w.put(static_cast<std::size_t>(a.family)), w.vector(a.indices);
 }
 
+// ln K(T) law coefficients and interval in record order; standard_state_id follows them.
+template <class Law> auto law_fields(Law& c) {
+    return std::array{&c.a, &c.b, &c.c, &c.d, &c.reference_temperature, &c.temperature_min, &c.temperature_max, &c.e, &c.f};
+}
+
 inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active, const EquilibriumProblem& p,
                               const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v5");
+    w.put("epcsaft.asl.equilibrium.v6");
     put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
@@ -110,16 +116,30 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
     for (const auto& phase : p.phases) {
         w.put(phase.name); w.put(phase.kind == PhaseKind::Liquid ? "liquid" : "vapor"); w.vector(phase.support); w.put(phase.support_declared);
         w.put("free"); w.put(phase.amount.fraction); w.vector(phase.composition_guess);
-        w.vector(phase.packing_guess ? std::vector<double>{*phase.packing_guess} : std::vector<double>{});
+        w.optional(phase.packing_guess);
     }
     w.put("reactions"); w.put(p.reactions.size());
     for (const auto& r : p.reactions) {
-        if (r.correlation || r.reference || r.equilibrium_constant.has_value() == r.affinity_j_per_mol.has_value())
-            throw std::invalid_argument("ASL requires exactly one scalar reaction target");
-        w.put(r.name); w.vector(r.stoichiometry); w.put(r.equilibrium_constant ? "K" : "affinity");
-        w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);
+        if (r.equilibrium_constant.has_value() + r.affinity_j_per_mol.has_value() + r.correlation.has_value() != 1)
+            throw std::invalid_argument("ASL requires exactly one reaction target: K, affinity or correlation");
+        w.put(r.name); w.vector(r.stoichiometry);
+        w.put(r.correlation ? "correlation" : r.equilibrium_constant ? "K" : "affinity");
+        if (const auto& c = r.correlation) {
+            for (const double* v : law_fields(*c)) w.put(*v);
+            w.put(c->standard_state_id);
+        } else w.put(r.equilibrium_constant ? *r.equilibrium_constant : *r.affinity_j_per_mol);
+        // Reference flag; then P0 (empty: system pressure) and the ReferenceSourceBasis index.
+        w.put(r.reference.has_value());
+        if (r.reference) w.optional(r.reference->reference_pressure_pa), w.put(std::size_t(r.reference->source_basis));
     }
     w.put("standard_gibbs_j_per_mol"); w.vector(p.standard_gibbs_j_per_mol);
+    // Neutral-reference flag; then solvent index (empty: none), solute molality ratios, m0 and SpeciesReference indices.
+    w.put("source_reference"), w.put(p.source_reference.has_value());
+    if (const auto& s = p.source_reference) {
+        w.optional(s->solvent_index), w.vector(s->solute_molality_ratios), w.put(s->standard_molality_mol_per_kg);
+        w.put(s->species_reference.size());
+        for (auto v : s->species_reference) w.put(std::size_t(v));
+    }
     w.put("topology_declared"); w.put(p.topology_declared); w.put("solver_options");
     const auto effective = p.solver_options.resolved(solver_options);
     for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));

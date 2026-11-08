@@ -466,7 +466,7 @@ branches as `success=False` with `message` and `convergence.stop`, but a failure
 evaluate the returned point still raises `EosError` or `ParameterError`; handle both.
 `solve_equilibrium_starts` records an attempt's exception in `causes` instead of raising.
 
-For a fixed-T/P equilibrium of two declared free phases (two liquids, or a liquid and a vapor whose declared
+For an equilibrium at fixed T and P of two declared free phases (two liquids, or a liquid and a vapor whose declared
 support holds only zero-charge components), `equilibrium.asl_record`
 constructs the immutable record consumed by the installed
 `epcsaft_equilibrium_phase_component_amount` external function:
@@ -485,14 +485,16 @@ feed_offset, feed_matrix = [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]]  # one control p
 anchor_controls, identity_component, minimum_gap = [0.7, 0.3], 1, 0.1  # isobutanol: x_L1 - x_L2 > 0.1
 record = eq.asl_record(model, problem, continuation, feed_offset,
                        feed_matrix, anchor_controls, identity_component, minimum_gap)
-# Pyomo ExternalFunction: (*controls, *theta, record, "0" or "1", str(component_index))
+# Pyomo ExternalFunction: (T, P, *controls, *theta, record, "0" or "1", str(component_index))
 print(len(record))                                            # characters in the encoded record
 ```
 
 Controls and returned amounts are mol on the caller's declared batch basis.
-The real arguments are `q = (controls, theta)`: theta holds the model's active EOS
-parameters in `active_parameters()` order and native units (a k_ij may be negative),
-and a record built on a model without active parameters takes the controls only.
+The real arguments are `q = (T [K], P [Pa], controls, theta)`: the problem's T and P
+are the anchor values, and finite positive T and P move the fixed intensives. Theta
+holds the model's active EOS parameters in `active_parameters()` order and native
+units (a k_ij may be negative); a record built on a model without active parameters
+takes no theta.
 The record carries the active families and slots, not their values; the starting
 theta is the model's `active_parameter_values`.
 The feed is `n = feed_offset + feed_matrix @ controls`, with component rows and
@@ -500,24 +502,31 @@ control columns. Offset and columns must be charge neutral; physical feed and
 controls are nonnegative, including zero incoming reactive complexes. The anchor
 must reproduce the supplied absolute feed. The selected component mole-fraction
 gap (phase 0 minus phase 1) must exceed `minimum_gap`; indices and supports follow
-the supplied model order. Scalar reaction K or affinity and explicit problem
-standard Gibbs references are transported; a reaction whose K underflows is
-declared by its affinity `-R T ln K`. Version 5 carries explicit base-EOS
-and association selections, the active parameters and each phase's kind; earlier
-records are rejected without guessed defaults. Temperature-dependent reaction
-correlations, neutral-reference transformations and model
-thermochemistry records are rejected rather than silently omitted.
+the supplied model order. Each reaction carries exactly one target: a scalar K, an
+affinity in J/mol, or a ln K(T) correlation with all its fields and interval; a
+reaction whose K underflows is declared by its affinity `-R T ln K`. Reaction
+references, the problem's neutral reference and explicit standard Gibbs values are
+transported. At a moved T a scalar K and an affinity stay constant, as in the native
+problem, and a T outside a correlation's interval is the native refusal. With an
+explicit standard Gibbs value and a T-varying target the native refuses every T
+action (`missing_thermochemistry`); values are unaffected. Version 6 carries explicit
+base-EOS and association selections, the active parameters, each phase's kind, the
+reaction laws and references and the neutral reference; earlier records are rejected
+without guessed defaults. Model thermochemistry records and species-thermochemistry
+reaction targets are rejected rather than silently omitted.
 
-For an observable `y(n, theta)`, the callback returns the gradient and the packed
-lower-triangle Hessian in `q`: `J_y B` and `B.T H_y B` in the control columns, where
-`B = feed_matrix`, and native parameter actions in the theta columns, including the
-mixed control-theta entries. E5 owns these implicit actions, not a finite-difference
+For an observable `y(T, P, n, theta)`, the callback returns the gradient and the packed
+lower-triangle Hessian in `q`: native T and P actions in their columns, `J_y B` and
+`B.T H_y B` in the control columns, where `B = feed_matrix`, and native parameter
+actions in the theta columns, including every mixed entry. The native actions own the
+ln K(T), reaction-reference and density chains in T and P. E5 owns these implicit actions, not a finite-difference
 callback. Pyomo owns any additional control products, ratios and process units.
 Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap
 checks admit it. Otherwise it continues from the immutable anchor: a parameter
-continuation at the anchor feed moves theta, then a feed continuation runs in the
-model at theta, and the first stop is the reported failure. A parameter value the
+continuation at the anchor T, P and feed moves theta, then one continuation moves
+T, P and the feed together in the model at theta, and the first stop is the reported
+failure. A parameter value the
 model refuses returns `OutsideInterval`. An admitted state need not be reachable by a straight path from the
 anchor. Each distinct record, by
 exact content, is prepared once per process and keeps its own model, anchor

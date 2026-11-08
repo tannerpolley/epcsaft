@@ -299,6 +299,10 @@ public:
         return result;
     }
     double number() { return parse_decimal(next().c_str(), "record number"); }
+    template<class Read> auto optional(Read read) {  // a vector of length 0 or 1
+        const auto v = vector(read, 1);
+        return v.empty() ? std::nullopt : std::optional(v.front());
+    }
     template<class Read> auto vector(Read read, std::size_t maximum = 64) {
         std::vector<decltype(read())> result;
         const auto count = integer(maximum);
@@ -416,7 +420,7 @@ auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v5");
+    reader.field("epcsaft.asl.equilibrium.v6");
     const auto document = read_document(reader);
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
@@ -440,8 +444,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         if (reader.next() != "free") reject("equilibrium callback requires free phase amounts");
         phase.amount.fraction = reader.number();
         phase.composition_guess = reader.vector([&] { return reader.number(); });
-        const auto packing = reader.vector([&] { return reader.number(); }, 1);
-        if (!packing.empty()) phase.packing_guess = packing.front();
+        phase.packing_guess = reader.optional([&] { return reader.number(); });
         return phase;
     });
     reader.field("reactions");
@@ -452,11 +455,20 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         const auto target = reader.next();
         if (target == "K") r.equilibrium_constant = reader.number();
         else if (target == "affinity") r.affinity_j_per_mol = reader.number();
-        else reject("unsupported reaction target");
+        else if (target == "correlation") {
+            auto& c = r.correlation.emplace();
+            for (double* v : eq::law_fields(c)) *v = reader.number();
+            c.standard_state_id = reader.next();
+        } else reject("unsupported reaction target");
+        if (reader.integer(1) != 0) r.reference = {reader.optional([&] { return reader.number(); }), epcsaft::ReferenceSourceBasis(reader.integer(1))};
         return r;
     });
     reader.field("standard_gibbs_j_per_mol");
     problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
+    reader.field("source_reference");
+    if (reader.integer(1) != 0)  // braced initialization reads left to right
+        problem.source_reference = {reader.optional([&] { return reader.integer(); }), reader.vector([&] { return reader.number(); }),
+            reader.number(), reader.vector([&] { return epcsaft::SpeciesReference(reader.integer(2)); })};
     reader.field("topology_declared");
     problem.topology_declared = reader.integer(1) != 0;
     reader.field("solver_options");
@@ -479,7 +491,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     reader.finish();
     context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, std::nullopt, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
-    const auto rows = 2 * document.component_ids.size(), n = context->map.anchor.size() + active.size();
+    const auto rows = 2 * document.component_ids.size(), n = 2 + context->map.anchor.size() + active.size();
     context->values.resize(rows);
     context->gradients.assign(rows, std::vector<double>(n));
     context->hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
@@ -523,11 +535,11 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
     return result.states.back();
 }
 
-// q = (feed controls, theta). A new q first solves directly in the model at theta; on failure a parameter leg at the
-// anchor (T, P, feed) precedes the feed leg, since a parameter path moves nothing else.
+// q = (T, P, feed controls, theta). A new q first solves directly in the model at theta; on failure a parameter leg at the
+// anchor (T, P, feed) precedes one leg moving T, P and the feed together, since a parameter path moves nothing else.
 void select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
-    const std::vector<double> feed(q.begin(), q.begin() + controls), theta(q.begin() + controls, q.end());
+    const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
     context.compiled.reset();  // it points at its model
     if (theta == context.model->active_parameter_values()) context.shifted.reset();
     if (theta != (context.shifted ? *context.shifted : *context.model).active_parameter_values()) try {
@@ -535,10 +547,12 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     } catch (const std::invalid_argument& error) { throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, error.what()); }
     const auto& model = context.shifted ? *context.shifted : *context.model;
     auto target = context.anchor;
+    target.temperature = eq::FreeValue::fixed(q[0]), target.pressure = eq::FreeValue::fixed(q[1]);
     target.feed.values = context.map.amounts(feed);
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
-    if (feed == context.map.anchor && !context.shifted) context.central = context.anchor_result;
+    const bool moved = feed != context.map.anchor || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
+    if (!moved && !context.shifted) context.central = context.anchor_result;
     else try {
         context.central = eq::solve_equilibrium(model, target);
         require_central(context, context.central, observable);
@@ -548,7 +562,7 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
         };
         context.central = context.anchor_result;
         if (context.shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
-        if (feed != context.map.anchor) leg(model, target, std::vector<double>{}, "continuation");
+        if (moved) leg(model, target, std::vector<double>{}, "continuation");
     }
     require_central(context, context.central, observable);
     context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
@@ -562,11 +576,11 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         for (std::size_t component = 0; component < context.map.offset.size(); ++component)
             request.observables.push_back({eq::SolvedStateObservableKind::PhaseComponentAmount, phase, component});
     const auto controls = context.map.anchor.size();
-    for (const int coordinate : coordinates) {  // a feed control column, then a parameter column
-        std::vector<double> direction(controls, 0.0), theta(context.model->active_parameters().size(), 0.0);
-        const auto k = static_cast<std::size_t>(coordinate);
-        if (coordinate >= 0) (k < controls ? direction.at(k) : theta.at(k - controls)) = 1.0;
-        request.directions.push_back({0.0, 0.0, context.map.amounts(direction, true), theta});
+    for (const int coordinate : coordinates) {  // a q column (T, P, feed controls, theta); -1 is no direction
+        std::vector<double> e(2 + controls + context.model->active_parameters().size(), 0.0);
+        if (coordinate >= 0) e.at(coordinate) = 1.0;
+        const auto theta = e.begin() + 2 + controls;
+        request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
     auto batch = eq::solved_state_actions(*context.compiled, context.central, request);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
@@ -616,13 +630,13 @@ double equilibrium_amount(arglist* arguments) {
         observable = eq::solved_state_observable_id({eq::SolvedStateObservableKind::PhaseComponentAmount, p, c});
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "equilibrium", [&] { return prepare_equilibrium(record, observable); });
-        const auto controls = context.map.anchor.size();
+        const auto controls = 2 + context.map.anchor.size();  // T, P and the feed controls
         if (std::size_t(n) != controls + context.model->active_parameters().size() || c >= context.map.offset.size())
             reject("control/observable dimension mismatch");
         const std::vector<double> q(arguments->ra, arguments->ra + n);  // a parameter may be negative (k_ij)
         for (std::size_t i = 0; i < q.size(); ++i) {
             if (!std::isfinite(q[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
-            if (i < controls && q[i] < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
+            if (i < controls && (i < 2 ? q[i] <= 0.0 : q[i] < 0.0)) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
         if (context.order < 0 || context.feed != q) select_state(context, q, observable);
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
