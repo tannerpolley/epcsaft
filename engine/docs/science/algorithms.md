@@ -3427,8 +3427,19 @@ compilation.
 
 #### Supplied-guess cap
 
-For a consumed original declared composition guess, first apply the existing supported
-positivity handling and normalization. Select species with
+For a consumed original declared composition guess, first raise each positive entry
+below `EQUILIBRIUM_TRACE_MOIETY_FRACTION` to that value, then apply the existing
+supported positivity handling and normalization. Ipopt places an entry below
+`EQUILIBRIUM_COMPOSITION_BOX` on the box. There its log-composition coordinate has
+objective gradient and curvature proportional to $x_i$, so only the barrier acts on it.
+In the reference MEA liquid + vapor at 353.15 K and 41 kPa, the guess carried
+H3O+ = 1.1e-11 and OH- = 1.7e-10. One full step moved both ions to $x\approx0.25$; the
+water fraction then collapsed into a salt-rich stationary point, and the polish refused
+it. Seeded at or above 1e-7, both ions converge onto the liquid–vapor branch from
+41 to 45 kPa (353.15 K) and from 50 to 54 kPa (358.15 K). Either ion left on the box
+fails somewhere on that grid.
+
+The cap then selects species with
 $0<U_i<$ `EQUILIBRIUM_TRACE_MOIETY_FRACTION`, where $U_i$ is the compiled feed
 fraction when $B=I$, otherwise the positive compiled attainable amount divided by
 feed total. A zero compiled bound stays uncapped. Let $R$ be the sum removed by

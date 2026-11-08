@@ -39,15 +39,18 @@ std::vector<double> seed_composition(const CompiledSystem& compiled, std::size_t
                       std::vector<double> composition,
                       std::vector<double>& point, std::size_t offset, bool declared = false) {
     const auto& spec = compiled.problem.phases[phase];
+    const bool guessed = declared && spec.declared_composition_guess;
     double total = 0.0;
     for (std::size_t i = 0; i < spec.support.size(); ++i) {
         const std::size_t species = spec.support[i];
         double value = composition[species];
         if (!(value > 0.0)) value = 1.0 / static_cast<double>(spec.support.size());
+        // ALG-EQUILIBRIUM trace floor: a guessed entry on the composition box feels only the barrier.
+        else if (guessed) value = std::max(value, policy::EQUILIBRIUM_TRACE_MOIETY_FRACTION.value);
         point[offset + i] = value;
         total += value;
     }
-    if (declared && spec.declared_composition_guess) {
+    if (guessed) {
         const std::size_t components = compiled.feed_composition.size();
         bool identity = compiled.B.size() == components;
         for (std::size_t i = 0; i < compiled.B.size(); ++i)

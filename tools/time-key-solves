@@ -183,7 +183,7 @@ def unloaded_declaration():
             items.append(node)
         elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id == '_MEA':
             items.append(node)
-        elif isinstance(node, ast.FunctionDef) and node.name == '_mea_mapping':
+        elif isinstance(node, ast.FunctionDef) and node.name in ('_mea_mapping', '_reference_mea'):
             items.append(node)
     function = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
                     and x.name == 'test_nominally_unloaded_mea_resolves_trace_ion_stationarity')

@@ -455,13 +455,9 @@ def test_zero_feed_ions_allow_provisional_flash_start() -> None:
         assert abs(balance) <= 1e-12 * sum(feed.values()), (row, balance)
 
 
-def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:
-    """#261: 7 mol MEA/kg water at CO2 loading 1e-5, 353.15 K and 101325 Pa (engine/data/reference/
-    mea-nominally-unloaded, Amine-Thermodynamics #124 record). CO2 (4.9e-13) and H3O+ (1.6e-12) lie far below
-    the optimizer box, so the polish starts at raw rows near 10. The former three-step cap stopped a still
-    quadratic contraction with every ionic stationarity row near -1.8e-9 z_i^2 under a 7.6e-12 classified
-    residual; continuing while raw rows exceed the criterion reaches rounding at the fourth step. The equilibrium heat-capacity action at the polished state
-    matches the centered enthalpy difference of re-solved neighbours."""
+def _reference_mea() -> tuple[Any, list[Reaction], NeutralReference, list[float], dict[str, Any]]:
+    """The Engine-owned reference declaration engine/data/reference/mea-nominally-unloaded: model with ideal
+    calorics, reactions, the application's neutral reference, the shipped liquid guess and the reaction system."""
     root = Path(__file__).resolve().parents[2] / "data" / "reference"
     request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
     system = request["reaction_system"]
@@ -494,12 +490,23 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     # The application's neutral reference: neutral solutes 1, source ion pairs summed, scaled by 1/8.
     ratios = dict(zip(_MEA[:2] + _MEA[3:], (0.125, 0.125, 0.625, 0.25, 0.125, 0.125, 0.125, 0.125)))
     guess = request["continuation"]["state"]["phases"][0]["mole_fractions"]
+    reference = NeutralReference(solvent="water", solute_molality_ratios=ratios, standard_molality_mol_per_kg=1.0)
+    return model, reactions, reference, guess, system
+
+
+def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -> None:
+    """#261: 7 mol MEA/kg water at CO2 loading 1e-5, 353.15 K and 101325 Pa (engine/data/reference/
+    mea-nominally-unloaded, Amine-Thermodynamics #124 record). CO2 (4.9e-13) and H3O+ (1.6e-12) lie far below
+    the optimizer box, so the polish starts at raw rows near 10. The former three-step cap stopped a still
+    quadratic contraction with every ionic stationarity row near -1.8e-9 z_i^2 under a 7.6e-12 classified
+    residual; continuing while raw rows exceed the criterion reaches rounding at the fourth step. The equilibrium heat-capacity action at the polished state
+    matches the centered enthalpy difference of re-solved neighbours."""
+    model, reactions, reference, guess, system = _reference_mea()
 
     def solve(temperature: float) -> tuple[Problem, Any]:
         problem = Problem(phases=[Phase("L", kind="liquid", support=_MEA, composition_guess=guess)], T=temperature,
                           P=101325.0, feed=Amounts(dict(zip(_MEA, system["feed_amounts_mol"]))), reactions=reactions,
-                          neutral_reference=NeutralReference(solvent="water", solute_molality_ratios=ratios,
-                                                             standard_molality_mol_per_kg=1.0), topology_declared=True)
+                          neutral_reference=reference, topology_declared=True)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
         return problem, result
@@ -534,3 +541,32 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     _, cold = solve(298.15)
     for p in range(cold.phase_count):
         model.state(298.15, rho=cold.molar_densities[p], x=cold.phase_mole_fractions(p))
+
+
+def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
+    """The reference declaration with a declared liquid + vapor pair at 353.15 K and loading 0.358, where the
+    branch through the 45 kPa state turns at its fold, 40,867 Pa. The shipped liquid guess carries H3O+ 1.1e-11 and
+    OH- 1.7e-10, below the optimizer box: started there, the barrier alone moved both ions to x ~ 0.25 in one step at
+    41 kPa, and the solve stalled at a salt-rich liquid at 41, 43 and 44 kPa. Each cold solve must return the state
+    reached from the 45 kPa solution's compositions; below the fold none exists and the solve must refuse."""
+    model, reactions, reference, guess, _ = _reference_mea()
+
+    def solve(pressure: float, liquid: list[float], vapor: list[float]) -> Any:
+        return solve_equilibrium(model, Problem(
+            T=353.15, P=pressure, row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
+            feed=Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
+            phases=[Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=liquid),
+                    Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=vapor)]))
+
+    shipped = (guess, [0.01, 0.002, 0.988])
+    anchor = solve(45e3, *shipped)
+    assert anchor.success, anchor.message
+    branch = (anchor.phase_mole_fractions(0), anchor.phase_mole_fractions(1))
+    for pressure in (41e3, 43e3, 44e3, 45e3):
+        cold, near = solve(pressure, *shipped), solve(pressure, *branch)
+        assert cold.success and cold.requested_tolerance_met, (pressure, cold.message)
+        assert near.success, (pressure, near.message)
+        for a, b in zip(cold.amounts, near.amounts):
+            assert math.isclose(a, b, rel_tol=1e-8, abs_tol=0.0), (pressure, list(cold.amounts), list(near.amounts))
+    below = solve(40e3, *shipped)
+    assert not below.success and not below.amounts, below.message
