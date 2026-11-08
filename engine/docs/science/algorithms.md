@@ -2943,6 +2943,18 @@ columns reuse the coefficient basis above, with zero EOS/other-reaction columns.
 It admits Difference residuals only and shares named-coordinate admission.
 `PhaseAmountRatio` composes component amounts by the quotient rule; any constant
 caller factor belongs in the observed value and, for Difference, in its scale.
+Declared pure solids are admitted by `PhaseMoleFraction`, `PhaseAmountRatio`,
+`PartialPressure` and `PhaseDensity`, which read the fluid phases of the solved
+state; the other kinds and the endpoint problem of an addition row refuse them.
+A saturated molality is the liquid's `PhaseAmountRatio` of the cation to the
+solvent, with M_w in the observed value. A named coordinate may name a solid's
+source ln K law instead of a reaction; the name is unique among a problem's
+reactions and solids, and tied solids also share their molar volume. Its
+direction is one δln K_s per solid at the fixed solved temperature, added to
+that solid's affinity row in the same first-action batch. Every declared free
+solid must be present (n_s > 0) at every prediction; an absent one is a
+`TopologyEvent` naming it, never the feed composition with a zero ln K column.
+State groups compare the solid declarations, and fit workers receive them.
 `AdditionEnthalpy` uses two declared equilibrium problems and the row's feed
 state; its value and exact first actions follow EqID:
 `finite_addition_enthalpy`. Both endpoint solves remain available through
@@ -3938,7 +3950,10 @@ solid's ln K^ρ is compiled once at fixed T at the source pressure, with its fir
 T slope where the reference admits it; a scalar K refuses T actions. An
 EOS-parameter direction adds ∂C_s/∂θ of the source-basis conversion, requested
 from the same reference owner only when the direction moves a parameter;
-second and higher actions admit at most one EOS-parameter direction.
+second and higher actions admit at most one EOS-parameter direction. A source ln
+K_s direction shifts the solid's affinity linearly at fixed T and is
+parameter-bearing like a reaction-law direction; neighbor difference checks do
+not admit it.
 
 ### Cation-mixing coordinates
 

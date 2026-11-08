@@ -121,6 +121,9 @@ struct SolidSpec final {
     AmountSpec amount;
 };
 
+// A solid's source ln K law as a reaction record, for the shared law comparisons below.
+inline ReactionSpec solid_law(const SolidSpec& s) { return {s.name, s.stoichiometry, s.equilibrium_constant, std::nullopt, s.correlation, s.reference}; }
+
 // Exact declaration equality, shared by fitting admission/grouping and continuation.
 inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool compare_temperature_bounds = true) {
     const auto correlation = [](const auto& v) {
@@ -533,7 +536,7 @@ struct CompiledSystem final {
     // Control direction [T, P, n_feed (C), active parameters (A)]; the extended layout appends the
     // (a, b, c, d) increments of every reaction law, then H/S, an admitted volume target and an admitted U target.
     std::size_t control_width() const noexcept { return 2 + n_feed.size() + (model ? model->active_parameters().size() : 0); }
-    std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + 2 + problem.volume_m3.has_value() + problem.internal_energy_j.has_value(); }
+    std::size_t extended_control_width() const noexcept { return control_width() + 4 * problem.reactions.size() + problem.solids.size() + 2 + problem.volume_m3.has_value() + problem.internal_energy_j.has_value(); }
 
     // A free amount is a coordinate seeded at 1 mol; a pinned amount is its fraction of the feed.
     double phase_amount(const PhaseSpec& phase) const noexcept { return phase.is_free() ? 1.0 : phase.amount.fraction * feed_total; }
@@ -928,6 +931,7 @@ struct SolvedStateActionDirection final {
     double entropy_j_per_k = 0.0;
     double volume_m3 = 0.0;
     double internal_energy_j = 0.0;
+    std::vector<double> solid_log_k;  // per declared solid: increment of its source ln K at the fixed T, or empty
 };
 
 struct SolvedStateActionRequest final {

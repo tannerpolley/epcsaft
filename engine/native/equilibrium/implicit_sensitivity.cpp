@@ -307,6 +307,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
                     throw std::invalid_argument("nonfinite reaction coefficient direction");
                 else if (v != 0.0 && !problem.standard_gibbs_j_per_mol.empty())
                     throw std::invalid_argument("reaction direction conflicts with supplied standard Gibbs values");
+        if ((!direction.solid_log_k.empty() && direction.solid_log_k.size() != problem.solids.size()) || !all_numeric(direction.solid_log_k))
+            throw std::invalid_argument("solid ln K direction shape or nonfinite");
         if (!std::isfinite(direction.internal_energy_j) || (!problem.internal_energy_j && direction.internal_energy_j != 0.0))
             throw std::invalid_argument("internal energy control without its active condition or nonfinite");
         if (!std::isfinite(direction.volume_m3) || (!problem.volume_m3 && direction.volume_m3 != 0.0))
@@ -332,6 +334,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
                 parameter |= v != 0.0;
+        for (double v : d.solid_log_k) parameter |= v != 0.0;
         if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
              problem.pressure.free))
@@ -1048,6 +1051,8 @@ static SolvedStateActionBatch evaluate_action(
             std::copy(direction.reaction_coefficients[r].begin(), direction.reaction_coefficients[r].end(),
                       control.begin() +
                           static_cast<std::ptrdiff_t>(source_offset + 4 * r));
+        std::copy(direction.solid_log_k.begin(), direction.solid_log_k.end(),
+                  control.begin() + static_cast<std::ptrdiff_t>(source_offset + 4 * problem.reactions.size()));
         control[target] = direction.enthalpy_j;
         control[target + 1] = direction.entropy_j_per_k;
         if (problem.volume_m3) control[target + 2] = direction.volume_m3;
@@ -1558,6 +1563,7 @@ std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem&
     const bool supported = compiled.model && std::all_of(d.active_parameters.begin(), d.active_parameters.end(), zero)
         && std::all_of(d.reaction_coefficients.begin(), d.reaction_coefficients.end(),
             [&](const auto& c) { return std::all_of(c.begin(), c.end(), zero); })
+        && std::all_of(d.solid_log_k.begin(), d.solid_log_k.end(), zero)
         && (zero(d.temperature_k) || !p.temperature.free) && (zero(d.pressure_pa) || !p.pressure.free)
         && (zero(d.internal_energy_j) || p.internal_energy_j) && (zero(d.volume_m3) || p.volume_m3) && (zero(d.enthalpy_j) || p.enthalpy_j) && (zero(d.entropy_j_per_k) || p.entropy_j_per_k)
         && (feed_zero || d.feed_amounts_mol.size() == compiled.n_feed.size());

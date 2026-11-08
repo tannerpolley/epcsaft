@@ -12,6 +12,7 @@ from typing import Any
 import pytest
 
 from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Parameters, _core
+from epcsaft import regression as reg
 from epcsaft.equilibrium import (
     Free, Molalities, NeutralReference, Phase, Pinned, Problem, ReactionLogPolynomial, ReactionReference,
     ReferenceSourceBasis, Solid, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable,
@@ -33,13 +34,17 @@ V_SOLID = 27.1e-6
 MEASURED = 6.1476  # mol/kg, Table 17A
 
 
-def held(shift: tuple[str, float] = ("", 0.0), active: tuple[ActiveParameter, ...] = ()) -> Mixture:
+def held_parameters(shift: tuple[str, float] = ("", 0.0)) -> Parameters:
     """The Held 2014 set with one document coefficient shifted by an absolute amount."""
     document = json.loads(parameters_json("held-2014-strategy2", 1).read_text())
     for record in (*document["components"], *document["pairs"]):
         for item in record["coefficients"]:
             item["value"]["magnitude"] += shift[1] if item["identity"] == shift[0] else 0.0
-    return Mixture(Parameters.from_mapping(document, components=list(SPECIES)), active_parameters=list(active))
+    return Parameters.from_mapping(document, components=list(SPECIES))
+
+
+def held(shift: tuple[str, float] = ("", 0.0), active: tuple[ActiveParameter, ...] = ()) -> Mixture:
+    return Mixture(held_parameters(shift), active_parameters=list(active))
 
 
 @cache
@@ -47,8 +52,13 @@ def model() -> Mixture:
     return held()
 
 
-def problem(molality: float, amount: Free | Pinned = Free(), temperature: float = T, pressure: float = P) -> Problem:
-    halite = Solid("halite", formula={"sodium-cation": 1.0, "chloride-anion": 1.0}, correlation=LAW,
+def law(a: float = LAW.a) -> ReactionLogPolynomial:
+    return ReactionLogPolynomial(a, LAW.b, LAW.c, LAW.d, LAW.reference_temperature, 288.15, 308.15, "molality-infinite-dilution")
+
+
+def problem(molality: float, amount: Free | Pinned = Free(), temperature: float = T, pressure: float = P,
+            correlation: ReactionLogPolynomial = LAW) -> Problem:
+    halite = Solid("halite", formula={"sodium-cation": 1.0, "chloride-anion": 1.0}, correlation=correlation,
                    reference=ReactionReference(ReferenceSourceBasis.CommonMolalityInfiniteDilution, P),
                    molar_volume_m3_per_mol=V_SOLID, amount=amount)
     return Problem(T=temperature, P=pressure, phases=[Phase("L", kind="liquid")], solids=[halite],
@@ -58,8 +68,8 @@ def problem(molality: float, amount: Free | Pinned = Free(), temperature: float 
                                                       solute_molality_ratios={"sodium-cation": 1.0, "chloride-anion": 1.0}))
 
 
-def solve(molality: float, amount: Free | Pinned = Free(), **state: float) -> _core.EquilibriumResult:
-    result = solve_equilibrium(model(), problem(molality, amount, **state))
+def solve(molality: float, amount: Free | Pinned = Free(), temperature: float = T, pressure: float = P) -> _core.EquilibriumResult:
+    result = solve_equilibrium(model(), problem(molality, amount, temperature, pressure))
     assert result.success, result.message
     assert max(abs(r) for r in result.classified_residuals) <= 1e-10
     return result
@@ -225,3 +235,81 @@ def test_solid_refusals() -> None:
     free.P = Free(P)
     with pytest.raises(ValueError, match="solids require fixed T and P"):
         solve_equilibrium(model(), free)
+
+
+# Solubility as a fit observation: n_Na/n_w = m_s M_w in the liquid, the existing amount ratio with M_w in the value.
+MW = 18.01528e-3  # kg/mol, water
+
+
+def solubility(molality: float, temperature: float = T, correlation: ReactionLogPolynomial = LAW,
+               observed: float = 0.0) -> _core.Observation:
+    return reg.observation(held_parameters(), "amount_ratio", problem(molality, temperature=temperature, correlation=correlation),
+                           observed=observed, form="difference", scale=1e-3, phase="L", species=["sodium-cation"],
+                           denominator_phase="L", denominator_species=["water"])
+
+
+def ratio(result: _core.EquilibriumResult) -> float:
+    assert result.success, result.message
+    return result.mole_fractions[1] / result.mole_fractions[0]
+
+
+def test_solubility_observation(evidence: Any) -> None:
+    """The saturated amount ratio equals the direct native solve at a 10 mol/kg feed."""
+    prediction = reg.predict(model(), solubility(10.0))
+    assert prediction.status == _core.ObservationStatus.Available, prediction.message
+    assert prediction.value is not None
+    same(evidence, "halite/solubility/observation", prediction.value, ratio(solve(10.0)), rtol=1e-12, atol=0.0,
+         method="direct native solid-liquid solve", claim="the amount-ratio observation reads the solved liquid")
+    same(evidence, "halite/solubility/molality", prediction.value / MW, 6.29890460910619, rtol=1e-12, atol=0.0,
+         method="design measurement", claim="m_s = (n_Na/n_w)/M_w")
+
+
+def test_solubility_jacobian(evidence: Any) -> None:
+    """Exact EOS and solubility-product columns of the observation against central differences of native solves."""
+    p = held_parameters()
+    targets = (("dispersion_energy_over_k", "sodium-cation"), ("segment_diameter", "chloride-anion"), ("k_ij", ("chloride-anion", "water")))
+    coordinates = [reg.coordinate(p, [(family, target, 1.0)], origin=value, scale=1.0)
+                   for (family, target), (_, _, value) in zip(targets, PARAMETERS)]
+    coordinates.append(reg.reaction_coordinate("halite", "a", origin=LAW.a, scale=1.0))
+    evaluation = reg.differentiate(p, coordinates, [solubility(10.0)], optimizer=[0.0] * 4)
+    assert evaluation.statuses == [_core.ObservationStatus.Available]
+
+    def check(name: str, exact: float, move: Any, steps: tuple[tuple[float, float], ...]) -> None:
+        for h, rtol in steps:
+            fd = (ratio(move(h)) - ratio(move(-h))) / (2 * h)
+            same(evidence, f"halite/solubility/jacobian/{name}/{h:.3g}", exact / MW, fd / MW, rtol=rtol, atol=0.0,
+                 method=f"central difference of native solves, h = {h:.3g}", claim="exact solved-state column, mol/kg per unit")
+
+    for k, (identity, _, value) in enumerate(PARAMETERS):
+        check(identity, evaluation.gradient[k], lambda h, identity=identity: solve_equilibrium(held((identity, h)), problem(10.0)),
+              tuple((step * max(1.0, abs(value)), rtol) for step, rtol in ((1e-3, 1e-5), (1e-4, 1e-7), (1e-5, 1e-7))))
+    check("a", evaluation.gradient[3], lambda h: solve_equilibrium(model(), problem(10.0, correlation=law(LAW.a + h))),
+          ((1e-2, 1e-5), (1e-3, 1e-7), (1e-4, 1e-7)))
+
+
+TEMPERATURES = (288.15, 298.15, 308.15)
+
+
+def solubility_fit(feed: float, workers: int) -> Any:
+    observed = [reg.predict(model(), solubility(10.0, t)).value for t in TEMPERATURES]
+    rows = [solubility(feed, t, law(LAW.a + 0.05), y or 0.0) for t, y in zip(TEMPERATURES, observed)]
+    return reg.fit(held_parameters(), [reg.reaction_coordinate("halite", "a", origin=LAW.a, scale=0.1)], rows,
+                   controls=reg.FitControls(maximum_iterations=50, maximum_elapsed_time_seconds=120.0, workers=workers))
+
+
+@pytest.mark.parametrize("workers", [1, 2])
+def test_solubility_product_fit(evidence: Any, workers: int) -> None:
+    """A manufactured three-temperature solubility fit recovers the law's a from a + 0.05, in process and in workers."""
+    result = solubility_fit(10.0, workers)
+    assert result.usable, result.message
+    same(evidence, f"halite/solubility/fit/{workers}", result.physical[0], LAW.a, rtol=0.0, atol=1e-8,
+         method=f"native least squares, {workers} process(es)", claim="the solubility product is identifiable from solubility")
+
+
+def test_undersaturated_solubility_refused() -> None:
+    """At 6.35 mol/kg and a + 0.05 halite is absent: the row is a named topology event, never the feed molality."""
+    prediction = reg.predict(model(), solubility(6.35, correlation=law(LAW.a + 0.05)))
+    assert prediction.status == _core.ObservationStatus.TopologyEvent and "solid halite is absent" in prediction.message
+    result = solubility_fit(6.35, 1)
+    assert not result.usable
+    assert {(f.status, "halite" in f.message) for f in result.failures} == {(_core.ObservationStatus.TopologyEvent, True)}

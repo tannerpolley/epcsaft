@@ -77,7 +77,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
             const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
             (void)reaction_direction(target);
-            const equilibrium::ReactionSpec* prior = nullptr;
+            std::optional<std::pair<equilibrium::ReactionSpec, double>> prior;  // the first law and its solid volume (-1 for a reaction)
             const equilibrium::EquilibriumProblem* prior_problem = nullptr;
             std::vector<const equilibrium::EquilibriumProblem*> problems;
             for (const auto& observation : observations) {
@@ -88,8 +88,11 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             }
             for (const auto* problem_pointer : problems) {
                 const auto& problem = *problem_pointer;
+                std::vector<std::pair<equilibrium::ReactionSpec, double>> laws;  // a solid's ln K law is fitted like a reaction's
+                for (const auto& reaction : problem.reactions) laws.emplace_back(reaction, -1.0);
+                for (const auto& solid : problem.solids) laws.emplace_back(equilibrium::solid_law(solid), solid.molar_volume_m3_per_mol);
                 std::size_t matches = 0;
-                for (const auto& reaction : problem.reactions) {
+                for (const auto& [reaction, volume] : laws) {
                     if (reaction.name != target.name) continue;
                     check(++matches == 1, "repeated name in problem");
                     check(!reaction.affinity_j_per_mol, "affinity target");
@@ -103,7 +106,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                     check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
                           reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
                     if (prior) {
-                        check(same_reaction(*prior, reaction, false), "tied declarations or starts disagree");
+                        check(same_reaction(prior->first, reaction, false) && prior->second == volume, "tied declarations or starts disagree");
                         if (reaction.reference) {
                             check(problem.source_reference && prior_problem->source_reference, "missing source declaration");
                             const auto& x = *problem.source_reference;
@@ -122,14 +125,14 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
                                         + names.at(std::size_t(convention(y, i))) + " vs " + names.at(std::size_t(convention(x, i)))).c_str());
                         }
                     } else {
-                        prior = &reaction;
+                        prior.emplace(reaction, volume);
                         prior_problem = &problem;
                         auto law = reaction.correlation.value_or(ReactionLogPolynomial{});
                         first = shift ? 0.0 : reaction.correlation ? coefficient(law, target.coefficient) : std::log(reaction.equilibrium_constant.value());
                     }
                 }
             }
-            check(prior, "unmatched name");
+            check(prior.has_value(), "unmatched name");
         } else {
             const auto& initial = coordinate.targets.front();
             require(initial.indices.front() < family_values(parameters, initial.family).second, "slot index");
@@ -229,20 +232,23 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {
         const auto& target = coordinates[order[row]].reaction;
         if (!target || (target->coefficient == ReactionCoefficient::EnthalpyShift) != shift || (shift && !shifts)) continue;
-        for (auto* problem : problems)
-            for (auto& reaction : problem->reactions) {
-                if (reaction.name != target->name) continue;
-                if (target->coefficient == ReactionCoefficient::EnthalpyShift) {
-                    require(reaction.correlation.has_value(), "enthalpy shift needs a correlation");
-                    const auto direction = reaction_direction(*target);
-                    if (values[row] != 0.0) {
-                        reaction.correlation->a += values[row] * direction[0];
-                        reaction.correlation->b += values[row] * direction[1];
-                    }
-                    laws.emplace(target->name, *reaction.correlation);
-                } else if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
-                else reaction.equilibrium_constant = std::exp(values[row]);
-            }
+        const auto rewrite = [&](auto& reaction) {
+            if (reaction.name != target->name) return;
+            if (target->coefficient == ReactionCoefficient::EnthalpyShift) {
+                require(reaction.correlation.has_value(), "enthalpy shift needs a correlation");
+                const auto direction = reaction_direction(*target);
+                if (values[row] != 0.0) {
+                    reaction.correlation->a += values[row] * direction[0];
+                    reaction.correlation->b += values[row] * direction[1];
+                }
+                laws.emplace(target->name, *reaction.correlation);
+            } else if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
+            else reaction.equilibrium_constant = std::exp(values[row]);
+        };
+        for (auto* problem : problems) {
+            for (auto& reaction : problem->reactions) rewrite(reaction);
+            for (auto& solid : problem->solids) rewrite(solid);
+        }
     }
     return laws;
 }

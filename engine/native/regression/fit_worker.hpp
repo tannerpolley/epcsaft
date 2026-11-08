@@ -43,6 +43,7 @@ FIELDS(equilibrium::PhaseSpec, a, b, c, d, e, f, declared_composition_guess, g)
 FIELDS(equilibrium::FeedSpec, a, b, c, d)
 FIELDS(ReactionLogPolynomial, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::ReactionSpec, a, b, c, d, e, f)
+FIELDS(equilibrium::SolidSpec, a, b, c, d, e, f, g)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
@@ -57,10 +58,10 @@ FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
 FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
-// Observation validation refuses discovery, spinodal conditions and solids, so these are not sent.
+// Observation validation refuses discovery and spinodal conditions, so these are not sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
     auto& [origin, a, b, c, d, e, f, g, h, discovery, j, k, volume_m3, internal_energy_j, spinodal, l, m, loading, n, o, solids] = item;
-    return std::tie(origin, a, b, c, d, e, f, g, h, j, k, volume_m3, internal_energy_j, l, m, loading, n, o);
+    return std::tie(origin, a, b, c, d, e, f, g, h, j, k, volume_m3, internal_energy_j, l, m, loading, n, o, solids);
 }
 // Saturation replies carry physical records and estimates; compiled caches and optimizer memory stay in the worker.
 FIELDS(core::NumericalEstimate, a, b, c, d, e)

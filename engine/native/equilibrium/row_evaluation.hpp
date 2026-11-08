@@ -972,6 +972,13 @@ RowSeries CompiledSystem::row_series(
                     result.rows[k][row] += species[rows[row].index];
         }
     }
+    // EqID solid_saturation_index: a source ln K_s increment lowers A_s/RT linearly in t (solids fix T).
+    for (std::size_t s = 0; order > 0 && control.size() > width && s < solids.size(); ++s) {
+        const double shift = control[width + 4 * problem.reactions.size() + s];
+        result.solid_affinity[s][1] -= shift;
+        for (std::size_t row = 0; solids[s].present && row < rows.size(); ++row)
+            if (rows[row].kind == RowKind::SolidAffinity && rows[row].index == s) result.rows[1][row] += shift;
+    }
     // Residual gradient coefficients: the Hessian action of each coefficient plus the model's
     // third and fourth contractions of the lower coefficients (Faa di Bruno through order 3).
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {

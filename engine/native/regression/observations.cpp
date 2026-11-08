@@ -133,6 +133,12 @@ bool same_state(const Observation& left, const Observation& right) {
         if (phase(a.phases[i]) != phase(b.phases[i])) return false;
     for (std::size_t i = 0; i < a.reactions.size(); ++i)
         if (!same_reaction(a.reactions[i], b.reactions[i])) return false;
+    if (a.solids.size() != b.solids.size()) return false;
+    for (std::size_t i = 0; i < a.solids.size(); ++i) {
+        const auto &x = a.solids[i], &y = b.solids[i];
+        if (!same_reaction(equilibrium::solid_law(x), equilibrium::solid_law(y)) || x.molar_volume_m3_per_mol != y.molar_volume_m3_per_mol
+            || x.amount.kind != y.amount.kind || x.amount.fraction != y.amount.fraction) return false;
+    }
     return true;
 }
 
@@ -151,7 +157,11 @@ void validate(const Observation& observation, const HelmholtzModel& model,
     }
     require(!observation.problem.spinodal && !observation.final_problem.spinodal, "without spinodal conditions");
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
-    require(observation.problem.solids.empty() && observation.final_problem.solids.empty(), "without solids");
+    // A solid has no caloric record and stability trials refuse it; composition and density kinds read the fluid phases.
+    const auto k = observation.kind;
+    require(observation.final_problem.solids.empty() && (observation.problem.solids.empty() || k == ObservationKind::PhaseMoleFraction
+        || k == ObservationKind::PhaseAmountRatio || k == ObservationKind::PartialPressure || k == ObservationKind::PhaseDensity),
+        "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
     require(std::isfinite(observation.observed), "observed value");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
@@ -543,6 +553,13 @@ Prediction predict(
         result.status = ObservationStatus::CentralSolveUnavailable;
         return result;
     }
+    // A declared free solid absent at the solved state is a phase-set change, never a fit value.
+    for (std::size_t s = 0; s < observation.problem.solids.size(); ++s)
+        if (observation.problem.solids[s].amount.kind == equilibrium::AmountKind::Free && !(solved.solid_amounts.at(s) > 0.0)) {
+            result.status = ObservationStatus::TopologyEvent;
+            result.message = "solid " + observation.problem.solids[s].name + " is absent at the solved state";
+            return result;
+        }
     result.solved = std::move(solved);
     project_prediction(model, observation, result);
     return result;
@@ -851,6 +868,14 @@ std::vector<PredictionGradient> differentiate_group(
             for (std::size_t j = 0; j < problem.reactions.size(); ++j)
                 if (problem.reactions[j].name == target.name)
                     directions[k].reaction_coefficients[j] = reaction_direction(target);
+            directions[k].solid_log_k.assign(problem.solids.size(), 0.0);
+            for (std::size_t s = 0; s < problem.solids.size(); ++s)
+                if (problem.solids[s].name == target.name) {
+                    const auto d = reaction_direction(target);
+                    const auto& law = problem.solids[s].correlation;
+                    directions[k].solid_log_k[s] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                        law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                }
         }
     }
     for (const auto& input : inputs) directions.push_back(input.state);

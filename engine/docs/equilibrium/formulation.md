@@ -381,8 +381,9 @@ complementarity pair, and one endpoint classification adds either its
 saturation row or n_s = 0, so the classified declaration is square. A
 `Pinned(0)` solid adds no coordinate and reports SI_s only. Solids require fixed
 T and P and a neutral reference; PH/PS, critical, envelope, azeotrope, pinned
-free-intensive cells, discovery, stability trials, continuation, fit
-observations and ASL records refuse them. Solid solutions and kinetics are not
+free-intensive cells, discovery, stability trials, continuation, caloric and
+stability fit observations, and ASL records refuse them; composition, amount-ratio,
+partial-pressure and phase-density fit observations admit them (ALG-FIT). Solid solutions and kinetics are not
 expressible.
 
 ## Stationarity, feasibility and stability
