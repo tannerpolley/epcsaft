@@ -612,9 +612,11 @@ double equilibrium_amount(arglist* arguments) {
     return report_failure(arguments, "epcsaft_equilibrium");
 }
 
-// Pressure-chart property callback (#73): q = (T, P, w_1..w_C) and x = w / sum(w). Native pressure actions along the
-// O(1) directions e_j - x supply the value and actions; only dx/dw_j = (e_j - x)/sum(w) and the exact chain
-// d2x/dw_j dw_k = -(dx/dw_j + dx/dw_k)/sum(w) are applied here. Rows: 0 density, 1 total enthalpy, 2 + i ln(phi_i).
+// Pressure-chart property callback (#73): q = (T, P, w_1..w_C), u = Pw with P = I - zz'/z'z the charge-null projector
+// (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
+// directions b_j = Pe_j - x sigma_j, sigma_j = 1'Pe_j, supply the value and actions; only dx/dw_j = b_j/s and the exact
+// chain d2x/dw_j dw_k = -(sigma_k dx/dw_j + sigma_j dx/dw_k)/s are applied here. Rows: 0 density, 1 total enthalpy,
+// 2 + i ln(phi_i).
 struct PropertyContext final {
     std::string record;
     bool require_phase_identity = false;
@@ -675,14 +677,24 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     if (branch.q == q && branch.order >= order) return;
     using Status = epcsaft::PropertyActionStatus;
     const std::size_t c = q.size() - 2, n = q.size();
-    const double sum = std::accumulate(q.begin() + 2, q.end(), 0.0);
-    std::vector<double> x(c);
-    for (std::size_t i = 0; i < c; ++i) x[i] = q[2 + i] / sum;
+    const auto& z = context.model->parameters().charge_number;
+    const double zz = std::inner_product(z.begin(), z.end(), z.begin(), 0.0);
+    std::vector<double> u(q.begin() + 2, q.end()), x(c), sigma(c, 1.0);
+    if (zz > 0.0) {  // admit within the native tolerance, then remove only the rounding below it
+        const double total = std::accumulate(u.begin(), u.end(), 0.0);
+        for (std::size_t i = 0; i < c; ++i) x[i] = u[i] / total;
+        context.model->validate_electroneutrality(x);
+        const double zw = std::inner_product(z.begin(), z.end(), u.begin(), 0.0), z1 = std::accumulate(z.begin(), z.end(), 0.0);
+        for (std::size_t i = 0; i < c; ++i) u[i] -= z[i] * zw / zz, sigma[i] = 1.0 - z[i] * z1 / zz;
+    }
+    const double sum = std::accumulate(u.begin(), u.end(), 0.0);
+    for (std::size_t i = 0; i < c; ++i) x[i] = u[i] / sum;
     std::vector<epcsaft::PressureActionDirection> basis(n, {0.0, 0.0, std::vector<double>(c, 0.0), {}});
     basis[0].temperature = 1.0;
     basis[1].pressure = 1.0;
     for (std::size_t j = 0; j < c; ++j)
-        for (std::size_t i = 0; i < c; ++i) basis[2 + j].composition[i] = (i == j ? 1.0 : 0.0) - x[i];
+        for (std::size_t i = 0; i < c; ++i)
+            basis[2 + j].composition[i] = (i == j ? 1.0 : 0.0) - (zz > 0.0 ? z[i] * z[j] / zz : 0.0) - x[i] * sigma[j];
     const std::vector<epcsaft::PropertyObservable> observables = {
         epcsaft::PropertyObservable::TotalEnthalpy, epcsaft::PropertyObservable::LogFugacityCoefficient};
     const auto cause = [](Status status, std::string fallback) {
@@ -752,7 +764,7 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             const auto actions = run({basis[i], basis[j]});
             for (std::size_t row = 0; row < n; ++row)
                 branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2) + (j >= 2))
-                    - (i >= 2 ? (branch.gradients[row][i] + branch.gradients[row][j]) / sum : 0.0);
+                    - (i >= 2 ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
         }
     branch.order = order;
 }

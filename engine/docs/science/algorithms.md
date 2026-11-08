@@ -3047,8 +3047,9 @@ column-then-row equilibrated defining Jacobian, $RJC$. Rank refusal precedes
 the inverse-condition estimate and Taylor solves, so absent operands stay
 absent. ASL never computes an estimate during conversion. Compare successful
 native and ASL actions in the same $(T,P,w)$ coordinates, including the
-normalization chain rule for $x=w/\sum w$; raw composition actions have a
-different basis.
+normalization chain rule for $x=Pw/\mathbf 1^\top Pw$, where
+$P=I-zz^\top/z^\top z$ projects onto the charge-null space and is the identity
+for a neutral record; raw composition actions have a different basis.
 
 1. Retain the exact declaration, parameter/library identity, units, starts,
    requested criteria, work budgets and default result. Read final convergence

@@ -1,4 +1,4 @@
-"""IDAES pressure properties and classified-root, neutral smooth VLE.
+"""IDAES pressure properties (neutral, or charged aqueous liquid) and classified-root, neutral smooth VLE.
 
 FTPx, LogBubbleDew and SmoothVLE own the process equations (Burgard et al.,
 PSE 2018). EOS values and exact derivatives come from the native ASL adapter.
@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 import warnings
 
-from idaes.core import Component, LiquidPhase, VaporPhase  # type: ignore[import-untyped]
+from idaes.core import Anion, AqueousPhase, Cation, Component, LiquidPhase, Solvent, VaporPhase  # type: ignore[import-untyped]
 from idaes.models.properties.modular_properties.eos.eos_base import EoSBase  # type: ignore[import-untyped]
 from idaes.models.properties.modular_properties.phase_equil import SmoothVLE  # type: ignore[import-untyped]
 from idaes.models.properties.modular_properties.phase_equil.bubble_dew import LogBubbleDew  # type: ignore[import-untyped]
@@ -64,7 +64,9 @@ def asl_library() -> Path:
 
 
 class PressureProperties(EoSBase):  # type: ignore[misc]
-    """Generic-property EOS methods supplied by native pressure actions."""
+    """Generic-property EOS methods supplied by native pressure actions; weights and rows follow record order."""
+
+    electrolyte_support = True
 
     @staticmethod
     def build_parameters(phase: Any) -> None:
@@ -101,7 +103,7 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
         return function(
             T,
             P,
-            *[x[j] for j in b.component_list],
+            *[x[j] for j in options["model"].component_ids],
             options["equilibrium_record" if strict else "record"],
             str(row),
             "0" if phase.is_liquid_phase() else "1",
@@ -121,7 +123,7 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
 
     @staticmethod
     def _log_fugacity(b: Any, p: str, j: str, T: Any, P: Any, x: Any) -> Any:
-        row = 2 + list(b.component_list).index(j)
+        row = 2 + b.params.get_phase(p).config.equation_of_state_options["model"].component_ids.index(j)
         return log(x[j]) + log(P / b.params.pressure_ref) + PressureProperties._at(b, p, row, T, P, x, True)
 
     @staticmethod
@@ -165,7 +167,10 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
 def property_configuration(
     model: Any, *, phases: tuple[str, ...], state_bounds: dict[str, Any], temperature_ref: float, pressure_ref: float
 ) -> dict[str, Any]:
-    """Declare a neutral GenericParameterBlock; starts and state bounds are caller inputs.
+    """Declare a GenericParameterBlock; starts and state bounds are caller inputs.
+
+    A record with charged components admits only phases=("liquid",), declared as an AqueousPhase with
+    Cation/Anion/Solvent components; the adapter refuses non-electroneutral weights.
 
     Phases are liquid, vapor, or both. Each VLE phase mixture density root must
     classify as its requested liquid or vapor side on its own (T, P, x) isotherm,
@@ -176,8 +181,10 @@ def property_configuration(
     """
     if not phases or len(set(phases)) != len(phases) or set(phases) - {"liquid", "vapor"}:
         raise ValueError("phases must select liquid, vapor, or both once")
-    if any(e.magnitude != 0 for e in model.parameters._document.entries if e.field == "charge_number"):
-        raise ValueError("IDAES pressure properties qualify neutral components only")
+    charge = {model.component_ids[e.index[0]]: e.magnitude for e in model.parameters._document.entries if e.field == "charge_number"}
+    charged = any(charge.values())
+    if charged and phases != ("liquid",):
+        raise ValueError("a charged record admits only phases=('liquid',); an ion-free vapor record is out of scope")
     record = property_asl_record(model)
     equilibrium_record = property_asl_record(model, require_phase_identity=True) if len(phases) == 2 else record
     options = {
@@ -190,11 +197,14 @@ def property_configuration(
     config = dict(
         components={
             j: {"type": Component, **({"phase_equilibrium_form": {pair: log_fugacity}} if len(phases) == 2 else {})}
+            if not charged
+            else {"type": Solvent} if not charge[j]
+            else {"type": Cation if charge[j] > 0 else Anion, "charge": int(charge[j])}
             for j in model.component_ids
         },
         phases={
             p: {
-                "type": LiquidPhase if p == "liquid" else VaporPhase,
+                "type": AqueousPhase if charged else LiquidPhase if p == "liquid" else VaporPhase,
                 "equation_of_state": PressureProperties,
                 "equation_of_state_options": options,
             }
@@ -220,7 +230,7 @@ def check_state(state: Any, phase: str) -> Any:
     batch = model.pressure_actions(
         value(state.temperature),
         value(state.pressure),
-        x=[value(state.mole_frac_phase_comp[phase, j]) for j in state.component_list],
+        x=[value(state.mole_frac_phase_comp[phase, j]) for j in model.component_ids],
         phase=phase,
         observables=[],
         directions=[PressureActionDirection(composition=[0.0] * len(model.component_ids))],

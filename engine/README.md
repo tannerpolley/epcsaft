@@ -546,8 +546,18 @@ the cause one of `invalid_input`, `support_insertion`, `no_density_root`,
 `ambiguous_branch`, `nonmechanical_root`, `inner_iteration_failure` or
 `unavailable_derivative`; an unavailable row leaves the other rows valid, and an
 owned thermochemistry endpoint keeps its value while its temperature derivative is
-unavailable. Derivatives are qualified for neutral records only: a single-ion
-weight direction is not charge balanced, and native admission refuses it.
+unavailable. A record with charged components first refuses weights whose
+normalized charge sum exceeds the native electroneutrality tolerance
+(`invalid_input: non-electroneutral composition`), then uses
+`x = Pw / sum(Pw)` with `P = I - z z^T / z^T z`, the projector onto the
+charge-null space. Each weight column therefore differentiates along a sum- and
+charge-free native direction; a single-ion column is the derivative of `f(Pw)`
+(for NaCl, half the salt derivative). Only neutral combinations of single-ion
+`ln(phi_i)` rows are physical. `epcsaft.idaes.property_configuration` declares
+such a record as one `AqueousPhase` with `Cation`, `Anion` and `Solvent`
+components and refuses vapor or VLE phases; it passes weights and rows in record
+order. A start with an ion fraction within Ipopt's `bound_push` of zero is no
+longer neutral after the push and is refused.
 
 Diagnostics keep their native meaning. `State.thermochemistry_status` separates a
 missing record from a temperature outside its intervals; `density_branch` and

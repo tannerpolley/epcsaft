@@ -1,5 +1,8 @@
 """The ASL property record: fitted parameters write back into their start document, and every thermochemistry form
-exports. The callback equals the native pressure actions bitwise (value, T/P gradient and Hessian) at 300 K, 1e6 Pa."""
+exports. The callback equals the native pressure actions bitwise (value, T/P gradient and Hessian) at 300 K, 1e6 Pa.
+Charged records (Held 2008 Debye-Hueckel, Figiel 2025 Born) at 298.15 K and 1e5 Pa: values equal the direct Engine,
+derivatives along charge-neutral directions match central differences (verification only), non-electroneutral weights
+are refused, and an IDAES mixer closes its energy balance through Ipopt."""
 from __future__ import annotations
 
 import csv
@@ -10,12 +13,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
 
+import numpy as np
 import pytest
-from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective, Var  # type: ignore[import-untyped]
+from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective, Var, value  # type: ignore[import-untyped]
 
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
-from epcsaft.eos import PressureActionDirection, PropertyObservable, property_asl_record
+from epcsaft.eos import ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
 from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem
 from tests.native_inputs import p3_forms, record
 from tests.packets import PACKETS, parameters_json
@@ -165,3 +169,138 @@ def test_external_ampl_caller_exits_normally(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
     solution = (tmp_path / "pressure.sol").read_text()
     assert "Optimal Solution Found" in solution
+
+
+CHARGED = {"NaCl": (("held-cameretti-sadowski-2008", 3), BRINE, [0.96, 0.02, 0.02], [0.0, 1.0, 1.0]),
+           "MgCl2": (("held-cameretti-sadowski-2008", 3), ("water", "magnesium-cation", "chloride-anion"), [0.97, 0.01, 0.02], [0.0, 1.0, 2.0]),
+           "Born": (("figiel-2025-chloride-activity-refit", 2), BRINE, [0.96, 0.02, 0.02], [0.0, 1.0, 1.0])}
+
+
+def charged(name: str) -> Mixture:
+    """A numerical identity thermochemistry record (cp 30 J/(mol K)); no physical ion enthalpy is claimed."""
+    form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
+    return Mixture(Parameters.from_json(parameters_json(*CHARGED[name][0]), components=CHARGED[name][1]), thermochemistry=record(form, form, form))
+
+
+def aqueous_package(model: Mixture) -> Any:
+    from idaes.core import FlowsheetBlock  # type: ignore[import-untyped]
+    from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock  # type: ignore[import-untyped]
+    from epcsaft.idaes import property_configuration
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.props = GenericParameterBlock(**property_configuration(model, phases=("liquid",), temperature_ref=298.15, pressure_ref=1.0e5,
+        state_bounds={"flow_mol": (0, 1, 10), "temperature": (273.15, 298.15, 373.15), "pressure": (5e4, 1e5, 1e6)}))
+    return m
+
+
+def property_fgh(text: str, q: Any, row: int, fgh: int) -> tuple[float, Any, Any]:
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
+    v, g, h = callback.evaluate_fgh([*q, text, str(row), "0"], fgh=fgh)
+    n = len(q)
+    hessian = np.array([[h[min(i, j) + max(i, j) * (max(i, j) + 1) // 2] for j in range(n)] for i in range(n)]) if fgh == 2 else None
+    return float(v), np.array(g[:n]) if fgh else None, hessian
+
+
+@pytest.mark.parametrize("name", CHARGED)
+def test_charged_values_equal_engine(name: str) -> None:
+    """F1: every row at every order, and the IDAES aqueous block (record order, not component_list order), equal the
+    direct Engine bitwise."""
+    from epcsaft.idaes import PressureProperties
+    model, w = charged(name), CHARGED[name][2]
+    batch = model.pressure_actions(298.15, 1.0e5, x=w, phase="liquid", directions=[PressureActionDirection(0.0, 0.0, [0.0] * 3)],
+                                   observables=[PropertyObservable.TotalEnthalpy, PropertyObservable.LogFugacityCoefficient])
+    direct = [cast(float, batch.molar_density), *(cast(float, r.value) for r in batch.results)]
+    text = property_asl_record(model)
+    assert [[property_fgh(text, [298.15, 1.0e5, *w], row, fgh)[0].hex() for fgh in (0, 1, 2)] for row in range(5)] == [[v.hex()] * 3 for v in direct]
+    m = aqueous_package(model)
+    m.fs.sb = m.fs.props.build_state_block([0], defined_state=True)
+    sb = m.fs.sb[0]
+    sb.temperature.fix(298.15)
+    sb.pressure.fix(1.0e5)
+    for j, v in zip(model.component_ids, w, strict=True):
+        sb.mole_frac_phase_comp["liquid", j].set_value(v)
+    x = {j: sb.mole_frac_phase_comp["liquid", j] for j in model.component_ids}
+    got = [value(sb.dens_mol_phase["liquid"]), value(sb.enth_mol_phase["liquid"]),
+           *(value(PressureProperties._at(sb, "liquid", 2 + k, sb.temperature, sb.pressure, x, True)) for k in range(3))]
+    assert [v.hex() for v in got] == [v.hex() for v in direct]
+
+
+@pytest.mark.parametrize("name", CHARGED)
+def test_charged_derivatives_match_central_differences(name: str) -> None:
+    """F2, verification only: |D - A| <= tau |A| + 10 eps (|f+| + |f-|) / 2h along T, P, water and salt; tau 1e-6 for
+    the gradient, 1e-5 for the Hessian from differences of the gradient. A mixed (composition, P) entry is differenced
+    along its composition direction: a 10 Pa difference of a composition gradient is roundoff-limited."""
+    model, w, salt = charged(name), CHARGED[name][2], CHARGED[name][3]
+    text, q = property_asl_record(model), np.array([298.15, 1.0e5, *w])
+    directions = {"T": (np.eye(5)[0], 1e-3), "P": (np.eye(5)[1], 10.0), "water": (np.eye(5)[2], 1e-5), "salt": (np.array([0, 0, *salt]), 1e-5)}
+    eps = float(np.finfo(float).eps)
+    for row in range(5):
+        _, gradient, hessian = property_fgh(text, q, row, 2)
+        for b, (d, h) in directions.items():
+            plus, minus = property_fgh(text, q + h * d, row, 1), property_fgh(text, q - h * d, row, 1)
+            pairs = [(gradient @ d, plus[0], minus[0], 1e-6)]
+            pairs += [(a @ hessian @ d, a @ plus[1], a @ minus[1], 1e-5) for k, (a, _) in directions.items() if b != "P" or k == "P"]
+            for exact, fp, fm, tau in pairs:
+                assert abs((fp - fm) / (2 * h) - exact) <= tau * abs(exact) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (row, b)
+
+
+def test_non_electroneutral_weights_are_refused() -> None:
+    """F3: every order and the endpoint audit refuse a charge-unbalanced composition; charged VLE is refused."""
+    from epcsaft.idaes import check_state, property_configuration
+    model, bad = charged("NaCl"), [0.96, 0.03, 0.01]
+    message = "non-electroneutral composition: charge sum 0.0199"
+    for fgh in (0, 1, 2):
+        with pytest.raises(RuntimeError, match="epcsaft_property:invalid_input:" + message):
+            property_fgh(property_asl_record(model), [298.15, 1.0e5, *bad], 2, fgh)
+    m = aqueous_package(model)
+    m.fs.sb = m.fs.props.build_state_block([0], defined_state=True)
+    sb = m.fs.sb[0]
+    sb.temperature.fix(298.15)
+    sb.pressure.fix(1.0e5)
+    for j, v in zip(model.component_ids, bad, strict=True):
+        sb.mole_frac_phase_comp["liquid", j].set_value(v)
+    with pytest.raises(ParameterError, match=message):
+        check_state(sb, "liquid")
+    with pytest.raises(ValueError, match="a charged record admits only"):
+        property_configuration(model, phases=("liquid", "vapor"), temperature_ref=298.15, pressure_ref=1.0e5, state_bounds={})
+
+
+def test_charged_mixer_ipopt_round_trip(tmp_path: Path) -> None:
+    """F4: an IDAES Mixer of two MgCl2 brines solves with no adapter refusal at any iterate, an exact outlet
+    composition and closed energy balance. The ion fractions start above Ipopt's 0.01 bound push."""
+    from idaes.core.solvers import get_solver  # type: ignore[import-untyped]
+    from idaes.models.unit_models import Mixer, MomentumMixingType  # type: ignore[import-untyped]
+    from epcsaft.idaes import asl_library, solve_with_diagnostics
+    solver = get_solver()
+    if not solver.available(exception_flag=False):
+        pytest.skip("IDAES Ipopt executable unavailable")
+    os.environ["AMPLFUNC"] = "\n".join(filter(None, (os.environ.get("AMPLFUNC"), str(asl_library()))))
+    model = charged("MgCl2")
+    m = aqueous_package(model)
+    m.fs.mix = Mixer(property_package=m.fs.props, inlet_list=["in1", "in2"], momentum_mixing_type=MomentumMixingType.equality)
+    inlets = (((0.94, 0.02, 0.04), 298.15), ((0.955, 0.015, 0.03), 303.15))
+    for port, (x, T) in zip((m.fs.mix.in1, m.fs.mix.in2), inlets, strict=True):
+        port.flow_mol.fix(1.0)
+        port.temperature.fix(T)
+        port.pressure.fix(1.0e5)
+        for j, v in zip(model.component_ids, x, strict=True):
+            port.mole_frac_comp[0, j].fix(v)
+    m.fs.mix.in2.pressure.unfix()  # pressure equality sets it; fixing both inlets over-specifies the mixer
+    states = (m.fs.mix.in1_state[0], m.fs.mix.in2_state[0], m.fs.mix.mixed_state[0])
+    for state, (x, _) in zip(states, (*inlets, inlets[0]), strict=True):
+        for j, v in zip(model.component_ids, x, strict=True):
+            state.mole_frac_comp[j].set_value(v)
+            state.mole_frac_phase_comp["liquid", j].set_value(v)
+    states[2].flow_mol.set_value(2.0)
+    log = tmp_path / "ipopt.log"
+    solve_with_diagnostics(solver, m, logfile=log, endpoints=((states[2], "liquid"),))
+    assert "epcsaft_property failure" not in log.read_text()
+    assert [value(states[2].mole_frac_comp[j]) for j in model.component_ids] == pytest.approx([0.9475, 0.0175, 0.035], abs=1e-10)
+    flows = []
+    for state in states:
+        batch = model.pressure_actions(value(state.temperature), value(state.pressure), phase="liquid",
+                                       x=[value(state.mole_frac_comp[j]) for j in model.component_ids],
+                                       directions=[PressureActionDirection(0.0, 0.0, [0.0] * 3)], observables=[PropertyObservable.TotalEnthalpy])
+        flows.append(value(state.flow_mol) * cast(float, batch.results[0].value))
+    assert abs(flows[0] + flows[1] - flows[2]) <= 1e-8 * sum(map(abs, flows))
