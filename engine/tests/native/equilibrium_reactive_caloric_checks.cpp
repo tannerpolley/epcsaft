@@ -700,9 +700,9 @@ inline void product_identities(const Case& c,Actions& actions,const std::vector<
 inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std::vector<NamedDirection>& basis) {
     std::vector<std::vector<NamedDirection>> result;
     for(const auto& a:basis) result.push_back({a});
-    // Two EOS-parameter directions run in parameter_pair(); two law directions are refused.
+    // Two EOS-parameter directions run in parameter_pair(); the law pair is the last basis entry twice.
     for(std::size_t i=0;i<basis.size();++i) for(std::size_t j=i;j<basis.size();++j)
-        if(!(basis[i].parameter&&basis[j].parameter)||basis[i].name!=basis[j].name) result.push_back({basis[i],basis[j]});
+        if(!(basis[i].parameter&&basis[j].parameter)||basis[i].name!=basis[j].name||i==basis.size()-1) result.push_back({basis[i],basis[j]});
     const std::size_t theta=c.ionic?4:3,kappa=theta+1;
     auto combined=[&](std::size_t a,std::size_t b,const char* label) {
         NamedDirection d{label,std::min(basis[a].step,basis[b].step),add(basis[a].value,basis[b].value),basis[a].chart,
@@ -726,7 +726,7 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
 // Two EOS-parameter directions need d2C/dtheta_a dtheta_b: single coordinates (eps0, eps1) on E-sys
 // and (eps_w, eps_Na) on I-sys, and the tied E-sys (epsilon, epsilon). E-sys species differ once
 // eps0 != eps1, outside the identical-species binary128 oracle, so that pair differences exact first
-// actions. Caloric observables and two law directions are refused, never returned as numbers.
+// actions. Caloric observables are refused, never returned as numbers.
 inline void parameter_pair(bool ionic) {
     auto c=input(ionic,false);
     if(ionic) c.active.push_back({ParameterFamily::DispersionEnergyOverK,{1}});
@@ -765,9 +765,6 @@ inline void parameter_pair(bool ionic) {
         if(item.observable.kind==SolvedStateObservableKind::PhaseProperty||item.observable.kind==SolvedStateObservableKind::PhaseGibbsMolarVolume) calorics.push_back(item.observable);
     for(const auto& item:solved_state_actions(compiled,solved,{calorics,{e[0].value,e[1].value}}).results)
         CHECK(item.status==SolvedStateActionStatus::ReferenceUnavailable&&!item.action);
-    bool refused=false;const auto& law=basis.back().value;
-    try {(void)solved_state_actions(compiled,solved,{{q[0].observable},{law,law}});} catch(const std::invalid_argument&) {refused=true;}
-    CHECK(refused);
 }
 
 void run(bool ionic,bool fixed) {

@@ -2121,7 +2121,7 @@ $$
 - Status: Exact derivation
 - Source: Multivariate Taylor expansion with one direction inserted at order three and the repeated direction at order one
 - Description: Cancellation-resistant third directional energy action with two equal directions. Brackets extract a Taylor coefficient, not a finite step evaluation; all derivatives include the same implicit association solution.
-- Change note: Pure fifth-order terms cancel and terms with two copies of u start at order six. This evaluates a third derivative, not a public fifth-derivative capability. Normalize directions before coefficient evaluation and restore their three norms afterwards. No association equation or physical parameter changes.
+- Change note: Pure fifth-order terms cancel and terms with two copies of u start at order six. This evaluates a third derivative, not a public fifth-derivative capability. Normalize directions before coefficient evaluation and restore their three norms afterwards. Scale v by the largest power of two s <= 1 with s|v_i| <= n_i for every present ion and divide by s^2: the D^5F[v^5] term cancels only exactly, and outside the radius of the DH ionic-strength power it swamps D^3F[u,v,v] in double. No association equation or physical parameter changes.
 
 $$
 [t^5]F(p+vt\pm ut^3)=\frac{D^5F[v,v,v,v,v]}{120}

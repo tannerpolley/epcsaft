@@ -1570,16 +1570,24 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         // EqID: repeated_direction_energy_third
         // [t^5](F(p+v*t+u*t^3)-F(p+v*t-u*t^3)) = D3F[u,v,v].
         // The sparse paths avoid subtracting the singular pure-u third derivative
-        // from an otherwise regular mixed response at dilute ionic states.
+        // from an otherwise regular mixed response at dilute ionic states. Their difference still
+        // carries D5F[v^5]/120 in each coefficient; scale v by a power of two s with s|v_i| <= n_i for
+        // every present ion, keeping the path inside the radius of DH (sum n_i z_i^2)^(3/2).
+        double s = 1.0;
+        for (std::size_t i = 0; i < components; ++i) {
+            const double v = std::abs(normalized[repeated->second][2 + i]);
+            if (parameters_.charge_number[i] != 0 && amounts[i] > 0.0 && s * v > amounts[i])
+                s = std::ldexp(1.0, std::ilogb(amounts[i] / v));
+        }
         for (const double sign : {1.0, -1.0}) {
             std::vector<std::vector<double>> series(6, std::vector<double>(width, 0.0));
             series[0] = point;
-            series[1] = normalized[repeated->second];
+            for (std::size_t i = 0; i < width; ++i) series[1][i] = s * normalized[repeated->second][i];
             for (std::size_t i = 0; i < width; ++i)
                 series[3][i] = sign * normalized[repeated->first][i];
             coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual).front();
+                &result.diagnostics.association_residual).front() / (s * s);
             ++result.diagnostics.directional_paths;
         }
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {

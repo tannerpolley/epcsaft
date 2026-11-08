@@ -2493,14 +2493,12 @@ changing source correlation.
 Referenced driven T/P caloric composition uses the anchored Gibbs derivative
 columns through order four, including T/P order through three with one EOS
 coordinate. Values and A1/A2 cover h, s, u_G, frozen c_p/c_v,G and v_G;
-A2 admits EOS-parameter increments in both directions and a coefficient increment
-in at most one. With two parameter-bearing directions the polarised paths also
+A2 admits EOS-parameter and coefficient increments in both directions. With two parameter-bearing directions the polarised paths also
 carry the fixed-T/P second parameter columns of ALG-REFERENCE on the coordinates
 they move; with one, that term cancels between the paths and is not evaluated.
 A parameter-coefficient pair adds no term, because the law shift is exact and
-independent of the EOS parameters. Two coefficient directions are refused: their
-A2 disagrees with both references on the ionic case. Caloric observables along
-two parameter-bearing directions are refused, because the anchored Gibbs columns
+independent of the EOS parameters; a coefficient pair moves only the state. Caloric
+observables along two EOS-parameter directions are refused, because the anchored Gibbs columns
 carry at most one parameter. No Engine consumer of two-parameter A2 exists today.
 Feed-only
 A3 retains constant standards and frozen slopes at driven T/P. Free-intensive A1/A2 uses the same composition with its solved T/P coefficients.

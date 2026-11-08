@@ -324,23 +324,19 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     }
     // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
     const bool referenced = !compiled.reference_diagnostics.empty();
-    std::size_t law_directions = 0, eos_parameter_directions = 0;
+    std::size_t eos_parameter_directions = 0;
     for (const auto &d : request.directions) {
-        bool parameter = false, law = false;
+        bool parameter = false;
         for (double v : d.active_parameters) parameter |= v != 0.0;
         eos_parameter_directions += std::size_t(parameter);
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
-                law |= v != 0.0;
-        parameter |= law;
-        law_directions += std::size_t(law);
+                parameter |= v != 0.0;
         if (referenced && request.directions.size() == 3 &&
             (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0 || problem.temperature.free ||
              problem.pressure.free))
             throw std::invalid_argument("a referenced third-order action admits only feed directions at fixed T and P");
     }
-    if (referenced && request.directions.size() == 2 && law_directions > 1)
-        throw std::invalid_argument("a referenced second-order action admits at most one reaction-law direction");
     // The solid's ln K^rho carries dC_s/dtheta only; its second parameter derivative is not compiled.
     if (!problem.solids.empty() && eos_parameter_directions > 1)
         throw std::invalid_argument("solids admit at most one EOS-parameter direction in a second or higher action");
