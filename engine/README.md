@@ -466,7 +466,8 @@ branches as `success=False` with `message` and `convergence.stop`, but a failure
 evaluate the returned point still raises `EosError` or `ParameterError`; handle both.
 `solve_equilibrium_starts` records an attempt's exception in `causes` instead of raising.
 
-For a fixed-T/P, declared two-free-liquid equilibrium, `equilibrium.asl_record`
+For a fixed-T/P equilibrium of two declared free phases (two liquids, or a liquid and a vapor whose declared
+support holds only zero-charge components), `equilibrium.asl_record`
 constructs the immutable record consumed by the installed
 `epcsaft_equilibrium_phase_component_amount` external function:
 
@@ -500,9 +501,10 @@ controls are nonnegative, including zero incoming reactive complexes. The anchor
 must reproduce the supplied absolute feed. The selected component mole-fraction
 gap (phase 0 minus phase 1) must exceed `minimum_gap`; indices and supports follow
 the supplied model order. Scalar reaction K or affinity and explicit problem
-standard Gibbs references are transported. Version 4 carries explicit base-EOS
-and association selections and the active parameters; earlier records are
-rejected without guessed defaults. Temperature-dependent reaction
+standard Gibbs references are transported; a reaction whose K underflows is
+declared by its affinity `-R T ln K`. Version 5 carries explicit base-EOS
+and association selections, the active parameters and each phase's kind; earlier
+records are rejected without guessed defaults. Temperature-dependent reaction
 correlations, neutral-reference transformations and model
 thermochemistry records are rejected rather than silently omitted.
 

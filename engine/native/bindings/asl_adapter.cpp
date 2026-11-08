@@ -416,7 +416,7 @@ auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v4");
+    reader.field("epcsaft.asl.equilibrium.v5");
     const auto document = read_document(reader);
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
@@ -432,7 +432,9 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     problem.phases = reader.vector([&] {
         eq::PhaseSpec phase;
         phase.name = reader.next();
-        if (reader.next() != "liquid") reject("equilibrium callback requires liquid phases");
+        const auto kind = reader.next();
+        if (kind != "liquid" && kind != "vapor") reject("equilibrium callback requires liquid or vapor phases");
+        phase.kind = kind == "liquid" ? eq::PhaseKind::Liquid : eq::PhaseKind::Vapor;
         phase.support = reader.vector([&] { return reader.integer(); });
         phase.support_declared = reader.integer(1) != 0;
         if (reader.next() != "free") reject("equilibrium callback requires free phase amounts");

@@ -27,8 +27,13 @@ struct AslFeedMap {
         require(identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0);
         require(!problem.temperature.free && !problem.pressure.free && problem.feed.kind == FeedKind::Amounts);
         require(problem.phases.size() == 2 && problem.topology_declared && !problem.source_reference);
-        for (const auto& p : problem.phases)
-            require(p.kind == PhaseKind::Liquid && p.is_free() && p.support_declared && !p.support.empty());
+        // At least one liquid; a vapor's declared support holds only zero-charge components.
+        require(problem.phases[0].kind == PhaseKind::Liquid || problem.phases[1].kind == PhaseKind::Liquid);
+        for (const auto& p : problem.phases) {
+            require(p.is_free() && p.support_declared && !p.support.empty());
+            for (auto i : p.support)
+                require(i < n && (p.kind == PhaseKind::Liquid || (parameters.charge_number.empty() ? 0 : parameters.charge_number[i]) == 0));
+        }
         for (double q : anchor) require(std::isfinite(q) && q >= 0.0);
         std::vector<double> charge(anchor.size() + 1, 0.0), norm(charge.size(), 0.0);
         for (std::size_t i = 0; i < n; ++i) {
@@ -97,13 +102,13 @@ inline void put_active(AslRecordWriter& w, const std::vector<ActiveParameter>& a
 inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active, const EquilibriumProblem& p,
                               const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v4");
+    w.put("epcsaft.asl.equilibrium.v5");
     put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
     w.put("phases"); w.put(p.phases.size());
     for (const auto& phase : p.phases) {
-        w.put(phase.name); w.put("liquid"); w.vector(phase.support); w.put(phase.support_declared);
+        w.put(phase.name); w.put(phase.kind == PhaseKind::Liquid ? "liquid" : "vapor"); w.vector(phase.support); w.put(phase.support_declared);
         w.put("free"); w.put(phase.amount.fraction); w.vector(phase.composition_guess);
         w.vector(phase.packing_guess ? std::vector<double>{*phase.packing_guess} : std::vector<double>{});
     }
