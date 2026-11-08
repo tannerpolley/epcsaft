@@ -452,10 +452,13 @@ struct CompiledSystem final {
     EPC_API std::vector<double> classified_residuals(const PhasePoint& prepared, const std::vector<double>& rows) const;
     // Moiety rows (Jacobian rows for width n) divided by their size, the larger of the feed inventory and the
     // row's term magnitude per mol of feed, when it is at most EQUILIBRIUM_TRACE_MOIETY_FRACTION (#633).
-    template <typename Base> std::vector<Base> trace_moiety_relative(const PhasePointValues<Base>&, std::vector<Base>, std::size_t = 1) const;
+    // Sizes are measured at `sizes` when given, so a polish trial is judged with its step's divisors (#1094).
+    template <typename Base> std::vector<Base> trace_moiety_relative(const PhasePointValues<Base>&, std::vector<Base>, std::size_t = 1,
+                                                                     const PhasePointValues<Base>* sizes = nullptr) const;
     std::vector<double> trace_moiety_relative(const PhasePoint& prepared, std::vector<double> values,
                                               std::size_t width = 1) const;
-    EPC_API std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1) const;
+    EPC_API std::vector<double> numerical_rows(const PhasePoint&, std::vector<double>, std::size_t width = 1,
+                                               const PhasePoint* sizes = nullptr) const;
     EPC_API double classified_residual_norm(const std::vector<double>& point) const;
     EPC_API RowUncertainty row_uncertainty(const PhasePoint&) const;
     EPC_API PointEvaluation evaluate_at(const PhasePoint& prepared) const;

@@ -1192,9 +1192,9 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     const bool free_amount_newton = newton && !compiled.feasibility_cell();
     const bool guarded_newton = free_amount_newton || !std::is_same_v<Base, double>;
     const bool preserve_trial_branch = refine_trial && !compiled.log_charge_rows.empty();
-    const auto numerical = [&](const auto& at, auto rows, std::size_t width = 1) {
-        if constexpr (std::is_same_v<Base, double>) return compiled.numerical_rows(at, std::move(rows), width);
-        else return compiled.trace_moiety_relative(at, std::move(rows), width);
+    const auto numerical = [&](const auto& at, auto rows, std::size_t width = 1, const PhasePointValues<Base>* sizes = nullptr) {
+        if constexpr (std::is_same_v<Base, double>) return compiled.numerical_rows(at, std::move(rows), width, sizes);
+        else return compiled.trace_moiety_relative(at, std::move(rows), width, sizes);
     };
     const auto classified_rows = [&](const auto& at, const auto& rows) {
         if constexpr (std::is_same_v<typename std::decay_t<decltype(rows)>::value_type, double>) return compiled.classified_residuals(at, rows);
@@ -1413,7 +1413,8 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                         static_cast<double>(trial_index)}, step, error.what());
                     continue;
                 }
-                const Base after = maximum_abs(numerical(at_candidate, rows_after));
+                // Judged with the step's moiety sizes: a size crossing the trace threshold rescales a row by 1/s_k (#1094).
+                const Base after = maximum_abs(numerical(at_candidate, rows_after, 1, &at));
                 const Base classified_after = maximum_abs(classified_rows(at_candidate, rows_after));
                 const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
                     || (after < defect && after <= row_tolerance)

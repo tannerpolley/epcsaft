@@ -1043,7 +1043,13 @@ correction is discarded. Row equilibration leaves the Newton direction unchanged
 in exact arithmetic; the optimizer's constraints and the exact derivatives of a
 solved state are unchanged. The term magnitude keeps a row that cancels large
 solution-side amounts, such as carbon in a loaded MEA liquid, at the size its
-rounding allows.
+rounding allows. A trial's progress is measured with the sizes of its step's
+start point, the divisors of that step's Newton system. A size that crosses the
+threshold between the point and its trial otherwise rescales the row by about
+$10^6$, so a contracting step reads as growth. In the sodium acetate + HMF
+two-liquid case, the proton moiety $\mathrm{H^+}+\mathrm{HAc}-\mathrm{OH^-}$
+at $s_k\approx 10^{-6}$ stalled at 5e-8 this way. Best-point selection and the
+classified residual keep each point's own sizes.
 Before evaluating a trial, a fresh undamped correction may terminate polishing
 when the current point is the stored best point, its classified maximum is within
 the unchanged caller criterion, and every free phase amount is positive.

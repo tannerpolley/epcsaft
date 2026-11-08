@@ -466,8 +466,9 @@ std::vector<double> CompiledSystem::trace_moiety_relative(const PhasePoint& at, 
 }
 template <typename Base>
 std::vector<Base> CompiledSystem::trace_moiety_relative(
-    const PhasePointValues<Base>& prepared, std::vector<Base> values, std::size_t width
+    const PhasePointValues<Base>& at, std::vector<Base> values, std::size_t width, const PhasePointValues<Base>* sizes
 ) const {
+    const auto& prepared = sizes ? *sizes : at;
     const auto n_feed = feed_at(prepared.point);
     const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(prepared); else return this->feed_total; }();
     const Base trace = policy::EQUILIBRIUM_TRACE_MOIETY_FRACTION.value;
@@ -489,13 +490,14 @@ std::vector<Base> CompiledSystem::trace_moiety_relative(
     return values;
 }
 
-template std::vector<WiderScalar> CompiledSystem::trace_moiety_relative(const PhasePointValues<WiderScalar>&, std::vector<WiderScalar>, std::size_t) const;
+template std::vector<WiderScalar> CompiledSystem::trace_moiety_relative(const PhasePointValues<WiderScalar>&, std::vector<WiderScalar>, std::size_t,
+    const PhasePointValues<WiderScalar>*) const;
 
 // Numerical charge representation only; physical equations and Ipopt derivatives remain unchanged.
 std::vector<double> CompiledSystem::numerical_rows(
-    const PhasePoint& prepared, std::vector<double> values, std::size_t width
+    const PhasePoint& prepared, std::vector<double> values, std::size_t width, const PhasePoint* sizes
 ) const {
-    values = trace_moiety_relative(prepared, std::move(values), width);
+    values = trace_moiety_relative<double>(prepared, std::move(values), width, sizes);
     for (const auto& [row, phase] : log_charge_rows) {
         const auto& z = model->parameters().charge_number;
         const auto& shape = prepared.shape[phase];
