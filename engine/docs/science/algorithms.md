@@ -1643,7 +1643,12 @@ accepts it, every recomputed row meets the caller `row_tolerance`, the
 candidate-topology predicate reports no event, and each corrected phase density
 shares the anchored locally unique root window (`DENSITY_ANCHOR_LOG_WINDOW`) of
 its cold declared root at `s = 0` or of the previous accepted density
-afterwards, with a positive corrected pressure slope. Finite step failures
+afterwards, with a positive corrected pressure slope. On a parameter path the
+density at the predicted coordinates also witnesses the branch: a step's
+density change can exceed the window while its predictor error does not.
+Intensive and feed paths keep the previous-density window alone, which also
+limits their step near a critical point, where a long step's corrector can
+exhaust a recovery's work. Finite step failures
 (left domain, stalled, missing anchored root) halve the step from the last
 accepted coordinates up to the caller's retry allowance and minimum step;
 invalid paths, nonfinite operands, infeasible solves, a singular implicit

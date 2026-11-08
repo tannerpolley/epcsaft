@@ -593,6 +593,12 @@ struct Path final {
     }
 };
 
+// Molar density of a prepared phase on the driver's log-composition chart.
+double chart_density(const HelmholtzModel& model, const PhasePoint& prepared, std::size_t phase) {
+    const auto& x = prepared.composition[phase];
+    return (model.parameters().ideal_gas ? std::accumulate(x.begin(), x.end(), 0.0) : 1.0) / prepared.volume[phase];
+}
+
 // A predicted free amount below zero is projected onto its bound rather than rejected: the
 // amount bound is the disappearance boundary itself, and only the bound-constrained corrector
 // can report the typed event there (counted in `projected`). A log mole fraction above zero is
@@ -733,11 +739,12 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
 
 // One predictor-corrector attempt shared by the straight path and the envelope: generated layout and
 // rank, the Euler predictor over `delta` along the implicit tangent at the accepted state, the admitted
-// domain and the same-driver corrector with carried anchors.
+// domain and the same-driver corrector. `predict_anchors`: the previous accepted density or else the density at
+// the predicted coordinates witnesses each phase's branch (the envelope passes its own Euler-predicted densities).
 Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
-                const std::vector<double>& anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
+                std::vector<double> anchors, bool predict_anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
                 const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
     Attempt attempt;
     attempt.terminal = true;
@@ -780,8 +787,16 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
                     return admit_result(trial, compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
                 }
             }
-            try { return admit_result(trial, compiled, solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm), &audit), anchors, false, scope); }
+            EquilibriumResult solved;
+            try { solved = solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm), &audit); }
             catch (...) { if (observations) observations->observe(audit); throw; }
+            if (!predict_anchors || compiled.mode_count) return admit_result(trial, compiled, std::move(solved), anchors, false, scope);
+            auto previous = admit_result(trial, compiled, solved, anchors, false, scope);
+            if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
+            const auto at = compiled.prepare(predicted, true);
+            for (std::size_t p = 0; p < anchors.size(); ++p) anchors[p] = chart_density(trial, at, p);
+            auto witnessed = admit_result(trial, compiled, std::move(solved), anchors, false, scope);
+            return witnessed.accepted ? witnessed : previous;
         }
         attempt.terminal = false;
         attempt.stop = ContinuationStop::left_domain;
@@ -970,7 +985,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
         CompiledSystem compiled = compile_problem(model, problem);
-        auto attempt = advance(model, start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
+        auto attempt = advance(model, start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, false, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted) {
             const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
@@ -1463,7 +1478,7 @@ BranchCheck density_branches_at(
         std::vector<double> x = prepared.composition[phase];
         const double total = std::accumulate(x.begin(), x.end(), 0.0);
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
-        const double corrected = (model.parameters().ideal_gas ? total : 1.0) / prepared.volume[phase];
+        const double corrected = chart_density(model, prepared, phase);
         const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
         const double slope = pure ? prepared.pure[phase].pressure_density_derivative
             : model.state(prepared.temperature, corrected, x).pressure_density_derivative;
@@ -1719,7 +1734,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         CompiledSystem compiled = compile_problem(trial, problem);
         Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
             return sensitivity(current, y_current, path.lever(current), failure);
-        }, q_try - q, anchors, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
+        }, q_try - q, anchors, parameter_path, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
