@@ -502,6 +502,14 @@ struct CompiledSystem final {
         return problem.enthalpy_j.has_value() || problem.entropy_j_per_k.has_value() || problem.internal_energy_j.has_value();
     }
 
+    // Apparent Cp is defined at driven T and P, or at free T with fixed P and an enthalpy target alone.
+    bool admits_apparent_cp() const noexcept {
+        const auto& p = problem;
+        return !p.pressure.free && !p.pressure.absent
+            && ((!p.temperature.free && !p.temperature.absent)
+                || (p.temperature.free && p.enthalpy_j && !p.entropy_j_per_k && !p.volume_m3 && !p.internal_energy_j));
+    }
+
     bool feasibility_cell() const noexcept {
         return ideal || pinned_count != 0 || has_caloric_condition() || problem.volume_m3 || (problem.critical.has_value() || problem.spinodal.has_value());
     }

@@ -246,9 +246,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
         return;
     }
     if (observation.kind == ObservationKind::EquilibriumIsobaricHeatCapacity) {
-        require(!compiled.problem.temperature.free && !compiled.problem.pressure.free
-                && !compiled.problem.temperature.absent && !compiled.problem.pressure.absent,
-                "apparent Cp requires driven T/P");
+        require(compiled.admits_apparent_cp(), "apparent Cp requires driven T/P or free T with a fixed-P enthalpy target");
         return;
     }
     require(observation.phase < compiled.problem.phases.size(), "phase index");

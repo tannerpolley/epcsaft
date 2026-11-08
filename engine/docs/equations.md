@@ -2644,8 +2644,8 @@ $$
 - Section: Equilibrium / Caloric observables
 - Status: Exact derivation
 - Source: Total extensive enthalpy differentiated along the fixed-pressure equilibrium branch
-- Description: Apparent isobaric heat capacity includes phase and reaction relaxation, normalized by the declared positive feed sum. Native actions use physical increments on a dimensionless path parameter; the auxiliary thermal increment is 1 K.
-- Change note: Equilibrium owns the phase-amount/enthalpy Taylor products. Parameter fitting consumes the value and first mixed thermal actions, dividing out physical increments before the affine optimizer map. Driven T/P and a smooth regular branch are required. No second apparent heat-capacity action or physical calorimetry is established.
+- Description: Apparent isobaric heat capacity includes phase and reaction relaxation, normalized by the declared positive feed sum. Native actions use physical increments on a dimensionless path parameter; the auxiliary thermal increment is 1 K. Under a PH specification (free T, fixed P, enthalpy-target direction w_H with increment delta_H; P, feed and parameters held) the value and first action come from the temperature actions, and the parameter derivative holds H rather than T fixed.
+- Change note: Equilibrium owns the phase-amount/enthalpy Taylor products. Parameter fitting consumes the value and first mixed thermal actions, dividing out physical increments before the affine optimizer map. Driven T/P or free T with a fixed-P enthalpy target, and a smooth regular branch, are required. No second apparent heat-capacity action or physical calorimetry is established.
 
 $$
 H=\sum_p n_p h_p,\qquad N_f=\sum_i n_{f,i},\qquad
@@ -2654,7 +2654,11 @@ $$
 $$
 Dc_{P,eq}[w]=\frac{D^2H[w_T,w]}{N_f\delta_T}
 -\frac{DH[w_T]DN_f[w]}{N_f^2\delta_T},\qquad
-\partial_k c_{P,eq}=\frac{D^2H[w_T,w_k]}{N_f\delta_T\delta_k}\quad(DN_f[w_k]=0).
+\partial_k c_{P,eq}=\frac{D^2H[w_T,w_k]}{N_f\delta_T\delta_k}\quad(DN_f[w_k]=0),
+$$
+$$
+c_{P,eq}=\frac{\delta_H}{N_f\,DT[w_H]},\qquad
+Dc_{P,eq}[w]=-\frac{\delta_H\,D^2T[w_H,w]}{N_f\,(DT[w_H])^2}-c_{P,eq}\frac{DN_f[w]}{N_f}\quad\text{(PH)}.
 $$
 
 ## `reference_species_calorics`

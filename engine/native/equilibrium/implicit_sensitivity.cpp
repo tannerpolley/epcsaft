@@ -275,9 +275,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         if (item.kind == SolvedStateObservableKind::PhaseProperty && static_cast<std::size_t>(item.property) >= CALORIC_PROPERTY_COUNT)
             throw std::invalid_argument("solved-state property observable");
         if (item.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
-            && (problem.temperature.free || problem.pressure.free || problem.temperature.absent
-                || problem.pressure.absent || request.directions.size() != 1))
-            throw std::invalid_argument("apparent Cp requires driven T/P and first actions only");
+            && (!compiled.admits_apparent_cp() || request.directions.size() != 1))
+            throw std::invalid_argument("apparent Cp requires driven T/P or free T with a fixed-P enthalpy target, and first actions only");
         const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
         if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
@@ -926,12 +925,17 @@ static SolvedStateActionBatch evaluate_action(
         return o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity;
     });
     if (apparent) {
+        // Driven T/P: dH along T. Free T with an enthalpy target: DT along H, so c = delta/(N_f DT[w_H]).
+        const bool enthalpy_target = problem.temperature.free;
+        const double feed = std::accumulate(compiled.n_feed.begin(), compiled.n_feed.end(), 0.0);
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity)
-                o.kind = SolvedStateObservableKind::SystemEnthalpy;
-        SolvedStateActionDirection thermal{1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
+                o.kind = enthalpy_target ? SolvedStateObservableKind::Temperature : SolvedStateObservableKind::SystemEnthalpy;
+        SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
+        if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
+        const double delta = enthalpy_target ? thermal.enthalpy_j : thermal.temperature_k;
         const bool new_thermal = !shared || !shared->thermal_enthalpy;
         if (new_thermal) {
             auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope, covering);
@@ -947,7 +951,6 @@ static SolvedStateActionBatch evaluate_action(
         auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
         enthalpy.directions.insert(enthalpy.directions.begin(), thermal);
         const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
-        const double feed = std::accumulate(compiled.n_feed.begin(), compiled.n_feed.end(), 0.0);
         const auto &direction = request.directions.front();
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
@@ -962,12 +965,13 @@ static SolvedStateActionBatch evaluate_action(
             item.status = first.status;
             item.diagnostic_message = first.diagnostic_message;
             if (first.status != SolvedStateActionStatus::Available || !first.action) continue;
-            item.value = *first.action / (feed * thermal.temperature_k);
+            item.value = enthalpy_target ? delta / (feed * *first.action) : *first.action / (feed * delta);
             item.status = second.status;
             item.diagnostic_message = second.diagnostic_message;
             item.property_diagnostics = second.property_diagnostics;
             if (second.status == SolvedStateActionStatus::Available && second.action)
-                item.action = *second.action / (feed * thermal.temperature_k) - *item.value * dfeed / feed;
+                item.action = (enthalpy_target ? -delta * *second.action / (feed * *first.action * *first.action)
+                                               : *second.action / (feed * delta)) - *item.value * dfeed / feed;
             if (!std::isfinite(*item.value) || (item.action && !std::isfinite(*item.action))) {
                 item.status = SolvedStateActionStatus::Nonfinite;
                 item.action.reset();

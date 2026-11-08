@@ -2794,12 +2794,16 @@ a reason to alter a coefficient or anchor.
 Extensive H is assembled by Equilibrium from its complete phase-property jets and
 phase-amount Taylor products. Pinned-zero amount series contribute exactly zero.
 `SystemEnthalpy` and `AdditionEnthalpy` in parameter fitting consume this owner.
-`EquilibriumIsobaricHeatCapacity` uses EqID: `equilibrium_isobaric_heat_capacity`:
-thermal H A1 supplies the value and H A2(T,w) supplies its first action, including
-the feed-normalization derivative. The call shares the prepared center and
-factorization across ordinary, thermal and mixed requests; nothing is reused
-across calls. Driven T/P is required, and higher apparent-Cp actions are refused.
-An unavailable outer action preserves an independently available Cp value.
+`EquilibriumIsobaricHeatCapacity` uses EqID: `equilibrium_isobaric_heat_capacity`.
+At driven T/P, thermal H A1 supplies the value and H A2(T,w) supplies its first
+action, including the feed-normalization derivative. At free T with fixed P and an
+enthalpy target (PH), the temperature A1 along the enthalpy target supplies the
+value and the mixed temperature A2(H,w) its first action, which holds H, P and feed
+fixed. The call shares the prepared center and factorization across ordinary,
+thermal and mixed requests; nothing is reused across calls. One admission predicate
+serves the action and the regression validator; free P, PS, UV, TV, pinned incipient
+charts and higher apparent-Cp actions are refused. An unavailable outer action
+preserves an independently available Cp value.
 
 ## ALG-FIT
 
@@ -2872,7 +2876,7 @@ See the fitting appendix for [cation-mixing coordinates](#cation-mixing-coordina
 [optional fitting-density offers](#optional-fitting-density-offers) and
 [guarded minimax](#guarded-minimax).
 The implemented fit (R1--R3) includes pressure-closed density and total molar
-isobaric heat capacity with fixed thermochemistry, driven-T/P apparent equilibrium
+isobaric heat capacity with fixed thermochemistry, driven-T/P or PH apparent equilibrium
 isobaric heat capacity, finite-addition enthalpy,
 the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust

@@ -496,7 +496,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         ``partial_pressure`` (Pa, P times that sum), ``phase_fraction``
         (dimensionless molar fraction), ``amount_ratio`` (dimensionless ratio
         of selected phase-component mol), or
-        ``equilibrium_isobaric_heat_capacity`` (J/(mol-feed K), driven T/P).
+        ``equilibrium_isobaric_heat_capacity`` (J/(mol-feed K), driven T/P or PH).
     problem : Problem
         Declared phases and physical constraints; discovery is refused.
     observed : float

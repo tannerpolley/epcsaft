@@ -89,18 +89,24 @@ void roundtrips() {
     const auto ph=recovered(aromatics,flash,at370,true,1.05*370,"PH5/benzene-toluene");
     CHECK(ph.iterations<=26);
 }
+// The identical ethane pair A=B at 300 K, 1 MPa: h_B-h_A = 5000 J/mol and equal c_p; the reaction law by kind
+// (0 affinity, 1 constant K, 2 ln K polynomial on the EOS standard state).
+std::pair<ThermochemistryRecord,EquilibriumProblem> ethane_reaction(int kind) {
+    auto r=records();const double R=GAS_CONSTANT_J_PER_MOL_K;
+    for(auto& species:r.component_intervals) species[0].correlation={IdealPolynomial{{40},298.15,0,0},100000};
+    r.component_intervals[1][0].correlation={IdealPolynomial{{40},298.15,kind==1?0.:5000.,kind==0?0.:R*std::log(2.)},100000};
+    auto p=equilibrium_support::flash(2);p.temperature=FreeValue::fixed(300);p.pressure=FreeValue::fixed(1e6);
+    p.phases[0].kind=PhaseKind::Vapor;  // vapor-side sole root at 300 K, 1 MPa (#423)
+    p.feed.values={2.5,0};p.solver_options.values[epcsaft::policy::row] = 1e-11;
+    ReactionSpec rx;rx.name="A=B";rx.stoichiometry={-1,1};
+    if(kind==0) rx.affinity_j_per_mol=5000;else if(kind==1) rx.equilibrium_constant=2;
+    else rx.correlation=ReactionLogPolynomial{std::log(2.),-5000/R,0,0,298.15,100,550,EOS_STANDARD_STATE_ID};
+    p.reactions={rx};return {r,p};
+}
 void reactions() {
     for(int kind=0;kind<3;++kind) {
-        auto r=records();const double R=GAS_CONSTANT_J_PER_MOL_K;
-        for(auto& species:r.component_intervals) species[0].correlation={IdealPolynomial{{40},298.15,0,0},100000};
-        r.component_intervals[1][0].correlation={IdealPolynomial{{40},298.15,kind==1?0.:5000.,kind==0?0.:R*std::log(2.)},100000};
-        auto p=equilibrium_support::flash(2);p.temperature=FreeValue::fixed(300);p.pressure=FreeValue::fixed(1e6);
-        p.phases[0].kind=PhaseKind::Vapor;  // vapor-side sole root at 300 K, 1 MPa (#423)
-        p.feed.values={2.5,0};p.solver_options.values[epcsaft::policy::row] = 1e-11;
-        ReactionSpec rx;rx.name="A=B";rx.stoichiometry={-1,1};
-        if(kind==0) rx.affinity_j_per_mol=5000;else if(kind==1) rx.equilibrium_constant=2;
-        else rx.correlation=ReactionLogPolynomial{std::log(2.),-5000/R,0,0,298.15,100,550,EOS_STANDARD_STATE_ID};
-        p.reactions={rx};const HelmholtzModel m(e2::identical_ethane_pair(),{},r);
+        auto [r,p]=ethane_reaction(kind);const double R=GAS_CONSTANT_J_PER_MOL_K;const auto rx=p.reactions[0];
+        const HelmholtzModel m(e2::identical_ethane_pair(),{},r);
         const auto ref=solve_equilibrium(m,p);CHECK(ref.has_state());
         for(bool h:{true,false}) recovered(m,p,ref,h,280,(h?"PH5/":"PS5/")+std::to_string(kind));
         const auto target=reaction_target_series(300,p.reactions,2);
@@ -458,5 +464,60 @@ void internal_energy_specification() {
     const HelmholtzModel bounded(propane_parameters(),{},edge);
     auto q=sat;q.temperature=FreeValue::variable(300);q.internal_energy_j=energy(pure,sr);q.volume_m3=volume(sr);
     bool refused=false;try{(void)solve_equilibrium(bounded,q);}catch(const std::invalid_argument& e){refused=std::string(e.what()).find("interval endpoint")!=std::string::npos;}CHECK(refused);
+}
+// Apparent Cp under PH (free T, fixed P, enthalpy target) on the PH5/2 state, read from solved_state_actions of the
+// PH-compiled problem, against central differences of the driven equilibrium enthalpy along T (F1) and of the driven
+// apparent Cp at the re-solved T over epsilon/k at fixed H, P and feed (F2); each extrapolated ladder within its criterion.
+void apparent_heat_capacity() {
+    const double R=GAS_CONSTANT_J_PER_MOL_K;const auto reaction=ethane_reaction(2);const auto& r=reaction.first;const auto& tp=reaction.second;
+    const std::vector<ActiveParameter> active={{ParameterFamily::DispersionEnergyOverK,{0}}};
+    const auto model=[&](double shift){auto q=e2::identical_ethane_pair();q.dispersion_energy_over_k[0]+=shift;return HelmholtzModel(q,active,r);};
+    const auto m=model(0);
+    const auto read=[](const CompiledSystem& c,const EquilibriumResult& x,SolvedStateObservableKind kind,std::vector<SolvedStateActionDirection> d) {
+        const auto item=solved_state_actions(c,x,{{{kind}},d}).results[0];
+        if(!item.value) throw std::runtime_error("apparent Cp read: "+item.diagnostic_message.value_or("unavailable"));
+        return item;
+    };
+    const auto driven=[&](const HelmholtzModel& model,double T,SolvedStateObservableKind kind) {
+        auto q=tp;q.temperature=FreeValue::fixed(T);const auto c=compile_problem(model,q);const auto x=solve_equilibrium(model,q);CHECK(x.has_state());
+        return *read(c,x,kind,{direction(c)}).value;
+    };
+    constexpr auto Cp=SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity,H=SolvedStateObservableKind::SystemEnthalpy;
+    const auto ph=condition(tp,true,driven(m,300,H),280);
+    const auto c=compile_problem(m,ph);const auto x=solve_equilibrium(m,ph);CHECK(x.has_state());
+    const double T=*x.temperature,feed=c.feed_total;auto wq=direction(c);wq.active_parameters[0]=1;
+    const double cp=*read(c,x,Cp,{direction(c)}).value;
+    const auto parameter=read(c,x,Cp,{wq});CHECK(parameter.status==SolvedStateActionStatus::Available&&parameter.action);
+    const double dcp=*parameter.action;
+    compare("PH6/T",T,300,300,1e-8);
+    // Cross-checks: the driven-T/P apparent Cp at this T, and c_p,frozen + (h_B-h_A)^2 K/((1+K)^2 R T^2) for identical species.
+    compare("PH6/driven-cp",cp,driven(m,T,Cp),cp,1e-12);
+    const double K=std::exp(std::log(2.)-5000/(R*T));SolvedStateObservable frozen{SolvedStateObservableKind::PhaseProperty};
+    frozen.property=PropertyObservable::TotalIsobaricHeatCapacity;
+    const double analytic=*solved_state_actions(c,x,{{frozen},{direction(c)}}).results[0].value+25e6*K/((1+K)*(1+K))/(R*T*T);
+    compare("PH6/analytic-cp",cp,analytic,cp,1e-12);
+    const auto ladder=[&](const std::string& id,double exact,double h0,double tolerance,const auto& difference) {
+        double fd[3];
+        for(int i=0;i<3;++i) {
+            fd[i]=difference(h0*std::ldexp(1.,-i));
+            recording_support::observe((id+"/step-"+std::to_string(i)).c_str(),"apparent-cp-difference","J/(mol-feed K)",exact,fd[i],
+                recording_support::fields({recording_support::field("step",h0*std::ldexp(1.,-i)),recording_support::field("error",std::abs(exact-fd[i])/std::abs(exact))}),
+                "Observation","centered-difference","fixed-H apparent Cp","caloric-specification");
+        }
+        for(int i=0;i<2;++i) compare(id+"/ratio-"+std::to_string(i),std::abs(exact-fd[i])/std::abs(exact-fd[i+1]),4,1,0.5);
+        compare(id+"/Richardson",exact,(4*fd[2]-fd[1])/3,exact,tolerance);
+    };
+    ladder("PH6/F1",cp,0.4,1e-10,[&](double h){return (driven(m,T+h,H)-driven(m,T-h,H))/(2*h*feed);});
+    ladder("PH6/F2",dcp,0.2,1e-9,[&](double d){
+        double v[2];
+        for(int side=0;side<2;++side) {
+            const auto shifted=model(side?d:-d);const auto xs=solve_equilibrium_from_coordinates(shifted,ph,x.coordinates);CHECK(xs.has_state());
+            v[side]=driven(shifted,*xs.temperature,Cp);
+        }
+        return (v[1]-v[0])/(2*d);
+    });
+    bool refused=false;try{(void)solved_state_actions(c,x,{{{Cp}},{wq,wq}});}
+    catch(const std::invalid_argument& e){refused=std::string(e.what()).find("fixed-P enthalpy target")!=std::string::npos;}
+    CHECK(refused);
 }
 } // namespace caloric_specification_checks
