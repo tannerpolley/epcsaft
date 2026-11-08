@@ -88,10 +88,16 @@ inline void put_document(AslRecordWriter& w, const ParameterDocument& d) {
     for (const auto& e : d.entries) { w.put(e.identity); w.put(e.field); w.vector(e.index); w.put(e.magnitude); w.put(e.unit); }
 }
 
-inline std::string asl_record(const ParameterDocument& d, const EquilibriumProblem& p,
-                              const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options = {}) {
+// The active parameters in model order; their values are the document's.
+inline void put_active(AslRecordWriter& w, const std::vector<ActiveParameter>& active) {
+    w.put("active_parameters"); w.put(active.size());
+    for (const auto& a : active) w.put(static_cast<std::size_t>(a.family)), w.vector(a.indices);
+}
+
+inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active, const EquilibriumProblem& p,
+                              const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v3");
+    w.put("epcsaft.asl.equilibrium.v4");
     put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
@@ -112,6 +118,7 @@ inline std::string asl_record(const ParameterDocument& d, const EquilibriumProbl
     w.put("topology_declared"); w.put(p.topology_declared); w.put("solver_options");
     const auto effective = p.solver_options.resolved(solver_options);
     for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));
+    put_active(w, active);
     w.put("continuation_options"); w.put(options.initial_step); w.put(options.minimum_step);
     w.put(options.max_steps); w.put(options.max_retries_per_step);
     w.put("feed_offset"); w.vector(map.offset); w.put("feed_matrix"); w.put(map.matrix.size());
@@ -139,8 +146,7 @@ inline std::string asl_property_record(const ParameterDocument& d, const std::ve
     put_document(w, d);
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
-    w.put("active_parameters"); w.put(active.size());
-    for (const auto& a : active) w.put(static_cast<std::size_t>(a.family)), w.vector(a.indices);
+    put_active(w, active);
     w.put(t.has_value());
     if (!t) return w.finish();
     w.put("standard_pressure"); w.put(t->standard_pressure); w.put("component_intervals"); w.put(t->component_intervals.size());

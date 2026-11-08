@@ -391,14 +391,12 @@ def test_parameter_columns_match_central_differences(phase: str) -> None:
 
 def test_parameter_estimation_ipopt_round_trip(tmp_path: Path) -> None:
     """F3: two theta* liquid densities (180 K, 3 MPa; 160 K, 1 MPa; x_methane 0.3) recover theta* from the packet values
-    through the IDAES adapter; the external AMPL Ipopt exits with code 0. The equilibrium record still refuses actives."""
+    through the IDAES adapter; the external AMPL Ipopt exits with code 0."""
     from idaes.core import FlowsheetBlock
     from idaes.core.solvers import get_solver
     from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock
     from epcsaft.idaes import asl_library, property_configuration, solve_with_diagnostics
     model, shifted = methane_ethane(), methane_ethane(THETA_STAR)
-    with pytest.raises(ValueError, match="ASL record requires inactive parameters"):
-        _core.equilibrium_asl_record(model, object(), _core.ContinuationOptions(), [], [], [], 0, 1.0)  # refused before the problem is read
     solver = get_solver()
     if not solver.available(exception_flag=False):
         pytest.skip("IDAES Ipopt executable unavailable")
