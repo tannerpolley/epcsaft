@@ -74,3 +74,13 @@ def test_cation_mixing_with_zero_dodecane_preserves_aqueous_state() -> None:
     new = Mixture(extended).state(298.15, rho=30000, x=[*x, 0.0])
     assert old.residual_helmholtz == new.residual_helmholtz
     assert old.cation_mixing == new.cation_mixing != 0
+
+
+def test_entries_read_before_reassignment_stay_valid() -> None:
+    """#1100: entries are copies; a list read earlier once dangled after the setter replaced the vector and aborted the process."""
+    d: Any = Parameters.from_mapping(packet("gross-sadowski-2001/3"), components=["methane", "ethane"])._document
+    earlier = d.entries
+    expected = [(e.identity, e.magnitude) for e in earlier]
+    d.entries = d.entries
+    d.entries = earlier
+    assert [(e.identity, e.magnitude) for e in earlier] == expected == [(e.identity, e.magnitude) for e in d.entries]

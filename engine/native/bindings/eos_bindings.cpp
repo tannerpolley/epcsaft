@@ -136,8 +136,9 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::ParameterDocument>(module, "ParameterDocument")
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_component, site_multiplicity, base_choice,
-            association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice,
-            entries);
+            association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice)
+        // Copies: references into the vector dangle once the setter replaces it.
+        .def_rw("entries", &epcsaft::ParameterDocument::entries, nb::rv_policy::copy);
     module.def("build_parameters", &epcsaft::build_parameters);
     module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
     module.def("fitted_document", &epcsaft::fitted_document);
