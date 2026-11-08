@@ -4585,7 +4585,7 @@ class ReactionCoordinate:
 
     Notes
     -----
-    Plain assignments precede an enthalpy-shift addition on a fresh observation copy. Duplicate assignments and two shifts on one reaction are refused. Sequence starts and minimax do not admit EnthalpyShift; see ALG-FIT.
+    Plain assignments precede an enthalpy-shift addition on a fresh observation copy. Duplicate assignments and two shifts on one reaction are refused. Sequence starts and minimax admit EnthalpyShift as an offset from the declared correlation; see ALG-FIT.
     """
     name: str
     """Reaction name shared by every matching observation/source law."""

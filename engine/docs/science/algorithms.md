@@ -2904,8 +2904,11 @@ existing physical shift row and any plain coordinate values. To replay, copy the
 declaration, retaining its bounds and source metadata, and use the fitted EOS
 parameters without applying coordinates again. The native `reaction_log10_reciprocal` helper
 returns its decadic coefficients and refuses $c\ne0$.
-Sequence starts and minimax explicitly refuse this coordinate; their existing
-coefficient and EOS charts retain their behavior.
+Sequence starts and minimax admit this coordinate. A sequence start gives the shift as an
+offset from the declared correlation, so the entry reports the total shift and its bounds stay
+those declared; the EOS and coefficient start rewrites are unchanged. A shift box that excludes
+zero is refused, because the ordinary start is physical zero, and a check baseline reads the
+declared correlation, not the shifted one.
 `LogEquilibriumConstant` uses the declared fixed positive temperature and named
 source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact

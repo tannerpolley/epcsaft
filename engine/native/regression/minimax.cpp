@@ -310,15 +310,12 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
     FitResult failures; failures.solver_options = request.controls.solver_options.resolved({});
     try {
-        for (const auto& coordinate : request.coordinates.coordinates)
-            require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
-                "reaction enthalpy shift is not supported in minimax");
         validate_fit_request(request, !evaluation_point);
         const auto frozen = evaluate_checks(request, request.baseline.value_or(request.parameters));
         std::vector<std::size_t> selected = request.minimax->targets;
         for (const auto& group : request.checks) if (!group.report_only) selected.insert(selected.end(), group.rows.begin(), group.rows.end());
         ObservationEvaluator evaluator(request, failures, selected);
-        const auto point = request.coordinates.start(request.parameters, request.observations, request.thermochemistry);
+        const auto point = fit_start(request);
         const ObservationFunction callback = [&](const auto& u, bool columns, auto& out) { return evaluator.evaluate(u, columns, out); };
         FitResult result; result.solver_options = request.controls.solver_options.resolved({});
         if (evaluation_point) {

@@ -109,6 +109,8 @@ struct FitRequest final {
     bool singular_vectors = false;
     std::optional<MinimaxRequest> minimax;
     std::optional<MeasurementUncertainty> uncertainty;
+    // Engine-internal (fit_sequence): optimizer start; only enthalpy-shift entries are read (see fit_start).
+    std::optional<std::vector<double>> start;
 };
 
 // One rejected trial: the observation that failed, its typed cause and the optimizer point. A
@@ -244,5 +246,7 @@ EPC_API FitResult solve_minimax(const FitRequest& request, const std::vector<dou
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);
 EPC_API FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& point = {});
 void validate_fit_request(const FitRequest& request, bool optimizing = true);
+// The initial optimizer point: CoordinateSet::start, with the enthalpy-shift entries taken from request.start.
+std::vector<double> fit_start(const FitRequest& request);
 
 }  // namespace epcsaft::regression

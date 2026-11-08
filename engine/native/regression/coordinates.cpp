@@ -215,7 +215,7 @@ Parameters CoordinateSet::apply(Parameters parameters, const std::vector<double>
     return parameters;
 }
 
-std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const {
+std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Observation>& observations, const std::vector<double>& optimizer, bool shifts) const {
     std::map<std::string, ReactionLogPolynomial> laws;
     const auto values = physical(optimizer);
     const auto order = tie();
@@ -228,7 +228,7 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     // Assign absolute coefficients before adding shifts, independent of declaration order.
     for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {
         const auto& target = coordinates[order[row]].reaction;
-        if (!target || (target->coefficient == ReactionCoefficient::EnthalpyShift) != shift) continue;
+        if (!target || (target->coefficient == ReactionCoefficient::EnthalpyShift) != shift || (shift && !shifts)) continue;
         for (auto* problem : problems)
             for (auto& reaction : problem->reactions) {
                 if (reaction.name != target->name) continue;

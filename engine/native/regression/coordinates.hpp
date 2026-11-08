@@ -59,7 +59,7 @@ struct CoordinateSet final {
     EPC_API std::pair<std::vector<double>, std::vector<double>> optimizer_bounds() const;
     // A copy of `parameters` with every slot (both mirrored entries of a pair) rewritten.
     EPC_API Parameters apply(Parameters parameters, const std::vector<double>& optimizer) const;
-    EPC_API std::map<std::string, ReactionLogPolynomial> apply(std::vector<Observation>& observations, const std::vector<double>& optimizer) const;
+    EPC_API std::map<std::string, ReactionLogPolynomial> apply(std::vector<Observation>& observations, const std::vector<double>& optimizer, bool shifts = true) const;
 };
 
 // Reject invalid charts, conflicting named reaction declarations and constants fixed by other inputs.

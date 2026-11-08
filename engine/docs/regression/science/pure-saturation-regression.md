@@ -240,8 +240,9 @@ regression.reaction_enthalpy_shift(
 
 Pivot temperature is required in K;
 origin, scale, bounds and the physical result are in J/mol. Ordinary least squares
-and coordinate-aware `regression.differentiate` admit the declaration; sequence
-starts and minimax refuse it. The point reader's residual columns have unit
+and coordinate-aware `regression.differentiate`, sequence starts and minimax admit the
+declaration; a sequence start is an offset from the declared correlation, and the box must
+include zero. The point reader's residual columns have unit
 weights. `result.chart.reaction_laws[name]` gives the fitted native correlation;
 `regression.reaction_log10_reciprocal(law)` supplies $(A,B,C)$ for the declared
 negative base-10 reciprocal form. Replay preserves caller-owned source metadata.

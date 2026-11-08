@@ -1476,6 +1476,177 @@ void check_addition_enthalpy() {
 }  // namespace regression_checks
 
 namespace regression_checks {
+// #1060: an enthalpy-shift start is an offset from the declared correlation; sequence starts and minimax carry it.
+// Fixture B: the reacting bubble with the manufactured law, coordinates A (scale 1) and shift (pivot 200 K, scale 2500).
+FitRequest shifted_bubble() {
+    FitRequest request;
+    request.controls = budgeted_controls();
+    request.parameters = properties_support::neutral_binary();
+    const auto bubble = reacting_bubble(HelmholtzModel(request.parameters));
+    request.observations = {solved(ObservationKind::EquilibriumPressure, bubble), solved(ObservationKind::PartialPressure, bubble, 1, {0})};
+    request.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::EnthalpyShift, 2500.0)};
+    request.coordinates.coordinates[1].reaction->pivot_temperature = 200.0;
+    for (auto& c : request.coordinates.coordinates) { c.lower = -20000.0; c.upper = 20000.0; }
+    request.coordinates.coordinates[0].lower = -50.0; request.coordinates.coordinates[0].upper = 50.0;
+    reaction_data(request);
+    for (auto& row : request.observations) row.observed *= 1.01;  // data off the model: the coordinates must move
+    request.minimax = MinimaxRequest{};
+    request.minimax->targets = {0, 1};
+    request.minimax->q = 0.01; request.minimax->tolerance = 1.0e-8;
+    request.minimax->activity_distance = 1.0e-6; request.minimax->margin = 0.1;
+    return request;
+}
+
+// The exact optimizer columns against independently rebuilt central differences (verification only).
+void check_shift_columns(const std::string& id, const FitRequest& request, const std::vector<double>& u, bool logarithmic) {
+    const auto at = evaluated_columns(request, u);
+    const std::size_t width = u.size();
+    std::vector<std::size_t> signal(width, 0);
+    for (std::size_t row = 0; row < request.observations.size(); ++row) for (std::size_t c = 0; c < width; ++c) {
+        const auto value = [&](double shift) {
+            auto v = u;
+            v[c] += shift;
+            auto observations = request.observations;
+            request.coordinates.apply(observations, v);
+            const auto prediction = predict(HelmholtzModel(request.coordinates.apply(request.parameters, v)), observations[row]);
+            CHECK(prediction.status == ObservationStatus::Available);
+            return logarithmic ? std::log(*prediction.value) : *prediction.value;
+        };
+        const auto rungs = ladder(value, 0.005);
+        signal[c] += std::abs(rungs.fine) >= 1.0e-2;
+        const double column = at.optimizer_gradient[row * width + c] / (logarithmic ? at.predictions[row] : 1.0);
+        ladder_agrees(id + "/" + std::to_string(row) + "/" + std::to_string(c), "dy_du", column, rungs,
+            fields({field("fd_signal", std::abs(rungs.fine)), field("u_step", 0.005)}),
+            "the shift column agrees with independently rebuilt central differences", "issue-1060");
+    }
+    for (std::size_t c = 0; c < width; ++c) CHECK(signal[c] > 0);
+}
+
+// Fixture K (check_reaction_enthalpy_shift's ln K pair, data at truth (1200, -700) J/mol): the sequence and the ordinary fit.
+void check_shift_sequence(const FitRequest& request) {
+    const auto optimizer = [](double a, double b) { return std::vector<double>{(a - 100.0) / 1000.0, (b - 100.0) / 1000.0}; };
+    const auto close = [](const std::string& id, double value, double reference, double atol, double rtol, const char* claim) {
+        agree("reaction-shift-start/" + id, "value", "1", value, reference, atol, rtol, "fixture K, truth (1200, -700) J/mol", claim, "issue-1060");
+    };
+    const auto sequence = [&](const FitRequest& r, const std::vector<double>& u) {
+        const auto results = fit_sequence(r, {u}, 100, 600.0);
+        CHECK(results.size() == 1 && results[0].usable);
+        return results.at(0);
+    };
+    const std::vector<double> truth_h{1200.0, -700.0};
+    const auto start = optimizer(500.0, 300.0);  // h0
+    const auto one = sequence(request, start);
+    for (std::size_t i = 0; i < 2; ++i) {
+        close("F1/physical/" + std::to_string(i), one.physical[i], truth_h[i], 1e-8, 1e-10, "the sequence reports the total shift from the declared correlation");
+        close("F1/optimizer/" + std::to_string(i), one.optimizer[i], (truth_h[i] - 100.0) / 1000.0, 1e-8, 1e-10, "the sequence endpoint is the chart value");
+    }
+    close("F1/initial_cost", one.initial_cost, 6.471776440961e-03, 0.0, 1e-10, "the sequence starts on the declared problem shifted by h0");
+    // Same start at shift zero: the sequence entry is the ordinary fit.
+    const auto at_zero = sequence(request, optimizer(0.0, 0.0)), ordinary = fit(request);
+    CHECK(at_zero.optimizer == ordinary.optimizer && at_zero.physical == ordinary.physical && at_zero.iterations == ordinary.iterations
+        && at_zero.initial_cost == ordinary.initial_cost && at_zero.optimizer_jacobian == ordinary.optimizer_jacobian);
+    CHECK(ordinary.iterations == 3);
+    close("F2a/initial_cost", ordinary.initial_cost, 8.382905054399e-03, 0.0, 1e-10, "the zero-shift start is the declared problem");
+    // Start h0: the ordinary fit runs on the request pre-shifted by h0 (ln K is linear in the shift, so the endpoint alone
+    // cannot expose a wrong start; the initial cost and the iteration count do).
+    auto pre = request;
+    request.coordinates.apply(pre.observations, start);
+    const auto shifted = fit(pre);
+    CHECK(shifted.usable);
+    close("F2b/initial_cost", one.initial_cost, shifted.initial_cost, 0.0, 1e-12, "the sequence and the pre-shifted ordinary fit start at one cost");
+    CHECK(one.iterations == shifted.iterations);
+    for (std::size_t i = 0; i < 2; ++i)
+        close("F2b/total/" + std::to_string(i), (i == 0 ? 500.0 : 300.0) + shifted.physical[i], one.physical[i], 1e-8, 0.0,
+            "h0 plus the pre-shifted shift is the sequence endpoint");
+    // A box that excludes the truth holds the endpoint on the declared bound, not on a bound moved by h0.
+    auto boxed = request;
+    boxed.coordinates.coordinates[0].lower = 0.0; boxed.coordinates.coordinates[0].upper = 1000.0;
+    const auto capped = sequence(boxed, start), plain = fit(boxed);
+    close("F2c/sequence", capped.optimizer[0], 0.9, 1e-8, 0.0, "the sequence ends on the declared upper bound");
+    close("F2c/ordinary", plain.optimizer[0], 0.9, 1e-8, 0.0, "the ordinary fit ends on the declared upper bound");
+    close("F2c/other", capped.optimizer[1], plain.optimizer[1], 1e-6, 0.0, "the unbounded reaction agrees");
+    // F3: the sequence endpoint columns are the point reader's (the ordinary fit's) columns there.
+    const auto reader = evaluated_columns(request, one.optimizer);
+    CHECK(reader.residual_optimizer_gradient.size() == one.optimizer_jacobian.size());
+    for (std::size_t i = 0; i < one.optimizer_jacobian.size(); ++i)
+        close("F3/sequence_column/" + std::to_string(i), one.optimizer_jacobian[i], reader.residual_optimizer_gradient[i], 1e-10, 1e-10,
+            "the sequence columns equal the ordinary columns at the endpoint");
+    check_shift_columns("reaction-shift-start/F4/K", request, optimizer(700.0, -300.0), false);
+    // F6: an EOS coordinate between two shifts keeps its start rewrite beside the shift start.
+    auto joint = request;
+    Coordinate eos{{{ParameterFamily::SegmentCount, {0}}}, request.parameters.segment_count[0], 0.1};
+    eos.lower = eos.origin - 0.5; eos.upper = eos.origin + 0.5;
+    joint.coordinates.coordinates.insert(joint.coordinates.coordinates.begin() + 1, eos);
+    joint.observations.push_back(density(300.0, 1e5, {1.0, 0.0, 0.0}, DensityBranch::Vapor));
+    const std::vector<double> truth_point{1.1, 0.2, -0.8};
+    auto truth_rows = joint.observations;
+    joint.coordinates.apply(truth_rows, truth_point);
+    const HelmholtzModel truth_model(joint.coordinates.apply(joint.parameters, truth_point));
+    for (std::size_t i = 0; i < truth_rows.size(); ++i) joint.observations[i].observed = *predict(truth_model, truth_rows[i]).value;
+    const auto mixed = sequence(joint, {0.4, 0.0, 0.2});
+    for (std::size_t i = 0; i < 3; ++i)
+        close("F6/optimizer/" + std::to_string(i), mixed.optimizer[i], truth_point[i], 1e-8, 0.0, "the EOS start rewrite and the shift start coexist");
+}
+
+// Fixture B through minimax: the point reader's constraint columns, the solve, and the shift start.
+void check_shift_minimax() {
+    const auto request = shifted_bubble();
+    auto u = request.coordinates.start(request.parameters, request.observations);
+    const auto start = u;
+    u[0] += 0.02; u[1] += 0.03;
+    const auto at = evaluated_columns(request, u);
+    const auto point = fit_minimax(request, u);
+    CHECK(point.minimax && point.minimax->availability == "values_only");
+    const auto& reader = *point.minimax;
+    const std::size_t width = reader.point.size();
+    std::size_t targets = 0;
+    for (std::size_t r = 0; r < reader.rows.size(); ++r) {
+        const auto& row = reader.rows[r];
+        if (row.kind != "target") continue;
+        ++targets;
+        const double y = at.predictions[row.row], slope = 1.0 / (std::log(10.0) * y);
+        for (std::size_t c = 0; c < 2; ++c)
+            agree("reaction-shift-start/F3/minimax/" + std::to_string(r) + "/" + std::to_string(c), "constraint_column", "native",
+                reader.jacobian[r * width + c], row.sign * slope * at.optimizer_gradient[row.row * 2 + c] / row.scale, 0.0, 1e-10,
+                "fixture B, interior point", "the minimax columns are sign*slope*dy/dv/scale of the ordinary columns", "issue-1060");
+    }
+    CHECK(targets == 4);
+    check_shift_columns("reaction-shift-start/F4/B", request, u, true);
+    const auto solved_point = fit_minimax(request);
+    CHECK(solved_point.minimax && solved_point.minimax->availability == "available");
+    const auto& m = *solved_point.minimax;
+    CHECK(m.feasible && m.stationary && solved_point.chart.reaction_laws.size() == 1);
+    const auto five = [&](const std::string& id, double value, double reference) {
+        agree("reaction-shift-start/F5/" + id, "value", "1", value, reference, 0.0, 1e-6, "fixture B, data x 1.01, q 0.01",
+            "public minimax reaches the bypassed-solve optimum with an A and shift pair", "issue-1060");
+    };
+    five("t", m.t, 1.246877e-4); five("A", solved_point.physical[0], -5.188913); five("shift", solved_point.physical[1], 6.403402);
+    // A nonzero shift start reaches fit_minimax through fit_start: the pre-shifted request is the same problem from zero.
+    const double h0 = 3000.0;
+    const std::vector<double> carried{start[0], h0 / 2500.0};
+    auto pre = request;
+    request.coordinates.apply(pre.observations, carried);
+    const auto reference = fit_minimax(pre);
+    auto direct = request;
+    direct.start = carried;
+    const auto ordinary = fit(direct);
+    const auto sequence = fit_sequence(request, {carried}, 1000, 600.0);
+    CHECK(reference.minimax && sequence.size() == 1);
+    CHECK(solved_point.residual_evaluations != reference.residual_evaluations || solved_point.jacobian_evaluations != reference.jacobian_evaluations);
+    // One temperature identifies only the combination that sets ln K there, so A and the shift can trade along a line:
+    // compare ln K at 180 K and t, and require the start-dependent evaluation counts to agree exactly.
+    const auto lnK = [](const FitResult& r) { return reaction_log_value(r.chart.reaction_laws.at("iso"), 180.0); };
+    CHECK(ordinary.physical == sequence.at(0).physical && ordinary.iterations == sequence.at(0).iterations);
+    for (const auto* result : {&ordinary, &sequence.at(0)}) {
+        CHECK(result->minimax && result->minimax->availability == "available");
+        five("start/lnK_180K", lnK(*result), lnK(reference));
+        five("start/lnK_zero_start", lnK(*result), lnK(solved_point));
+        five("start/t", result->minimax->t, reference.minimax->t);
+        CHECK(result->iterations == reference.iterations && result->residual_evaluations == reference.residual_evaluations
+            && result->jacobian_evaluations == reference.jacobian_evaluations);
+    }
+}
+
 // #484: van 't Hoff coefficient motion, supplied-record preservation and decadic replay.
 void check_reaction_enthalpy_shift() {
     FitRequest request;
@@ -1696,13 +1867,8 @@ void check_reaction_enthalpy_shift() {
         catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
     }
-    refused=false;
-    try { (void)fit_sequence(request, {start}, 10, 10.0); } catch (const std::invalid_argument& e) { refused=std::string(e.what()).find("fit_sequence") != std::string::npos; }
-    CHECK(refused);
-    request.minimax = MinimaxRequest{};
-    CHECK(fit(request).message.find("not supported in minimax") != std::string::npos);
-    CHECK(fit_minimax(request, start).message.find("not supported in minimax") != std::string::npos);
-    request.minimax.reset();
+    check_shift_sequence(request);
+    check_shift_minimax();
     auto wrong = request;
     wrong.coordinates.coordinates[0].reaction->pivot_temperature = 0.0;
     CHECK(fit(wrong).status == "invalid_setup");

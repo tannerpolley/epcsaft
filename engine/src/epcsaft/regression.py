@@ -809,7 +809,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         Request native singular vectors; default false.
     starts : sequence of sequence of float, optional
         Dimensionless optimizer starts, attempted in supplied order while shared
-        budgets remain. Reaction-enthalpy-shift coordinates are refused here.
+        budgets remain. A reaction-enthalpy-shift start is an offset from the declared
+        correlation.
     shared_iterations : int, optional
         Positive shared iteration budget; defaults to controls.maximum_iterations.
     shared_seconds : float, optional
@@ -832,7 +833,7 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
     ------
     ParameterError
         The required controls argument is omitted, solver options or shared
-        budgets are invalid, or starts are combined with a reaction-enthalpy shift.
+        budgets are invalid.
 
     Notes
     -----

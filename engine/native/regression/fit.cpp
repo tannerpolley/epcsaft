@@ -1182,6 +1182,18 @@ void validate_fit_request(const FitRequest& request, bool optimizing) {
     }
 }
 
+std::vector<double> fit_start(const FitRequest& request) {
+    auto point = request.coordinates.start(request.parameters, request.observations, request.thermochemistry);
+    if (!request.start) return point;
+    require(request.start->size() == point.size(), "fit start width");
+    for (std::size_t c = 0; c < point.size(); ++c) {
+        const auto& reaction = request.coordinates.coordinates[c].reaction;
+        if (reaction && reaction->coefficient == ReactionCoefficient::EnthalpyShift) point[c] = (*request.start)[c];
+    }
+    require(request.coordinates.within_bounds(point), "start outside bounds");
+    return point;
+}
+
 FitResult fit(const FitRequest& request) {
     if (request.uncertainty && request.uncertainty->groups.empty() && request.uncertainty->output_sigma.empty()
         && !request.uncertainty->covariance && !request.uncertainty->correlation) {
@@ -1207,7 +1219,7 @@ FitResult fit(const FitRequest& request) {
     auto& evaluator = *owned;
     const std::size_t width = evaluator.width();
     evaluator.start_workers(request.controls.workers);
-    std::vector<double> optimizer = set.start(request.parameters, request.observations, request.thermochemistry);
+    std::vector<double> optimizer = fit_start(request);
     optimizer.resize(width, 0.0);
     ObservationEvaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
@@ -1338,9 +1350,6 @@ FitResult fit(const FitRequest& request) {
 
 std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
     int iterations, double seconds) {
-    for (const auto& coordinate : request.coordinates.coordinates)
-        require(!coordinate.reaction || coordinate.reaction->coefficient != ReactionCoefficient::EnthalpyShift,
-            "reaction enthalpy shift is not supported in fit_sequence (starts)");
     require(iterations > 0 && std::isfinite(seconds) && seconds > 0.0, "shared fit budgets");
     const auto begin = std::chrono::steady_clock::now();
     std::vector<FitResult> results;
@@ -1353,7 +1362,8 @@ std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::v
         trial.controls.maximum_elapsed_time_seconds = std::min(controls.maximum_elapsed_time_seconds, remaining);
         try {
             trial.parameters = evaluate_coordinates(request.parameters, request.coordinates, start, request.holds, request.thermochemistry, request.controls.solver_options).parameters;
-            request.coordinates.apply(trial.observations, start);
+            request.coordinates.apply(trial.observations, start, false);
+            trial.start = start;
             results.push_back(fit(trial));
         } catch (const std::invalid_argument& error) {
             FitResult failed; failed.solver_options = request.controls.solver_options.resolved({}); failed.optimizer = start; failed.message = error.what(); results.push_back(std::move(failed));
