@@ -28,6 +28,7 @@ State = _core.State
 StateBatch = _core.StateBatch
 StateStatus = _core.StateStatus
 VirialCoefficients = _core.VirialCoefficients
+VirialCoefficientActions = _core.VirialCoefficientActions
 IdealPolynomial = _core.IdealPolynomial
 IdealShomate = _core.IdealShomate
 IdealNASA7 = _core.IdealNASA7
@@ -291,6 +292,19 @@ class Mixture:
         declarations refuse even on an ion-free composition face.
         """
         return self._model.virial_coefficients(T, self._composition(x))
+
+    def virial_coefficient_actions(
+        self, T: float, x: Mapping[str, float] | Sequence[float] | None = None, *, temperature_direction: float | None = None,
+        composition_direction: Mapping[str, float] | Sequence[float] | None = None,
+    ) -> VirialCoefficientActions:
+        """Return B and C with their exact derivatives along a direction in T (K) and x.
+
+        `second_action` and `third_action` are dB and dC per unit of the direction:
+        `temperature_direction=1` gives d/dT; a composition direction must sum to
+        zero (fixed total) and `[1, -1]` gives d/dx of the first component of a binary.
+        """
+        direction = [] if composition_direction is None else self._composition(composition_direction)
+        return self._model.virial_coefficient_actions(T, self._composition(x), temperature_direction or 0.0, direction)
 
     def state(
         self,

@@ -992,31 +992,67 @@ HelmholtzModel::HelmholtzModel(
     }
 }
 
+// Residual Helmholtz energy as a Taylor series in molar density at fixed T and x; Fixed = Taylor<1> adds
+// the exact derivative of every coefficient along one direction in T and x.
+template <typename Fixed>
+static Taylor<2, Fixed> virial_energy(const Parameters& parameters, const Fixed& temperature, const std::vector<Fixed>& composition) {
+    using Series = Taylor<2, Fixed>;
+    const auto sigma = segment_sigma(temperature, parameters);
+    const auto diameter = segment_diameter(temperature, parameters, sigma);
+    for (const auto* values : {&sigma, &diameter})
+        require(std::all_of(values->begin(), values->end(), [](const Fixed& v) { return std::isfinite(scalar_lead(v)) && scalar_lead(v) > 0.0; }), "segment geometry");
+    Series density;
+    density.c[1] = Fixed(1.0);
+    const std::vector<Fixed> energy(parameters.association_energy_over_k.begin(), parameters.association_energy_over_k.end());
+    const std::vector<Fixed> volume(parameters.association_volume.begin(), parameters.association_volume.end());
+    const auto delta = parameters.ideal_gas ? std::vector<Series>{} : association_delta_values(
+        temperature, density, composition, parameters, sigma, diameter, energy, volume);
+    for (const auto& strength : delta)
+        require(std::isfinite(scalar_lead(strength)) && scalar_lead(strength) >= 0.0, "association strength");
+    const auto sites = association_density_coefficients(density, composition, parameters, delta);
+    const auto terms = residual_helmholtz(temperature, density, composition, parameters, sigma, diameter,
+        sites, Series(0.0), Series(0.0), association_products(density, composition, parameters, sites, delta));
+    return terms.hard_chain + terms.dispersion + terms.association + terms.dipolar;
+}
+
 // EqID: neutral_virial_coefficients
-VirialCoefficients HelmholtzModel::virial_coefficients(double temperature, const std::vector<double>& composition) const {
-    core::Scope scope("virial_coefficients");
+VirialCoefficientActions HelmholtzModel::virial_coefficient_actions(double temperature, const std::vector<double>& composition,
+    double temperature_direction, const std::vector<double>& composition_direction) const {
+    core::Scope scope("virial_coefficient_actions");
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     validate_composition(composition);
     if (std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
         throw std::invalid_argument("virial coefficients require a neutral model: charged declaration is nonanalytic at zero density");
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    for (const auto* values : {&sigma, &diameter})
-        require(std::all_of(values->begin(), values->end(), [](double v) { return std::isfinite(v) && v > 0.0; }), "segment geometry");
-    Taylor<2> density;
-    density.c[1] = 1.0;
-    const auto delta = parameters_.ideal_gas ? std::vector<Taylor<2>>{} : association_delta_values(
-        temperature, density, composition, parameters_, sigma, diameter,
-        parameters_.association_energy_over_k, parameters_.association_volume);
-    for (const auto& strength : delta)
-        require(std::isfinite(strength.c[0]) && strength.c[0] >= 0.0, "association strength");
-    const auto sites = association_density_coefficients(density, composition, parameters_, delta);
-    const auto terms = residual_helmholtz(temperature, density, composition, parameters_, sigma, diameter,
-        sites, Taylor<2>(0.0), Taylor<2>(0.0), association_products(density, composition, parameters_, sites, delta));
-    const auto energy = terms.hard_chain + terms.dispersion + terms.association + terms.dipolar;
+    const auto energy = virial_energy(parameters_, temperature, composition);
     if (!std::isfinite(energy.c[1])) throw std::runtime_error("nonfinite second virial coefficient");
     if (!std::isfinite(2.0 * energy.c[2])) throw std::runtime_error("nonfinite third virial coefficient");
-    return {energy.c[1], 2.0 * energy.c[2]};
+    VirialCoefficientActions result{energy.c[1], 2.0 * energy.c[2]};
+    if (temperature_direction == 0.0 && composition_direction.empty()) return result;
+    require(composition_direction.empty() || composition_direction.size() == composition.size(), "composition direction size");
+    require(std::isfinite(temperature_direction), "temperature direction");
+    double balance = 0.0;
+    for (const double value : composition_direction) { require(std::isfinite(value), "composition direction"); balance += value; }
+    require(std::abs(balance) <= std::numeric_limits<double>::epsilon() * static_cast<double>(composition.size()), "composition direction sum");
+    using Fixed = Taylor<1>;
+    std::vector<Fixed> x(composition.size());
+    for (std::size_t i = 0; i < x.size(); ++i) {
+        x[i].c[0] = composition[i];
+        if (!composition_direction.empty()) x[i].c[1] = composition_direction[i];
+    }
+    Fixed t(temperature);
+    t.c[1] = temperature_direction;
+    const auto dual = virial_energy(parameters_, t, x);
+    result.second_action = dual.c[1].c[1];
+    result.third_action = 2.0 * dual.c[2].c[1];
+    if (!std::isfinite(result.second_action)) throw std::runtime_error("nonfinite second virial coefficient action");
+    if (!std::isfinite(result.third_action)) throw std::runtime_error("nonfinite third virial coefficient action");
+    return result;
+}
+
+VirialCoefficients HelmholtzModel::virial_coefficients(double temperature, const std::vector<double>& composition) const {
+    core::Scope scope("virial_coefficients");
+    const auto result = virial_coefficient_actions(temperature, composition, 0.0, {});
+    return {result.second, result.third};
 }
 
 void HelmholtzModel::validate_composition(

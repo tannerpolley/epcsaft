@@ -63,8 +63,14 @@ association and its error estimates retain their existing owners.
 Reject any declaration containing a nonzero species charge, even if that
 species has zero composition. Validate temperature, normalized nonnegative
 composition, evaluated geometry and association strengths, and retain named
-nonfinite coefficient failures. Outputs are B (m³/mol) and C (m⁶/mol²);
-thermal/composition actions are not supplied by this request.
+nonfinite coefficient failures. Outputs are B (m³/mol) and C (m⁶/mol²).
+
+The same series, with every coefficient and the temperature and mole fractions
+carrying one further forward-mode layer along a direction (dT, dx), returns the
+exact directional derivatives dB and dC. The composition direction sums to
+zero, so total amount stays fixed; dT = 1 gives d/dT, and a unit pair
+e_i − e_j gives ∂/∂x_i − ∂/∂x_j. The value arithmetic is that of the request
+without a direction, so B and C are unchanged.
 
 ## ALG-CALORICS
 

@@ -205,6 +205,8 @@ void register_eos(nb::module_& module) {
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
     nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
+    nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions")
+        EPCSAFT_READONLY(epcsaft::VirialCoefficientActions, second, third, second_action, third_action);
     nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
         EPCSAFT_VALUES(epcsaft::StateStatus, Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError);
     nb::class_<epcsaft::StateBatch> batch(module, "StateBatch");
@@ -267,6 +269,8 @@ void register_eos(nb::module_& module) {
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
         .def("virial_coefficients", &epcsaft::HelmholtzModel::virial_coefficients,
             nb::arg("temperature"), nb::arg("composition"))
+        .def("virial_coefficient_actions", &epcsaft::HelmholtzModel::virial_coefficient_actions,
+            nb::arg("temperature"), nb::arg("composition"), nb::arg("temperature_direction"), nb::arg("composition_direction"))
         .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
                          const std::vector<double>& composition, bool derived_properties) {
             model.validate_electroneutrality(composition);

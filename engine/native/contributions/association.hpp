@@ -119,10 +119,11 @@ std::vector<Scalar> association_residuals(
 
 // EqExclude: numerical iteration mechanics
 // At vacuum X=1 and the mass-action Jacobian is exactly the identity.
-inline std::vector<Taylor<2>> association_density_coefficients(const Taylor<2>& density,
-    const std::vector<double>& composition, const Parameters& parameters,
-    const std::vector<Taylor<2>>& delta) {
-    std::vector<Taylor<2>> sites(parameters.site_count(), Taylor<2>(1.0));
+template <typename Scalar, typename Fixed>
+std::vector<Scalar> association_density_coefficients(const Scalar& density,
+    const std::vector<Fixed>& composition, const Parameters& parameters,
+    const std::vector<Scalar>& delta) {
+    std::vector<Scalar> sites(parameters.site_count(), Scalar(1.0));
     for (std::size_t k = 1; k <= 2; ++k) {
         const auto rows = association_residuals(density, composition, parameters, sites, delta);
         for (std::size_t a = 0; a < sites.size(); ++a) sites[a].c[k] = -rows[a].c[k];

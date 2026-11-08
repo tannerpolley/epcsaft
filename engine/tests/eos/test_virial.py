@@ -92,3 +92,31 @@ def test_polar_third_virial_retains_three_body_term(family: str) -> None:
         face = _model(("carbon-dioxide", "methane"), True).virial_coefficients(300., [0., 1.])
         plain = _model(("carbon-dioxide", "methane"), False).virial_coefficients(300., [0., 1.])
     assert face.second == plain.second and face.third == plain.third
+
+
+def _action_fluid(name: str) -> tuple[Mixture, list[float] | None]:
+    if name in SPECIES or "+" in name:
+        return model(name), None if "+" not in name else [.3, .7]
+    from tests.eos.test_dipolar import _model as dipolar
+    from tests.eos.test_quadrupolar import _model as quadrupolar
+    return (dipolar if name == "dipole" else quadrupolar)(("acetone", "n-pentane") if name == "dipole" else ("carbon-dioxide", "methane"), True), [.3, .7]
+
+
+@pytest.mark.parametrize("name", ["Methane", "Methane+Propane", "Water2B+Methane", "dipole", "quadrupole"])
+@pytest.mark.parametrize("dT, dx, steps", [(1., None, (.5, .1, .02)), (0., [1., -1.], (1e-2, 2e-3, 4e-4)),
+                                           (.7, [.5, -.5], (.04, .008, .0016))])
+def test_virial_actions_converge_to_central_differences(name: str, dT: float, dx: list[float] | None, steps: tuple[float, ...]) -> None:
+    """Exact B and C actions against central differences: the difference shrinks as step squared."""
+    fluid, x = _action_fluid(name)
+    if dx is not None and x is None:
+        pytest.skip("pure fluid has no composition direction")
+    exact = fluid.virial_coefficient_actions(300., x, temperature_direction=dT, composition_direction=dx)
+    value = fluid.virial_coefficients(300., x)
+    assert (exact.second, exact.third) == (value.second, value.third)
+
+    def at(s: float) -> tuple[float, float]:
+        v = fluid.virial_coefficients(300. + s * dT, x if dx is None else [a + s * d for a, d in zip(x or [], dx)])
+        return v.second, v.third
+    for k, action in enumerate((exact.second_action, exact.third_action)):
+        for s in steps:
+            assert abs((at(s)[k] - at(-s)[k]) / (2 * s) - action) <= 3e-4 * (s / steps[0]) ** 2 * abs(action)

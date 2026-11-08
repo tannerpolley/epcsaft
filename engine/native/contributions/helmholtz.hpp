@@ -241,8 +241,8 @@ Scalar packing_fraction_from_geometry(
     if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) refuse(molar_density, eta);
     else if constexpr (is_taylor<Scalar>) {
         // Analytic series may be centered at vacuum; ordinary physical states remain strictly positive.
-        if (!(molar_density.c[0] >= 0.0 && wide_math::isfinite(molar_density.c[0])
-            && eta.c[0] < policy::CLOSE_PACKING_FRACTION.value))
+        if (!(scalar_lead(molar_density) >= 0.0 && wide_math::isfinite(scalar_lead(molar_density))
+            && scalar_lead(eta) < policy::CLOSE_PACKING_FRACTION.value))
             throw std::invalid_argument("packing fraction outside the fluid domain");
     }
     return eta;

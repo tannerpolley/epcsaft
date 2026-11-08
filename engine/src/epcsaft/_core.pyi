@@ -1274,6 +1274,15 @@ class VirialCoefficients:
     third: float
     """C in m⁶/mol²."""
 
+class VirialCoefficientActions:
+    """B and C with their derivatives along a (temperature, zero-sum composition) direction."""
+    second: float
+    third: float
+    second_action: float
+    """dB along the direction."""
+    third_action: float
+    """dC along the direction."""
+
 class State:
     unavailable_properties: list[tuple[str, PropertyActionStatus]]
     rank_records: list[NumericalRank]
@@ -1620,6 +1629,8 @@ class HelmholtzModel:
     """
     def virial_coefficients(self, temperature: float, composition: Sequence[float]) -> VirialCoefficients:
         """Return exact B and C for a neutral declaration at temperature in K."""
+    def virial_coefficient_actions(self, temperature: float, composition: Sequence[float], temperature_direction: float, composition_direction: Sequence[float]) -> VirialCoefficientActions:
+        """Return B, C and their exact derivatives along a direction; the composition direction sums to zero."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings with values and provenance."""
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),

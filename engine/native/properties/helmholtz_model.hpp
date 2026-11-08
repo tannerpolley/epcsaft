@@ -197,6 +197,10 @@ inline double require_component_property(const std::optional<double>& value) {
 struct VirialCoefficients final {
     double second = 0.0, third = 0.0;
 };
+// B and C with their derivatives along (temperature, composition) direction; zero-sum composition direction.
+struct VirialCoefficientActions final {
+    double second = 0.0, third = 0.0, second_action = 0.0, third_action = 0.0;
+};
 
 struct State final {
     policy::SolverOptions solver_options;
@@ -503,6 +507,8 @@ public:
         const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
         const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
+    EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
+        double temperature_direction, const std::vector<double>& composition_direction) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     std::vector<double> active_parameter_values() const;
