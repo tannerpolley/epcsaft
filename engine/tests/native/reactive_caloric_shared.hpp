@@ -8,8 +8,9 @@ using namespace epcsaft::equilibrium;
 using binary128_support::Quantity;
 
 inline double gibbs_contraction(const ReferenceCalorics& ref,std::size_t component,
-                               std::size_t a,std::size_t b,std::optional<std::size_t> parameter) {
-    for(const auto& term:ref.gibbs) if(term.temperature_order==a&&term.pressure_order==b&&term.parameter==parameter) {
+                               std::size_t a,std::size_t b,std::optional<std::size_t> parameter,
+                               std::optional<std::size_t> second=std::nullopt) {
+    for(const auto& term:ref.gibbs) if(term.temperature_order==a&&term.pressure_order==b&&term.parameter==parameter&&term.second_parameter==second) {
         if(term.column.status!=SolvedStateActionStatus::Available) throw std::runtime_error(term.column.message);
         return term.column.values.at(component);
     }

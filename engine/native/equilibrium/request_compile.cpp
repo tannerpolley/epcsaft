@@ -1142,7 +1142,8 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope, bool parameter_slopes,
-                                     std::size_t derivative_order, bool numerical_errors) {
+                                     std::size_t derivative_order, bool numerical_errors,
+                                     const std::vector<std::size_t> &pair_coordinates) {
     if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
     using AD = CppAD::AD<double>;
@@ -1272,19 +1273,26 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
                                   pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
                                   std::min(derivative_order, std::size_t(2)),
-                                  parameter_slopes, derivative_order);
+                                  parameter_slopes, derivative_order, nullptr, pair_coordinates);
     if (numerical_errors && !derived.empty()) for (std::size_t r = 0; r < diagnostics.size(); ++r) {
         reference_errors(model, temperature, problem.reactions[reference_rows[r]].stoichiometry, diagnostics[r]);
         if (!diagnostics[r].numerical_error_cause.empty()) result.numerical_error_cause = diagnostics[r].numerical_error_cause;
     }
-    for (std::size_t c = 0; c <= std::size_t(parameter_slopes); ++c)
+    // Parameter slots by count c: none, one coordinate, a requested coordinate pair.
+    std::array<std::vector<std::array<std::optional<std::size_t>, 2>>, 3> slots;
+    slots[0].push_back({});
+    for (std::size_t p = 0; p < model.active_parameters().size(); ++p)
+        slots[1].push_back({p, std::nullopt});
+    for (std::size_t i = 0; i < pair_coordinates.size(); ++i)
+        for (std::size_t j = i; j < pair_coordinates.size(); ++j)
+            slots[2].push_back({pair_coordinates[i], pair_coordinates[j]});
+    for (std::size_t c = 0; c <= (pair_coordinates.empty() ? std::size_t(parameter_slopes) : 2); ++c)
         for (std::size_t a = 0; a + c <= derivative_order; ++a)
             for (std::size_t b = 0; a + b + c <= derivative_order; ++b) {
                 if (b && !pressure_slope)
                     continue;
-                for (std::size_t p = 0; p < (c ? model.active_parameters().size() : 1); ++p) {
-                    ReferenceCalorics::Derivative entry{
-                        a, b, c ? std::optional<std::size_t>(p) : std::nullopt, {}};
+                for (const auto &slot : slots[c]) {
+                    ReferenceCalorics::Derivative entry{a, b, slot[0], slot[1], {}};
                     auto &column = entry.column;
                     column.values.assign(components, 0.0);
                     Eigen::VectorXd right(rows), scale(rows);
@@ -1294,8 +1302,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                     for (std::size_t r = 0; r < rows; ++r)
                         right(r) = !b && !c ? thermal[a][components + r] : 0.0;
                     for (std::size_t r = 0; r < diagnostics.size(); ++r) {
-                        const auto upper = diagnostics[r].derivative_value(a, b, entry.parameter);
-                        const auto lower = a ? diagnostics[r].derivative_value(a - 1, b, entry.parameter)
+                        const auto upper = diagnostics[r].derivative_value(a, b, entry.parameter, entry.second_parameter);
+                        const auto lower = a ? diagnostics[r].derivative_value(a - 1, b, entry.parameter, entry.second_parameter)
                                              : std::optional<double>(0.0);
                         if (!upper || !lower) {
                             column.status = SolvedStateActionStatus::ReferenceUnavailable;
@@ -1303,8 +1311,8 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                             column.message = "reference_unavailable: reaction " +
                                 reaction_name(problem.reactions[reference_rows[r]], reference_rows[r]) +
                                 " C_" + std::to_string(missing_a) + std::to_string(b) +
-                                (c ? " parameter " + std::to_string(p) : "") + ": " +
-                                diagnostics[r].derivative_cause(missing_a, b, entry.parameter);
+                                (c ? " parameter " + std::to_string(*entry.parameter) : "") + ": " +
+                                diagnostics[r].derivative_cause(missing_a, b, entry.parameter, entry.second_parameter);
                         } else
                             right(reference_rows[r]) -=
                                 GAS_CONSTANT_J_PER_MOL_K * (temperature * *upper + double(a) * *lower);

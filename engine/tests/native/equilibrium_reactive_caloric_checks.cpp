@@ -723,23 +723,47 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
 }
 
 #if defined(__linux__)
+// Sum_i nu_i g_{i,T^m P^n theta_p theta_q} = -R (T C_{mn} + m C_{m-1,n}) for the contraction C, mixed-differenced in binary128.
+inline void ionic_columns(const Case& c,const CompiledSystem& compiled,const Sample& center,const std::string& inputs,WideIonic& oracle) {
+    const std::vector<std::size_t> coordinates{0,1};
+    const auto ref=reference_calorics(compiled,c.problem.temperature.value,c.problem.pressure.value,true,true,true,4,false,coordinates);
+    const auto& nu=c.problem.reactions[0].stoichiometry;
+    const Wide T=c.problem.temperature.value,P=c.problem.pressure.value,epsilon=c.parameters.dispersion_energy_over_k[0],na=c.parameters.dispersion_energy_over_k[1];
+    const std::size_t family[3][3]={{0,3,5},{1,4,0},{2,0,0}};  // C, C_P, C_PP / C_T, C_TP / C_TT by (m,n)
+    for(const auto& pair:std::vector<std::array<std::size_t,2>>{{0,1},{0,0},{1,1}}) for(const auto& order:std::vector<std::array<std::size_t,2>>{{0,0},{1,0},{2,0},{0,1},{1,1},{0,2}}) {
+        double exact=0;for(std::size_t i=0;i<nu.size();++i) exact+=nu[i]*gibbs_contraction(ref,i,order[0],order[1],pair[0],pair[1]);
+        const auto mixed=[&](double h,std::size_t m,std::size_t n) {
+            Wide sum=0;
+            for(int sa:{1,-1}) for(int sb:{1,-1}) {
+                Wide ew=epsilon,en=na;(pair[0]?en:ew)+=sa*Wide(h);(pair[1]?en:ew)+=sb*Wide(h);
+                sum+=Wide(sa*sb)*oracle.reference_contraction(T,P,ew,en,center.phase.rho)[family[m][n]];
+            }
+            return double(sum/(4*Wide(h)*Wide(h)));
+        };
+        const auto centered=[&](double h)->double {return -GAS_CONSTANT_J_PER_MOL_K*(double(T)*mixed(h,order[0],order[1])+(order[0]?order[0]*mixed(h,order[0]-1,order[1]):0));};
+        const std::string label="p"+std::to_string(pair[0])+std::to_string(pair[1])+"/T"+std::to_string(order[0])+"P"+std::to_string(order[1]);
+        CHECK(scalar_ladder("1087/"+c.name+"/columns/"+label,{"sum nu g","J/mol",0,{}},exact,0.02,inputs,1e-6,centered));
+    }
+}
+
 // Two EOS-parameter directions need d2C/dtheta_a dtheta_b: single coordinates (eps0, eps1) on E-sys
 // and (eps_w, eps_Na) on I-sys, and the tied E-sys (epsilon, epsilon). E-sys species differ once
 // eps0 != eps1, outside the identical-species binary128 oracle, so that pair differences exact first
-// actions. Caloric observables are refused, never returned as numbers.
+// actions. On I-sys the trace salt puts every caloric A2 below its absolute floor, so the two-parameter
+// Gibbs columns are also checked against binary128 mixed differences of the reference contraction.
 inline void parameter_pair(bool ionic) {
     auto c=input(ionic,false);
     if(ionic) c.active.push_back({ParameterFamily::DispersionEnergyOverK,{1}});
     HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     if(!solved.has_state()) throw std::runtime_error(c.name+" pair center: "+solved.message);
-    const auto q=quantities(c.parameters.component_count(),false);const auto center=values(model,compiled,solved,q);
+    const auto q=quantities(c.parameters.component_count());const auto center=values(model,compiled,solved,q);
     const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
     Actions actions(compiled,solved,q);
     const auto basis=directions(c);const auto& tied=basis[ionic?4:3];
     std::vector<NamedDirection> e;
     for(std::size_t a=0;a<2;++a) {auto d=zero(c);d.active_parameters[a]=1;e.push_back({"epsilon-"+std::to_string(a),0.02,d,{d},true});}
-    if(ionic) {WideIonic oracle(c.parameters,c.records,c.problem,center.solved.mole_fractions[1]);ladder(c,actions,e,q,center,inputs,nullptr,&oracle);}
+    if(ionic) {WideIonic oracle(c.parameters,c.records,c.problem,center.solved.mole_fractions[1]);ladder(c,actions,e,q,center,inputs,nullptr,&oracle);ionic_columns(c,compiled,center,inputs,oracle);}
     else {
         ladder(c,actions,e,q,center,inputs);
         WideNeutral oracle(c);ladder(c,actions,{tied,tied},q,center,inputs,&oracle);
@@ -761,10 +785,6 @@ inline void parameter_pair(bool ionic) {
             "Relationship","swapped-directions","A2 is symmetric in its two parameter directions",
             "abs(A_ab-A_ba)<=atol+64*epsilon*sigma",std::abs(ab[i]-ba[i])<=target,"reactive-caloric");
     }
-    std::vector<Observable> calorics;for(const auto& item:quantities(c.parameters.component_count()))
-        if(item.observable.kind==SolvedStateObservableKind::PhaseProperty||item.observable.kind==SolvedStateObservableKind::PhaseGibbsMolarVolume) calorics.push_back(item.observable);
-    for(const auto& item:solved_state_actions(compiled,solved,{calorics,{e[0].value,e[1].value}}).results)
-        CHECK(item.status==SolvedStateActionStatus::ReferenceUnavailable&&!item.action);
 }
 
 void run(bool ionic,bool fixed) {

@@ -733,15 +733,21 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
                         diagnostic.derivatives.push_back(std::move(column));
                     }
                 }
-        // d2C/dtheta_a dtheta_b (EqID: reference_single_insertion_taylor), only for requested coordinate pairs.
+        // d2C/dtheta_a dtheta_b through T/P order reference_order-2 (EqID: reference_single_insertion_taylor), only for
+        // requested coordinate pairs; order 0 always, as the row path asks for it.
         for (std::size_t i = 0; i < pair_coordinates.size(); ++i)
-            for (std::size_t j = i; j < pair_coordinates.size(); ++j) {
-                auto column = reference_column(model, temperature, trace, stoichiometries[row], 0, 0,
-                    pair_coordinates[i], &preparation, pair_coordinates[j]);
-                if (!column.value) column.message = "reaction " + std::to_string(row) + " C_00 coordinates "
-                    + std::to_string(pair_coordinates[i]) + "," + std::to_string(pair_coordinates[j]) + ": " + column.message;
-                diagnostic.derivatives.push_back(std::move(column));
-            }
+            for (std::size_t j = i; j < pair_coordinates.size(); ++j)
+                for (std::size_t d = 0; d + 2 <= std::max<std::size_t>(reference_order, 2); ++d)
+                    for (std::size_t b = 0; b <= (pressure_jets ? d : 0); ++b) {
+                        NeutralReferenceReactionDiagnostic::Derivative column;
+                        if (b && reference.reference_pressure_pa) column = {d-b, b, pair_coordinates[i], pair_coordinates[j], {}, 0.0};
+                        else column = reference_column(model, temperature, trace, stoichiometries[row], d-b, b,
+                            pair_coordinates[i], &preparation, pair_coordinates[j]);
+                        if (!column.value) column.message = "reaction " + std::to_string(row) + " C_" + std::to_string(d-b)
+                            + std::to_string(b) + " coordinates " + std::to_string(pair_coordinates[i]) + ","
+                            + std::to_string(pair_coordinates[j]) + ": " + column.message;
+                        diagnostic.derivatives.push_back(std::move(column));
+                    }
 
     }
     if (species_values) for (std::size_t r = 0; r < result.size(); ++r) {

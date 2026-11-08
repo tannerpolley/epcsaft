@@ -960,7 +960,7 @@ struct ReferenceCalorics final {
     };
     struct Derivative final {
         std::size_t temperature_order = 0, pressure_order = 0;
-        std::optional<std::size_t> parameter;
+        std::optional<std::size_t> parameter, second_parameter;
         Column column; // raw derivatives of the record-anchored density-standard g, J/mol
     };
     std::vector<Derivative> gibbs;
@@ -972,7 +972,8 @@ struct ReferenceCalorics final {
 };
 EPC_API ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
                                      bool heat_capacity, bool pressure_slope = false,
-                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false);
+                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false,
+                                     const std::vector<std::size_t> &pair_coordinates = {});
 
 struct SolvedStateActionResult final {
     SolvedStateObservable observable;

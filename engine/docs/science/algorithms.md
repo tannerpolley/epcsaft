@@ -2536,14 +2536,12 @@ changing source correlation.
 
 Referenced driven T/P caloric composition uses the anchored Gibbs derivative
 columns through order four, including T/P order through three with one EOS
-coordinate. Values and A1/A2 cover h, s, u_G, frozen c_p/c_v,G and v_G;
+coordinate and through two with two. Values and A1/A2 cover h, s, u_G, frozen c_p/c_v,G and v_G;
 A2 admits EOS-parameter and coefficient increments in both directions. With two parameter-bearing directions the polarised paths also
-carry the fixed-T/P second parameter columns of ALG-REFERENCE on the coordinates
+carry the second parameter columns of ALG-REFERENCE, with the T/P orders the caloric standards consume, on the coordinates
 they move; with one, that term cancels between the paths and is not evaluated.
 A parameter-coefficient pair adds no term, because the law shift is exact and
-independent of the EOS parameters; a coefficient pair moves only the state. Caloric
-observables along two EOS-parameter directions are refused, because the anchored Gibbs columns
-carry at most one parameter. No Engine consumer of two-parameter A2 exists today.
+independent of the EOS parameters; a coefficient pair moves only the state. No Engine consumer of two-parameter A2 exists today.
 Feed-only
 A3 retains constant standards and frozen slopes at driven T/P. Free-intensive A1/A2 uses the same composition with its solved T/P coefficients.
 The prepared standard refreshes at each current T and system-reference P,
@@ -2616,8 +2614,7 @@ radial coefficient and regular contributions, with a zero DH insertion. It never
 enters the ordinary-state tape cache or relaxes ordinary ionic-insertion admission.
 The existing association Jacobian and implicit pressure coefficients supply all
 T/P derivatives through order four, one parameter through T/P order three, and
-the fixed-T/P second derivative in two parameters for the coordinate pairs an
-action requests.
+two parameters through T/P order two for the coordinate pairs an action requests.
 One amount insertion appears at degree r+1; extraction through degree 2r+1
 cannot contain two such insertions. No ionic-concentration Hessian is required.
 Within one reaction-reference batch, an exact state, exact direction, order,
@@ -2790,7 +2787,7 @@ carry zero system-pressure derivatives; their compile-time values are reused at
 every point of the compiled problem, since model, temperature, declaration and
 source pressure are fixed there.
 Driven T/P state and record-anchored caloric composition follow ALG-ACTIONS:
-A1/A2 retain every consumed T/P/feed term and one parameter-bearing direction,
+A1/A2 retain every consumed T/P/feed term and every parameter-bearing direction,
 including source coefficients evaluated at the path temperature. Driven feed-only
 A3 keeps the standards and frozen partials constant while composing the full
 amount/composition products. The defining rows retain their minimum-norm

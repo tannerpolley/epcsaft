@@ -147,6 +147,17 @@ public:
         CHECK(c.parameters.association_volume[1]==c.parameters.association_volume[2]);
         record_tapes();
     }
+    // The reference contraction C, C_T, C_TT, C_P, C_TP, C_PP at (T, P, eps_w, eps_Na): the sqrt(m) Richardson limit of the
+    // 1e-14 and 1e-12 mol/kg points (#353), started from the solvent molar density rho.
+    std::array<Wide,6> reference_contraction(Wide T,Wide P,Wide epsilon,Wide na,Wide rho) {
+        if(na!=sodium) {sodium=na;record_tapes();}
+        const Wide mass=c.parameters.molar_mass_kg_per_mol[0];
+        const Wide ys=mass*Wide(1e-14)/(1+2*mass*Wide(1e-14)),yc=mass*Wide(1e-12)/(1+2*mass*Wide(1e-12));
+        const auto fine=state(reference,T,P,epsilon,ys,rho),coarse=state(reference_coarse,T,P,epsilon,yc,rho);
+        std::array<Wide,6> out;std::size_t k=0;
+        for(auto field:{&State::C,&State::ct,&State::ctt,&State::cp,&State::ctp,&State::cpp}) out[k++]=(10*(fine.*field)-coarse.*field)/9;
+        return out;
+    }
     std::vector<Wide> values(const std::vector<Quantity>& q,const std::vector<NamedDirection>& ds,double factor,std::size_t mask,
                              const EquilibriumResult& solved,double rho) {
         max_pressure_residual=0;max_pressure_floor=0;
@@ -163,19 +174,15 @@ public:
             for(std::size_t i=0;i<4;++i) coeff[i]+=scale*d.reaction_coefficients[0][i];
         }
         CHECK(feed[1]==feed[2]);
-        if(na!=sodium) {sodium=na;record_tapes();}
-        const Wide mass=c.parameters.molar_mass_kg_per_mol[0],m=Wide(1e-14);
-        const Wide ys=mass*m/(1+2*mass*m);const auto& source=*c.problem.reactions[0].reference;const bool fixed=source.reference_pressure_pa.has_value();
+        const Wide mass=c.parameters.molar_mass_kg_per_mol[0];
+        const auto& source=*c.problem.reactions[0].reference;const bool fixed=source.reference_pressure_pa.has_value();
         const Wide sourceP=fixed?Wide(*source.reference_pressure_pa):P;
-        // The production reference is the sqrt(m) Richardson limit of its 1e-12 and 1e-14 mol/kg points (#353).
-        auto src=state(reference,T,sourceP,epsilon,ys,rho);
-        const Wide yc=mass*Wide(1e-12)/(1+2*mass*Wide(1e-12));const auto coarse=state(reference_coarse,T,sourceP,epsilon,yc,rho);
-        for(auto field:{&State::C,&State::ct,&State::ctt,&State::cp,&State::ctp,&State::cpp}) src.*field=(10*(src.*field)-coarse.*field)/9;
+        const auto src=reference_contraction(T,sourceP,epsilon,na,rho);  // C, C_T, C_TT, C_P, C_TP, C_PP
         const Wide lnK=coeff[0]+coeff[1]/T+coeff[2]*CppAD::log(T/Wide(law.reference_temperature))+coeff[3]*T;
         const Wide lnKT=-coeff[1]/(T*T)+coeff[2]/T+coeff[3],lnKTT=2*coeff[1]/(T*T*T)-coeff[2]/(T*T);
         // The raw mole-fraction basis has no common-molality scale 2 ln M_w.
         const Wide scale=source.source_basis==ReferenceSourceBasis::RawMoleFractionInfiniteDilution?Wide(0):2*CppAD::log(mass);
-        const Wide target=lnK+scale+src.C;
+        const Wide target=lnK+scale+src[0];
         Wide y=solved.mole_fractions[1];State sys{};
         Wide chemical=0;
         for(std::size_t iteration=0;iteration<8;++iteration) {
@@ -195,9 +202,9 @@ public:
         std::array<Wide,3> g{},gt{},gtt{},gp{},gtp{},gpp{};
         g[0]=h-T*s+rt*CppAD::log(rt/Wide(1e5));gt[0]=-s+Wide(R)*(CppAD::log(rt/Wide(1e5))+1);gtt[0]=(Wide(R)-cp)/T;
         for(std::size_t i=1;i<3;++i) {
-            g[i]=(g[0]-rt*target)/2;gt[i]=(gt[0]-Wide(R)*(target+T*(lnKT+src.ct)))/2;
-            gtt[i]=(gtt[0]-Wide(R)*(2*(lnKT+src.ct)+T*(lnKTT+src.ctt)))/2;
-            if(!fixed) {gp[i]=-rt*src.cp/2;gtp[i]=-Wide(R)*(src.cp+T*src.ctp)/2;gpp[i]=-rt*src.cpp/2;}
+            g[i]=(g[0]-rt*target)/2;gt[i]=(gt[0]-Wide(R)*(target+T*(lnKT+src[1])))/2;
+            gtt[i]=(gtt[0]-Wide(R)*(2*(lnKT+src[1])+T*(lnKTT+src[2])))/2;
+            if(!fixed) {gp[i]=-rt*src[3]/2;gtp[i]=-Wide(R)*(src[3]+T*src[4])/2;gpp[i]=-rt*src[5]/2;}
         }
         std::array<Wide,5> ideal{},total{};Wide volume=sys.v,vt=sys.vt,vp=sys.vp;
         for(std::size_t i=0;i<3;++i) {

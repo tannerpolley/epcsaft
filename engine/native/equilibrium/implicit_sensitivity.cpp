@@ -570,7 +570,7 @@ Series standard_series(const ReferenceCalorics &calorics, const RowSeries &path,
         if (entry.temperature_order < a || entry.pressure_order < b)
             continue;
         const auto ta = entry.temperature_order - a, pb = entry.pressure_order - b;
-        if (ta + pb + std::size_t(entry.parameter.has_value()) > order)
+        if (ta + pb + std::size_t(entry.parameter.has_value()) + std::size_t(entry.second_parameter.has_value()) > order)
             continue;
         Series weight = one;
         for (std::size_t k = 1; k <= ta; ++k) {
@@ -583,13 +583,18 @@ Series standard_series(const ReferenceCalorics &calorics, const RowSeries &path,
             for (auto &v : weight)
                 v /= double(k);
         }
-        if (entry.parameter) {
+        for (const auto parameter : {entry.parameter, entry.second_parameter}) {
+            if (!parameter)
+                continue;
             Series theta(order + 1, 0.0);
-            const auto index = 2 + entry.column.values.size() + *entry.parameter;
+            const auto index = 2 + entry.column.values.size() + *parameter;
             for (std::size_t k = 1; k <= order; ++k)
                 theta[k] = path.phase[phase].point[k][index];
             weight = product(weight, theta);
         }
+        if (entry.second_parameter && entry.second_parameter == entry.parameter)
+            for (auto &v : weight)
+                v *= 0.5;
         if (std::all_of(weight.begin(), weight.end(), [](double v) { return v == 0.0; }))
             continue;
         if (entry.column.status != SolvedStateActionStatus::Available)
@@ -865,6 +870,7 @@ struct ActionCenter final {
     std::optional<ReferenceCalorics> calorics;
     std::optional<SolvedStateActionBatch> thermal_enthalpy;
     CaloricNeed caloric{};
+    std::vector<std::size_t> pairs;
     SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
     SolvedStateActionStatus matrix_gate = SolvedStateActionStatus::Available;
     double classified_residual = 0.0;
@@ -1075,12 +1081,19 @@ static SolvedStateActionBatch evaluate_action(
     };
     const bool needs_calorics = std::any_of(request.observables.begin(), request.observables.end(), caloric);
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
+    const bool parameter_pairs = std::count_if(request.directions.begin(), request.directions.end(), [](const auto& d) {
+        return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double v) { return v != 0.0; }); }) > 1;
     if (reference_problem && needs_calorics) {
         const auto need = caloric_need(problem, request, zero, shared->caloric);
-        if (!shared->calorics || need != shared->caloric) {
+        std::vector<std::size_t> pairs;  // the coordinates the directions move, as row_series
+        for (std::size_t k = 0; parameter_pairs && !zero && k < model.active_parameters().size(); ++k)
+            if (std::any_of(request.directions.begin(), request.directions.end(), [k](const auto& d) { return d.active_parameters[k] != 0.0; }))
+                pairs.push_back(k);
+        if (!shared->calorics || need != shared->caloric || pairs != shared->pairs) {
             shared->caloric = need;
+            shared->pairs = pairs;
             shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure,
-                                                  true, need[2], need[1], need[0]);
+                                                  true, need[2], need[1], need[0], false, pairs);
         }
         calorics = &*shared->calorics;
     }
@@ -1264,13 +1277,6 @@ static SolvedStateActionBatch evaluate_action(
     std::vector<double> accumulated(batch.results.size(), 0.0);
     std::vector<bool> usable(batch.results.size(), true);
     const std::size_t paths = std::size_t(1) << (order - 1);
-    const bool parameter_pairs = std::count_if(request.directions.begin(), request.directions.end(), [](const auto& d) {
-        return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double v) { return v != 0.0; }); }) > 1;
-    // Caloric standards compose Gibbs columns with at most one parameter (standard_series).
-    for (auto& item : batch.results)
-        if (reference_problem && parameter_pairs && caloric(item.observable) && item.status == SolvedStateActionStatus::Available)
-            refuse(item, SolvedStateActionStatus::ReferenceUnavailable, "reference_unavailable: caloric second-order "
-                   "actions in two parameter directions need second parameter Gibbs columns", false);
     for (std::size_t mask = 0; mask < paths; ++mask) {
         std::vector<double> control(width, 0.0);
         double weight = 1.0;
