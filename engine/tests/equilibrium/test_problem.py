@@ -534,3 +534,22 @@ def test_fast_discovery_budget_cannot_publish_the_methane_ethane_parent(limits: 
     else:
         assert any(t.resolved_descent for t in record.rounds[0].trials)
         assert "declaration budget" in found.message
+
+
+def test_fast_tested_flags_the_missed_third_liquid_and_leaves_a_stable_split() -> None:
+    # Post-flash check on the fast split: Full's endpoint trial set flags the 10 MPa three-liquid case
+    # (tpd/RT ~ -6.9e-2) and passes methane/ethane 190 K 1 MPa with the fast state unchanged.
+    ternary = Mixture(Parameters.from_json(
+        Path(__file__).parents[3] / "analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json"))
+    feed = Amounts(dict.fromkeys(ternary.component_ids, 1 / 3))
+    missed = solve_equilibrium(ternary, Problem(T=300.0, P=1e7, feed=feed, phases=equilibrium.Discover(mode="fast-tested")))
+    record = missed.discovery
+    assert record is not None and not missed.success and not missed.amounts
+    assert record.termination == "descent_after_split" and record.candidate.phase_count == 2
+    assert any(t.resolved_descent and t.quantities["tpd_over_rt"] < -1e-2 for t in record.rounds[1].trials)
+    feed = Amounts({"methane": 0.5, "ethane": 0.5})
+    plain, tested = (solve_equilibrium(mixture(), Problem(T=190.0, P=1e6, feed=feed, phases=equilibrium.Discover(mode=mode)))
+                     for mode in ("fast", "fast-tested"))
+    assert tested.success and tested.discovery is not None and tested.discovery.rounds[1].no_descent_in_trial_set
+    assert "post-flash stability" in plain.discovery.unsearched and "post-flash stability" not in tested.discovery.unsearched  # type: ignore[union-attr]
+    assert tested.mole_fractions == plain.mole_fractions and tested.amounts == plain.amounts

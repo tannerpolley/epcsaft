@@ -236,7 +236,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(SolidSpec, name, stoichiometry, equilibrium_constant, correlation, reference,
             molar_volume_m3_per_mol, amount);
     nb::enum_<DiscoveryMode>(module, "DiscoveryMode")
-        EPCSAFT_VALUES(DiscoveryMode, Full, Fast);
+        EPCSAFT_VALUES(DiscoveryMode, Full, Fast, FastTested);
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
         EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, trials, declaration_budget, trial_budget,

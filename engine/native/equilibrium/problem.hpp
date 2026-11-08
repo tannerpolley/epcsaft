@@ -143,7 +143,7 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool com
 }
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
-enum class DiscoveryMode { Full, Fast };
+enum class DiscoveryMode { Full, Fast, FastTested };
 struct StabilityOptions final {
     DiscoveryMode mode = DiscoveryMode::Full;
     bool evaluate_supplied_trials = false;

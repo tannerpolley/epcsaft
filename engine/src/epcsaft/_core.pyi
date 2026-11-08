@@ -2329,6 +2329,7 @@ class SolidSpec:
 class DiscoveryMode:
     Full: DiscoveryMode
     Fast: DiscoveryMode
+    FastTested: DiscoveryMode
 
 class StabilityOptions:
     """Finite declared trial search for a tangent-plane descent witness.

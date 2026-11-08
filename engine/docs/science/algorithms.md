@@ -1911,6 +1911,25 @@ seed identities, alternate additions, post-flash stability and three-or-more
 phase topologies. Salt-rich minima, remote splits and a third phase may be
 missed. No component-order invariance or global stability follows.
 
+`Discover(mode="fast-tested")` is opt-in and keeps round 1 exactly as `fast`.
+Only after an admitted split it runs `test_snapshot` once on that endpoint with
+the Full default trial set (the call Full's second round and `stability_test`
+make) and the remaining trial budget, and appends the report to `rounds`. The
+check flags only: it adds, removes and retries nothing, so the returned split
+is the fast split, and no second stability search exists. Any resolved descent
+among the evaluated trials, complete or not, or a negative tangent plane with
+unresolved finite descent gives `success=false`, `termination=descent_after_split`
+and a cleared state, while `record.candidate` keeps the split. A completed check
+without either keeps the state, reports `admitted_two_phase` and drops
+`post-flash stability` from `unsearched`. An incomplete check (a user trial
+budget; no work limit reaches it) with neither keeps the state and `unsearched`, with
+"post-flash check incomplete" in the message; this differs from Full, which
+reports an incomplete round as failure. Full may reach a different two-phase
+endpoint (donor-slope order, `recover_physical_amounts`); fast-tested tests the
+fast split, not Full's. Not flagged means no witness in that finite trial set,
+not a global stability certificate. `stability_test`, `stability_measure` and
+fitting observations reject this mode as they reject `fast`.
+
 ### Unfinished optimized trials
 
 An ordinary explicit trial passes an internal refinement permission to the shared

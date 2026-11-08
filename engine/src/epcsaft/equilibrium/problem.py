@@ -190,9 +190,10 @@ class Discover:
 
     Attributes
     ----------
-    mode : {"full", "fast"}
+    mode : {"full", "fast", "fast-tested"}
         Full searches all default starts. Fast stops at the first resolved
         split and attempts one two-phase declaration, without a final search.
+        "fast-tested" then runs Full's endpoint trial set once and only flags.
     trials : sequence of Phase or None
         Trial phase declarations. ``None`` selects native defaults;
         a supplied sequence is copied and retains its support/branch choices.
@@ -730,10 +731,10 @@ class Problem:
             item.packing_guess = phase.packing_guess
             native_phases.append(item)
         if isinstance(self.phases, Discover):
-            if self.phases.mode not in ("full", "fast"):
-                raise ValueError("Discover mode must be full or fast")
+            if self.phases.mode not in ("full", "fast", "fast-tested"):
+                raise ValueError("Discover mode must be full, fast or fast-tested")
             options = _core.StabilityOptions()
-            options.mode = _core.DiscoveryMode.Fast if self.phases.mode == "fast" else _core.DiscoveryMode.Full
+            options.mode = getattr(_core.DiscoveryMode, self.phases.mode.title().replace("-", ""))
             options.trials = None if self.phases.trials is None else native_phases
             options.declaration_budget = self.phases.declaration_budget
             options.trial_budget = self.phases.trial_budget

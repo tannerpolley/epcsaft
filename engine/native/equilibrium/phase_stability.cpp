@@ -1056,7 +1056,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
     core::CalculationWork work;
     const double row_tolerance = request.solver_options.resolved(model.solver_options()).value(policy::row);
     const auto& options = *request.discovery;
-    const bool fast = options.mode == DiscoveryMode::Fast;
+    const bool fast = options.mode != DiscoveryMode::Full;
     if (fast && (!request.reactions.empty() || options.trials))
         throw std::invalid_argument("fast discovery requires no reactions and default trial supports");
     if (options.evaluate_supplied_trials) throw std::invalid_argument("supplied trial evaluation is not phase discovery");
@@ -1179,8 +1179,10 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (fast) record->unsearched.push_back("entire trial search (positive-neutral-base, near-pure Liquid/Vapor, ideal-gas Vapor starts)");
         return finish(false, fast && budget == 0 ? "declaration budget exhausted" : "discovery has no accepted initial candidate");
     }
+    bool checking = false;  // fast-tested: one more round on the admitted endpoint with Full's trial set
     for (std::size_t round = 0; round < 2 * rank + 1; ++round) {
         auto trial_options = options;
+        if (fast) trial_options.mode = checking ? DiscoveryMode::Full : DiscoveryMode::Fast;
         if (options.trial_budget) {
             const auto used = static_cast<std::size_t>(record->work["trial_invocations"]);
             trial_options.trial_budget = used < *options.trial_budget ? *options.trial_budget - used : 0;
@@ -1199,15 +1201,28 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             });
             if (!duplicate) descending.push_back(i);
         }
+        const bool unresolved = (!fast || checking) && std::any_of(current.trials.begin(), current.trials.end(), [](const auto& t) {
+            return t.quantities.count("donor_slope_over_rt") && descent_resolved(t.quantities.at("tpd_over_rt"),
+                t.quantities.at("donor_slope_over_rt"), t.quantities.at("descent_error_estimate_over_rt")); });
+        if (checking) {  // flags only; the returned split stays the fast split
+            const bool flagged = !descending.empty() || unresolved;
+            auto result = finish(!flagged, "");
+            if (flagged) {
+                record->termination = "descent_after_split";
+                result.message = descending.empty() ? "negative tangent plane with unresolved finite descent"
+                    : "resolved descent at the fast admitted split; mode='full' can add the phase";
+            } else if (current.completed) {
+                record->unsearched.erase(std::find(record->unsearched.begin(), record->unsearched.end(), "post-flash stability"));
+                result.message = "locally admitted two-phase state; no witness in the Full endpoint trial set";
+            } else result.message += "; post-flash check incomplete";
+            return result;
+        }
         if (descending.empty()) {
             if (fast) {
                 const bool available = current.completed && std::all_of(current.trials.begin(), current.trials.end(),
                     [](const auto& t) { return t.evidence == "no_resolved_descent"; });
                 return finish(available, current.message);
             }
-            const bool unresolved = std::any_of(current.trials.begin(), current.trials.end(), [](const auto& t) {
-                return t.quantities.count("donor_slope_over_rt") && descent_resolved(t.quantities.at("tpd_over_rt"),
-                    t.quantities.at("donor_slope_over_rt"), t.quantities.at("descent_error_estimate_over_rt")); });
             return finish(!unresolved, unresolved ? "negative tangent plane with unresolved finite descent" : current.message);
         }
         if (best.phase_count >= rank) return finish(false, "resolved descent at balance-rank phase limit; replacement deferred");
@@ -1256,6 +1271,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             if (!(result.objective < best.objective - error_estimate)) continue;
             best = std::move(result); best_compiled = std::move(system); added = true; break;
         }
+        if (fast && added && (checking = options.mode == DiscoveryMode::FastTested)) continue;
         if (fast && added) return finish(true, "");
         if (!added) return finish(false, calls >= budget ? "resolved descent with exhausted declaration budget"
             : "resolved descent without an admitted lower-G declaration");
