@@ -522,17 +522,25 @@ official IDAES executable and exact option-file readback.
 
 `eos.property_asl_record(mixture)` constructs the immutable record of the installed
 `epcsaft_pressure_property` external function (#73) for a mixture with document
-parameters, no active parameters and optional thermochemistry in any native form
-(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v3`).
+parameters, optional active parameters and optional thermochemistry in any native form
+(polynomial, Shomate, NASA7, NASA9 or DIPPR107; record `epcsaft.asl.property.v4`,
+which lists each active parameter's family and native slots in model order).
 `regression.fitted_parameters` writes the fitted values back into the start
 document's entries, so both records export a fit; a fit the document cannot
 represent (a fitted slot with no entry, a value that does not rebuild bitwise in
 its entry's unit) stays usable and the record builders raise that cause. The function's real
-arguments are `q = (T K, P Pa, w_1..w_C)` with `x = w / sum(w)`, then the strings
+arguments are `q = (T K, P Pa, w_1..w_C, theta_1..theta_m)` with `x = w / sum(w)` and
+`theta` the active parameters in their native family units (k_ij and l_ij -, eps/k K,
+sigma Å, dielectric volume m3/mol; finite, and possibly negative), then the strings
 record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
 `ln(phi_i)`) and phase (`0` liquid, the highest stable density root; `1` vapor,
 the lowest). It returns the value, gradient and packed Hessian in physical `q`
-from the native pressure actions plus the exact normalization chain. A zero
+from the native pressure actions plus the exact normalization chain; a `theta` column
+is one native parameter-direction action at fixed `(T, P, x)`. At another `theta` the
+record's model is rebuilt with every slot of each active parameter set to its value;
+a value the model refuses returns `invalid_input`. IDAES `PressureProperties` declares
+them as `epcsaft_active_parameter[k]` on the parameter block, dimensionless to Pyomo,
+fixed at the model's `active_parameter_values`; unfix them to estimate. A zero
 neutral weight follows the exact infinite-dilution limit when the weights sum
 to a positive value. A resolved opposite-side root is refused. A sole unclassified root is admitted
 for ordinary property records; `require_phase_identity=True` refuses it for the

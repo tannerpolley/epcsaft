@@ -28,6 +28,7 @@ namespace {
 using epcsaft::DerivativeOrder;
 using epcsaft::NeutralProperty;
 using epcsaft::NeutralPropertyDerivatives;
+using epcsaft::detail::family_values;
 
 struct PreparedModel final {
     std::mutex mutex;
@@ -612,11 +613,11 @@ double equilibrium_amount(arglist* arguments) {
     return report_failure(arguments, "epcsaft_equilibrium");
 }
 
-// Pressure-chart property callback (#73): q = (T, P, w_1..w_C), u = Pw with P = I - zz'/z'z the charge-null projector
+// Pressure-chart property callback (#73): q = (T, P, w_1..w_C, theta_1..theta_m), u = Pw with P = I - zz'/z'z the charge-null projector
 // (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
 // directions b_j = Pe_j - x sigma_j, sigma_j = 1'Pe_j, supply the value and actions; only dx/dw_j = b_j/s and the exact
 // chain d2x/dw_j dw_k = -(sigma_k dx/dw_j + sigma_j dx/dw_k)/s are applied here. Rows: 0 density, 1 total enthalpy,
-// 2 + i ln(phi_i).
+// 2 + i ln(phi_i). A theta column is one native parameter direction at fixed (T, P, x); x does not depend on theta.
 struct PropertyContext final {
     std::string record;
     bool require_phase_identity = false;
@@ -631,12 +632,17 @@ struct PropertyContext final {
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v3");
+    reader.field("epcsaft.asl.property.v4");
     const bool require_phase_identity = reader.integer(1) != 0;
     const auto document = read_document(reader);
     epcsaft::policy::SolverOptions solver_options;
     reader.field("solver_options");
     for (auto& value : solver_options.values) value = reader.number();
+    reader.field("active_parameters");
+    const auto active = reader.vector([&] {
+        const auto family = epcsaft::ParameterFamily(reader.integer(epcsaft::detail::PARAMETER_FAMILY_COUNT - 1));
+        return epcsaft::ActiveParameter{family, reader.vector([&] { return reader.integer(SIZE_MAX); })};
+    });
     std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
     if (reader.integer(1) != 0) {
     thermochemistry.emplace();
@@ -667,7 +673,7 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     auto context = std::make_unique<PropertyContext>();
     context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<epcsaft::HelmholtzModel>(
-        epcsaft::build_parameters(document), std::vector<epcsaft::ActiveParameter>{}, thermochemistry, solver_options);
+        epcsaft::build_parameters(document), active, thermochemistry, solver_options);
     context->record = raw;
     return context;
 }
@@ -676,10 +682,19 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     auto& branch = context.branches[phase];
     if (branch.q == q && branch.order >= order) return;
     using Status = epcsaft::PropertyActionStatus;
-    const std::size_t c = q.size() - 2, n = q.size();
+    const std::size_t c = context.model->parameters().component_count(), rows = 2 + c, n = q.size();
+    const auto active = context.model->active_parameters();
+    const std::vector<double> theta(q.begin() + rows, q.end());
+    if (theta != context.model->active_parameter_values()) {  // the slot assignment of CoordinateSet::apply
+        auto parameters = context.model->parameters();
+        for (std::size_t k = 0; k < theta.size(); ++k)
+            for (auto i : active[k].indices) family_values(parameters, active[k].family).first[i] = theta[k];
+        context.model = std::make_unique<epcsaft::HelmholtzModel>(std::move(parameters), active,
+            context.model->thermochemistry(), context.model->solver_options());
+    }
     const auto& z = context.model->parameters().charge_number;
     const double zz = std::inner_product(z.begin(), z.end(), z.begin(), 0.0);
-    std::vector<double> u(q.begin() + 2, q.end()), x(c), sigma(c, 1.0);
+    std::vector<double> u(q.begin() + 2, q.begin() + 2 + c), x(c), sigma(c, 1.0);
     if (zz > 0.0) {  // admit within the native tolerance, then remove only the rounding below it
         const double total = std::accumulate(u.begin(), u.end(), 0.0);
         for (std::size_t i = 0; i < c; ++i) x[i] = u[i] / total;
@@ -689,12 +704,13 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     }
     const double sum = std::accumulate(u.begin(), u.end(), 0.0);
     for (std::size_t i = 0; i < c; ++i) x[i] = u[i] / sum;
-    std::vector<epcsaft::PressureActionDirection> basis(n, {0.0, 0.0, std::vector<double>(c, 0.0), {}});
+    std::vector<epcsaft::PressureActionDirection> basis(rows, {0.0, 0.0, std::vector<double>(c, 0.0), {}});
     basis[0].temperature = 1.0;
     basis[1].pressure = 1.0;
     for (std::size_t j = 0; j < c; ++j)
         for (std::size_t i = 0; i < c; ++i)
             basis[2 + j].composition[i] = (i == j ? 1.0 : 0.0) - (zz > 0.0 ? z[i] * z[j] / zz : 0.0) - x[i] * sigma[j];
+    for (const auto& a : active) basis.push_back({0.0, 0.0, std::vector<double>(c, 0.0), {{a.family, a.indices, 1.0}}});
     const std::vector<epcsaft::PropertyObservable> observables = {
         epcsaft::PropertyObservable::TotalEnthalpy, epcsaft::PropertyObservable::LogFugacityCoefficient};
     const auto cause = [](Status status, std::string fallback) {
@@ -705,10 +721,10 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     std::optional<double> anchor;
     branch.q = q;
     branch.order = -1;
-    branch.values.assign(n, 0.0);
-    branch.failures.assign(n, {3, std::string()});
-    branch.gradients.assign(n, std::vector<double>(n));
-    branch.hessians.assign(n, std::vector<double>(n * (n + 1) / 2));
+    branch.values.assign(rows, 0.0);
+    branch.failures.assign(rows, {3, std::string()});
+    branch.gradients.assign(rows, std::vector<double>(n));
+    branch.hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
     const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
         const auto batch = context.model->pressure_actions(q[0], q[1], x,
             phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, observables, directions, anchor);
@@ -741,11 +757,11 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
                     + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual))
                     + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
         };
-        std::vector<double> actions(n);
+        std::vector<double> actions(rows);
         const bool first = !anchor;
         if (first) anchor = branch.values[0] = *batch.molar_density;
         actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
-        for (std::size_t row = 1; row < n; ++row) {
+        for (std::size_t row = 1; row < rows; ++row) {
             const auto& item = batch.results[row - 1];
             if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
             if (first && !item.value) fail(row, 0, item.status);
@@ -756,15 +772,15 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     };
     for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
         const auto actions = run({basis[k]});
-        for (std::size_t row = 0; row < n; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2);
+        for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
     }
     std::size_t packed = 0;
     for (std::size_t j = 0; order >= 2 && j < n; ++j)
         for (std::size_t i = 0; i <= j; ++i, ++packed) {
             const auto actions = run({basis[i], basis[j]});
-            for (std::size_t row = 0; row < n; ++row)
-                branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2) + (j >= 2))
-                    - (i >= 2 ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
+            for (std::size_t row = 0; row < rows; ++row)
+                branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2 && i < rows) + (j >= 2 && j < rows))
+                    - (i >= 2 && j < rows ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
         }
     branch.order = order;
 }
@@ -775,18 +791,18 @@ double pressure_property(arglist* arguments) {
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        const int n = argument_count(arguments, 3, 66, "property callback requires T, P, weights and three strings");
+        const int n = argument_count(arguments, 3, 130, "property callback requires real arguments and three strings");
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "property", [&] { return prepare_property(record); });
         const std::size_t c = context.model->parameters().component_count();
-        if (static_cast<std::size_t>(n) != 2 + c) reject("weight count differs from the record components");
+        if (std::size_t(n) != 2 + c + context.model->active_parameters().size()) reject("argument count differs");
         const auto row = selector(arguments, n + 1, 2 + c), phase = selector(arguments, n + 2, 2);
         const std::vector<double> q(arguments->ra, arguments->ra + n);
         // Zero weights are admitted: the component enters at its exact infinite-dilution limit.
-        for (int i = 0; i < n; ++i)
-            if (!std::isfinite(q[i]) || q[i] < 0.0 || (i < 2 && q[i] == 0.0))
-                reject("T and P must be finite and positive, weights finite and nonnegative");
-        if (!(std::accumulate(q.begin() + 2, q.end(), 0.0) > 0.0)) reject("weights must have a positive sum");
+        for (std::size_t i = 0; i < q.size(); ++i)  // a parameter may be negative (k_ij)
+            if (!std::isfinite(q[i]) || (i < 2 + c && q[i] < 0.0) || (i < 2 && q[i] == 0.0))
+                reject("T and P must be finite and positive, weights finite and nonnegative, parameters finite");
+        if (!(std::accumulate(q.begin() + 2, q.begin() + 2 + c, 0.0) > 0.0)) reject("weights must have a positive sum");
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
         evaluate_property(context, phase, q, order);
         const auto& branch = context.branches[phase];

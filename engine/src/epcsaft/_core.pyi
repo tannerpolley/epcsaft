@@ -1647,6 +1647,8 @@ class HelmholtzModel:
         """Return B, C and their exact derivatives along a direction; the composition direction sums to zero."""
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings with values and provenance."""
+    active_parameter_values: list[float]
+    """Active parameter values in active order, each in its family's native unit."""
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
                  thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> None:
         """Initialize HelmholtzModel from the declared inputs.

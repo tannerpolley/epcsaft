@@ -129,14 +129,18 @@ template <class C> std::vector<double*> ideal_anchors(C& c) {
     if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) return {&c.reference_temperature, &c.reference_enthalpy, &c.reference_entropy};
     return {};
 }
-// Property callbacks: the parameter document and a thermochemistry record, no state.
-inline std::string asl_property_record(const ParameterDocument& d, const std::optional<ThermochemistryRecord>& t, const policy::SolverOptions& solver_options, bool require_phase_identity) {
+// Property callbacks: the parameter document, the active parameters in model order (their values are the document's),
+// and a thermochemistry record, no state.
+inline std::string asl_property_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active,
+    const std::optional<ThermochemistryRecord>& t, const policy::SolverOptions& solver_options, bool require_phase_identity) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.property.v3");
+    w.put("epcsaft.asl.property.v4");
     w.put(require_phase_identity);
     put_document(w, d);
     w.put("solver_options");
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
+    w.put("active_parameters"); w.put(active.size());
+    for (const auto& a : active) w.put(static_cast<std::size_t>(a.family)), w.vector(a.indices);
     w.put(t.has_value());
     if (!t) return w.finish();
     w.put("standard_pressure"); w.put(t->standard_pressure); w.put("component_intervals"); w.put(t->component_intervals.size());

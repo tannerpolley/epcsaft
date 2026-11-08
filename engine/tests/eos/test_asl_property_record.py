@@ -2,10 +2,13 @@
 exports. The callback equals the native pressure actions bitwise (value, T/P gradient and Hessian) at 300 K, 1e6 Pa.
 Charged records (Held 2008 Debye-Hueckel, Figiel 2025 Born) at 298.15 K and 1e5 Pa: values equal the direct Engine,
 derivatives along charge-neutral directions match central differences (verification only), non-electroneutral weights
-are refused, and an IDAES mixer closes its energy balance through Ipopt."""
+are refused, and an IDAES mixer closes its energy balance through Ipopt. Gross-Sadowski 2001 methane/ethane with k_ij and
+methane eps/k active: parameter columns equal the direct Engine, match central differences, and an IDAES estimate
+recovers shifted parameters through Ipopt."""
 from __future__ import annotations
 
 import csv
+import json
 import os
 import shutil
 import subprocess
@@ -19,7 +22,7 @@ from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective
 
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
-from epcsaft.eos import ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
+from epcsaft.eos import ParameterActionDirection, ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
 from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem
 from tests.native_inputs import p3_forms, record
 from tests.packets import PACKETS, parameters_json
@@ -193,10 +196,10 @@ def aqueous_package(model: Mixture) -> Any:
     return m
 
 
-def property_fgh(text: str, q: Any, row: int, fgh: int) -> tuple[float, Any, Any]:
+def property_fgh(text: str, q: Any, row: int, fgh: int, phase: str = "liquid") -> tuple[float, Any, Any]:
     from epcsaft.idaes import PropertyExternalFunction, asl_library
     callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
-    v, g, h = callback.evaluate_fgh([*q, text, str(row), "0"], fgh=fgh)
+    v, g, h = callback.evaluate_fgh([*q, text, str(row), "0" if phase == "liquid" else "1"], fgh=fgh)
     n = len(q)
     hessian = np.array([[h[min(i, j) + max(i, j) * (max(i, j) + 1) // 2] for j in range(n)] for i in range(n)]) if fgh == 2 else None
     return float(v), np.array(g[:n]) if fgh else None, hessian
@@ -304,3 +307,120 @@ def test_charged_mixer_ipopt_round_trip(tmp_path: Path) -> None:
                                        directions=[PressureActionDirection(0.0, 0.0, [0.0] * 3)], observables=[PropertyObservable.TotalEnthalpy])
         flows.append(value(state.flow_mol) * cast(float, batch.results[0].value))
     assert abs(flows[0] + flows[1] - flows[2]) <= 1e-8 * sum(map(abs, flows))
+
+
+THETA_STAR, STATES = (0.01, 151.03), {"liquid": (180.0, 3.0e6), "vapor": (250.0, 1.0e6)}
+OBSERVABLES = [PropertyObservable.TotalEnthalpy, PropertyObservable.LogFugacityCoefficient]
+
+
+def active(parameters: Parameters) -> list[_core.ActiveParameter]:
+    return [regression.active_parameter(parameters, "k_ij", ("methane", "ethane")),
+            regression.active_parameter(parameters, "dispersion_energy_over_k", "methane")]
+
+
+def methane_ethane(theta: tuple[float, float] | None = None) -> Mixture:
+    """Gross-Sadowski 2001 methane/ethane with k_ij and methane eps/k active and cp 30 J/(mol K) on [150, 350] K;
+    theta edits the packet JSON (k_ij -, eps/k K)."""
+    mapping = json.loads(parameters_json("gross-2001-methane-ethane", 3).read_text())
+    if theta is not None:
+        mapping["pairs"][0]["coefficients"][0]["value"]["magnitude"] = theta[0]
+        methane = next(c for c in mapping["components"] if c["component_id"] == "methane")
+        next(k for k in methane["coefficients"] if k["identity"].endswith("dispersion_energy_over_k"))["value"]["magnitude"] = theta[1]
+    parameters = Parameters.from_mapping(mapping, components=("methane", "ethane"))
+    form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
+    return Mixture(parameters, thermochemistry=record(form, form, lower=150.0, upper=350.0), active_parameters=active(parameters))
+
+
+def native_columns(model: Mixture, phase: str) -> tuple[list[float], list[list[float]], dict[tuple[int, int], list[float]]]:
+    """Rows at x_methane 0.3: values, raw actions along (T, P, k_ij, eps/k) and their second actions, i <= j. As in
+    the callback, the first call's exhaustive root search anchors every later direction."""
+    zero, (T, P) = [0.0, 0.0], STATES[phase]
+    directions = [PressureActionDirection(1.0, 0.0, zero), PressureActionDirection(0.0, 1.0, zero)]
+    directions += [PressureActionDirection(0.0, 0.0, zero, [ParameterActionDirection(a.family, list(a.indices), 1.0)])
+                   for a in active(model.parameters)]
+    def batch(*k: int, anchor: Any = None) -> Any:
+        return model.pressure_actions(T, P, x=[0.3, 0.7], phase=phase, observables=OBSERVABLES,
+                                      directions=[directions[i] for i in k], anchor=anchor)
+    first = [batch(0)]
+    anchor = model.state(T, rho=first[0].molar_density, x=[0.3, 0.7])
+    first += [batch(k, anchor=anchor) for k in range(1, 4)]
+    second = {(i, j): batch(i, j, anchor=anchor) for j in range(4) for i in range(j + 1)}
+    values = [first[0].molar_density, *(r.value for r in first[0].results)]
+    gradient = [[b.density_action[0] for b in first], *([b.results[r].action for b in first] for r in range(3))]
+    return values, gradient, {k: [b.density_mixed_action, *(r.action for r in b.results)] for k, b in second.items()}
+
+
+@pytest.mark.parametrize("phase", STATES)
+def test_parameter_columns_equal_engine(phase: str) -> None:
+    """F1: at the packet values every row and its (T, P, theta) gradient and Hessian equal the direct Engine bitwise;
+    at theta* = (0.01, 151.03 K) they match a model built from the edited packet to 1e-12 relative."""
+    model, columns = methane_ethane(), (0, 1, 4, 5)  # q = (T, P, w_methane, w_ethane, k_ij, eps/k)
+    text, theta0 = property_asl_record(model), model._model.active_parameter_values
+    assert theta0 == [0.0, 150.03]
+    for theta, direct in ((theta0, model), (list(THETA_STAR), methane_ethane(THETA_STAR))):
+        values, gradient, hessian = native_columns(direct, phase)
+        for row in range(4):
+            v, g, h = property_fgh(text, [*STATES[phase], 0.3, 0.7, *theta], row, 2, phase)
+            got = [v, *(g[c] for c in columns), *(h[columns[i], columns[j]] for i, j in hessian)]
+            want = [values[row], *gradient[row], *(entry[row] for entry in hessian.values())]
+            if theta == theta0:
+                assert [float(x).hex() for x in got] == [float(x).hex() for x in want], row
+            else:
+                assert got == pytest.approx(want, rel=1e-12, abs=0.0), row
+    if phase == "liquid":
+        assert property_fgh(text, [*STATES[phase], 0.3, 0.7, *theta0], 0, 0)[0] == pytest.approx(19347.938101423977, rel=1e-12)
+
+
+@pytest.mark.parametrize("phase", STATES)
+def test_parameter_columns_match_central_differences(phase: str) -> None:
+    """F2, verification only: along k_ij (h 1e-5) and eps/k (h 1e-3 K), at h x {4, 1, 0.25}, the gradient (tau 1e-6) and
+    every Hessian entry with a parameter (tau 1e-5) meet the charged-record criterion."""
+    model = methane_ethane()
+    text, eps = property_asl_record(model), float(np.finfo(float).eps)
+    q = np.array([*STATES[phase], 0.3, 0.7, *model._model.active_parameter_values])
+    exact = [property_fgh(text, q, row, 2, phase) for row in range(4)]
+    for b, h0 in ((4, 1e-5), (5, 1e-3)):
+        for h in (4 * h0, h0, 0.25 * h0):
+            plus, minus = ([property_fgh(text, q + s * h * np.eye(6)[b], row, 1, phase) for row in range(4)] for s in (1, -1))
+            for row, (_, gradient, hessian) in enumerate(exact):
+                pairs = [(gradient[b], plus[row][0], minus[row][0], 1e-6)]
+                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(6)]
+                for exact_value, fp, fm, tau in pairs:
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
+
+
+def test_parameter_estimation_ipopt_round_trip(tmp_path: Path) -> None:
+    """F3: two theta* liquid densities (180 K, 3 MPa; 160 K, 1 MPa; x_methane 0.3) recover theta* from the packet values
+    through the IDAES adapter; the external AMPL Ipopt exits with code 0. The equilibrium record still refuses actives."""
+    from idaes.core import FlowsheetBlock
+    from idaes.core.solvers import get_solver
+    from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock
+    from epcsaft.idaes import asl_library, property_configuration, solve_with_diagnostics
+    model, shifted = methane_ethane(), methane_ethane(THETA_STAR)
+    with pytest.raises(ValueError, match="ASL record requires inactive parameters"):
+        _core.equilibrium_asl_record(model, object(), _core.ContinuationOptions(), [], [], [], 0, 1.0)  # refused before the problem is read
+    solver = get_solver()
+    if not solver.available(exception_flag=False):
+        pytest.skip("IDAES Ipopt executable unavailable")
+    os.environ["AMPLFUNC"] = "\n".join(filter(None, (os.environ.get("AMPLFUNC"), str(asl_library()))))
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.props = GenericParameterBlock(**property_configuration(model, phases=("liquid",), temperature_ref=298.15, pressure_ref=1.0e5,
+        state_bounds={"flow_mol": (0, 1, 10), "temperature": (150.0, 180.0, 350.0), "pressure": (5e4, 1e6, 1e7)}))
+    m.fs.sb = m.fs.props.build_state_block([0, 1], defined_state=True)
+    for i, (T, P) in enumerate(((180.0, 3.0e6), (160.0, 1.0e6))):
+        sb = m.fs.sb[i]
+        for var, v in ((sb.flow_mol, 1.0), (sb.temperature, T), (sb.pressure, P), (sb.mole_frac_comp["methane"], 0.3), (sb.mole_frac_comp["ethane"], 0.7)):
+            var.fix(v)
+        for j, v in (("methane", 0.3), ("ethane", 0.7)):
+            sb.mole_frac_phase_comp["liquid", j].set_value(v)
+        target = shifted.pressure_actions(T, P, x=[0.3, 0.7], phase="liquid", observables=[],
+                                          directions=[PressureActionDirection(0.0, 0.0, [0.0, 0.0])]).molar_density
+        sb.add_component("density_target", Constraint(expr=sb.dens_mol_phase["liquid"] == target))
+    m.fs.props.epcsaft_active_parameter.unfix()
+    log = tmp_path / "ipopt.log"
+    result = solve_with_diagnostics(solver, m, logfile=log)
+    assert "epcsaft_property failure" not in log.read_text()
+    assert result.solver.error_rc == 0
+    for got, want in zip(m.fs.props.epcsaft_active_parameter.values(), THETA_STAR, strict=True):
+        assert abs(value(got) - want) <= 1e-6 * max(abs(want), 1.0)

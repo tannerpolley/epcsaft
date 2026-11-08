@@ -18,7 +18,7 @@ from idaes.models.properties.modular_properties.phase_equil.bubble_dew import Lo
 from idaes.models.properties.modular_properties.phase_equil.forms import log_fugacity  # type: ignore[import-untyped]
 from idaes.models.properties.modular_properties.state_definitions import FTPx  # type: ignore[import-untyped]
 from pyomo.core.base.external import AMPLExternalFunction, _ARGLIST  # type: ignore[import-untyped]
-from pyomo.environ import check_optimal_termination, log, value, units as u  # type: ignore[import-untyped]
+from pyomo.environ import Var, check_optimal_termination, log, value, units as u  # type: ignore[import-untyped]
 
 from . import _core
 from .eos import DensityBranch, PressureActionDirection, property_asl_record
@@ -70,12 +70,22 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
 
     @staticmethod
     def build_parameters(phase: Any) -> None:
-        """The immutable native record already contains the physical parameters."""
+        """Declare the record's active EOS parameters, fixed at the native values; unfix them to estimate.
+
+        ``epcsaft_active_parameter[k]`` follows the record's active order. Pyomo sees it dimensionless; its value
+        carries the native unit of its family (k_ij and l_ij -, eps/k K, sigma Angstrom, dielectric volume m3/mol).
+        """
+        b = phase.parent_block()
+        if b.component("epcsaft_active_parameter") is None:
+            values = phase.config.equation_of_state_options["model"]._model.active_parameter_values
+            b.epcsaft_active_parameter = Var(range(len(values)), initialize=values, units=u.dimensionless)
+            b.epcsaft_active_parameter.fix()
 
     @staticmethod
     def common(b: Any, phase: Any) -> None:
         options = phase.config.equation_of_state_options
         if b.component("_pressure_property") is None:
+            reals = len(b.component_list) + len(b.params.epcsaft_active_parameter)  # weights, then parameters
             for name, unit in (
                 ("_pressure_property", u.dimensionless),
                 ("_density_property", u.mol / u.m**3),
@@ -87,7 +97,7 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
                         library=options["library"],
                         function="epcsaft_pressure_property",
                         units=unit,
-                        arg_units=[u.K, u.Pa, *[u.dimensionless for _ in b.component_list], None, None, None],
+                        arg_units=[u.K, u.Pa, *[u.dimensionless] * reals, None, None, None],
                     ),
                 )
 
@@ -104,6 +114,7 @@ class PressureProperties(EoSBase):  # type: ignore[misc]
             T,
             P,
             *[x[j] for j in options["model"].component_ids],
+            *b.params.epcsaft_active_parameter.values(),
             options["equilibrium_record" if strict else "record"],
             str(row),
             "0" if phase.is_liquid_phase() else "1",

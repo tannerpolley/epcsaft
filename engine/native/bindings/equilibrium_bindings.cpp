@@ -157,9 +157,7 @@ void register_equilibrium(nb::module_& module) {
         const auto document = record_document(model);
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        if (!native.active_parameters().empty())
-            throw std::invalid_argument("ASL property record requires inactive parameters");
-        return asl_property_record(document, native.thermochemistry(), native.solver_options(), require_phase_identity);
+        return asl_property_record(document, native.active_parameters(), native.thermochemistry(), native.solver_options(), require_phase_identity);
     }, nb::arg("model"), nb::arg("require_phase_identity") = false);
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
     module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;

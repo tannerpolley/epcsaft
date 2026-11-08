@@ -270,6 +270,7 @@ void register_eos(nb::module_& module) {
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
+        .def_prop_ro("active_parameter_values", &epcsaft::HelmholtzModel::active_parameter_values)
         .def("virial_coefficients", &epcsaft::HelmholtzModel::virial_coefficients,
             nb::arg("temperature"), nb::arg("composition"))
         .def("virial_coefficient_actions", &epcsaft::HelmholtzModel::virial_coefficient_actions,
