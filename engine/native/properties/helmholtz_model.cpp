@@ -588,14 +588,18 @@ void validate_action_request(
         require(std::isfinite(direction.temperature)
             && std::isfinite(direction.molar_density), "direction");
         require(finite_vector(direction.composition), "direction composition");
-        double balance = 0.0, charge = 0.0;
+        // A direction's size carries its coordinate's units, so each sum's defect is relative to its own terms.
+        double balance = 0.0, charge = 0.0, size = 0.0, charge_size = 0.0;
         for (std::size_t i = 0; i < components; ++i) {
+            const double term = direction.composition[i] * model.parameters().charge_number[i];
             balance += direction.composition[i];
-            charge += direction.composition[i] * model.parameters().charge_number[i];
+            charge += term;
+            size += std::abs(direction.composition[i]);
+            charge_size += std::abs(term);
         }
-        require(std::abs(balance) <= policy::COMPOSITION_SUM_TOLERANCE.value,
+        require(std::abs(balance) <= policy::COMPOSITION_SUM_TOLERANCE.value * std::max(1.0, size),
             "direction composition balance");
-        require(std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value,
+        require(std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value * std::max(1.0, charge_size),
             "direction charge balance");
         for (const auto& parameter : direction.parameter) {
             require(std::isfinite(parameter.value), "direction parameter");

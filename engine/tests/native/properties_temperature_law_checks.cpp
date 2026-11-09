@@ -454,6 +454,21 @@ void temperature_laws() {
                     epcsaft::DensityBranch::Vapor, {h}, {{1.0, 0.0, {0.0, 0.0}, {}}}, std::nullopt); },
                 "invalid evaluated l_ij for pair 0/1 at T = 360");
     }
+    {   // A balanced composition direction of size 1e7 keeps a floating-point sum defect above the absolute 1e-12; it is
+        // admitted against 1e-12 sum|d| and acts linearly, while a unit defect still refuses.
+        auto document = binary_document(false);
+        document.entries.push_back(entry("k01", "k_ij", {0, 1}, 0.0, "dimensionless"));
+        const epcsaft::HelmholtzModel model(epcsaft::build_parameters(document));
+        const auto h = [&](const std::vector<double>& d) { return model.density_actions(300.0, RHO, X,
+            {epcsaft::PropertyObservable::ResidualEnthalpy}, {{0.0, 0.0, d, {}}}).results.front().action.value(); };
+        const std::vector<double> large = {5e6, -(5e6 - 1e-9)};
+        const double defect = large[0] + large[1], criterion = 1e-12 * (std::abs(large[0]) + std::abs(large[1]));
+        CHECK(defect > 1e-12 && defect <= criterion);
+        normalized("direction/roundoff-balanced", "residual enthalpy action", "J/mol", h(large), 5e6 * h({1.0, -1.0}), 0.0,
+            1e-9, fields({field("direction", large), field("balance_defect", defect), field("relative_criterion", criterion)}),
+            "a roundoff-balanced large direction is admitted and acts linearly");
+        refused("direction/unit-defect", [&] { (void)h({5e6, 1.0 - 5e6}); }, "direction composition balance");
+    }
     // Identical ethane components: constants and power-zero laws have the same positive-diameter domain.
     auto pair = properties_support::parameters(2);
     pair.segment_count = {1.6069, 1.6069}; pair.sigma_constant = {3.5206, 3.5206};

@@ -1293,6 +1293,9 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
     Eigen::CompleteOrthogonalDecomposition<Eigen::MatrixXd> decomposition;
     if (!derived.empty())
         decomposition.compute(matrix);
+    // Row sums of |nu_D|: nonzero on rows with record-less species; their maximum is the operator inf-norm of nu_D.
+    const Eigen::VectorXd derived_weight = matrix.cwiseAbs().rowwise().sum();
+    const double matrix_norm = derived_weight.lpNorm<Eigen::Infinity>();
     const auto nullity =
         derived.empty() ? Eigen::Index(0) : Eigen::Index(derived.size()) - decomposition.rank();
     if (nullity > 1 ||
@@ -1396,17 +1399,21 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                             derived.empty() ? Eigen::VectorXd() : Eigen::VectorXd(decomposition.solve(right));
                         const Eigen::VectorXd residual =
                             derived.empty() ? right : Eigen::VectorXd(matrix * solution - right);
-                        for (Eigen::Index r = 0; r < residual.size(); ++r)
-                            if (!(std::abs(residual(r)) <= std::sqrt(std::numeric_limits<double>::epsilon()) *
-                                                               std::max(1.0, scale(r)))) {
+                        // Completion roundoff follows ||nu_D|| ||x||, so only rows with record-less species carry it.
+                        const double bound = matrix_norm * solution.lpNorm<Eigen::Infinity>();
+                        for (Eigen::Index r = 0; r < residual.size(); ++r) {
+                            const double criterion = std::sqrt(std::numeric_limits<double>::epsilon())
+                                * std::max(1.0, scale(r) + (derived_weight(r) > 0.0 ? bound : 0.0));
+                            if (!(std::abs(residual(r)) <= criterion)) {
                                 column.status = SolvedStateActionStatus::ReferenceUnavailable;
                                 column.message = "supplied records inconsistent with reaction " +
                                                  reaction_name(problem.reactions[r], r)
                                     + "; residual " + core::optional_number(std::abs(residual(r)))
-                                    + "; criterion " + core::optional_number(std::sqrt(std::numeric_limits<double>::epsilon()) * std::max(1.0, scale(r)));
+                                    + "; criterion " + core::optional_number(criterion);
                                 if (!derived.empty()) column.message += "; reference_completion rank " + std::to_string(decomposition.rank())
                                     + "/" + std::to_string(derived.size()) + "; threshold " + core::optional_number(decomposition.threshold());
                             }
+                        }
                         for (std::size_t j = 0; j < derived.size(); ++j)
                             column.values[derived[j]] = solution(j);
                         if (numerical_errors && !b && !c && a <= 1) {

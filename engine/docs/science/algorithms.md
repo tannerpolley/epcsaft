@@ -2334,7 +2334,9 @@ are different observables with different chains.
 For the P4 native caloric action surface, each of Ideal, Residual and Total
 `h`, `u`, `s`, `cp`, and `cv` admits mixed directional orders one through three
 in `(T,rho,x;theta)` or `(T,P,x;theta)` on one accepted density branch.
-Composition directions preserve normalization and charge balance; known fixed
+Composition directions preserve normalization and charge balance within the
+composition-sum tolerance times each sum's absolute term total (at least one);
+known fixed
 parameter slots project to zero, while unknown slots are input errors. A separate
 retained design specifies the qualification cases and numerical limits.
 
@@ -2837,8 +2839,11 @@ individual column admission is not a bound on an ill-conditioned quotient.
 
 A missing column refuses only the outputs and action directions consuming it,
 with its derivative, reaction, coordinate and original cause retained. Supplied
-records must be consistent with each consumed reaction derivative. Embed the
-record-less null space with zeros on supplied species and require it to lie in
+records must be consistent with each consumed reaction derivative, within
+sqrt(eps) of the row's absolute term sum; a row with a record-less species adds
+the completion's normwise roundoff ||nu_D||_inf ||x||_inf, where ||nu_D||_inf
+is the maximum absolute row sum. This is consistency within that tolerance, not
+exact consistency. Embed the record-less null space with zeros on supplied species and require it to lie in
 the full charge span (EqID: `reference_species_calorics`). Any supplied ion
 fixes that gauge, requiring full column rank of the record-less block; otherwise
 only a single charge-proportional null direction is admissible. Refuse any

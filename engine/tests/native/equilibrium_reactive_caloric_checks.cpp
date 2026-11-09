@@ -952,8 +952,45 @@ inline void partial_ion_records() {
     }
 }
 
+inline void mixed_record_conflict() {
+    // C = P+ + M- (A = 2e8 J/mol) and C = D on supplied records: nu_D = [[1,1],[0,0]], b = [2e8+g_C, g_C-g_D].
+    // D's cp slope keeps C and D equal through cp at the compiled 298.15 K and leaves g_D - g_C of about -1.1 J/mol at
+    // 318.15 K. Row 2 has no record-less species, so that conflict refuses although sqrt(eps) ||nu_D|| ||x|| is 3 J/mol.
+    auto parameters = properties_support::parameters(4);
+    parameters.segment_count = {1.0, 1.6069, 1.0, 1.0};
+    parameters.sigma_constant = {3.7039, 3.5206, 3.7039, 3.7039};
+    parameters.dispersion_energy_over_k = {150.03, 191.42, 150.03, 150.03};
+    parameters.molar_mass_kg_per_mol = {0.016043, 0.03007, 0.016043, 0.016043};
+    parameters.charge_number = {0, 0, 1, -1};
+    parameters.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    parameters.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    parameters.permittivity_form = PermittivityForm::ComponentMixing;
+    parameters.relative_permittivity = {78, 78, 78, 78};
+    parameters.packing_diameter_angstrom = parameters.debye_huckel_diameter_angstrom = {2.5, 2.5, 2.5, 2.5};
+    auto problem = equilibrium_support::flash(4);
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.feed.values = {1, 1, 1, 1};
+    problem.reactions = {{"C=P++M-", {-1, 0, 1, 1}, std::nullopt, 2e8, std::nullopt, std::nullopt},
+                         {"C=D", {-1, 1, 0, 0}, 1.0, std::nullopt, std::nullopt, std::nullopt}};
+    ThermochemistryRecord records;
+    records.standard_pressure = 1e5;
+    records.component_intervals.resize(4);
+    for (double slope : {0.0, 0.25}) {
+        records.component_intervals[0] = {{200, 400, true, true, {IdealPolynomial{{30}, 298.15, 100, 10}, 1e5}}};
+        records.component_intervals[1] = {{200, 400, true, true, {IdealPolynomial{{30, slope}, 298.15, 100, 10}, 1e5}}};
+        const auto ref = reference_calorics(compile_problem(HelmholtzModel(parameters, {}, records), problem), 318.15, 1e5, true);
+        std::string cause;
+        double g_cation = 0.0;
+        try { g_cation = column(ref, 0, 0, 2); } catch (const std::exception& e) { cause = e.what(); }
+        std::printf("mixed-record-conflict cp_slope_J_per_mol_K2=%g g_P_J_per_mol=%.17g cause=%s\n", slope, g_cation, cause.c_str());
+        CHECK(slope ? cause.find("supplied records inconsistent with reaction C=D") != std::string::npos
+                    : cause.empty() && std::abs(g_cation) > 9e7);
+    }
+}
+
 inline void dependency_checks() {
     partial_ion_records();
+    mixed_record_conflict();
     auto c = input(false, true);
     HelmholtzModel model(c.parameters, c.active, c.records);
     const auto compiled = compile_problem(model, c.problem);
