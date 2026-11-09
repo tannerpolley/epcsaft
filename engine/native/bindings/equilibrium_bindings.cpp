@@ -490,7 +490,6 @@ void register_equilibrium(nb::module_& module) {
         const nb::object native_owner = model.attr("_model");
         const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
         const auto p = nb::cast<EquilibriumProblem>(problem.attr("_native")(model));
-        if (!p.solids.empty()) throw std::invalid_argument("ASL record does not carry solids");
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
         map.validate(p, native.parameters());
         compile_problem(native, p);

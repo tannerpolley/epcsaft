@@ -521,6 +521,21 @@ Species-thermochemistry reaction targets are rejected rather than silently omitt
 Without model thermochemistry the enthalpy function returns `missing_thermochemistry`;
 the amount function is unaffected.
 
+The record also carries declared-present pure solids beside one declared liquid: pass
+`Problem(phases=[one liquid], solids=[Solid(..., amount=Free())], neutral_reference=...)`
+with `identity_component = 0` and `minimum_gap = 0`. Each solid needs a ln K(T) law; a
+`Pinned(0)` or scalar-K solid is refused when the record is built, and a record without
+solids keeps the version 7 layout apart from its tag `epcsaft.asl.equilibrium.v8`.
+`epcsaft_equilibrium_solid_amount(q, record, str(s))` returns solid s in mol of its formula
+unit from the same native batch as the liquid amounts, with exact first and second
+actions in every q column. A solid absent at the solved state (amount 0) is
+`phase_boundary_not_differentiable` ("solid <name> is absent at the solved state"); presence
+is declared, never decided. A T outside a solid's law interval is `outside_interval` naming
+the solid. There is no continuation with solids: a failed direct solve keeps its own status.
+The system enthalpy is `missing_thermochemistry` while a solid is present, since a solid has
+no caloric record. Qualified on halite in water inside its law's 288.15-308.15 K interval;
+two fluid phases or reacting liquids with solids are admitted but not qualified.
+
 For an observable `y(T, P, n, theta)`, the callback returns the gradient and the packed
 lower-triangle Hessian in `q`: native T and P actions in their columns, `J_y B` and
 `B.T H_y B` in the control columns, where `B = feed_matrix`, and native parameter

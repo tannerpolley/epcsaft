@@ -268,22 +268,31 @@ static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd
         + (w * defect).cwiseAbs() + application.cwiseAbs() + eps * (s.cwiseAbs() + w.cwiseAbs() * b.cwiseAbs());
 }
 
-// A solid's ln K^rho = ln K_src + scale + C_s(theta) at its source pressure; only C_s moves with theta.
-std::vector<std::vector<double>> solid_parameter_derivative(const CompiledSystem& c, double T, double P,
-                                                            const std::vector<double>& control) {
+// The ln K^rho_s(T, P0) = ln K_src + scale + C_s columns an action moves, from the solid_log_k owner: dC/dtheta_a for every
+// moved coordinate; with T jets of order two L'' + C_TT and d2C/dT dtheta_a; d2C/dtheta_a dtheta_b over the pairs. A
+// requested column the reference owner did not admit refuses with its cause.
+std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P, std::size_t order, bool temperature_jets,
+                                     const std::vector<double>& control, const std::vector<std::size_t>& pairs) {
     const auto& solids = c.problem.solids;
-    if (solids.empty() || std::none_of(control.begin(), control.end(), [](double v) { return v != 0.0; })) return {};
-    std::vector<std::vector<double>> nu, result(solids.size());
-    std::vector<ReactionReference> refs;
-    for (const auto& solid : solids) nu.push_back(solid.stoichiometry), refs.push_back(*solid.reference);
-    const auto d = reaction_references(*c.model, T, P, *c.problem.source_reference, nu, refs, false, {}, 0, true);
-    for (std::size_t s = 0; s < solids.size(); ++s)
+    const bool parameters = std::any_of(control.begin(), control.end(), [](double v) { return v != 0.0; });
+    const std::size_t thermal = order > 1 && temperature_jets ? 2 : 0;
+    if (solids.empty() || (!parameters && !thermal)) return {};
+    auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, thermal, parameters, pairs);
+    for (std::size_t s = 0; s < solids.size(); ++s) {
+        const auto need = [&](std::size_t a, std::optional<std::size_t> p = {}, std::optional<std::size_t> q = {}) {
+            if (!laws[s].reference.derivative_value(a, 0, p, q))
+                throw std::invalid_argument("reference_unavailable: solid " + solids[s].name + " " + laws[s].reference.derivative_cause(a, 0, p, q));
+        };
+        if (thermal) need(2);
         for (std::size_t a = 0; a < control.size(); ++a) {
-            if (control[a] != 0.0 && !d[s].derivative_value(0, 0, a))
-                throw std::invalid_argument("reference_unavailable: solid " + solids[s].name + " " + d[s].derivative_cause(0, 0, a));
-            result[s].push_back(d[s].derivative_value(0, 0, a).value_or(0.0));
+            if (control[a] == 0.0) continue;
+            need(0, a);
+            if (thermal) need(1, a);
         }
-    return result;
+        for (std::size_t i = 0; i < pairs.size(); ++i)
+            for (std::size_t j = i; j < pairs.size(); ++j) need(0, pairs[i], pairs[j]);
+    }
+    return laws;
 }
 
 StandardTerm standard_term(
@@ -424,7 +433,7 @@ StandardTerm standard_term(
                 error->absolute[k].assign(mapped.data(), mapped.data() + mapped.size());
             }
         }
-        result.solid_parameter_derivative = solid_parameter_derivative(compiled, temperature, pressure, active_control);
+        result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, active_control, pairs);
         return result;
     }
     const auto gibbs = standard_state_series(
@@ -448,7 +457,7 @@ StandardTerm standard_term(
             result.derivative[k][species] = value / GAS_CONSTANT_J_PER_MOL_K;
         }
     }
-    result.solid_parameter_derivative = solid_parameter_derivative(compiled, temperature, pressure, active_control);
+    result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, active_control, pairs);
     return result;
 }
 
@@ -898,15 +907,25 @@ CppAD::ADFun<double> record_geometry(
             }
         }
     }
-    // EqIDs solid_standard_gibbs and solid_saturation_index; ln K^rho is linear in T (first-order T actions).
+    // EqIDs solid_standard_gibbs and solid_saturation_index: the affinity subtracts the second-order Taylor term of
+    // ln K^rho in (T, theta), K0 + (L' + C_T) dT + C_a dtheta_a + (L'' + C_TT) dT^2/2 + C_Ta dT dtheta_a + C_ab dtheta_a dtheta_b/2,
+    // whose columns are those standard.solid carries; V_s (P - P0)/RT is exact.
     std::vector<AD> solid_output;
     for (std::size_t s = 0; s < compiled.solids.size(); ++s) {
         const auto& solid = compiled.solids[s];
         const auto& spec = problem.solids[s];
         AD affinity = -(solid.log_k + solid.log_k_slope.value_or(0.0) * delta_T + spec.molar_volume_m3_per_mol
             * (P - *spec.reference->reference_pressure_pa) / (GAS_CONSTANT_J_PER_MOL_K * T));
-        for (std::size_t a = 0; !standard.solid_parameter_derivative.empty() && a < theta.size(); ++a)
-            affinity -= standard.solid_parameter_derivative[s][a] * (theta[a] - theta_center[a]);
+        if (!standard.solid.empty()) {  // solid_columns refused every moved column it lacks; an unmoved one is zero
+            const auto& C = standard.solid[s];
+            const auto column = [&C](std::size_t a, auto... p) { return C.reference.derivative_value(a, 0, p...).value_or(0.0); };
+            affinity -= 0.5 * (C.curvature.value_or(0.0) + column(2, std::nullopt)) * delta_T * delta_T;
+            for (std::size_t a = 0; a < theta.size(); ++a) {
+                const AD d = theta[a] - theta_center[a];
+                affinity -= (column(0, a) + column(1, a) * delta_T) * d;
+                for (std::size_t b = 0; b <= a; ++b) affinity -= (b < a ? 1.0 : 0.5) * column(0, b, a) * (theta[b] - theta_center[b]) * d;
+            }
+        }
         for (std::size_t i = 0; i < components; ++i)
             if (spec.stoichiometry[i] != 0.0) affinity -= spec.stoichiometry[i] * add_standard(AD(0.0), i);
         for (std::size_t j = 0; j < compiled.rank; ++j) affinity += u[compiled.primal_size + j] * solid.balance[j];

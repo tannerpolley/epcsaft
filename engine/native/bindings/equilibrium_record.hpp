@@ -24,11 +24,15 @@ struct AslFeedMap {
         auto require = [](bool ok) { if (!ok) throw std::invalid_argument("invalid ASL affine feed/phase contract"); };
         require(n > 0 && n <= 64 && !anchor.empty() && anchor.size() <= 64);
         require(offset.size() == n && matrix.size() == n && problem.feed.values.size() == n);
-        require(identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0);
         require(!problem.temperature.free && !problem.pressure.free && problem.feed.kind == FeedKind::Amounts);
-        require(problem.phases.size() == 2 && problem.topology_declared);
+        // Two fluid phases with an identity gap, or one liquid beside declared-present (Free) solids with neither.
+        const bool pair = problem.phases.size() == 2;
+        require(pair ? identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0
+                     : problem.phases.size() == 1 && !problem.solids.empty() && !identity_component && minimum_gap == 0.0);
+        for (const auto& solid : problem.solids) require(solid.amount.kind == AmountKind::Free);
+        require(problem.topology_declared);
         // At least one liquid; a vapor's declared support holds only zero-charge components.
-        require(problem.phases[0].kind == PhaseKind::Liquid || problem.phases[1].kind == PhaseKind::Liquid);
+        require(problem.phases[0].kind == PhaseKind::Liquid || (pair && problem.phases[1].kind == PhaseKind::Liquid));
         for (const auto& p : problem.phases) {
             require(p.is_free() && p.support_declared && !p.support.empty());
             for (auto i : p.support)
@@ -157,11 +161,26 @@ inline void put_thermochemistry(AslRecordWriter& w, const std::optional<Thermoch
     }
 }
 
+// The solid block: the count, the neutral reference where `reference` is given (the property record), then each solid's
+// ln K(T) law and V_s. Every solid has a T column, so an isothermal K is declared as a constant law on its interval.
+inline void put_solids(AslRecordWriter& w, const std::vector<SolidSpec>& solids,
+                       const std::optional<NeutralReferenceDeclaration>* reference = nullptr) {
+    w.put("solids");
+    w.put(solids.size());
+    if (reference && !solids.empty() && !*reference) throw std::invalid_argument("ASL solid rows require a neutral reference");
+    if (reference && !solids.empty()) put_source_reference(w, *reference);
+    for (const auto& solid : solids) {
+        if (!solid.correlation) throw std::invalid_argument("ASL solid rows require a ln K(T) law");
+        put_reaction(w, solid_law(solid));
+        w.put(solid.molar_volume_m3_per_mol);
+    }
+}
+
 inline std::string asl_record(const ParameterDocument& d, const std::vector<ActiveParameter>& active,
                               const std::optional<ThermochemistryRecord>& t, const EquilibriumProblem& p,
                               const ContinuationOptions& options, const AslFeedMap& map, const policy::SolverOptions& solver_options) {
     AslRecordWriter w;
-    w.put("epcsaft.asl.equilibrium.v7");
+    w.put("epcsaft.asl.equilibrium.v8");
     put_document(w, d);
     w.put("temperature"); w.put(p.temperature.value); w.put("pressure"); w.put(p.pressure.value);
     w.put("feed_kind"); w.put("amounts"); w.put("feed_amounts"); w.vector(p.feed.values);
@@ -175,6 +194,7 @@ inline std::string asl_record(const ParameterDocument& d, const std::vector<Acti
     for (const auto& r : p.reactions) put_reaction(w, r);
     w.put("standard_gibbs_j_per_mol"); w.vector(p.standard_gibbs_j_per_mol);
     put_source_reference(w, p.source_reference);
+    if (!p.solids.empty()) put_solids(w, p.solids);  // a record without solids keeps its layout
     w.put("topology_declared"); w.put(p.topology_declared); w.put("solver_options");
     const auto effective = p.solver_options.resolved(solver_options);
     for (std::size_t i = 0; i < effective.values.size(); ++i) w.put(effective.value(i));
@@ -202,14 +222,7 @@ inline std::string asl_property_record(const ParameterDocument& d, const std::ve
     for (std::size_t i = 0; i < solver_options.values.size(); ++i) w.put(solver_options.value(i));
     put_active(w, active);
     put_thermochemistry(w, t);
-    // Every solid row has a T column, so an isothermal K is declared as a constant law on its interval.
-    w.put("solids"); w.put(solids.size());
-    if (!solids.empty() && !reference) throw std::invalid_argument("ASL solid rows require a neutral reference");
-    if (!solids.empty()) put_source_reference(w, reference);
-    for (const auto& solid : solids) {
-        if (!solid.correlation) throw std::invalid_argument("ASL solid rows require a ln K(T) law");
-        put_reaction(w, solid_law(solid)), w.put(solid.molar_volume_m3_per_mol);
-    }
+    put_solids(w, solids, &reference);
     return w.finish();
 }
 }  // namespace epcsaft::equilibrium

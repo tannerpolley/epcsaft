@@ -30,7 +30,7 @@ from tests.packets import parameters_json
 NAMES, G0, G1, TP0 = ("water", "isobutanol"), (0.7, 0.3), (0.7, 0.285), (298.15, 1.0e5)
 THETA0, THETA_STAR, THETA_MERGED = (-0.0071, 257.13), (-0.0021, 258.13), (-0.0371, 257.13)
 OPTIONS = eq.Continuation(initial_step=0.05, minimum_step=1e-3, max_steps=200, max_retries_per_step=5)
-FUNCTION, ENTHALPY = "epcsaft_equilibrium_phase_component_amount", "epcsaft_equilibrium_system_enthalpy"
+FUNCTION, ENTHALPY, SOLID = "epcsaft_equilibrium_phase_component_amount", "epcsaft_equilibrium_system_enthalpy", "epcsaft_equilibrium_solid_amount"
 
 
 def mixture(theta: Any = None, active: bool = True) -> Mixture:
@@ -55,28 +55,34 @@ def record(model: Mixture, T: float = 298.15) -> str:
     return eq.asl_record(model, problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
 
 
-def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2) -> tuple[float, Any, Any]:
-    """Row p*components + c at q, or the system enthalpy for row None; the Hessian unpacked from the lower triangle i + j(j+1)/2."""
+def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2, phases: int = 2) -> tuple[float, Any, Any]:
+    """Row p*components + c at q, solid s at row phases*components + s, or the system enthalpy for row None; the Hessian
+    unpacked from the lower triangle i + j(j+1)/2."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
-    callback = PropertyExternalFunction(library=str(asl_library()), function=ENTHALPY if row is None else FUNCTION)
-    v, g, h = callback.evaluate_fgh([*q, text] if row is None else [*q, text, str(row // components), str(row % components)], fgh=order)
+    solid = row is not None and row >= phases * components
+    callback = PropertyExternalFunction(library=str(asl_library()), function=ENTHALPY if row is None else SOLID if solid else FUNCTION)
+    strings = [] if row is None else [str(row - phases * components)] if solid else [str(row // components), str(row % components)]
+    v, g, h = callback.evaluate_fgh([*q, text, *strings], fgh=order)
     n = len(q)
     hessian = np.array([[h[min(i, j) + max(i, j) * (max(i, j) + 1) // 2] for j in range(n)] for i in range(n)]) if order == 2 else None
     return float(v), np.array(g[:n]) if order else None, hessian
 
 
-def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy: bool = False) -> list[list[float]]:
+def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy: bool = False, matrix: Any = None) -> list[list[float]]:
     """Per row: value, first actions, second actions (i <= j, packed order) over (T, P, feed, theta), from solve_equilibrium
-    and solved_state_actions; the feed controls are the first len(feed) components. The rows are the phase-component
-    amounts, or the system enthalpy alone."""
+    and solved_state_actions; the feed controls move the components by `matrix`, else the first len(feed) components. The
+    rows are the phase-component amounts then the solid amounts, or the system enthalpy alone."""
     target = target or problem(feed)
     central = eq.solve_equilibrium(model, target)
     compiled = _core.compile_problem(model._model, target._native(model))
-    k, n, m = len(feed), len(central.mole_fractions) // 2, len(model._model.active_parameter_values)
+    F, S = central.phase_count, len(central.solid_amounts)
+    k, n, m = len(feed), len(central.mole_fractions) // F, len(model._model.active_parameter_values)
     e = np.eye(2 + k + m).tolist()
-    d = [eq.SolvedStateActionDirection(c[0], c[1], c[2:2 + k] + [0.0] * (n - k), c[2 + k:]) for c in e]
+    d = [eq.SolvedStateActionDirection(c[0], c[1], (np.array(matrix) @ c[2:2 + k]).tolist() if matrix else c[2:2 + k] + [0.0] * (n - k),
+                                       c[2 + k:]) for c in e]
     observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.SystemEnthalpy)] if enthalpy else [
-        eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, c) for p in range(2) for c in range(n)]
+        eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, c) for p in range(F) for c in range(n)] + [
+        eq.SolvedStateObservable(eq.SolvedStateObservableKind.SolidAmount, s) for s in range(S)]
 
     def batch(*directions: Any) -> Any:
         return _core.solved_state_actions(compiled, central, eq.SolvedStateActionRequest(observables, list(directions))).results
@@ -87,8 +93,8 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy
     return [[zero[r].value, *(b[r].action for b in first), *(b[r].action for b in second)] for r in range(len(observables))]
 
 
-def callback_row(text: str, q: Any, row: int | None, components: int = 2) -> list[float]:
-    v, g, h = fgh(text, q, row, 2, components)
+def callback_row(text: str, q: Any, row: int | None, components: int = 2, phases: int = 2) -> list[float]:
+    v, g, h = fgh(text, q, row, 2, components, phases)
     return [v, *g, *(h[i, j] for j in range(len(q)) for i in range(j + 1))]
 
 
@@ -264,7 +270,7 @@ def test_vapor_support_refusals() -> None:
     callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
     for edited, cause in ((text.replace(vapor, "1:V,5:vapor,1:4,1:0,1:1,1:2,1:3,"), contract),
                           (text.replace("1:L,6:liquid,", "1:L,5:vapor,"), contract),
-                          (text.replace("equilibrium.v7", "equilibrium.v6"), "")):
+                          (text.replace("equilibrium.v8", "equilibrium.v7"), "")):
         with pytest.raises(RuntimeError, match="epcsaft_equilibrium:.*" + cause):
             callback.evaluate([MEA_T, MEA_P, *U0, edited, "0", "3"])
 
@@ -472,3 +478,166 @@ def test_record_without_thermochemistry_refuses_only_enthalpy() -> None:
         for row in range(2 * C):
             got, want = (np.concatenate([np.ravel(x) for x in fgh(t, R_Q0, row, order, C) if x is not None]) for t in (without, with_block))
             assert got.tobytes() == want.tobytes(), (order, row)
+
+
+# H: Held 2014 strategy 2 water/Na+/Cl- beside declared-present halite (tests/equilibrium/test_pure_solid.py declarations)
+# at 298.15 K and 101325 Pa with 1 kg of water and 10 mol NaCl; q = (T, P, u_water, u_NaCl, eps/k[Na+], sigma[Cl-],
+# k_ij[Cl-, water]). Rows 0-2 are the liquid amounts, row 3 the halite amount in mol of NaCl.
+H_Q0, H_MATRIX = (298.15, 101325.0, 55.508435061791985, 10.0, 230.0, 2.756, -0.25), [[1.0, 0.0], [0.0, 1.0], [0.0, 1.0]]
+
+
+def halite_problem(q: Any, amount: Any = None) -> eq.Problem:
+    from tests.equilibrium import test_pure_solid as hs
+    target = hs.problem(10.0, amount or eq.Free(), q[0], q[1])
+    target.phases = [eq.Phase("L", kind="liquid", support=hs.SPECIES)]
+    target.feed = eq.Amounts(dict(zip(hs.SPECIES, (q[2], q[3], q[3]), strict=True)))
+    return target
+
+
+def halite(shift: tuple[str, float] = ("", 0.0)) -> tuple[Mixture, str]:
+    from tests.equilibrium import test_pure_solid as hs
+    model = hs.held(shift, tuple(item for _, item, _ in hs.PARAMETERS))
+    return model, eq.asl_record(model, halite_problem(H_Q0), OPTIONS, [0.0] * 3, H_MATRIX, list(H_Q0[2:4]), 0, 0.0)
+
+
+def test_halite_record_equals_direct_engine() -> None:
+    """H1: the saturated molality and halite amount; every row's value, gradient and Hessian equal the direct Engine
+    bitwise at theta0 and to 1e-12 relative at k_ij + 0.01, and each order returns the same value."""
+    from tests.equilibrium import test_pure_solid as hs
+    model, text = halite()
+    assert model._model.active_parameter_values == list(H_Q0[4:])
+    sodium, solid = (fgh(text, H_Q0, row, 0, 3, 1)[0] for row in (1, 3))
+    assert sodium / (H_Q0[2] * hs.MW) == pytest.approx(6.29890460910619, rel=1e-12, abs=0.0)
+    assert solid == pytest.approx(3.7010953908938036, rel=1e-12, abs=0.0) and abs(solid + sodium - H_Q0[3]) <= 1e-13
+    star = (*H_Q0[:6], -0.24)
+    for q, mixture_at, bitwise in ((H_Q0, model, True), (star, halite(("pair/chloride-anion/water/k_ij", 0.01))[0], False)):
+        want = native(mixture_at, q[2:4], halite_problem(q), matrix=H_MATRIX)
+        values = [[fgh(text, q, row, order, 3, 1)[0] for row in range(4)] for order in (0, 1)]
+        got = [callback_row(text, q, row, 3, 1) for row in range(4)]
+        assert values == [[r[0] for r in got]] * 2
+        for row in range(4):
+            if bitwise:
+                assert [x.hex() for x in got[row]] == [float(x).hex() for x in want[row]], (q, row)
+            else:
+                assert got[row] == pytest.approx(want[row], rel=1e-12, abs=0.0), (q, row)
+
+
+def test_halite_saturation_condition() -> None:
+    """H2: at the callback's liquid the property record's solid row closes sum nu (ln x + ln phi) = l_s to 1e-12."""
+    from tests.eos.test_asl_property_record import halite as property_halite, property_fgh
+    _, text = halite()
+    _, row_text, _, _ = property_halite()
+    amounts = np.array([fgh(text, H_Q0, row, 0, 3, 1)[0] for row in range(3)])
+    q = [*H_Q0[:2], *(amounts / amounts.sum()), *H_Q0[4:]]
+    ln_x = np.log(q[3]) + np.log(q[4])
+    residual = ln_x + property_fgh(row_text, q, 3, 0)[0] + property_fgh(row_text, q, 4, 0)[0] - property_fgh(row_text, q, 5, 0)[0]
+    assert abs(residual) <= 1e-12, residual
+
+
+def test_halite_columns_match_central_differences() -> None:
+    """H3, H4, verification only: T at {4, 1, 0.25} 1e-3 K, P at {4, 1, 0.25} 1e3 Pa, u at {4, 1, 0.25} 1e-5 mol and theta at
+    {4, 1, 0.25} 1e-5 max(1, |theta|). Every gradient entry (tau 1e-6) and every Hessian entry against the difference of the
+    exact gradient (tau 1e-5) meet |D - A| <= tau |A| + 10 eps (|f+| + |f-|)/2h. The halite column is the design's native
+    one; dn_s/du_w = -m_s M_w and dn_s/du_NaCl = 1 (the saturated liquid does not move with the feed), so the u_NaCl
+    Hessian row is zero and the liquid sodium row is the negative of the halite row elsewhere. The liquid water row is u_w
+    exactly: its columns close that balance to 1e-14 of the largest halite entry of the same order. The u_NaCl Hessian column
+    is that analytic zero, so its differences carry only re-solve noise (25 ulp of the gradient): 1e-13 replaces 10 eps there."""
+    from tests.equilibrium import test_pure_solid as hs
+    _, text = halite()
+    eps, q = float(np.finfo(float).eps), np.array(H_Q0)
+    exact = [fgh(text, q, row, 2, 3, 1) for row in range(4)]
+    solid = exact[3][1]
+    assert solid == pytest.approx([-1.430830593594595e-02, -2.1295896304825715e-09, -0.11347653022633869, 1.0,
+                                   8.92286053703689e-03, 2.304237756233167, -4.849349365690943], rel=1e-12, abs=0.0)
+    assert abs(solid[2] + exact[1][0] / (H_Q0[2] * hs.MW) * hs.MW) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
+    assert not exact[1][2][3].any() and not exact[3][2][3].any()
+    water = exact[0]
+    assert water[0] == H_Q0[2] and np.abs(water[1] - np.eye(7)[2]).max() <= 1e-14 * np.abs(solid).max()
+    assert np.abs(water[2]).max() <= 1e-14 * np.abs(exact[3][2]).max()
+    assert np.delete(exact[1][1] + solid, 3) == pytest.approx(0.0, abs=1e-15) and np.delete(exact[1][2] + exact[3][2], 3) == pytest.approx(0.0, abs=1e-15)
+    for b, h0 in enumerate((1e-3, 1e3, 1e-5, 1e-5, *(1e-5 * max(1.0, abs(t)) for t in H_Q0[4:]))):
+        for h in (4 * h0, h0, 0.25 * h0):
+            plus, minus = ([fgh(text, q + s * h * np.eye(7)[b], row, 1, 3, 1) for row in range(4)] for s in (1, -1))
+            for row, (_, gradient, hessian) in enumerate(exact[1:], 1):
+                pairs = [(gradient[b], plus[row][0], minus[row][0], 1e-6)]
+                pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(7)]
+                noise = 1e-13 if b == 3 else 10 * eps
+                for exact_value, fp, fm, tau in pairs:
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + noise * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
+
+
+def test_halite_onset_and_interval_name_the_cause_and_recover() -> None:
+    """H5: below the solubility (6.0 mol NaCl) halite is absent, and above its law (308.16 K) the solve is refused; each
+    names its cause, and the next call at q0 returns the q0 value bitwise. At 6.30 mol halite is present."""
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    _, text = halite()
+    callback = PropertyExternalFunction(library=str(asl_library()), function=SOLID)
+    start = callback.evaluate([*H_Q0, text, "0"])
+    for q, cause in (((*H_Q0[:3], 6.0, *H_Q0[4:]), "phase_boundary_not_differentiable:solid[0].amount: solid halite is absent at the solved state"),
+                     ((308.16, *H_Q0[1:]), "outside_interval:solid[0].amount: solid halite: temperature outside reaction correlation")):
+        with pytest.raises(RuntimeError) as failure:
+            callback.evaluate([*q, text, "0"])
+        assert str(failure.value).startswith("epcsaft_equilibrium:" + cause), str(failure.value)
+        assert callback.evaluate([*H_Q0, text, "0"]).hex() == start.hex()
+    assert callback.evaluate([*H_Q0[:3], 6.30, *H_Q0[4:], text, "0"]) == pytest.approx(1.0953908938e-3, rel=1e-10, abs=0.0)
+
+
+def test_halite_temperature_ipopt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """H6: with u and theta fixed, Ipopt (exact Hessian, tol 1e-12, "Optimal Solution Found" only) frees T in [288.15,
+    308.15] K from 298.15 K and recovers 303.15 K from the halite amount there, the native 3.633567004371989 mol: dn_s/dT =
+    -0.0127 mol/K at 303.15 K, so 1e-8 K is 1.27e-10 mol and the unscaled amount residual must be at most 1e-11 mol. The
+    external AMPL Ipopt returns the same temperature and reports no callback failure."""
+    from idaes.core.solvers import get_solver
+    from pyomo.opt import ReaderFactory  # type: ignore[import-untyped]
+    from epcsaft.idaes import PropertyExternalFunction, asl_library, solve_with_diagnostics
+    solver, executable = get_solver(), shutil.which("ipopt") or str(Path.home() / ".idaes/bin/ipopt")
+    if not solver.available(exception_flag=False) or not Path(executable).is_file():
+        pytest.skip("Ipopt executable unavailable")
+    library, target = str(asl_library()), 3.633567004371989
+    monkeypatch.setenv("AMPLFUNC", library)
+    _, text = halite()
+    m = ConcreteModel()
+    m.T = Var(initialize=298.15, bounds=(288.15, 308.15))
+    m.solid = ExternalFunction(library=library, function=SOLID)
+    m.amount = Constraint(expr=m.solid(m.T, *H_Q0[1:], text, "0") == target)
+    m.write(str(tmp_path / "halite.nl"), format="nl")
+    (tmp_path / "ipopt.opt").write_text("linear_solver mumps\ntol 1e-12\nacceptable_iter 0\n")
+    external = subprocess.run([executable, "halite.nl", "-AMPL"], cwd=tmp_path, capture_output=True, text=True, check=False)
+    assert external.returncode == 0 and "epcsaft_equilibrium failure" not in external.stderr, external.stdout + external.stderr
+    sol = ReaderFactory("sol")(str(tmp_path / "halite.sol"))
+    assert "Optimal Solution Found" in str(sol.solver.message)
+    external_T = sol.solution(0).variable["v0"]["Value"]
+    solver.options["tol"] = 1e-12
+    log = tmp_path / "ipopt.log"
+    result = solve_with_diagnostics(solver, m, logfile=log)
+    assert check_optimal_termination(result) and result.solver.error_rc == 0
+    assert "Optimal Solution Found" in log.read_text() and "epcsaft_equilibrium failure" not in log.read_text()
+    residual = PropertyExternalFunction(library=library, function=SOLID).evaluate([value(m.T), *H_Q0[1:], text, "0"]) - target
+    print(f"H6 T={value(m.T)!r} K dT={value(m.T) - 303.15:.3e} K residual={residual:.3e} mol external T={external_T!r} K")
+    assert abs(value(m.T) - 303.15) <= 1e-8 and abs(residual) <= 1e-11 and abs(external_T - 303.15) <= 1e-8
+
+
+def test_halite_record_refusals() -> None:
+    """H7: a Pinned(0) and a scalar-K halite are refused when the record is built; with halite present the system enthalpy
+    is refused at every order naming the solid, and in a native batch it loses its value and action while the amounts keep
+    theirs."""
+    from tests.equilibrium import test_pure_solid as hs
+    model, text = halite()
+    with pytest.raises(_core.ParameterError, match="invalid ASL affine feed/phase contract"):
+        eq.asl_record(model, halite_problem(H_Q0, eq.Pinned(0.0)), OPTIONS, [0.0] * 3, H_MATRIX, list(H_Q0[2:4]), 0, 0.0)
+    scalar = halite_problem(H_Q0)
+    scalar.solids = [dataclasses.replace(scalar.solids[0], correlation=None, equilibrium_constant=37.9)]
+    with pytest.raises(ValueError, match=r"ASL solid rows require a ln K\(T\) law"):
+        eq.asl_record(model, scalar, OPTIONS, [0.0] * 3, H_MATRIX, list(H_Q0[2:4]), 0, 0.0)
+    for order in (0, 1, 2):
+        with pytest.raises(RuntimeError) as failure:
+            fgh(text, H_Q0, None, order, 3, 1)
+        assert str(failure.value).startswith("epcsaft_equilibrium:missing_thermochemistry:system.enthalpy: solid halite has no enthalpy record")
+    target = halite_problem(H_Q0)
+    central = eq.solve_equilibrium(model, target)
+    kinds = (eq.SolvedStateObservableKind.SystemEnthalpy, eq.SolvedStateObservableKind.SolidAmount)
+    request = eq.SolvedStateActionRequest([eq.SolvedStateObservable(k) for k in kinds],
+                                          [eq.SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [0.0] * 3)])
+    enthalpy, solid = _core.solved_state_actions(_core.compile_problem(model._model, target._native(model)), central, request).results
+    assert (enthalpy.status, enthalpy.value, enthalpy.action) == (_core.SolvedStateActionStatus.MissingThermochemistry, None, None)
+    assert solid.value == central.solid_amounts[0] and solid.action == pytest.approx(-hs.MW * 6.29890460910619, rel=1e-12)

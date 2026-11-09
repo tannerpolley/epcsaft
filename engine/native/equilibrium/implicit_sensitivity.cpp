@@ -321,8 +321,6 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("free temperature is a solved output, not an external control");
         if (problem.pressure.free && direction.pressure_pa != 0.0)
             throw std::invalid_argument("free pressure is a solved output, not an external control");
-        if (!problem.solids.empty() && request.directions.size() > 1 && (direction.temperature_k != 0.0 || direction.pressure_pa != 0.0))
-            throw std::invalid_argument("solids admit T and P actions through order one");
     }
     // A referenced problem: compilation resolves a diagnostic for every source-referenced reaction.
     const bool referenced = !compiled.reference_diagnostics.empty();
@@ -332,6 +330,9 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         bool parameter = false;
         for (double v : d.active_parameters) parameter |= v != 0.0;
         eos_parameter_directions += std::size_t(parameter);
+        // ln K^rho_s is compiled to second order in (T, theta); V_s (P - P0)/RT is exact.
+        if (!problem.solids.empty() && request.directions.size() == 3 && (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0))
+            throw std::invalid_argument("solids admit T, P and parameter directions through order two");
         for (const auto &field : d.reaction_coefficients)
             for (double v : field)
                 parameter |= v != 0.0, source_directions |= v != 0.0;
@@ -341,9 +342,6 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
              problem.pressure.free))
             throw std::invalid_argument("a referenced third-order action admits only feed directions at fixed T and P");
     }
-    // The solid's ln K^rho carries dC_s/dtheta only; its second parameter derivative is not compiled.
-    if (!problem.solids.empty() && eos_parameter_directions > 1)
-        throw std::invalid_argument("solids admit at most one EOS-parameter direction in a second or higher action");
     // Every observable of an anchored PH/PS cell follows its caloric row, whose g carries one EOS-parameter
     // coordinate; the row has no reaction-law source shift.
     if (compiled.anchored_calorics() && (eos_parameter_directions > 1 || source_directions))
@@ -1110,6 +1108,13 @@ static SolvedStateActionBatch evaluate_action(
             item.value.reset();
         item.diagnostic_message = std::move(message);
     };
+    // A present solid has no caloric record: the system enthalpy, and apparent Cp through it, is refused, never fluid-only.
+    const auto observe = [&](SolvedStateActionResult& item, const RowSeries& series, const std::vector<PhaseMap>& maps) {
+        for (std::size_t s = 0; item.observable.kind == SolvedStateObservableKind::SystemEnthalpy && s < compiled.solids.size(); ++s)
+            if (compiled.solids[s].present)
+                throw CaloricUnavailable(SolvedStateActionStatus::MissingThermochemistry, "solid " + problem.solids[s].name + " has no enthalpy record");
+        return observable_series(model, item.observable, series, maps, calorics, &item, &batch.diagnostics);
+    };
     auto& property_rows = shared->property_rows;
     auto& property_lists = shared->property_lists;
     if (shared->central_results.empty()) {
@@ -1122,7 +1127,7 @@ static SolvedStateActionBatch evaluate_action(
         for (auto& item : batch.results) {
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty) continue;
             try {
-                const auto series = observable_series(model, item.observable, base, base_maps, calorics, &item, &batch.diagnostics);
+                const auto series = observe(item, base, base_maps);
                 if (!series.empty() && std::isfinite(series.front())) item.value = series.front();
             } catch (const CaloricUnavailable& error) {
                 refuse(item, error.status, error.what(), true);
@@ -1300,7 +1305,7 @@ static SolvedStateActionBatch evaluate_action(
             auto& item = batch.results[i];
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty || !state_dependent(item.observable, problem)) continue;
             try {
-                const auto series = observable_series(model, item.observable, path.series, maps, calorics, &item, &batch.diagnostics);
+                const auto series = observe(item, path.series, maps);
                 accumulated[i] += weight * series[order];
             } catch (const CaloricUnavailable& error) {
                 refuse(item, error.status, error.what(), false);

@@ -892,8 +892,8 @@ RowSeries CompiledSystem::row_series(
                 pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0), nullptr, pairs);
         } catch (const std::invalid_argument&) {}
     }
-    const auto& standard = reference_diagnostics.empty()
-        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false, false, active_control)
+    const auto& standard = reference_diagnostics.empty()  // T jets and pairs reach only the solids' ln K columns here
+        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false, temperature_jets, active_control, nullptr, pairs)
         : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
         : parameter_jets ? *prepared.parameter_standard : prepared.standard;

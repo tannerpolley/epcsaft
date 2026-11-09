@@ -4028,13 +4028,16 @@ physical: a free copy of halite with ln K + 0.01 stays absent at SI = −0.01/ln
 An absent solid's row n_s = 0 is a constraint of the reduced-Hessian check. The Newton
 attempts are ineligible (a solid requires a source reference). Solved-state
 actions rebuild the classification from the central amounts (present exactly
-when n_s > 0) and are one-sided at the onset kink; T and P directions are
-admitted through order one, feed directions through the general order. The
-solid's ln K^ρ is compiled once at fixed T at the source pressure, with its first
-T slope where the reference admits it; a scalar K refuses T actions. An
-EOS-parameter direction adds ∂C_s/∂θ of the source-basis conversion, requested
-from the same reference owner only when the direction moves a parameter;
-second and higher actions admit at most one EOS-parameter direction. A source ln
+when n_s > 0) and are one-sided at the onset kink; T, P and EOS-parameter
+directions are admitted through order two, feed directions through the general
+order. The solid's ln K^ρ is compiled once at fixed T at the source pressure,
+with its first T slope where the reference admits it; a scalar K refuses T
+actions. An action that moves T at order two or an EOS parameter adds, from the
+same `solid_log_k` owner, L'' + C_TT, ∂C_s/∂θ_a, ∂²C_s/∂T∂θ_a and ∂²C_s/∂θ_a∂θ_b
+over the moved coordinates, so the affinity subtracts the second-order Taylor
+term of ln K^ρ in (T, θ); a requested column the reference does not admit
+refuses with its cause. A system enthalpy (and apparent Cp through it) with a
+present solid is `MissingThermochemistry`: a solid has no caloric record. A source ln
 K_s direction shifts the solid's affinity linearly at fixed T and is
 parameter-bearing like a reaction-law direction; neighbor difference checks do
 not admit it.

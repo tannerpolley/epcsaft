@@ -200,12 +200,6 @@ def test_present_branch_parameter_actions(evidence: Any) -> None:
             same(evidence, f"halite/F5/dm_dtheta/{identity}/{step}", exact, fd, rtol=rtol, atol=0.0,
                  method=f"central difference of native solves, h = {h:.3g}",
                  claim="ln K^rho_s carries dC_s/dtheta of the source-basis conversion")
-    # dC_s/dtheta is compiled to first order: two parameter directions are refused, one with a feed direction is not.
-    compiled, sodium = compile_problem(mixture, problem(6.5)), [SolvedStateObservable(Kind.PhaseComponentAmount, 0, 1)]
-    feed = SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [0.0] * 3)
-    with pytest.raises(ValueError, match="at most one EOS-parameter direction"):
-        solved_state_actions(compiled, center, SolvedStateActionRequest(sodium, directions[:1] * 2))
-    assert solved_state_actions(compiled, center, SolvedStateActionRequest(sodium, [directions[0], feed])).results[0].action is not None
 
 
 def test_halite_pressure_reference(evidence: Any) -> None:

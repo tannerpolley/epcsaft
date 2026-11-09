@@ -293,6 +293,14 @@ struct PackingTermsValues final {
 };
 using PackingTerms = PackingTermsValues<double>;
 
+// EqID solid_standard_gibbs: ln K^rho_s(T, P0) = ln_k + scale + C_s, with C_s the reference contraction at the source
+// pressure P0. slope and curvature (d ln K_src/dT, d2/dT2) exist only for a correlation: a scalar K has no T law.
+struct SolidLogK final {
+    double ln_k = 0.0, scale = 0.0;
+    std::optional<double> slope, curvature;
+    NeutralReferenceReactionDiagnostic reference;
+};
+
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
@@ -307,7 +315,7 @@ struct StandardTerm final {
     // parameter_derivative[a][i] is d(g_i/RT)/dtheta_a at fixed T and P; empty unless requested.
     std::vector<std::vector<double>> parameter_derivative, temperature_parameter_derivative,
         pressure_parameter_derivative;
-    std::vector<std::vector<double>> solid_parameter_derivative;  // [s][a] d ln K^rho_s/dtheta_a; empty unless requested
+    std::vector<SolidLogK> solid;  // per solid: the curvature and reference columns the actions move; empty unless requested
     // parameter_pair_derivative[i][j][k] is d2(g_k/RT)/dtheta_a dtheta_b, a and b from pair_coordinates[i], [j].
     std::vector<std::size_t> pair_coordinates;
     std::vector<std::vector<std::vector<double>>> parameter_pair_derivative;
@@ -561,13 +569,6 @@ EPC_API CompiledSystem compile_problem(
 );
 EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
 
-// EqID solid_standard_gibbs: ln K^rho_s(T, P0) = ln_k + scale + C_s, with C_s the reference contraction at the source
-// pressure P0. slope and curvature (d ln K_src/dT, d2/dT2) exist only for a correlation: a scalar K has no T law.
-struct SolidLogK final {
-    double ln_k = 0.0, scale = 0.0;
-    std::optional<double> slope, curvature;
-    NeutralReferenceReactionDiagnostic reference;
-};
 // Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
 void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
 std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,

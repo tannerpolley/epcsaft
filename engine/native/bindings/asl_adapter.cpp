@@ -334,7 +334,7 @@ struct EquilibriumContext final {
         std::vector<double> values;
         std::vector<std::vector<double>> gradients, hessians;
         int order = -1;  // highest order filled at `feed`
-    } rows[2];  // 0: the 2C phase-component amounts, 1: the system enthalpy
+    } rows[2];  // 0: the F C phase-component amounts, then the S solid amounts; 1: the system enthalpy
 };
 
 std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank>& records) {
@@ -365,10 +365,15 @@ void require_central(const EquilibriumContext& context, const eq::EquilibriumRes
     if (!result.has_state()) throw failure(ActionStatus::CentralSolveUnavailable);
     if (!result.requested_tolerance_met.value_or(false))
         throw failure(ActionStatus::DefiningEquationsNotSatisfied);
-    if (result.topology_event != eq::TopologyEvent::None || result.phase_count != 2
-        || result.mole_fractions.size() != 2 * count || result.amounts.size() != 2
-        || !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap))
+    if (result.topology_event != eq::TopologyEvent::None || result.phase_count != context.anchor.phases.size()
+        || result.mole_fractions.size() != result.phase_count * count || result.amounts.size() != result.phase_count
+        || result.solid_amounts.size() != context.anchor.solids.size()
+        || (result.phase_count == 2 && !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap)))
         throw failure(ActionStatus::PhaseBoundaryNotDifferentiable);
+    for (std::size_t s = 0; s < result.solid_amounts.size(); ++s)  // native classification sets an absent amount to 0
+        if (!(result.solid_amounts[s] > 0.0))
+            throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable,
+                                     "solid " + context.anchor.solids[s].name + " is absent at the solved state");
 }
 
 epcsaft::ParameterDocument read_document(RecordReader& reader) {
@@ -436,6 +441,19 @@ std::optional<epcsaft::NeutralReferenceDeclaration> read_source_reference(Record
         reader.number(), reader.vector([&] { return epcsaft::SpeciesReference(reader.integer(2)); })};
 }
 
+// The block put_solids writes after its "solids" field, each solid declared present (Free).
+std::vector<eq::SolidSpec> read_solids(RecordReader& reader, std::optional<epcsaft::NeutralReferenceDeclaration>* reference = nullptr) {
+    const auto count = reader.integer();
+    if (reference && count > 0) *reference = read_source_reference(reader);
+    std::vector<eq::SolidSpec> solids;
+    for (std::size_t s = 0; s < count; ++s) {
+        const auto r = read_reaction(reader);
+        if (!r.correlation) reject("ASL solid rows require a ln K(T) law");
+        solids.push_back({r.name, r.stoichiometry, r.equilibrium_constant, r.correlation, r.reference, reader.number(), {}});
+    }
+    return solids;
+}
+
 // The block put_thermochemistry writes.
 std::optional<epcsaft::ThermochemistryRecord> read_thermochemistry(RecordReader& reader) {
     if (reader.integer(1) == 0) return std::nullopt;
@@ -476,7 +494,7 @@ auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v7");
+    reader.field("epcsaft.asl.equilibrium.v8");
     const auto document = read_document(reader);
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
@@ -508,7 +526,12 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     reader.field("standard_gibbs_j_per_mol");
     problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
     problem.source_reference = read_source_reference(reader);
-    reader.field("topology_declared");
+    auto field = reader.next();  // the solid block is present exactly when solids are declared
+    if (field == "solids") {
+        problem.solids = read_solids(reader);
+        field = reader.next();
+    }
+    if (field != "topology_declared") reject("unexpected record field: topology_declared");
     problem.topology_declared = reader.integer(1) != 0;
     reader.field("solver_options");
     for (auto& value : problem.solver_options.values) value = reader.number();
@@ -531,7 +554,8 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     reader.finish();
     context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, thermochemistry, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
-    const std::size_t counts[2] = {2 * document.component_ids.size(), 1}, n = 2 + context->map.anchor.size() + active.size();
+    const std::size_t counts[2] = {problem.phases.size() * document.component_ids.size() + problem.solids.size(), 1};
+    const std::size_t n = 2 + context->map.anchor.size() + active.size();
     for (int kind = 0; kind < 2; ++kind) {
         auto& rows = context->rows[kind];
         rows.values.resize(counts[kind]);
@@ -579,7 +603,8 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
 }
 
 // q = (T, P, feed controls, theta). A new q first solves directly in the model at theta; on failure a parameter leg at the
-// anchor (T, P, feed) precedes one leg moving T, P and the feed together, since a parameter path moves nothing else.
+// anchor (T, P, feed) precedes one leg moving T, P and the feed together, since a parameter path moves nothing else. With
+// solids there is no continuation: the direct failure keeps its status, and a T outside a solid's law is OutsideInterval.
 void select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
@@ -600,6 +625,10 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
         context.central = eq::solve_equilibrium(model, target);
         require_central(context, context.central, observable);
     } catch (const std::exception& original) {
+        for (const auto& solid : context.anchor.solids)
+            if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
+                throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + original.what());
+        if (!context.anchor.solids.empty()) throw;
         const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
             context.central = continuation_leg(context, path, to, targets, original.what(), name, observable);
         };
@@ -620,9 +649,11 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
 eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates, int kind) {
     eq::SolvedStateActionRequest request;
     if (kind == 1) request.observables.push_back({eq::SolvedStateObservableKind::SystemEnthalpy});
-    for (std::size_t phase = 0; kind == 0 && phase < 2; ++phase)
+    for (std::size_t phase = 0; kind == 0 && phase < context.anchor.phases.size(); ++phase)
         for (std::size_t component = 0; component < context.map.offset.size(); ++component)
             request.observables.push_back({eq::SolvedStateObservableKind::PhaseComponentAmount, phase, component});
+    for (std::size_t s = 0; kind == 0 && s < context.anchor.solids.size(); ++s)
+        request.observables.push_back({eq::SolvedStateObservableKind::SolidAmount, s});
     const auto controls = context.map.anchor.size();
     for (const int coordinate : coordinates) {  // a q column (T, P, feed controls, theta); -1 is no direction
         std::vector<double> e(2 + controls + context.model->active_parameters().size(), 0.0);
@@ -666,8 +697,8 @@ double report_failure(arglist* arguments, const char* callback) {
     return invalid_value();
 }
 
-// kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J. Both kinds share one
-// solved state per record and q.
+// kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J; kind 2: (q, record, solid), mol
+// of the solid's formula unit. Kinds 0 and 2 read one batch; every kind shares one solved state per record and q.
 double equilibrium_observable(arglist* arguments, int kind) {
     static Prepared<EquilibriumContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
@@ -675,14 +706,18 @@ double equilibrium_observable(arglist* arguments, int kind) {
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        const int n = argument_count(arguments, kind == 0 ? 3 : 1, 128, "equilibrium callback requires real q and the record");
-        const auto p = kind == 0 ? selector(arguments, n + 1, 2) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
-        observable = eq::solved_state_observable_id(kind == 0 ? eq::SolvedStateObservable{eq::SolvedStateObservableKind::PhaseComponentAmount, p, c}
-            : eq::SolvedStateObservable{eq::SolvedStateObservableKind::SystemEnthalpy});
+        using Kind = eq::SolvedStateObservableKind;
+        const Kind kinds[3] = {Kind::PhaseComponentAmount, Kind::SystemEnthalpy, Kind::SolidAmount};
+        const int strings[3] = {3, 1, 2};  // the record, then the selectors
+        const int n = argument_count(arguments, strings[kind], 128, "equilibrium callback requires real q and the record");
+        const auto p = kind != 1 ? selector(arguments, n + 1, kind == 0 ? 2 : 64) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
+        observable = eq::solved_state_observable_id({kinds[kind], p, c});
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "equilibrium", [&] { return prepare_equilibrium(record, observable); });
         const auto controls = 2 + context.map.anchor.size();  // T, P and the feed controls
-        if (std::size_t(n) != controls + context.model->active_parameters().size() || c >= context.map.offset.size())
+        const auto phases = context.anchor.phases.size(), count = context.map.offset.size();
+        if (std::size_t(n) != controls + context.model->active_parameters().size() || c >= count
+            || (kind == 0 && p >= phases) || (kind == 2 && p >= context.anchor.solids.size()))
             reject("control/observable dimension mismatch");
         const std::vector<double> q(arguments->ra, arguments->ra + n);  // a parameter may be negative (k_ij)
         for (std::size_t i = 0; i < q.size(); ++i) {
@@ -690,25 +725,25 @@ double equilibrium_observable(arglist* arguments, int kind) {
             if (i < controls && (i < 2 ? q[i] <= 0.0 : q[i] < 0.0)) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
         if (!context.compiled || context.feed != q) select_state(context, q, observable);
-        auto& rows = context.rows[kind];
+        auto& rows = context.rows[kind == 1];  // the amount batch also holds the solid amounts
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
-        if (order == 0 && rows.order < 0) actions(context, {-1}, kind);
+        if (order == 0 && rows.order < 0) actions(context, {-1}, kind == 1);
         if (order >= 1 && rows.order < 1) {
             for (int i = 0; i < n; ++i) {
-                const auto batch = actions(context, {i}, kind);
+                const auto batch = actions(context, {i}, kind == 1);
                 for (std::size_t row = 0; row < rows.values.size(); ++row) rows.gradients[row][i] = *batch.results[row].action;
             }
         }
         if (order >= 2 && rows.order < 2) {
             std::size_t packed = 0;
             for (int j = 0; j < n; ++j) for (int i = 0; i <= j; ++i) {
-                const auto batch = actions(context, {i, j}, kind);
+                const auto batch = actions(context, {i, j}, kind == 1);
                 for (std::size_t row = 0; row < rows.values.size(); ++row) rows.hessians[row][packed] = *batch.results[row].action;
                 ++packed;
             }
         }
         rows.order = std::max(rows.order, order);
-        const auto row = p * context.map.offset.size() + c;
+        const auto row = kind == 2 ? phases * count + p : p * count + c;
         if (arguments->derivs != nullptr) std::copy(rows.gradients[row].begin(), rows.gradients[row].end(), arguments->derivs);
         if (arguments->hes != nullptr) std::copy(rows.hessians[row].begin(), rows.hessians[row].end(), arguments->hes);
         return rows.values[row];  // On the caller's declared absolute batch basis.
@@ -726,6 +761,7 @@ double equilibrium_observable(arglist* arguments, int kind) {
 
 double equilibrium_amount(arglist* arguments) { return equilibrium_observable(arguments, 0); }
 double equilibrium_enthalpy(arglist* arguments) { return equilibrium_observable(arguments, 1); }
+double equilibrium_solid_amount(arglist* arguments) { return equilibrium_observable(arguments, 2); }
 
 // Pressure-chart property callback (#73): q = (T, P, w_1..w_C, theta_1..theta_m), u = Pw with P = I - zz'/z'z the charge-null projector
 // (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
@@ -759,13 +795,7 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     const auto thermochemistry = read_thermochemistry(reader);
     auto context = std::make_unique<PropertyContext>();
     reader.field("solids");
-    const auto count = reader.integer();
-    if (count > 0) context->reference = read_source_reference(reader);
-    for (std::size_t s = 0; s < count; ++s) {
-        const auto r = read_reaction(reader);
-        if (!r.correlation) reject("ASL solid rows require a ln K(T) law");
-        context->solids.push_back({r.name, r.stoichiometry, r.equilibrium_constant, r.correlation, r.reference, reader.number(), {}});
-    }
+    context->solids = read_solids(reader, &context->reference);
     reader.finish();
     context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<HelmholtzModel>(
@@ -990,6 +1020,10 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
     exports->Addfunc(
         "epcsaft_equilibrium_system_enthalpy", equilibrium_enthalpy,
         FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -3, nullptr, exports
+    );
+    exports->Addfunc(
+        "epcsaft_equilibrium_solid_amount", equilibrium_solid_amount,
+        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -4, nullptr, exports
     );
     exports->Addfunc(
         "epcsaft_pressure_property", pressure_property,

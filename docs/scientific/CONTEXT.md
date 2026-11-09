@@ -60,7 +60,9 @@ The Pyomo/IDAES adapter ships `libepcsaft_asl.so` in the same non-editable Engin
 wheel. Its neutral functions transport shared Helmholtz pressure derivatives;
 the [neutral analysis](../../analyses/2026-idaes-asl-adapter/README.md) owns that
 qualification. Its equilibrium functions transport E5 phase-component amounts and the system enthalpy
-with exact first/second temperature, pressure, feed and active EOS-parameter actions on a declared two-liquid or liquid-vapor branch.
+with exact first/second temperature, pressure, feed and active EOS-parameter actions on a declared two-liquid or liquid-vapor branch,
+or on one liquid beside declared-present pure solids, whose amounts they also return. With a present solid the amount
+values and actions are available and the system enthalpy is not, since a solid has no caloric record.
 The [Khudaida analysis](../../analyses/2026-khudaida-idaes-settler/README.md) owns
 the nonreactive qualification. Its pressure-property function transports pressure-chart
 density, total enthalpy and component `ln(phi_i)` with exact first/second
