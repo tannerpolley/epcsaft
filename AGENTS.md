@@ -50,7 +50,7 @@ provenance last.
 
 ## Every task
 
-Read the nearest subtree `AGENTS.md`, the current GitHub leaf issue and only the
+Read the nearest subtree `AGENTS.md`, the current leaf issue and only the
 equations, decisions and evidence it points to; change only the demonstrated
 gap. For domain terms and decisions, read the list in `docs/agents/domain.md`.
 The leaf issue, not `engine/docs/`, says what the installed Engine
