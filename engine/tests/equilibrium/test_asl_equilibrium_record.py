@@ -295,6 +295,25 @@ def reference_record(thermochemistry: bool = True) -> str:
     return eq.asl_record(model, target(R_Q0), options, [0.0] * C, np.eye(C, 3).tolist(), list(R_Q0[2:]), 1, 0.01)
 
 
+def test_reference_continuation_fallback() -> None:
+    model, target = reference_mea()
+    q = (353.15, 41000.0, *R_Q0[2:])
+    assert not eq.solve_equilibrium(model, target(q)).success
+    options = eq.Continuation(initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8)
+    path = eq.continue_equilibrium(model, target(R_Q0), target(q), options, eq.solve_equilibrium(model, target(R_Q0)))
+    assert path.success, path.message
+    x = path.states[-1].mole_fractions
+    seeded = target(q)
+    seeded.phases[0].composition_guess = list(x[:C])
+    seeded.phases[1].composition_guess = list(x[C:C + 3])
+    direct = eq.solve_equilibrium(model, seeded)
+    assert direct.success, direct.message
+    want = native(model, q[2:], seeded)
+    text = reference_record()
+    for row in range(2 * C):
+        assert callback_row(text, q, row, C) == pytest.approx(want[row], rel=1e-8, abs=1e-10), row
+
+
 def test_reference_record_equals_direct_engine() -> None:
     """R1: at the anchor every row's value, gradient and packed Hessian over q equal solve_equilibrium plus
     solved_state_actions on the declared problem bitwise; at (353.65 K, 45500 Pa), and there with u_CO2 0.36 mol, they
@@ -385,6 +404,25 @@ def test_reference_enthalpy_equals_direct_engine() -> None:
 def test_reference_enthalpy_matches_central_differences() -> None:
     """E2: the system enthalpy with feed steps 1e-5 u_j x {4, 1, 0.25} mol."""
     central_differences([None], 4e-5)
+
+
+def test_enthalpy_parameter_columns_match_central_differences() -> None:
+    from epcsaft import IdealPolynomial
+    from tests.native_inputs import record as thermal_record
+    base = mixture()
+    form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
+    model = Mixture(base.parameters, thermochemistry=thermal_record(form, form),
+                    active_parameters=[regression.active_parameter(base.parameters, "k_ij", ("isobutanol", "water")),
+                                       regression.active_parameter(base.parameters, "dispersion_energy_over_k", "isobutanol")])
+    text, q, eps = record(model), np.array([*TP0, *G0, *THETA0]), float(np.finfo(float).eps)
+    _, gradient, hessian = fgh(text, q, None, 2)
+    for b, h0 in ((4, 1e-5), (5, 1e-3)):
+        for h in (4 * h0, h0, 0.25 * h0):
+            plus, minus = (fgh(text, q + s * h * np.eye(6)[b], None, 1) for s in (1, -1))
+            pairs = [(gradient[b], plus[0], minus[0], 1e-6)]
+            pairs += [(hessian[a, b], plus[1][a], minus[1][a], 1e-5) for a in range(6)]
+            for exact, fp, fm, tau in pairs:
+                assert abs((fp - fm) / (2 * h) - exact) <= tau * abs(exact) + 10 * eps * (abs(fp) + abs(fm)) / (2 * h), (b, h)
 
 
 def test_reference_adiabatic_flash_ipopt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

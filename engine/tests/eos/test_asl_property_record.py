@@ -454,6 +454,28 @@ def test_halite_solid_row_values() -> None:
         assert abs(residual) <= 1e-12, (T, P, residual)
 
 
+@pytest.mark.parametrize("temperature", [287.0, 310.0])
+def test_halite_solid_row_outside_interval(temperature: float) -> None:
+    model, text, _, _ = halite()
+    q = [temperature, 101325.0, 0.9, 0.05, 0.05, *model._model.active_parameter_values]
+    with pytest.raises(RuntimeError, match=r"epcsaft_property:OutsideInterval:5: solid halite:"):
+        property_fgh(text, q, 5, 0)
+
+
+def test_halite_record_with_thermochemistry() -> None:
+    from tests.equilibrium import test_pure_solid as hs
+    model, without, solid, reference = halite()
+    form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
+    thermal = Mixture(hs.held_parameters(), thermochemistry=record(form, form, form),
+                      active_parameters=[item for _, item, _ in hs.PARAMETERS])
+    text = property_asl_record(thermal, solids=[solid._native(thermal)], neutral_reference=reference._native(thermal))
+    start, end = text.index("1:1,17:standard_pressure,"), text.index("6:solids,")
+    assert text[:start] + "1:0," + text[end:] == without
+    for temperature, pressure in HALITE_STATES:
+        q = [temperature, pressure, 0.9, 0.05, 0.05, *model._model.active_parameter_values]
+        assert property_fgh(text, q, 5, 0)[0] == property_fgh(without, q, 5, 0)[0]
+
+
 def test_halite_solid_row_derivatives() -> None:
     """F2, verification only: the exact (T, P, theta) gradient and Hessian of l_s at 298.15 K / 101325 Pa against central
     differences at h x {4, 1, 0.25} (T 1e-3 K, P 10 Pa, theta 1e-5 max(1, |theta|)), charged-record criterion; weight
