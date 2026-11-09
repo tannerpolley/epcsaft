@@ -11,11 +11,12 @@ tip is on origin/main. Branches no worktree holds are handled the same way. Unme
 on the exact commit. --dry-run changes nothing and plans from the cached origin refs.
 """
 import argparse
-import json
 import os
 import re
 import subprocess
 import sys
+
+from forgejo_state import ForgejoState
 
 TOOLS = os.path.dirname(os.path.realpath(__file__))
 
@@ -37,10 +38,10 @@ def main():
     if not options.dry_run:
         run("git", "fetch", "--quiet", "--prune", "origin")
     try:
-        prs = json.loads(run("gh", "pr", "list", "--state", "open", "--limit", "1000", "--json", "headRefName"))
-    except (OSError, subprocess.CalledProcessError, ValueError):
-        sys.exit("prune-worktrees: open pull requests unknown (gh failed); nothing removed")
-    open_heads = {pr["headRefName"] for pr in prs}
+        state = ForgejoState(TOOLS)
+        open_heads = {pr["head"]["ref"] for pr in state.open_items("pulls")}
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
+        sys.exit("prune-worktrees: open pull requests unknown (Forgejo read failed); nothing removed")
     live = set()
     for pid in filter(str.isdigit, os.listdir("/proc")):
         try:
@@ -53,8 +54,12 @@ def main():
 
     def archivable(name):
         issue = re.search(r"(?:issue-|t3code/)(\d+)", name)
-        return bool(options.archive_unmerged and issue and run(
-            "gh", "issue", "view", issue[1], "--json", "state", "-q", ".state", check=False) == "CLOSED")
+        if not (options.archive_unmerged and issue):
+            return False
+        try:
+            return state.issue(issue[1])["state"] == "closed"
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
 
     def archive_tag(name, commit):
         """True once archive/<name> holds exactly `commit` locally and on origin."""

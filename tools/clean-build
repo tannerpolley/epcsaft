@@ -19,7 +19,6 @@ case, which the owner accepted.
 """
 import argparse
 from datetime import datetime, timedelta, timezone
-import json
 import os
 from pathlib import Path
 import re
@@ -29,14 +28,12 @@ import subprocess
 import sys
 import time
 
+from forgejo_state import ForgejoState
+
 DAYS = 3
 REPORT_SUFFIXES = {".md", ".qmd", ".html", ".png"}
 REPORT_MAX_BYTES = 5 * 2**20
 COPY_DIRS = {".venv", "venv", "site-packages", "source", "meson"}
-
-
-def gh_json(root, *args):
-    return json.loads(subprocess.run(["gh", *args], cwd=root, check=True, capture_output=True, text=True).stdout)
 
 
 def keep_reports(folder, dry):
@@ -78,6 +75,13 @@ def main():
     if build.is_symlink() or Path(os.path.realpath(build)) != build:
         sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
 
+    try:
+        state = ForgejoState(root)
+        open_issues = {item["number"] for item in state.open_items("issues")}
+        open_prs = {item["number"] for item in state.open_items("pulls")}
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
+        sys.exit("clean-build: open issues or PRs unknown (Forgejo read failed); nothing removed")
+
     if len(paths) > 1:
         pruned = subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []),
                                  *paths[1:]], cwd=root, capture_output=True, text=True)
@@ -92,15 +96,6 @@ def main():
         elif not dry:
             attention.unlink(missing_ok=True)
 
-    try:
-        open_issues = {item["number"] for item in gh_json(root, "issue", "list", "--state", "open", "--limit", "1000",
-                                                           "--json", "number")}
-        open_prs = {item["number"] for item in gh_json(root, "pr", "list", "--state", "open", "--limit", "1000",
-                                                        "--json", "number")}
-    except (OSError, subprocess.CalledProcessError, ValueError):
-        sys.exit("clean-build: open issues or PRs unknown (gh failed); nothing removed")
-    if len(open_issues) >= 1000 or len(open_prs) >= 1000:
-        sys.exit("clean-build: open issue or PR list may be truncated; nothing removed")
     grep = subprocess.run(["git", "grep", "-ohE", r"build/(issue-[0-9]+|archive/[A-Za-z0-9._-]+)"], cwd=root,
                           capture_output=True, text=True)
     if grep.returncode > 1:
@@ -115,10 +110,10 @@ def main():
         if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_issues | open_prs | cited:
             continue
         try:
-            closed = gh_json(root, "issue", "view", number[1], "--json", "state,closedAt")
-        except (OSError, subprocess.CalledProcessError, ValueError):
+            closed = state.issue(number[1])
+        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
             continue
-        if closed["state"] != "CLOSED" or datetime.fromisoformat(closed["closedAt"].replace("Z", "+00:00")) > cutoff:
+        if closed["state"] != "closed" or datetime.fromisoformat(closed["closed_at"].replace("Z", "+00:00")) > cutoff:
             continue
         freed = keep_reports(folder, dry)
         if freed >= 2**20:
