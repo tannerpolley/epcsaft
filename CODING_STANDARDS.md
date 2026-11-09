@@ -29,6 +29,17 @@ Use Numerical Verification-Driven Development:
   algorithms, code and numerical evidence together; code behavior cannot
   redefine accepted doctrine.
 
+## Stages and outcomes
+
+- A stage, outcome or availability is one named value with one owner that
+  decides every transition.
+- New code never encodes one as a combination of flags, an absent value, a
+  sentinel number or a label compared as text. Produce a user-visible label
+  from the named value in one place.
+- Not requested, unavailable and refused are different values.
+- Convert an existing lifecycle when its owner changes for another reason.
+  Numerical loops are exempt: their order of operations is numerical behavior.
+
 ## Evidence
 
 - Homogeneous numerical rows are retained once in CSV/TSV; JSON stays compact
