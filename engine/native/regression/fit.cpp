@@ -207,7 +207,14 @@ void set_fit_host(FitHost host, const void* extension) {
 struct ObservationEvaluator::Impl final {
     Impl(FitRequest request, FitResult& result, const std::vector<std::size_t>& groups,
               const std::vector<double>& sqrt_weights, std::optional<MeasurementChart> measurement = {})
-        : request_([&] { request.controls.solver_options = request.controls.solver_options.resolved({});
+        : needs_compiled_admission_(!measurement), request_([&] {
+            if (!measurement) {
+                const HelmholtzModel model(request.parameters, request.coordinates.active_parameters(), request.thermochemistry, request.controls.solver_options);
+                for (const auto& observation : request.observations) {
+                    (void)validate_declaration(observation, model);
+                }
+            }
+            request.controls.solver_options = request.controls.solver_options.resolved({});
             request.controls.solver_options.nested_solve = true;
             for (auto& o : request.observations) {
                 o.problem.solver_options = o.problem.solver_options.resolved(request.controls.solver_options);
@@ -650,11 +657,15 @@ struct ObservationEvaluator::Impl final {
                         ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
                             == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
                         : same_state(observation, prior));
+                    std::vector<const Observation*> admission;
+                    if (needs_compiled_admission_) for (std::size_t row = 0; row < n; ++row)
+                        if (groups_[row] == g) admission.push_back(&trial.observations[row]);
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
-                        seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_);
+                        seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
                     if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy && observation.kind != ObservationKind::Stability) {
-                        auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references);
+                        auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references,
+                            nullptr, nullptr, false, deadline_, admission);
                         core::retain_first(retry.first_numerical_failure, prediction.first_numerical_failure, true);
                         prediction = std::move(retry);
                     }
@@ -738,6 +749,7 @@ struct ObservationEvaluator::Impl final {
         return Disposition::Committed;
     }
 
+    const bool needs_compiled_admission_;
     const FitRequest request_;
     std::chrono::steady_clock::time_point deadline_ = request_.controls.maximum_elapsed_time_seconds > 0
         ? std::chrono::steady_clock::now() + std::chrono::duration_cast<std::chrono::steady_clock::duration>(
@@ -788,7 +800,10 @@ void serve_fit(int fd) {
     evaluator.serve(fd);
 }
 
-ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows) {
+ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows)
+    : ObservationEvaluator(request, failures, rows, false) {}
+ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures,
+    const std::vector<std::size_t>& rows, bool admitted) {
     for (const auto& coordinate : request.coordinates.coordinates)
         if (coordinate.reaction && coordinate.reaction->coefficient == ReactionCoefficient::EnthalpyShift) {
             validate(request.coordinates, request.parameters, request.observations, request.thermochemistry);
@@ -799,7 +814,8 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
     auto canonical = request;
     if (canonical.uncertainty && canonical.uncertainty->groups.empty() && canonical.uncertainty->output_sigma.empty()
         && !canonical.uncertainty->covariance && !canonical.uncertainty->correlation) canonical.uncertainty.reset();
-    impl_ = std::make_shared<Impl>(canonical, failures, state_groups(canonical.observations), selection);
+    impl_ = std::make_shared<Impl>(canonical, failures, state_groups(canonical.observations), selection,
+        admitted ? std::optional<MeasurementChart>(MeasurementChart(canonical)) : std::nullopt);
 }
 bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out) {
     out.residual_optimizer_gradient.clear();
@@ -1261,7 +1277,7 @@ FitResult fit(const FitRequest& request) {
     try {
         validate_fit_request(request);
         for (std::size_t i = 0; i < request.weights.size(); ++i) sqrt_weights[i] = std::sqrt(request.weights[i]);
-        owned = std::make_unique<ObservationEvaluator::Impl>(request, result, groups, sqrt_weights);
+        owned = std::make_unique<ObservationEvaluator::Impl>(request, result, groups, sqrt_weights, MeasurementChart(request));
     } catch (const std::invalid_argument& error) {
         core::retain_failure(result.first_numerical_failure, error, "fit setup");
         result.message = error.what();

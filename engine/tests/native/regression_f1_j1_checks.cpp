@@ -5,6 +5,14 @@ namespace regression_checks {
 
 void check_f1() {
     const HelmholtzModel model(properties_support::ethane());
+    for (const double observed : {0.0, -1.0}) {
+        auto row = density(200.0, 217800.6949469248, {1.0}, DensityBranch::Liquid);
+        row.observed = observed;
+        CHECK(rejection([&] { validate(row, model); }) == "observation positive LogRatio observation");
+        FitRequest request; request.parameters = model.parameters(); request.observations = {row};
+        FitResult failures;
+        CHECK(rejection([&] { ObservationEvaluator evaluator(request, failures, {0}); }) == "observation positive LogRatio observation");
+    }
     const double mass = 0.03007;
     for (const auto& row : NIST) {
         const std::string point = "T" + std::to_string(static_cast<int>(row.T));
@@ -93,6 +101,12 @@ void check_f2() {
     truth("r1-f2/bound_inclusive", "theta = lower is admitted", set.within_bounds(lower), field("u0", lower[0]), "r1-f2");
     lower[0] -= 1.0e-9;
     truth("r1-f2/bound_exclusive", "theta below lower is rejected", !set.within_bounds(lower), field("u0", lower[0]), "r1-f2");
+    auto supplied_chart = set;
+    supplied_chart.coordinates[0].lower = 230.0;
+    auto supplied_point = start; supplied_point[0] = 0.9;
+    const auto supplied = evaluate_coordinates(parameters, supplied_chart, supplied_point, {});
+    CHECK(supplied.physical[0] == 230.0);
+    CHECK(rejection([&] { supplied_chart.start(parameters); }) == "coordinate start outside bounds");
     struct Rejection final { const char* phrase; std::function<void(CoordinateSet&)> mutate; };
     const std::vector<Rejection> rejections = {
         {"start outside bounds", [](CoordinateSet& s) { s.coordinates[0].lower = 230.0; }},

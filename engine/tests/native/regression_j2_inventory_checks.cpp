@@ -576,6 +576,18 @@ void check_minimax_consistency() {
     epsilon.composition = formula_composition({1, 0, 0}, parameters, {1, 2}, {1, 1}, .1);
     request.observations = {gamma, phi, epsilon, energy};
     {
+        FitRequest checks; checks.parameters = parameters;
+        auto mixture = gamma; mixture.kind = ObservationKind::MixtureOsmoticCoefficient;
+        mixture.composition = epsilon.composition;
+        checks.observations = {mixture}; checks.baseline = properties_support::ethane();
+        checks.checks = {{"osmotic", {0}, CheckMetric::AbsoluteLog10Ratio, 1., {}, true, false}};
+        CHECK(rejection([&] { (void)evaluate_checks(checks, parameters); }) == "observation liquid composition");
+        checks.baseline.reset(); checks.observations = {energy};
+        checks.checks = {{"energy", {0}, CheckMetric::AbsoluteDifference, 1., {}, false, false}};
+        auto reconciled = checks.observations; reconciled[0].species.clear();
+        CHECK(rejection([&] { (void)evaluate_checks(checks, parameters, nullptr, &reconciled); }) == "observation selected ion");
+    }
+    {
         HelmholtzModel columns(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::Kij, {1, 3}}});
         // Constructed State qualification isolates consumption; it does not certify mixed producer availability.
         for (bool reference : {false, true}) {

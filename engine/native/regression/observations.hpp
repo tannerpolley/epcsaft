@@ -148,6 +148,8 @@ struct ObservationInputDirection final {
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
 using equilibrium::same_reaction;
 bool same_state(const Observation& left, const Observation& right);
+// Returns whether compiled predicates remain after declaration admission.
+bool validate_declaration(const Observation&, const HelmholtzModel&);
 EPC_API void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);
 EPC_API void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
@@ -160,7 +162,8 @@ EPC_API Prediction predict(
     std::optional<equilibrium::CompiledSystem> prepared = std::nullopt, ReferenceCache* references = nullptr,
     const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
     bool same_parameters = false,
-    std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max()
+    std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max(),
+    const std::vector<const Observation*>& admission = {}
 );
 EPC_API PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction

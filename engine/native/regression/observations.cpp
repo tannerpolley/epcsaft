@@ -142,8 +142,7 @@ bool same_state(const Observation& left, const Observation& right) {
     return true;
 }
 
-void validate(const Observation& observation, const HelmholtzModel& model,
-              const equilibrium::CompiledSystem* prepared) {
+bool validate_declaration(const Observation& observation, const HelmholtzModel& model) {
     const auto components = model.parameters().component_count();
     if (observation.kind == ObservationKind::Stability) {
         require(observation.form == ResidualForm::Difference && observation.observed == 0.0, "zero Difference stability requirement");
@@ -153,7 +152,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             [](const auto& p) { return p.kind == equilibrium::PhaseKind::Liquid; }), "declared liquid parent at fixed pressure");
         require(std::isfinite(observation.pressure_ratio) && observation.pressure_ratio > 0.0, "positive pressure ratio");
         if (observation.pressure_reference) { auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
-            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); validate(reference, model); }
+            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); (void)validate_declaration(reference, model); }
     }
     require(!observation.problem.spinodal && !observation.final_problem.spinodal, "without spinodal conditions");
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
@@ -163,6 +162,7 @@ void validate(const Observation& observation, const HelmholtzModel& model,
         || k == ObservationKind::PhaseAmountRatio || k == ObservationKind::PartialPressure || k == ObservationKind::PhaseDensity),
         "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
     require(std::isfinite(observation.observed), "observed value");
+    require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
@@ -205,13 +205,13 @@ void validate(const Observation& observation, const HelmholtzModel& model,
             if (observation.kind == ObservationKind::TransferGibbsEnergy)
                 (void)formula_composition(observation.reference_composition, model.parameters(), observation.ion_indices, observation.stoichiometry, 1.0);
         }
-        require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
-        return;
+        return false;
     }
     if (observation.kind == ObservationKind::LogEquilibriumConstant) {
         require(!observation.problem.temperature.free && !observation.problem.temperature.absent && std::isfinite(observation.problem.temperature.value)
             && observation.problem.temperature.value > 0.0 && observation.form == ResidualForm::Difference, "ln K needs fixed positive T and Difference");
-        return validate(CoordinateSet{{{{}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
+        validate(CoordinateSet{{{{}, 0.0, 1.0, -HUGE_VAL, HUGE_VAL, ReactionCoordinate{observation.reaction}}}}, model.parameters(), {observation}, model.thermochemistry());
+        return false;
     }
     if (observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy) {
         require(observation.form == ResidualForm::Difference, "capped addition uses Difference");
@@ -220,6 +220,19 @@ void validate(const Observation& observation, const HelmholtzModel& model,
         require(observation.composition.size() == components
             && std::count(observation.composition.begin(), observation.composition.end(), 1.0) == 1
             && std::count(observation.composition.begin(), observation.composition.end(), 0.0) == components - 1, "pure added feed");
+    }
+    if (pressure_closed(observation.kind) || observation.kind == ObservationKind::AdditionEnthalpy) {
+        require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
+        require(std::isfinite(observation.pressure) && observation.pressure > 0.0, "pressure");
+        require(observation.composition.size() == components, "composition");
+        if (observation.kind != ObservationKind::AdditionEnthalpy) return false;
+    }
+    return true;
+}
+
+static void validate_compiled(const Observation& observation, const HelmholtzModel& model,
+    const equilibrium::CompiledSystem* prepared, const equilibrium::CompiledSystem* final_prepared = nullptr) {
+    if (observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy) {
         const auto seed = equilibrium::compile_problem(model, observation.final_problem);
         const auto initial = equilibrium::compile_problem(model, observation.problem);
         require(!observation.problem.temperature.free && !observation.problem.pressure.free
@@ -233,23 +246,18 @@ void validate(const Observation& observation, const HelmholtzModel& model,
         validate(fixed, model, &initial);
         return;
     }
-    if (pressure_closed(observation.kind) || observation.kind == ObservationKind::AdditionEnthalpy) {
-        require(std::isfinite(observation.temperature) && observation.temperature > 0.0, "temperature");
-        require(std::isfinite(observation.pressure) && observation.pressure > 0.0, "pressure");
-        require(observation.composition.size() == components, "composition");
-        if (observation.kind != ObservationKind::AdditionEnthalpy) return;
-    }
     const auto owned = prepared ? std::optional<equilibrium::CompiledSystem>()
                                 : equilibrium::compile_problem(model, observation.problem);
     const auto& compiled = prepared ? *prepared : *owned;
     if (observation.kind == ObservationKind::AdditionEnthalpy) {
         require(std::isfinite(observation.feed_amount) && observation.feed_amount > 0.0, "feed amount");
-        const auto final = equilibrium::compile_problem(model, observation.final_problem);
+        const auto owned_final = final_prepared ? std::optional<equilibrium::CompiledSystem>() : equilibrium::compile_problem(model, observation.final_problem);
+        const auto& final = final_prepared ? *final_prepared : *owned_final;
         require(compiled.problem.reactions.size() == final.problem.reactions.size(), "endpoint reaction count");
         for (std::size_t r = 0; r < compiled.problem.reactions.size(); ++r)
             require(same_reaction(compiled.problem.reactions[r], final.problem.reactions[r]), "endpoint reaction declaration");
         require(compiled.problem.source_reference == final.problem.source_reference, "endpoint source reference");
-        for (std::size_t i = 0; i < components; ++i)
+        for (std::size_t i = 0; i < model.parameters().component_count(); ++i)
             require(std::abs(final.n_feed[i] - compiled.n_feed[i] - observation.feed_amount * observation.composition[i])
                 <= policy::ADDITION_MATERIAL_BALANCE.value * std::max({1.0, std::abs(final.n_feed[i]), std::abs(compiled.n_feed[i])}),
                 ("material balance component " + std::to_string(i)).c_str());
@@ -277,12 +285,21 @@ void validate(const Observation& observation, const HelmholtzModel& model,
     }
 }
 
+void validate(const Observation& observation, const HelmholtzModel& model, const equilibrium::CompiledSystem* prepared) {
+    if (!validate_declaration(observation, model)) return;
+    if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
+        auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
+        reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); validate_compiled(reference, model, nullptr);
+    }
+    validate_compiled(observation, model, prepared);
+}
+
 Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
     const std::optional<equilibrium::EquilibriumResult>& start,
     std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references,
     const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters,
-    std::chrono::steady_clock::time_point deadline
+    std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission
 ) {
     core::Scope density_scope("fit_density_anchor");
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
@@ -421,6 +438,12 @@ Prediction predict(
         auto item = observation;
         item.kind = ObservationKind::SystemEnthalpy;
         item.form = ResidualForm::Difference; item.scale = 1.0; item.observed = 0.0;
+        std::optional<equilibrium::CompiledSystem> final_prepared;
+        if (!admission.empty()) {
+            if (!prepared) prepared = equilibrium::compile_problem(model, observation.problem);
+            final_prepared = equilibrium::compile_problem(model, observation.final_problem);
+            for (const auto* row : admission) validate_compiled(*row, model, &*prepared, &*final_prepared);
+        }
         auto initial = predict(model, item, start, std::move(prepared));
         const auto failed = [&](Prediction& p, const char* source) {
             core::retain_first(p.first_numerical_failure, initial.first_numerical_failure, true);
@@ -431,7 +454,7 @@ Prediction predict(
         };
         if (failed(initial, "initial")) return initial;
         item.problem = observation.final_problem;
-        auto compiled = equilibrium::compile_problem(model, item.problem);
+        auto compiled = final_prepared ? std::move(*final_prepared) : equilibrium::compile_problem(model, item.problem);
         const auto& a = initial.compiled->problem.phases;
         const auto& b = compiled.problem.phases;
         const bool compatible = a.size() == b.size() && std::equal(a.begin(), a.end(), b.begin(),
@@ -522,14 +545,17 @@ Prediction predict(
             reference.problem = *observation.pressure_reference; reference.pressure_reference.reset();
             if (references) for (const auto& entry : references->pressures) if (same_state(reference, entry.first))
                 result.pressure_reference = std::make_shared<Prediction>(entry.second);
+            if (result.pressure_reference && !admission.empty()) validate_compiled(reference, model, &*result.pressure_reference->compiled);
             if (!result.pressure_reference) {
-                result.pressure_reference = std::make_shared<Prediction>(predict(model, reference));
+                result.pressure_reference = std::make_shared<Prediction>(predict(model, reference, {}, {}, nullptr, nullptr, nullptr, false, deadline,
+                    admission.empty() ? std::vector<const Observation*>{} : std::vector<const Observation*>{&reference}));
                 if (references && result.pressure_reference->value) references->pressures.emplace_back(reference, *result.pressure_reference);
             }
             if (!result.pressure_reference->value) throw std::runtime_error("pressure reference: " + result.pressure_reference->message);
             problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
+        for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
         solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const std::runtime_error& failure) {
         result.status = ObservationStatus::CentralSolveUnavailable;

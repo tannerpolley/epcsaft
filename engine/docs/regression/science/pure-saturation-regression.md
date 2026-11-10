@@ -95,13 +95,24 @@ Residual forms: `Difference` $r=(y-y_{obs})/s$ with a positive
 nondimensionalisation scale $s$ in the observation's unit (not an
 uncertainty), and `LogRatio` $r=\ln(y/y_{obs})$ for positive quantities, which
 carries no scale, evaluated as $\ln y-\ln y_{obs}$ across the dynamic range
-and as $\mathrm{log1p}$ inside the named `LOG_RATIO_NEAR_UNITY` band; a nonpositive log argument is
-`nonpositive_log_argument` and a residual that overflows is `nonfinite`
+and as $\mathrm{log1p}$ inside the named `LOG_RATIO_NEAR_UNITY` band.
+A nonpositive declared observation is refused at admission with
+`observation positive LogRatio observation`; a nonpositive trial prediction is
+`nonpositive_log_argument`, and a residual that overflows is `nonfinite`
 while the independently valid value is retained. A mass basis is defined only
 for the two density kinds and is refused by name elsewhere.
 A constant factor multiplying an amount ratio is folded into its observed value;
 a Difference residual must scale its nondimensionalization scale by that same
 factor. Phase volumes are not inferred.
+Point readers admit declaration predicates before constructing a measurement
+chart. Phase indices, apparent heat-capacity admission and addition endpoint
+consistency consume the compiled systems prepared for prediction, before
+projection or endpoint use. Fitting completes both stages before its first
+trial; workers consume the parent's admitted observations. Check evaluation
+admits each consumed candidate, reconciled or baseline row against the model
+that predicts it. Saturation-capped addition retains full admission and its
+compilations in the prediction path.
+
 The two forms are not commensurable by themselves; relative weights
 $w_i\ge 0$ enter the objective as $\sqrt{w_i}\,r_i$ and are declared
 separately from any absolute uncertainty.

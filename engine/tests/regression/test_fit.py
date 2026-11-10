@@ -129,6 +129,17 @@ def test_point_reader_takes_the_fit_thermochemistry(evidence: Any) -> None:
     same(evidence, "point-reader/total-cp", read.predictions[0], fitted.predictions[0], atol=0.0, rtol=1e-10, T_K=300.0, P_Pa=1.0e5)
 
 
+def test_single_ion_energy_requires_a_selected_ion() -> None:
+    p = aqueous_electrolyte()
+    chart = [regression.coordinate(p, [("k_ij", ("s0", "s1"), 1)],
+                                  origin=-0.3, scale=0.2, bounds=(-1.0, 1.0))]
+    row = regression.electrolyte(p, "solvation_gibbs_energy", 298.15, 1e5, {"s0": 1.0},
+        ions=("s1", "s2"), stoichiometry=(1, 1), molality=0.1,
+        species=None, observed=-1.0, form="difference", scale=1.0)
+    with pytest.raises(ParameterError, match="^observation selected ion$"):
+        regression.differentiate(p, chart, [row], optimizer=[0.0])
+
+
 def test_minimax_point_without_fit_budgets(evidence: Any) -> None:
     """The aqueous gamma point in native minimax-consistency needs no optimizer budget (#753)."""
     p = aqueous_electrolyte()

@@ -65,6 +65,18 @@ void check_stability_requirement() {
     const auto tie = predict(model, tied);
     CHECK(tie.stability && !tie.stability->available && !tie.stability->event.empty() && !tie.value);
     CHECK(tie.stability->report.no_descent_in_trial_set && tie.stability->minima.size() >= 2);
+    {
+        auto reference = row; reference.kind = ObservationKind::EquilibriumPressure;
+        validate(reference, model);
+        const auto pressure = predict(model, reference);
+        CHECK(pressure.status == ObservationStatus::Available);
+        ReferenceCache references; references.pressures.emplace_back(reference, pressure);
+        auto shared = tied; shared.pressure_reference = reference.problem; shared.phase = 1;
+        CHECK(validate_declaration(shared, model));
+        CHECK(rejection([&] { validate(shared, model); }) == "observation phase index");
+        CHECK(rejection([&] { (void)predict(model, shared, {}, {}, &references, nullptr, nullptr, false,
+            std::chrono::steady_clock::time_point::max(), {&shared}); }) == "observation phase index");
+    }
     auto uncertain = row; uncertain.stability_options.standard_uncertainty_over_rt = {1., 1.};
     const auto transition = predict(model, uncertain, {}, {}, nullptr, &initial, &model, true);
     CHECK(transition.stability && transition.stability->report.no_descent_in_trial_set);

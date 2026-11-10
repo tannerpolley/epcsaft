@@ -321,7 +321,7 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         const auto frozen = evaluate_checks(request, request.baseline.value_or(request.parameters));
         std::vector<std::size_t> selected = request.minimax->targets;
         for (const auto& group : request.checks) if (!group.report_only) selected.insert(selected.end(), group.rows.begin(), group.rows.end());
-        ObservationEvaluator evaluator(request, failures, selected);
+        ObservationEvaluator evaluator(request, failures, selected, true);
         const auto point = fit_start(request);
         const ObservationFunction callback = [&](const auto& u, bool columns, auto& out) { return evaluator.evaluate(u, columns, out); };
         FitResult result; result.solver_options = request.controls.solver_options.resolved({});

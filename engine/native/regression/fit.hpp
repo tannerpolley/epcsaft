@@ -245,6 +245,8 @@ public:
     EPC_API ObservationEvaluator(const FitRequest& request, FitResult& failures, const std::vector<std::size_t>& rows);
     EPC_API bool evaluate(const std::vector<double>& optimizer, bool columns, ObservationEvaluation& out);
 private:
+    friend FitResult fit_minimax(const FitRequest&, const std::optional<std::vector<double>>&);
+    ObservationEvaluator(const FitRequest&, FitResult&, const std::vector<std::size_t>&, bool admitted);
     std::shared_ptr<Impl> impl_;
 };
 EPC_API std::vector<CheckResult> evaluate_checks(const FitRequest& request, const Parameters& stored, FitResult* final = nullptr,
