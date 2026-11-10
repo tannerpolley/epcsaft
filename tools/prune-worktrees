@@ -16,7 +16,7 @@ import re
 import subprocess
 import sys
 
-from forgejo_state import ForgejoState
+from host_state import HostState
 
 TOOLS = os.path.dirname(os.path.realpath(__file__))
 
@@ -38,10 +38,10 @@ def main():
     if not options.dry_run:
         run("git", "fetch", "--quiet", "--prune", "origin")
     try:
-        state = ForgejoState(TOOLS)
+        state = HostState(TOOLS)
         open_heads = {pr["head"]["ref"] for pr in state.open_items("pulls")}
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
-        sys.exit("prune-worktrees: open pull requests unknown (Forgejo read failed); nothing removed")
+        sys.exit("prune-worktrees: open pull requests unknown (host read failed); nothing removed")
     live = set()
     for pid in filter(str.isdigit, os.listdir("/proc")):
         try:
@@ -58,7 +58,7 @@ def main():
             return False
         try:
             return state.issue(issue[1])["state"] == "closed"
-        except (OSError, ValueError, KeyError, TypeError):
+        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
             return False
 
     def archive_tag(name, commit):

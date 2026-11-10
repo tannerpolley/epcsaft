@@ -6,10 +6,10 @@ Run daily by the user timer epcsaft-clean-build.timer. In order:
 1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
    and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
 2. build/issue-N: retention() names one state per folder, the first that applies, and prints it:
-   open (issue or pull request N open on Forgejo), unknown (its Forgejo state cannot be read), recent (closed less than
+   open (issue or pull request N open on the host), unknown (its host state cannot be read), recent (closed less than
    DAYS ago), cited (a tracked file names build/issue-N), unpromoted (it holds a file a tracked analyses/ record names
    by SHA-256 whose exact bytes no Git object reachable from a ref holds, nor an analyses/**.gz committed at HEAD
-   decompresses to), expired. Only "closed" on Forgejo can expire. Only an expired folder is cleaned: keep only
+   decompresses to), expired. Only "closed" on the host can expire. Only an expired folder is cleaned: keep only
    reports (*.md, *.qmd, *.html, *.png of at most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline*
    copies) and delete everything else. Unpromoted folders stay whole and are listed in build/evidence-to-promote.md
    until each listed file is promoted or discarded. Unreadable citations or hash records stop the run.
@@ -35,7 +35,7 @@ import subprocess
 import sys
 import time
 
-from forgejo_state import ForgejoState
+from host_state import HostState
 
 DAYS = 3
 REPORT_SUFFIXES = {".md", ".qmd", ".html", ".png"}
@@ -84,18 +84,18 @@ def digest(path, algorithm, prefix=b""):
 
 
 def retention(folder, record, cited, recorded, promoted):
-    """Return (state, reason, held) for build/issue-N from its Forgejo record (None when unreadable), the cited issue
+    """Return (state, reason, held) for build/issue-N from its host record (None when unreadable), the cited issue
     numbers, recorded {sha256: tracked analyses/ file naming it} and promoted (reachable blob ids and SHA-256 of
     decompressed analyses/**.gz committed at HEAD). held lists (file, record) for unpromoted, else []."""
     number = int(folder.name.removeprefix("issue-"))
     if record and record.get("state") == "open":
         return "open", f"issue or pull request {number} is open", []
     if not record or record.get("state") != "closed":
-        return "unknown", "Forgejo state unreadable", []
+        return "unknown", "host state unreadable", []
     try:
         closed = datetime.fromisoformat(record["closed_at"].replace("Z", "+00:00"))
     except (AttributeError, KeyError, TypeError, ValueError):
-        return "unknown", "Forgejo state unreadable", []
+        return "unknown", "host state unreadable", []
     if closed > datetime.now(timezone.utc) - timedelta(days=DAYS):
         return "recent", f"closed {closed:%Y-%m-%d}", []
     if number in cited:
@@ -152,11 +152,12 @@ def main():
         sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
 
     try:
-        state = ForgejoState(root)
+        state = HostState(root)
+        # The issues list also includes pull requests; both protect open numbers.
         open_issues = {item["number"] for item in state.open_items("issues")}
         open_prs = {item["number"] for item in state.open_items("pulls")}
     except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
-        sys.exit("clean-build: open issues or PRs unknown (Forgejo read failed); nothing removed")
+        sys.exit("clean-build: open issues or PRs unknown (host read failed); nothing removed")
 
     if len(paths) > 1:
         pruned = subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []),

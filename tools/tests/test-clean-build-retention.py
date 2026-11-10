@@ -1,8 +1,8 @@
 """#1140 fixture: a closed, uncited build/issue-N holding a file an analysis records by SHA-256 that Git does not hold.
 
 Usage: python3 tools/tests/test-clean-build-retention.py [BASE]
-Everything runs in a throwaway Git repository with a stub Forgejo reader (no open items; every issue closed ten days
-ago, except 9007 in an unrecognized state and 9008 with no state). With BASE (a commit whose tools/clean-build
+Everything runs in a throwaway Git repository with a stub host reader (no open items; every issue closed ten days
+ago, except 9007 in an unrecognized state, 9008 with no state and 9009 open). With BASE (a commit whose tools/clean-build
 predates #1140), first shows that tool would expire the folder.
 """
 import gzip
@@ -17,12 +17,13 @@ import tempfile
 
 TOOLS = Path(__file__).resolve().parents[1]
 STUB = '''from datetime import datetime, timedelta, timezone
-class ForgejoState:
+class HostState:
     def __init__(self, root): pass
     def open_items(self, kind): return []
     def issue(self, number):
         old = (datetime.now(timezone.utc) - timedelta(days=10)).isoformat()
-        return {"9007": {"state": "unknown", "closed_at": old}, "9008": {"closed_at": old}}.get(
+        return {"9007": {"state": "unknown", "closed_at": old}, "9008": {"closed_at": old},
+                "9009": {"state": "open"}}.get(
             str(number), {"state": "closed", "closed_at": old})
 '''
 # Today's tool prints nothing per folder, so print each folder it would hand to keep_reports.
@@ -64,7 +65,7 @@ with tempfile.TemporaryDirectory() as directory:
     (root / ".gitignore").write_text("build/\n")
     (root / ".gitattributes").write_text("* text=auto\n")
     (root / "tools").mkdir()
-    (root / "tools/forgejo_state.py").write_text(STUB)
+    (root / "tools/host_state.py").write_text(STUB)
     producer = b"print('unique producer of run.json')\n"
     crlf = b"T,K\r\n298.15,1\r\n"
     record(root, "build/issue-9001/producer.py", producer)
@@ -86,20 +87,21 @@ with tempfile.TemporaryDirectory() as directory:
         assert "EXPIRE issue-9001" in before.splitlines(), before
         print(f"base {sys.argv[1]}: expires issue-9001 (would delete its unique producer)")
 
-    for folder in ("build/issue-9007", "build/issue-9008"):  # the base tool stops on 9008's missing state
+    for folder in ("build/issue-9007", "build/issue-9008", "build/issue-9009"):  # the base tool stops on 9008's missing state
         (root / folder).mkdir()
         (root / folder / "scratch.bin").write_bytes(b"\0")
     shutil.copy(TOOLS / "clean-build", root / "tools/clean-build")
     expected = {"issue-9001": "unpromoted", "issue-9002": "unpromoted", "issue-9003": "unpromoted",
-                "issue-9004": "expired", "issue-9005": "unpromoted", "issue-9007": "unknown", "issue-9008": "unknown"}
+                "issue-9004": "expired", "issue-9005": "unpromoted", "issue-9007": "unknown", "issue-9008": "unknown", "issue-9009": "open"}
     assert states(root) == expected, states(root)
     subprocess.run([sys.executable, str(root / "tools/clean-build")], cwd=root, check=True, capture_output=True)
     listing = (root / "build/evidence-to-promote.md").read_text()
     assert (root / "build/issue-9001/producer.py").exists() and "issue-9001/producer.py" in listing, listing
     assert not (root / "build/issue-9004/build").exists()
     assert (root / "build/issue-9007/scratch.bin").exists() and (root / "build/issue-9008/scratch.bin").exists()
+    assert (root / "build/issue-9009/scratch.bin").exists()
     print("held: 9001 producer, 9002 CRLF table, 9003 producer, 9005 log, listed and kept by a real run; "
-          "9004 build-jobs expired; 9007 (state unknown) and 9008 (no state) kept as unknown")
+          "9004 build-jobs expired; 9007 (state unknown) and 9008 (no state) kept as unknown; 9009 open and kept")
 
     archive.write_bytes(gzip.compress(log))
     assert states(root)["issue-9005"] == "unpromoted", "working-copy .gz released the hold"
