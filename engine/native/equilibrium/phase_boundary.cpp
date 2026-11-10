@@ -526,7 +526,7 @@ std::optional<PhaseStart> true_species_split(
 // ---------------------------------------------------------------- continuation
 
 
-struct Attempt final {
+struct BoundaryAttempt final {
     StageWork observations;
     bool accepted = false;
     bool terminal = false;
@@ -675,11 +675,11 @@ ContinuationStop stop_of(const EquilibriumResult& result, bool& terminal) {
 }
 
 // `supplied`: a caller's result; the driver's own results already carry this problem's classified rows.
-Attempt admit_result(
+BoundaryAttempt admit_result(
     const HelmholtzModel& model, const CompiledSystem& compiled, EquilibriumResult result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, bool supplied = false
 ) {
-    Attempt outcome;
+    BoundaryAttempt outcome;
     outcome.convergence = result.convergence;
     const auto refuse = [&](ContinuationStop stop, std::string message) {
         outcome.stop = stop;
@@ -727,7 +727,7 @@ ContinuationResult finish(ContinuationResult result, ContinuationStop stop, std:
     return result;
 }
 
-void reject(ContinuationResult& result, const Attempt& attempt, double q) {
+void reject(ContinuationResult& result, const BoundaryAttempt& attempt, double q) {
     result.attempted_path = q;
     result.cause_stop = attempt.stop;
     result.cause_convergence = attempt.convergence;
@@ -744,12 +744,12 @@ void reject(ContinuationResult& result, const Attempt& attempt, double q) {
 // rank, the Euler predictor over `delta` along the implicit tangent at the accepted state, the admitted
 // domain and the same-driver corrector. `predict_anchors`: the previous accepted density or else the density at
 // the predicted coordinates witnesses each phase's branch (the envelope passes its own Euler-predicted densities).
-Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
+BoundaryAttempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
                 std::vector<double> anchors, bool predict_anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
                 const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
-    Attempt attempt;
+    BoundaryAttempt attempt;
     attempt.terminal = true;
     std::vector<double> tangent;
     if (const std::string generated = layout_difference(start, compiled); !generated.empty()) {
@@ -811,7 +811,7 @@ Attempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const 
 }
 
 // An identity swap between accepted states without a requested ln K sign change is the pair's coalescence.
-void coalesced(Attempt& attempt, const CompiledSystem& compiled, std::pair<std::size_t, std::size_t> pair) {
+void coalesced(BoundaryAttempt& attempt, const CompiledSystem& compiled, std::pair<std::size_t, std::size_t> pair) {
     attempt.accepted = false;
     attempt.terminal = true;
     attempt.stop = ContinuationStop::phases_coalesced;
@@ -1671,7 +1671,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
     {
         core::Scope initial("equilibrium_continuation_initial");
         initial.probe("path_value", 0.0);
-        Attempt admitted;
+        BoundaryAttempt admitted;
         const auto solve_initial = [&](const std::vector<double>& coordinates) {
             EquilibriumResult audit;
             try { return solve_equilibrium_from_coordinates(start, coordinates, nullptr, nullptr, {}, &audit); }
@@ -1737,7 +1737,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         auto trial_model = parameter_model(q_try);
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
-        Attempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
+        BoundaryAttempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
             auto tangent = sensitivity(current, y_current, path.lever(current), failure);
             w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
             return tangent;

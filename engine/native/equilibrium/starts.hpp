@@ -120,7 +120,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
                 auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
                                                 : *audit;
-                stages.report(result);
+                StageWork(stages).report(result);
                 if (work.expired()) { result.message += "; elapsed work budget exhausted";
                     reject_elapsed(result, scope); }
                 if (result.success) {
@@ -129,9 +129,9 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                               : check_density_branches(model, compiled, result, {}, true, scope, &work); }
                     catch (const std::exception& error) { branch.message = error.what(); }
                     if (!branch.accepted || work.expired()) {
-                        result.success = false;
+
                         result.message = (work.expired() ? "elapsed work budget exhausted in admission" : branch.message) + "; driver: " + result.message;
-                        if (work.expired()) reject_elapsed(result, scope); else clear_state(result);
+                        if (work.expired()) reject_elapsed(result, scope); else refuse(result);
                     }
                 }
                 scope.finish(result.convergence);
@@ -140,8 +140,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             } catch (const std::exception& error) {
                 out.causes[i] = std::string(audit ? "driver/post-driver: " : "initialization: ") + error.what();
                 if (work.expired()) out.causes[i] += "; elapsed deadline exhausted";
-                if (audit) { audit->message = out.causes[i]; stages.report(*audit);
-                    if (work.expired()) reject_elapsed(*audit, scope); else clear_state(*audit);
+                if (audit) { audit->message = out.causes[i]; std::move(stages).report(*audit);
+                    if (work.expired()) reject_elapsed(*audit, scope); else refuse(*audit);
                     out.results[i] = std::move(audit); }
             }
             if (out.results[i]) for (auto& rank : out.results[i]->rank_records)

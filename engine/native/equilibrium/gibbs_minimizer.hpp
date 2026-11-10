@@ -29,6 +29,8 @@ EPC_API HelmholtzSpectrum helmholtz_spectrum(const HelmholtzDerivatives&, const 
     const std::vector<std::size_t>&, const std::vector<double>& normalization = {});
 EPC_API const SpinodalSearch& spinodal_search(const CompiledSystem&, const DriverLimits* = nullptr, double anchor = NAN, const SpinodalSearch* carried = nullptr);
 EPC_API EquilibriumResult spinodal_search_failure(const CompiledSystem&, EquilibriumResult, const std::string&);
+// Returned work is accumulated unless the retry caller requests invocation work.
+enum class Work : std::uint8_t { Accumulated, Invocation };
 struct StageWork final {  // the work of the sub-solves that seed a solve, failed ones included
     std::size_t iterations = 0, evaluations = 0, hessian_calls = 0, stage = 0;
     std::optional<core::Convergence> first_numerical_failure;
@@ -60,7 +62,13 @@ struct StageWork final {  // the work of the sub-solves that seed a solve, faile
         StageWork combined = *this; combined.observe(r); std::move(combined).publish_observations(r);
     }
     void add(const EquilibriumResult& r) { iterations += r.iterations; evaluations += r.evaluations; hessian_calls += r.hessian_calls; observe(r); }
-    void report(EquilibriumResult& r) const { r.iterations += iterations; r.evaluations += evaluations; r.hessian_calls += hessian_calls; report_observations(r); }
+    void report(EquilibriumResult& r) && {
+        r.iterations += iterations;
+        r.evaluations += evaluations;
+        r.hessian_calls += hessian_calls;
+        observe(r);
+        std::move(*this).publish_observations(r);
+    }
 };
 // Shared general continuation; an original start skips initialization and reduced attempts.
 EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<EquilibriumResult>&,
@@ -156,22 +164,23 @@ EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const
 StabilityReport vanished_phase_stability(const CompiledSystem& compiled, std::size_t phase, const DriverLimits& limits);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 // The driver internals the stability search (phase_stability.cpp) shares.
-void clear_state(EquilibriumResult& result);
+void refuse(EquilibriumResult& result, Candidate as = Candidate::Refused);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
 EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr);
 EPC_API EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
 EPC_API EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
-    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, bool newton = false,
-    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, bool* retry_eligible = nullptr
+    std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, Attempt kind = Attempt::Cold,
+    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, Retry runs = Retry::PhysicalAmounts
 );
+EPC_API Retry retry_after(Attempt, bool reaction, bool non_error, bool fatal, Ipopt::SolverReturn, TopologyEvent, core::Stop, Candidate);
 // One physical-mol attempt; null restart rebuilds the original declaration, otherwise coordinates are immutable.
-EquilibriumResult recover_physical_amounts(
+EPC_API EquilibriumResult recover_physical_amounts(
     const CompiledSystem& compiled, EquilibriumResult result, bool eligible, core::Scope& scope,
     const std::vector<double>* restart = nullptr, const DriverLimits* limits = nullptr,
     std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, bool admit_density = false,
-    std::size_t* declarations = nullptr, std::size_t declaration_budget = 0, bool* invoked = nullptr
+    std::size_t* declarations = nullptr, std::size_t declaration_budget = 0, bool* invoked = nullptr, Work counts = Work::Accumulated
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle. Not bound; solve_equilibrium remains the public solve.

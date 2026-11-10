@@ -325,7 +325,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             core::Convergence& convergence = result.convergence;
             convergence = *result.last_full_evaluation;
             result.requested_tolerance_met = convergence.residual <= tolerance;
-            result.success = convergence.stop == core::Stop::converged && inside(at.phase);
+            result.candidate = convergence.stop == core::Stop::converged && inside(at.phase) ? Candidate::Admitted : Candidate::Refused;
             result.message = core::describe(convergence);
             result.solver_status = "NEWTON_CONVERGED";
             result.constraint_multipliers.assign(c.rows.size(), 0.0);
@@ -335,7 +335,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                 const auto branch = check_density_branches(*c.model, c, result, {}, true, scope, limits, &at.phase);
                 if (!branch.accepted) {
                     core::retain_failure(result.first_numerical_failure, branch.message, "one-component two-density admission");
-                    result.success = false; result.message = branch.message; clear_state(result);
+                     result.message = branch.message; refuse(result);
                 }
             }
             if (result.has_state()) {
@@ -356,7 +356,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
     if (result.last_rank) core::retain_rank(result.rank_records, *result.last_rank);
     if (result.linear_solve_diagnostics) result.linear_solve_diagnostics->reason = "rejected attempt: " + result.message;
     core::retain_failure(result.first_numerical_failure, result.message, "one-component two-density refusal");
-    result.success = false; clear_state(result);
+    refuse(result);
     observations.merge(result.rank_records); return result;
 }
 
@@ -375,7 +375,7 @@ EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
         failed.convergence.residual = std::numeric_limits<double>::quiet_NaN();
         core::retain_failure(failed.first_numerical_failure, error, "saturation initialization");
         if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) failed.terminal_numerical_failure = failure->record;
-        stages.report(failed);
+        std::move(stages).report(failed);
         return recover_from_source(compiled, std::move(failed));
     }
     auto result = one_component_two_density_attempt(compiled, initial, structural, scope, nullptr);
@@ -391,11 +391,11 @@ EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
         catch (const std::exception& error) {
             core::retain_failure(result.first_numerical_failure, error, "saturation continuation");
             if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.terminal_numerical_failure = failure->record;
-            result.message = error.what(); result.success = false; clear_state(result);
-            stages.report(result);
+            result.message = error.what(); refuse(result);
+            std::move(stages).report(result);
             result.rejected_reduction = rejected;
         }
-    } else stages.report(result);
+    } else std::move(stages).report(result);
     if (!result.success) result = recover_from_source(compiled, std::move(result));
     if (result.has_state() && result.phase_pressures.empty()) {
         for (const auto density : result.molar_densities) {

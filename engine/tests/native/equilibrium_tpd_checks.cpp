@@ -4,6 +4,66 @@
 
 namespace equilibrium_checks {
 
+void check_candidate_publication() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::flash(2);
+    problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+    const auto compiled = compile_problem(model, problem);
+    core::Scope scope("candidate-publication");
+    auto candidate = structural_result(compiled, scope);
+    // Converged methane/ethane coordinates at 300 K and 1 bar on main b7cf329a1.
+    const std::vector<double> coordinates = {-0.6931471805599453, -0.6931471805599453, 1.0, -7.23736496284779, 2.9965471325033444, 2.9909862944698395};
+    const auto prepared = compiled.prepare(coordinates);
+    candidate.residuals = compiled.evaluate_at(prepared).values;
+    candidate.classified_residuals = compiled.classified_residuals(prepared, candidate.residuals);
+    candidate.convergence.stop = core::Stop::converged;
+    candidate.requested_tolerance_met = true;
+    candidate.success = true;
+    candidate.candidate = Candidate::Admitted;
+    CHECK(publish_candidate(compiled, prepared, candidate, scope).has_state());
+    candidate.candidate = Candidate::Absent; candidate.success = true;
+    const auto absent = publish_candidate(compiled, prepared, candidate, scope);
+    CHECK(!absent.has_state());
+    CHECK(!absent.success && absent.amounts.empty());
+}
+
+void check_budget_retry() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    for (auto topology : {TopologyEvent::None, TopologyEvent::PhaseDisappeared})
+        CHECK(retry_after(Attempt::Cold, true, true, false, Ipopt::MAXITER_EXCEEDED,
+            topology, core::Stop::budget_exhausted, Candidate::Refused) == Retry::PhysicalAmounts);
+    CHECK(retry_after(Attempt::Cold, true, false, false, static_cast<Ipopt::SolverReturn>(-1),
+        TopologyEvent::None, core::Stop::infeasible, Candidate::Refused) == Retry::None);
+}
+
+void check_physical_amount_work() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::flash(2);
+    problem.phases = {equilibrium_support::phase("L", PhaseKind::Liquid)};
+    problem.reactions = {{"A=B", {-1.0, 1.0}, 1.0}};
+    const auto compiled = compile_problem(model, problem);
+    core::Scope scope("physical-amount-work");
+    auto primary = structural_result(compiled, scope);
+    primary.iterations = 7; primary.evaluations = 11; primary.hessian_calls = 3;
+    primary.retry = Retry::PhysicalAmounts;
+    bool invoked = false;
+    const auto accumulated = recover_physical_amounts(compiled, primary, true, scope, nullptr, nullptr,
+        nullptr, nullptr, false, nullptr, 0, &invoked, Work::Accumulated);
+    CHECK(invoked);
+    invoked = false;
+    const auto invocation = recover_physical_amounts(compiled, primary, true, scope, nullptr, nullptr,
+        nullptr, nullptr, false, nullptr, 0, &invoked, Work::Invocation);
+    CHECK(invoked);
+    CHECK(accumulated.iterations == invocation.iterations + 7);
+    CHECK(accumulated.evaluations == invocation.evaluations + 11);
+    CHECK(accumulated.hessian_calls == invocation.hessian_calls + 3);
+}
+
 // Gross--Sadowski methane/ethane: Full search work must survive nested counting and failed roots.
 void check_discovery_work() {
     using namespace epcsaft;
@@ -151,7 +211,7 @@ void check_solve_error_curvature() {
         auto candidate = structural_result(compiled, scope);
         candidate.residuals = compiled.evaluate_at(at).values;
         candidate.classified_residuals = compiled.classified_residuals(at, candidate.residuals);
-        candidate.convergence.stop = core::Stop::converged; candidate.requested_tolerance_met = true; candidate.success = true;
+        candidate.convergence.stop = core::Stop::converged; candidate.requested_tolerance_met = true; candidate.candidate = Candidate::Admitted;
         const auto result = publish_candidate(compiled, at, candidate, scope);
         double minimum = NAN, band = NAN;
         std::vector<double> correction;
@@ -312,7 +372,7 @@ void check_trial_refinement() {
     std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
     core::Capture capture(true); core::Scope scope("trial-refinement");
     std::vector<double> attempt;
-    const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, false, {}, false, true);
+    const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, Attempt::Cold, {}, false, true);
     const auto raw = trial.prepare(attempt, true);
     const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number, phase.kind);
     const auto inputs = recording_support::fields({recording_support::field("composition", composition),

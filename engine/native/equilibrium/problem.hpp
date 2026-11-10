@@ -596,6 +596,9 @@ EPC_API std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compi
 
 // Candidate-topology outcome of the existing producer loop: the first vanished free phase
 // in declaration order, else the first coincident pair in lexicographic ordinal order.
+enum class Attempt : std::uint8_t { Cold, Warm, Newton, PhysicalAmounts };
+enum class Retry : std::uint8_t { None, PhysicalAmounts, Source };
+enum class Candidate : std::uint8_t { Absent, Refused, Unstable, Admitted, Published };
 enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
 
 // Spectrum of M, the cubic form and the augmented-Jacobian diagnostics of a critical-equation
@@ -693,6 +696,9 @@ struct IpoptDiagnostics final {
     std::optional<IpoptPoint> failed_point;
 };
 struct EquilibriumResult final {
+    Attempt attempt = Attempt::Cold;
+    Retry retry = Retry::None;
+    Candidate candidate = Candidate::Absent;
     std::shared_ptr<const CriticalSearch> critical_search;
     std::shared_ptr<const EquilibriumResult> rejected_reduction;
     std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation;

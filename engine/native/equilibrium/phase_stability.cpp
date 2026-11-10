@@ -686,7 +686,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     StageWork prior; prior.observe(trial.optimizer);
                     try {
                         trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
-                            scope, &trial.raw_coordinates, &audit, limits, false, {}, false, true);
+                            scope, &trial.raw_coordinates, &audit, limits, Attempt::Cold, {}, false, true);
                     } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
                     prior.report_observations(trial.optimizer);
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
@@ -980,7 +980,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     try {
         // An ordinary dew stands only when no competing liquid descends at its temperature.
         if (failed.success && !competing(*failed.temperature)) {
-            work.report(failed);
+            StageWork(work).report(failed);
             return {std::move(failed), std::move(reports)};
         }
         double upper = c.seed_temperature();
@@ -1005,13 +1005,13 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         if (*recovered.temperature < lower - 1e-10 * upper || *recovered.temperature > upper + 1e-10 * upper)
             throw std::runtime_error("boundary corrector left cooling-onset bracket");
         if (competing(*recovered.temperature)) throw std::runtime_error("competing liquid descent at corrected dew");
-        work.add(failed); work.report(recovered);
+        work.add(failed); StageWork(work).report(recovered);
         return {std::move(recovered), std::move(reports)};
     } catch (const std::exception& error) {
         work.add(recovered);
-        if (failed.success) { failed.success = false; failed.message = "ordinary dew unconfirmed"; clear_state(failed); }
+        if (failed.success) {  failed.message = "ordinary dew unconfirmed"; refuse(failed); }
         failed.message += "; cooling onset refused: " + std::string(error.what());
-        work.report(failed);
+        std::move(work).report(failed);
         return {std::move(failed), std::move(reports)};
     }
 }
@@ -1145,15 +1145,13 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             if (!newton_accepted) {
                 invoked = true;
-                bool eligible = false;
-                result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, false, {}, false, false, &eligible);
-                auto retried = audit, primary = result;
-                primary.iterations = primary.evaluations = primary.hessian_calls = 0;  // each record keeps its own work
-                if (!fast) (void)recover_physical_amounts(c, std::move(primary), eligible, scope, &seed, nullptr,
-                    &retry_attempt, &retried, true, &calls, budget, &invoked);
+                result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, Attempt::Cold, {}, false, false, Retry::None);
+                auto retried = audit;
+                if (!fast) (void)recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
+                    &retry_attempt, &retried, true, &calls, budget, &invoked, Work::Invocation);
                 if (calls != before) {
                     count_driver(record->work, result, "declaration_invocations");
-                    newton_work.report(result);
+                    StageWork(newton_work).report(result);
                     record->declarations.push_back(result); record->declaration_roles.push_back(role);
                     record->declaration_attempt_coordinates.push_back(attempt);
                     result = std::move(retried);
@@ -1161,7 +1159,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 }
                 if (result.success && calls == before) {
                     const auto branch = check_density_branches(model, c, result, {}, true, scope);
-                    if (!branch.accepted) { result.success = false; result.message = branch.message; clear_state(result); }
+                    if (!branch.accepted) {  result.message = branch.message; refuse(result); }
                 }
             }
         } catch (const std::exception& error) { result = audit; result.message = error.what(); }
@@ -1170,7 +1168,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         record->work["hessian_calls"] += newton_work.hessian_calls;
         if (invoked) count_driver(record->work, result, "declaration_invocations");
         else if (!newton_accepted) ++record->work["declaration_initialization_failures"];
-        if (!newton_accepted && calls == before) newton_work.report(result);
+        if (!newton_accepted && calls == before) std::move(newton_work).report(result);
         record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
         record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
         return result;
@@ -1206,7 +1204,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             result.message = success ? (best.phase_count == 2 ? "locally admitted two-phase state; post-flash stability unsearched"
                 : "no admitted split in the fast trial set") : "no admitted split: " + message;
         }
-        if (!success) { result.success = false; if (!fast) result.message = message; clear_state(result); }
+        if (!success) {  if (!fast) result.message = message; refuse(result); }
         return result;
     };
     if (!best.success) {
