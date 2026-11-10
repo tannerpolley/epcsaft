@@ -22,6 +22,7 @@ from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective
 
 from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
+from epcsaft.parameters import document_mapping
 from epcsaft.eos import ParameterActionDirection, ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
 from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equilibrium
 from tests.native_inputs import p3_forms, record
@@ -130,7 +131,11 @@ def test_write_back_across_families() -> None:
         _core.fitted_document(load("ion-fraction-suppression"), _core.build_parameters(target))
     start = Parameters.from_json(SELECTIONS / "ion-fraction-suppression.json", components=BRINE)
     fit = cast(regression.FitResult, SimpleNamespace(parameters=_core.build_parameters(target)))
-    model = Mixture(regression.fitted_parameters(start, fit))
+    fitted = regression.fitted_parameters(start, fit)
+    fitted_again = regression.fitted_parameters(fitted, fit)
+    with pytest.raises(ValueError, match="the start document cannot represent the fit: " + refusal):
+        document_mapping(fitted_again)
+    model = Mixture(fitted)
     assert model.state(298.15, P=1.0e5, x={"water": 0.98, "sodium-cation": 0.01, "chloride-anion": 0.01}, phase="liquid").pressure > 0.0
     with pytest.raises(ValueError, match="ASL record: the start document cannot represent the fit: " + refusal):
         property_asl_record(model)

@@ -22,6 +22,8 @@ namespace epcsaft::equilibrium {
 
 // Python opens this only while the epcsaft logger is at DEBUG; it collects the calling thread's Ipopt iterations.
 struct IpoptIterations final {
+    enum class State { not_entered, active, closed };
+    State state = State::not_entered;
     std::vector<IpoptIterationRecord> records;
     std::vector<IpoptIterationRecord>* previous = nullptr;
     IpoptIterations& enter();
@@ -29,13 +31,17 @@ struct IpoptIterations final {
 };
 IpoptIterations& IpoptIterations::enter() {
     core::Scope scope("ipopt_iterations");
+    if (state == State::active) throw std::runtime_error("capture is already active");
     records.clear();
+    state = State::active;
     previous = std::exchange(ipopt_iteration_log(), &records);
     return *this;
 }
 bool IpoptIterations::exit(const nb::args&) {
     core::Scope scope("ipopt_iterations");
+    if (state != State::active) throw std::runtime_error("capture is not active");
     ipopt_iteration_log() = previous;
+    state = State::closed;
     return false;
 }
 

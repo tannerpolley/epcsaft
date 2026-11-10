@@ -17,6 +17,8 @@ namespace nb = nanobind;
 namespace {
 
 struct CaptureWrapper final {
+    enum class State { not_entered, active, closed };
+    State state = State::not_entered;
     std::optional<epcsaft::core::Capture> capture;
     std::optional<epcsaft::core::Trace> captured;
     bool diagnostics = false;
@@ -81,13 +83,17 @@ void register_diagnostics(nb::module_& module) {
         .def(nb::init<bool, std::string, int>(),
              nb::arg("diagnostics") = false, nb::arg("ipopt_log") = "", nb::arg("ipopt_print_level") = 12)
         .def("__enter__", [](CaptureWrapper& wrapper) -> CaptureWrapper& {
+            if (wrapper.state == CaptureWrapper::State::active) throw std::runtime_error("capture is already active");
             wrapper.capture.emplace(wrapper.diagnostics, wrapper.ipopt_log, wrapper.ipopt_print_level);
             wrapper.captured.reset();
+            wrapper.state = CaptureWrapper::State::active;
             return wrapper;
         }, nb::rv_policy::reference_internal)
         .def("__exit__", [](CaptureWrapper& wrapper, nb::object, nb::object, nb::object) {
+            if (wrapper.state != CaptureWrapper::State::active) throw std::runtime_error("capture is not active");
             wrapper.captured.emplace(wrapper.capture->take());
             wrapper.capture.reset();
+            wrapper.state = CaptureWrapper::State::closed;
             return false;
         }, nb::arg("exc_type").none(), nb::arg("exc_value").none(), nb::arg("traceback").none())
         .def_prop_ro("trace", [](const CaptureWrapper& wrapper) -> nb::object {
