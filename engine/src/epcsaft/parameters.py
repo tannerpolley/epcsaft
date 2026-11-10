@@ -20,7 +20,7 @@ ParameterError = _core.ParameterError
 # Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
 _KEYS = {*"schema schema_version components correlations pairs model_families model_coefficients topology".split(),
          *"document_id document_version purpose sources domains materialization".split(),
-         *"reaction_correlations empirical_density_correction cation_mixing".split()}
+         *"reaction_correlations empirical_density_correction cation_mixing pathway_weight".split()}
 
 
 def _mapping(value: object, name: str) -> Mapping[str, object]:
@@ -527,7 +527,7 @@ class Parameters:
                     permittivity_term += 1
 
         raw_pairs = _array(document.get("pairs", ()), "pairs")
-        pair_fields = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope"}
+        pair_fields = {"k_ij", "l_ij", "k_ij_reciprocal_temperature_slope", "k_ij_complement"}
         for index, pair_value in enumerate(raw_pairs):
             pair = _mapping(pair_value, "pair")
             a = pair.get("component_id_a")
@@ -632,6 +632,13 @@ class Parameters:
             site_ids.append(site_key)
             site_component.append(positions[component_id])
             site_multiplicity.append(cast(int, item.get("multiplicity")))
+            # Pathway block (weight w or 1 - w) and the symmetric reactive-site correction; build_parameters checks both.
+            block = {"weighted": 1, "complement": 2}.get(cast(str, item.get("pathway")), 0)  # 0 is refused natively
+            for field, key, magnitude in (("site_pathway", "pathway", block),
+                                          ("site_correction", "symmetric_reactive_site_correction", 1)):
+                if item.get(key):
+                    marker = {"magnitude": magnitude, "unit": "dimensionless"}
+                    entries.add(f"topology/{component_id}/{site_id}/{key}", field, (len(site_ids) - 1,), marker, key)
         site_positions = {pair: index for index, pair in enumerate(site_ids)}
         edges = _array(topology.get("edges", ()), "topology.edges")
         selected_edges: list[tuple[tuple[int, int], Mapping[str, object], Mapping[str, object]]] = []
@@ -667,10 +674,12 @@ class Parameters:
             volume = _mapping(edge.get("volume"), "association volume")
             if not isinstance(energy.get("identity"), str) or not isinstance(volume.get("identity"), str):
                 raise _core.ParameterError("association edge identities must be strings")
-            for identity, family in ((cast(str, energy.get("identity")), "energy_over_k"), (cast(str, volume.get("identity")), "volume")):
-                if identity in association_identities:
+            for record, family in ((energy, "energy_over_k"), (volume, "volume")):
+                identity = cast(str, record.get("identity"))
+                # One temperature law may own several edges (one coordinate); a constant's identity names one edge.
+                if identity in association_identities and "temperature_law" not in record:
                     raise _core.ParameterError(f"duplicate association identity {identity}")
-                association_identities[identity] = (family, edge_index)
+                association_identities.setdefault(identity, (family, edge_index))
 
         def resolve_inputs(values: Sequence[object], family: str) -> list[tuple[int, int]]:
             try:
@@ -717,6 +726,22 @@ class Parameters:
             if a in positions and b in positions:
                 ab, zero = (positions[a], positions[b]), {"magnitude": 0.0, "unit": "dimensionless"}
                 entries.add(f"no_cross_association/{a}/{b}", "no_cross_association", ab, zero, a)
+
+        if "pathway_weight" in document:
+            weight = _mapping(document["pathway_weight"], "pathway_weight")
+            loading = _mapping(weight.get("loading"), "pathway_weight.loading")
+            ends = [positions.get(cast(str, loading.get(end)), -1) for end in ("numerator", "denominator")]
+            if -1 in ends:
+                raise ParameterError("pathway_weight loading needs two selected components")
+            zero = {"magnitude": 0.0, "unit": "dimensionless"}
+            entries.add("pathway_weight/loading", "pathway_loading", ends, zero, "pathway_weight")
+            terms = ("intercept", "loading_slope", "temperature_slope")
+            for value in _array(weight.get("coefficients"), "pathway_weight coefficients"):
+                item = _mapping(value, "pathway_weight coefficient")
+                if item.get("family") not in terms:
+                    raise ParameterError(f"unknown pathway_weight coefficient {item.get('family')}")
+                term = terms.index(cast(str, item["family"]))
+                entries.add(item.get("identity"), "pathway_weight", (term,), item["value"], "pathway_weight")
 
         native_document = _core.ParameterDocument()
         native_document.component_ids = list(selected_ids)

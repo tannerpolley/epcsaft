@@ -36,6 +36,7 @@ void liquid_reference_branch_evidence();
 void joule_thomson_identities();
 void temperature_laws();
 void cation_mixing();
+void pathway_weight();
 }  // namespace properties_checks
 
 int main(int argc, char** argv) {
@@ -69,6 +70,7 @@ int main(int argc, char** argv) {
         {{"native.properties.log-fugacity", "LogFugacity"}, log_fugacity_actions},
         {{"native.properties.cation-mixing", "CationMixing"}, cation_mixing},
         {{"native.properties.temperature-laws", "TemperatureLaws"}, temperature_laws},
+        {{"native.properties.pathway-weight", "PathwayWeight"}, pathway_weight},
         {{"native.properties.issue423", "Issue423"}, liquid_reference_branch_evidence},
         {{"native.properties.joule-thomson", "JouleThomson"}, joule_thomson_identities},
     });

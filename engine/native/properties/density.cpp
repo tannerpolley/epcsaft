@@ -111,6 +111,7 @@ public:
     mutable std::optional<DensityPartition> partition;
     mutable std::optional<core::Convergence> first_numerical_failure;
     mutable std::vector<core::NumericalRank> rank_records;
+    mutable std::optional<core::Convergence> refinement;  // wider site refinement: converged or stagnated at the floor
     std::optional<core::AssociationObservations> observations_;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
@@ -187,6 +188,7 @@ public:
         for (double site : sites) site_series.emplace_back(Base(site));
         for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
         floor = 0.0;
+        const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
         if (!sites.empty()) {
             static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
             if (!prepared) {
@@ -200,11 +202,17 @@ public:
             rows.resize(count); cross.resize(count);
             if constexpr (!std::is_same_v<Base, double>) {
                 if (central_sites_.empty()) { central_sites_.assign(sites.begin(), sites.end()); used_ = record.iterations; }
-                auto& used = used_;
+                const auto stop = [&](core::Stop how, const char* cause, Base residual) {
+                    refinement.emplace();
+                    refinement->residual = static_cast<double>(residual), refinement->stop = how, refinement->cause = cause;
+                };
                 for (std::size_t k = 0; k <= N; ++k) {
+                    // Each order's refinement has the declared budget; order 0 continues the site solve's count.
+                    std::size_t used = k == 0 ? used_ : 0;
                     Base normalization = 1.0;
                     for (std::size_t j = 0; direction.empty() && j < k; ++j) normalization *= volume;
-                    for (;;) {
+                    Base previous = std::numeric_limits<Base>::infinity();
+                    for (bool moved = true;;) {
                         residuals = association_residuals(rho, composition, parameters_, site_series, delta);
                         Base norm = 0.0, scale = 1.0;
                         for (Eigen::Index i = 0; i < count; ++i) {
@@ -215,20 +223,48 @@ public:
                         }
                         entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
                         if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
-                        if (used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value))
-                            throw std::runtime_error("extended association residual/implicit-coefficient floor unresolved");
+                        if (!moved || used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value)) {
+                            // Where refinement would refuse, a residual within the evaluation's rounding bound that
+                            // failed to halve on the last update has stagnated at that floor: accept and name it.
+                            if (!(norm > Base(count) * std::numeric_limits<Base>::epsilon() * scale || norm <= previous / 2)) {
+                                stop(core::Stop::converged_to_floor, "stagnated at rounding floor", norm);
+                                break;
+                            }
+                            throw std::runtime_error(moved ? "extended association residual/implicit-coefficient floor unresolved"
+                                                           : "extended association residual cannot be refined");
+                        }
+                        previous = norm;
                         coefficient = lu.solve(rows);
-                        bool changed = false;
+                        moved = false;
                         for (Eigen::Index i = 0; i < count; ++i) {
                             auto& x = site_series[static_cast<std::size_t>(i)].c[k];
                             const Base next = x + Base(coefficient(i));
                             if (!wide_math::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
                                 throw std::runtime_error("extended association site domain");
-                            changed = changed || next != x; x = next;
+                            moved = moved || next != x; x = next;
                         }
-                        if (!changed) throw std::runtime_error("extended association residual cannot be refined");
                     }
                 }
+                if (!refinement) stop(core::Stop::converged, "converged", 0);
+            } else {
+            // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order. Declared
+            // pathway blocks are not stationary in X, so their order-N energy coefficient needs X_N too.
+            for (std::size_t k = 1; k < N + (blocks ? 1 : 0); ++k) {
+                residuals = association_residuals(rho, composition, parameters_, site_series, delta);
+                for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
+                coefficient = lu.solve(rows);
+                for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
+                if (k > 1 || prepared || blocks) continue;
+                for (Eigen::Index s = 0; s < count; ++s) {
+                    const auto site = static_cast<std::size_t>(s);
+                    cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
+                        * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
+                }
+                unit = lu.solve(Eigen::VectorXd::Ones(count));
+                floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
+            }
+            }
+            if (!std::is_same_v<Base, double> || (blocks && !prepared)) {
                 // Coupled achieved site defects J0 e_k = -r_k - sum_{l=1}^k J_l e_{k-l}.
                 residuals = association_residuals(rho, composition, parameters_, site_series, delta);
                 const auto bonded = bonded_densities(composition, parameters_, site_series, delta);
@@ -256,27 +292,16 @@ public:
                     }
                     entry.probe("association_linear_defect", {double(k), double(defect)});
                 }
+                // Signed energy site gradient g = -beta b + N h of declared blocks; b alone otherwise (its sign is immaterial).
+                using Fraction = std::decay_t<decltype(composition.front())>;
+                const auto gradient = blocks ? association_site_gradient(Series(total), rho, composition, parameters_, site_series, delta,
+                    parameters_.pathway_weight.empty() ? std::array<Fraction, 2>{} : pathway_weights(Fraction(temperature_), composition, parameters_))
+                    : std::vector<Series>{};
                 for (std::size_t a = 0; a < sites.size(); ++a) {
-                    central_sites_[a] = site_series[a].c[0];
-                    const auto b = total * composition[parameters_.site_component[a]] * Base(parameters_.site_multiplicity[a]) * residuals[a] / site_series[a];
+                    if constexpr (!std::is_same_v<Base, double>) central_sites_[a] = site_series[a].c[0];
+                    const auto b = blocks ? gradient[a] : total * composition[parameters_.site_component[a]] * Base(parameters_.site_multiplicity[a]) * residuals[a] / site_series[a];
                     floor += wide_math::abs(b.c[1] * error[a].c[0]) + wide_math::abs(b.c[0] * error[a].c[1]);
                 }
-            } else {
-            // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order.
-            for (std::size_t k = 1; k < N; ++k) {
-                residuals = association_residuals(rho, composition, parameters_, site_series, delta);
-                for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
-                coefficient = lu.solve(rows);
-                for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
-                if (k > 1 || prepared) continue;
-                for (Eigen::Index s = 0; s < count; ++s) {
-                    const auto site = static_cast<std::size_t>(s);
-                    cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
-                        * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
-                }
-                unit = lu.solve(Eigen::VectorXd::Ones(count));
-                floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
-            }
             }
         }
         const auto products = association_products(rho, composition, parameters_, site_series, delta);
@@ -1501,6 +1526,7 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     const auto energy = series.template residual<2>(1.0 / volume, d.gradient_floor, nullptr, &sites);
     core::retain_first(d.first_numerical_failure, series.first_numerical_failure);
     d.rank_records = series.rank_records;
+    d.association_refinement = series.refinement;
     if (series.observations_) series.observations_->merge(d.rank_records);
     if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
@@ -1569,6 +1595,7 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
     out.volume_second_derivative = out.hessian[width + 1];
     core::retain_first(out.first_numerical_failure, series.first_numerical_failure);
     out.rank_records = series.rank_records;
+    out.association_refinement = series.refinement;
     if (series.observations_) series.observations_->merge(out.rank_records);
     return out;
 }

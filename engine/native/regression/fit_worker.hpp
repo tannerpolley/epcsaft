@@ -31,7 +31,7 @@ FIELDS(core::ConditioningObservation, operation, basis, norm, method, cause, poi
     precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error, criterion_value, coordinates,
     row_scale, column_scale, controls, phase, component, export_displacement, available)
 FIELDS(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning)
-FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J)
+FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, C, D, E, F, G, H, I, J, K, L, M)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)
@@ -87,13 +87,13 @@ auto fields(Prediction& v) {
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {
-    static_assert(sizeof(Parameters) == sizeof(FixedParameters) + 2 * sizeof(double) + 17 * sizeof(std::vector<double>));
+    static_assert(sizeof(Parameters) == sizeof(FixedParameters) + 2 * sizeof(double) + 18 * sizeof(std::vector<double>));
     return std::tuple_cat(fields(static_cast<FixedParameters&>(v)), std::tie(v.ionic_region_relative_permittivity,
         v.born_c_dielectric, v.packing_diameter_angstrom, v.debye_huckel_diameter_angstrom, v.born_diameter_angstrom,
         v.ion_suppression_coefficient, v.segment_count, v.sigma_constant, v.dispersion_energy_over_k, v.k_ij,
         v.k_ij_reciprocal_temperature_slope, v.l_ij, v.association_energy_over_k, v.association_volume,
         v.dielectric_volume_m3_per_mol, v.dielectric_temperature_k, v.temperature_law_coefficient,
-        v.cation_pair_mixing, v.cation_triple_mixing));
+        v.cation_pair_mixing, v.cation_triple_mixing, v.pathway_weight));
 }
 
 // Whole values in one message, written or read in memory: trivially copyable bytes; a size, then the elements of

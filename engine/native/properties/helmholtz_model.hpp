@@ -53,6 +53,7 @@ struct HelmholtzDerivativeValues final {
     std::vector<Base> site_fractions;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent
 };
 
 using HelmholtzDerivatives = HelmholtzDerivativeValues<double>;
@@ -240,6 +241,7 @@ struct State final {
     std::vector<std::optional<double>> density_parameter_derivative, permittivity_parameter_derivative;
     std::vector<std::pair<std::string, PropertyActionStatus>> unavailable_properties;
     std::vector<double> site_fractions;
+    std::optional<double> pathway_weight;  // w of a declared pathway weight at this phase's T and x
     std::optional<core::Convergence> density_convergence;
     DensityBranch density_branch = DensityBranch::Unspecified;
     DensityBranch requested_density_branch = DensityBranch::Unspecified;

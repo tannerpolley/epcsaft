@@ -35,7 +35,7 @@ bool symmetric_field(const std::string& field) {
         || field == "k_ij_reference_temperature"
         || field == "association_energy_over_k"
         || field == "association_volume"
-        || field == "association_volume_correction" || field == "no_cross_association";
+        || field == "association_volume_correction" || field == "no_cross_association" || field == "k_ij_complement";
 }
 
 Index canonical_index(const ParameterEntry& entry) {
@@ -132,6 +132,7 @@ struct Rule final {
 
 // Law targets in TemperatureLaw order; the volume correction (5) is consumed by a combining rule.
 int law_target(const std::string& field) {
+    if (field == "k_ij_complement") return static_cast<int>(TemperatureLaw::KijComplement);
     const std::array<const char*, 5> targets = {"k_ij", "l_ij", "association_energy_over_k", "association_volume",
                                                 "association_volume_correction"};
     for (std::size_t i = 0; i < targets.size(); ++i) if (field == targets[i]) return static_cast<int>(i) + 1;
@@ -461,6 +462,24 @@ Parameters build_parameters(const ParameterDocument& document) {
                 result.temperature_law_slot.push_back({target, static_cast<int>(slot), static_cast<int>(entry.index[0])});
                 if (site) result.association_active[a * sites + b] = result.association_active[b * sites + a] = 1;
             }
+        } else if (entry.field == "pathway_weight") {
+            require_index(entry, 1, "pathway weight term");
+            if (entry.index[0] > 2) reject("pathway weight term out of range for " + where(entry));
+            result.pathway_weight.resize(3, 0.0);
+            result.pathway_weight[entry.index[0]] = entry.magnitude * unit_factor(entry, "dimensionless");
+        } else if (entry.field == "pathway_loading") {
+            const auto [i, j] = pair_index(entry, components);
+            if (result.pathway_loading[0] >= 0 || entry.magnitude * unit_factor(entry, "dimensionless") != 0.0) reject("repeated or nonzero " + where(entry));
+            result.pathway_loading = {static_cast<int>(i), static_cast<int>(j)};
+        } else if (entry.field == "site_pathway" || entry.field == "site_correction") {
+            require_index(entry, 1, "site index");
+            if (entry.index[0] >= sites) reject("site index out of range for " + where(entry));
+            const double value = entry.magnitude * unit_factor(entry, "dimensionless");
+            const bool pathway = entry.field == "site_pathway";
+            if (value != std::trunc(value) || value < 1 || value > (pathway ? 2 : 1)) reject("invalid " + where(entry));  // block codes 1, 2
+            auto& target = pathway ? result.site_pathway : result.site_correction;
+            target.resize(sites, 0);
+            target[entry.index[0]] = static_cast<int>(value);
         } else if (entry.field == "temperature_law_coefficient" || entry.field == "temperature_law_reciprocal_slope") {
             // Read in the term pass below, after every law is declared.
         } else if (entry.field == "no_cross_association") {
@@ -645,6 +664,16 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.association_volume[reverse] = volume;
     }
     if (!corrections.empty()) reject("unconsumed association_volume_correction");
+    // Pathway blocks: no edge crosses blocks, and a complete weight is declared exactly when a block or k_ij_complement uses it.
+    const bool complement = std::any_of(law_slots.begin(), law_slots.end(), [](const auto& slot) { return slot.first == 0; });
+    const auto terms = std::count_if(document.entries.begin(), document.entries.end(), [](const auto& e) { return e.field == "pathway_weight"; });
+    if (!result.site_pathway.empty() || complement || terms) {
+        if (result.site_pathway.empty() || terms != 3 || result.pathway_loading[0] < 0) reject("incomplete or unconsumed pathway_weight declaration");
+        for (std::size_t s = 0; s < sites; ++s)
+            for (std::size_t t = 0; t < sites; ++t)
+                if (result.association_active[s * sites + t] != 0 && result.site_pathway[s] != result.site_pathway[t])
+                    reject("association edge crosses pathway blocks: sites " + std::to_string(s) + "/" + std::to_string(t));
+    }
     // Full EOS §5: omitted cross edges stay inactive, so each site-bearing component pair declares a cross
     // edge or no_cross_association; nothing is inferred.
     std::map<std::pair<std::size_t, std::size_t>, bool> cross;  // site-bearing component pair -> any active cross edge
@@ -689,12 +718,14 @@ ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, doub
 
 ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted) {
     core::Scope scope("fitted_document");
-    static const std::array<std::string, detail::PARAMETER_FAMILY_COUNT> fields({"segment_count", "sigma_constant",
+    // ParameterFamily order up to TemperatureLawCoefficient; a fitted PathwayWeight is not written to a document.
+    static const std::array<std::string, detail::PARAMETER_FAMILY_COUNT - 1> fields({"segment_count", "sigma_constant",
         "dispersion_energy_over_k", "k_ij", "l_ij", "association_energy_over_k", "association_volume", "born_diameter",
         "debye_huckel_diameter", "packing_diameter", "ion_suppression_coefficient", "born_c_dielectric",
         "ionic_region_relative_permittivity", "k_ij_reciprocal_temperature_slope", "dielectric_volume",
-        "dielectric_temperature", "cation_pair_mixing", "cation_triple_mixing", "temperature_law_coefficient"});  // ParameterFamily order
+        "dielectric_temperature", "cation_pair_mixing", "cation_triple_mixing", "temperature_law_coefficient"});
     const Parameters base = build_parameters(start);
+    if (fitted.pathway_weight != base.pathway_weight) reject("fitted pathway_weight cannot be written to the document");
     const auto charged = std::find_if(base.charge_number.begin(), base.charge_number.end(), [](int z) { return z != 0; });
     ParameterDocument result = start;
     std::map<std::pair<std::size_t, std::size_t>, std::string> units;

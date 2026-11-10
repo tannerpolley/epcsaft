@@ -62,8 +62,9 @@ enum class ParameterFamily {
     DielectricVolume, DielectricTemperature,  // Schreckenberg d_V (m3/mol) and d_T (K) of a neutral solvent
     CationPairMixing, CationTripleMixing,
     TemperatureLawCoefficient,  // a_p or s of a declared temperature law, by coefficient slot
+    PathwayWeight,  // b_0, b_alpha, b_T of the declared pathway_weight
 };
-constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::TemperatureLawCoefficient) + 1;
+constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::PathwayWeight) + 1;
 
 // The one family -> (pointer, size) storage view, for double and AD alike.
 template <class ParameterSet>
@@ -92,6 +93,7 @@ auto family_values(ParameterSet& parameters, ParameterFamily family, std::size_t
     case ParameterFamily::TemperatureLawCoefficient: return view(parameters.temperature_law_coefficient);
     case ParameterFamily::CationPairMixing: return view(parameters.cation_pair_mixing);
     case ParameterFamily::CationTripleMixing: return view(parameters.cation_triple_mixing);
+    case ParameterFamily::PathwayWeight: return view(parameters.pathway_weight);
     }
     throw std::invalid_argument("invalid parameter family");
 }

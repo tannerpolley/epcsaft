@@ -39,6 +39,7 @@ enum class IonicDispersion {
 
 // Quantities a temperature law may own (equation pair_parameter_temperature_law).
 enum class TemperatureLaw {
+    KijComplement = 0,          // component pair, the complement pathway's k_ij (pathway_weighted_cross_dispersion)
     Kij = 1,                    // component pair
     Lij = 2,                    // component pair
     AssociationEnergyOverK = 3, // explicit site-pair edge, K
@@ -60,6 +61,11 @@ struct FixedParameters {
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;  // 0 inactive, 1 active, 2 Wolbach--Sandler rule edge
+    // Pathway blocks (pathway_weighted_association_helmholtz): per site 0 unweighted, 1 weight w, 2 weight 1 - w;
+    // per site 1 for the symmetric_reactive_site_correction. Each empty unless declared.
+    std::vector<int> site_pathway;
+    std::vector<int> site_correction;
+    std::array<int, 2> pathway_loading{-1, -1};  // components of the loading n_a / n_b in the pathway weight
 
     // Temperature laws q(T) = sum_p a_p (T - T_r)^p + s (1/T - 1/T_r): a reference per law; per coefficient
     // its law, power p (-1 for s) and source identity; per owned slot (target, row-major slot with the
@@ -138,6 +144,7 @@ struct ParameterRecord final : FixedParameters {
     std::vector<Scalar> temperature_law_coefficient;
     std::vector<Scalar> cation_pair_mixing;
     std::vector<Scalar> cation_triple_mixing;
+    std::vector<Scalar> pathway_weight;  // b_0, b_alpha, b_T of pathway_weight; empty unless declared
 
     std::size_t component_count() const { return ideal_gas ? molar_mass_kg_per_mol.size() : segment_count.size(); }
     std::size_t site_count() const { return site_component.size(); }

@@ -259,6 +259,7 @@ properties_checks = executable(
         'tests/native/properties_p4_checks.cpp',
         'tests/native/properties_log_fugacity_checks.cpp',
         'tests/native/properties_temperature_law_checks.cpp',
+        'tests/native/properties_pathway_weight_checks.cpp',
         'tests/native/properties_cation_mixing_checks.cpp'),
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',

@@ -377,6 +377,17 @@ an optional Gross-Vrabec dipole-dipole residual term and ADR 0014 an optional Gr
 quadrupole-quadrupole term; the dipole-quadrupole cross term remains retired by ADR 0006,
 and dipolar relative permittivity is a distinct input and equation.
 
+Pathway-weighted association (Hong et al. 2027) is a site declaration, not a
+species rule: declared sites form two blocks weighted by $w$ and $1-w$, a
+symmetric reactive site may carry the $\omega_2=1-X$ correction, and a pair may
+blend its $k_{ij}$ with a complement law. $w$ is a logistic function of
+loading and temperature, so one Helmholtz energy holds across states and every
+derivative carries $\partial w/\partial n$ and $\partial w/\partial T$. Zero
+slopes give the fixed pathway weight: not one fluid model across states. Which
+reactive-partner site bonds the reactive sites, and any adopted parameters,
+belong to the application. [Full EOS §5](../../engine/docs/science/full-eos.md#5-association)
+owns the declaration.
+
 
 `DensityDiagnostics` means a bounded fixed-temperature/composition report of
 pressure crossings, spinodals ($P_\rho=0$), declared connected cells and

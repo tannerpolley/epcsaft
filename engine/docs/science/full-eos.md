@@ -31,6 +31,7 @@ Correct mathematics is not weakened to match an implementation defect.
 | Bulow2021MDEA | Bülow et al., *Ind. Eng. Chem. Res.* 2021, 60, 6327-6336, DOI `10.1021/acs.iecr.1c00176` | Cubic water--MDEA `k_ij(T)`, Eq. (26) and Table 3, temperature-law falsifier only |
 | Ascani2022 | Ascani, Sadowski, and Held, *J. Chem. Eng. Data* 2022, 67, 1972-1984, DOI `10.1021/acs.jced.1c00866` | Case Study 2 component, association, `k_ij`, `l_ij`, and `k_ij^hb` records at 298.15 K |
 | AscaniHeld2021 | Ascani and Held, *Z. Anorg. Allg. Chem.* 2021, 647, 1305-1314, DOI `10.1002/zaac.202100032` | Original Born equation and combined solvent-mass/ion-mole dielectric rule |
+| Hong2027 | Hong et al., *Sep. Purif. Technol.* 2027, 422, 140522, DOI `10.1016/j.seppur.2026.140522`, with supporting information Table S1 | Non-ionic pathway-weighted reactive cross-association: the symmetric reactive-site correction, Eqs. (7)-(10); the two-pathway blend, Eqs. (11)-(12); Tables 1-3 parameters as test declarations |
 | HamerWu1972 | Hamer and Wu, *J. Phys. Chem. Ref. Data* 1972, 1, 1047-1100, DOI `10.1063/1.3253108`; official NIST PDF SHA-256 `8399084b29b4db4ce35ab47ed679446dbedb9bf1686f99f43fce7b2073ee4beb` | Practical molal osmotic-coefficient definition and aqueous NaCl comparison value |
 
 Each equation below has one status:
@@ -340,6 +341,35 @@ explicit energy; adopting that whole edge, with its Eq. (18) volume, is not.
 The association Helmholtz contribution is
 
 Defining relation: [EqID: `association_helmholtz`](../equations.md#association_helmholtz).
+
+**Pathway blocks**. Hong2027 blends two simultaneous association solutions of
+one mixture. A topology site may declare `"pathway": "weighted"` or
+`"pathway": "complement"`, and a reactive site may declare
+`"symmetric_reactive_site_correction": true`. The declared sites form one
+augmented site vector: no edge crosses blocks (admission refuses one), each
+block keeps its own mass action, and an undeclared site has weight 1.
+
+Defining relations: [EqID: `pathway_weighted_association_helmholtz`](../equations.md#pathway_weighted_association_helmholtz),
+[EqID: `symmetric_reactive_site_correction`](../equations.md#symmetric_reactive_site_correction),
+[EqID: `pathway_weight`](../equations.md#pathway_weight) and
+[EqID: `pathway_weighted_cross_dispersion`](../equations.md#pathway_weighted_cross_dispersion).
+
+The top-level `pathway_weight` record declares the loading components
+(`loading.numerator`, `loading.denominator`) and three dimensionless coefficients
+with families `intercept`, `loading_slope` and `temperature_slope`; a pair may
+add a `k_ij_complement` temperature law, the complement pathway's `k_ij`. A weight
+is required exactly when a block or a complement law uses it. `w` is a state
+function of `T` and `x`, so `partial w/partial n_i` and `partial w/partial T`
+enter every property and derivative; each phase's State reports its `w`. A
+zero `loading_slope` and `temperature_slope` is the fixed pathway weight: exact
+for the declared `w`, but resetting `w` between states (the Hong2027 Table S1
+convention) is not one fluid model. A nonzero or active `loading_slope` is
+refused at a zero loading-denominator amount. Which reactive-partner site bonds
+the reactive sites is a declaration, never inferred from species.
+
+The corrected term is not stationary in `X`: the site chain below is complete
+for it, and the energy's error estimate uses the signed site gradient
+(algorithms.md, ALG-ASSOCIATION).
 
 The value solver runs outside CppAD recording. For independent variables `q`,
 CppAD supplies the partial Jacobians of `H(X,q)` and the code solves

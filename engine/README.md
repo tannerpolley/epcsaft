@@ -336,6 +336,15 @@ print(trace.stop, len(trace.states), [(c.temperature, c.pressure) for c in trace
   retryable steps stops with `budget_exhausted`, and a halved step below
   `minimum_step` stops with `step_too_small`; `cause_stop` and `cause_message`
   give the last rejected step's reason.
+- Pathway-weighted association (Hong et al. 2027): a topology site declares
+  `"pathway": "weighted"` or `"complement"`, a reactive site may add
+  `"symmetric_reactive_site_correction": true`, and a pair may add a
+  `k_ij_complement` temperature law. The top-level `pathway_weight` record names
+  the loading components (`{"loading": {"numerator": "co2", "denominator": "mea"}}`)
+  and three dimensionless `coefficients` with families `intercept`,
+  `loading_slope` and `temperature_slope`. `state.pathway_weight` reports each
+  phase's w; every derivative includes dw/dn and dw/dT. Zero slopes give the
+  fixed pathway weight: not one fluid model across states.
 
 The installed package transports the same native records with the same meanings
 and SI molar units; Python performs no thermodynamic arithmetic. Thermal

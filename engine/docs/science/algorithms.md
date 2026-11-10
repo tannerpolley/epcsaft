@@ -308,6 +308,49 @@ Positive-order sweeps recompute the requested directions while preserving order
 zero. This changes neither the implicit derivative equations nor their admission
 criteria.
 
+### Declared pathway blocks
+
+A declared pathway block or symmetric reactive-site correction
+(`pathway_weighted_association_helmholtz`) keeps the stationary summands above,
+weighted by $\beta_A\in\{1,w,\bar w\}$, and removes $X_R\ell_R$ of each corrected
+site $R$. The weighted blocks remain stationary, but the correction does not:
+its site gradient is
+$$
+g_A=\frac{\partial (N a^{assoc})}{\partial X_A}=-\beta_A N x_{i(A)}\nu_A\frac{F_A}{X_A}+N h_A,
+$$
+where $h$ differentiates $-\beta_R X_R\ell_R$ with
+$\partial\ell/\partial X|_q=x\nu(q/2-F/X)$ and $\partial\ell/\partial q=-x\nu X/2$,
+exact off the root too. Each formula that assumes a stationary energy uses this
+signed gradient and the coupled site defects instead, only when blocks are
+declared; models without them keep the existing arithmetic bit for bit:
+
+- Taylor density coefficients solve one more site order, because the order-$N$
+  energy coefficient needs $X_N$.
+- The density-coefficient floor is $\sum_A |g_{1,A}e_{0,A}|+|g_{0,A}e_{1,A}|$,
+  with the coupled defects $J_0e_k=-r_k-\sum_{l\ge1}J_le_{k-l}$, in double and
+  wider arithmetic alike.
+- The exact-gradient floor of a requested column is
+  $\sum_A|s_A e_{0,A}|+|\mu_A r_{1,A}|+\lVert J_0^{-T}s\rVert_1\,\phi$, with
+  $J_0e_0=-r_0$, $\mu=J_0^{-T}g_0$, $s=g_1-J_1^T\mu$ read from the Lagrangian
+  sweep, and $\phi$ the solve's achieved residual or its floor, whichever is
+  larger, bounding each $r_0$ component. Amount columns of a state
+  Hessian are swept for it, and the floor is the maximum over the swept columns.
+- Coefficient error estimates keep the first coefficient's actual sensitivity to
+  $X_0$, use no stationary substitution, and add the same allowance
+  $\lVert J_0^{-T}\,\partial c_1/\partial X_0\rVert_1\,\phi$.
+- Both are local first-order estimates with a worst-sign allowance for the
+  achieved residual, not rigorous enclosures. In the checked case (state Z, a
+  requested association tolerance of 0.1) the observed gradient error,
+  1.3086e-3, is about 20% above the first-order estimate without the allowance,
+  1.0920e-3. The complete estimate divided by the observed error is 8.53 for the
+  gradient floor (1.1164e-2 / 1.3086e-3) and 8.58 for the coefficient estimate.
+- The isothermal two-component Hessian shortcut is not used.
+- Contribution-resolved fugacity terms add the implicit site chain, the complete
+  residual gradient less the fixed-site terms, to the association term.
+
+The weight $w$ is a CppAD conditional expression in $z$, so a tape stays valid
+on both sides of $z=0$.
+
 ### Independent state arrays
 
 A declared state array evaluates each row sequentially through the scalar
@@ -810,10 +853,15 @@ existing gradient floor. The extended instantiation refines values and implicit
 coefficients in affine volume and amount directions against the shared wide
 mass-action residual. It reuses the admitted double full-pivot factorization as
 a preconditioner and retains the achieved linear defect. Values and coefficients
-stay wide. Each coefficient must meet working epsilon times its coefficient
-scale within the cumulative association budget, including the starting solve.
-Nonfinite or out-of-domain sites, rank loss, unchanged coefficients above that
-floor, or exhausted work refuse the calculation with their cause.
+stay wide. Each coefficient order is refined until its residual meets working
+epsilon times its coefficient scale, within its own association budget; order
+zero continues the starting solve's iteration count. Where refinement would
+stop, at that budget or after an update that leaves the sites unchanged, a
+residual within $n_{\mathrm{sites}}$ times working epsilon times the scale that
+failed to halve on the last update has stagnated at the rounding floor: it is
+accepted, and the result names the stop ("stagnated at rounding floor" or
+converged). Nonfinite or out-of-domain sites, rank loss, or a residual above
+that bound when refinement stops refuse the calculation with their cause.
 
 For $q=(V,n_1,\ldots,n_c)$, use dimensionless affine paths
 $q(t)=q_0+t s_i e_i$ and sums of two such directions, with $s_V=V_0$ and

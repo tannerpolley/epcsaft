@@ -430,7 +430,7 @@ std::optional<Fixed> temperature_law_value(const Fixed& temperature, const Param
             if (!std::isfinite(value) || (target == TemperatureLaw::Lij && !valid_lij(value))
                 || (target >= TemperatureLaw::AssociationEnergyOverK && !(value >= 0.0)))
                 throw std::invalid_argument(law_domain_failure(
-                    target == TemperatureLaw::Kij ? "k_ij" : target == TemperatureLaw::Lij ? "l_ij"
+                    target <= TemperatureLaw::Kij ? "k_ij" : target == TemperatureLaw::Lij ? "l_ij"
                     : target == TemperatureLaw::AssociationVolume ? "association_volume" : "association_energy_over_k",
                     slot, size, temperature));
         }
@@ -463,6 +463,35 @@ Fixed pair_correction(const Fixed& temperature, const ParameterSet& parameters, 
     return k_ij;
 }
 
+// True when a parameter value is nonzero or carries a derivative (an active tape coordinate, a series direction).
+template <typename Scalar>
+bool scalar_live(const Scalar& value) {
+    if constexpr (is_taylor<Scalar>) return std::any_of(value.c.begin(), value.c.end(), [](const auto& c) { return scalar_live(c); });
+    else if constexpr (std::is_floating_point_v<Scalar> || std::is_same_v<Scalar, WiderScalar>) return value != 0.0;
+    else return CppAD::Variable(value) || CppAD::Value(value) != 0.0;
+}
+
+// EqID: pathway_weight
+// w = sigma(z) and 1 - w = sigma(-z), z = b_0 + b_alpha (alpha - 1/2) + b_T (T - 353.15 K)/(40 K), alpha = x_a / x_b.
+// Both weights are formed from e = exp(-|z|) <= 1, so neither overflows and the smaller keeps its relative
+// precision; the branch stays live on a tape. alpha enters only with a nonzero or active b_alpha, and is then
+// refused at x_b = 0 rather than clipped.
+template <typename Fixed, typename ParameterSet>
+std::array<Fixed, 2> pathway_weights(const Fixed& temperature, const std::vector<Fixed>& x, const ParameterSet& parameters) {
+    const auto& b = parameters.pathway_weight;
+    Fixed z = b[0] + b[2] * (temperature - 353.15) / 40.0;
+    if (scalar_live(b[1])) {
+        const auto [numerator, denominator] = parameters.pathway_loading;
+        if (!(scalar_lead(x[static_cast<std::size_t>(denominator)]) > 0.0))
+            throw std::invalid_argument("pathway weight loading undefined: zero loading-denominator amount");
+        z += b[1] * (x[static_cast<std::size_t>(numerator)] / x[static_cast<std::size_t>(denominator)] - 0.5);
+    }
+    const Fixed e = scalar_exp(-scalar_select_less(z, Fixed(0.0), -z, z));
+    const Fixed large = Fixed(1.0) / (Fixed(1.0) + e);
+    const Fixed small = e / (Fixed(1.0) + e);
+    return {scalar_select_less(z, Fixed(0.0), small, large), scalar_select_less(z, Fixed(0.0), large, small)};
+}
+
 template <typename Fixed>
 std::pair<std::array<Fixed, 7>, std::array<Fixed, 7>> dispersion_coefficients(const Fixed& mean_segment_count) {
     // EqID: dispersion_chain_coefficients
@@ -487,12 +516,19 @@ std::array<Fixed, 2> composition_moments(const Fixed& temperature, const std::ve
     Fixed first_moment = Fixed(0.0);
     Fixed second_moment = Fixed(0.0);
     const auto laws = temperature_law_values(temperature, parameters);
+    const bool weighted = !parameters.pathway_weight.empty();
+    const auto weights = weighted ? pathway_weights(temperature, mole_fractions, parameters) : std::array<Fixed, 2>{};
     for (std::size_t i = 0; i < size; ++i) {
         for (std::size_t j = 0; j < size; ++j) {
             // EqID: cross_segment_diameter
             const Fixed sigma_ij = Fixed(0.5) * (sigma[i] + sigma[j])
                 * (Fixed(1.0) - pair_correction(temperature, parameters, laws, TemperatureLaw::Lij, i, j));
-            const Fixed k_ij = pair_correction(temperature, parameters, laws, TemperatureLaw::Kij, i, j);
+            Fixed k_ij = pair_correction(temperature, parameters, laws, TemperatureLaw::Kij, i, j);
+            // EqID: pathway_weighted_cross_dispersion
+            if (weighted)
+                if (auto complement = temperature_law_value(temperature, parameters, laws, TemperatureLaw::KijComplement,
+                        std::min(i, j) * size + std::max(i, j), size))
+                    k_ij = weights[0] * k_ij + weights[1] * *complement;
             // EqID: cross_dispersion_energy
             // EqID: same_sign_ionic_dispersion
             const int charge_i = parameters.charge_number[i];
@@ -630,18 +666,56 @@ HelmholtzResult<Scalar> residual_helmholtz(
     }
 
     // EqID: association_helmholtz
+    // EqID: pathway_weighted_association_helmholtz
+    // EqID: symmetric_reactive_site_correction
+    // A declared block weighs each stationary site summand by w or 1 - w; a corrected site keeps (1 - X) of its
+    // summand: omega_2 = 1 - X removes -X ell of the reactive site, off the root too.
+    const bool blocks = !parameters.site_pathway.empty() || !parameters.site_correction.empty();
+    const auto weights = parameters.pathway_weight.empty() ? std::array<Fixed, 2>{}
+        : pathway_weights(temperature, mole_fractions, parameters);
     Scalar association = Scalar(0.0);
     for (std::size_t site = 0; site < site_fraction.size(); ++site) {
         const std::size_t component =
             static_cast<std::size_t>(parameters.site_component[site]);
-        association += mole_fractions[component] *
+        Scalar term = mole_fractions[component] *
             parameters.site_multiplicity[site] *
             (-scalar_log1p(products.first[site]) + site_fraction[site] * products.first[site] / 2.0
                 + (scalar_log1p(products.second[site]) - products.second[site]));
+        if (blocks) {
+            if (!parameters.site_correction.empty() && parameters.site_correction[site]) term -= site_fraction[site] * term;
+            if (!parameters.site_pathway.empty() && parameters.site_pathway[site])
+                term *= weights[static_cast<std::size_t>(parameters.site_pathway[site] - 1)];
+        }
+        association += term;
     }
     // EqID: residual_helmholtz
     return {hard_chain, dispersion, association, debye_huckel, born, dipolar,
         cation_mixing_helmholtz(mole_fractions, parameters)};
+}
+
+// EqExclude: error-estimate gradient
+// g_a = d(N a_assoc)/dX_a of the declared blocks (algorithms.md, association energy error estimate): the stationary
+// part -beta_a N x nu F_a / X_a and, for a corrected site R, h = d(-beta_R N X_R ell_R)/dX with
+// d ell/dX|_q = x nu (q/2 - F/X) and d ell/dq = -x nu X/2 exactly, off the root too.
+template <typename Scalar, typename ParameterSet, typename Fixed>
+std::vector<Scalar> association_site_gradient(const Scalar& total, const Scalar& density, const std::vector<Fixed>& x,
+    const ParameterSet& parameters, const std::vector<Scalar>& sites, const std::vector<Scalar>& delta,
+    const std::array<Fixed, 2>& weights) {
+    const auto [q, residuals] = association_products(density, x, parameters, sites, delta);
+    const std::size_t count = sites.size();
+    std::vector<Scalar> gradient(count, Scalar(0.0));
+    for (std::size_t a = 0; a < count; ++a) {
+        const Fixed beta = parameters.site_pathway.empty() || !parameters.site_pathway[a] ? Fixed(1.0)
+            : weights[static_cast<std::size_t>(parameters.site_pathway[a] - 1)];
+        const Scalar scale = beta * total * x[static_cast<std::size_t>(parameters.site_component[a])] * parameters.site_multiplicity[a];
+        gradient[a] -= scale * residuals[a] / sites[a];
+        if (parameters.site_correction.empty() || !parameters.site_correction[a]) continue;
+        gradient[a] -= scale * (-scalar_log1p(q[a]) + sites[a] * q[a] + scalar_log1p(residuals[a]) - Scalar(2.0) * residuals[a]);
+        for (std::size_t b = 0; b < count; ++b)
+            gradient[b] += scale * sites[a] * sites[a] / 2.0 * density * NUMBER_DENSITY_PER_ANGSTROM3
+                * x[static_cast<std::size_t>(parameters.site_component[b])] * parameters.site_multiplicity[b] * delta[a * count + b];
+    }
+    return gradient;
 }
 
 }  // namespace epcsaft

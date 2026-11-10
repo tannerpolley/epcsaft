@@ -829,6 +829,8 @@ class ParameterFamily:
     """Declared cation-pair mixing coefficient in kg/mol; scalar slot."""
     CationTripleMixing: ParameterFamily
     """Declared cation-triple mixing coefficient in kg^2/mol^2; scalar slot."""
+    PathwayWeight: ParameterFamily
+    """Pathway weight coefficient b_0, b_alpha or b_T, dimensionless; slots 0, 1, 2."""
 
 class ActiveParameter:
     """One independent parameter value assigned to native storage slots."""
@@ -1405,6 +1407,8 @@ class State:
     """dP/drho at fixed temperature and composition, Pa m^3/mol."""
     site_fractions: list[float]
     """Length s of dimensionless unbonded fractions in declared site order."""
+    pathway_weight: Optional[float]
+    """Pathway weight w at this phase's temperature and composition, or None when no weight is declared."""
     density_convergence: Optional[Convergence]
     """Pressure-root convergence evidence, or None for a direct density state."""
     thermochemistry_status: ThermochemistryStatus
@@ -1614,6 +1618,7 @@ class StateBatch:
     molar_density: list[Optional[float]]
     pressure_density_derivative: list[Optional[float]]
     site_fractions: list[Optional[list[float]]]
+    pathway_weight: list[Optional[Optional[float]]]
     density_convergence: list[Optional[Optional[Convergence]]]
     thermochemistry_status: list[Optional[ThermochemistryStatus]]
     density_branch: list[Optional[DensityBranch]]

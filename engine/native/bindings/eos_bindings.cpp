@@ -119,7 +119,7 @@ void register_thermal_inputs(nb::module_& module) {
         EPCSAFT_VALUES(ParameterFamily, BornCDielectric, IonicRegionRelativePermittivity, BornDiameter,
             DebyeHuckelDiameter, PackingDiameter, IonSuppressionCoefficient, SegmentCount, SigmaConstant,
             DispersionEnergyOverK, Kij, Lij, AssociationEnergyOverK, AssociationVolume, KijReciprocalTemperatureSlope,
-            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient, CationPairMixing, CationTripleMixing);
+            DielectricVolume, DielectricTemperature, TemperatureLawCoefficient, CationPairMixing, CationTripleMixing, PathwayWeight);
     // Native slot indices of one coordinate; a reciprocal pair lists both of its slots.
     nb::class_<ActiveParameter>(module, "ActiveParameter")
         .def(nb::init<ParameterFamily, std::vector<std::size_t>>(), nb::arg("family"), nb::arg("indices"))
@@ -244,7 +244,7 @@ void register_eos(nb::module_& module) {
             residual_enthalpy, residual_isochoric_heat_capacity, residual_isobaric_heat_capacity, ideal_enthalpy,
             ideal_internal_energy, ideal_entropy, ideal_isobaric_heat_capacity, ideal_isochoric_heat_capacity,
             total_enthalpy, total_internal_energy, total_entropy, total_isobaric_heat_capacity,
-            total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions,
+            total_isochoric_heat_capacity, molar_density, pressure_density_derivative, site_fractions, pathway_weight,
             density_convergence, thermochemistry_status,
             // Unspecified and absent in the T-rho chart: no pressure-root search was performed.
             density_branch, stable_root_count)

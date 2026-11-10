@@ -1134,6 +1134,28 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian);
 }
 
+// Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one
+// requested column is |g1.e0| + |g0.e1| with J0 e0 = -r0 and J0 e1 = -r1 - J1 e0 (algorithms.md): after the tangent
+// sweep, the Lagrangian sweep with weights (1, -mu), mu = J0^-T g0, holds g1 - J1^T mu at the sites, and g0.e1 adds -mu.r1.
+// The achieved residual allowance phi = max(residual, floor) bounds each r0 component the evaluated residual cannot
+// resolve: it adds |J0^-T (g1 - J1^T mu)|_1 phi.
+static double coupled_site_floor(const std::vector<double>& values, const std::vector<double>& tangent,
+    const std::vector<double>& second, const Eigen::VectorXd& multipliers, const Eigen::FullPivLU<Eigen::MatrixXd>& lu,
+    std::size_t point_size, double site_residual) {
+    const auto sites = multipliers.size();
+    Eigen::VectorXd residual(sites), mixed(sites);
+    for (Eigen::Index a = 0; a < sites; ++a) residual(a) = -values[1 + static_cast<std::size_t>(a)];
+    const Eigen::VectorXd error = lu.solve(residual);
+    double floor = 0.0;
+    for (Eigen::Index a = 0; a < sites; ++a) {
+        const auto site = static_cast<std::size_t>(a);
+        mixed(a) = second[2 * (point_size + site) + 1];
+        floor += std::abs(mixed(a) * error(a)) + std::abs(multipliers(a) * tangent[1 + site]);
+    }
+    const Eigen::VectorXd adjoint = lu.transpose().solve(mixed);
+    return floor + adjoint.lpNorm<1>() * site_residual;
+}
+
 static std::string state_coordinates(double temperature, double density) {
     std::ostringstream out;
     out << std::setprecision(17) << "; T=" << temperature << "; molar_density=" << density;
@@ -1154,7 +1176,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
-    isothermal_hessian = isothermal_hessian && order == DerivativeOrder::IsothermalPhaseHessian
+    const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
+    isothermal_hessian = isothermal_hessian && !blocks && order == DerivativeOrder::IsothermalPhaseHessian
         && components == 2 && active_.empty() && !parameters_.ideal_gas
         && parameters_.dipole_moment_debye.empty() && parameters_.quadrupole_moment_debye_angstrom.empty()
         && (parameters_.site_component.size() == 2 || parameters_.site_component.size() == 4)
@@ -1251,9 +1274,10 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
             direction[point_size + site] = volume_sites(static_cast<Eigen::Index>(site));
         }
-        tape_->function.Forward(1, direction);
+        const auto tangent = tape_->function.Forward(1, direction);
         const auto second = tape_->function.Reverse(2, weights);
         counters_.forward += 2; counters_.reverse += 2;
+        if (blocks) result.gradient_floor = coupled_site_floor(values, tangent, second, multipliers, factorization, point_size, site_residual);
         result.gradient.assign(point_size, 0.0);
         for (std::size_t row = 0; row < point_size; ++row) result.gradient[row] = second[2 * row];
         result.volume_second_derivative = second[2 * 1 + 1];
@@ -1287,6 +1311,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::vector<double> weights(output_count, 0.0);
     weights.front() = 1.0;
     Eigen::MatrixXd site_sensitivity(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(width));
+    Eigen::VectorXd multipliers;
     result.gradient.assign(point_size, 0.0);
     if (sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
@@ -1324,7 +1349,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         scope.probe("gradient", result.gradient);
         if (order == DerivativeOrder::Gradient) return finish(std::move(result));
-        const Eigen::VectorXd multipliers = factorization.transpose().solve(
+        multipliers = factorization.transpose().solve(
             Eigen::Map<const Eigen::VectorXd>(raw_gradient.data() + point_size, static_cast<Eigen::Index>(sites_count)));
         for (std::size_t site = 0; site < sites_count; ++site)
             weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
@@ -1333,18 +1358,23 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (isothermal_hessian) result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization).hessian;
     if (order != DerivativeOrder::PressureSlope) ++counters_.hessian_calls;
     std::vector<double> direction(input_count, 0.0);
+    double coupled = 0.0;  // declared blocks: the largest coupled_site_floor over the requested chart
     for (std::size_t offset = 0; !isothermal_hessian && offset < width; ++offset) {
         const std::size_t column = coordinates[offset];
-        if (order == DerivativeOrder::StateHessian && column >= 2 && column < 2 + components) continue;
+        const bool skipped = order == DerivativeOrder::StateHessian && column >= 2 && column < 2 + components;
+        if (skipped && !(blocks && sites_count)) continue;
         std::fill(direction.begin(), direction.end(), 0.0);
         direction[column] = 1.0;
         for (std::size_t site = 0; site < sites_count; ++site)
             direction[point_size + site] =
                 site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(offset));
-        tape_->function.Forward(1, direction);
+        const auto tangent = tape_->function.Forward(1, direction);
         ++counters_.forward;
         const auto second = tape_->function.Reverse(2, weights);
         ++counters_.reverse;
+        if (blocks && sites_count)
+            coupled = std::max(coupled, coupled_site_floor(values, tangent, second, multipliers, factorization, point_size, site_residual));
+        if (skipped) continue;
         // Contract each row with that row coordinate's site tangent: O(sites) per entry.
         for (std::size_t local = 0; local < rows.size(); ++local) {
             const std::size_t row = rows[local];
@@ -1363,7 +1393,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient_floor", result.gradient_floor);
         return finish(std::move(result));
     }
-    if (sites_count != 0) {
+    if (sites_count != 0 && blocks) result.gradient_floor = coupled;
+    else if (sites_count != 0) {
         // Floor over the requested chart only: it bounds exactly the gradient entries computed here.
         double maximum = 0.0;
         for (std::size_t local = 0; local < width; ++local) {
@@ -1395,6 +1426,8 @@ static std::vector<double> coefficient_errors(const Parameters& p, detail::Helmh
     if (count > 6 || !count || width != tape.regular_count) throw std::invalid_argument("coefficient error path");
     std::vector<double> errors(count, 0.0);
     if (!ns) return errors;
+    // Declared pathway blocks are not stationary in X: coefficient 1 keeps its actual sensitivity to X_0.
+    const bool blocks = !p.site_pathway.empty() || !p.site_correction.empty();
     const double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
     std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
     for (double& x : composition) x /= total;
@@ -1463,14 +1496,22 @@ static std::vector<double> coefficient_errors(const Parameters& p, detail::Helmh
         }
         previous.segment(k * ns, ns) = core::inverse_error_action(lu, right);
         // The gradient's base-site contribution is the achieved-residual floor below.
-        for (std::size_t j = k == 1 ? ns : 0; j < (k + 1) * ns; ++j)
+        for (std::size_t j = k == 1 && !blocks ? ns : 0; j < (k + 1) * ns; ++j)
             errors[k] += std::abs(jacobian[k * (ns + 1) * count * ns + j]) * previous[j];
         if (k == 1) {
             double base_residual = epsilon * ns;
             for (std::size_t a = 0; a < ns; ++a) base_residual = std::max(base_residual, std::abs(known[a]));
-            for (std::size_t a = 0; a < ns; ++a)
-                errors[k] += std::abs(coefficients[ns + a] * total * composition[p.site_component[a]]
-                    * p.site_multiplicity[a] / sites[a]) * base_residual;
+            if (!blocks) {
+                for (std::size_t a = 0; a < ns; ++a)
+                    errors[k] += std::abs(coefficients[ns + a] * total * composition[p.site_component[a]]
+                        * p.site_multiplicity[a] / sites[a]) * base_residual;
+            } else {
+                // The gradient floor's achieved-residual allowance: worst sign of the X_0 sensitivity over |r_0| <= phi.
+                Eigen::VectorXd sensitivity(ns);
+                for (std::size_t a = 0; a < ns; ++a) sensitivity[a] = jacobian[k * (ns + 1) * count * ns + a];
+                const Eigen::VectorXd adjoint = lu.transpose().solve(sensitivity);
+                errors[k] += adjoint.lpNorm<1>() * base_residual;
+            }
         }
         if (k == 0) {
             std::vector<double> weights(count * (ns + 1), 0.0); weights[0] = 1;
@@ -2647,6 +2688,7 @@ State HelmholtzModel::state(
     result.molar_density = molar_density;
     result.pressure_density_derivative = dpressure_drho;
     result.site_fractions = sites;
+    if (!parameters_.pathway_weight.empty()) result.pathway_weight = pathway_weights(temperature, mole_fractions, parameters_)[0];
     const auto mandatory = [&](std::string_view field, double value) {
         if (!std::isfinite(value)) throw std::runtime_error("nonfinite mandatory state property: " + std::string(field) + state_coordinates(temperature, molar_density));
     };
@@ -2764,6 +2806,10 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
         nullptr, nullptr, nullptr, false, solver_options_);
+    // Declared pathway blocks are not stationary in X: the association term also carries the implicit site chain,
+    // the complete residual gradient less the fixed-site terms. Evaluated before this function records its tape.
+    const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
+    const auto complete = blocks ? evaluate(temperature, volume, mole_fractions, DerivativeOrder::Gradient).gradient : std::vector<double>{};
     std::vector<double> point{volume};
     point.insert(point.end(), mole_fractions.begin(), mole_fractions.end());
     std::vector<AD> input(point.begin(), point.end());
@@ -2787,8 +2833,13 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     CppAD::ADFun<double> function(input, std::vector<AD>{total * a.hard_chain, total * a.dispersion,
         total * a.association, total * a.debye_huckel, total * a.born, total * a.dipolar, total * a.cation_mixing});
     recording.active = false;
-    const auto jacobian = function.Jacobian(point);
+    auto jacobian = function.Jacobian(point);
     const std::size_t width = point.size();
+    for (std::size_t j = 0; blocks && j < width; ++j) {
+        double fixed = 0.0;
+        for (std::size_t k = 0; k < 7; ++k) fixed += jacobian[k * width + j];
+        jacobian[2 * width + j] += complete[1 + j] - fixed;
+    }
     double phi_v = 0.0;
     for (std::size_t k = 0; k < 7; ++k) phi_v += jacobian[k * width];
     const double z = 1.0 - volume * phi_v;

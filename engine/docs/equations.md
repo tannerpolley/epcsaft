@@ -203,6 +203,60 @@ a^{assoc}=\sum_A x_{i(A)}\nu_A
 \left(\ln X_A-\frac{X_A}{2}+\frac{1}{2}\right).
 $$
 
+## `pathway_weighted_association_helmholtz`
+
+- Section: Contribution intermediates / Association
+- Status: Source equation
+- Source: [Hong2027], Eq.~(11), with the stationary association potential of `association_helmholtz`
+- Description: Two simultaneous association solutions as one augmented site vector: declared sites of block w (weight $w$) and block w̄ (weight $\bar w=1-w$) never bond across blocks, so each block keeps its own mass action, and an undeclared site has weight 1. $L_b$ is the stationary potential summed over block $b$; $\ell_R$ is a corrected site's own summand.
+- Change note: Off the root the weighted blocks stay stationary (energy error O(F²)), while the correction is not: its implicit site chain and the coupled site-defect error estimate are kept. A model without a declared block or correction keeps the ordinary arithmetic.
+
+$$
+a^{assoc}=w\,L_{w}(X)+\bar w\,L_{\bar w}(X)-\sum_{R\ \mathrm{corrected}}\beta_R X_R\,\ell_R(X),
+\qquad
+\ell_R=x_{i(R)}\nu_R\left[-\log1p(q_R)+\frac{X_Rq_R}{2}+\log1p(F_R)-F_R\right],
+$$
+
+## `symmetric_reactive_site_correction`
+
+- Section: Contribution intermediates / Association
+- Status: Exact derivation
+- Source: [Hong2027], Eqs.~(7)--(10)
+- Description: The bonding-state weight of a symmetric two-site reactive species applied to that site's association term only: with $f_1=2X(1-X)$ and $f_2=(1-X)^2$, $\omega_2=2f_2/(2f_2+f_1)=1-X$ exactly, so the corrected term is the site's ordinary term less $X_R$ times it.
+- Change note: No 0/0 at $X=1$: the continuous zero-bonding limit is $\omega_2=0$. The correction is a per-site declaration; it names no species. It removes the reactive side of each reactive-partner pair from the second virial coefficient, because $X_R\ell_R$ is O(ρ).
+
+$$
+\omega_2=1-X_R,\qquad
+a^{assoc}_{sym}=a^{assoc}_{sym,0}-X_R\,a_{R},\qquad
+a_R=x_{i(R)}\nu_R\left(\ln X_R-\frac{X_R}{2}+\frac12\right)\ \text{on the root}.
+$$
+
+## `pathway_weight`
+
+- Section: Contribution intermediates / Association
+- Status: Implementation convention
+- Source: logistic weight law declared for the [Hong2027] blend (Eq.~11 takes $w$ per state from Table S1)
+- Description: Weight of the declared pathway blocks as a function of the loading $\alpha=x_a/x_b$ of two declared components and temperature, so one Helmholtz energy holds across states; $\partial w/\partial n_i$ and $\partial w/\partial T$ enter every derivative. The fixed pathway weight requires both $b_\alpha=b_T=0$, fixed and inactive: exact for the declared $w$, but resetting $w$ between states (the Table S1 convention) is not one fluid model.
+- Change note: Both weights come from $e=\exp(-|z|)\le1$, so neither overflows and $\bar w$ keeps its relative precision. $\alpha$ enters only with a nonzero or active $b_\alpha$, and is then refused at $x_b=0$, never clipped.
+
+$$
+w=\sigma(z),\quad \bar w=\sigma(-z),\quad
+z=b_0+b_\alpha\left(\alpha-\tfrac12\right)+b_T\,\frac{T-353.15\ \mathrm K}{40\ \mathrm K},\qquad
+\sigma(z)=\begin{cases}1/(1+e),& z\ge0\\ e/(1+e),& z<0\end{cases}.
+$$
+
+## `pathway_weighted_cross_dispersion`
+
+- Section: Parameter setup
+- Status: Source equation
+- Source: [Hong2027], Eq.~(12)
+- Description: The binary dispersion parameter of a pair that declares a complement-pathway law, blended by the pathway weight before dispersion is evaluated.
+- Change note: Blending the complete dispersion energies would be a different model. The complement law is a temperature law of the same form as `pair_parameter_temperature_law`.
+
+$$
+k_{ij}=w\,k_{ij}(T)+\bar w\,k_{ij}^{\bar w}(T).
+$$
+
 ## `association_mass_action`
 
 - Section: Contribution intermediates / Association
