@@ -156,10 +156,11 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     admit(options->SetIntegerValue("acceptable_iter", 0));
     admit(options->SetIntegerValue("max_iter", iterations));
     if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds));
+    // ALG-EQUILIBRIUM: unrelaxed variable bounds; a relaxed zero amount lets a vanished phase lower the objective.
+    admit(options->SetNumericValue("bound_relax_factor", 0.0));
     if (!exact) {
         admit(options->SetStringValue("limited_memory_update_type", "bfgs"));
         admit(options->SetNumericValue("compl_inf_tol", tolerance));
-        admit(options->SetNumericValue("bound_relax_factor", 0.0));
     }
     admit(options->SetStringValue("linear_solver", linear_solver()));
 #if __has_include(<HSLLoader.h>)

@@ -1275,9 +1275,9 @@ $$x-l\ge\kappa_N\,(b-l),\qquad \kappa_N=\texttt{EQUILIBRIUM\_AMOUNT\_STEP\_RETEN
 
 Here $b$ is the amount at the base of the direction being searched (Ipopt's current
 iterate, which a watchdog rollback restores; in restoration the original-variable
-block of the restoration iterate), $l$ the active search problem's relaxed lower
-bound (restoration's own during restoration; Ipopt relaxes the zero bound to about
-$-10^{-8}$, that is $-10^{-8}S_p$ mol) and $x$ the trial amount, all in Ipopt's amount
+block of the restoration iterate), $l$ the active search problem's lower bound
+(restoration's own during restoration; exact solves set `bound_relax_factor=0`, so
+the zero amount bound is not relaxed) and $x$ the trial amount, all in Ipopt's amount
 coordinate $y_p=n_p/S_p$ defined below. The rule is unchanged by a positive per-column
 scale, so it reads the same in mol. Along one shrinking
 direction $d$ this is $\alpha\le(1-\kappa_N)(b-l)/(-d)$: a fraction-to-boundary rule
@@ -1869,7 +1869,17 @@ lower-objective single-phase declaration before [neutral recovery](#neutral-reco
 (owner, 2026-11-03). A completed search without a descent means "no witness in the
 recorded trial set", never a global certificate: a split outside the finite trial
 set is not excluded, and a refused solve does not run recovery, so a case recovery
-could have solved can be refused. Calls outside this exception preserve callback
+could have solved can be refused. The same public flash, when both amount-chart
+attempts end with a vanished phase, solves the declaration without that phase and,
+only if it succeeds, tests it with one explicit trial of the vanished phase's kind and
+declared support (its existing seeds, no default trial set) under an allowance built
+like recovery's; the parent and trials are charged to it and to the result's work, and
+the report is `result.vanished_phase_stability`. The split stays refused and the
+message adds one of: the parent's failure ("surviving declaration unresolved"); "no
+descent against <kind> trials of support {…} in this finite search: minimum TPD/RT =
+<raw>; not a stability certificate"; a resolved descent with its TPD/RT; or "<kind>
+trial search unresolved" for an unresolved, incomplete or budget-limited search. The
+TPD/RT is the raw minimum over resolved trials, not clipped at zero. Calls outside these exceptions preserve callback
 arithmetic/order and counted work; the exception adds the search's work and, on a
 refusal, omits recovery's. Returned
 solved-state actions use the fixed discovered declaration without searching.
@@ -3269,6 +3279,9 @@ unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution d
 $\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem
 is infeasible, and just above that the optimum sits on the box beyond the polish's reach
 (for example 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
+The upper bound of each `log(x_i)` is 0, except in a one-species phase, which has none: its normalization row
+fixes $\log x = 0$, so that bound would be active at every solution and, unrelaxed, hold the solution on the
+barrier (a water-only vapor took 6/7 instead of 3/4 iterations, with a bound multiplier near $10^{13}$).
 
 `inventory_bounds(compiled, species, fraction, floor)` shares this HiGHS owner
 with the optimizer box. The amount program uses $n/N_{\mathrm{feed}}$ and returns

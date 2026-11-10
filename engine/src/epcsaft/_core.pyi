@@ -3267,6 +3267,8 @@ class EquilibriumResult:
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
     rejected_reduction: EquilibriumResult | None
     recovery_stability: StabilityReport | None
+    vanished_phase_stability: StabilityReport | None
+    """Failure-only: trials of a vanished phase's kind and support from the declaration without it."""
     terminal_numerical_failure: Convergence | None
     last_full_evaluation: Convergence | None
     phase_pressures: list[float]

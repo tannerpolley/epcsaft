@@ -709,6 +709,7 @@ struct EquilibriumResult final {
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
     std::shared_ptr<const StabilityReport> recovery_stability;  // #987: the trial search run before recovery
+    std::shared_ptr<const StabilityReport> vanished_phase_stability;  // a vanished phase's trials, without it
     bool success = false;
     std::string message;
     std::string solver_status;

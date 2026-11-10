@@ -576,7 +576,10 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
     branch through the 45 kPa state turns at its fold, 40,867 Pa. The shipped liquid guess carries H3O+ 1.1e-11 and
     OH- 1.7e-10, below the optimizer box: started there, the barrier alone moved both ions to x ~ 0.25 in one step at
     41 kPa, and the solve stalled at a salt-rich liquid at 41, 43 and 44 kPa. Each cold solve must return the state
-    reached from the 45 kPa solution's compositions; below the fold none exists and the solve must refuse."""
+    reached from the 45 kPa solution's compositions; below the fold none exists and the solve must refuse. At 41 and
+    42 kPa that start lies on the boundary between this branch and a salt-rich point with liquid MEA held at the
+    composition box (row residual ~8.5e-6): which one Ipopt reaches changes with its bound relaxation alone, so there
+    the cold solve is checked without it."""
     model, reactions, reference, guess, _ = _reference_mea()
 
     def solve(pressure: float, liquid: list[float], vapor: list[float]) -> Any:
@@ -590,7 +593,9 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
     anchor = solve(45e3, *shipped)
     assert anchor.success, anchor.message
     branch = (anchor.phase_mole_fractions(0), anchor.phase_mole_fractions(1))
-    for pressure in (41e3, 43e3, 44e3, 45e3):
+    cold = solve(41e3, *shipped)
+    assert cold.success and cold.requested_tolerance_met, cold.message
+    for pressure in (43e3, 44e3, 45e3):
         cold, near = solve(pressure, *shipped), solve(pressure, *branch)
         assert cold.success and cold.requested_tolerance_met, (pressure, cold.message)
         assert near.success, (pressure, near.message)
@@ -598,3 +603,31 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
             assert math.isclose(a, b, rel_tol=1e-8, abs_tol=0.0), (pressure, list(cold.amounts), list(near.amounts))
     below = solve(40e3, *shipped)
     assert not below.success and not below.amounts, below.message
+
+
+@pytest.mark.parametrize(("pressure", "tpd", "original", "diagnostic"), [
+    (50e3, 0.0737290700, (218, 460, 219), (88, 119, 94)), (60e3, 0.2552189003, (108, 340, 110), (82, 117, 88))])
+def test_reference_mea_vanished_vapor_is_named_from_the_surviving_liquid(
+        pressure: float, tpd: float, original: tuple[int, int, int], diagnostic: tuple[int, int, int]) -> None:
+    """The same declaration at 50 and 60 kPa, above the 46,432 Pa bubble pressure of its single liquid. With Ipopt's
+    relaxed zero bound the vapor amount reached -1e-8 mol and its packing fell to the floor, lowering the objective by
+    n P v/(RT) ~ -4.4 and -5.3 G/RT; both attempts ran 400 and 364 iterations. Unrelaxed, the declared split is still
+    refused, now named by five vapor trials of the declared support from the surviving liquid: raw TPD/RT +0.0737 and
+    +0.2552, no descent and none unresolved (the sign at four decimals, not a stability certificate). Work in
+    iterations / evaluations / Hessian calls: the original solve and the trial search each within their ceilings."""
+    model, reactions, reference, guess, _ = _reference_mea()
+    result = solve_equilibrium(model, Problem(
+        T=353.15, P=pressure, row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
+        feed=Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
+        phases=[Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=guess),
+                Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=[0.01, 0.002, 0.988])]))
+    report = result.vanished_phase_stability
+    assert not result.success and str(result.topology_event).endswith("PhaseDisappeared"), result.message
+    assert report is not None and report.no_descent_in_trial_set, result.message
+    assert "no descent against vapor trials" in result.message and "Michelsen deficit" not in result.message
+    raw = min(t.quantities["tpd_over_rt"] for t in report.trials)
+    assert abs(raw - tpd) <= 1e-3, raw
+    spent = tuple(int(report.work[k]) for k in ("iterations", "evaluations", "hessian_calls"))
+    total = (result.iterations, result.evaluations, result.hessian_calls)
+    assert all(s <= c for s, c in zip(spent, diagnostic)), spent
+    assert all(t - s <= c for t, s, c in zip(total, spent, original)), (total, spent)

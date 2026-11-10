@@ -497,9 +497,12 @@ bool GibbsMinimizer::get_bounds_info(
     if (limits_ && limits_->expired()) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
+        // ALG-EQUILIBRIUM: a one-species phase's normalization row fixes ln x = 0, so an upper bound there is always
+        // active; with unrelaxed bounds it would hold the solution on the barrier.
+        const double top = phase.support.size() == 1 ? infinity : 0.0;
         for (const std::size_t i : phase.support) {
             x_l[offset] = std::log(box[i]);
-            x_u[offset++] = compiled_.ideal ? std::log(compiled_.inventory_upper_bounds[i]) : 0.0;
+            x_u[offset++] = compiled_.ideal ? std::log(compiled_.inventory_upper_bounds[i]) : top;
         }
         if (compiled_.ideal) continue;
         if (phase.amount.kind == AmountKind::Free) x_l[offset++] = 0.0;
@@ -943,10 +946,10 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         const double deficit = michelsen_deficit(
             compiled, compositions[phase], phase, result.residuals);
         scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
+        // The deficit is a probe only: a vanished phase's coordinates are undetermined.
         if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
             topology_ok = false;
             cause = "phase_disappeared";
-            topology_failure = "Michelsen deficit " + std::to_string(deficit);
         }
     }
     for (const double distance : topology.distances) scope.probe("phase_distance", distance);
@@ -1010,8 +1013,8 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         result.success = false;
         if (!topology_ok) {
             infeasible(cause.c_str());
-            result.message = cause == "phases_coalesced" || cause == "phase_disappeared"
-                ? topology_sentence(compiled, topology) + "; " + topology_failure : topology_failure;
+            result.message = cause == "phases_coalesced" ? topology_sentence(compiled, topology) + "; " + topology_failure
+                : cause == "phase_disappeared" ? topology_sentence(compiled, topology) : topology_failure;
         }
         clear_state(result);
         return result;
@@ -2239,12 +2242,33 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     result = recover_physical_amounts(compiled, std::move(result), retry_eligible && !admission_refused,
         scope, nullptr, limits, nullptr, nullptr, true);
     result.rejected_reduction = rejected;
+    // ALG-EQUILIBRIUM recovery work: its own caps, within any caller remainder.
+    const auto allowance = [&] {
+        const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+        const auto left = limits ? limits->iterations - std::min(limits->consumed, limits->iterations) : cap;
+        const auto deadline = limits ? limits->deadline : std::chrono::steady_clock::time_point::max();
+        return DriverLimits{std::min(cap, left), deadline, 0, true, 4 * cap, 2 * cap};
+    };
+    // ALG-STABILITY: a vanished declared phase at fixed T and P is named from the surviving declaration under that
+    // allowance; the declared split stays refused.
+    if (!result.success && recover && result.topology_event == TopologyEvent::PhaseDisappeared && result.topology_phase
+        && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
+        && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty()) {
+        auto probe = allowance();
+        auto report = vanished_phase_stability(compiled, *result.topology_phase, probe);
+        if (limits) limits->consumed += probe.consumed;
+        // Driver plus tangent-plane work, as the report keeps them; the original solve's work is the remainder.
+        auto& w = report.work;
+        result.iterations += static_cast<std::size_t>(w["iterations"] + w["trial_tangent_plane_iterations"]);
+        result.evaluations += static_cast<std::size_t>(w["evaluations"] + w["trial_tangent_plane_evaluations"]);
+        result.hessian_calls += static_cast<std::size_t>(w["hessian_calls"] + w["trial_tangent_plane_hessian_evaluations"]);
+        result.message += "; " + report.message;
+        result.vanished_phase_stability = std::make_shared<const StabilityReport>(std::move(report));
+    }
     if (result.success || !recover || one_component_two_density_eligible(compiled) || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
         || !recovery_eligible(compiled) || !recovery_trigger(result)) return selected(std::move(result), limits);
-    // ALG-EQUILIBRIUM neutral recovery: its own caps, within any caller remainder; both causes and all work are kept.
-    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-    DriverLimits work{limits ? std::min(cap, limits->iterations - limits->consumed) : cap,
-        limits ? limits->deadline : std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    // Neutral recovery: both causes and all work are kept.
+    auto work = allowance();
     // ALG-STABILITY (#987): after coalescence at fixed T and P, the finite trial search under the same allowance
     // construction; no descent in it ends the solve without recovery. It is not a global stability certificate.
     if (result.topology_event == TopologyEvent::PhasesCoalesced && !compiled.problem.temperature.free

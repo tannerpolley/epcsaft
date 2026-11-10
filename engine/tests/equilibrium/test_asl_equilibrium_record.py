@@ -388,12 +388,12 @@ def test_reference_temperature_pressure_ipopt_round_trip(tmp_path: Path, monkeyp
     assert abs(value(m.T) - 353.65) <= 6e-9 and abs(value(m.P) - 45500.0) <= 1.1e-5, (value(m.T), value(m.P))
 
 
-H_ANCHOR = float.fromhex("-0x1.28afb4ecf2407p+21")  # -2430454.6156964335 J, the direct native SystemEnthalpy at R_Q0
+H_ANCHOR = float.fromhex("-0x1.28afb4ecf2405p+21")  # -2430454.6156964325 J, the direct native SystemEnthalpy at R_Q0
 
 
 def test_reference_enthalpy_equals_direct_engine() -> None:
     """E1: the system enthalpy (J) with its gradient and packed Hessian over q equals solve_equilibrium plus
-    solved_state_actions on the declared problem bitwise at the anchor, where H = -2430454.6156964335 J, and to 1e-12
+    solved_state_actions on the declared problem bitwise at the anchor, where H = -2430454.6156964325 J, and to 1e-12
     relative at (353.65 K, 45500 Pa) and there with u_CO2 0.36 mol; each order returns the same value."""
     model, target = reference_mea()
     text = reference_record()
@@ -552,9 +552,13 @@ def test_halite_columns_match_central_differences() -> None:
     assert abs(solid[2] + exact[1][0] / (H_Q0[2] * hs.MW) * hs.MW) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
     assert not exact[1][2][3].any() and not exact[3][2][3].any()
     water = exact[0]
-    assert water[0] == H_Q0[2] and np.abs(water[1] - np.eye(7)[2]).max() <= 1e-14 * np.abs(solid).max()
+    # The two identities below hold exactly in the equations and to one ulp of their own scale in binary64. Bitwise
+    # equality was rounding luck: Ipopt's unrelaxed bounds alone move each by one ulp (the same Engine reproduces it with
+    # an options file setting only bound_relax_factor 0).
+    assert abs(water[0] - H_Q0[2]) <= eps * H_Q0[2] and np.abs(water[1] - np.eye(7)[2]).max() <= 1e-14 * np.abs(solid).max()
     assert np.abs(water[2]).max() <= 1e-14 * np.abs(exact[3][2]).max()
-    assert np.delete(exact[1][1] + solid, 3) == pytest.approx(0.0, abs=1e-15) and np.delete(exact[1][2] + exact[3][2], 3) == pytest.approx(0.0, abs=1e-15)
+    assert np.delete(exact[1][1] + solid, 3) == pytest.approx(0.0, abs=1e-15)
+    assert np.delete(exact[1][2] + exact[3][2], 3) == pytest.approx(0.0, abs=eps * np.abs(exact[3][2]).max())
     for b, h0 in enumerate((1e-3, 1e3, 1e-5, 1e-5, *(1e-5 * max(1.0, abs(t)) for t in H_Q0[4:]))):
         for h in (4 * h0, h0, 0.25 * h0):
             plus, minus = ([fgh(text, q + s * h * np.eye(7)[b], row, 1, 3, 1) for row in range(4)] for s in (1, -1))

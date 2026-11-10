@@ -879,6 +879,40 @@ StabilityReport recovery_stability(const CompiledSystem& input, const DriverLimi
     return report;
 }
 
+// ALG-STABILITY: can the declared vanished phase appear? The parent is the declaration without it, accepted only on
+// success; one explicit trial of its kind and declared support, its existing seeds, every solve charged to `limits`.
+StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_t phase, const DriverLimits& limits) {
+    auto declaration = input.problem;
+    const auto vanished = declaration.phases[phase];
+    declaration.phases.erase(declaration.phases.begin() + static_cast<std::ptrdiff_t>(phase));
+    const std::string kind = vanished.kind == PhaseKind::Vapor ? "vapor" : "liquid";
+    StabilityReport report;
+    EquilibriumResult audit, parent;  // `audit` holds the parent's work, also when it throws
+    try {
+        const auto compiled = compile_problem(*input.model, declaration);
+        audit = parent = solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, false, &audit);
+        if (!parent.success) throw std::runtime_error(parent.message);
+        StabilityOptions options;
+        options.trials = std::vector<PhaseSpec>{vanished};
+        report = test_snapshot(compiled, parent, options, {}, nullptr, &limits);
+        std::optional<double> raw;  // descending trials, or all when none descends or is unresolved; not clipped
+        std::string support;
+        for (const auto& t : report.trials) if (t.resolved_descent || report.no_descent_in_trial_set)
+            raw = std::min(raw.value_or(t.quantities.at("tpd_over_rt")), t.quantities.at("tpd_over_rt"));
+        for (const auto i : report.trials.empty() ? vanished.support : report.trials.front().phase.support) support += (support.empty() ? "" : ", ") + std::to_string(i);
+        report.message = report.no_descent_in_trial_set ? "no descent against " + kind + " trials of support {" + support
+                + "} in this finite search: minimum TPD/RT = " + core::optional_number(raw) + "; not a stability certificate"
+            : raw ? "a " + kind + " trial descends from the surviving declaration: TPD/RT = " + core::optional_number(raw)
+            : kind + " trial search unresolved: " + report.message;
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {  // before the first trial: the trials' own catches keep theirs
+        report.message = (parent.success ? kind + " trial search unresolved: " : "surviving declaration unresolved: ") + error.what();
+    }
+    count_driver(report.work, audit, "parent_declarations");
+    core::retain_first(report.first_numerical_failure, audit.first_numerical_failure, true);
+    return report;
+}
+
 std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem& input) {
     core::Scope scope("cooling_onset");
     auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;

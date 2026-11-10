@@ -603,11 +603,17 @@ void check_tangent_plane_admission() {
     });
     CHECK(near_pure != aqueous_report.trials.end());
     CHECK(near_pure->evidence == "no_resolved_descent" && !near_pure->resolved_descent);
+    // The trial returns to the parent composition, so its TPD is rounding noise inside the summation estimate and its
+    // sign is not a behavior: relaxed Ipopt bounds gave -1.78e-15, unrelaxed +6.22e-15 (estimate 4.96e-14). A search of
+    // this fixture (water 0.90-0.995, 500 Pa-1 bar) found no clearly negative unresolved trial, so the donor slope and
+    // error are checked only when the sign happens to be negative.
     const auto& aqueous_q = near_pure->quantities;
-    CHECK(std::isfinite(aqueous_q.at("tpd_over_rt")) && aqueous_q.at("tpd_over_rt") < 0.0);
-    CHECK(std::isfinite(aqueous_q.at("donor_slope_over_rt")) && std::isfinite(aqueous_q.at("descent_error_estimate_over_rt")));
-    CHECK(aqueous_q.at("descent_error_estimate_over_rt") >= 0.0
-        && aqueous_q.at("donor_slope_over_rt") >= -aqueous_q.at("descent_error_estimate_over_rt"));
+    CHECK(std::abs(aqueous_q.at("tpd_over_rt")) <= aqueous_q.at("summation_estimate_over_rt"));
+    if (aqueous_q.at("tpd_over_rt") < 0.0) {
+        CHECK(std::isfinite(aqueous_q.at("donor_slope_over_rt")) && std::isfinite(aqueous_q.at("descent_error_estimate_over_rt")));
+        CHECK(aqueous_q.at("descent_error_estimate_over_rt") >= 0.0
+            && aqueous_q.at("donor_slope_over_rt") >= -aqueous_q.at("descent_error_estimate_over_rt"));
+    }
     // #904: A1 fit:2:0, Kuranov 313.13 K, loading 0.9746714815929381, near-pure-0.
     const std::vector<double> trace_weights{0x1.f64f82d00935bp-1, 0x1.360fa26622b49p-6,
         0x1.c32c20f6c1dc0p-46, 0x1.fb7b5e721a2fbp-638, 0x1.231142a8bdf31p-801,

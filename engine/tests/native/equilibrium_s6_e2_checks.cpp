@@ -754,10 +754,10 @@ void check_c3_availability() {
         && failure.amounts.empty() && failure.mole_fractions.empty()
         && failure.molar_densities.empty() && failure.coordinates.empty();
     const bool failure_reason = failure.message.find("phase V vanished") != std::string::npos;
-    // The vanished phase's KKT-scaled stationarity rows vanish with its amount, so the
-    // classified residual meets the association floor while the topology predicate fails.
-    const bool stalled = failure.convergence.stop == epcsaft::core::Stop::stalled
-        || failure.convergence.stop == epcsaft::core::Stop::converged_to_floor;
+    // With unrelaxed amount bounds the solve converges (residual 1.83e-12, deficit 0.9588) and the
+    // topology check rejects the point; a relaxed bound stalled at 1e-8 with the vapor amount below zero.
+    const bool rejected = failure.convergence.stop == epcsaft::core::Stop::infeasible
+        && failure.convergence.cause == "phase_disappeared";
     // Michelsen deficit of the vanished phase from its chemical rows.
     double expected_deficit = 1.0;
     bool driving_row = false;
@@ -812,7 +812,7 @@ void check_c3_availability() {
         && std::isfinite(success.convergence.residual);
     recording_support::compare(
         "c3-availability", "failed-result", "1",
-        (retained && cleared && failure_reason && stalled) ? 1.0 : 0.0, 1.0,
+        (retained && cleared && failure_reason && rejected) ? 1.0 : 0.0, 1.0,
         recording_support::fields({
             recording_support::field("solver_status", failure.solver_status),
             recording_support::field("stop", epcsaft::core::stop_name(failure.convergence.stop)),
@@ -826,7 +826,7 @@ void check_c3_availability() {
         }),
         "Relationship", "unavailable-result", "failed solve retains diagnostics and clears state",
         "absolute", 0.0, 0.0,
-        retained && cleared && failure_reason && stalled, "native.equilibrium.c3", "C3",
+        retained && cleared && failure_reason && rejected, "native.equilibrium.c3", "C3",
         "failed-result", "availability", "T,P,feed", "has_state=0 with diagnostics retained");
     recording_support::compare(
         "c3-availability", "success-state", "1", success_state ? 1.0 : 0.0, 1.0,

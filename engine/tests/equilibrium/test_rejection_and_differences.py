@@ -72,8 +72,8 @@ def test_recoverable_flash_keeps_recovery() -> None:
     result = solve_equilibrium(methane_ethane(), problem)
     report = result.recovery_stability
     assert report is not None and result.success and any(t.resolved_descent for t in report.trials)
-    assert list(result.amounts) == [0.08578566729375485, 0.914214332706245]  # equilibrated tangent; 71 / 150 / 92 recovery work
-    assert work(result) == tuple(a + b for a, b in zip((71, 150, 92), charged(report)))
+    assert list(result.amounts) == [0.08578566729375318, 0.9142143327062467]  # equilibrated tangent; 71 / 149 / 92 recovery work
+    assert work(result) == tuple(a + b for a, b in zip((71, 149, 92), charged(report)))
 
 
 def test_bubble_point_above_coalescence_verdict() -> None:
