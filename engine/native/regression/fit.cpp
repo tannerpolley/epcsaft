@@ -100,6 +100,8 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
 
 #include "fit_measurement.hpp"
 
+// The committed record is `optimizer`, `evaluation` and `jacobian`, written only by publish(). The rest is working
+// state, which a same-point evaluation may update before its verdict.
 struct Trial final {
     std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
     std::vector<Observation> observations;
@@ -119,7 +121,17 @@ struct Failure final {
     bool jacobian = false;
     std::string message;
     std::vector<ResidualEnergyAction> parameter_actions{};
-    std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::Convergence> first_numerical_failure{};
+};
+
+// One evaluated trial's disposition, decided once and only by ObservationEvaluator::Impl::evaluate. Evaluated: every
+// process computed its rows and none failed. Rejected: `failure` is the first failure and no process publishes.
+// Committed: entered only through publish(), in each process. A request the committed record already answers is
+// reused before any of this. Workers receive the verdict as one byte: commit or not.
+enum class Disposition { Evaluated, Rejected, Committed };
+struct Verdict final {
+    Disposition disposition = Disposition::Evaluated;
+    Failure failure{};
 };
 
 FitHost fit_host;
@@ -340,9 +352,25 @@ struct ObservationEvaluator::Impl final {
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         for (const Channel fd : workers_.sockets) put(fd, optimizer, jacobian);
-        const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         Trial fresh;
         Trial& trial = same_point ? *cached_ : fresh;
+        Verdict verdict = assemble(optimizer, jacobian, out, trial, same_point, scope);
+        for (const Channel fd : workers_.sockets) put(fd, verdict.disposition == Disposition::Evaluated);
+        if (verdict.disposition == Disposition::Rejected) {
+            if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
+            if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
+            auto& failure = verdict.failure;
+            fail(failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
+                 std::move(failure.parameter_actions), out.first_numerical_failure);
+        } else verdict.disposition = publish(optimizer, jacobian, out, trial, fresh, same_point);
+        return verdict.disposition == Disposition::Committed;
+    }
+
+    // Every process's rows of one trial merged in row order, then the weighted cost and optimizer columns: Evaluated,
+    // or Rejected with the first failure. It sends no verdict and publishes nothing.
+    Verdict assemble(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial,
+                     bool same_point, core::Scope& scope) {
+        const std::size_t n = request_.observations.size(), width = request_.coordinates.tie().size() + request_.holds.size();
         auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             std::optional<Failure> theirs;
@@ -396,13 +424,7 @@ struct ObservationEvaluator::Impl final {
                 previous = {optimizer, *out.stability_predictions[i]};
             }
         }
-        const auto reject = [&](std::size_t index, ObservationStatus status, std::string message, bool flagged, std::vector<ResidualEnergyAction> actions = {}) {
-            for (const Channel fd : workers_.sockets) put(fd, false);
-            if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
-            if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
-            return fail(index, optimizer, status, std::move(message), flagged, std::move(actions), out.first_numerical_failure);
-        };
-        if (failure) return reject(failure->observation, failure->status, std::move(failure->message), failure->jacobian, std::move(failure->parameter_actions));
+        if (failure) return {Disposition::Rejected, std::move(*failure)};
         out.weighted.resize(n);
         for (std::size_t i = 0; i < n; ++i) out.weighted[i] = sqrt_weights_[i] * out.residuals[i];
         // One half of the row-ordered squared sum; reject its first nonfinite operand or sum.
@@ -411,8 +433,8 @@ struct ObservationEvaluator::Impl final {
             const double weighted = out.weighted[i];
             sum += weighted * weighted;
             if (!std::isfinite(weighted) || !std::isfinite(sum))
-                return reject(i, ObservationStatus::Nonfinite,
-                    std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite", jacobian);
+                return {Disposition::Rejected, {i, i, ObservationStatus::Nonfinite, jacobian,
+                    std::isfinite(weighted) ? "accumulated weighted cost not finite" : "weighted residual not finite"}};
         }
         out.cost = 0.5 * sum;
         for (std::size_t i = 0; i < n; ++i) {
@@ -430,7 +452,7 @@ struct ObservationEvaluator::Impl final {
                     * out.input_gradient[i * latent + c] * measurement_.sigma[c];
             if (!Eigen::Map<const Eigen::VectorXd>(out.optimizer_gradient.data() + i * columns,
                 static_cast<Eigen::Index>(columns)).allFinite())
-                return reject(i, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", true);
+                return {Disposition::Rejected, {i, i, ObservationStatus::Nonfinite, true, "optimizer Jacobian not finite"}};
         }
         if (request_.uncertainty) {
             auto& reconciled = out.reconciliation.emplace();
@@ -446,14 +468,13 @@ struct ObservationEvaluator::Impl final {
                 if (jacobian) out.optimizer_gradient[(n + c) * columns + parameters + c] = 1.0;
             }
             out.cost += reconciled.input_cost;
-            if (!std::isfinite(out.cost)) return reject(n, ObservationStatus::Nonfinite, "input penalty not finite", jacobian);
+            if (!std::isfinite(out.cost))
+                return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, "input penalty not finite"}};
             if (!measurement_.factor.empty() && !whiten(out, columns))
-                return reject(n, ObservationStatus::Nonfinite, "whitened residual or Jacobian not finite", jacobian);
+                return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, "whitened residual or Jacobian not finite"}};
             if (jacobian) reconciled.jacobian = out.optimizer_gradient;
         }
-        for (const Channel fd : workers_.sockets) put(fd, true);
-        publish(optimizer, jacobian, out, trial, fresh, same_point);
-        return true;
+        return {};
     }
 
     // z = L^-1 e on the compact rows of the residual and of every complete column; excluded rows stay zero.
@@ -701,9 +722,10 @@ struct ObservationEvaluator::Impl final {
         }
     }
 
-    // Neither a failed row nor an overflowing weighted/coordinate chain publishes starts or a cache.
-    void publish(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial,
-                 Trial& fresh, bool same_point) {
+    // Neither a failed row nor an overflowing weighted/coordinate chain publishes starts or a cache. The only commit:
+    // an Evaluated trial becomes Committed here, in the fit process on evaluate's verdict and in a worker on its byte.
+    Disposition publish(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial,
+                        Trial& fresh, bool same_point) {
         for (std::size_t g = 0; g < groups_.size(); ++g)
             if (trial.centers[g].solved) starts_[g] = trial.centers[g].solved;
         out.chart = trial.chart;
@@ -713,6 +735,7 @@ struct ObservationEvaluator::Impl final {
         if (!same_point) {
             cached_.emplace(std::move(fresh));
         }
+        return Disposition::Committed;
     }
 
     const FitRequest request_;
@@ -926,19 +949,8 @@ private:
     ObservationEvaluator::Impl& evaluator_;
 };
 
-const char* termination_name(ceres::TerminationType termination) {
-    switch (termination) {
-    case ceres::CONVERGENCE: return "convergence";
-    case ceres::NO_CONVERGENCE: return "no_convergence";
-    case ceres::FAILURE: return "failure";
-    case ceres::USER_SUCCESS: return "user_success";
-    case ceres::USER_FAILURE: return "user_failure";
-    }
-    return "failure";
-}
-
-void covariance(FitResult& result, const FitRequest& request, std::size_t n,
-    const std::vector<double>& point, const std::vector<double>& lower, const std::vector<double>& upper) {
+FitCovarianceStatus covariance(FitResult& result, const FitRequest& request, std::size_t n, const std::vector<double>& point,
+    const std::vector<double>& lower, const std::vector<double>& upper, FitTermination termination) {
     auto& cov = result.covariance;
     const auto& set = request.coordinates;
     const auto width = static_cast<Eigen::Index>(point.size());
@@ -952,7 +964,7 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
         if (request.weights.empty() || request.weights[i] > 0.0) cov.objective_rows.push_back(i);
     if (result.reconciliation) for (std::size_t c = 0; c < result.reconciliation->corrections.size(); ++c)
         cov.objective_rows.push_back(n + c);
-    if (cov.objective_rows.empty()) { cov.status = "rank_deficient"; return; }
+    if (cov.objective_rows.empty()) return FitCovarianceStatus::RankDeficient;
     Eigen::MatrixXd jacobian(static_cast<Eigen::Index>(cov.objective_rows.size()), width);
     for (Eigen::Index i = 0; i < jacobian.rows(); ++i)
         for (Eigen::Index c = 0; c < width; ++c)
@@ -993,13 +1005,17 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     if (!request.uncertainty && cov.objective_rows.size() > cov.rank) cov.variance_factor = 2.0 * result.data_cost / static_cast<double>(cov.objective_rows.size() - cov.rank);
     // An unfinished iterate keeps its rank, singular values and bound diagnostics but is not a
     // parameter-covariance estimate.
-    if (result.status != "converged") { cov.status = "not_converged"; cov.variance_factor.reset(); return; }
-    if (cov.rank < point.size()) { cov.status = "rank_deficient"; return; }
-    if (std::any_of(request.observations.begin(), request.observations.end(), [](const auto& o) { return o.kind == ObservationKind::Stability; })) {
-        cov.status = "stability_penalty"; cov.variance_factor.reset();
-        cov.assumption = "numerical rank includes requirement rows; no statistical covariance claim"; return;
+    if (termination != FitTermination::Settled && termination != FitTermination::AllHeld) {
+        cov.variance_factor.reset();
+        return FitCovarianceStatus::NotConverged;
     }
-    if (!cov.active_bounds.empty()) { cov.status = "active_bound"; return; }
+    if (cov.rank < point.size()) return FitCovarianceStatus::RankDeficient;
+    if (std::any_of(request.observations.begin(), request.observations.end(), [](const auto& o) { return o.kind == ObservationKind::Stability; })) {
+        cov.variance_factor.reset();
+        cov.assumption = "numerical rank includes requirement rows; no statistical covariance claim";
+        return FitCovarianceStatus::StabilityPenalty;
+    }
+    if (!cov.active_bounds.empty()) return FitCovarianceStatus::ActiveBound;
     const Eigen::MatrixXd complete = svd.matrixV() * singular.cwiseAbs2().cwiseInverse().asDiagonal()
         * svd.matrixV().transpose();
     const Eigen::MatrixXd optimizer = complete.topLeftCorner(set.coordinates.size(), set.coordinates.size());
@@ -1008,8 +1024,9 @@ void covariance(FitResult& result, const FitRequest& request, std::size_t n,
     const Eigen::MatrixXd physical = map * optimizer * map.transpose();
     cov.optimizer.assign(optimizer.data(), optimizer.data() + optimizer.size());
     cov.physical.assign(physical.data(), physical.data() + physical.size());
-    cov.status = finite(cov.optimizer) && finite(cov.physical) ? "available" : "unavailable";
-    if (cov.status == "unavailable") { cov.optimizer.clear(); cov.physical.clear(); }
+    if (finite(cov.optimizer) && finite(cov.physical)) return FitCovarianceStatus::Available;
+    cov.optimizer.clear(); cov.physical.clear();
+    return FitCovarianceStatus::Unavailable;
 }
 
 void validate_checks(const FitRequest& request) {
@@ -1146,13 +1163,47 @@ void publish_candidate(FitResult& result, ObservationEvaluation final, const std
     result.optimizer_jacobian = std::move(final.optimizer_gradient);
     result.final_cost = final.cost;
 }
-void finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled) {
+FitAcceptance finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled) {
     auto check_request = request;
     request.coordinates.apply(check_request.observations, result.optimizer);
     result.checks = evaluate_checks(check_request, result.parameters, &result, reconciled);
-    result.acceptance = "pass";
+    auto acceptance = FitAcceptance::Pass;
     for (const auto& check : result.checks)
-        if (!check.report_only && check.status != "pass" && result.acceptance != "unavailable") result.acceptance = check.status;
+        if (!check.report_only && check.status != "pass" && acceptance != FitAcceptance::Unavailable)
+            acceptance = check.status == "fail" ? FitAcceptance::Fail : FitAcceptance::Unavailable;
+    return acceptance;
+}
+
+// The one place a fit's outcome becomes its labels. `message` keeps its owner's free text (a setup or Ipopt
+// refusal, the Ceres summary, a trial failure; empty for PointOnly) unless the termination has a fixed text. A fit
+// that ran Ceres and whose returned point has no committed evaluation is "failed", whatever its termination.
+void label(FitResult& result, const FitOutcome& outcome) {
+    using T = FitTermination;
+    const T t = outcome.termination;
+    const bool ipopt = t == T::IpoptSuccess || t == T::IpoptStop, converged = t == T::Settled || t == T::AllHeld;
+    const bool ceres = !ipopt && t != T::NotRun && t != T::StartRejected && t != T::PointOnly;
+    const bool absent = outcome.candidate == FitCandidate::Absent;
+    result.status = t == T::NotRun ? "invalid_setup" : t == T::StartRejected ? "initial_evaluation_failed"
+        : t == T::PointOnly ? "point_evaluated" : t == T::IpoptStop ? "limit_or_failure"
+        : absent || t == T::Failure || t == T::CallbackFailure ? "failed"
+        : ipopt || converged ? "converged" : "limit_reached";
+    result.termination = ipopt ? result.minimax->solver_status : !ceres ? "not_run" : converged ? "convergence"
+        : t == T::Failure ? "failure" : t == T::CallbackFailure ? "user_failure" : "no_convergence";
+    if (t == T::AllHeld) result.message = "every coordinate is held at an active bound";
+    if (t == T::IterationLimit) result.message = "iteration limit reached";
+    if (t == T::TimeLimit) result.message = "time limit reached";
+    if (ipopt) result.message = "local constrained estimate; global feasibility and optimality unresolved";
+    if (ceres && absent) result.message = "the final point could not be evaluated: " + result.message;
+    result.usable = outcome.candidate == FitCandidate::Usable;
+    using C = FitCovarianceStatus;
+    const C c = outcome.covariance;
+    result.covariance.status = c == C::Available ? "available" : c == C::NotConverged ? "not_converged"
+        : c == C::RankDeficient ? "rank_deficient" : c == C::StabilityPenalty ? "stability_penalty"
+        : c == C::ActiveBound ? "active_bound" : c == C::Unavailable ? "unavailable"
+        : c == C::MinimaxUnavailable ? "minimax_unavailable" : "not_evaluated";
+    const FitAcceptance a = outcome.acceptance;
+    result.acceptance = a == FitAcceptance::Pass ? "pass" : a == FitAcceptance::Fail ? "fail"
+        : a == FitAcceptance::Unavailable ? "unavailable" : "not_evaluated";
 }
 
 void validate_fit_request(const FitRequest& request, bool optimizing) {
@@ -1221,11 +1272,13 @@ FitResult fit(const FitRequest& request) {
     evaluator.start_workers(request.controls.workers);
     std::vector<double> optimizer = fit_start(request);
     optimizer.resize(width, 0.0);
+    FitOutcome outcome;
     ObservationEvaluation initial;
     if (!evaluator.evaluate(optimizer, true, initial)) {
-        result.status = "initial_evaluation_failed";
+        outcome.termination = FitTermination::StartRejected;
         result.message = result.failures.back().message;
         result.statuses = std::move(initial.statuses);
+        label(result, outcome);
         return result;
     }
     result.initial_cost = initial.cost;
@@ -1259,20 +1312,21 @@ FitResult fit(const FitRequest& request) {
     std::vector<int> held;
     int remaining = controls.maximum_iterations;
     double seconds = controls.maximum_elapsed_time_seconds;
-    bool settled = false, all_held = false, exhausted = false;
     int round = 0;
+    using T = FitTermination;
     for (bool first = true;; first = false) {
         if (!evaluator.gradient_at(optimizer, gradient)) {
-            summary.termination_type = ceres::FAILURE;
+            outcome.termination = T::Failure;
             summary.message = result.failures.back().message;
             break;
         }
         const auto next = select_held(optimizer, gradient, lower, upper);
-        // Unchanged membership retains Ceres' stopping criteria; it does not certify the free gradient.
-        all_held = next.size() == width;
-        settled = (!first && summary.termination_type == ceres::CONVERGENCE && next == held) || all_held;
-        exhausted = !settled && (remaining <= 0 || seconds <= 0.0);
-        if (settled || exhausted) break;
+        // Unchanged membership retains Ceres' stopping criteria; it does not certify the free gradient. Until a
+        // round stops the fit, the termination stays NotRun.
+        outcome.termination = next.size() == width ? T::AllHeld
+            : !first && summary.termination_type == ceres::CONVERGENCE && next == held ? T::Settled
+            : remaining <= 0 ? T::IterationLimit : seconds <= 0.0 ? T::TimeLimit : T::NotRun;
+        if (outcome.termination != T::NotRun) break;
         std::vector<int> kept;
         std::set_union(held.begin(), held.end(), next.begin(), next.end(), std::back_inserter(kept));
         held = summary.termination_type == ceres::CONVERGENCE || kept.size() == width ? next : kept;
@@ -1298,34 +1352,33 @@ FitResult fit(const FitRequest& request) {
         }
         remaining -= static_cast<int>(summary.iterations.size()) - 1;
         seconds -= summary.total_time_in_seconds;
-        if (summary.termination_type != ceres::CONVERGENCE && summary.termination_type != ceres::USER_SUCCESS) break;
+        if (summary.termination_type == ceres::CONVERGENCE || summary.termination_type == ceres::USER_SUCCESS) continue;
+        outcome.termination = summary.termination_type == ceres::NO_CONVERGENCE ? T::CeresLimit
+            : summary.termination_type == ceres::USER_FAILURE ? T::CallbackFailure : T::Failure;
+        break;
     }
-    result.termination = settled ? "convergence" : exhausted ? "no_convergence" : termination_name(summary.termination_type);
     result.iterations = result.iteration_costs.empty() ? 0 : result.iteration_costs.size() - 1;  // entry 0 is the start
-    result.message = all_held ? "every coordinate is held at an active bound"
-        : exhausted ? (remaining <= 0 ? "iteration limit reached" : "time limit reached") : summary.message;
-    result.status = settled ? "converged" : summary.termination_type == ceres::FAILURE
-        || summary.termination_type == ceres::USER_FAILURE ? "failed" : "limit_reached";
+    result.message = summary.message;  // label() substitutes the fixed texts
 
     result.optimizer = optimizer;
     ObservationEvaluation final;
     if (!set.within_bounds(std::vector<double>(optimizer.begin(), optimizer.begin() + set.coordinates.size()))
         || !evaluator.evaluate(optimizer, true, final)) {
-        result.status = "failed";
-        result.message = "the final point could not be evaluated: " + result.message;
         result.statuses = std::move(final.statuses);
+        label(result, outcome);
         return result;
     }
     publish_candidate(result, std::move(final), optimizer);
-    result.usable = result.status != "failed" && finite(result.physical);
-    if (result.usable) {
-        covariance(result, request, n, optimizer, lower, upper);
+    outcome.candidate = outcome.termination != T::Failure && outcome.termination != T::CallbackFailure
+        && finite(result.physical) ? FitCandidate::Usable : FitCandidate::Values;
+    if (outcome.candidate == FitCandidate::Usable) {
+        outcome.covariance = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
         if (request.uncertainty) {
             auto reconciled = request.observations;
             request.coordinates.apply(reconciled, result.optimizer);
             evaluator.measurement_.apply(request, optimizer, reconciled);
-            finish_checks(result, request, &reconciled);
-        } else finish_checks(result, request);
+            outcome.acceptance = finish_checks(result, request, &reconciled);
+        } else outcome.acceptance = finish_checks(result, request);
         // A limit stop leaves the round-start gradient stale; this is a cache hit on the final evaluation.
         if (!evaluator.gradient_at(optimizer, gradient)) result.covariance.projected_gradient_norm = NAN;
         else for (std::size_t c = 0; c < width; ++c)
@@ -1341,10 +1394,13 @@ FitResult fit(const FitRequest& request) {
             auto event = stability_transition(i, optimizer, *result.stability_predictions[i], optimizer, fresh);
             if (!event.kind.empty()) result.stability_transitions.push_back(std::move(event));
             result.stability_predictions[i] = fresh;
-            if (!fresh.stability || !fresh.stability->available) { result.usable = false; result.acceptance = "unavailable"; }
-            else if (!fresh.stability->report.no_descent_in_trial_set) result.acceptance = "fail";
+            if (!fresh.stability || !fresh.stability->available) {
+                outcome.candidate = FitCandidate::Values;
+                outcome.acceptance = FitAcceptance::Unavailable;
+            } else if (!fresh.stability->report.no_descent_in_trial_set) outcome.acceptance = FitAcceptance::Fail;
         }
     }
+    label(result, outcome);
     return result;
 }
 

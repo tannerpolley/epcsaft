@@ -14,9 +14,9 @@ void require(bool ok, const char* cause) { if (!ok) throw std::invalid_argument(
 bool positive(double x) { return std::isfinite(x) && x > 0.0; }
 class Minimax final : public TNLP {
 public:
-    Minimax(const FitRequest& request, FitResult& result, const ObservationFunction& evaluate,
+    Minimax(const FitRequest& request, FitResult& result, FitOutcome& outcome, const ObservationFunction& evaluate,
             const std::vector<double>& start, const std::vector<CheckResult>& frozen)
-        : request_(request), result_(result), evaluate_(evaluate), spec_(*request.minimax), u_(start.size()) {
+        : request_(request), result_(result), outcome_(outcome), evaluate_(evaluate), spec_(*request.minimax), u_(start.size()) {
         result_.minimax.emplace();
         auto& out = *result_.minimax;
         out.frozen_checks = frozen;
@@ -180,14 +180,14 @@ public:
         const auto& out = *result_.minimax;
         publish_candidate(result_, std::move(evaluation_), std::vector<double>(out.point.begin(), out.point.begin() + u_));
         result_.initial_cost = result_.final_cost = NAN;
-        result_.weighted_residuals.clear(); result_.covariance.status = "minimax_unavailable";
-        result_.usable = true;
+        result_.weighted_residuals.clear(); outcome_.covariance = FitCovarianceStatus::MinimaxUnavailable;
+        outcome_.candidate = FitCandidate::Usable;
     }
     void point_values() {
         auto& out = *result_.minimax;
         require(assemble(out.point.data(), true), "minimax point unavailable");
         publish();
-        result_.status = "point_evaluated";
+        outcome_.termination = FitTermination::PointOnly;
         out.availability = "values_only";
     }
     void finish() {
@@ -265,29 +265,27 @@ public:
         out.feasible = out.primal <= spec_.tolerance;
         out.stationary = std::max({out.stationarity, out.dual_sign, out.complementarity}) <= spec_.tolerance;
         publish();
-        result_.status = out.solver_status == "SUCCESS" ? "converged" : "limit_or_failure";
-        result_.termination = out.solver_status;
-        result_.message = "local constrained estimate; global feasibility and optimality unresolved";
+        outcome_.termination = out.solver_status == "SUCCESS" ? FitTermination::IpoptSuccess : FitTermination::IpoptStop;
     }
     bool finalized_ = false;
     std::chrono::steady_clock::time_point begin_ = std::chrono::steady_clock::now();
 private:
     const FitRequest& request_;
     FitResult& result_;
+    FitOutcome& outcome_;  // this estimator's termination, candidate and covariance; the caller labels them
     const ObservationFunction& evaluate_;
     const MinimaxRequest& spec_;
     std::size_t u_;
     std::vector<double> variable_scales_;
     ObservationEvaluation evaluation_;
 };
-}  // namespace
-
-FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
-    const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate) {
+// The Ipopt solve with its outcome values left unlabelled, for fit_minimax to add the acceptance.
+FitResult solve(const FitRequest& request, const std::vector<double>& start, const std::vector<CheckResult>& frozen,
+    const ObservationFunction& evaluate, FitOutcome& outcome) {
     FitResult result; result.solver_options = request.controls.solver_options.resolved({});
     try {
         require(request.minimax.has_value(), "missing minimax declaration");
-        SmartPtr<Minimax> nlp = new Minimax(request, result, evaluate, start, frozen);
+        SmartPtr<Minimax> nlp = new Minimax(request, result, outcome, evaluate, start, frozen);
         auto& diagnostics = result.minimax->ipopt_diagnostics.emplace();
         const auto [initialized, returned] = equilibrium::run_ipopt(nlp, request.minimax->tolerance,
             request.controls.maximum_iterations, request.controls.maximum_elapsed_time_seconds, false, 1.0, nullptr, 0.0, {},
@@ -307,6 +305,15 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
     }
     return result;
 }
+}  // namespace
+
+FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
+    const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate) {
+    FitOutcome outcome;
+    auto result = solve(request, start, frozen, evaluate, outcome);
+    label(result, outcome);
+    return result;
+}
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
     FitResult failures; failures.solver_options = request.controls.solver_options.resolved({});
     try {
@@ -318,14 +325,16 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         const auto point = fit_start(request);
         const ObservationFunction callback = [&](const auto& u, bool columns, auto& out) { return evaluator.evaluate(u, columns, out); };
         FitResult result; result.solver_options = request.controls.solver_options.resolved({});
+        FitOutcome outcome;
         if (evaluation_point) {
-            Minimax nlp(request, result, callback, *evaluation_point, frozen);
+            Minimax nlp(request, result, outcome, callback, *evaluation_point, frozen);
             nlp.point_values();
-        } else result = solve_minimax(request, point, frozen, callback);
+        } else result = solve(request, point, frozen, callback, outcome);
         core::retain_first(result.first_numerical_failure, failures.first_numerical_failure, true);
         result.failures = std::move(failures.failures); result.trial_failures = failures.trial_failures;
         result.residual_evaluations = failures.residual_evaluations; result.jacobian_evaluations = failures.jacobian_evaluations;
-        if (result.usable || evaluation_point) finish_checks(result, request);
+        if (outcome.candidate == FitCandidate::Usable) outcome.acceptance = finish_checks(result, request);
+        label(result, outcome);
         return result;
     } catch (const std::bad_alloc&) {
         throw;

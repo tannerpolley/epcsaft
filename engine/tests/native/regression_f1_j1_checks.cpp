@@ -428,6 +428,28 @@ void check_f9_f10() {
               && steep_fit.failures[0].status == ObservationStatus::Nonfinite && steep_fit.failures[0].observation == 0
               && steep_fit.failures[0].jacobian,
           summary(steep_fit), "r1-f10");
+    // Neither the rejected Jacobian request at the committed point u nor the rejected trial at v is reused.
+    {
+        FitResult counts; ObservationEvaluator evaluator(request, counts, {0}); ObservationEvaluation committed, rejected, again;
+        const std::vector<double> u = request.coordinates.start(request.parameters), v{1.0e-200};
+        std::size_t step = 0;
+        const auto at = [&](bool ok, std::size_t jacobians) {
+            ++step;
+            truth("r1-f9/no_reuse/step" + std::to_string(step), "a rejected evaluation is never reused and leaves the committed record intact",
+                  ok && counts.residual_evaluations == 1 && counts.jacobian_evaluations == jacobians && counts.trial_failures == jacobians
+                      && (jacobians == 0 || counts.failures.back().jacobian),
+                  fields({field("residual_evaluations", counts.residual_evaluations), field("jacobian_evaluations", counts.jacobian_evaluations),
+                          field("trial_failures", counts.trial_failures)}), "r1-f9");
+        };
+        at(evaluator.evaluate(u, false, committed), 0);
+        at(!evaluator.evaluate(u, true, rejected), 1);
+        at(!evaluator.evaluate(v, true, rejected), 2);
+        at(evaluator.evaluate(u, false, again) && again.predictions == committed.predictions && again.residuals == committed.residuals
+               && again.weighted == committed.weighted && again.statuses == committed.statuses && again.cost == committed.cost
+               && again.optimizer_gradient == committed.optimizer_gradient, 2);
+        at(!evaluator.evaluate(u, true, rejected), 3);
+        at(!evaluator.evaluate(v, true, rejected), 4);
+    }
     // Three finite rows whose squares are representable but whose accumulated objective is not: the
     // failure is typed at the row where the running sum stops being finite, never an infinite cost.
     Observation steep_row = density(200.0, 1.0e5, {1.0}, DensityBranch::Liquid);
@@ -444,6 +466,13 @@ void check_f9_f10() {
               && accumulated.initial_cost == 0.0
               && accumulated.statuses.size() == 3,
           fields({summary(accumulated), field("row_residual", *predict(ethane, steep_row).residual)}), "r1-f10");
+    // A refused start publishes no rows, so its zero costs cannot be read as evaluated residuals.
+    for (const auto& [name, failed] : {std::pair{"refused", &refused}, {"weighted", &weighted}, {"accumulated", &accumulated}})
+        truth(std::string("r1-f9/zero_cost_is_not_a_residual/") + name, "a refused start has zero costs beside no predictions, residuals or weighted residuals",
+              failed->initial_cost == 0.0 && failed->final_cost == 0.0 && !failed->usable && failed->status == "initial_evaluation_failed"
+                  && failed->termination == "not_run" && failed->predictions.empty() && failed->residuals.empty()
+                  && failed->weighted_residuals.empty() && failed->covariance.status == "not_evaluated" && failed->acceptance == "not_evaluated",
+              fields({summary(*failed), field("predictions", failed->predictions.size()), field("initial_cost", failed->initial_cost)}), "r1-f9");
 }
 
 // ---- #86: first-order pressure-chart density actions against rebuilt-model closures.

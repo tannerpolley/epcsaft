@@ -130,7 +130,7 @@ struct TrialFailure final {
 // (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
-    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | active_bound | unavailable | minimax_unavailable
+    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | stability_penalty | active_bound | unavailable | minimax_unavailable
     std::string assumption;
     std::size_t rank = 0;
     std::vector<double> singular_values, right_vectors, left_vectors;
@@ -150,6 +150,35 @@ struct StabilityTransition final {
 };
 EPC_API StabilityTransition stability_transition(std::size_t, const std::vector<double>&, const Prediction&,
     const std::vector<double>&, const Prediction&);
+
+// A fit's outcome is four named values. fit() owns them for least squares and Minimax for minimax;
+// label() is the one place that writes their strings into FitResult, word for word.
+// Termination. NotRun: the request was refused before any optimizer ran, or minimax produced no point.
+// StartRejected: the start's evaluation was rejected. Failure: a round-start gradient failed or Ceres reported
+// FAILURE. CallbackFailure: Ceres USER_FAILURE. AllHeld: every coordinate is held at an active bound. Settled:
+// Ceres convergence with unchanged held membership. IterationLimit, TimeLimit: the fit's budgets. CeresLimit:
+// Ceres NO_CONVERGENCE. IpoptSuccess, IpoptStop: Ipopt's solver status. PointOnly: a minimax point evaluation.
+enum class FitTermination {
+    NotRun, StartRejected, Failure, CallbackFailure, AllHeld, Settled, IterationLimit, TimeLimit, CeresLimit,
+    IpoptSuccess, IpoptStop, PointOnly
+};
+// The returned point only. Absent: no committed evaluation of it is published; predictions, residuals and
+// weighted_residuals are empty and final_cost keeps its default zero. Values: its committed evaluation is
+// published but is not usable. Usable: published and usable. A published minimax candidate keeps NaN costs and
+// empty weighted_residuals.
+enum class FitCandidate { Absent, Values, Usable };
+// NotEvaluated until a usable candidate's covariance is examined. Available needs a settled interior point of
+// full rank without stability rows; every other value is the cause it is not.
+enum class FitCovarianceStatus {
+    NotEvaluated, Available, NotConverged, RankDeficient, StabilityPenalty, ActiveBound, Unavailable, MinimaxUnavailable
+};
+enum class FitAcceptance { NotEvaluated, Pass, Fail, Unavailable };
+struct FitOutcome final {
+    FitTermination termination = FitTermination::NotRun;
+    FitCandidate candidate = FitCandidate::Absent;
+    FitCovarianceStatus covariance = FitCovarianceStatus::NotEvaluated;
+    FitAcceptance acceptance = FitAcceptance::NotEvaluated;
+};
 
 struct FitResult final {
     std::string internal_factor_conditioning = "unavailable_internal_LM_or_KKT";
@@ -178,8 +207,10 @@ struct FitResult final {
     std::size_t jacobian_evaluations = 0;
     std::size_t trial_failures = 0;
     std::vector<double> iteration_seconds, iteration_costs;  // per Ceres iteration, 0 = the start
-    // Ceres: 0.5 sum(w r^2); minimax: unavailable (NaN). Failed Ceres evaluations are zero, never a
-    // partial or infinite sum, and only status and usable say whether a zero is a cost.
+    // Ceres: 0.5 sum(w r^2); minimax: unavailable (NaN). A failed Ceres evaluation leaves zero, never a partial
+    // or infinite sum. final_cost and the row vectors are evaluated if and only if a candidate was published
+    // (predictions non-empty). initial_cost is evaluated once the start was committed and survives a later
+    // final-point failure, where final_cost keeps its default zero.
     double initial_cost = 0.0;
     double final_cost = 0.0;
     FitCovariance covariance;
@@ -240,7 +271,8 @@ EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vecto
 // Shared unweighted check algebra and final publication, used by both native estimators.
 EPC_API std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);
 void publish_candidate(FitResult& result, ObservationEvaluation evaluation, const std::vector<double>& point);
-void finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled = nullptr);
+FitAcceptance finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled = nullptr);
+void label(FitResult& result, const FitOutcome& outcome);
 using ObservationFunction = std::function<bool(const std::vector<double>&, bool, ObservationEvaluation&)>;
 EPC_API FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);
