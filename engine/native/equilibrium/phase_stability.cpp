@@ -63,7 +63,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const DriverLimits* limits = nullptr) {
     // DriverLimits::spend reads no clock: the deadline is checked first.
     const auto charge = [limits](std::size_t& used, std::size_t cap) {
-        if (limits->check(); !limits->spend(used, cap)) throw std::runtime_error("elapsed work budget exhausted");
+        if (limits->check(); !limits->spend(used, cap)) limits->check();
     };
     const auto& S = phase.support;
     const auto n = static_cast<Eigen::Index>(S.size());
@@ -510,8 +510,8 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     double beta = capacity / 2.0;
     for (std::size_t check = 0; check <= 8; ++check, beta /= 2.0) {
         Quantities split{{"beta_mol", beta}, {"admitted", 0.0}};
+        if (limits) limits->check();
         try {
-            if (limits) limits->check();  // #987: a spent budget starts no further split
             const double remaining = at.amount[p] - beta;
             std::vector<double> x(w.size(), 0.0), error(w.size(), 0.0);
             double sum = 0.0, charge = 0.0, inventory_error = 0.0;

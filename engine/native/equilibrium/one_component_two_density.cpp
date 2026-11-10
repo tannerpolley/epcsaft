@@ -115,7 +115,7 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
     } else {
         out.phase = *layout;
         auto& at = out.phase;
-        at.parameter_standard.reset(); at.energy_actions.clear();
+        at.parameter_standard = ParameterStandardNotAttempted{}; at.energy_actions.clear();
         for (std::size_t p = 0; p < 2; ++p) {
             core::AssociationObservations phase_observations(p);
             at.point[at.shape[p].volume] = log_coefficient + u[p];

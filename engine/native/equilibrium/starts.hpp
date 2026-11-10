@@ -85,7 +85,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     }
                     if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
                     if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
-                    if (work.expired()) throw std::runtime_error("elapsed work budget exhausted in initialization");
+                    work.check("elapsed work budget exhausted in initialization");
                     auto speciated = complete || !uncomposed ? std::nullopt : speciated_start(seeded, &work, stages);
                     std::vector<bool> packings(seeded.problem.phases.size());
                     for (std::size_t p = 0; p < packings.size(); ++p) packings[p] = packed(p);
@@ -125,23 +125,28 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     reject_elapsed(result, scope); }
                 if (result.success) {
                     BranchCheck branch;
-                    try { branch = compiled.mode_count ? admit_null_mode(compiled, result)
-                              : check_density_branches(model, compiled, result, {}, true, scope, &work); }
-                    catch (const std::exception& error) { branch.message = error.what(); }
-                    if (!branch.accepted || work.expired()) {
-
-                        result.message = (work.expired() ? "elapsed work budget exhausted in admission" : branch.message) + "; driver: " + result.message;
-                        if (work.expired()) reject_elapsed(result, scope); else refuse(result);
+                    try {
+                        branch = compiled.mode_count ? admit_null_mode(compiled, result)
+                              : check_density_branches(model, compiled, result, {}, true, scope, &work);
+                        if (!branch.accepted || work.expired()) {
+                            result.message = (work.expired() ? "elapsed work budget exhausted in admission" : branch.message) + "; driver: " + result.message;
+                            if (work.expired()) reject_elapsed(result, scope); else refuse(result);
+                        }
+                    } catch (const std::exception& error) {
+                        const bool budget = dynamic_cast<const BudgetExhausted*>(&error);
+                        result.message = std::string(budget ? "elapsed work budget exhausted in admission" : error.what()) + "; driver: " + result.message;
+                        if (budget) reject_elapsed(result, scope); else refuse(result);
                     }
                 }
                 scope.finish(result.convergence);
                 out.causes[i] = result.message; out.results[i] = std::move(result);
                 if (out.results[i]->success && out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
             } catch (const std::exception& error) {
+                const bool budget = dynamic_cast<const BudgetExhausted*>(&error);
                 out.causes[i] = std::string(audit ? "driver/post-driver: " : "initialization: ") + error.what();
-                if (work.expired()) out.causes[i] += "; elapsed deadline exhausted";
+                if (budget) out.causes[i] += "; elapsed deadline exhausted";
                 if (audit) { audit->message = out.causes[i]; std::move(stages).report(*audit);
-                    if (work.expired()) reject_elapsed(*audit, scope); else refuse(*audit);
+                    if (budget) reject_elapsed(*audit, scope); else refuse(*audit);
                     out.results[i] = std::move(audit); }
             }
             if (out.results[i]) for (auto& rank : out.results[i]->rank_records)

@@ -131,6 +131,10 @@ BranchCheck check_density_branches(
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
 EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
 
+struct EPC_EXCEPTION BudgetExhausted final : std::runtime_error {
+    using std::runtime_error::runtime_error;
+};
+
 struct DriverLimits final {
     std::size_t iterations;
     std::chrono::steady_clock::time_point deadline;
@@ -146,7 +150,7 @@ struct DriverLimits final {
         exhausted = exhausted || (recovery && consumed >= iterations) || (attempt_cap && attempts > attempt_cap);
         return exhausted || std::chrono::steady_clock::now() >= deadline;
     }
-    void check() const { if (expired()) throw std::runtime_error("elapsed work budget exhausted"); }
+    void check(const char* cause = "elapsed work budget exhausted") const { if (expired()) throw BudgetExhausted(cause); }
     // Before one evaluation or Hessian callback: false, refusing it, once any recovery cap is spent.
     bool spend(std::size_t& used, std::size_t cap) const {
         exhausted = exhausted || (recovery && (used >= cap || consumed >= iterations));
@@ -373,9 +377,10 @@ private:
     // One latest-point phase evaluation per solve; every derived quantity is cached
     // with it and invalidated when the callback point changes.
     void retain_callback_failure(const std::exception& error, const char* operation) {
-        if (dynamic_cast<const std::domain_error*>(&error) && std::strcmp(error.what(), "amount step") == 0) return;
+        if (dynamic_cast<const BudgetExhausted*>(&error)) return;
         core::retain_failure(observations_.first_numerical_failure, error, operation);
     }
+    bool step_admitted(const Ipopt::Number* x);
     const PhasePoint& prepared(Ipopt::Index n, const Ipopt::Number* x);
     const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 

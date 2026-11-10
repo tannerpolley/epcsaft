@@ -587,8 +587,8 @@ const std::vector<double>& GibbsMinimizer::search_base() {
     return base_;
 }
 
-const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
-    if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
+bool GibbsMinimizer::step_admitted(const Ipopt::Number* x) {
+    if (limits_) limits_->check();
     // ALG-EQUILIBRIUM: a trial point keeps at least kappa_N of each free amount's distance to its relaxed lower bound.
     if (Ipopt::IsValid(search_)) {
         const auto& base = search_base();
@@ -596,26 +596,24 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         for (const std::size_t i : amount_columns_)
             refused = refused || (base[i] > lower_[i]
                 && x[i] - lower_[i] < policy::EQUILIBRIUM_AMOUNT_STEP_RETENTION.value * (base[i] - lower_[i]));
-        if (refused) throw std::domain_error("amount step");
+        if (refused) return false;
     }
+    return true;
+}
+
+const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
     std::vector<double> candidate(x, x + n);
     for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
     if (!prepared_.has_value() || prepared_->point != candidate) {
+        prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure);
         rows_.reset();
         jacobian_.reset();
         gradient_.reset();
         objective_hessian_.reset();
         constraint_hessian_.reset();
-        try {
-            prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure);
-        } catch (const std::exception& error) {
-            prepared_.reset();
-
-            throw;
-        }
         ++prepared_points_;
     }
-    if (limits_ && limits_->expired()) throw std::runtime_error("elapsed work budget exhausted");
+    if (limits_) limits_->check();
     return *prepared_;
 }
 
@@ -632,6 +630,7 @@ bool GibbsMinimizer::eval_f(
     if (limits_ && !limits_->spend(limits_->evaluations, limits_->evaluation_cap)) return false;
     ++evaluations_;
     try {
+        if (!compiled_.feasibility_cell() && !step_admitted(x)) return false;
         value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
         return std::isfinite(value);
     } catch (const std::exception& error) {
@@ -645,6 +644,7 @@ bool GibbsMinimizer::eval_grad_f(
 ) {
     core::Scope callback("ipopt_eval_grad_f");
     try {
+        if (!step_admitted(x)) return false;
         const auto& point = prepared(n, x);
         if (!gradient_.has_value()) gradient_ = compiled_.objective_gradient_at(point);
         for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
@@ -661,6 +661,7 @@ bool GibbsMinimizer::eval_g(
 ) {
     core::Scope callback("ipopt_eval_g");
     try {
+        if (!step_admitted(x)) return false;
         const auto& values = rows_at(n, x).values;
         const auto rows = constraint_rows();
         for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
@@ -689,6 +690,7 @@ bool GibbsMinimizer::eval_jac_g(
         return entry == nele_jac;
     }
     try {
+        if (!step_admitted(x)) return false;
         const auto& point = prepared(n, x);
         if (!jacobian_.has_value()) jacobian_ = compiled_.jacobian_at(point);
         Ipopt::Index entry = 0;
@@ -725,6 +727,7 @@ bool GibbsMinimizer::eval_h(
     }
     std::fill(values, values + nele_hess, 0.0);
     try {
+        if (!step_admitted(x)) return false;
         const auto& point = prepared(n, x);
         // Objective curvature is multiplier independent; the weighted constraint curvature is
         // recombined whenever the optimizer multipliers change at the same point.
@@ -1527,7 +1530,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             std::vector<double> exported;
             for (const auto& value : point) exported.push_back(static_cast<double>(value));
             if (!limits->spend(limits->evaluations, limits->evaluation_cap) || limits->expired())
-                throw std::runtime_error("work budget exhausted before export admission");
+                limits->check("work budget exhausted before export admission");
             const auto at = compiled.prepare(exported, false, &refined.first_numerical_failure);
             const auto rows = compiled.evaluate_at(at);
             refined.residuals = rows.values; refined.classified_residuals = compiled.classified_residuals(at, rows.values);
@@ -1810,7 +1813,7 @@ static EquilibriumResult run_driver_once(
     } catch (const std::exception& error) {
         auto& observed = publishing && audit ? *audit : result;
         observations.merge(observed.rank_records);
-        core::retain_failure(observed.first_numerical_failure, error, "equilibrium preparation");
+        core::retain_failure(observed.first_numerical_failure, error, publishing ? "equilibrium publication" : "equilibrium preparation");
         if (audit && !publishing) StageWork::publish_observations(result, *audit);
         throw;
 }
@@ -1850,7 +1853,7 @@ EquilibriumResult recover_physical_amounts(
             const auto branches = check_density_branches(*compiled.model, compiled, retried, {}, true, retry_scope, limits);
             if (!branches.accepted) throw std::runtime_error(branches.message);
         }
-        if (limits && limits->expired()) throw std::runtime_error("elapsed work budget exhausted");
+        if (limits) limits->check();
     } catch (const std::exception& error) {
         core::retain_failure(retried.first_numerical_failure, error, "physical amount retry");
 

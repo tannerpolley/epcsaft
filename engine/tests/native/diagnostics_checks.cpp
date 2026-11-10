@@ -543,8 +543,16 @@ void producer_boundaries() {
     callback.get_nlp_info(n, m, j, h, style);
     auto refused = initial; refused[0] = 10000.0;
     std::vector<double> rows(m);
+    const bool initial_callback = callback.eval_g(n, initial.data(), true, m, rows.data());
+    const auto initial_rows = rows;
+    const auto prepared_points = callback.prepared_points();
     const bool rejected = !callback.eval_g(n, refused.data(), true, m, rows.data());
     const bool recovered_callback = callback.eval_g(n, initial.data(), true, m, rows.data());
+    const bool cached = initial_callback && recovered_callback && rows == initial_rows
+        && callback.prepared_points() == prepared_points;
+    recording_support::compare("callback-cache", "prepared-points", "1", callback.prepared_points(), prepared_points, {},
+        "Relationship", "constraint-callback", "a failed trial preserves the preceding point and rows", "absolute", 0.0, 0.0,
+        cached, "native.diagnostics.c3", "C3", "callback", "prepared-point", "good,bad,same-good", "cached rows unchanged");
     epcsaft::equilibrium::EquilibriumResult observed;
     callback.publish_observations(observed);
     const bool unavailable = rejected && recovered_callback && observed.first_numerical_failure

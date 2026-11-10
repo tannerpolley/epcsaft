@@ -289,6 +289,20 @@ void spinodal() {
         {4054.856203725969,3910613.0924964524,12859.059488761855,3405203.649787669},
         {4652.0793682042395,4563624.675611604,11747.012051799871,5298968.3388277},
         {5541.783794029926,5414300.1339770015,10197.837043437796,6552596.485374888}};
+    const auto interrupted = compile_problem(model, cell(240, 4000));
+    DriverLimits spent{1, std::chrono::steady_clock::time_point::max()};
+    spent.recovery = true; spent.consumed = spent.iterations;
+    std::string cause;
+    bool budget_exception = false;
+    try { spinodal_search(interrupted, &spent); }
+    catch (const BudgetExhausted& error) { budget_exception = true; cause = error.what(); }
+    catch (const std::exception& error) { cause = error.what(); }
+    const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_search
+        && interrupted.spinodal_search->evaluations == 0 && interrupted.spinodal_search->finite_limits.empty();
+    recording_support::compare("spinodal/exhausted", "budget-cause", "1", budget ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("cause", cause),
+            recording_support::field("budget_exception", budget_exception)}), "Relationship", "spinodal-search",
+        "a spent budget starts no Hessian sample and creates no density gap", "absolute", 0.0, 0.0, budget);
     for (int branch=0;branch<2;++branch) {
         const double guess=branch?13000:4000;
         for (int t=0;t<3;++t) {

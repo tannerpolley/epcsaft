@@ -2,6 +2,8 @@
 #include "equilibrium_checks_shared.hpp"
 #include "caloric_specification_inputs.hpp"
 #include "caloric_specification_shared.hpp"
+#include <cstdlib>
+#include <filesystem>
 namespace caloric_specification_checks {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
@@ -38,6 +40,26 @@ inline EquilibriumProblem binary() {
 void roundtrips() {
     const HelmholtzModel m(properties_support::neutral_binary(),{},records());
     auto p=binary();const auto base=solve_equilibrium(m,p);CHECK(base.has_state());
+    const auto missing = std::filesystem::current_path() / "build/issue-1164/missing-ipopt-options.opt";
+    CHECK(!std::filesystem::exists(missing));
+    const char* setting = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    const auto previous = setting ? std::optional<std::string>(setting) : std::nullopt;
+    CHECK(setenv("EPCSAFT_IPOPT_OPTIONS_FILE", missing.c_str(), 1) == 0);
+    EquilibriumStart complete; complete.coordinates = base.coordinates;
+    const auto failed = solve_equilibrium_starts(m, p, {complete}, {});
+    if (previous) CHECK(setenv("EPCSAFT_IPOPT_OPTIONS_FILE", previous->c_str(), 1) == 0);
+    else CHECK(unsetenv("EPCSAFT_IPOPT_OPTIONS_FILE") == 0);
+    CHECK(!failed.selected && failed.results[0]);
+    const auto& diagnostic = *failed.results[0];
+    const bool retained = diagnostic.diagnostic_options_file == missing.string()
+        && diagnostic.solver_status == "UNASSIGNED"
+        && diagnostic.ipopt_diagnostics && diagnostic.solver_settings.empty() && diagnostic.linear_solver.empty()
+        && diagnostic.message.find("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: " + missing.string()) != std::string::npos;
+    recording_support::compare("ipopt-options/missing", "retained-diagnostics", "1", retained ? 1.0 : 0.0, 1.0,
+        recording_support::fields({recording_support::field("cause", diagnostic.message),
+            recording_support::field("options_file", diagnostic.diagnostic_options_file),
+            recording_support::field("solver_status", diagnostic.solver_status)}),
+        "Relationship", "driver-diagnostics", "a configuration refusal retains the driver observations", "absolute", 0.0, 0.0, retained);
     for(bool h:{true,false}) for(double n:{1.0,2.5}) {
         auto q=p;q.feed.values={0.5*n,0.5*n};const auto ref=solve_equilibrium(m,q);CHECK(ref.has_state());
         recovered(m,q,ref,h,165,(h?"PH1/":"PS1/")+std::to_string(n));

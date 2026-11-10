@@ -30,15 +30,23 @@ void pressure_basis(const HelmholtzModel& model, const EquilibriumResult& result
     if (!std::isfinite(*ln_q)) { row.pressure_cause = "pressure-basis actions undefined at a structurally zero activity"; return; }
     const auto branch = result.declaration->phases[phase].kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
     row.log_pressure_quotient_actions.assign(x.size() + 2, std::nullopt);
-    for (std::size_t k = 0; k < x.size() + 2; ++k) try {
+    try { for (std::size_t k = 0; k < x.size() + 2; ++k) {
         PressureActionDirection direction{double(k == 0), double(k == 1), std::vector<double>(x.size(), 0.0), {}};
         if (k > 1) for (std::size_t i = 0; i < x.size(); ++i) direction.composition[i] = (i == k - 2) - x[i];
         const auto batch = model.pressure_actions(T, P, x, branch, {PropertyObservable::LogFugacityCoefficient}, {direction});
         double action = k == 1 ? dnu / P : 0.0;
-        for (std::size_t i = 0; i < x.size(); ++i) if (nu[i] != 0)
-            action += nu[i] * (batch.results.at(i).action.value() + (k > 1 ? double(i == k - 2) / x[i] - 1.0 : 0.0));
+        for (std::size_t i = 0; i < x.size(); ++i) if (nu[i] != 0) {
+            const auto& item = batch.results.at(i);
+            if (!item.action) {
+                row.pressure_cause = solved_state_status_name(solved_state_status(item.status));
+                row.log_pressure_quotient_actions.clear(); return;
+            }
+            action += nu[i] * (*item.action + (k > 1 ? double(i == k - 2) / x[i] - 1.0 : 0.0));
+        }
         row.log_pressure_quotient_actions[k] = action;
-    } catch (const std::exception& error) { row.pressure_cause = error.what(); }
+    } } catch (const std::exception& error) {
+        row.pressure_cause = error.what(); row.log_pressure_quotient_actions.clear();
+    }
 }
 
 std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* model,

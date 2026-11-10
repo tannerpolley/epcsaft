@@ -851,7 +851,10 @@ void check_e4_c() {
     const auto vanished = epcsaft::equilibrium::solve_equilibrium(model, below);
     record_bool("e4-c/liquid", "e4-c", "the liquid vanishes at 0.8 times the dew pressure",
         dew_point.success && !vanished.success && vanished.message.rfind("phase L vanished", 0) == 0,
-        recording_support::fields({recording_support::field("message", vanished.message)}));
+        recording_support::fields({recording_support::field("message", vanished.message),
+            recording_support::field("iterations", vanished.iterations),
+            recording_support::field("evaluations", vanished.evaluations),
+            recording_support::field("hessian_calls", vanished.hessian_calls)}));
 }
 
 void check_e4_d() {
@@ -1383,6 +1386,14 @@ void check_saturation_loading() {
     const auto refused = search_loading(model, bubble, *bubble.loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5}, &exhausted);
     CHECK(refused.nodes.empty() && !refused.accepted && !refused.complete && refused.iterations == 512
         && refused.evaluations == 0 && refused.hessian_calls == 0);
+    const auto budget_cause = std::find(refused.causes.begin(), refused.causes.end(), "budget_exhausted");
+    const auto gap_cause = std::find(refused.causes.begin(), refused.causes.end(), "unexamined_gap");
+    e4::record_bool("saturation-loading/exhausted", "saturation-loading", "a spent limit retains the budget and first failure causes",
+        budget_cause != refused.causes.end() && gap_cause != refused.causes.end() && refused.first_numerical_failure
+            && refused.first_numerical_failure->cause == "saturation search: elapsed work budget exhausted",
+        recording_support::fields({recording_support::field("budget_cause", budget_cause == refused.causes.end() ? "" : *budget_cause),
+            recording_support::field("gap_cause", gap_cause == refused.causes.end() ? "" : *gap_cause),
+            recording_support::field("first_failure", refused.first_numerical_failure ? refused.first_numerical_failure->cause : "")}));
     const auto alpha = result.coordinates[c.loading_column()];
     const auto estimates = equilibrium_numerical_estimates(c, result);
     CHECK(estimates.loading.available && estimates.loading.resolved);

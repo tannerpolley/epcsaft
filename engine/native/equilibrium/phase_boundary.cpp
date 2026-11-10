@@ -250,7 +250,7 @@ PhaseStart start_compositions(const CompiledSystem& compiled, core::Scope& scope
 
 // ALG-EQUILIBRIUM: a converged ln P start, otherwise the existing one-step bubble seed.
 double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double>& point,
-                            const std::vector<std::size_t>& phase_offsets, const PhaseStart& start, core::Scope& scope, bool& corrected, bool correct_dense, const DriverLimits* limits, bool allow_loop = true) {
+                            const std::vector<std::size_t>& phase_offsets, const PhaseStart& start, core::Scope& scope, bool& corrected, bool correct_dense, const DriverLimits* limits, StageWork* stages, bool allow_loop = true) {
     const auto& problem = compiled.problem;
     const double seed = compiled.seed_pressure(), fallback = start.pressure > 0.0 ? start.pressure : seed;
     const bool loop = allow_loop && pressure_loop_eligible(compiled);
@@ -341,8 +341,11 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
             }
             pressure = stepped;
         }
-    } catch (const std::exception&) { if (corrected) throw; }  // Uncorrected failures retain the original path.
-    return loop ? fugacity_pressure_seed(compiled, point, phase_offsets, start, scope, corrected, false, limits, false) : fallback;
+    } catch (const std::exception& error) {
+        if (corrected) throw;
+        if (stages) retain_density_failure(stages->first_numerical_failure, error, "pressure seed");
+    }
+    return loop ? fugacity_pressure_seed(compiled, point, phase_offsets, start, scope, corrected, false, limits, stages, false) : fallback;
 }
 
 // Ideal-solution chemical equilibrium with frozen c_j: minimize sum_j n_j (c_j + ln n_j/n) subject to B n = b
@@ -1080,6 +1083,7 @@ const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const Driv
         std::optional<HelmholtzSpectrum> at;
         try { at = sample(rho); }
         catch (const std::bad_alloc&) { throw; }
+        catch (const BudgetExhausted&) { throw; }
         catch (const std::exception& error) {
             DensityDiagnosticPoint limit;
             limit.lower = previous ? last : NAN; limit.upper = rho;
@@ -1115,6 +1119,7 @@ const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const Driv
         HelmholtzSpectrum at;
         try { at = sample(m); }
         catch (const std::bad_alloc&) { throw; }
+        catch (const BudgetExhausted&) { scan.seed = NAN; throw; }
         catch (const std::exception& error) {
             DensityDiagnosticPoint limit;
             limit.lower = a; limit.upper = m; limit.cause = error.what(); limit.stop = "hessian_unavailable";
@@ -1257,7 +1262,9 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             while (!seed.has_state() && !pure && !liquid_sided(t) && inside(t)) t *= policy::COOLING_RATIO.value;
             seed_problem.temperature = FreeValue::fixed(t);
             if (t != compiled.seed_temperature() && inside(t)) cooled = compile_problem(*compiled.model, seed_problem);
-        } catch (const std::exception&) {}
+        } catch (const std::exception& error) {
+            if (stages) retain_density_failure(stages->first_numerical_failure, error, "cooled seed");
+        }
         if (seed.has_state() || cooled) {
             const auto coordinates = cooled ? boundary_start(*cooled, true, limits, stages) : seed.coordinates;
             double T = cooled ? cooled->seed_temperature() : *seed.temperature;
@@ -1321,7 +1328,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         && problem.solids.empty() && !problem.discovery && !problem.enthalpy_j && !problem.entropy_j_per_k && !problem.volume_m3
         && !problem.azeotrope && !problem.critical && !problem.spinodal && !problem.envelope && !problem.loading
         && problem.phases.size() == 2 && free_phases == 1;
-    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits);
+    const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits, stages);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
@@ -2107,7 +2114,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         }
     } catch (const std::exception& error) {
         core::retain_failure(out.first_numerical_failure, error, "saturation search");
-        fail(work.expired() ? "budget_exhausted" : error.what()); fail("unexamined_gap");
+        fail(dynamic_cast<const BudgetExhausted*>(&error) ? "budget_exhausted" : error.what()); fail("unexamined_gap");
     }
     admit_loading_search(out);
     out.iterations = work.consumed; out.evaluations = work.evaluations;

@@ -18,6 +18,7 @@
 #include <string_view>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
 namespace epcsaft::core { class Scope; }
@@ -323,6 +324,9 @@ struct StandardTerm final {
 };
 
 struct ReferenceCalorics;
+struct ParameterStandardNotAttempted final {};
+struct ParameterStandardRefused final { std::string cause; };
+using ParameterStandardOutcome = std::variant<ParameterStandardNotAttempted, StandardTerm, ParameterStandardRefused>;
 // One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.
 template <typename Base>
 struct PhasePointValues final {
@@ -340,7 +344,7 @@ struct PhasePointValues final {
     StandardTerm standard;
     // A referenced problem's standard term with jets along every active parameter, built on the
     // first parameter-driven row series at this point and reused by every later direction.
-    mutable std::optional<StandardTerm> parameter_standard;
+    mutable ParameterStandardOutcome parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
     // An anchored PH/PS cell's g jets at this centre; row_series adds pressure or parameter columns on demand.
     mutable std::shared_ptr<const ReferenceCalorics> calorics;

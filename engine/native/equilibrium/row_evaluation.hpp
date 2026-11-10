@@ -878,23 +878,31 @@ RowSeries CompiledSystem::row_series(
     // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
     // exactly. If any slope is refused, each direction resolves its own, leaving sibling directions intact.
     const bool reuse = !reference_diagnostics.empty() && control[0] == 0.0 && control[1] == 0.0;
+    const auto* cached = std::get_if<StandardTerm>(&prepared.parameter_standard);
     const auto parameter_cache_ready = [&] {
-        return prepared.parameter_standard.has_value()
-            && !(order > 1 && pressure_jets && prepared.parameter_standard->pressure_parameter_derivative.empty())
-            && !(order > 1 && temperature_jets && prepared.parameter_standard->temperature_parameter_derivative.empty())
-            && prepared.parameter_standard->pair_coordinates == pairs;
+        return cached
+            && !(order > 1 && pressure_jets && cached->pressure_parameter_derivative.empty())
+            && !(order > 1 && temperature_jets && cached->temperature_parameter_derivative.empty())
+            && cached->pair_coordinates == pairs;
     };
-    if (reuse && parameter_jets && !parameter_cache_ready()) {
+    if (reuse && parameter_jets && !parameter_cache_ready()
+        && !std::holds_alternative<ParameterStandardRefused>(prepared.parameter_standard)) {
         try {
+            core::Scope scope("parameter_standard");
             prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, std::max<std::size_t>(order, 1),
                 pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0), nullptr, pairs);
-        } catch (const std::invalid_argument&) {}
+        } catch (const std::invalid_argument& error) {
+            prepared.parameter_standard = ParameterStandardRefused{error.what()};
+            scope.probe("parameter_standard_refused", {}, 0,
+                std::get<ParameterStandardRefused>(prepared.parameter_standard).cause.c_str());
+        }
+        cached = std::get_if<StandardTerm>(&prepared.parameter_standard);
     }
     const auto& standard = reference_diagnostics.empty()  // T jets and pairs reach only the solids' ln K columns here
         ? standard_term(*this, prepared.temperature, prepared.pressure, order, false, temperature_jets, active_control, nullptr, pairs)
         : !reuse || (parameter_jets && !parameter_cache_ready())
             ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
-        : parameter_jets ? *prepared.parameter_standard : prepared.standard;
+        : parameter_jets ? *cached : prepared.standard;
     if (prepared.calorics) {
         // Pressure and parameter columns join the anchored g at this centre on first need; a motion that reads an
         // unavailable column is refused with its cause.
