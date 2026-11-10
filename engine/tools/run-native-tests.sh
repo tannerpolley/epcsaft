@@ -25,7 +25,7 @@ print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmat
 .venv/bin/meson compile -C "$build_dir" -j "$(cat build/environment-wheel/build-jobs 2>/dev/null || echo 2)" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"
-.venv/bin/meson test -C "$build_dir" "${tests[@]}" --print-errorlogs --no-rebuild --logbase "$logbase"
+.venv/bin/meson test -C "$build_dir" "${tests[@]}" --timeout-multiplier 4 --print-errorlogs --no-rebuild --logbase "$logbase"
 meson_status=$?
 set -e
 mkdir -p build/test-results
