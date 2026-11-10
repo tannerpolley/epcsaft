@@ -5,9 +5,14 @@ Usage: tools/clean-build [--dry-run]
 Run daily by the user timer epcsaft-clean-build.timer. In order:
 1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
    and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
-2. build/issue-N, once issue N has been closed for DAYS and no tracked file cites build/issue-N: keep only reports
-   (*.md, *.qmd, *.html, *.png of at most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline* copies)
-   and delete everything else. Cited folders stay whole until their evidence moves into the citing analysis.
+2. build/issue-N: retention() names one state per folder, the first that applies, and prints it:
+   open (issue or pull request N open on Forgejo), unknown (its Forgejo state cannot be read), recent (closed less than
+   DAYS ago), cited (a tracked file names build/issue-N), unpromoted (it holds a file a tracked analyses/ record names
+   by SHA-256 whose exact bytes no Git object reachable from a ref holds, nor an analyses/**.gz committed at HEAD
+   decompresses to), expired. Only "closed" on Forgejo can expire. Only an expired folder is cleaned: keep only
+   reports (*.md, *.qmd, *.html, *.png of at most 5 MiB, outside .venv/venv/site-packages/source/meson/baseline*
+   copies) and delete everything else. Unpromoted folders stay whole and are listed in build/evidence-to-promote.md
+   until each listed file is promoted or discarded. Unreadable citations or hash records stop the run.
 3. build/pr-gates/pr-N once pull request N is no longer open.
 4. Regular files directly in build/archive older than DAYS whose name carries no open issue or PR number and
    that no tracked file cites.
@@ -18,6 +23,8 @@ ancestors for a symlink while the job runs; three safety reviews (#783) found re
 case, which the owner accepted.
 """
 import argparse
+import gzip
+import hashlib
 from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
@@ -36,31 +43,100 @@ REPORT_MAX_BYTES = 5 * 2**20
 COPY_DIRS = {".venv", "venv", "site-packages", "source", "meson"}
 
 
-def keep_reports(folder, dry):
-    """Delete everything under folder except small report files outside environment and checkout copies."""
-    freed = 0
+def removable(folder):
+    """Yield what an expired folder loses: symlinks, environment and checkout copies, then non-report files."""
     for top, dirs, files in os.walk(folder, topdown=True):
         for name in list(dirs):
             path = Path(top, name)
             if path.is_symlink() or name in COPY_DIRS or name.startswith("baseline"):
                 dirs.remove(name)
-                if not path.is_symlink():
-                    freed += sum(f.lstat().st_size for f in path.rglob("*") if f.is_file() and not f.is_symlink())
-                if not dry:
-                    path.unlink() if path.is_symlink() else shutil.rmtree(path)
+                yield path
         for name in files:
             path = Path(top, name)
             info = path.lstat()
-            if stat.S_ISREG(info.st_mode) and path.suffix in REPORT_SUFFIXES and info.st_size <= REPORT_MAX_BYTES:
-                continue
-            freed += info.st_size if stat.S_ISREG(info.st_mode) else 0
+            if not (stat.S_ISREG(info.st_mode) and path.suffix in REPORT_SUFFIXES and info.st_size <= REPORT_MAX_BYTES):
+                yield path
+
+
+def keep_reports(folder, dry):
+    """Delete everything under folder except small report files outside environment and checkout copies."""
+    freed = 0
+    for path in removable(folder):
+        if path.is_dir() and not path.is_symlink():
+            freed += sum(f.lstat().st_size for f in path.rglob("*") if f.is_file() and not f.is_symlink())
             if not dry:
-                path.unlink()
+                shutil.rmtree(path)
+            continue
+        info = path.lstat()
+        freed += info.st_size if stat.S_ISREG(info.st_mode) else 0
+        if not dry:
+            path.unlink()
     if not dry:
         for top, dirs, files in os.walk(folder, topdown=False):
             if top != str(folder) and not os.listdir(top):
                 os.rmdir(top)
     return freed
+
+
+def digest(path, algorithm, prefix=b""):
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, lambda: hashlib.new(algorithm, prefix)).hexdigest()
+
+
+def retention(folder, record, cited, recorded, promoted):
+    """Return (state, reason, held) for build/issue-N from its Forgejo record (None when unreadable), the cited issue
+    numbers, recorded {sha256: tracked analyses/ file naming it} and promoted (reachable blob ids and SHA-256 of
+    decompressed analyses/**.gz committed at HEAD). held lists (file, record) for unpromoted, else []."""
+    number = int(folder.name.removeprefix("issue-"))
+    if record and record.get("state") == "open":
+        return "open", f"issue or pull request {number} is open", []
+    if not record or record.get("state") != "closed":
+        return "unknown", "Forgejo state unreadable", []
+    try:
+        closed = datetime.fromisoformat(record["closed_at"].replace("Z", "+00:00"))
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return "unknown", "Forgejo state unreadable", []
+    if closed > datetime.now(timezone.utc) - timedelta(days=DAYS):
+        return "recent", f"closed {closed:%Y-%m-%d}", []
+    if number in cited:
+        return "cited", f"a tracked file names build/{folder.name}", []
+    held = []
+    for path in removable(folder):
+        relative = path.relative_to(folder).as_posix()
+        # R5 (lead, 2026-11-09): generated from a recorded value; it cannot be promoted.
+        if not stat.S_ISREG(path.lstat().st_mode) or f"/{relative}".endswith("/build/environment-wheel/build-jobs"):
+            continue
+        sha256 = digest(path, "sha256")
+        # The unfiltered blob id, as `git hash-object --no-filters`: Git's line-ending normalization must not match.
+        if sha256 in recorded and sha256 not in promoted and \
+                digest(path, "sha1", b"blob %d\0" % path.stat().st_size) not in promoted:
+            held.append((relative, recorded[sha256]))
+    if held:
+        return "unpromoted", "holds " + "; ".join(f"{file} (recorded in {source})" for file, source in held), held
+    return "expired", "closed, uncited, no recorded unpromoted file", []
+
+
+def recorded_and_promoted(root):
+    """The SHA-256 tokens tracked analyses/ files record, and the bytes Git holds."""
+    grep = subprocess.run(["git", "grep", "-oP", "[0-9a-f]{64}", "--", "analyses"], cwd=root,
+                          capture_output=True, text=True)
+    objects = subprocess.run(["git", "rev-list", "--objects", "--all"], cwd=root, capture_output=True, text=True)
+    tree = subprocess.run(["git", "ls-tree", "-r", "-z", "HEAD", "--", "analyses"], cwd=root, capture_output=True,
+                          text=True)
+    # git grep exits 1 ("no match") after an unreadable file, saying so only on stderr.
+    if grep.returncode not in (0, 1) or grep.stderr or objects.returncode or tree.returncode:
+        sys.exit("clean-build: recorded hashes or Git objects unknown (git failed); nothing removed")
+    recorded = {}
+    for source, sha256 in re.findall(r"^(.+):([0-9a-f]{64})$", grep.stdout, re.M):
+        recorded.setdefault(sha256, source)
+    promoted = {line.split()[0] for line in objects.stdout.splitlines()}
+    # Committed blobs only: a working-copy or staged .gz holds no bytes Git keeps.
+    for entry in tree.stdout.split("\0"):
+        if entry.endswith(".gz") and entry.split()[1] == "blob":
+            blob = subprocess.run(["git", "cat-file", "blob", entry.split()[2]], cwd=root, check=True,
+                                  capture_output=True).stdout
+            promoted.add(hashlib.sha256(gzip.decompress(blob)).hexdigest())
+    return recorded, promoted
 
 
 def main():
@@ -96,28 +172,46 @@ def main():
         elif not dry:
             attention.unlink(missing_ok=True)
 
+    recorded, promoted = recorded_and_promoted(root)
     grep = subprocess.run(["git", "grep", "-ohE", r"build/(issue-[0-9]+|archive/[A-Za-z0-9._-]+)"], cwd=root,
                           capture_output=True, text=True)
-    if grep.returncode > 1:
+    if grep.returncode not in (0, 1) or grep.stderr:
         sys.exit("clean-build: cited build/ paths unknown (git grep failed); nothing removed")
     cited = {int(n) for n in re.findall(r"build/issue-(\d+)", grep.stdout)}
     cited_archives = set(re.findall(r"build/archive/([A-Za-z0-9._-]+)", grep.stdout))
     verb = "would free" if dry else "freed"
-    cutoff = datetime.now(timezone.utc) - timedelta(days=DAYS)
 
+    to_promote = []
     for folder in sorted(build.glob("issue-*")):
-        number = re.fullmatch(r"issue-(\d+)", folder.name)
-        if folder.is_symlink() or not folder.is_dir() or not number or int(number[1]) in open_issues | open_prs | cited:
+        if folder.is_symlink() or not folder.is_dir() or not re.fullmatch(r"issue-\d+", folder.name):
             continue
         try:
-            closed = state.issue(number[1])
+            record = state.issue(folder.name.removeprefix("issue-"))
         except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
-            continue
-        if closed["state"] != "closed" or datetime.fromisoformat(closed["closed_at"].replace("Z", "+00:00")) > cutoff:
+            record = None
+        name, reason, held = retention(folder, record, cited, recorded, promoted)
+        print(f"{name} build/{folder.name} {reason}")
+        if held:
+            size = sum(f.lstat().st_size for f in folder.rglob("*") if f.is_file() and not f.is_symlink())
+            to_promote += [f"- build/{folder.name}/{file}: SHA-256 recorded in {source} "
+                           f"(folder {size / 2**30:.1f} GiB)\n" for file, source in held]
+        if name != "expired":
             continue
         freed = keep_reports(folder, dry)
         if freed >= 2**20:
             print(f"{verb} {freed / 2**20:.0f} MiB in build/{folder.name} (reports kept)")
+    listing = build / "evidence-to-promote.md"
+    if not dry and to_promote:
+        listing.write_text(
+            f"# Evidence the {datetime.now():%Y-%m-%d} cleanup holds\n\nAn analysis records each file below by "
+            "SHA-256 and no Git object holds its exact bytes, so its whole folder is kept. Resolve every file: promote "
+            "it (commit the exact bytes into the analysis leaf that records it, as a `-text` path in .gitattributes or "
+            "gzipped) or discard it (delete it and state the loss in that leaf, naming the issue number and the "
+            "record, never the path build/issue-N, which would cite and keep the folder). Then "
+            "`tools/clean-build --dry-run` shows the folder expired or names what still holds it.\n\n"
+            + "".join(to_promote))
+    elif not dry:
+        listing.unlink(missing_ok=True)
 
     for folder in sorted((build / "pr-gates").glob("pr-*")):
         number = re.fullmatch(r"pr-(\d+)", folder.name)

@@ -140,6 +140,11 @@ exact commit. `--dry-run` plans without changing anything. The daily
 `tools/clean-build` timer (owner, 2026-11-03) runs the same tool on every linked
 worktree, keeps only reports in `build/issue-N` three days after issue N closes,
 removes `build/pr-gates/pr-N` once pull request N is closed, and expires old
-`build/archive` files. Worktrees it keeps (dirty, nested clones, in use) are
+`build/archive` files. It keeps a closed issue's folder whole while it holds a
+file that a tracked `analyses/` record names by SHA-256 and whose exact bytes
+no Git ref holds, listing each in `build/evidence-to-promote.md`; the lead
+promotes it (commits those exact bytes into the analysis) or discards it
+(deletes it and records the loss there by issue number, never by the path
+`build/issue-N`). Worktrees it keeps (dirty, nested clones, in use) are
 listed in `build/worktrees-to-resolve.md`; the lead commits or discards each
 and prunes it.
