@@ -1311,6 +1311,23 @@ void reference_limits() {
                 "Relationship","completed-ladder","completed heat-capacity convergence","absolute",ok,"F9-limit");
         }
     }
+    // Parameter jets at temperature order zero request dC/dtheta and no temperature column: the lookup names the column
+    // that was not requested and the one that was refused as different states. A model that has not stored a
+    // higher-order reference, which would serve this request with its temperature columns.
+    using Column=epcsaft::ReferenceColumnState;
+    const epcsaft::HelmholtzModel unused(params,{{PF::DispersionEnergyOverK,{0}}});
+    auto jets=epcsaft::reaction_references(unused,T,P,{0,{0,1,1},1},{{-1,1,1}},{{}},false,std::nullopt,0,true,0)[0];
+    CHECK(jets.status==epcsaft::NeutralReferenceStatus::Available);
+    CHECK(jets.column(1,0,std::nullopt).state==Column::NotRequested);
+    const auto admitted=jets.column(0,0,0);
+    CHECK(admitted.state==Column::Available && admitted.value==jets.terminal_contraction_parameter_derivative[0]);
+    jets.terminal_contraction_parameter_derivative[0].reset();  // refuse coordinate 0 as reference_column() records it
+    for(auto& record:jets.lower_derivatives) if(record.parameter && record.temperature_order==0) {
+        record.value.reset();
+        record.message="reference action status 12";
+    }
+    const auto refused=jets.column(0,0,0);
+    CHECK(refused.state==Column::Refused && *refused.cause=="reference action status 12");
 }
 // Frozen N-P-fix vapor center and normalized tangent from the independently
 // differentiated binary128 cv action in f6-a1-extraction/states.tsv.

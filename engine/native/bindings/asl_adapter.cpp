@@ -939,9 +939,10 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int
         rows.values[s] = law.ln_k + law.scale + *C.terminal_contraction + V * (P - P0) / RT - dnu * std::log(P / RT);
         // A requested column the reference owner did not admit fails the row at its order.
         const auto column = [&](int k, std::size_t a, std::optional<std::size_t> i = {}, std::optional<std::size_t> j = {}) {
-            const auto v = C.derivative_value(a, 0, i, j);
-            if (!v) fail(k, "unavailable_derivative", "reference column d^" + std::to_string(a) + "/dT; " + C.message);
-            return v.value_or(0.0);
+            const auto v = C.column(a, 0, i, j);
+            if (v.state == epcsaft::ReferenceColumnState::Available) return v.value;
+            fail(k, "unavailable_derivative", "reference column d^" + std::to_string(a) + "/dT; " + C.message);
+            return 0.0;
         };
         auto& g = rows.gradients[s];
         const auto h = [&](std::size_t i, std::size_t j) -> double& { return rows.hessians[s][j * (j + 1) / 2 + i]; };  // i <= j

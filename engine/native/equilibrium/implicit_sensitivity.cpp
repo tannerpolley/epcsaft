@@ -376,11 +376,6 @@ struct Path final {
     std::optional<std::string> diagnostic_message;
 };
 
-bool is_reference_unavailable(const std::exception& error) {
-    const std::string message = error.what();
-    return message.rfind("reference_unavailable:", 0) == 0;
-}
-
 SolvedStateActionStatus energy_status(PropertyActionStatus status) {
     return status == PropertyActionStatus::Nonfinite ? SolvedStateActionStatus::NonfiniteJacobian
         : solved_state_status(status);
@@ -400,8 +395,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         try {
             series = compiled.row_series(center.prepared, prefix, control, k, plane, parameter_pairs);
             return true;
-        } catch (const std::invalid_argument& error) {
-            if (!is_reference_unavailable(error)) throw;
+        } catch (const ReferenceUnavailable& error) {
             path.status = SolvedStateActionStatus::ReferenceUnavailable;
             path.diagnostic_message = error.what();
             return false;

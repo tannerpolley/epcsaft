@@ -973,6 +973,12 @@ enum class SolvedStateActionStatus {
     CentralPropertyUnavailable, Nonfinite, IllConditioned
 };
 
+// A source or solid reference, or a reference column a motion reads, is unavailable; the one producer of the label.
+struct EPC_EXCEPTION ReferenceUnavailable final : std::invalid_argument {
+    static std::string label(const std::string& cause) { return "reference_unavailable: " + cause; }
+    explicit ReferenceUnavailable(const std::string& cause) : std::invalid_argument(label(cause)) {}
+};
+
 // Per-species ideal-gas h (J/mol) and, on request, cp (J/(mol K)) at the standard pressure
 // of a referenced problem (EqID: reference_species_calorics); a refusal clears both.
 struct ReferenceCalorics final {

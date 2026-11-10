@@ -175,14 +175,13 @@ std::vector<ReactionSpec> central_reference_reactions(
     const std::vector<std::size_t>& pairs = {}) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
-        throw std::invalid_argument("reference_unavailable: source reference declaration is missing");
+        throw ReferenceUnavailable("source reference declaration is missing");
     }
     if (!request.standard_gibbs_j_per_mol.empty()) {
-        throw std::invalid_argument(
-            "reference_unavailable: supplied standard Gibbs conflicts with source reference");
+        throw ReferenceUnavailable("supplied standard Gibbs conflicts with source reference");
     }
     const auto unavailable = [&](std::size_t row, const std::string& tail) {
-        return std::invalid_argument("reference_unavailable: reaction " + reaction_name(request.reactions[row], row) + tail);
+        return ReferenceUnavailable("reaction " + reaction_name(request.reactions[row], row) + tail);
     };
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
@@ -280,8 +279,8 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
     auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, thermal, parameters, pairs);
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto need = [&](std::size_t a, std::optional<std::size_t> p = {}, std::optional<std::size_t> q = {}) {
-            if (!laws[s].reference.derivative_value(a, 0, p, q))
-                throw std::invalid_argument("reference_unavailable: solid " + solids[s].name + " " + laws[s].reference.derivative_cause(a, 0, p, q));
+            if (const auto column = laws[s].reference.column(a, 0, p, q); column.state != ReferenceColumnState::Available)
+                throw ReferenceUnavailable("solid " + solids[s].name + " " + *column.cause);
         };
         if (thermal) need(2);
         for (std::size_t a = 0; a < control.size(); ++a) {
@@ -346,17 +345,15 @@ StandardTerm standard_term(
             const std::size_t source_order = !parameter && b == 0 ? a : 0;
             for (const auto& diagnostic : diagnostics) {
                 const std::size_t row = diagnostic.reaction_index;
-                const std::optional<double> slope = diagnostic.derivative_value(a, b, parameter, second);
-                if (!slope) {
-                    const auto cause = diagnostic.derivative_cause(a, b, parameter, second);
-                    throw std::invalid_argument("reference_unavailable: reaction " + reaction_name(problem.reactions[row], row)
+                const ReferenceColumn slope = diagnostic.column(a, b, parameter, second);
+                if (slope.state != ReferenceColumnState::Available)
+                    throw ReferenceUnavailable("reaction " + reaction_name(problem.reactions[row], row)
                         + " C_" + std::to_string(a) + std::to_string(b)
                         + (parameter ? " coordinate " + std::to_string(*parameter) : "")
-                        + (second ? "," + std::to_string(*second) : "") + " (" + name + "): " + cause);
-                }
+                        + (second ? "," + std::to_string(*second) : "") + " (" + name + "): " + *slope.cause);
                 const auto& source = problem.reactions[row].correlation;
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
-                values[row] = -*slope - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
+                values[row] = -slope.value - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
             }
             return species_standard_slopes(temperature, components, reactions, values);
         };
@@ -918,7 +915,10 @@ CppAD::ADFun<double> record_geometry(
             * (P - *spec.reference->reference_pressure_pa) / (GAS_CONSTANT_J_PER_MOL_K * T));
         if (!standard.solid.empty()) {  // solid_columns refused every moved column it lacks; an unmoved one is zero
             const auto& C = standard.solid[s];
-            const auto column = [&C](std::size_t a, auto... p) { return C.reference.derivative_value(a, 0, p...).value_or(0.0); };
+            const auto column = [&C](std::size_t a, auto... p) {
+                const ReferenceColumn c = C.reference.column(a, 0, p...);
+                return c.state == ReferenceColumnState::Available ? c.value : 0.0;
+            };
             affinity -= 0.5 * (C.curvature.value_or(0.0) + column(2, std::nullopt)) * delta_T * delta_T;
             for (std::size_t a = 0; a < theta.size(); ++a) {
                 const AD d = theta[a] - theta_center[a];
@@ -1176,7 +1176,7 @@ std::vector<SolidLogK> solid_log_k(const HelmholtzModel& model, double temperatu
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto& solid = solids[s];
         if (diagnostics[s].status != NeutralReferenceStatus::Available || !diagnostics[s].terminal_contraction)
-            throw std::invalid_argument("reference_unavailable: solid " + solid.name + " " + diagnostics[s].message);
+            throw ReferenceUnavailable("solid " + solid.name + " " + diagnostics[s].message);
         auto& item = result.emplace_back(SolidLogK{0.0, 0.0, std::nullopt, std::nullopt, diagnostics[s]});
         if (solid.correlation) {
             const auto law = evaluate_reaction_properties(*solid.correlation, temperature);
@@ -1366,20 +1366,20 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                     for (std::size_t r = 0; r < rows; ++r)
                         right(r) = !b && !c ? thermal[a][components + r] : 0.0;
                     for (std::size_t r = 0; r < diagnostics.size(); ++r) {
-                        const auto upper = diagnostics[r].derivative_value(a, b, entry.parameter, entry.second_parameter);
-                        const auto lower = a ? diagnostics[r].derivative_value(a - 1, b, entry.parameter, entry.second_parameter)
-                                             : std::optional<double>(0.0);
-                        if (!upper || !lower) {
+                        const auto upper = diagnostics[r].column(a, b, entry.parameter, entry.second_parameter);
+                        const auto lower = a ? diagnostics[r].column(a - 1, b, entry.parameter, entry.second_parameter)
+                                             : ReferenceColumn{ReferenceColumnState::Available};
+                        const bool has_upper = upper.state == ReferenceColumnState::Available;
+                        if (!has_upper || lower.state != ReferenceColumnState::Available) {
                             column.status = SolvedStateActionStatus::ReferenceUnavailable;
-                            const auto missing_a = !upper ? a : a - 1;
-                            column.message = "reference_unavailable: reaction " +
-                                reaction_name(problem.reactions[reference_rows[r]], reference_rows[r]) +
-                                " C_" + std::to_string(missing_a) + std::to_string(b) +
+                            column.message = ReferenceUnavailable::label(
+                                "reaction " + reaction_name(problem.reactions[reference_rows[r]], reference_rows[r]) +
+                                " C_" + std::to_string(has_upper ? a - 1 : a) + std::to_string(b) +
                                 (c ? " parameter " + std::to_string(*entry.parameter) : "") + ": " +
-                                diagnostics[r].derivative_cause(missing_a, b, entry.parameter, entry.second_parameter);
+                                *(has_upper ? lower : upper).cause);
                         } else
                             right(reference_rows[r]) -=
-                                GAS_CONSTANT_J_PER_MOL_K * (temperature * *upper + double(a) * *lower);
+                                GAS_CONSTANT_J_PER_MOL_K * (temperature * upper.value + double(a) * lower.value);
                     }
                     Eigen::VectorXd source_error = Eigen::VectorXd::Zero(numerical_errors ? rows : 0);
                     if (numerical_errors && !b && !c && a <= 1) for (std::size_t r = 0; r < diagnostics.size(); ++r) {

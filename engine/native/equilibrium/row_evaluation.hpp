@@ -688,8 +688,7 @@ template std::vector<WiderScalar> CompiledSystem::jacobian_at(const PhasePointVa
 std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& point) const {
     core::Scope scope("equilibrium_lever_jacobian");
     if (!reference_diagnostics.empty()) {
-        throw std::invalid_argument(
-            "reference_unavailable: source reference T/P/parameter lever derivatives are not admitted");
+        throw ReferenceUnavailable("source reference T/P/parameter lever derivatives are not admitted");
     }
     auto prepared = prepare(point);
     prepared.point.resize(std::max(prepared.point.size(), unknown_count()), 0.0);
@@ -870,11 +869,10 @@ RowSeries CompiledSystem::row_series(
         if (active_control[a] != 0.0) pairs.push_back(a);
     for (std::size_t s = 0; control[0] != 0.0 && s < solids.size(); ++s)
         if (!solids[s].log_k_slope)
-            throw std::invalid_argument("reference_unavailable: solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
+            throw ReferenceUnavailable("solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
     if (!reference_diagnostics.empty() &&
         (order > 2 && (parameter_jets || pressure_jets || temperature_jets))) {
-        throw std::invalid_argument(
-            "reference_unavailable: row series pressure/T/parameter order is unsupported");
+        throw ReferenceUnavailable("row series pressure/T/parameter order is unsupported");
     }
     // The prepared term carries the current free-T/P jets. Parameter jets enter the rows only via
     // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
@@ -909,7 +907,7 @@ RowSeries CompiledSystem::row_series(
         for (const auto& e : prepared.calorics->gibbs)
             if (e.column.status != SolvedStateActionStatus::Available
                 && ((e.pressure_order && control[1] != 0.0) || (e.parameter && active_control[*e.parameter] != 0.0)))
-                throw std::invalid_argument("reference_unavailable: caloric " + e.column.message);
+                throw ReferenceUnavailable("caloric " + e.column.message);
     }
     auto geometry = record_geometry(*this, prepared, standard, false, plane);
     const std::size_t stride = width + 2 + (has_caloric_condition() ? 3 : 0) + (mode_count ? 2 * components : 0);

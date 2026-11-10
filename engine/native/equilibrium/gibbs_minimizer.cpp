@@ -1720,8 +1720,7 @@ static EquilibriumResult run_driver_once(
     PhasePoint prepared;
     try {
         prepared = compiled.prepare(full, false, &result.first_numerical_failure);
-    } catch (const std::invalid_argument& error) {
-        if (std::string(error.what()).rfind("reference_unavailable:", 0) != 0) throw;
+    } catch (const ReferenceUnavailable& error) {
         result.success = false;
         result.message = error.what() + ipopt_failure;
         result.convergence.stop = core::Stop::left_domain;

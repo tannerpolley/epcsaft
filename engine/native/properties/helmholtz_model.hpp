@@ -353,6 +353,15 @@ enum class NeutralReferenceStatus {
     Nonfinite,
 };
 
+// One reference derivative column: its value when Available, otherwise the cause of the refusal (the reference message,
+// empty for an available reference, when the column was not requested).
+enum class ReferenceColumnState { NotRequested, Available, Refused };
+struct ReferenceColumn final {
+    ReferenceColumnState state;
+    double value = 0.0;
+    const std::string* cause = nullptr;
+};
+
 struct NeutralReferenceTrace;
 struct NeutralReferenceReactionDiagnostic final {
     std::shared_ptr<const NeutralReferenceTrace> trace;
@@ -393,32 +402,33 @@ struct NeutralReferenceReactionDiagnostic final {
     };
     std::vector<Derivative> derivatives;  // raw SI partials; system-P zeros for fixed sources
     std::vector<Derivative> lower_derivatives;
-    // d^(a+b+[p]+[q]) C / dT^a dP^b [dtheta_p] [dtheta_q], nullopt where it was not admitted or not requested.
-    std::optional<double> derivative_value(std::size_t a, std::size_t b, std::optional<std::size_t> p,
+    // d^(a+b+[p]+[q]) C / dT^a dP^b [dtheta_p] [dtheta_q]: the one owner of whether a column was requested and admitted.
+    ReferenceColumn column(std::size_t a, std::size_t b, std::optional<std::size_t> p,
         std::optional<std::size_t> q = std::nullopt) const {
-        const auto parameter = [&p](const std::vector<std::optional<double>>& v) {
-            return *p < v.size() ? v[*p] : std::nullopt; };
-        if (p && !q && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
-        if (p && !q && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
-        if (!p && a + b == 0) return terminal_contraction;
-        if (!p && a == 1 && b == 0) return terminal_contraction_temperature_derivative;
-        if (!p && a == 2 && b == 0) return terminal_contraction_temperature_second_derivative;
-        if (!p && a == 0 && b == 1) return terminal_contraction_pressure_derivative;
-        if (!p && a == 0 && b == 2) return terminal_contraction_pressure_second_derivative;
-        if (!p && a == 1 && b == 1) return terminal_contraction_temperature_pressure_derivative;
-        for (const auto& column : derivatives)
-            if (column.temperature_order == a && column.pressure_order == b && column.parameter == p
-                && column.second_parameter == q) return column.value;
-        return std::nullopt;
-    }
-    std::string derivative_cause(std::size_t a, std::size_t b, std::optional<std::size_t> p,
-        std::optional<std::size_t> q = std::nullopt) const {
+        const auto same = [&](const Derivative& d) {
+            return d.temperature_order == a && d.pressure_order == b && d.parameter == p && d.second_parameter == q; };
+        const auto stored = [&]() -> std::optional<double> {
+            const auto parameter = [&p](const std::vector<std::optional<double>>& v) {
+                return *p < v.size() ? v[*p] : std::nullopt; };
+            if (p && !q && a + b == 0) return parameter(terminal_contraction_parameter_derivative);
+            if (p && !q && a == 1 && b == 0) return parameter(terminal_contraction_temperature_parameter_derivative);
+            if (!p && a + b == 0) return terminal_contraction;
+            if (!p && a == 1 && b == 0) return terminal_contraction_temperature_derivative;
+            if (!p && a == 2 && b == 0) return terminal_contraction_temperature_second_derivative;
+            if (!p && a == 0 && b == 1) return terminal_contraction_pressure_derivative;
+            if (!p && a == 0 && b == 2) return terminal_contraction_pressure_second_derivative;
+            if (!p && a == 1 && b == 1) return terminal_contraction_temperature_pressure_derivative;
+            for (const auto& d : derivatives)
+                if (same(d)) return d.value;
+            return std::nullopt;
+        };
+        if (const auto value = stored()) return {ReferenceColumnState::Available, *value};
         for (const auto* columns : {&lower_derivatives, &derivatives})
-            for (const auto& column : *columns)
-                if (column.temperature_order == a && column.pressure_order == b && column.parameter == p
-                    && column.second_parameter == q && !column.value)
-                    return column.message;
-        return message;
+            for (const auto& d : *columns)
+                if (same(d) && !d.value) return {ReferenceColumnState::Refused, 0.0, &d.message};
+        // A refused reference never reached the columns it did not record.
+        const bool reached = status == NeutralReferenceStatus::Available;
+        return {reached ? ReferenceColumnState::NotRequested : ReferenceColumnState::Refused, 0.0, &message};
     }
 };
 
