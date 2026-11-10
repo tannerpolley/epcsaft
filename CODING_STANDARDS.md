@@ -40,6 +40,21 @@ Use Numerical Verification-Driven Development:
 - Convert an existing lifecycle when its owner changes for another reason.
   Numerical loops are exempt: their order of operations is numerical behavior.
 
+## Checks, helpers and failures
+
+- Admit each input once, at the boundary no caller can skip: native problem
+  compilation owns declaration admission; the Helmholtz model constructor owns
+  parameter admission. Python owns names, shapes and document structure.
+- Past that boundary, do not re-test admitted data; check only what depends on
+  the state.
+- Return expected outcomes rather than throwing them. Exceptions cross only a
+  real boundary (Ipopt callbacks, C callbacks, the Python boundary, a foreign
+  library); a handler never replaces a cause. The density search's own fallback
+  stays.
+- Write a function with one caller at its use unless it names an equation or a
+  documented method step.
+- A result member has a writer and a reader, or it does not exist.
+
 ## Evidence
 
 - Homogeneous numerical rows are retained once in CSV/TSV; JSON stays compact
