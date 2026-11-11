@@ -1712,7 +1712,9 @@ static CompiledSystem compile_with_basis(
         compiled.rows.push_back({RowKind::SaturationPressure, 0, 0});
     }
     const auto point = compiled.generic_point();
-    const auto jacobian = compiled.jacobian(point);
+    const bool state_only = !compiled.problem.loading
+        && std::none_of(compiled.rows.begin(), compiled.rows.end(), [](const auto& row) { return condition_row(row.kind); });
+    const auto jacobian = compiled.jacobian_at(compiled.prepare(point, state_only));
     Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
         jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
     for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
