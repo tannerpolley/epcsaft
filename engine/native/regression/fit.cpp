@@ -79,6 +79,7 @@ bool finite(const std::vector<double>& values) {
 // The same point-local D maps raw observation columns and covariance.
 void chain(const FitRequest& request, const std::vector<double>& map, double slope, const double* gradient, double* out) {
     const auto columns = request.coordinates.coordinates.size();
+    if (columns == 0) return;
     std::fill(out, out + columns, 0.0);
     for (std::size_t r = 0; r < map.size() / columns; ++r)
         for (std::size_t c = 0; c < columns; ++c) out[c] += slope * gradient[r] * map[r * columns + c];

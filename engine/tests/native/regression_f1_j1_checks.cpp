@@ -43,6 +43,26 @@ void check_f1() {
     agree("r1-f1/T200/o1a_density", "molar_density", "mol/m^3", *value.value, 17541.25129083691, 0.0, 1.0e-9,
           fields({field("T_K", 200.0), field("P_Pa", 217800.6949469248), field("branch", "liquid")}),
           "the pressure-closed O1a density equals the retained saturated-liquid root", "r1-f1");
+    FitRequest request; request.parameters = model.parameters();
+    request.observations = {density(200.0, 217800.6949469248, {1.0}, DensityBranch::Liquid)};
+    FitResult failures;
+    ObservationEvaluator evaluator(request, failures, {0});
+    for (const bool columns : {false, true}) {
+        ObservationEvaluation evaluated;
+        CHECK(evaluator.evaluate({}, columns, evaluated));
+        CHECK(evaluated.predictions.size() == 1 && evaluated.statuses == std::vector{ObservationStatus::Available});
+        agree(columns ? "r1-f1/empty_coordinates/derivative" : "r1-f1/empty_coordinates/prediction",
+              "molar_density", "mol/m^3", evaluated.predictions[0], 17541.251290836917, 0.0, 1.0e-9,
+              fields({field("T_K", 200.0), field("P_Pa", 217800.6949469248)}),
+              "an empty coordinate list retains the liquid density and has zero derivative columns", "r1-f1");
+        CHECK(evaluated.gradient.empty() && evaluated.optimizer_gradient.empty()
+              && evaluated.residual_optimizer_gradient.empty() && evaluated.chart.map.empty());
+    }
+    const auto manufactured = observations_at(request, {}, {0.0});
+    CHECK(manufactured.size() == 1);
+    agree("r1-f1/empty_coordinates/manufactured", "molar_density", "mol/m^3", manufactured[0].observed,
+          17541.251290836917, 0.0, 1.0e-9, "{}",
+          "zero manufactured error retains prediction with an empty coordinate list", "r1-f1");
     // A neutral species always carries a positive molar mass by Properties admission; the missing-mass
     // path is reachable only for an ion without a recorded mass.
     auto ionic = properties_support::aqueous_electrolyte();
