@@ -1,0 +1,4 @@
+# Codebase Memory: index code, not data. Result and reference tables (JSON, CSV) were
+# ~90% of tracked bytes and index entries, re-parsed in full for every worktree.
+*.json
+*.csv
