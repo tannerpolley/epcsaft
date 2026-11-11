@@ -163,7 +163,6 @@ double michelsen_deficit(
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
         const auto& item = compiled.rows[row];
         if (item.kind != RowKind::Chemical || item.phase != phase) continue;
-        if (item.index >= composition.size() || row >= residuals.size()) continue;
         sum += composition[item.index] * std::exp(-residuals[row]);
     }
     return 1.0 - sum;
@@ -234,8 +233,7 @@ void copy_previous_phase(
         composition[species] = start.mole_fractions[phase * composition.size() + species];
     double density = start.molar_densities[phase];
     if (spec.amount.kind == AmountKind::Pinned && start.temperature && start.pressure) {
-        const auto branch = spec.kind == PhaseKind::Vapor
-            ? DensityBranch::Vapor : DensityBranch::Liquid;
+        const auto branch = branch_of(spec.kind);
         density = solve_density(*compiled.model, *start.temperature, *start.pressure,
                                 composition, branch, std::nullopt).molar_density;
     }
@@ -401,7 +399,7 @@ bool GibbsMinimizer::initialize_warm(const OptimizerState& state, double cap, bo
     if (!(cap > 0.0)) return refuse("explicit options file or nonpositive effective multiplier cap");
     if (state.identity != compiled_.optimizer_identity() || state.basis != compiled_.B
         || !declaration_difference(state.declaration, optimizer_declaration(compiled_.problem)).empty()) return refuse("layout changed");
-    const auto n = chart_.size(), m = constraint_rows().size();
+    const auto n = chart_.size(), m = constraint_rows_.size();
     if (state.point.size() != n || state.lower.size() != n || state.upper.size() != n || state.lambda.size() != m)
         return refuse("tuple shape");
     auto chart = chart_;
@@ -450,6 +448,8 @@ GibbsMinimizer::GibbsMinimizer(
     const CompiledSystem& compiled, std::vector<double> start, core::Scope* scope, const DriverLimits* limits, bool physical_amounts
 )
     : compiled_(compiled), start_(std::move(start)), scope_(scope), limits_(limits) {
+    for (std::size_t row = 0; row < compiled_.rows.size(); ++row)
+        if (compiled_.feasibility_cell() || !stationarity_row(compiled_.rows[row].kind)) constraint_rows_.push_back(row);
     const auto offsets = compiled_.phase_offsets();
     for (std::size_t p = 0; p < offsets.size(); ++p)
         if (!compiled_.ideal && compiled_.problem.phases[p].is_free()) amount_columns_.push_back(offsets[p] + compiled_.problem.phases[p].support.size());
@@ -466,7 +466,7 @@ bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style
 ) {
     n = static_cast<Ipopt::Index>(chart_.size());
-    m = static_cast<Ipopt::Index>(constraint_rows().size());
+    m = static_cast<Ipopt::Index>(constraint_rows_.size());
     nnz_jac_g = n * m;
     nnz_h_lag = n * (n + 1) / 2;
     index_style = C_STYLE;
@@ -537,7 +537,7 @@ bool GibbsMinimizer::get_bounds_info(
 
 bool GibbsMinimizer::physical_bounds(std::vector<double>& lower, std::vector<double>& upper) {
     const auto n = static_cast<Ipopt::Index>(chart_.size());
-    const auto m = static_cast<Ipopt::Index>(constraint_rows().size());
+    const auto m = static_cast<Ipopt::Index>(constraint_rows_.size());
     std::vector<double> gl(m), gu(m);
     if (!get_bounds_info(n, lower.data(), upper.data(), m, gl.data(), gu.data())) return false;
     for (std::size_t i = 0; i < chart_.size(); ++i) {
@@ -561,14 +561,6 @@ bool GibbsMinimizer::get_starting_point(
     }
     if (init_lambda) { if (warm_) std::copy(warm_lambda_.begin(), warm_lambda_.end(), lambda); else std::fill(lambda, lambda + m, 0.0); }
     return true;
-}
-
-std::vector<std::size_t> GibbsMinimizer::constraint_rows() const {
-    std::vector<std::size_t> result;
-    for (std::size_t row = 0; row < compiled_.rows.size(); ++row) {
-        if (compiled_.feasibility_cell() || !stationarity_row(compiled_.rows[row].kind)) result.push_back(row);
-    }
-    return result;
 }
 
 static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 11 && IPOPT_VERSION_RELEASE == 9,
@@ -602,9 +594,10 @@ bool GibbsMinimizer::step_admitted(const Ipopt::Number* x) {
 }
 
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
-    std::vector<double> candidate(x, x + n);
-    for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
-    if (!prepared_.has_value() || prepared_->point != candidate) {
+    if (!prepared_.has_value() || !std::equal(x, x + n, prepared_->point.begin(), prepared_->point.end(),
+        [&, i = std::size_t{0}](double value, double stored) mutable { return value * chart_[i++] == stored; })) {
+        std::vector<double> candidate(x, x + n);
+        for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
         prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure);
         rows_.reset();
         jacobian_.reset();
@@ -663,7 +656,7 @@ bool GibbsMinimizer::eval_g(
     try {
         if (!step_admitted(x)) return false;
         const auto& values = rows_at(n, x).values;
-        const auto rows = constraint_rows();
+        const auto& rows = constraint_rows_;
         for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
         return true;
     } catch (const std::exception& error) {
@@ -678,7 +671,7 @@ bool GibbsMinimizer::eval_jac_g(
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
     core::Scope callback("ipopt_eval_jac_g");
-    const auto rows = constraint_rows();
+    const auto& rows = constraint_rows_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < m; ++row) {
@@ -806,7 +799,7 @@ void GibbsMinimizer::finalize_solution(
         point.tnlp_lower_multipliers.assign(z_L, z_L + n);
         point.tnlp_upper_multipliers.assign(z_U, z_U + n);
         point.tnlp_constraint_multipliers.assign(lambda, lambda + m);
-        point.coordinate_scale = chart_; point.constraint_rows = constraint_rows();
+        point.coordinate_scale = chart_; point.constraint_rows = constraint_rows_;
         point.declaration = std::make_shared<const EquilibriumProblem>(compiled_.problem);
         point.rows = compiled_.rows; point.objective_factor = 1.0 / compiled_.feed_total;
         d.failed_point = std::move(point);
@@ -895,7 +888,6 @@ static void capture_driver(const GibbsMinimizer& nlp, const EquilibriumResult& r
         ? std::numeric_limits<double>::quiet_NaN() : maximum_abs(audit->classified_residuals);
 }
 
-// The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 static bool mixture_precision_eligible(const CompiledSystem& c) {
     return !c.ideal && newton_eligible(c) && !c.problem.temperature.free && c.problem.pressure.free
         && !c.problem.source_reference && c.solids.empty() && c.model->parameters().component_count() > 1;
@@ -1257,7 +1249,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
             final_step = step;
             if constexpr (!std::is_same_v<Base, double>) {
-                if (limits && (limits->consumed >= limits->iterations || !limits->spend(limits->consumed, limits->iterations))) { stop("iteration budget"); return false; }
+                if (limits && (limits->iterations_spent() || !limits->spend(limits->consumed, limits->iterations))) { stop("iteration budget"); return false; }
                 ++result.iterations;
             }
             if (expired()) { stop("elapsed budget"); break; }
@@ -1575,6 +1567,7 @@ Retry retry_after(Attempt kind, bool reaction, bool non_error, bool fatal, Ipopt
             && (topology == TopologyEvent::PhasesCoalesced || candidate == Candidate::Unstable))) ? Retry::Source : Retry::None;
 }
 
+// The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 static EquilibriumResult run_driver_once(
     const HelmholtzModel* model, const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
@@ -1826,8 +1819,8 @@ EquilibriumResult recover_physical_amounts(
     bool* invoked, Work counts
 ) {
     const auto exhausted = [&] {
-        return limits && (limits->expired() || limits->consumed >= limits->iterations
-            || (limits->recovery && (limits->evaluations >= limits->evaluation_cap || limits->hessian_calls >= limits->hessian_cap)));
+        return limits && (limits->expired() || limits->iterations_spent()
+            || (limits->recovery && limits->caps_spent()));
     };
     if (result.success || !eligible || !compiled.has_reaction || compiled.feasibility_cell()
         || !compiled.solids.empty() || exhausted()
@@ -2258,7 +2251,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
         const auto left = limits ? limits->iterations - std::min(limits->consumed, limits->iterations) : cap;
         const auto deadline = limits ? limits->deadline : std::chrono::steady_clock::time_point::max();
-        return DriverLimits{std::min(cap, left), deadline, 0, true, 4 * cap, 2 * cap};
+        return DriverLimits::recovery_allowance(deadline, std::min(cap, left));
     };
     // ALG-STABILITY: a vanished declared phase at fixed T and P is named from the surviving declaration under that
     // allowance; the declared split stays refused.
@@ -2276,7 +2269,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         result.message += "; " + report.message;
         result.vanished_phase_stability = std::make_shared<const StabilityReport>(std::move(report));
     }
-    if (result.success || !recover || one_component_two_density_eligible(compiled) || admission_refused || (limits && (limits->expired() || limits->consumed >= limits->iterations))
+    if (result.success || !recover || one_component_two_density_eligible(compiled) || admission_refused || (limits && (limits->expired() || limits->iterations_spent()))
         || !recovery_eligible(compiled) || result.retry != Retry::Source) return selected(std::move(result), limits);
     // Neutral recovery: both causes and all work are kept.
     auto work = allowance();
@@ -2314,6 +2307,22 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     return recovered;
 }
 
+// Reduced temperature and packing starts; coefficients are initialization heuristics (ALG-EQUILIBRIUM).
+static std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel& model) {
+    const auto& p = model.parameters();
+    const double theta = p.dispersion_energy_over_k[0], base = theta * (1 + 0.35 * p.segment_count[0]);
+    double energy = 0;
+    for (std::size_t i = 0; i < p.association_active.size(); ++i)
+        if (p.association_active[i] && p.association_volume[i] > 0) energy = std::max(energy, p.association_energy_over_k[i]);
+    std::vector<std::array<double, 2>> seeds{{4 * theta, 0.025}, {3 * theta, 0.04}, {base, 0.12}, {1.5 * base, 0.072}};
+    if (energy > 0) {
+        const double associated = std::max(base, energy / 4);
+        seeds.push_back({associated, 0.025});
+        seeds.push_back({associated, 0.12});
+    }
+    return seeds;
+}
+
 // One driver, finite physical starts, and no selection between distinguishable critical candidates.
 static EquilibriumResult recover_critical(const CompiledSystem& compiled, EquilibriumResult original, core::Scope& scope) {
     auto search = std::make_shared<CriticalSearch>();
@@ -2323,12 +2332,12 @@ static EquilibriumResult recover_critical(const CompiledSystem& compiled, Equili
     const auto seeds = critical_seed_scales(*compiled.model);
     search->scheduled = seeds.size();
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-    DriverLimits work{cap, std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    auto work = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(), cap);
     StageWork stages;
     stages.add(original);
     bool comparable = true;
     for (const auto& seed : seeds) {
-        if (work.expired() || work.evaluations >= work.evaluation_cap || work.hessian_calls >= work.hessian_cap) break;
+        if (work.expired() || work.caps_spent()) break;
         auto declaration = compiled.problem;
         declaration.temperature = FreeValue::variable(seed[0]);
         declaration.critical->mode_guess.clear();
@@ -2372,7 +2381,7 @@ static EquilibriumResult recover_critical(const CompiledSystem& compiled, Equili
                 && agrees(equilibrium::Quantity::Positive, previous.molar_densities[0], current.molar_densities[0], a.densities[0], b.densities[0]);
         }
     }
-    search->budget_exhausted = work.expired() || work.evaluations >= work.evaluation_cap || work.hessian_calls >= work.hessian_cap;
+    search->budget_exhausted = work.expired() || work.caps_spent();
     if (!comparable) search->selected.reset();
     auto result = search->selected ? search->results[*search->selected] : std::move(original);
     if (!search->selected) { refuse(result); }

@@ -79,7 +79,6 @@ EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<E
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 EPC_API std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
                                    StageWork* stages = nullptr, const std::vector<bool>& packed = {}, bool correct_dense = false);
-std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel&);
 struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
@@ -146,14 +145,20 @@ struct DriverLimits final {
     mutable bool exhausted = false;
     std::size_t attempt_cap = 0;
     mutable std::size_t attempts = 0;
+    static DriverLimits recovery_allowance(std::chrono::steady_clock::time_point deadline, std::size_t iterations) {
+        const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+        return {iterations, deadline, 0, true, 4 * cap, 2 * cap};
+    }
+    bool iterations_spent() const { return consumed >= iterations; }
+    bool caps_spent() const { return evaluations >= evaluation_cap || hessian_calls >= hessian_cap; }
     bool expired() const {
-        exhausted = exhausted || (recovery && consumed >= iterations) || (attempt_cap && attempts > attempt_cap);
+        exhausted = exhausted || (recovery && iterations_spent()) || (attempt_cap && attempts > attempt_cap);
         return exhausted || std::chrono::steady_clock::now() >= deadline;
     }
     void check(const char* cause = "elapsed work budget exhausted") const { if (expired()) throw BudgetExhausted(cause); }
     // Before one evaluation or Hessian callback: false, refusing it, once any recovery cap is spent.
     bool spend(std::size_t& used, std::size_t cap) const {
-        exhausted = exhausted || (recovery && (used >= cap || consumed >= iterations));
+        exhausted = exhausted || (recovery && (used >= cap || iterations_spent()));
         return !exhausted && ++used;
     }
 };
@@ -293,7 +298,6 @@ EPC_API std::vector<double> sensitivity(
 );
 
 struct SensitivityInfo final {
-    std::size_t equations = 0;
     std::size_t rank = 0;
     double condition_estimate = 0.0, threshold = 0.0;
     bool nonsingular = false;
@@ -373,7 +377,7 @@ public:
     void publish_observations(EquilibriumResult& result) const { observations_.report_observations(result); }
 
 private:
-    std::vector<std::size_t> constraint_rows() const;
+    std::vector<std::size_t> constraint_rows_;
     // One latest-point phase evaluation per solve; every derived quantity is cached
     // with it and invalidated when the callback point changes.
     void retain_callback_failure(const std::exception& error, const char* operation) {

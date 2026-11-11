@@ -25,6 +25,7 @@ namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
 enum class PhaseKind { Liquid, Vapor };
+inline DensityBranch branch_of(PhaseKind kind) { return kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid; }
 enum class AmountKind { Free, Pinned };
 enum class FeedKind { MoleFractions, Amounts, MassFractions, Molalities };
 

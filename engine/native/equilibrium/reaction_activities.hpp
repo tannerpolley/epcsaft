@@ -28,7 +28,7 @@ void pressure_basis(const HelmholtzModel& model, const EquilibriumResult& result
     for (const double v : nu) dnu += v;
     row.log_pressure_quotient = *ln_q + dnu * std::log(GAS_CONSTANT_J_PER_MOL_K * T / *row.standard_pressure_pa);
     if (!std::isfinite(*ln_q)) { row.pressure_cause = "pressure-basis actions undefined at a structurally zero activity"; return; }
-    const auto branch = result.declaration->phases[phase].kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
+    const auto branch = branch_of(result.declaration->phases[phase].kind);
     row.log_pressure_quotient_actions.assign(x.size() + 2, std::nullopt);
     try { for (std::size_t k = 0; k < x.size() + 2; ++k) {
         PressureActionDirection direction{double(k == 0), double(k == 1), std::vector<double>(x.size(), 0.0), {}};

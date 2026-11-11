@@ -1570,6 +1570,14 @@ void check_e2_reuse() {
         compare_flat("a-zero-objective", callback(a, 0.0, lambda_one), fresh(a, 0.0, lambda_one));
         compare_flat("b", callback(b, 0.5, lambda_one), fresh(b, 0.5, lambda_one));
         compare_flat("a-return", callback(a, 0.5, lambda_one), first);
+        if (item.solved) {
+            Ipopt::Number value = 0.0;
+            CHECK(!nlp.eval_f(0, a.data(), false, value));
+            epcsaft::equilibrium::EquilibriumResult observations;
+            nlp.publish_observations(observations);
+            CHECK(observations.first_numerical_failure.has_value());
+            CHECK(observations.first_numerical_failure->cause == "eval_f: equilibrium point is too short");
+        }
     }
 }
 

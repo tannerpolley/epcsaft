@@ -24,7 +24,6 @@ namespace {
 using RowMajor = Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>;
 
 Eigen::MatrixXd dense_matrix(const std::vector<double>& values, std::size_t rows, std::size_t columns) {
-    if (values.size() != rows * columns) throw std::invalid_argument("matrix size");
     return Eigen::Map<const RowMajor>(values.data(), static_cast<Eigen::Index>(rows), static_cast<Eigen::Index>(columns));
 }
 
@@ -76,7 +75,6 @@ SensitivityInfo inspect_sensitivity(
     const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
     const auto lu = equilibrated.fullPivLu();
     SensitivityInfo result;
-    result.equations = rows;
     result.rank = static_cast<std::size_t>(lu.rank());
     result.threshold = lu.threshold();
     result.condition_estimate = condition_estimate(matrix);
@@ -115,7 +113,7 @@ std::vector<double> solve_implicit(
     const auto [row_scale, column_scale] = power_of_two_equilibration(matrix);
     const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
     const auto lu = equilibrated.fullPivLu();
-    if (!square_and_numeric(matrix) || static_cast<std::size_t>(lu.rank()) != dimension)
+    if (!matrix.allFinite() || static_cast<std::size_t>(lu.rank()) != dimension)
         return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", matrix.allFinite() ? core::Stop::singular : core::Stop::nonfinite, &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));

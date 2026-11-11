@@ -161,14 +161,14 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
         std::vector<double> u;
         for (std::size_t p = 0; p < offsets.size(); ++p)
             u.push_back(initial[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] - log_c);
+        std::optional<PhasePoint> layout;
         // The fluid domain on the coordinate vector alone; the wider-precision lift fills only .point.
         const auto inside = [&](const PhasePoint& at) {
             if (!std::all_of(at.point.begin(), at.point.end(), [](double v) { return std::isfinite(v); })) return false;
             for (std::size_t p = 0; p < offsets.size(); ++p)
-                if (!admitted_packing_fraction(std::exp(at.point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)]))) return false;
+                if (!admitted_packing_fraction(std::exp(at.point[layout->shape[p].volume]))) return false;
             return at.point[c.primal_size - 1] > 0.0;
         };
-        std::optional<PhasePoint> layout;
         const auto evaluate = [&](const std::vector<double>& logs) {
             if (limits) {
                 limits->check();
@@ -206,7 +206,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
         bool polishing = false;
         double polish_residual = std::numeric_limits<double>::infinity();
         for (std::size_t step = 0; step < static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value); ++step) {
-            if (limits && (limits->expired() || limits->consumed >= limits->iterations))
+            if (limits && (limits->expired() || limits->iterations_spent()))
                 throw std::runtime_error("one-component two-density iteration/elapsed budget");
             full_evaluate(at.phase);
             polishing = polishing || result.last_full_evaluation->residual <= tolerance;
@@ -274,7 +274,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                     const auto lift = [&](const std::vector<Wide>& values, const PureIsothermalValues<Wide>& vapor) {
                         PhasePoint point; point.point = at.phase.point;
                         for (std::size_t p = 0; p < 2; ++p)
-                            point.point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] = double(Wide(log_c) + values[p]);
+                            point.point[at.phase.shape[p].volume] = double(Wide(log_c) + values[p]);
                         point.point[c.primal_size - 1] = double(vapor.pressure);
                         point.point[c.primal_size] = double(vapor.chemical_potential_over_rt + Wide(at.phase.standard.derivative[0][0]));
                         return point;
@@ -283,7 +283,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                     std::size_t refinements = 0;
                     for (;;) {
                         if (result.iterations >= static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)
-                            || (limits && (limits->expired() || limits->consumed >= limits->iterations)))
+                            || (limits && (limits->expired() || limits->iterations_spent())))
                             throw std::runtime_error("one-component two-density extended iteration/elapsed budget");
                         const ReducedCorrection<Wide> correction(wide.jacobian, wide.rows, result.last_rank, logs);
                         const Wide norm = std::max(wide_math::abs(wide.rows[0]), wide_math::abs(wide.rows[1]));

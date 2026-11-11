@@ -83,12 +83,6 @@ std::vector<double> seed_composition(const CompiledSystem& compiled, std::size_t
     return composition;
 }
 
-void validate_density_seed(const DensityRoot& root) {
-    if (!(std::isfinite(root.molar_density) && root.molar_density > 0.0)) {
-        throw std::runtime_error("boundary seed has invalid density");
-    }
-}
-
 // A start's compositions in declared phase order and, after a split, its free amounts; vapor_density anchors the
 // true-species split's vapor root; a positive pressure replaces a pure fluid's free-pressure seed (NaN: the loop rule found none).
 struct PhaseStart final {
@@ -424,7 +418,7 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
     try {
         const auto root = [&](std::optional<double> anchor) {
             const auto root = solve_density(*compiled.model, t, p, composition,
-                phase.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid, anchor);
+                branch_of(phase.kind), anchor);
             if (observations) core::retain_first(observations->first_numerical_failure, root.first_numerical_failure);
             return root.molar_density;
         };
@@ -1133,22 +1127,6 @@ const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const Driv
     return scan;
 }
 
-// Reduced temperature and packing starts; coefficients are initialization heuristics (ALG-EQUILIBRIUM).
-std::vector<std::array<double, 2>> critical_seed_scales(const HelmholtzModel& model) {
-    const auto& p = model.parameters();
-    const double theta = p.dispersion_energy_over_k[0], base = theta * (1 + 0.35 * p.segment_count[0]);
-    double energy = 0;
-    for (std::size_t i = 0; i < p.association_active.size(); ++i)
-        if (p.association_active[i] && p.association_volume[i] > 0) energy = std::max(energy, p.association_energy_over_k[i]);
-    std::vector<std::array<double, 2>> seeds{{4 * theta, 0.025}, {3 * theta, 0.04}, {base, 0.12}, {1.5 * base, 0.072}};
-    if (energy > 0) {
-        const double associated = std::max(base, energy / 4);
-        seeds.push_back({associated, 0.025});
-        seeds.push_back({associated, 0.12});
-    }
-    return seeds;
-}
-
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages,
                                    const std::vector<bool>& packed, bool correct_dense) {
     core::Scope scope("boundary_start");
@@ -1357,8 +1335,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             point[cursor] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             continue;
         }
-        const DensityBranch branch = compiled.problem.phases[phase].kind == PhaseKind::Vapor
-            ? DensityBranch::Vapor : DensityBranch::Liquid;
+        const DensityBranch branch = branch_of(compiled.problem.phases[phase].kind);
         DensityRoot root;
         try {
             const auto unanchored = [&] { return corrected && branch == DensityBranch::Vapor
@@ -1386,7 +1363,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
                 + " at T = " + core::optional_number(t) + " K; T may exceed the model critical temperature");
         }
         if (limits) limits->check();
-        validate_density_seed(root);
+        if (!(std::isfinite(root.molar_density) && root.molar_density > 0.0))
+            throw std::runtime_error("boundary seed has invalid density");
         scope.probe("phase", static_cast<double>(phase));
         scope.probe("branch_density", root.molar_density,
                     static_cast<std::uint32_t>(phase));
@@ -1464,7 +1442,7 @@ void check_declared_side(const DensityRoot& root, DensityBranch branch) {
 }  // namespace
 
 DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind) {
-    const auto branch = kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
+    const auto branch = branch_of(kind);
     auto root = solve_density(model, T, P, x, branch, std::nullopt);
     check_declared_side(root, branch);
     return root;
@@ -1489,7 +1467,7 @@ BranchCheck density_branches_at(
         const double total = std::accumulate(x.begin(), x.end(), 0.0);
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
         const double corrected = chart_density(model, prepared, phase);
-        const auto branch = spec.kind == PhaseKind::Vapor ? DensityBranch::Vapor : DensityBranch::Liquid;
+        const auto branch = branch_of(spec.kind);
         const double slope = pure ? prepared.pure[phase].pressure_density_derivative
             : model.state(prepared.temperature, corrected, x).pressure_density_derivative;
         if (limits) limits->check();
@@ -1912,7 +1890,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
 EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumResult failed) {
     if (failed.success || !one_component_two_density_eligible(target) || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) return failed;
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-    DriverLimits work{cap, std::chrono::steady_clock::time_point::max(), 0, true, 4 * cap, 2 * cap};
+    auto work = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(), cap);
     auto recovered = recover_from_source(target, work);
     StageWork observations; observations.observe(failed); observations.observe(recovered);
     std::move(observations).publish_observations(recovered.success ? recovered : failed);
@@ -1996,7 +1974,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         if (!std::isfinite(grid[i]) || grid[i] <= 0 || (i && grid[i] <= grid[i - 1]))
             throw std::invalid_argument("saturation grid must be positive and strictly increasing");
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-    DriverLimits own{cap, deadline, 0, true, 4 * cap, 2 * cap};
+    auto own = DriverLimits::recovery_allowance(deadline, cap);
     own.attempt_cap = cap;
     const auto& work = supplied ? *supplied : own;
     SaturationSearch out; out.grid = grid; out.declaration = affine;
