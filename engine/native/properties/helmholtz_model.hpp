@@ -22,6 +22,8 @@
 
 namespace epcsaft {
 
+EPC_API void density_conditioning(core::Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization");
+
 using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
 void validate_cation_mixing(const Parameters& parameters);

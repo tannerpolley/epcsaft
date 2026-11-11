@@ -105,7 +105,7 @@ std::vector<double> solve_implicit(
         if (failure) { core::Convergence r; r.cause = cause;
             if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "implicit defining rows"));
             r.residual = backward.value_or(NAN); r.backward_error = backward; r.stop = stop;
-            if (backward) r.criterion = &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR;
+            if (backward) r.criterion = {std::shared_ptr<const policy::Tolerance>{}, &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR};
             core::retain_first(*failure, r);
         }
         return std::vector<double>{};
@@ -1507,7 +1507,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         const auto project = [&](std::size_t i, bool positive) {
             const Base displacement = internal.empty() ? Base(0) : positive
                 ? wide_math::abs(wide_math::log1p((mapped[i] - internal_map[i]) / internal_map[i])) : wide_math::abs(mapped[i] - internal_map[i]);
-            const auto estimate = core::project_numerical_estimate(double(values[i]), mapped[i], e.radius[i] + displacement, positive, g.row(i).isZero(0.0));
+            const auto estimate = equilibrium::project_numerical_estimate(double(values[i]), mapped[i], e.radius[i] + displacement, positive, g.row(i).isZero(0.0));
             radius[i] = positive ? estimate.chart : estimate.absolute;
             return estimate;
         };

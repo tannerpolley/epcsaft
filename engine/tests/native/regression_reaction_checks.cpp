@@ -309,7 +309,7 @@ void check_d7_minimax() {
         const auto real = analytic_minimax_evaluator(p.request);
         int calls = 0;
         core::Convergence record; record.stop = core::Stop::left_domain; record.residual = 0.25;
-        record.criterion = &policy::DENSITY_ROOT_RESIDUAL; record.cause = "R2-D7 observation action refused";
+        record.criterion = {std::shared_ptr<const policy::Tolerance>{}, &policy::DENSITY_ROOT_RESIDUAL}; record.cause = "R2-D7 observation action refused";
         const ObservationFunction refused = [&](const auto& x, bool columns, auto& out) {
             if (calls++ == 0) return real(x, columns, out);
             if (typed) throw core::ConvergenceFailure(record);

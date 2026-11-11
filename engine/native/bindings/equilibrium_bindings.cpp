@@ -132,10 +132,10 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<core::NumericalRank>(module, "NumericalRank")
         EPCSAFT_READONLY(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning)
         EPCSAFT_REPR(NumericalRank, "basis", "dimension", "rank", "threshold", "first_conditioning_warning");
-    using core::Quantity; using core::ComparisonMode; using core::NumericalEstimate;
-    using core::ComparisonEligibility; using core::EquilibriumComparison;
-    using core::compare_equilibrium_quantity;
-    using core::project_numerical_estimate;
+    using equilibrium::Quantity; using equilibrium::ComparisonMode; using equilibrium::NumericalEstimate;
+    using equilibrium::ComparisonEligibility; using equilibrium::EquilibriumComparison;
+    using equilibrium::compare_equilibrium_quantity;
+    using equilibrium::project_numerical_estimate;
     nb::enum_<Quantity>(module, "Quantity") EPCSAFT_VALUES(Quantity, Linear, Positive, LogPositive);
     nb::enum_<ComparisonMode>(module, "ComparisonMode") EPCSAFT_VALUES(ComparisonMode, Strict, EstimatedError);
     nb::class_<NumericalEstimate>(module, "NumericalEstimate").def(nb::init<>())

@@ -529,8 +529,8 @@ std::vector<std::vector<double>> standard_state_series(
     const auto refuse = [&](double residual, const Eigen::BDCSVD<Eigen::MatrixXd>* factor) {
         core::Convergence r; r.residual = residual; r.stop = core::Stop::infeasible;
         if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "minimum_norm_standard_state"));
-        r.criterion_owner = std::make_shared<policy::Tolerance>(policy::Tolerance{"standard state consistency", criterion,
-            policy::Category::AlgorithmTolerance, "sqrt(eps) max(1, norm(target)) J/mol"}); r.criterion = r.criterion_owner.get();
+        r.criterion = std::make_shared<policy::Tolerance>(policy::Tolerance{"standard state consistency", criterion,
+            policy::Category::AlgorithmTolerance, "sqrt(eps) max(1, norm(target)) J/mol"});
         throw core::DeclarationError("inconsistent standard state", r);
     };
     if (!supplied.empty()) {

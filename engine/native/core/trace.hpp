@@ -115,7 +115,11 @@ inline void retain_failure(std::optional<Convergence>& first, const std::excepti
     first = std::move(record);
 }
 inline void retain_failure(std::optional<Convergence>& first, std::string_view cause, const char* operation) {
-    if (!first) retain_failure(first, std::runtime_error(std::string(cause)), operation);
+    if (first) return;
+    Convergence record;
+    record.residual = std::numeric_limits<double>::quiet_NaN();
+    record.cause = std::string(operation) + ": " + std::string(cause);
+    first = std::move(record);
 }
 inline void retain_rank(NumericalRank& target, const NumericalRank& rank,
     const std::vector<double>& point = {}, std::optional<std::size_t> stage = std::nullopt) {
@@ -162,11 +166,6 @@ private:
     std::vector<NumericalRank>* destination_;
     std::optional<std::size_t> phase_;
 };
-
-template <typename Observation>
-void observe(Trace* trace, Observation&& observation) {
-    if (trace) observation();
-}
 
 class Capture final {
 public:
@@ -227,7 +226,7 @@ public:
         if (trace_ == nullptr) return;
         const auto now = std::chrono::steady_clock::now();
         parent_ = trace_->current;
-        observe([&] { trace_->spans.push_back({name, parent_, std::nullopt, 0.0}); });
+        trace_->spans.push_back({name, parent_, std::nullopt, 0.0});
         index_ = static_cast<std::uint32_t>(trace_->spans.size() - 1);
         trace_->current = index_;
         start_ = now;
@@ -256,7 +255,7 @@ public:
     }
     template <typename Observation>
     void observe(Observation&& observation) {
-        core::observe(trace_, std::forward<Observation>(observation));
+        if (trace_) observation();
     }
 
     void probe(const char* name, double value, std::uint32_t iteration = 0) {

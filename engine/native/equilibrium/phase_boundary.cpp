@@ -1925,8 +1925,8 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumR
 }
 
 
-void compare_loading_candidates(SaturationSearch& out, core::ComparisonEligibility eligibility) {
-    const auto usable = [](const core::NumericalEstimate& e) {
+void compare_loading_candidates(SaturationSearch& out, ComparisonEligibility eligibility) {
+    const auto usable = [](const NumericalEstimate& e) {
         return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0
             && std::isfinite(e.chart) && e.chart >= 0;
     };
@@ -1942,8 +1942,8 @@ void compare_loading_candidates(SaturationSearch& out, core::ComparisonEligibili
                 auto e = eligibility;
                 e.admission_a = e.admission_a && usable(a[k].error) && a[k].quantity == b[k].quantity;
                 e.admission_b = e.admission_b && usable(b[k].error);
-                const auto c = core::compare_equilibrium_quantity(a[k].quantity, a[k].value, b[k].value, 0,
-                    a[k].error, b[k].error, e, core::ComparisonMode::EstimatedError);
+                const auto c = compare_equilibrium_quantity(a[k].quantity, a[k].value, b[k].value, 0,
+                    a[k].error, b[k].error, e, ComparisonMode::EstimatedError);
                 comparison.operands.push_back(c);
                 if (c.judgment == "failed") {
                     if (e.valid() && (c.cause == "outside_estimates" || c.cause == "ordinary_achievable")) {
@@ -2020,7 +2020,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         if (!out.first_numerical_failure) out.first_numerical_failure = state.first_numerical_failure;
         return std::make_pair(std::move(compiled), std::move(state));
     };
-    const auto usable = [](const core::NumericalEstimate& e) {
+    const auto usable = [](const NumericalEstimate& e) {
         return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0;
     };
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
@@ -2091,8 +2091,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                     fail(estimates.cause); fail("unexamined_gap"); out.candidates.push_back(std::move(candidate)); continue;
                 }
                 candidate.admitted = true;
-                const auto append = [&](double value, const core::NumericalEstimate& error, bool positive = false) {
-                    candidate.operands.push_back({positive ? core::Quantity::Positive : core::Quantity::Linear, value, error});
+                const auto append = [&](double value, const NumericalEstimate& error, bool positive = false) {
+                    candidate.operands.push_back({positive ? Quantity::Positive : Quantity::Linear, value, error});
                     if (!usable(error)) { candidate.admitted = false; fail("root_comparison_unresolved"); }
                 };
                 append(alpha, estimates.loading); append(*candidate.state.temperature, estimates.temperature);

@@ -57,21 +57,18 @@ inline void observe_conditioning(NumericalRank& record, ConditioningObservation 
 
 struct Convergence final {
     double residual = 0.0;
-    const policy::Tolerance* criterion = nullptr;
+    std::shared_ptr<const policy::Tolerance> criterion;
     std::optional<double> floor, amplification, contraction;
     std::size_t iterations = 0;
     std::size_t evaluations = 0;
     Stop stop = Stop::stalled;
-    // Owns a caller-valued criterion; static policy producers leave it empty.
-    std::shared_ptr<const policy::Tolerance> criterion_owner;
     std::string cause;
     std::shared_ptr<NumericalRank> rank;
     std::optional<double> backward_error;
 };
 
 inline void stopping_criterion(Convergence& record, const policy::SolverOptions& options, std::size_t i) {
-    record.criterion_owner = options.owners.at(i);
-    record.criterion = options.criterion(i);
+    record.criterion = {options.owners.at(i), options.criterion(i)};
 }
 
 inline Stop classify(

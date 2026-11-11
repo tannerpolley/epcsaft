@@ -1407,7 +1407,7 @@ void check_e2_solve() {
         if (tolerance == 1.0e-5) CHECK(result.evaluations < default_evaluations && result.convergence.residual <= tolerance);
         const bool criterion_ok = result.convergence.criterion != nullptr
             && result.convergence.criterion->value == tolerance
-            && (default_request ? result.convergence.criterion == &epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL
+            && (default_request ? result.convergence.criterion.get() == &epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL
                                 : std::string(result.convergence.criterion->name) == "EQUILIBRIUM_ROW_RESIDUAL");
         const bool flag_ok = std::isfinite(result.convergence.residual)
             ? (result.requested_tolerance_met.has_value()
@@ -1445,9 +1445,9 @@ void check_e2_solve() {
         for (const auto& span : capture.trace().spans)
             if (std::string(span.name) == "solve_equilibrium" && span.convergence.has_value()) copied = span.convergence;
     }
-    const bool lifetime_ok = copied.has_value() && copied->criterion != nullptr && copied->criterion_owner
+    const bool lifetime_ok = copied.has_value() && copied->criterion != nullptr
         && copied->floor.has_value() && std::isfinite(*copied->floor)
-        && copied->criterion == copied->criterion_owner.get() && copied->criterion->value == 1.0e-8
+        && copied->criterion->value == 1.0e-8
         && std::string(copied->criterion->name) == "EQUILIBRIUM_ROW_RESIDUAL"
         && epcsaft::core::classify(copied->residual, *copied->criterion, copied->floor, copied->contraction, false,
                                    copied->amplification) == copied->stop;

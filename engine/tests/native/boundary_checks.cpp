@@ -1302,7 +1302,7 @@ void check_saturation_refusals() {
         Eigen::VectorXd terms(1); terms[0] = std::abs(alpha * alpha) + std::abs(alpha) + 0.24;
         const Eigen::VectorXd scale = Eigen::VectorXd::Ones(1), inner = Eigen::VectorXd::Zero(1);
         const auto floor = core::canonical_row_floor(jacobian, scale, terms, inner);
-        node.estimates.pressure = core::project_numerical_estimate(1e6 + node.mismatch, 1e6 + node.mismatch, 1e6 * floor[0], false, false);
+        node.estimates.pressure = equilibrium::project_numerical_estimate(1e6 + node.mismatch, 1e6 + node.mismatch, 1e6 * floor[0], false, false);
         search.nodes.push_back(node);
     }
     for (double alpha : {0.4, 0.6, 0.4}) {
@@ -1324,8 +1324,8 @@ void check_saturation_refusals() {
         for (std::size_t i = 0; i < n; ++i) {
             const bool positive = i >= 2 && i <= 5;
             const double radius = positive ? error.radius[i] / values[i] : error.radius[i];
-            const auto estimate = core::project_numerical_estimate(values[i], values[i], radius, positive, false);
-            candidate.operands.push_back({positive ? core::Quantity::Positive : core::Quantity::Linear, values[i], estimate});
+            const auto estimate = equilibrium::project_numerical_estimate(values[i], values[i], radius, positive, false);
+            candidate.operands.push_back({positive ? equilibrium::Quantity::Positive : equilibrium::Quantity::Linear, values[i], estimate});
         }
         search.candidates.push_back(candidate);
     }

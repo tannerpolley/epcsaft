@@ -1494,7 +1494,10 @@ static std::vector<double> coefficient_errors(const Parameters& p, detail::Helmh
             for (std::size_t j = 0; j < k * ns; ++j)
                 right[a] += std::abs(jacobian[((k * (ns + 1) + 1 + a) * count * ns) + j]) * previous[j];
         }
-        previous.segment(k * ns, ns) = core::inverse_error_action(lu, right);
+        Eigen::VectorXd result = Eigen::VectorXd::Zero(right.size());
+        for (std::ptrdiff_t i = 0; i < right.size(); ++i)
+            result += lu.solve(Eigen::VectorXd::Unit(right.size(), i)).cwiseAbs() * right[i];
+        previous.segment(k * ns, ns) = result;
         // The gradient's base-site contribution is the achieved-residual floor below.
         for (std::size_t j = k == 1 && !blocks ? ns : 0; j < (k + 1) * ns; ++j)
             errors[k] += std::abs(jacobian[k * (ns + 1) * count * ns + j]) * previous[j];

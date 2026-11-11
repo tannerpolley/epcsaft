@@ -619,14 +619,68 @@ struct SpinodalRecord final : HelmholtzModeRecord {
     double normalized_null_residual = NAN;
 };
 
+enum class Quantity { Linear, Positive, LogPositive };
+enum class ComparisonMode { Strict, EstimatedError };
+struct NumericalEstimate final {
+    double absolute = NAN, chart = NAN;
+    bool available = false, resolved = false;
+    std::string cause = "not_evaluated";
+};
+struct ComparisonEligibility final {
+    bool declaration = true, branch = true, phase_matching = true, inventory = true;
+    bool residual_a = true, residual_b = true, admission_a = true, admission_b = true;
+    bool valid() const { return declaration && branch && phase_matching && inventory && residual_a && residual_b && admission_a && admission_b; }
+};
+struct EquilibriumComparison final {
+    std::string judgment = "failed", cause;
+    double difference = 0, chart_difference = 0, radius_sum = 0;
+};
+template <typename Base>
+Base log_difference(Base a, Base b) {
+    const Base relative = (a - b) / b;
+    return wide_math::abs(wide_math::isfinite(relative) && wide_math::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? wide_math::log1p(relative) : wide_math::log(a) - wide_math::log(b));
+}
+template <typename Base>
+NumericalEstimate project_numerical_estimate(double value, Base mapped, Base radius, bool positive, bool constant) {
+    core::Scope scope("project_numerical_estimate");
+    const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : wide_math::abs(value));
+    const Base displacement = positive ? log_difference(Base(value), mapped) : wide_math::abs(Base(value) - mapped);
+    const double chart = static_cast<double>(radius + displacement + rounding);
+    const double absolute = positive ? value * std::expm1(chart) : chart;
+    const bool available = std::isfinite(absolute) && std::isfinite(chart);
+    return {absolute, chart, available, available, available ? "" : "nonfinite_projection"};
+}
+inline EquilibriumComparison compare_equilibrium_quantity(Quantity quantity, double a, double b, double allowance,
+    const NumericalEstimate& ea, const NumericalEstimate& eb, ComparisonEligibility eligibility, ComparisonMode mode) {
+    core::Scope scope("compare_equilibrium_quantity");
+    EquilibriumComparison out; out.difference = std::abs(a - b);
+    if (!std::isfinite(a) || !std::isfinite(b) || !std::isfinite(allowance) || allowance < 0) { out.cause = "nonfinite_operand"; return out; }
+    if (quantity == Quantity::Positive && (!(a > 0) || !(b > 0))) { out.cause = "positive_domain"; return out; }
+    out.chart_difference = quantity == Quantity::Positive ? log_difference(a, b) : out.difference;
+    if (!eligibility.valid()) { out.cause = "prerequisite"; return out; }
+    if (out.difference <= allowance) { out.judgment = "ordinary"; out.cause = "ordinary_allowance"; return out; }
+    if (mode == ComparisonMode::Strict) { out.cause = "strict_comparison"; return out; }
+    const auto usable = [](const NumericalEstimate& e) {
+        return e.available && e.resolved && std::isfinite(e.absolute) && std::isfinite(e.chart) && e.absolute >= 0 && e.chart >= 0;
+    };
+    if (!usable(ea) || !usable(eb)) { out.cause = "unavailable_or_unresolved"; return out; }
+    if (ea.absolute <= allowance && eb.absolute <= allowance) { out.cause = "ordinary_achievable"; return out; }
+    out.radius_sum = quantity == Quantity::Linear ? ea.absolute + eb.absolute : ea.chart + eb.chart;
+    if (!std::isfinite(out.radius_sum)) { out.cause = "nonfinite_sum"; return out; }
+    if (out.chart_difference <= out.radius_sum) {
+        out.judgment = "estimated_error"; out.cause = "consistent_within_estimated_numerical_error";
+    } else out.cause = "outside_estimates";
+    return out;
+}
+
 struct EquilibriumNumericalEstimates final {
     std::string basis = "canonical_defining_rows", cause = "not_evaluated";
     std::string source_reference_method;
     std::size_t rank = 0, dimension = 0, precision_bits = std::numeric_limits<double>::digits;
     double threshold = 0, condition = INFINITY, inverse_norm = INFINITY, backward_error = INFINITY, physical_radius = INFINITY;
     std::vector<double> residuals, row_terms, row_inner, row_floor, physical_scale;
-    core::NumericalEstimate temperature, pressure, loading;
-    std::vector<core::NumericalEstimate> densities, packing, composition, amounts;
+    equilibrium::NumericalEstimate temperature, pressure, loading;
+    std::vector<equilibrium::NumericalEstimate> densities, packing, composition, amounts;
 };
 
 template <typename Base>
@@ -875,9 +929,9 @@ EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
 struct SolvedStateActionDiagnostics;
 // All operands are generated from one exact trial declaration in declared phase order.
 struct SaturationOperand final {
-    core::Quantity quantity = core::Quantity::Linear;
+    equilibrium::Quantity quantity = equilibrium::Quantity::Linear;
     double value = NAN;
-    core::NumericalEstimate error;
+    equilibrium::NumericalEstimate error;
 };
 struct SaturationCandidate final {
     EquilibriumResult state;
@@ -886,7 +940,7 @@ struct SaturationCandidate final {
 };
 struct SaturationComparison final {
     std::size_t left = 0, right = 0;
-    std::vector<core::EquilibriumComparison> operands;
+    std::vector<equilibrium::EquilibriumComparison> operands;
     std::string identity;
 };
 struct SaturationNode final {
@@ -915,7 +969,7 @@ struct SaturationSearch final {
     std::string uniqueness_scope = "unique within the declared search";
     std::string detection_limits = "unsampled tangencies, paired crossings or multiple roots in a cell, turns between nodes and undiscovered branches can escape detection";
 };
-void compare_loading_candidates(SaturationSearch&, core::ComparisonEligibility);
+void compare_loading_candidates(SaturationSearch&, equilibrium::ComparisonEligibility);
 EPC_API void admit_loading_search(SaturationSearch&);
 EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,

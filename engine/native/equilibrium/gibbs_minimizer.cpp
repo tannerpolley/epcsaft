@@ -2360,16 +2360,16 @@ static EquilibriumResult recover_critical(const CompiledSystem& compiled, Equili
         if (!search->selected) search->selected = index;
         if (!comparable) continue;
         const auto& b = *estimate;
-        const auto agrees = [](core::Quantity quantity, double x, double y, const core::NumericalEstimate& ex, const core::NumericalEstimate& ey) {
-            return core::compare_equilibrium_quantity(quantity, x, y, 0, ex, ey, {}, core::ComparisonMode::EstimatedError).judgment != "failed";
+        const auto agrees = [](equilibrium::Quantity quantity, double x, double y, const equilibrium::NumericalEstimate& ex, const equilibrium::NumericalEstimate& ey) {
+            return equilibrium::compare_equilibrium_quantity(quantity, x, y, 0, ex, ey, {}, equilibrium::ComparisonMode::EstimatedError).judgment != "failed";
         };
         for (std::size_t i = 1; comparable && i < index; ++i) {
             const auto& previous = search->results[i];
             if (!previous.has_state()) continue;
             const auto& a = *previous.numerical_estimates;
-            comparable = agrees(core::Quantity::Linear, *previous.temperature, *current.temperature, a.temperature, b.temperature)
-                && agrees(core::Quantity::Linear, *previous.pressure, *current.pressure, a.pressure, b.pressure)
-                && agrees(core::Quantity::Positive, previous.molar_densities[0], current.molar_densities[0], a.densities[0], b.densities[0]);
+            comparable = agrees(equilibrium::Quantity::Linear, *previous.temperature, *current.temperature, a.temperature, b.temperature)
+                && agrees(equilibrium::Quantity::Linear, *previous.pressure, *current.pressure, a.pressure, b.pressure)
+                && agrees(equilibrium::Quantity::Positive, previous.molar_densities[0], current.molar_densities[0], a.densities[0], b.densities[0]);
         }
     }
     search->budget_exhausted = work.expired() || work.evaluations >= work.evaluation_cap || work.hessian_calls >= work.hessian_cap;

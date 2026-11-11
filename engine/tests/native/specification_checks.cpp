@@ -1704,22 +1704,22 @@ void check_conditioning() {
     }
     {
         core::Convergence overflow; overflow.residual = 1e-10; overflow.floor = 0;
-        core::density_conditioning(overflow, 1.0, 1e-320, true, "endpoint");
+        epcsaft::density_conditioning(overflow, 1.0, 1e-320, true, "endpoint");
         CHECK(overflow.rank->observation.available && overflow.rank->observation.condition == 1);
         CHECK(std::isinf(overflow.rank->observation.error) && overflow.rank->first_conditioning_warning);
         CHECK(overflow.rank->first_conditioning_warning->cause == "nonfinite_projection");
         std::vector<core::NumericalRank> recovered;
         core::retain_rank(recovered, *overflow.rank);
-        core::density_conditioning(overflow, 1.0, 1.0, true, "endpoint");
+        epcsaft::density_conditioning(overflow, 1.0, 1.0, true, "endpoint");
         core::retain_rank(recovered, *overflow.rank);
         CHECK(recovered[0].observation.condition == 1 && std::isfinite(recovered[0].observation.error));
         CHECK(recovered[0].first_conditioning_warning && std::isinf(recovered[0].first_conditioning_warning->error));
-        overflow.floor.reset(); core::density_conditioning(overflow, 1.0, 1.0, true);
+        overflow.floor.reset(); epcsaft::density_conditioning(overflow, 1.0, 1.0, true);
         CHECK(std::isnan(overflow.rank->observation.error) && !overflow.rank->first_conditioning_warning);
         core::Convergence earlier; earlier.floor = 0.0;
-        core::density_conditioning(earlier, 1.0, 1.0, true);
+        epcsaft::density_conditioning(earlier, 1.0, 1.0, true);
         CHECK(earlier.rank->observation.point_kind == "last_linearization");
-        core::density_conditioning(earlier, 1.0, 1.0, true, "endpoint");
+        epcsaft::density_conditioning(earlier, 1.0, 1.0, true, "endpoint");
         CHECK(earlier.rank->observation.point_kind == "endpoint");
     }
     for (double diagonal : {1.0, 1e-10, 0.0}) {
@@ -1762,7 +1762,7 @@ void check_conditioning() {
     const auto refusal = [] { core::Convergence r; r.cause = "unrelated numerical refusal";
         r.stop = core::Stop::left_domain; r.iterations = 7; r.evaluations = 11; r.residual = 2;
         r.floor = 0.4; r.amplification = 3.2; r.contraction = 0.8; r.backward_error = 1e-8;
-        r.criterion = &policy::EQUILIBRIUM_ROW_RESIDUAL;
+        r.criterion = {std::shared_ptr<const policy::Tolerance>{}, &policy::EQUILIBRIUM_ROW_RESIDUAL};
         r.rank = std::make_shared<core::NumericalRank>(core::NumericalRank{"unrelated basis", 3, 2, 1e-14}); return r; }();
     {
         std::optional<core::NumericalRank> warning;
@@ -1812,8 +1812,7 @@ void check_conditioning() {
             || core::describe(*recovered.first_numerical_failure) != core::describe(refusal)
             || recovered.first_numerical_failure->iterations != refusal.iterations
             || recovered.first_numerical_failure->evaluations != refusal.evaluations
-            || recovered.first_numerical_failure->criterion != refusal.criterion
-            || recovered.first_numerical_failure->criterion_owner != refusal.criterion_owner)
+            || recovered.first_numerical_failure->criterion != refusal.criterion)
             throw std::runtime_error("conditioning warning lost through recovery");
     }
 }

@@ -64,8 +64,8 @@ auto fields(equilibrium::EquilibriumProblem& item) {
     return std::tie(origin, a, b, c, d, e, f, g, h, j, k, volume_m3, internal_energy_j, l, m, loading, n, o, solids);
 }
 // Saturation replies carry physical records and estimates; compiled caches and optimizer memory stay in the worker.
-FIELDS(core::NumericalEstimate, a, b, c, d, e)
-FIELDS(core::EquilibriumComparison, a, b, c, d, e)
+FIELDS(equilibrium::NumericalEstimate, a, b, c, d, e)
+FIELDS(equilibrium::EquilibriumComparison, a, b, c, d, e)
 FIELDS(equilibrium::EquilibriumNumericalEstimates, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w)
 FIELDS(equilibrium::SaturationOperand, a, b, c)
 FIELDS(equilibrium::SaturationCandidate, a, b, c)
@@ -114,10 +114,10 @@ struct Wire final {
         double target = v.criterion ? v.criterion->value : 0;
         (*this)(name, target);
         if (!out) {
-            v.criterion = nullptr; v.criterion_owner.reset();
+            v.criterion.reset();
             for (const auto* entry : policy::ENTRIES) if (name == entry->name) {
                 auto owned = std::make_shared<policy::Tolerance>(*entry); owned->value = target;
-                v.criterion = owned.get(); v.criterion_owner = std::move(owned); break;
+                v.criterion = std::move(owned); break;
             }
             if (!name.empty() && !v.criterion) throw std::runtime_error("fit worker criterion name");
         }

@@ -125,8 +125,8 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
         }
         const double residual = p.g.lpNorm<Eigen::Infinity>();
         const auto stop = core::classify(residual, criterion, std::nullopt, std::nullopt, true);  // converged or the cap
-        o.convergence = core::Convergence{residual, &criterion, std::nullopt, std::nullopt, std::nullopt, o.iterations,
-            o.evaluations, stop, nullptr};
+        o.convergence = core::Convergence{residual, {std::shared_ptr<const policy::Tolerance>{}, &criterion}, std::nullopt, std::nullopt, std::nullopt, o.iterations,
+            o.evaluations, stop};
         if (stopped_for_test) {
             o.convergence.cause = "selected trial stopping control";
         }

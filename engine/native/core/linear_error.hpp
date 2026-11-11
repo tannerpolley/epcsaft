@@ -84,32 +84,6 @@ typename Right::PlainObject compensated_defect(const Matrix& matrix, const Solut
     return result;
 }
 
-// Undo numerical equilibration before measuring the supplied matrix's inverse norm.
-template <typename Factor, typename Vector>
-auto inverse_infinity_norm(const Factor& lu, const Vector& rows, const Vector& columns) {
-    Vector sums = Vector::Zero(columns.size());
-    for (std::ptrdiff_t i = 0; i < columns.size(); ++i) {
-        const Vector rhs = Vector::Unit(columns.size(), i);
-        sums += (columns.asDiagonal() * lu.solve(rows.asDiagonal() * rhs)).cwiseAbs();
-    }
-    return sums.maxCoeff();
-}
-
-// Propagate nonnegative row errors through an already admitted factorization.
-template <typename Factor, typename Right>
-typename Right::PlainObject inverse_error_action(const Factor& lu, const Right& right) {
-    using Vector = typename Right::PlainObject;
-    Vector result = Vector::Zero(right.size());
-    for (std::ptrdiff_t i = 0; i < right.size(); ++i)
-        result += lu.solve(Vector::Unit(right.size(), i)).cwiseAbs() * right[i];
-    return result;
-}
-
-template <typename Real>
-Real reduced_error_envelope(Real inverse, Real residual, Real floor, Real displacement = 0) {
-    return inverse * (residual + floor) + displacement;
-}
-
 template <typename Matrix, typename Scale, typename Terms, typename Inner>
 typename Scale::PlainObject canonical_row_floor(const Matrix& j, const Scale& physical_scale,
     const Terms& terms, const Inner& inner) {
@@ -186,73 +160,4 @@ double polish_forward_bound(const Matrix& j, const Residual& r, const Correction
         + (j * d + r).cwiseAbs().maxCoeff() / denominator;
 }
 
-inline void density_conditioning(Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization") {
-    NumericalRank rank{"scalar_density", 1, std::isfinite(derivative) && derivative != 0.0 ? 1u : 0u, 0};
-    ConditioningObservation observation{"density_closure", "", "scalar", "inverse_derivative", "", point_kind};
-    observation.available = rank.rank == 1;
-    observation.condition = observation.available ? 1.0 : INFINITY;
-    observation.cause = observation.available ? "" : std::isfinite(derivative) ? "rank_deficient" : "nonfinite_inverse";
-    if (observation.available && record.floor)
-        observation.error = (record.residual + *record.floor) / std::abs(derivative) / density + std::numeric_limits<double>::epsilon();
-    observation.criterion = policy::DENSITY_ANCHOR_REGULARITY.name;
-    observation.criterion_value = final ? policy::DENSITY_ANCHOR_REGULARITY.value : NAN;
-    observation.iteration = record.iterations;
-    observe_conditioning(rank, std::move(observation));
-    if (rank.first_conditioning_warning) rank.first_conditioning_warning->coordinates = {density};
-    record.rank = std::make_shared<NumericalRank>(std::move(rank));
-}
-
-enum class Quantity { Linear, Positive, LogPositive };
-enum class ComparisonMode { Strict, EstimatedError };
-struct NumericalEstimate final {
-    double absolute = NAN, chart = NAN;
-    bool available = false, resolved = false;
-    std::string cause = "not_evaluated";
-};
-struct ComparisonEligibility final {
-    bool declaration = true, branch = true, phase_matching = true, inventory = true;
-    bool residual_a = true, residual_b = true, admission_a = true, admission_b = true;
-    bool valid() const { return declaration && branch && phase_matching && inventory && residual_a && residual_b && admission_a && admission_b; }
-};
-struct EquilibriumComparison final {
-    std::string judgment = "failed", cause;
-    double difference = 0, chart_difference = 0, radius_sum = 0;
-};
-template <typename Base>
-Base log_difference(Base a, Base b) {
-    const Base relative = (a - b) / b;
-    return wide_math::abs(wide_math::isfinite(relative) && wide_math::abs(relative) < policy::LOG_RATIO_NEAR_UNITY.value ? wide_math::log1p(relative) : wide_math::log(a) - wide_math::log(b));
-}
-template <typename Base>
-NumericalEstimate project_numerical_estimate(double value, Base mapped, Base radius, bool positive, bool constant) {
-    core::Scope scope("project_numerical_estimate");
-    const double rounding = constant ? 0.0 : std::numeric_limits<double>::epsilon() * (positive ? 1.0 : wide_math::abs(value));
-    const Base displacement = positive ? log_difference(Base(value), mapped) : wide_math::abs(Base(value) - mapped);
-    const double chart = static_cast<double>(radius + displacement + rounding);
-    const double absolute = positive ? value * std::expm1(chart) : chart;
-    const bool available = std::isfinite(absolute) && std::isfinite(chart);
-    return {absolute, chart, available, available, available ? "" : "nonfinite_projection"};
-}
-inline EquilibriumComparison compare_equilibrium_quantity(Quantity quantity, double a, double b, double allowance,
-    const NumericalEstimate& ea, const NumericalEstimate& eb, ComparisonEligibility eligibility, ComparisonMode mode) {
-    core::Scope scope("compare_equilibrium_quantity");
-    EquilibriumComparison out; out.difference = std::abs(a - b);
-    if (!std::isfinite(a) || !std::isfinite(b) || !std::isfinite(allowance) || allowance < 0) { out.cause = "nonfinite_operand"; return out; }
-    if (quantity == Quantity::Positive && (!(a > 0) || !(b > 0))) { out.cause = "positive_domain"; return out; }
-    out.chart_difference = quantity == Quantity::Positive ? log_difference(a, b) : out.difference;
-    if (!eligibility.valid()) { out.cause = "prerequisite"; return out; }
-    if (out.difference <= allowance) { out.judgment = "ordinary"; out.cause = "ordinary_allowance"; return out; }
-    if (mode == ComparisonMode::Strict) { out.cause = "strict_comparison"; return out; }
-    const auto usable = [](const NumericalEstimate& e) {
-        return e.available && e.resolved && std::isfinite(e.absolute) && std::isfinite(e.chart) && e.absolute >= 0 && e.chart >= 0;
-    };
-    if (!usable(ea) || !usable(eb)) { out.cause = "unavailable_or_unresolved"; return out; }
-    if (ea.absolute <= allowance && eb.absolute <= allowance) { out.cause = "ordinary_achievable"; return out; }
-    out.radius_sum = quantity == Quantity::Linear ? ea.absolute + eb.absolute : ea.chart + eb.chart;
-    if (!std::isfinite(out.radius_sum)) { out.cause = "nonfinite_sum"; return out; }
-    if (out.chart_difference <= out.radius_sum) {
-        out.judgment = "estimated_error"; out.cause = "consistent_within_estimated_numerical_error";
-    } else out.cause = "outside_estimates";
-    return out;
-}
 }  // namespace epcsaft::core

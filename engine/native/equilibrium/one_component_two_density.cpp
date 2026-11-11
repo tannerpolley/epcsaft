@@ -61,7 +61,12 @@ struct ReducedCorrection final {
         }
         delta = columns.asDiagonal() * lu.solve(-(rows.asDiagonal() * f));
         if (!delta.allFinite()) throw std::runtime_error("one-component two-density nonfinite direction");
-        inverse = core::inverse_infinity_norm(lu, rows, columns);
+        Vector sums = Vector::Zero(columns.size());
+        for (std::ptrdiff_t i = 0; i < columns.size(); ++i) {
+            const Vector rhs = Vector::Unit(columns.size(), i);
+            sums += (columns.asDiagonal() * lu.solve(rows.asDiagonal() * rhs)).cwiseAbs();
+        }
+        inverse = sums.maxCoeff();
         condition = j.cwiseAbs().rowwise().sum().maxCoeff() * inverse;
     }
 };
@@ -70,7 +75,7 @@ template <typename Base>
 LinearSolveDiagnostics diagnostics(const Reduction<Base>& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
     const Base norm = std::max(wide_math::abs(at.rows[0]), wide_math::abs(at.rows[1]));
     return {"one_component_two_density_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
-        double(core::reduced_error_envelope(step.inverse, norm, at.floor, displacement)), std::numeric_limits<Base>::digits, 0, "last_linearization"};
+        double((step.inverse * (norm + at.floor) + displacement)), std::numeric_limits<Base>::digits, 0, "last_linearization"};
 }
 void observe_diagnostics(EquilibriumResult& result, const LinearSolveDiagnostics& d, const std::vector<double>& point) {
     core::NumericalRank rank{"log_density", 2, 2, 0};
@@ -299,7 +304,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
                         result.linear_solve_diagnostics = record;
                         observe_diagnostics(result, record, {double(logs[0]), double(logs[1])});
                         const Wide achieved = std::max(wide_math::abs(wide.rows[0]), wide_math::abs(wide.rows[1]));
-                        const Wide error = core::reduced_error_envelope(next.inverse, achieved, wide.floor), correction_norm = next.delta.template lpNorm<Eigen::Infinity>();
+                        const Wide error = (next.inverse * (achieved + wide.floor) + Wide(0)), correction_norm = next.delta.template lpNorm<Eigen::Infinity>();
                         if (!final_wide || achieved > Wide(tolerance)
                             || !((correction_norm <= policy::EQUILIBRIUM_POLISH_CORRECTION.value && error <= policy::EQUILIBRIUM_POLISH_CORRECTION.value)
                                 || (achieved <= wide.floor && correction_norm <= next.inverse * wide.floor))) continue;

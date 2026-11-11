@@ -22,6 +22,23 @@
 #include <vector>
 
 namespace epcsaft {
+void density_conditioning(core::Convergence& record, double density, double derivative, bool final, const char* point_kind) {
+    core::NumericalRank rank{"scalar_density", 1, std::isfinite(derivative) && derivative != 0.0 ? 1u : 0u, 0};
+    core::ConditioningObservation observation{"density_closure", "", "scalar", "inverse_derivative", "", point_kind};
+    observation.available = rank.rank == 1;
+    observation.condition = observation.available ? 1.0 : INFINITY;
+    observation.cause = observation.available ? "" : std::isfinite(derivative) ? "rank_deficient" : "nonfinite_inverse";
+    if (observation.available && record.floor)
+        observation.error = (record.residual + *record.floor) / std::abs(derivative) / density + std::numeric_limits<double>::epsilon();
+    observation.criterion = policy::DENSITY_ANCHOR_REGULARITY.name;
+    observation.criterion_value = final ? policy::DENSITY_ANCHOR_REGULARITY.value : NAN;
+    observation.iteration = record.iterations;
+    observe_conditioning(rank, std::move(observation));
+    if (rank.first_conditioning_warning) rank.first_conditioning_warning->coordinates = {density};
+    record.rank = std::make_shared<core::NumericalRank>(std::move(rank));
+}
+
+
 namespace {
 
 // The diagnostic scan's evaluation or time budget ran out; it ends the scan instead of
@@ -471,13 +488,13 @@ DensityRoot refine(
     const double derivative = residual_derivative(point, density, pressure, temperature);
     parent_scope.probe("density_root_bracket", {lower, upper, derivative, point.residual});
     core::Convergence record{
-        std::abs(point.residual), model.solver_options().criterion(policy::density),
+        std::abs(point.residual), {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)},
         point.gradient_floor / density,
         std::isfinite(derivative) && derivative != 0.0
             ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
-        history.contraction(), iterations + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
+        history.contraction(), iterations + 1, evaluations, core::Stop::stalled
     };
-    core::density_conditioning(record, density, derivative, true, "endpoint");
+    density_conditioning(record, density, derivative, true, "endpoint");
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                  record.contraction, iterations == maximum,
                                  record.amplification);
@@ -1220,14 +1237,14 @@ DensityRoot anchor(
         anchor_scope.probe("density_newton_step", {density, point.residual, derivative, candidate},
                            static_cast<std::uint32_t>(iteration));
         anchor_record = {
-            std::abs(point.residual), model.solver_options().criterion(policy::density),
+            std::abs(point.residual), {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)},
             point.gradient_floor / density,
             std::isfinite(derivative) && derivative != 0.0
                 ? std::optional<double>(1.0 / std::abs(derivative)) : std::nullopt,
-            history.contraction(), iteration + 1, evaluations, core::Stop::stalled, model.solver_options().owners[policy::density]
+            history.contraction(), iteration + 1, evaluations, core::Stop::stalled
         };
         if (anchor_record.residual <= anchor_record.criterion->value || derivative == 0 || !std::isfinite(derivative))
-            core::density_conditioning(anchor_record, density, derivative, anchor_record.residual <= anchor_record.criterion->value);
+            density_conditioning(anchor_record, density, derivative, anchor_record.residual <= anchor_record.criterion->value);
         if (anchor_record.rank) core::retain_rank(model.rank_records, *anchor_record.rank);
         if (model.partition || (anchor_record.residual <= anchor_record.criterion->value
             && point.slope > 0.0)) {
@@ -1664,7 +1681,7 @@ DensityRoot solve_density(
         core::stopping_criterion(root.convergence, model.solver_options(), policy::density);
         root.convergence.residual = 0.0;
         root.convergence.floor = 0.0;
-        core::density_conditioning(root.convergence, ideal_density, 1.0 / ideal_density, true, "endpoint");
+        density_conditioning(root.convergence, ideal_density, 1.0 / ideal_density, true, "endpoint");
         root.rank_records = {*root.convergence.rank};
         root.convergence.stop = core::classify(root.convergence.residual, *root.convergence.criterion, std::nullopt, std::nullopt, false);
         scope.finish(root.convergence);
@@ -1685,8 +1702,8 @@ DensityRoot solve_density(
                 throw std::invalid_argument("invalid density anchor");
             }
             if (!(*anchor_density > lower && *anchor_density < upper)) {
-                core::Convergence record{0.0, model.solver_options().criterion(policy::density), std::nullopt,
-                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain, model.solver_options().owners[policy::density]};
+                core::Convergence record{0.0, {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)}, std::nullopt,
+                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
                 record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
                     + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
                     + "; upper=" + core::optional_number(upper);
