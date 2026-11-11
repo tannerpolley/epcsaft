@@ -444,11 +444,11 @@ struct CompiledSystem final {
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
     EPC_API PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
-        std::optional<core::Convergence>* first_numerical_failure = nullptr) const;
+        std::optional<core::Convergence>* first_numerical_failure = nullptr, std::optional<std::size_t> chemical_phase = std::nullopt) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
-        std::optional<core::Convergence>* = nullptr) const;
-    template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&) const;
+        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt) const;
+    template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
         const std::vector<std::vector<Base>>&) const;
@@ -470,7 +470,7 @@ struct CompiledSystem final {
                                                const PhasePoint* sizes = nullptr) const;
     EPC_API double classified_residual_norm(const std::vector<double>& point) const;
     EPC_API RowUncertainty row_uncertainty(const PhasePoint&) const;
-    EPC_API PointEvaluation evaluate_at(const PhasePoint& prepared) const;
+    EPC_API PointEvaluation evaluate_at(const PhasePoint& prepared, std::optional<std::size_t> chemical_phase = std::nullopt) const;
     EPC_API std::vector<double> generic_point() const;
     // Quantity and basis of each solved-chart coordinate, in coordinate order (unknown_count entries).
     EPC_API std::vector<std::string> coordinate_labels() const;

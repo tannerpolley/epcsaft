@@ -401,7 +401,7 @@ bool ideal_speciation(const std::vector<std::vector<double>>& B, const std::vect
 // `index` selects the speciated phase; its chemical rows alone supply c_j, so other phases' coordinates stay as given.
 std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSystem& compiled, std::vector<double>& point,
                                                                std::vector<double> composition, core::Scope& scope,
-                                                               std::size_t index = 0, StageWork* observations = nullptr) {
+                                                               std::size_t index = 0, StageWork* observations = nullptr, bool selected_chemical_phase = false) {
     const auto& phase = compiled.problem.phases[index];
     const std::size_t m = phase.support.size(), offset = compiled.phase_offsets()[index];
     std::vector<std::size_t> chemical;  // phase `index`'s chemical rows, in support order
@@ -436,7 +436,8 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             trial[offset + m] = compiled.feed_total;
             trial[offset + m + 1] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
-            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true, observations ? &observations->first_numerical_failure : nullptr)).values;
+            const auto selected = selected_chemical_phase ? std::optional<std::size_t>(index) : std::nullopt;
+            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true, observations ? &observations->first_numerical_failure : nullptr, selected), selected).values;
             std::vector<double> c(m);
             for (std::size_t j = 0; j < m; ++j) c[j] = rows[chemical[j]] - trial[offset + j];
             if (!ideal_speciation(B, compiled.balance, c, n, observations)) break;
@@ -480,7 +481,7 @@ std::optional<PhaseStart> true_species_split(
     double total = 0.0, vapor_density = 0.0;
     try {
         auto point = compiled.generic_point();
-        const auto speciated = speciate_single_phase(compiled, point, compiled.feed_composition, scope, liquid, stages);
+        const auto speciated = speciate_single_phase(compiled, point, compiled.feed_composition, scope, liquid, stages, true);
         if (limits) limits->check();
         if (!speciated) return std::nullopt;
         total = speciated->first;

@@ -52,11 +52,11 @@ std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std
 }
 
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
-    std::optional<core::Convergence>* first) const { return prepare_values(point, state_only, first); }
+    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase) const { return prepare_values(point, state_only, first, chemical_phase); }
 
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
-    std::optional<core::Convergence>* first_numerical_failure) const {
+    std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -85,7 +85,11 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     result.temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     if constexpr (std::is_same_v<Base, double>) admit_calorics(*this, result.temperature);
+    result.composition.resize(result.shape.size()); result.packing.resize(result.shape.size());
+    result.eta.resize(result.shape.size()); result.volume.resize(result.shape.size());
+    result.amount.resize(result.shape.size()); result.derivative.resize(result.shape.size());
     for (std::size_t phase = 0; phase < result.shape.size(); ++phase) {
+        if (chemical_phase && phase != *chemical_phase) continue;
         core::AssociationObservations phase_observations(phase);
         const auto& layout = result.shape[phase];
         std::vector<Base> values(components, 0.0);
@@ -97,26 +101,26 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
             total += value;
         }
         if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
-        result.packing.push_back(packing_terms(*model, result.temperature, values));
-        result.eta.push_back(wide_math::exp(point[layout.volume]));
-        if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(double(result.eta.back())))
+        result.packing[phase] = packing_terms(*model, result.temperature, values);
+        result.eta[phase] = wide_math::exp(point[layout.volume]);
+        if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(double(result.eta[phase])))
             throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");
-        result.volume.push_back(result.packing.back().coefficient / result.eta.back());
-        result.amount.push_back(layout.amount.has_value()
-            ? point[*layout.amount] : phase_amount(problem.phases[phase]));
+        result.volume[phase] = result.packing[phase].coefficient / result.eta[phase];
+        result.amount[phase] = layout.amount.has_value()
+            ? point[*layout.amount] : phase_amount(problem.phases[phase]);
         const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
             ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
         if constexpr (std::is_same_v<Base, double>) {
         if (state_only && one_component_two_density_eligible(*this)) {
-            result.pure.push_back(model->pure_isothermal(result.temperature, result.volume.back(), total));
-            result.derivative.push_back(result.pure.back().derivative);
-        } else result.derivative.push_back(model->evaluate(result.temperature, result.volume.back(), values, order,
-            phase_calculation == PhaseCalculation::Declared));
-        } else result.derivative.push_back(model->isothermal(result.temperature, result.volume.back(), values));
-        if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative.back().first_numerical_failure);
-        scope.probe("gradient_floor", double(result.derivative.back().gradient_floor),
+            result.pure.push_back(model->pure_isothermal(result.temperature, result.volume[phase], total));
+            result.derivative[phase] = result.pure.back().derivative;
+        } else result.derivative[phase] = model->evaluate(result.temperature, result.volume[phase], values, order,
+            phase_calculation == PhaseCalculation::Declared);
+        } else result.derivative[phase] = model->isothermal(result.temperature, result.volume[phase], values);
+        if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative[phase].first_numerical_failure);
+        scope.probe("gradient_floor", double(result.derivative[phase].gradient_floor),
                     static_cast<std::uint32_t>(phase));
-        result.composition.push_back(std::move(values));
+        result.composition[phase] = std::move(values);
     }
     result.standard = standard_term(
         *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
@@ -125,17 +129,17 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));
 }
 
-PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& at) const { return evaluate_at<double>(at); }
+PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& at, std::optional<std::size_t> chemical_phase) const { return evaluate_at<double>(at, chemical_phase); }
 
 template <typename Base>
-PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<Base>& prepared) const {
+PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<Base>& prepared, std::optional<std::size_t> chemical_phase) const {
     core::Scope scope("equilibrium_evaluate");
     if constexpr (std::is_same_v<Base, double>) if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
@@ -159,7 +163,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
     const auto& standard = prepared.standard.derivative[0];
     PointEvaluationValues<Base> result;
-    for (const auto& derivative : prepared.derivative) result.floor = std::max(result.floor, derivative.gradient_floor);
+    if (!chemical_phase) for (const auto& derivative : prepared.derivative) result.floor = std::max(result.floor, derivative.gradient_floor);
     std::vector<std::optional<std::size_t>> phase_phi(shape.size());
     std::size_t phi_index = 0;
     for (const auto& item : rows) {
@@ -167,6 +171,9 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     }
     std::vector<Base> series;  // every condition row from one zeroth coefficient
     for (const auto& row : rows) {
+        if (chemical_phase && (row.kind != RowKind::Chemical || row.phase != *chemical_phase)) {
+            result.values.push_back(0.0); continue;
+        }
         Base value = 0.0;
         if (row.kind == RowKind::Chemical) {
             const auto& derivative = prepared.derivative[row.phase];
@@ -213,6 +220,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         result.values.push_back(value);
     }
     if constexpr (std::is_same_v<Base, double>) scope.probe("row_values", result.values);
+    if (chemical_phase) return result;
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         const auto& derivative = prepared.derivative[phase];
         Base ideal = ideal_mechanical_helmholtz(x[phase], volume[phase], Base(1));
@@ -236,7 +244,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     return result;
 }
 
-template PointEvaluationValues<WiderScalar> CompiledSystem::evaluate_at(const PhasePointValues<WiderScalar>&) const;
+template PointEvaluationValues<WiderScalar> CompiledSystem::evaluate_at(const PhasePointValues<WiderScalar>&, std::optional<std::size_t>) const;
 
 RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
     const auto balance = matvec(B, feed_at(at.point));
