@@ -208,7 +208,7 @@ asl_library = shared_library(
 )
 
 # Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
-py.extension_module(
+core_extension = py.extension_module(
   '_core',
   files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp',
         'native/bindings/diagnostics_bindings.cpp',
@@ -347,6 +347,13 @@ boundary_checks = executable(
 )
 test('boundary', boundary_checks, timeout: 600)
 
+capped_input_options = get_option('b_sanitize').contains('address') ? ['sanitize'] + cpp.cmd_array() : []
+capped_addition_input = custom_target('mea_capped_addition',
+  input: files('../tools/fixtures/mea-f1.json.gz', '../tools/fixtures/mea-f1-identity.json'),
+  depend_files: files('src/epcsaft/parameters.py'),
+  output: 'mea_capped_addition.inc',
+  command: [py, files('tests/native/fixtures/mea_capped_addition.py'), core_extension, '@OUTPUT@'] + capped_input_options,
+)
 regression_checks = executable(
   'regression_checks',
   files('tests/native/regression_checks.cpp',
@@ -354,7 +361,9 @@ regression_checks = executable(
         'tests/native/regression_j2_inventory_checks.cpp',
         'tests/native/regression_reaction_checks.cpp',
         'tests/native/regression_measurement_checks.cpp',
-        'tests/native/regression_stability_checks.cpp'),
+        'tests/native/regression_stability_checks.cpp',
+        'tests/native/regression_capped_addition_checks.cpp'),
+  capped_addition_input,
   cpp_args: native_warnings,
   gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep] + quadmath_dep,
