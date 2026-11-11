@@ -3107,9 +3107,6 @@ class CompiledSystem:
         """
         ...
 
-    first_numerical_failure: Optional[Convergence]
-    """Earliest observed numerical refusal, separate from final convergence."""
-
     rank_records: list[NumericalRank]
     """Latest observed rank per named operation; no extra admission rule."""
 

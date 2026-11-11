@@ -20,6 +20,7 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+static void validate_reaction_set(std::size_t components, const std::vector<ReactionSpec>& reactions);
 namespace {
 
 void require_nonnegative(const std::vector<double>& values, const char* name) {
@@ -567,14 +568,6 @@ std::vector<std::vector<double>> standard_state_series(
     return result;
 }
 
-std::vector<double> standard_state(
-    double temperature, std::size_t components,
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry, CompiledSystem* observations
-) {
-    return standard_state_series(temperature, components, reactions, supplied, 0, thermochemistry, nullptr, observations).front();
-}
-
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {
     if (basis.empty()) throw std::invalid_argument("empty balance basis");
     const std::size_t components = basis.front().size();
@@ -638,7 +631,7 @@ std::string reaction_name(const ReactionSpec& reaction, std::size_t index) {
     return reaction.name.empty() ? std::to_string(index) : reaction.name;
 }
 
-void validate_reaction_set(
+static void validate_reaction_set(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 ) {
     if (components == 0) throw std::invalid_argument("no components");

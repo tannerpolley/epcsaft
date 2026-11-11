@@ -26,16 +26,10 @@ EPC_API std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions, CompiledSystem* observations = nullptr
 );
 
-EPC_API std::vector<double> standard_state(
-    double temperature, std::size_t components,
-    const std::vector<ReactionSpec>& reactions,
-    const std::vector<double>& supplied, const ThermochemistryRecord* thermochemistry = nullptr, CompiledSystem* observations = nullptr
-);
-
 // series[k][i] is d^k g_i / dT^k of the minimum-norm standard state (one gauge for every
 // order) or of a supplied constant vector; order <= 3. A supplied vector must satisfy the
 // reaction targets at this temperature by the inferred-vector criterion.
-std::vector<std::vector<double>> standard_state_series(
+EPC_API std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
     const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry = nullptr,
@@ -79,10 +73,6 @@ Base sum(const std::vector<Base>& values) {
 }
 
 EPC_API std::size_t reaction_rank(
-    std::size_t components, const std::vector<ReactionSpec>& reactions
-);
-
-void validate_reaction_set(
     std::size_t components, const std::vector<ReactionSpec>& reactions
 );
 

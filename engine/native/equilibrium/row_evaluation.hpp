@@ -1041,17 +1041,6 @@ RowSeries CompiledSystem::row_series(
                 std::move(key), model->residual_energy_action(prepared.temperature,
                     prepared.volume[phase], prepared.composition[phase], directions)).first->second;
             result.maximum_energy_order = std::max(result.maximum_energy_order, directions.size());
-            auto& total = result.energy_diagnostics;
-            if (!reused) {
-                total.forward_sweeps += energy.diagnostics.forward_sweeps;
-                total.directional_paths += energy.diagnostics.directional_paths;
-                total.site_solves += energy.diagnostics.site_solves;
-                total.site_factorizations += energy.diagnostics.site_factorizations;
-                total.recordings += energy.diagnostics.recordings;
-            }
-            total.site_rank = energy.diagnostics.site_rank;
-            total.site_pivot_ratio = std::max(total.site_pivot_ratio, energy.diagnostics.site_pivot_ratio);
-            total.association_residual = std::max(total.association_residual, energy.diagnostics.association_residual);
             if (energy.status != PropertyActionStatus::Available && result.energy == PropertyActionStatus::Available)
                 result.energy = energy.status;
             return energy.action.value_or(std::numeric_limits<double>::quiet_NaN());

@@ -851,7 +851,6 @@ EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope&
     result.unknown_count = compiled.unknown_count();
     result.jacobian_rank = compiled.jacobian_rank;
     result.last_rank = compiled.last_rank;
-    core::retain_first(result.first_numerical_failure, compiled.first_numerical_failure);
     result.rank_records = compiled.rank_records;
     result.generic_nullity = compiled.generic_nullity;
     if (!compiled.feasible) {

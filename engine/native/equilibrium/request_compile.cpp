@@ -256,7 +256,7 @@ std::vector<double> species_standard_slopes(double temperature, std::size_t comp
         reactions[row].reference.reset();
         reactions[row].affinity_j_per_mol = values[row];
     }
-    return standard_state(temperature, components, reactions, {});
+    return standard_state_series(temperature, components, reactions, {}, 0).front();
 }
 
 static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd& w, const Eigen::VectorXd& b,
@@ -1617,7 +1617,10 @@ static CompiledSystem compile_with_basis(
     if (request.internal_energy_j && (!request.volume_m3 || phases.size() > 2))
         throw std::invalid_argument("UV requires volume and one or two declared phases");
     admit_conditions(compiled);
-    if (compiled.free_intensive_count != compiled.pinned_count + compiled.condition_count()) {
+    // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
+    const auto condition_count = compiled.has_caloric_condition() + request.volume_m3.has_value()
+        + 2 * request.critical.has_value() + request.spinodal.has_value() + request.envelope.has_value();
+    if (compiled.free_intensive_count != compiled.pinned_count + condition_count) {
         if (caloric_count) throw std::invalid_argument("PH/PS requires declared free amounts, free T and fixed P");
         if (compiled.free_intensive_count < compiled.pinned_count)  // so at least one phase is pinned
             throw std::invalid_argument("pinned phase " + std::find_if(phases.begin(), phases.end(), pinned)->name
@@ -1658,7 +1661,7 @@ static CompiledSystem compile_with_basis(
         model, request, temperature_guess, pressure_guess,
         compiled.reference_diagnostics, false);
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
-    compiled.standard_gibbs = standard_state(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr, &compiled);
+    compiled.standard_gibbs = standard_state_series(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, 0, model.thermochemistry() ? &*model.thermochemistry() : nullptr, nullptr, &compiled).front();
     admit_solids(compiled, covered);
     for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
         compiled.rows.push_back({RowKind::Moiety, 0, row});
@@ -1821,8 +1824,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
         throw std::invalid_argument("unit-activity solvent absent from positive liquid support");
     if (phase.support.size() != all.size()) restrict_inventory_balances(c, retained);
     for (auto i : all) if (!retained[i]) c.removed_species.push_back(i);
-    c.primal_size = phase.support.size(); c.amount_coordinates.resize(c.primal_size);
-    std::iota(c.amount_coordinates.begin(), c.amount_coordinates.end(), 0);
+    c.primal_size = phase.support.size();
     for (std::size_t r = 0; r < request.reactions.size(); ++r) c.rows.push_back({model.activity_basis == "molarity" ? RowKind::ReactionMolarity : RowKind::ReactionMassAction, 0, r});
     for (std::size_t k = 0; k < c.rank; ++k) c.rows.push_back({RowKind::Moiety, 0, k});
     const auto info = inspect_sensitivity(c, c.generic_point());

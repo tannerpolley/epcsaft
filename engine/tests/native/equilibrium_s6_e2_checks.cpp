@@ -592,7 +592,7 @@ void check_s11() {
     const std::vector<epcsaft::equilibrium::ReactionSpec> reactions = {
         {"isomerisation", {-1.0, 1.0, 0.0}, 2.0, std::nullopt}
     };
-    const auto standard = epcsaft::equilibrium::standard_state(300.0, 3, reactions, {});
+    const auto standard = epcsaft::equilibrium::standard_state_series(300.0, 3, reactions, {}, 0).front();
     const auto affinity = equilibrium_support::reaction_affinities(reactions, standard);
     const double affinity_reference = -epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0 * std::log(2.0);
     recording_support::compare(

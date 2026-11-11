@@ -374,7 +374,6 @@ struct RowSeries final {
     std::array<std::vector<std::vector<double>>, 3> reaction_shift; // L, L_T, L_TT Taylor coefficients
     std::vector<std::vector<double>> solid_amount, solid_affinity;  // [solid][k]: n_s and A_s/RT
     PropertyActionStatus energy = PropertyActionStatus::Available;
-    PropertyActionDiagnostics energy_diagnostics;
     std::size_t maximum_energy_order = 0;
 };
 
@@ -403,14 +402,11 @@ struct SpinodalSearch final {
 
 struct CompiledSystem final {
     PhaseCalculation phase_calculation = PhaseCalculation::Unknown;
-    std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
     const IdealMoleFraction* ideal = nullptr;
-    // EqID ideal_reaction_amount_coordinates: column j is ln(n_support[j]/N_feed).
-    std::vector<std::size_t> amount_coordinates;
     std::vector<double> ideal_log_k;
     EquilibriumProblem problem;
     std::vector<double> n_feed;
@@ -545,11 +541,6 @@ struct CompiledSystem final {
     }
     // One minimized phase: no optimizer ln eta bounds, prepare refuses eta outside the domain (#314).
     bool log_packing_unbounded() const noexcept { return problem.phases.size() == 1 && !feasibility_cell(); }
-
-    // Scalar conditions e: a caloric row, two net critical equations or an envelope row.
-    std::size_t condition_count() const noexcept {
-        return has_caloric_condition() + problem.volume_m3.has_value() + 2 * problem.critical.has_value() + problem.spinodal.has_value() + problem.envelope.has_value();
-    }
 
     std::size_t mode_row() const noexcept { return rows.size() - mode_count - 1 - problem.critical.has_value(); }
     const CriticalDeclaration& mode_seed() const { return problem.critical ? *problem.critical : *problem.spinodal; }

@@ -1269,7 +1269,7 @@ void check_ideal_mole_fraction() {
     auto candidate = r1;
     candidate.mole_fractions = {x[0] - 2 * x[1], 2 * x[1], 2 * x[2]};
     const auto compiled_water = compile_problem(water, p);
-    for (std::size_t i = 0; i < 3; ++i) candidate.coordinates[compiled_water.amount_coordinates[i]] = std::log(candidate.mole_fractions[i]);
+    for (std::size_t i = 0; i < 3; ++i) candidate.coordinates[i] = std::log(candidate.mole_fractions[i]);
     check_activity_defect(water, compiled_water, candidate, source_log_k(0, p.temperature.value));
     std::printf("activity-ideal,lnQ=%.17g,lnK=%.17g,xw=%.17g,analytic=%.17g\n", *read.log_quotient, source_log_k(0, p.temperature.value), x[0], xw);
     candidate = r1; candidate.mole_fractions = {1,0,0};

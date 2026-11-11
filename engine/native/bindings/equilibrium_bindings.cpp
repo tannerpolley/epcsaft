@@ -280,7 +280,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(PointEvaluation, values, objective, floor);
     nb::class_<CompiledSystem>(module, "CompiledSystem")
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
-        EPCSAFT_READONLY(CompiledSystem, first_numerical_failure, rank_records, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
+        EPCSAFT_READONLY(CompiledSystem, rank_records, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
         .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
         .def("solve_saturation", &solve_saturation, nb::keep_alive<0, 1>())
