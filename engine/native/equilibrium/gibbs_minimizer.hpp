@@ -175,7 +175,8 @@ EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, Equili
 // The driver internals the stability search (phase_stability.cpp) shares.
 void refuse(EquilibriumResult& result, Candidate as = Candidate::Refused);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
-EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr);
+EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr,
+    const PhasePoint* cached_prepared = nullptr, const PointEvaluation* cached_rows = nullptr);
 EPC_API EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
 EPC_API EquilibriumResult run_driver(
     const HelmholtzModel& model, const CompiledSystem& compiled,
@@ -358,6 +359,7 @@ public:
     }
     // Ipopt's lower-bound multipliers at the endpoint, per physical column of the extensive objective.
     const std::vector<double>& lower_multipliers() const noexcept { return lower_multipliers_; }
+    const std::optional<PhasePoint>& last_prepared() const noexcept { return prepared_; }
     const std::optional<PointEvaluation>& last_rows() const noexcept { return rows_; }
     std::vector<double> last_classified() const { return rows_ && prepared_ ? compiled_.classified_residuals(*prepared_, rows_->values) : std::vector<double>{}; }
     Ipopt::SolverReturn status() const noexcept { return status_; }

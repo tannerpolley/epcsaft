@@ -1,6 +1,7 @@
 // S6-S16, C1, C3, F5 and E2: solve, reuse, availability and thermal-solve checks.
 #include "equilibrium_checks_shared.hpp"
 #include "one_component_two_density_inputs.hpp"
+#include <cstring>
 
 namespace equilibrium_checks {
 
@@ -12,6 +13,19 @@ void check_s6() {
     one.phases.resize(1);
     const auto one_result = epcsaft::equilibrium::solve_equilibrium(model, one);
     const auto two_result = epcsaft::equilibrium::solve_equilibrium(model, two);
+    // ALG-EQUILIBRIUM: the zero-dual chemical rows must give identical lifted multipliers.
+    const auto compiled = epcsaft::equilibrium::compile_problem(model, two);
+    const std::vector<double> primal(two_result.coordinates.begin(),
+        two_result.coordinates.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size));
+    epcsaft::equilibrium::GibbsMinimizer nlp(compiled, primal, nullptr, nullptr, true);
+    Ipopt::Number objective = 0.0;
+    CHECK(nlp.eval_f(static_cast<Ipopt::Index>(primal.size()), primal.data(), true, objective));
+    CHECK(nlp.last_prepared() && nlp.last_rows());
+    const auto original = epcsaft::equilibrium::add_multipliers(compiled, primal);
+    const auto reused = epcsaft::equilibrium::add_multipliers(
+        compiled, primal, nullptr, &*nlp.last_prepared(), &*nlp.last_rows());
+    CHECK(original.size() > primal.size() && original.size() == reused.size());
+    CHECK(std::memcmp(original.data(), reused.data(), original.size() * sizeof(double)) == 0);
     recording_support::compare(
         "one-success", "success", "bool", one_result.success ? 1.0 : 0.0, 1.0,
         recording_support::fields({recording_support::field("T", 298.15),

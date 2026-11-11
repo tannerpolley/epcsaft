@@ -19,6 +19,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstring>
 #include <exception>
 #include <limits>
 #include <memory>
@@ -321,7 +322,8 @@ void refuse(EquilibriumResult& result, Candidate as) {
 }
 
 std::vector<double> add_multipliers(
-    const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations
+    const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations,
+    const PhasePoint* cached_prepared, const PointEvaluation* cached_rows
 ) {
     if (point.size() != compiled.primal_size) return point;
     const std::size_t width = compiled.rank + compiled.charge_row_count;
@@ -331,8 +333,10 @@ std::vector<double> add_multipliers(
     // Recover the balance and charge multipliers by the KKT-weighted least squares of the
     // chemical rows: the free-amount minimizer's stationarity conditions carry the weights
     // N_p x_i / N_feed, so the weighted fit is the one whose classified residual is minimal.
-    const auto prepared = compiled.prepare(result, true, observations ? &observations->first_numerical_failure : nullptr);
-    const auto values = compiled.evaluate_at(prepared).values;
+    const auto recomputed = cached_prepared ? PhasePoint{} : compiled.prepare(result, true, observations ? &observations->first_numerical_failure : nullptr);
+    const auto& prepared = cached_prepared ? *cached_prepared : recomputed;
+    const auto recomputed_rows = cached_rows ? PointEvaluation{} : compiled.evaluate_at(prepared);
+    const auto& values = cached_rows ? cached_rows->values : recomputed_rows.values;
     std::vector<std::size_t> chemical;
     std::vector<std::size_t> phi_phase;
     for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -1648,7 +1652,13 @@ static EquilibriumResult run_driver_once(
     if (expired()) return limited_result();
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits || newton ? std::move(fallback) : declared.ideal ? declared.generic_point() : boundary_start(declared);
-    std::vector<double> full = !declared.feasibility_cell() ? add_multipliers(declared, point, &result) : point;
+    const auto& cached = nlp->last_prepared();
+    const auto& rows = nlp->last_rows();
+    const bool reuse = !nlp->solution().empty() && point.size() == declared.primal_size && cached && rows
+        && cached->point.size() == point.size()
+        && std::memcmp(cached->point.data(), point.data(), point.size() * sizeof(double)) == 0;
+    std::vector<double> full = !declared.feasibility_cell()
+        ? add_multipliers(declared, point, &result, reuse ? &*cached : nullptr, reuse ? &*rows : nullptr) : point;
     // ALG-EQUILIBRIUM: each free solid is classified once at the Ipopt endpoint by complementarity: present (saturation
     // row) when n_s/N_feed exceeds its bound multiplier z_s = -A_s/RT, absent (n_s = 0) otherwise. The classified
     // declaration is square for the polish; after it a present solid keeps n_s > 0 and an absent one A_s/RT <= criterion.
