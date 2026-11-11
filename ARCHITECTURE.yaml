@@ -103,6 +103,7 @@ project_map: {
     ["uv.lock", "workspace", "configuration"],
     [".gitignore", "workspace", "configuration"],
     [".gitattributes", "workspace", "configuration"],
+    [".cbmignore", "workspace", "configuration"],
     [".agents/", "workspace", "configuration"],
     [".claude/", "workspace", "configuration"],
     [".codex/", "workspace", "configuration"],
