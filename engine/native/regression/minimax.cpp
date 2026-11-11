@@ -282,7 +282,7 @@ private:
 // The Ipopt solve with its outcome values left unlabelled, for fit_minimax to add the acceptance.
 FitResult solve(const FitRequest& request, const std::vector<double>& start, const std::vector<CheckResult>& frozen,
     const ObservationFunction& evaluate, FitOutcome& outcome) {
-    FitResult result; result.solver_options = request.controls.solver_options.resolved({});
+    FitResult result(request);
     try {
         require(request.minimax.has_value(), "missing minimax declaration");
         SmartPtr<Minimax> nlp = new Minimax(request, result, outcome, evaluate, start, frozen);
@@ -315,7 +315,7 @@ FitResult solve_minimax(const FitRequest& request, const std::vector<double>& st
     return result;
 }
 FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector<double>>& evaluation_point) {
-    FitResult failures; failures.solver_options = request.controls.solver_options.resolved({});
+    FitResult failures(request);
     try {
         validate_fit_request(request, !evaluation_point);
         const auto frozen = evaluate_checks(request, request.baseline.value_or(request.parameters));
@@ -324,7 +324,7 @@ FitResult fit_minimax(const FitRequest& request, const std::optional<std::vector
         ObservationEvaluator evaluator(request, failures, selected, true);
         const auto point = fit_start(request);
         const ObservationFunction callback = [&](const auto& u, bool columns, auto& out) { return evaluator.evaluate(u, columns, out); };
-        FitResult result; result.solver_options = request.controls.solver_options.resolved({});
+        FitResult result(request);
         FitOutcome outcome;
         if (evaluation_point) {
             Minimax nlp(request, result, outcome, callback, *evaluation_point, frozen);

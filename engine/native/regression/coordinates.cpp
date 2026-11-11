@@ -73,7 +73,6 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             const auto check = [&](bool ok, const char* cause) {
                 if (!ok) throw std::invalid_argument("reaction coordinate " + target.name + ": " + cause);
             };
-            check(static_cast<std::size_t>(target.coefficient) <= 4, "unknown coefficient");
             check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
             const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
             (void)reaction_direction(target);

@@ -24,16 +24,9 @@ thread_local std::optional<nb::python_error> interrupted_error;
 template <typename Function>
 auto fit_entry(Function&& function) {
     interrupted_error.reset();
-    try {
-        auto result = function();
-        interrupted_error.reset();
-        return result;
-    } catch (const FitInterrupted&) {
-        throw;  // The translator consumes the saved exception after native cleanup.
-    } catch (...) {
-        interrupted_error.reset();
-        throw;
-    }
+    auto result = function();
+    interrupted_error.reset();
+    return result;
 }
 
 // The point readers' request: fit's model inputs at a declared point, without optimizer controls.
@@ -163,9 +156,9 @@ m._serve_fit(channel)
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, saturation_loading_gradient, endpoint_loading_gradient);
+            requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, saturation_loading_gradient, endpoint_loading_gradient);
+        EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")
@@ -236,7 +229,7 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(FitResult, stability_transitions, stability_predictions, data_cost, stability_cost, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure, internal_factor_conditioning);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);

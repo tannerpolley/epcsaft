@@ -102,6 +102,14 @@ double residual_slope(const Observation& observation, double value) {
     return observation.form == ResidualForm::Difference ? 1.0 / observation.scale : 1.0 / value;
 }
 
+Observation pressure_reference_row(const Observation& observation) {
+    auto reference = observation;
+    reference.kind = ObservationKind::EquilibriumPressure;
+    reference.problem = *observation.pressure_reference;
+    reference.pressure_reference.reset();
+    return reference;
+}
+
 bool same_state(const Observation& left, const Observation& right) {
     if (left.kind == ObservationKind::Stability || right.kind == ObservationKind::Stability) return false;
     if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
@@ -151,8 +159,7 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
         require(!observation.problem.pressure.free && std::all_of(observation.problem.phases.begin(), observation.problem.phases.end(),
             [](const auto& p) { return p.kind == equilibrium::PhaseKind::Liquid; }), "declared liquid parent at fixed pressure");
         require(std::isfinite(observation.pressure_ratio) && observation.pressure_ratio > 0.0, "positive pressure ratio");
-        if (observation.pressure_reference) { auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
-            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); (void)validate_declaration(reference, model); }
+        if (observation.pressure_reference) { auto reference = pressure_reference_row(observation); (void)validate_declaration(reference, model); }
     }
     require(!observation.problem.spinodal && !observation.final_problem.spinodal, "without spinodal conditions");
     require(!observation.problem.discovery && !observation.final_problem.discovery, "declared phases");
@@ -288,8 +295,7 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
 void validate(const Observation& observation, const HelmholtzModel& model, const equilibrium::CompiledSystem* prepared) {
     if (!validate_declaration(observation, model)) return;
     if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
-        auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
-        reference.problem = *observation.pressure_reference; reference.pressure_reference.reset(); validate_compiled(reference, model, nullptr);
+        auto reference = pressure_reference_row(observation); validate_compiled(reference, model, nullptr);
     }
     validate_compiled(observation, model, prepared);
 }
@@ -355,7 +361,10 @@ Prediction predict(
                 if (result.reference->pure_solvent_state) accepted(*result.reference->pure_solvent_state, pure, anchor);
                 auto activity = solvent_activity(model, observation.temperature, observation.pressure, observation.composition, *result.reference,
                     close(observation.composition, previous && previous->activity ? &previous->activity->state : nullptr));
-                if (!activity.solvent_activity) throw std::runtime_error(activity.cause);
+                if (!activity.solvent_activity) {
+                    result.status = ObservationStatus::ReferenceUnavailable; result.message = activity.cause;
+                    core::retain_failure(result.first_numerical_failure, activity.cause, "prediction"); return result;
+                }
                 result.activity.emplace();
                 result.activity->state = std::move(activity.state);
                 result.activity->osmotic_coefficient = activity.osmotic_coefficient;
@@ -541,8 +550,7 @@ Prediction predict(
     try {
         auto problem = observation.problem;
         if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
-            auto reference = observation; reference.kind = ObservationKind::EquilibriumPressure;
-            reference.problem = *observation.pressure_reference; reference.pressure_reference.reset();
+            auto reference = pressure_reference_row(observation);
             if (references) for (const auto& entry : references->pressures) if (same_state(reference, entry.first))
                 result.pressure_reference = std::make_shared<Prediction>(entry.second);
             if (result.pressure_reference && !admission.empty()) validate_compiled(reference, model, &*result.pressure_reference->compiled);
@@ -551,7 +559,11 @@ Prediction predict(
                     admission.empty() ? std::vector<const Observation*>{} : std::vector<const Observation*>{&reference}));
                 if (references && result.pressure_reference->value) references->pressures.emplace_back(reference, *result.pressure_reference);
             }
-            if (!result.pressure_reference->value) throw std::runtime_error("pressure reference: " + result.pressure_reference->message);
+            if (!result.pressure_reference->value) {
+                result.status = ObservationStatus::CentralSolveUnavailable;
+                result.message = "pressure reference: " + result.pressure_reference->message;
+                core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
+            }
             problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
@@ -706,7 +718,7 @@ PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 ) {
     if (prediction.status != ObservationStatus::Available)
-        return {{}, prediction.status, prediction.message, {}, {}, {}, prediction.first_numerical_failure};
+        return {{}, prediction.status, prediction.message, {}, prediction.first_numerical_failure};
     if (electrolyte_observation(observation.kind)) {
         PredictionGradient gradient;
         const auto width = model.active_parameters().size();
@@ -851,7 +863,6 @@ std::vector<PredictionGradient> differentiate_group(
                         {d.temperature_k, d.pressure_pa, inputs[j].molality});
                     value = row->kind == ObservationKind::MeanIonicActivityCoefficient ? action.mean_ionic : action.osmotic;
                     if (action.status != PropertyActionStatus::Available) gradient.message = action.message;
-                    gradient.input_actions.push_back(std::move(action));
                 } else {
                     const bool density = row->kind == ObservationKind::Density;
                     const auto batch = model.pressure_actions(row->temperature, row->pressure, row->composition, row->branch,
@@ -912,8 +923,7 @@ std::vector<PredictionGradient> differentiate_group(
         using Kind = equilibrium::SolvedStateObservableKind;
         if (prediction.pressure_reference) {
             const auto& reference = *prediction.pressure_reference;
-            auto reference_row = row; reference_row.kind = ObservationKind::EquilibriumPressure;
-            reference_row.problem = *row.pressure_reference; reference_row.pressure_reference.reset();
+            auto reference_row = pressure_reference_row(row);
             const auto gradient = differentiate_group(model, {&reference_row}, reference, coordinates, inputs).front();
             if (gradient.status != ObservationStatus::Available) { out.message = "pressure reference: " + gradient.message; return {out}; }
             for (std::size_t k = 0; k < directions.size(); ++k) directions[k].pressure_pa = row.pressure_ratio * gradient.value.at(k);
@@ -938,7 +948,6 @@ std::vector<PredictionGradient> differentiate_group(
                 value += trial.composition[i] * *actions[k].results[i + 2].action;
             }
             out.raw_minimum.push_back(value); out.value.push_back(*measure.value == 0.0 ? 0.0 : value);
-            out.state_diagnostics.push_back(actions[k].diagnostics);
         }
         out.status = ObservationStatus::Available; return {out};
     }
@@ -963,7 +972,7 @@ std::vector<PredictionGradient> differentiate_group(
             if (prediction.cap_branch == "switch" || !e.loading.resolved
                 || std::abs(item.loading_cap - *prediction.saturation_loading) <= e.loading.absolute) {
                 PredictionGradient unavailable; unavailable.message = "saturation:switch or unresolved branch";
-                unavailable.saturation_loading_gradient = loading_gradient; return {unavailable};
+                return {unavailable};
             }
             item.feed_amount = *prediction.added_amount;
         }
@@ -984,10 +993,7 @@ std::vector<PredictionGradient> differentiate_group(
         for (std::size_t k = 0; k < width; ++k)
             initial.value[k] = (final.value[k] - initial.value[k]) / item.feed_amount - (k < feed.value.size() ? feed.value[k] : 0.0);
         if (capped) {
-            initial.saturation_loading_gradient = loading_gradient;
-            initial.endpoint_loading_gradient.assign(width, 0);
             if (prediction.cap_branch == "saturation_cap") for (std::size_t k = 0; k < width; ++k) {
-                initial.endpoint_loading_gradient[k] = loading_gradient[k];
                 initial.value[k] -= *prediction.enthalpy_difference / item.feed_amount / *prediction.endpoint_loading * loading_gradient[k];
             }
         }
@@ -1057,7 +1063,6 @@ std::vector<PredictionGradient> differentiate_group(
         auto& gradient = gradients[row];
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;
-        for (const auto& batch : batches) gradient.state_diagnostics.push_back(batch.diagnostics);
         for (std::size_t k = 0; k < width; ++k) {
             if (observation.kind == ObservationKind::LogEquilibriumConstant) {
                 for (std::size_t j = 0; j < problem.reactions.size(); ++j)

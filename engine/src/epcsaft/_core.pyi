@@ -4547,8 +4547,6 @@ class Prediction:
     endpoint_loading: Optional[float]
     added_amount: Optional[float]
     cap_branch: str
-    saturation_loading_gradient: list[float]
-    endpoint_loading_gradient: list[float]
 
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
@@ -4577,8 +4575,6 @@ class Prediction:
     """First producer refusal, including recovered causes."""
 
 class PredictionGradient:
-    saturation_loading_gradient: list[float]
-    endpoint_loading_gradient: list[float]
     parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
 
@@ -5136,7 +5132,6 @@ class InputReconciliation:
     on the outputs.
     """
 class FitResult:
-    internal_factor_conditioning: str
     """Native parameter-estimation candidate, objective and local evidence.
 
     Notes

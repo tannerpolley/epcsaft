@@ -83,7 +83,7 @@ auto fields(equilibrium::EquilibriumResult& v) {
 auto fields(Prediction& v) {
     return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,
         v.saturation, v.saturation_loading, v.endpoint_loading, v.added_amount, v.cap_branch,
-        v.saturation_loading_gradient, v.endpoint_loading_gradient, v.stability, v.pressure_reference, v.stability_raw_gradient);
+        v.stability, v.pressure_reference, v.stability_raw_gradient);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {

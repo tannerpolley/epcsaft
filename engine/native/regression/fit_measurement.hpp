@@ -73,7 +73,6 @@ struct MeasurementChart final {
             for (std::size_t j = 0; j < group.inputs.size(); ++j) {
                 const auto& input = group.inputs[j];
                 using K = MeasuredInputKind;
-                require(input.kind >= K::Temperature && input.kind <= K::Molality, "unknown measured input");
                 require(std::isfinite(input.sigma) && input.sigma >= 0.0, "input sigma must be finite and nonnegative");
                 require(std::isfinite(input.lower) && std::isfinite(input.upper) && input.lower <= input.upper, "finite physical input bounds");
                 for (std::size_t k = 0; k < j; ++k)
@@ -196,19 +195,4 @@ struct MeasurementChart final {
         }
     }
 
-    std::pair<std::vector<ObservationInputDirection>, std::vector<double>> directions(const FitRequest& request, std::size_t row) const {
-        std::vector<ObservationInputDirection> result;
-        std::vector<double> deviations;
-        for (std::size_t c = 0; c < groups.size(); ++c) if (membership[row] == groups[c]) {
-            const auto kind = request.uncertainty->groups[groups[c]].inputs[inputs[c]].kind;
-            ObservationInputDirection d;
-            d.state.feed_amounts_mol = composition[c];
-            d.state.active_parameters.assign(request.coordinates.active_parameters().size() + request.holds.size(), 0.0);
-            d.state.temperature_k = kind == MeasuredInputKind::Temperature ? 1.0 : 0.0;
-            d.state.pressure_pa = kind == MeasuredInputKind::Pressure ? 1.0 : 0.0;
-            d.molality = kind == MeasuredInputKind::Molality ? 1.0 : 0.0;
-            result.push_back(std::move(d)); deviations.push_back(sigma[c]);
-        }
-        return {result, deviations};
-    }
 };

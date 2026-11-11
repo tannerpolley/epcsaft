@@ -27,7 +27,9 @@ inline bool pressure_closed(ObservationKind kind) {
     return kind == ObservationKind::Density || kind == ObservationKind::IsobaricHeatCapacity || kind == ObservationKind::FeedEnthalpy;
 }
 inline bool electrolyte_observation(ObservationKind kind) {
-    return kind <= ObservationKind::BulkRelativePermittivity;
+    return kind == ObservationKind::MeanIonicActivityCoefficient || kind == ObservationKind::OsmoticCoefficient
+        || kind == ObservationKind::MixtureOsmoticCoefficient || kind == ObservationKind::SolvationGibbsEnergy
+        || kind == ObservationKind::TransferGibbsEnergy || kind == ObservationKind::BulkRelativePermittivity;
 }
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
@@ -124,7 +126,6 @@ struct Prediction final {
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<Prediction> pressure_reference;
     std::vector<double> stability_raw_gradient;
-    std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
 };
 
 // d(value)/d(theta) in EOS-row order, then the requested reaction-coordinate order;
@@ -133,11 +134,8 @@ struct PredictionGradient final {
     std::vector<double> value;
     ObservationStatus status = ObservationStatus::ActionUnavailable;
     std::string message;
-    std::vector<ElectrolyteInputAction> input_actions;
     std::vector<ResidualEnergyAction> parameter_actions{};
-    std::vector<equilibrium::SolvedStateActionDiagnostics> state_diagnostics;
     std::optional<core::Convergence> first_numerical_failure;
-    std::vector<double> saturation_loading_gradient, endpoint_loading_gradient;
     std::vector<double> raw_minimum;
 };
 struct ObservationInputDirection final {
@@ -148,6 +146,7 @@ struct ObservationInputDirection final {
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
 using equilibrium::same_reaction;
 bool same_state(const Observation& left, const Observation& right);
+Observation pressure_reference_row(const Observation& observation);
 // Returns whether compiled predicates remain after declaration admission.
 bool validate_declaration(const Observation&, const HelmholtzModel&);
 EPC_API void validate(const Observation& observation, const HelmholtzModel& model,
