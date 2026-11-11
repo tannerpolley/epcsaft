@@ -245,8 +245,16 @@ void hessian_fd_and_pressure_slope() {
             "m5-pressure-slope", std::to_string(case_index).c_str(), "P_\\rho", "T,V,\\mathbf{n}",
             "P_\\rho=\\Delta P/\\Delta\\rho", "rho");
         const auto pressure_slope = model.evaluate(
-            temperature, volume, item.second, epcsaft::DerivativeOrder::PressureSlope
+            temperature, volume, item.second, epcsaft::DerivativeOrder::Hessian
         );
+        double gradient_floor = 0.0;
+        const auto series = epcsaft::properties::density_volume_taylor(model, temperature, 1.0 / volume, item.second, gradient_floor);
+        recording_support::compare(
+            (std::string("volume-series-curvature/") + std::to_string(case_index)).c_str(),
+            "a_VV", "1", 2.0 * series.c[2], pressure_slope.hessian[pressure_slope.gradient.size() + 1], inputs,
+            "Identity", "independent-tape", "volume series curvature agrees with Hessian-order tape",
+            "reference_or_one", 0.0, 1e-6,
+            close(2.0 * series.c[2], pressure_slope.hessian[pressure_slope.gradient.size() + 1], 1e-6));
         const double volume_step = volume * 1e-5;
         const auto plus_volume_gradient = model.evaluate(
             temperature, volume + volume_step, item.second,
@@ -261,14 +269,14 @@ void hessian_fd_and_pressure_slope() {
                 / (2.0 * volume_step);
         recording_support::compare(
             (std::string("volume-second-derivative/") + std::to_string(case_index)).c_str(),
-            "a_VV", "1", pressure_slope.volume_second_derivative,
+            "a_VV", "1", pressure_slope.hessian[pressure_slope.gradient.size() + 1],
             volume_second_fd,
             recording_support::fields({inputs, recording_support::field("step_V", volume_step),
                                        recording_support::field("V_plus", volume + volume_step),
                                        recording_support::field("V_minus", volume - volume_step)}),
             "Relationship", "finite-difference", "a_VV=derivative of a_V",
             "reference_or_one", 0.0, 1.0e-6,
-            close(pressure_slope.volume_second_derivative, volume_second_fd, 1e-6),
+            close(pressure_slope.hessian[pressure_slope.gradient.size() + 1], volume_second_fd, 1e-6),
             "m5-volume-curvature", std::to_string(case_index).c_str(), "a_{VV}", "T,V,\\mathbf{n},\\Delta V",
             "a_{VV}=\\Delta a_V/\\Delta V", "volume");
     }

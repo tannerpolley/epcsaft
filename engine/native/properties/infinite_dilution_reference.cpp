@@ -36,17 +36,6 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
 
 namespace {
 
-// EqIDs single_ion_activity_coefficient, reaction_activity_quotient: retain log differences.
-double activity_log(double finite, double reference, double log_concentration = 0.0) {
-    return log_concentration == 0.0 ? finite - reference : (finite - reference) + log_concentration;
-}
-
-std::array<double, 2> ion_log_fugacity(const State& state, const std::array<std::size_t, 2>& ions) {
-    if (!state.log_fugacity_coefficient) throw std::runtime_error("reference fugacity is unavailable");
-    return {require_component_property((*state.log_fugacity_coefficient)[ions[0]]),
-        require_component_property((*state.log_fugacity_coefficient)[ions[1]])};
-}
-
 // A declaration whose solvent, pure reference species, solute ratios or reaction carry net charge.
 struct NonNeutralDeclaration final : std::invalid_argument {
     using std::invalid_argument::invalid_argument;
@@ -116,11 +105,6 @@ double validate_neutral_reference_declaration(
     return solvent_mass;
 }
 
-// Reference-column scale of active coordinate a: max(1, |theta|); d_V (m3/mol) uses a 1 L/mol floor.
-double parameter_scale(const HelmholtzModel& model, const std::vector<double>& values, std::size_t a) {
-    return std::max(model.active_parameters()[a].family == ParameterFamily::DielectricVolume ? 1.0e-3 : 1.0, std::abs(values[a]));
-}
-
 }  // namespace
 
 ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, double temperature,
@@ -135,7 +119,7 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
     const std::array<std::optional<std::size_t>, 2> slots{parameter, second_parameter};
     std::array<double, 2> theta_scale{1.0, 1.0};
     for (std::size_t k = 0; k < 2; ++k)
-        if (slots[k]) theta_scale[k] = parameter_scale(model, model.active_parameter_values(), *slots[k]);
+        if (slots[k]) theta_scale[k] = std::max(model.active_parameters()[*slots[k]].family == ParameterFamily::DielectricVolume ? 1.0e-3 : 1.0, std::abs(model.active_parameter_values()[*slots[k]]));
     const double scale = std::pow(temperature, int(temperature_order)) * std::pow(pressure_scale, int(pressure_order))
         * theta_scale[0] * theta_scale[1];
     double contraction = 0.0;
@@ -780,8 +764,8 @@ SpeciesActivities species_activities(const std::vector<double>& composition, con
             if (declaration && basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution && i != *declaration->solvent_index)
                 log_concentration -= std::log(parameters->molar_mass_kg_per_mol[*declaration->solvent_index]
                     * declaration->standard_molality_mol_per_kg);
-            const double value = composition[i] == 0.0 ? -INFINITY : state ? activity_log(std::log(state->molar_density / 1.0)
-                + require_component_property(state->residual_chemical_potential_over_rt.at(i)), standard, log_concentration)
+            const double value = composition[i] == 0.0 ? -INFINITY : state ? (std::log(state->molar_density / 1.0)
+                + require_component_property(state->residual_chemical_potential_over_rt.at(i)) - standard) + log_concentration
                 : log_concentration;
             if (std::isnan(value) || value == INFINITY) throw std::runtime_error("nonfinite log activity");
             result.log_activities[i] = value;
@@ -1066,18 +1050,21 @@ ElectrolyteActivity electrolyte_activity(
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
     if (const auto cause = properties::vapor_side(result.state)) throw std::runtime_error(*cause);
     const auto& state = result.state;
-    const auto log_fugacity = ion_log_fugacity(state, ion_indices);
+    if (!state.log_fugacity_coefficient) throw std::runtime_error("reference fugacity is unavailable");
+    const std::array<double, 2> log_fugacity{
+        require_component_property((*state.log_fugacity_coefficient)[ion_indices[0]]),
+        require_component_property((*state.log_fugacity_coefficient)[ion_indices[1]])};
+    // EqIDs single_ion_activity_coefficient, reaction_activity_quotient: retain log differences.
     // EqID: single_ion_activity_coefficient
-    const double first = activity_log(log_fugacity[0], reference.log_fugacity[0]);
-    const double second = activity_log(log_fugacity[1], reference.log_fugacity[1]);
+    const double first = log_fugacity[0] - reference.log_fugacity[0];
+    const double second = log_fugacity[1] - reference.log_fugacity[1];
     const double coefficient_sum = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
     // EqID: mean_ionic_activity_coefficient
     const double mean_log_x = (
         stoichiometry[0] * first + stoichiometry[1] * second
     ) / coefficient_sum;
     // EqID: molality_activity_conversion
-    const double mean_log_m = activity_log(mean_log_x,
-        std::log(1.0 + solute_ratio));
+    const double mean_log_m = mean_log_x - std::log(1.0 + solute_ratio);
     result.single_ion = {std::exp(first), std::exp(second)};
     result.mean_ionic_mole_fraction_scale = std::exp(mean_log_x);
     result.mean_ionic_log_molality_scale = mean_log_m;

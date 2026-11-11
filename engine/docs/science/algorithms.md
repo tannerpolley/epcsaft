@@ -366,9 +366,9 @@ so an external AMPL host can unload the library before delayed thread-exit
 notifications release their references. Model and tape storage still follows
 same-thread destruction; this retention does not retain evaluated models.
 
-A failed scalar state attempt discards its cached current and previous replay
-tapes after local mutex guards unwind. Each recording site arms its own abort
-guard only after `CppAD::Independent` succeeds and disarms when ADFun takes
+A failed scalar state evaluation that touches the tapes discards its cached current
+and previous replay tapes after local mutex guards unwind. Each recording site arms
+its own abort guard only after `CppAD::Independent` succeeds and disarms when ADFun takes
 ownership. Thus failure cleanup cannot abort an unrelated recording. Successful
 rows retain the scalar tape reuse and derivative work. Association observation
 scopes restore the previous owner on unwinding. Pressure-series thread-local

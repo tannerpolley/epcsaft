@@ -172,9 +172,10 @@ std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
 ) {
     if (sites.empty()) return nullptr;
     const auto sigma = segment_sigma(temperature, parameters), diameter = segment_diameter(temperature, parameters, sigma);
-    auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>(properties::site_factorization(
+    auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>();
+    properties::site_factorization(*result,
         sites, composition, parameters, density * NUMBER_DENSITY_PER_ANGSTROM3,
-        association_delta(temperature, density, composition, parameters, sigma, diameter), &status));
+        association_delta(temperature, density, composition, parameters, sigma, diameter), &status);
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
     if (!options.nested_solve) core::retain_rank(diagnostics.site_conditioning,
@@ -507,13 +508,6 @@ bool is_heat_capacity(PropertyObservable observable) {
     const auto index = property_index(observable);
     return !is_fugacity(observable) && (index == 3 || index == 4);
 }
-bool zero_direction(const ActionDirection& direction) {
-    return direction.temperature == 0.0 && direction.molar_density == 0.0
-        && std::all_of(direction.composition.begin(), direction.composition.end(),
-            [](double value) { return value == 0.0; })
-        && std::all_of(direction.parameter.begin(), direction.parameter.end(),
-            [](double value) { return value == 0.0; });
-}
 // The tape's independent point (T, V, n, theta).
 std::vector<double> action_point(
     const HelmholtzModel& model, double temperature, double volume,
@@ -673,20 +667,6 @@ bool ionic_insertion_value(const Parameters& p, const std::vector<double>& x, st
         || (component == j && x[j] == 0.0 && x[i] > 0.0));
 }
 
-PropertyActionBatch unavailable_batch(
-    const std::vector<PropertyObservable>& observables, PropertyActionStatus status,
-    std::size_t order, std::size_t components
-) {
-    PropertyActionBatch result;
-    result.maximum_energy_order = order + 2;
-    for (const auto observable : observables)
-        for (std::size_t i = 0; i < (is_fugacity(observable) ? components : 1); ++i)
-            result.results.push_back({observable,
-                is_fugacity(observable) ? std::optional<std::size_t>(i) : std::nullopt,
-                std::nullopt, std::nullopt, status, order + (is_heat_capacity(observable) ? 2 : 1)});
-    return result;
-}
-
 PropertyActionBatch evaluate_actions(
     ActionContext& context, const std::vector<std::size_t>& ids,
     const std::vector<PropertyObservable>& observables, const ActionPlan& plan,
@@ -705,7 +685,12 @@ PropertyActionBatch evaluate_actions(
     const auto jets = property_jets(context, ids, plan.ideal, residual, false,
         plan.fugacity && context.tape.residual_available && association_available);
     const bool zero_action = std::any_of(ids.begin(), ids.end(), [&](std::size_t id) {
-        return zero_direction(context.directions[id]);
+        const auto& direction = context.directions[id];
+        return direction.temperature == 0.0 && direction.molar_density == 0.0
+            && std::all_of(direction.composition.begin(), direction.composition.end(),
+            [](double value) { return value == 0.0; })
+            && std::all_of(direction.parameter.begin(), direction.parameter.end(),
+            [](double value) { return value == 0.0; });
     });
     PropertyActionBatch result;
     result.results.reserve(observables.size());
@@ -1130,6 +1115,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     const std::vector<double>& amounts,
     DerivativeOrder order, bool isothermal_hessian
 ) const {
+    require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
     return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian);
 }
@@ -1248,51 +1234,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     }
     const auto delta = parameters_.ideal_gas ? std::vector<double>{} : association_delta(
         temperature, density, composition, parameters_, sigma, diameter);
-    auto factorization = properties::site_factorization(
+    Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+    properties::site_factorization(factorization,
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
-    if (sites_count != 0 && order == DerivativeOrder::PressureSlope) {
-        // Density closure consumes the reduced gradient, a_VV and the floor only: one adjoint for
-        // the site multipliers and one volume tangent replace the full site Jacobian.
-        std::vector<double> weights(output_count, 0.0), direction(input_count, 0.0);
-        weights.front() = 1.0;
-        direction[1] = 1.0;
-        const auto raw_gradient = tape_->function.Reverse(1, weights);
-        const auto first = tape_->function.Forward(1, direction);
-        Eigen::VectorXd phi_sites(static_cast<Eigen::Index>(sites_count)), volume_rows = phi_sites, cross = phi_sites;
-        for (std::size_t site = 0; site < sites_count; ++site) {
-            const auto s = static_cast<Eigen::Index>(site);
-            phi_sites(s) = raw_gradient[point_size + site];
-            volume_rows(s) = -first[1 + site];
-            cross(s) = -total * composition[static_cast<std::size_t>(parameters_.site_component[site])]
-                * parameters_.site_multiplicity[site] / sites[site] * first[1 + site];
-        }
-        const Eigen::VectorXd multipliers = factorization.transpose().solve(phi_sites);
-        const Eigen::VectorXd volume_sites = factorization.solve(volume_rows);
-        result.gradient_floor = std::abs(cross.dot(factorization.solve(
-            Eigen::VectorXd::Ones(static_cast<Eigen::Index>(sites_count))))) * site_residual;
-        for (std::size_t site = 0; site < sites_count; ++site) {
-            weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
-            direction[point_size + site] = volume_sites(static_cast<Eigen::Index>(site));
-        }
-        const auto tangent = tape_->function.Forward(1, direction);
-        const auto second = tape_->function.Reverse(2, weights);
-        counters_.forward += 2; counters_.reverse += 2;
-        if (blocks) result.gradient_floor = coupled_site_floor(values, tangent, second, multipliers, factorization, point_size, site_residual);
-        result.gradient.assign(point_size, 0.0);
-        for (std::size_t row = 0; row < point_size; ++row) result.gradient[row] = second[2 * row];
-        result.volume_second_derivative = second[2 * 1 + 1];
-        for (std::size_t site = 0; site < sites_count; ++site)
-            result.volume_second_derivative += volume_sites(static_cast<Eigen::Index>(site)) * second[2 * (point_size + site) + 1];
-        scope.probe("gradient", result.gradient);
-        scope.probe("volume_second_derivative", result.volume_second_derivative);
-        scope.probe("gradient_floor", result.gradient_floor);
-        return finish(std::move(result));
-    }
     // Requested chart: phase Hessians drop fixed controls, absent species and active parameters.
     std::vector<std::size_t> coordinates;
-    if (order == DerivativeOrder::PressureSlope) {
-        coordinates = {1};
-    } else if (order == DerivativeOrder::PhaseHessian || order == DerivativeOrder::IsothermalPhaseHessian) {
+    if (order == DerivativeOrder::PhaseHessian || order == DerivativeOrder::IsothermalPhaseHessian) {
         if (order == DerivativeOrder::PhaseHessian) coordinates.push_back(0);
         coordinates.push_back(1);
         for (std::size_t i = 0; i < components; ++i)
@@ -1302,12 +1249,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         std::iota(coordinates.begin(), coordinates.end(), std::size_t{0});
     }
     const std::size_t width = coordinates.size();
-    // The sites-free PressureSlope keeps every gradient row it has always returned.
-    std::vector<std::size_t> rows = coordinates;
-    if (order == DerivativeOrder::PressureSlope) {
-        rows.resize(point_size);
-        std::iota(rows.begin(), rows.end(), std::size_t{0});
-    }
+    const auto& rows = coordinates;
     std::vector<double> weights(output_count, 0.0);
     weights.front() = 1.0;
     Eigen::MatrixXd site_sensitivity(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(width));
@@ -1356,7 +1298,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     }
     result.hessian.assign(point_size * point_size, 0.0);
     if (isothermal_hessian) result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization).hessian;
-    if (order != DerivativeOrder::PressureSlope) ++counters_.hessian_calls;
+    ++counters_.hessian_calls;
     std::vector<double> direction(input_count, 0.0);
     double coupled = 0.0;  // declared blocks: the largest coupled_site_floor over the requested chart
     for (std::size_t offset = 0; !isothermal_hessian && offset < width; ++offset) {
@@ -1386,12 +1328,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             result.hessian[row * point_size + column] = value;
         }
         if (sites_count == 0 && offset == 0) scope.probe("gradient", result.gradient);
-    }
-    if (order == DerivativeOrder::PressureSlope) {
-        result.volume_second_derivative = result.hessian[1 * point_size + 1];
-        scope.probe("volume_second_derivative", result.volume_second_derivative);
-        scope.probe("gradient_floor", result.gradient_floor);
-        return finish(std::move(result));
     }
     if (sites_count != 0 && blocks) result.gradient_floor = coupled;
     else if (sites_count != 0) {
@@ -1547,7 +1483,8 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     for (double& x : composition) x /= total;
     const auto sigma = segment_sigma(regular[0][0], p), diameter = segment_diameter(regular[0][0], p, sigma);
     // association_delta admits the central density and geometry before the tape is recorded or replayed.
-    const auto lu = properties::site_factorization(sites, composition, p,
+    Eigen::FullPivLU<Eigen::MatrixXd> lu;
+    properties::site_factorization(lu, sites, composition, p,
         total / regular[0][1] * NUMBER_DENSITY_PER_ANGSTROM3,
         association_delta(regular[0][0], total / regular[0][1], composition, p, sigma, diameter));
     ensure_tape(regular[0], sites, predicate_signature(regular[0][0], composition), {}, 0.0, true);
@@ -2348,23 +2285,35 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
         validation.push_back({direction.temperature, 0.0, direction.composition, direction.parameter});
     }
     validate_action_request(*this, observables, validation);
-    DensityRoot root;
-    try {
-        root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
-    } catch (const std::runtime_error& error) {
-        auto batch = unavailable_batch(observables, PropertyActionStatus::DensityUnavailable, directions.size(), mole_fractions.size());
+    const auto unavailable = [&](const std::runtime_error& error) {
+        PropertyActionBatch batch;
+        batch.maximum_energy_order = directions.size() + 2;
+        for (const auto observable : observables)
+            for (std::size_t i = 0; i < (is_fugacity(observable) ? mole_fractions.size() : 1); ++i)
+                batch.results.push_back({observable,
+                    is_fugacity(observable) ? std::optional<std::size_t>(i) : std::nullopt,
+                    std::nullopt, std::nullopt, PropertyActionStatus::DensityUnavailable,
+                    directions.size() + (is_heat_capacity(observable) ? 2 : 1)});
         batch.density_status = PropertyActionStatus::DensityUnavailable;
         batch.solver_options = solver_options_;
         batch.density_message = error.what();
-        if (const auto* structure = dynamic_cast<const DensityStructureError*>(&error)) {
-            batch.density_convergence = structure->first_numerical_failure;
-            core::retain_first(batch.diagnostics.first_numerical_failure, structure->first_numerical_failure);
-        }
         retain_density_failure(batch.diagnostics.first_numerical_failure, error, "density closure");
-        batch.density_structure_refused = dynamic_cast<const DensityStructureError*>(&error) != nullptr;
-        if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
-            batch.density_convergence = failure->record;
         return batch;
+    };
+    DensityRoot root;
+    try {
+        root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
+    } catch (const DensityStructureError& error) {
+        auto batch = unavailable(error);
+        batch.density_convergence = error.first_numerical_failure;
+        batch.density_structure_refused = true;
+        return batch;
+    } catch (const core::ConvergenceFailure& error) {
+        auto batch = unavailable(error);
+        batch.density_convergence = error.record;
+        return batch;
+    } catch (const std::runtime_error& error) {
+        return unavailable(error);
     }
     std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, root.molar_density, mole_fractions,
@@ -2876,7 +2825,7 @@ State HelmholtzModel::state_at_pressure(
     DensityBranch branch,
     std::optional<double> anchor_density,
     bool derived_properties
-) const try {
+) const {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
@@ -2898,7 +2847,7 @@ State HelmholtzModel::state_at_pressure(
     scope.finish(root.convergence);
     return result;
 }
-catch (...) { reset_state_tapes(); throw; }
+
 
 double HelmholtzModel::packing_fraction_coefficient(
     double temperature,

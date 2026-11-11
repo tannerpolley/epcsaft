@@ -76,8 +76,8 @@ struct ReactionLogPolynomial final {
     double e = 0.0, f = 0.0;
 };
 // One scalar/AD expression owns the source law and its raw thermal derivatives.
-template <typename Scalar>
 // EqID: reaction_constant_ln_polynomial
+template <typename Scalar>
 Scalar reaction_log_value(const ReactionLogPolynomial& law, const Scalar& temperature,
                           std::size_t thermal_order = 0) {
     Scalar value;

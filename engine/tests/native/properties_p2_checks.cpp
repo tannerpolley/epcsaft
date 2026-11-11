@@ -189,7 +189,6 @@ void p2_density_series() {
         double floor = 0.0;
         const auto series = epcsaft::properties::density_volume_taylor(model, item.temperature, item.density, item.composition, floor);
         const auto tape = model.evaluate(item.temperature, volume, item.composition, epcsaft::DerivativeOrder::Hessian);
-        const auto smaller = model.evaluate(item.temperature, volume, item.composition, epcsaft::DerivativeOrder::PressureSlope);
         std::vector<double> direction(item.composition.size()+2, 0.0); direction[1] = 1.0;
         const auto third = model.residual_energy_action(item.temperature, volume, item.composition, {direction,direction,direction});
         CHECK(third.action.has_value());
@@ -226,7 +225,7 @@ void p2_density_series() {
                 "absolute",limit,0.0,decreasing&&best<=limit,"p2-volume-stencil",item.name,"scaled error","T,V,n","d/dlnV=V d/dV","order");
         }
         const std::array<double,3> series_pressure={1-calculated[0],1+calculated[1],-calculated[2]-2*calculated[1]};
-        const std::array<double,3> tape_pressure={1-volume*smaller.gradient[1],1+volume*volume*smaller.volume_second_derivative,-exact[2]-2*exact[1]};
+        const std::array<double,3> tape_pressure={1-volume*tape.gradient[1],1+volume*volume*tape.hessian[tape.gradient.size()+1],-exact[2]-2*exact[1]};
         if (item.composition.size()==1) {
             const auto pressure=model.neutral_property(item.temperature,item.density,epcsaft::NeutralProperty::Pressure,epcsaft::DerivativeOrder::Hessian);
             const double curvature=item.density*pressure.hessian[3]/(epcsaft::GAS_CONSTANT_J_PER_MOL_K*item.temperature);
@@ -374,31 +373,29 @@ void properties_p2() {
         bool finite = finite_state_without_cp(state);
         for (const double value : state.site_fractions) finite = finite && std::isfinite(value);
         for (const double value : residuals) residual = std::max(residual, std::abs(value));
-        const auto pressure_slope = associating.evaluate(
-            temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::PressureSlope
-        );
+        double gradient_floor = 0.0;
+        const auto series = epcsaft::properties::density_volume_taylor(associating, temperature, density, composition, gradient_floor);
+        const auto tape = associating.evaluate(temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::Hessian);
         const double expected_floor = p2_pressure_slope_floor_reference(
             temperature, 1.0 / density, composition,
             associating.parameters(), state.site_fractions
         );
-        // The PressureSlope adjoint gradient and the Gradient-order sensitivity gradient are
-        // algebraically distinct formulas for the same reduced gradient.
-        const auto gradient_order = associating.evaluate(
-            temperature, 1.0 / density, composition, epcsaft::DerivativeOrder::Gradient);
-        double gradient_error = 0.0;
-        for (std::size_t i = 0; i < gradient_order.gradient.size(); ++i)
-            gradient_error = std::max(gradient_error, std::abs(pressure_slope.gradient[i] - gradient_order.gradient[i])
-                / std::max(1.0, std::abs(gradient_order.gradient[i])));
-        CHECK(pressure_slope.gradient.size() == gradient_order.gradient.size() && gradient_error <= 1e-12);
         const auto inputs = recording_support::fields({
             model_inputs(associating.parameters(), temperature, 1.0 / density, composition),
             recording_support::field("support", support),
-            recording_support::field("pressure_slope_gradient_identity_error", gradient_error),
             recording_support::field("site_fractions", state.site_fractions),
-            recording_support::field("association_floor", pressure_slope.gradient_floor),
+            recording_support::field("association_floor", gradient_floor),
             recording_support::field("expected_floor", expected_floor),
         });
         const auto point = std::to_string(support);
+        const std::array<double, 2> calculated{series.c[1], 2.0 * series.c[2]};
+        const std::array<double, 2> reference{tape.gradient[1], tape.hessian[tape.gradient.size() + 1]};
+        for (std::size_t k = 0; k < calculated.size(); ++k)
+            recording_support::compare(
+                ("support-series/" + point + "/" + std::to_string(k + 1)).c_str(),
+                "volume_derivative", "1", calculated[k], reference[k], inputs,
+                "Identity", "independent-tape", "volume series agrees with Hessian-order tape at pure support",
+                "reference_or_one", 0.0, 1e-12, close(calculated[k], reference[k], 1e-12));
         recording_support::compare_custom(
             (std::string("support-residual/") + point).c_str(),
             "association_residual_infinity", "1", residual, 0.0, inputs,
@@ -408,11 +405,11 @@ void properties_p2() {
             "||F_a||_inf<=2e-13", "support");
         CHECK(finite && residual <= 2e-13);
         const double floor_scale = std::max(expected_floor, 1.0e-300);
-        const double floor_error = std::abs(pressure_slope.gradient_floor - expected_floor);
+        const double floor_error = std::abs(gradient_floor - expected_floor);
         const bool floor_ok = floor_error <= 1.0e-6 * floor_scale;
         recording_support::compare_custom(
             (std::string("support-floor/") + point).c_str(), "gradient_floor", "1",
-            pressure_slope.gradient_floor, expected_floor, inputs, "Relationship",
+            gradient_floor, expected_floor, inputs, "Relationship",
             "mass-action-residual-bound", "PressureSlope floor uses U^{-1} one",
             "relative", floor_ok, "p2-support-floor", point.c_str(), "floor",
             "T,rho,x", "floor=bound(U^{-1}1)", "support");

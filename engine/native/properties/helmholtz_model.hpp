@@ -28,7 +28,6 @@ using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
 void validate_cation_mixing(const Parameters& parameters);
 
-// PressureSlope returns the reduced gradient, a_VV and the association floor, not a Hessian.
 // Phase Hessians differentiate only V, positive amounts and (unless isothermal) T; other
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
 // Dry cation-mixing transverse entries are defined zero storage, not physical insertion derivatives (full EOS 12).
@@ -165,7 +164,7 @@ struct PropertyActionBatch final {
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
-    // #86 pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
+    // Pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
     std::optional<double> molar_density;
     std::vector<double> density_action;
     std::optional<double> density_mixed_action;  // d^k rho over all k >= 2 directions, when observables are requested
@@ -280,7 +279,6 @@ struct DensityRoot final {
     double molar_density = 0.0;
     double pressure_residual = 0.0;
     double pressure_density_derivative = 0.0;
-    std::size_t iterations = 0;
     std::optional<std::size_t> stable_root_count;
     DensityBranch branch = DensityBranch::Unspecified;
     core::Convergence convergence;
@@ -316,9 +314,6 @@ struct DensityDiagnostics final {
     std::optional<core::Convergence> first_numerical_failure;
 };
 
-// A Stage-A neutral reference is a pure, neutral solvent plus one explicit
-// full-width solute molality-ratio vector.  Mixed-solvent declarations are
-// intentionally outside this first native consumer contract.
 enum class SpeciesReference { InfiniteDilution, PureLiquid, PureGas };
 
 struct NeutralReferenceDeclaration final {
@@ -451,11 +446,11 @@ public:
         const std::vector<double>& amounts,
         DerivativeOrder order, bool isothermal_hessian = false
     ) const;
-    // Mixed contraction of the extensive residual Helmholtz scalar with three to five
-    // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
         const std::vector<double>& sites) const;
+    // Mixed contraction of the extensive residual Helmholtz scalar with three to five
+    // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     EPC_API ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
@@ -609,8 +604,8 @@ EPC_API NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-// Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
 void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&);
+// Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
 EPC_API ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     std::size_t temperature_order, std::size_t pressure_order,
@@ -630,8 +625,7 @@ EPC_API SpeciesActivities species_activities(const std::vector<double>&, const S
     ReferenceSourceBasis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution);
 
 // Evaluate multiple reaction references while reusing one solvent closure per
-// resolved source pressure within the call.  This remains a native owner; the
-// Python surface exposes only the established singular diagnostic/result path.
+// resolved source pressure within the call.
 EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const HelmholtzModel& model,
     double temperature,
@@ -760,7 +754,7 @@ EPC_API ElectrolyteActivity electrolyte_activity(
 );
 
 namespace properties {
-// Unit-amount residual Helmholtz coefficients in V+t, used by density pressure closure.
+// Unit-amount residual Helmholtz coefficients in V+t.
 EPC_API Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temperature, double density,
     const std::vector<double>& composition, double& gradient_floor);
 

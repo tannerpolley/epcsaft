@@ -428,14 +428,6 @@ bool bracket_closed(const PressurePoint& point, double derivative, double width,
         && derivative != 0.0 && width * std::abs(derivative) <= tolerance);
 }
 
-bool association_failure(const std::exception& error) {
-    const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
-    // Who threw, not how it stopped. Enumerating stops silently narrowed this when
-    // `classify` gained `stalled`: the scan propagated instead of skipping the point.
-    return failure != nullptr
-        && failure->record.criterion && std::string_view(failure->record.criterion->name) == policy::ASSOCIATION_RESIDUAL.name;
-}
-
 // Safeguarded Newton from the bracket endpoint with smaller absolute pressure error.
 // Both endpoint evaluations enclose one crossing in [lower, upper]. The caller
 // isolates a mechanically stable interval, or supplies an exact scan-node root.
@@ -504,7 +496,7 @@ DensityRoot refine(
         || (iterations == maximum && record.stop != core::Stop::converged)) {
         throw core::ConvergenceFailure(record);
     }
-    const DensityRoot root{density, point.pressure - pressure, point.slope, iterations + 1,
+    const DensityRoot root{density, point.pressure - pressure, point.slope,
                            std::nullopt, DensityBranch::Unspecified, record};
     parent_scope.probe("density_root", {density, point.residual, point.slope, point.slope > 0.0 ? 1.0 : 0.0},
                        static_cast<std::uint32_t>(iterations));
@@ -755,7 +747,11 @@ std::vector<DensityRoot> scan_roots(
             points.push_back({density, at_density(model, temperature, pressure, composition,
                 density, evaluations, DerivativeOrder::PressureSlope), linked});
         } catch (const std::exception& error) {
-            const bool association = association_failure(error);
+            const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
+            // Who threw, not how it stopped. Enumerating stops silently narrowed this when
+            // `classify` gained `stalled`: the scan propagated instead of skipping the point.
+            const bool association = failure != nullptr
+                && failure->record.criterion && std::string_view(failure->record.criterion->name) == policy::ASSOCIATION_RESIDUAL.name;
             if (scope.diagnostics_on()) scope.probe(association ? "density_scan_skip" : "density_scan_failure",
                 {density, static_cast<double>(index), 0.0}, static_cast<std::uint32_t>(index), error.what());
             if (!association && interruptions.empty()) throw;
@@ -1287,7 +1283,6 @@ DensityRoot anchor(
                 result.branch = branch;
                 result.convergence.iterations += iteration + 1;
                 result.convergence.evaluations = evaluations;
-                result.iterations = result.convergence.iterations;
                 anchor_scope.finish(result.convergence);
                 return result;
             }

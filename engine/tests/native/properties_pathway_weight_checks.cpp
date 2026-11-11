@@ -533,7 +533,7 @@ void pathway_weight() {
                 fields({inputs(s, "blend"), field("B_correction_off", uncorrected.virial_coefficients(s.temperature, s.x).second)}),
                 "B equals the low-density slope (the remainder is O(rho^2))");
         }
-        // A site defect against the exact-gradient floor (PressureSlope: A_V; Hessian: T, V, n) and against the
+        // A site defect against the volume-series floor (A_V), the Hessian gradient floor (T, V, n), and the
         // gradient coefficient error estimate of each column, both formed from the defective sites. Both are local
         // first-order estimates with a worst-sign allowance for the achieved residual, not rigorous enclosures: at Z with a
         // requested association tolerance of 0.1, the n_CO2 error 1.3086e-3 is about 20% above the first-order estimate
@@ -552,13 +552,19 @@ void pathway_weight() {
                     "Relationship", "controlled site defect", "the error estimate bounds the gradient error a site defect leaves",
                     "error <= estimate_loose + estimate_tight + 4 eps rho", error <= bound);
             };
-            for (const auto order : {epcsaft::DerivativeOrder::PressureSlope, epcsaft::DerivativeOrder::Hessian}) {
-                const auto exact = tight.evaluate(s.temperature, volume, s.x, order);
-                const auto moved = loose.evaluate(s.temperature, volume, s.x, order);
-                const bool slope = order == epcsaft::DerivativeOrder::PressureSlope;
-                for (std::size_t j = slope ? 1 : 0; j < (slope ? 2 : 5); ++j)
-                    check(std::string("F3b/") + s.name + "/gradient-floor/" + (slope ? "slope/" : "hessian/") + std::to_string(j), j,
+            {
+                const auto exact = tight.evaluate(s.temperature, volume, s.x, epcsaft::DerivativeOrder::Hessian);
+                const auto moved = loose.evaluate(s.temperature, volume, s.x, epcsaft::DerivativeOrder::Hessian);
+                for (std::size_t j = 0; j < 5; ++j)
+                    check(std::string("F3b/") + s.name + "/gradient-floor/hessian/" + std::to_string(j), j,
                         std::abs(moved.gradient[j] - exact.gradient[j]), moved.gradient_floor + exact.gradient_floor + rounding);
+                double tight_floor = 0.0, loose_floor = 0.0;
+                const auto tight_series = epcsaft::properties::density_volume_taylor(tight, s.temperature, s.density, s.x, tight_floor);
+                const auto loose_series = epcsaft::properties::density_volume_taylor(loose, s.temperature, s.density, s.x, loose_floor);
+                identity(std::string("F3b/") + s.name + "/gradient-floor/series-tape", "A_V", tight_series.c[1], exact.gradient[1],
+                    1.0, IDENTITY, inputs(s, "blend"), "the tight volume-series derivative agrees with the Hessian-order tape");
+                check(std::string("F3b/") + s.name + "/gradient-floor/series/1", 1,
+                    std::abs(loose_series.c[1] - tight_series.c[1]), loose_floor + tight_floor + rounding);
             }
             const auto exact = tight.evaluate(s.temperature, volume, s.x, epcsaft::DerivativeOrder::Gradient);
             const auto moved = loose.evaluate(s.temperature, volume, s.x, epcsaft::DerivativeOrder::Gradient);
