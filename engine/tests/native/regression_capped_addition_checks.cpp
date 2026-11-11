@@ -11,6 +11,25 @@ void check_saturation_capped_addition() {
   CHECK(rejection([&] { (void)validate_declaration(invalid, model); }) ==
         "observation positive basis and cap");
 
+  const auto initial = compile_problem(model, row.problem);
+  const AffineLoading departure{initial.n_feed, row.composition, 0.001, 0.01, 0,
+                                row.pressure};
+  const auto low =
+      search_loading(model, row.final_problem, departure, {0.001, 0.01});
+  CHECK(low.nodes.size() == 2);
+  for (const auto &node : low.nodes) {
+    CHECK(node.state.success && node.state.residual_norm() <= 1e-10 &&
+          maximum_abs(node.state.classified_residuals) <= 1e-10);
+    CHECK(node.state.iterations < 200);
+  }
+  agree("capped-addition/ordinary-loading-node", "pressure", "Pa",
+        *low.nodes.back().state.pressure, 6467.867870101388, 1e-6, 0,
+        fields({field("loading_mol_per_mol", low.nodes.back().loading)}),
+        "carried physical states resolve the frozen departure",
+        "capped-addition");
+  CHECK(low.complete && !low.accepted);
+  CHECK(low.causes == std::vector<std::string>{"unresolved_slope_reversal"});
+
   const auto center = predict(model, row);
   CHECK(center.status == ObservationStatus::Available && center.value &&
         center.saturation);

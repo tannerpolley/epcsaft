@@ -1808,7 +1808,8 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
-starting cold and then mapping the preceding admitted current-vector state.
+starting cold and then carrying the preceding admitted physical state with
+element potentials initialized anew.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded

@@ -2005,8 +2005,11 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
     try {
         for (double alpha : grid) {
+            auto start = out.nodes.empty() ? std::optional<EquilibriumResult>{}
+                                          : std::make_optional(out.nodes.back().state);
+            if (start) start->multipliers.clear();
             auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
-                out.nodes.empty() ? std::nullopt : std::make_optional(out.nodes.back().state), false);
+                start, false);
             SaturationNode node; node.loading = alpha; node.state = std::move(state);
             out.nodes.push_back(std::move(node)); auto& n = out.nodes.back();
             if (!n.state.success || !n.state.has_state()) { fail_at(alpha, n.state.message); fail("unexamined_gap"); break; }
