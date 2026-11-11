@@ -377,13 +377,12 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/h", "reaction_enthalpy", "J/mol", reaction.enthalpy,
                R * 350.0 * 350.0 * expected_derivative, "T=350", "p3-reaction", "h");
 
-    bool endpoints = false, finite_k = true, outside_k = false;
-    try {
-        const auto lower = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_min);
-        const auto upper = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_max);
-        endpoints = true;
-        finite_k = lower.k.has_value() && upper.k.has_value();
-    } catch (const std::exception&) {}
+    const auto lower = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_min);
+    const auto upper = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_max);
+    const bool endpoints = lower.k.has_value() && upper.k.has_value();
+    const bool finite_k = lower.k.has_value() && upper.k.has_value()
+        && std::isfinite(*lower.k) && std::isfinite(*upper.k);
+    bool outside_k = false;
     try {
         epcsaft::evaluate_reaction_properties(correlation, 280.0);
     } catch (const std::invalid_argument&) { outside_k = true; }

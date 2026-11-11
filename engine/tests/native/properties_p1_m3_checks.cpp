@@ -436,8 +436,9 @@ void derivatives_and_limits() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const double close_density = model.molar_density_upper_bound(300.0, {0.4, 0.6})
         * epcsaft::policy::DENSITY_UPPER_FRACTION.value;
-    model.evaluate(300.0, 1.0 / close_density, {0.4, 0.6},
-                   epcsaft::DerivativeOrder::Value);
+    const auto near_cap = model.evaluate(300.0, 1.0 / close_density, {0.4, 0.6},
+                                         epcsaft::DerivativeOrder::Value);
+    CHECK(std::isfinite(near_cap.value));
 }
 
 void finite_difference_gradient() {

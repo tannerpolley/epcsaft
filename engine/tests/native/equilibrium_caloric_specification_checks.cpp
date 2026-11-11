@@ -270,7 +270,10 @@ void admission() {
     // Saturation at 1 MPa (300.053 K, PH3) lies outside [100,300] K while the 300 K seed lies inside.
     auto narrow=records(true);narrow.component_intervals[0][0].upper=300;const HelmholtzModel outside(params,{},narrow);
     auto two=p;two.feed.values={2.5};two.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor));
-    std::string cause;try{cause=solve_equilibrium(outside,condition(two,true,0,300)).message;}catch(const std::exception& e){cause=e.what();}
+    bool refused=false;std::string cause;
+    try { solve_equilibrium(outside,condition(two,true,0,300)); }
+    catch(const std::invalid_argument& error) { refused=true;cause=error.what(); }
+    CHECK(refused);
     compare("admission/saturation-outside",cause.find("outside interval: species 0 at 300.05")!=std::string::npos?1:0,1,1,1e-10,recording_support::field("cause",cause));
     ThermochemistryRecord joined;joined.standard_pressure=100000;
     joined.component_intervals={{{100,250,true,true,{IdealPolynomial{{40},200,0,0},100000}},

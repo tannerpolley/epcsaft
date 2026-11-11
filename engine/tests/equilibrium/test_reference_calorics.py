@@ -167,25 +167,27 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
         return Mixture(params, thermochemistry=records(A_RECORD, []),
                        active_parameters=active)
 
+    fraction = SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)
     for label, active, parameter_direction, step in cases:
         model = rebuilt(label, 0.0, active)
         result = solve_equilibrium(model, base)
         assert result.success, result.message
         direction = Direction(0.0, 0.0, [0.0, 0.0], parameter_direction)
-        batch = solved_state_first_actions(compile_problem(model, base), result, [H, AMOUNT], [direction])[0]
-        h, n = batch.results
+        batch = solved_state_first_actions(compile_problem(model, base), result, [H, AMOUNT, fraction], [direction])[0]
+        h, n, composition = batch.results
         assert all(item.status == Status.Available for item in batch.results)
         assert h.value is not None and h.action is not None and n.value is not None and n.action is not None
         action = n.value * h.action + h.value * n.action
 
-        def extensive(shift: float) -> float:
-            values = _values(rebuilt(label, shift, active), base, [H, AMOUNT],
+        def shifted(shift: float) -> tuple[float, float]:
+            values = _values(rebuilt(label, shift, active), base, [H, AMOUNT, fraction],
                              Direction(0.0, 0.0, [0.0, 0.0], [0.0] * len(active)))
             assert all(item.status == Status.Available and item.value is not None for item in values)
-            return float(values[0].value * values[1].value)
+            return float(values[0].value * values[1].value), float(values[2].value)
 
-        coarse, fine = ((extensive(step_size) - extensive(-step_size)) / (2.0 * step_size)
-                        for step_size in (2.0 * step, step))
+        slopes = [tuple((a - b) / (2.0 * step_size) for a, b in zip(shifted(step_size), shifted(-step_size)))
+                  for step_size in (2.0 * step, step)]
+        coarse, fine = (slope[0] for slope in slopes)
         richardson = (4.0 * fine - coarse) / 3.0
         assert abs(fine - action) <= abs(coarse - action) / 2.0
         same(evidence, f"reference-calorics/enthalpy-parameter/system/{label}/d(nH)/dtheta", action, richardson,
@@ -194,14 +196,13 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
              basis="Identity", method="richardson-centered-resolve",
              claim="referenced total enthalpy parameter action equals rebuilt-model re-solves")
 
-    model = rebuilt("kij", 0.0, [ActiveParameter(ParameterFamily.Kij, (1, 2))])
-    problem = dimer_problem(T0, None)
-    result = solve_equilibrium(model, problem)
-    compiled = compile_problem(model, problem)
-    fraction = SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)
-    k = Direction(0.0, 0.0, [0.0, 0.0], [1.0])
-    composition = solved_state_actions(compiled, result, SolvedStateActionRequest([fraction], [k])).results[0]
-    assert composition.status == Status.Available and composition.action is not None
+        if label == "kij":
+            assert composition.action is not None
+            same(evidence, f"reference-calorics/composition-parameter/system/{label}/dx/dtheta", composition.action,
+                 (4.0 * slopes[1][1] - slopes[0][1]) / 3.0, rtol=1e-6, atol=0.0,
+                 inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step]},
+                 basis="Identity", method="richardson-centered-resolve",
+                 claim="composition parameter action equals rebuilt-model re-solves")
 
 
 def _ionic(temperature: float, reference_pressure: float | None) -> Problem:

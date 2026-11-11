@@ -1634,8 +1634,8 @@ void ideal_mechanical_owner_preserves_chart() {
     recording_support::compare(
         "clamp-tiny", "a_ideal_mechanical", "1", replay, direct,
         "n:DBL_MIN/1024;V:2.3;rho0:1.7;clamp:true", "Relationship", "scalar_policy",
-        "double and AD honor the same subnormal clamp", "reference_or_one", 0.0, 1.0e-14,
-        close(replay, direct, 1.0e-14), "c1-ideal-mechanical", "clamp-tiny",
+        "double and AD honor the same subnormal clamp", "reference_scale", 0.0, 1.0e-14,
+        std::abs(replay - direct) <= 1.0e-14 * std::abs(direct), "c1-ideal-mechanical", "clamp-tiny",
         "A/(RT)", "n,V,rho_0", "AD=double clamp policy", "amount");
 
     std::vector<AD> zero_independent = {AD(volume)};

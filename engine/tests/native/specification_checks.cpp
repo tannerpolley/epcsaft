@@ -1768,8 +1768,13 @@ void check_conditioning() {
         std::optional<core::NumericalRank> warning;
         std::optional<core::Convergence> first = refusal;
         Matrix singular = Matrix::Identity(2, 2); singular(1, 1) = 0;
+        bool refused = false;
         try { solve_linear(singular, {0, 1}, nullptr, &first, &warning, {0.5, 0.5}, 3); }
-        catch (const std::runtime_error&) {}
+        catch (const std::runtime_error& error) {
+            refused = std::string(error.what()) == "association Jacobian is ill-conditioned";
+            if (!refused) throw;
+        }
+        CHECK(refused);
         if (!warning || !warning->first_conditioning_warning || warning->first_conditioning_warning->available
             || warning->first_conditioning_warning->coordinates != std::vector<double>({0.5, 0.5})
             || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))

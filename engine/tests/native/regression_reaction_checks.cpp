@@ -639,11 +639,7 @@ void check_reaction_rejections() {
         SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
     reject(reference, "tied species references disagree: component 0 pure liquid vs pure gas");
     reference.observations[1].problem.source_reference->species_reference[0] = SpeciesReference::PureLiquid;
-    const auto admitted = [&] {
-        try { return reference.coordinates.start(reference.parameters, reference.observations).size() == 1; }
-        catch (const std::invalid_argument&) { return false; }
-    };
-    truth("reaction-rejection/matching-species-reference", "a tie whose reacting species share one effective convention is admitted", admitted(),
+    truth("reaction-rejection/matching-species-reference", "a tie whose reacting species share one effective convention is admitted", reference.coordinates.start(reference.parameters, reference.observations).size() == 1,
           fields({field("water_reference", "explicit pure liquid equal to the default")}), "issue-448");
     // #433: rows that differ only in species_reference are different states; each keeps its own solve
     // (fixed ln K and an EOS coordinate, so no tie across conventions).

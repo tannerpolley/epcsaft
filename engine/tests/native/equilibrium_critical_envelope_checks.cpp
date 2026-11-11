@@ -49,7 +49,10 @@ void pure_critical() {
     const auto p=critical_cell({1},375,5000);const auto r=solved(m,p,"C1");const auto c=compile_problem(m,p);
     const auto actions=solved_state_actions(c,r,{{{SolvedStateObservableKind::Temperature},{SolvedStateObservableKind::PhaseMolarDensity},
         {SolvedStateObservableKind::PhaseProperty,0,0,PropertyObservable::TotalIsobaricHeatCapacity}},{{0,0,{0.1},{}}}});
-    compare("C1/direct-values",actions.results[0].action&&actions.results[1].action&&actions.results[1].value?1:0,1,1,1e-10);
+    CHECK(actions.results[0].action && actions.results[1].action && actions.results[1].value);
+    // Feed scaling leaves pure critical temperature and molar density unchanged.
+    compare("C1/feed-scale-temperature",*actions.results[0].action,0,*r.temperature,1e-8);
+    compare("C1/feed-scale-density",*actions.results[1].action,0,*actions.results[1].value,1e-8);
     compare("C1/pressure-closed-cp",actions.results[2].status==SolvedStateActionStatus::PressureSingular&&!actions.results[2].value?1:0,1,1,1e-10);
     // Floor: the exact Newton correction of the critical system moves each identity, plus rounding of its terms.
     auto y=r.coordinates;const auto rows=c.evaluate(y).values;const auto J=c.jacobian(y);const auto n=static_cast<Eigen::Index>(y.size());
@@ -371,7 +374,9 @@ void spinodal() {
             const auto initial=solve_equilibrium(model,p);
             const bool covered=initial.success && std::abs(initial.molar_densities[0]-endpoints[0][branch])/endpoints[0][branch]<=1e-8;
             auto coverage=compile_problem(model,p);
-            try { spinodal_search(coverage); } catch (const std::domain_error&) {}
+            try { spinodal_search(coverage); } catch (const std::domain_error& error) {
+                if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
+            }
             CHECK(coverage.spinodal_search);
             const bool expected_coverage=std::any_of(coverage.spinodal_search->brackets.begin(),coverage.spinodal_search->brackets.end(),
                 [&](const auto& b) { return endpoints[0][branch]>=b.lower && endpoints[0][branch]<=b.upper; });
@@ -380,7 +385,9 @@ void spinodal() {
             if (covered) {
                 ++available;
                 auto compiled=compile_problem(model,target);
-                try { spinodal_search(compiled); } catch (const std::domain_error&) {}
+                try { spinodal_search(compiled); } catch (const std::domain_error& error) {
+                    if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
+                }
                 CHECK(compiled.spinodal_search);
                 const auto& before=initial.spinodal->search;
                 for (const auto& bracket:compiled.spinodal_search->brackets)

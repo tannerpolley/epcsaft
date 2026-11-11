@@ -21,10 +21,10 @@ SPECIES = {"Methane": (16.04, 1., 3.7039, 150.03), "Propane": (44.1, 2.002, 3.61
 def model(name: str) -> Mixture:
     names = name.split("+")
     pairs = [("k_ij", (0, 1), 0.)] if len(names) == 2 else []
-    if name == "Water2B":
+    if "Water2B" in names:
         pairs += [("association_energy_over_k", (0, 1), 2500.7), ("association_volume", (0, 1), .034868)]
     p = parameters([SPECIES[n] for n in names], pairs,
-                   sites=([0, 0], [1, 1]) if name == "Water2B" else ([], []))
+                   sites=([names.index("Water2B")] * 2, [1, 1]) if "Water2B" in names else ([], []))
     return Pure(p) if len(names) == 1 else Mixture(p)
 
 
@@ -107,6 +107,9 @@ def _action_fluid(name: str) -> tuple[Mixture, list[float] | None]:
                                            (.7, [.5, -.5], (.04, .008, .0016))])
 def test_virial_actions_converge_to_central_differences(name: str, dT: float, dx: list[float] | None, steps: tuple[float, ...]) -> None:
     """Exact B and C actions against central differences: the difference shrinks as step squared."""
+    # Association raises the centered-difference truncation term, requiring smaller steps.
+    if name == "Water2B+Methane" and dx is not None:
+        steps = tuple(s * (0.5 if dT == 0.0 else 0.25) for s in steps)
     fluid, x = _action_fluid(name)
     if dx is not None and x is None:
         pytest.skip("pure fluid has no composition direction")

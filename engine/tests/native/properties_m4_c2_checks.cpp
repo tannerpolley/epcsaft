@@ -511,16 +511,16 @@ void density_and_reference() {
             (std::string("vapor-volume/") + std::to_string(case_index)).c_str(),
             "specific_volume", "m3/mol", 1.0 / vapor.molar_density, std::get<2>(row),
             inputs, "Relationship", "historical-reference", "historical vapor volume agrees within 5%",
-            "reference_or_one", 0.0, 0.05,
-            close(1.0 / vapor.molar_density, std::get<2>(row), 0.05),
+            "reference_scale", 0.0, 0.05,
+            std::abs(1.0 / vapor.molar_density - std::get<2>(row)) <= 0.05 * std::abs(std::get<2>(row)),
             "m8-vapor-volume", std::to_string(case_index).c_str(), "v_v", "T,P,\\mathbf{x}",
             "v_v", "case");
         recording_support::compare(
             (std::string("liquid-volume/") + std::to_string(case_index)).c_str(),
             "specific_volume", "m3/mol", 1.0 / liquid.molar_density, std::get<3>(row),
             inputs, "Relationship", "historical-reference", "historical liquid volume agrees within 5%",
-            "reference_or_one", 0.0, 0.05,
-            close(1.0 / liquid.molar_density, std::get<3>(row), 0.05),
+            "reference_scale", 0.0, 0.05,
+            std::abs(1.0 / liquid.molar_density - std::get<3>(row)) <= 0.05 * std::abs(std::get<3>(row)),
             "m8-liquid-volume", std::to_string(case_index).c_str(), "v_l", "T,P,\\mathbf{x}",
             "v_l", "case");
         bool ambiguous = false;

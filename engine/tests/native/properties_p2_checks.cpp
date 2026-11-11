@@ -895,8 +895,6 @@ void properties_p2() {
             epcsaft::policy::DENSITY_ANCHOR_SCAN_INTERVALS.value);
         failure_stop = error.record.stop;
         failure_residual = error.record.residual;
-    } catch (const std::runtime_error&) {
-        branch_unreachable = false;
     }
     const auto unreachable_inputs = recording_support::fields({
         recording_support::field("T", 376.88), recording_support::field("P", 101330.0),
