@@ -28,9 +28,8 @@ reference map, that the task needs before selecting the evidence-justified route
 - cse:review — independently check a plan, a delivered result, or a change
 - cse:write — turn accepted evidence into manuscript or report prose
 - cse:prose — inspect scientific writing without editing it
-- cse:workflow — carry one task through several stages
-- cse:zotero, cse:data, cse:digitize, cse:mathpix — sources, datasets, figure values, and PDF transcription
-- cse:plot, cse:pgfplots, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents
+- cse:zotero, cse:data, cse:digitize — sources, datasets, figure values, and PDF transcription
+- cse:plot, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents
 - cse:audit — remove software ceremony, duplicated values, or misplaced records
 - delegated roles — review: cse:review; implementation: cse:build; design: cse:design; research: cse:research; diagnosis: cse:diagnose; analysis: cse:analyze; writing: cse:write
 
