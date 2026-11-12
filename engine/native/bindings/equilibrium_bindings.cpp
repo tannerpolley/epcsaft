@@ -370,9 +370,11 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(SpinodalRecord, search, normalized_null_residual);
     nb::class_<CriticalSearch>(module, "CriticalSearch")
         EPCSAFT_READONLY(CriticalSearch, seeds, results, added_work, scheduled, budget_exhausted, selected);
+    nb::class_<StabilityPhaseComparison>(module, "StabilityPhaseComparison")
+        EPCSAFT_READONLY(StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance);
     nb::class_<StabilityTrial>(module, "StabilityTrial")
         EPCSAFT_READONLY(StabilityTrial, phase, seed, evidence, message, optimizer, raw_coordinates, raw_residuals,
-            composition, split_coordinates, basis, row_transformation, quantities, split_checks, donor,
+            composition, split_coordinates, basis, row_transformation, quantities, split_checks, present_phase_comparisons, diagnostic_cause, donor,
             resolved_descent);
     nb::class_<StabilityReport>(module, "StabilityReport")
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,

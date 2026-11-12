@@ -845,6 +845,11 @@ EPC_API std::vector<ReactionActivities> reaction_activities(const IdealMoleFract
 // Per declared solid: 1 when present, absent otherwise.
 EPC_API std::vector<std::optional<double>> solid_activities(const EquilibriumResult&);
 
+struct StabilityPhaseComparison final {
+    std::size_t phase = 0;
+    std::vector<std::size_t> added_species, missing_species;
+    double composition_max_distance = 0.0, volume_log_distance = 0.0;
+};
 struct StabilityTrial final {
     PhaseSpec phase;
     std::string seed, evidence, message;
@@ -854,6 +859,8 @@ struct StabilityTrial final {
     // Quantities carry units in their names; errors are local estimates, never enclosures.
     std::map<std::string, double> quantities;
     std::vector<std::map<std::string, double>> split_checks;
+    std::vector<StabilityPhaseComparison> present_phase_comparisons;
+    std::string diagnostic_cause;
     std::optional<std::size_t> donor;
     bool resolved_descent = false;
 };

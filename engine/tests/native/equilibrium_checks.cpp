@@ -41,6 +41,7 @@ void check_candidate_publication();
 void check_budget_retry();
 void check_physical_amount_work();
 void check_solve_error_curvature();
+void check_stability_phase_comparison();
 void check_stability_amount_correction();
 void check_trial_refinement();
 void check_normalized_reaction_affinity();
@@ -111,6 +112,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.budget-retry", "budget-retry", "Automatic_fast"}, check_budget_retry},
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},
+        {{"native.equilibrium.stability-phase-comparison", "stability-phase-comparison", "Automatic_fast"}, check_stability_phase_comparison},
         {{"native.equilibrium.stability-amount-correction", "stability-amount-correction", "Automatic_fast"}, check_stability_amount_correction},
         {{"native.equilibrium.trial-refinement", "trial-refinement", "Automatic_fast"}, check_trial_refinement},
         {{"native.equilibrium.normalized-reaction", "TPD", "Automatic_fast"}, check_normalized_reaction_affinity},

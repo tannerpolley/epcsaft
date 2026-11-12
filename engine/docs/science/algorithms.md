@@ -1871,6 +1871,17 @@ density-dependent ionic/reacting cases, explicit density-independent
 charged-search refusals and unchanged declared work. Method adoption is recorded in
 [ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md).
 
+Explicit `stability_test` calls retain diagnostic root-side evidence and
+structural support and composition/volume comparisons for indeterminate trials
+before `stability_measure` returns unavailable. Comparisons refer to the
+conservation-repaired stability candidate, including zero-pinned phases and
+original retained volumes. Direct discovery, recovery and vanished-support
+searches do not request this enrichment. Anchor refusal retains partial
+quantities and its cause without changing trial evidence. Existing ordered
+`split_checks` supply Gibbs changes and paired extensive errors; no diagnostic
+changes descent admission or availability. Search kind and composition
+proximity alone do not establish physical phase identity.
+
 ### Stability requirements in parameter fitting
 
 A declared stability observation consumes this same Full optimized trial search.

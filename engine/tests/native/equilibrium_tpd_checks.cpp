@@ -1268,4 +1268,57 @@ void check_tangent_plane_jacobian() {
     }
 }
 
+// Manufactured A=B, K=1e-12 at 150 K: unresolved finite decrease must retain gas-root diagnostics.
+void check_stability_phase_comparison() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::bubble_at(150.0);
+    problem.feed.values = {1.0, 0.0}; problem.reactions = {{"A=B", {-1.0, 1.0}, 1e-12}};
+    problem.phases[0].support = {0, 1}; problem.phases[0].support_declared = true;
+    problem.phases[1].support = {0}; problem.phases[1].support_declared = true;
+    problem.phases[1].composition_guess = {1.0, 0.0};
+    problem.solver_options.values[policy::row] = 1e-10;
+    const auto compiled = compile_problem(model, problem);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.success && parent.residual_norm() <= 1e-10);
+    StabilityOptions options;
+    auto vapor = problem.phases[1]; vapor.amount = {}; vapor.support = {0, 1}; vapor.composition_guess.clear();
+    options.trials = std::vector<PhaseSpec>{problem.phases[0], vapor};
+    const auto measure = stability_measure(compiled, parent, options);
+    CHECK(!measure.available);
+    const auto& report = measure.report;
+    const auto found = std::find_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
+        return t.phase.kind == PhaseKind::Vapor && t.seed == "near-pure-0";
+    });
+    CHECK(found != report.trials.end());
+    const auto& trial = *found;
+    const auto& q = trial.quantities;
+    CHECK(trial.evidence == "indeterminate" && trial.diagnostic_cause.empty());
+    CHECK(q.at("root_density_side") == static_cast<double>(DensityBranch::Vapor));
+    CHECK(q.count("density_side") == 1);
+    CHECK(q.at("identity_root_log_displacement") <= policy::DENSITY_ANCHOR_LOG_WINDOW.value);
+    CHECK(q.at("identity_root_residual") <= policy::DENSITY_ROOT_RESIDUAL.value);
+    CHECK(q.at("donor_slope_over_rt") < -q.at("descent_error_estimate_over_rt"));
+    CHECK(trial.split_checks.size() == 9);
+    for (const auto& split : trial.split_checks)
+        CHECK(split.at("admitted") == 1 && split.at("delta_g_over_rt") >= -split.at("error_estimate_over_rt"));
+    CHECK(trial.present_phase_comparisons.size() == problem.phases.size());
+    std::size_t cursor = 0;
+    for (std::size_t p = 0; p < problem.phases.size(); ++p) {
+        std::vector<double> x(2, 0.0);
+        for (auto i : problem.phases[p].support) x[i] = std::exp(report.candidate_coordinates.at(cursor++));
+        cursor += 2;
+        const auto& comparison = trial.present_phase_comparisons[p];
+        CHECK(comparison.phase == p && comparison.missing_species.empty());
+        CHECK(comparison.added_species == (p == 1 ? std::vector<std::size_t>{1} : std::vector<std::size_t>{}));
+        double distance = 0.0;
+        for (std::size_t i = 0; i < x.size(); ++i) distance = std::max(distance, std::abs(trial.composition[i] - x[i]));
+        CHECK(std::abs(comparison.composition_max_distance - distance) <= 1e-15);
+        CHECK(std::abs(comparison.volume_log_distance - std::abs(std::log(q.at("volume_m3_per_mol")
+            / report.present_phases[p].at("volume_m3_per_mol")))) <= 1e-15);
+    }
+    CHECK(trial.present_phase_comparisons[0].volume_log_distance > 3.0);
+}
+
 }  // namespace equilibrium_checks

@@ -2369,10 +2369,32 @@ class StabilityOptions:
         """
         ...
 
+class StabilityPhaseComparison:
+    """Trial distances to the conservation-repaired candidate, including zero-amount phases."""
+    phase: int
+    """Zero-based declared phase index."""
+    added_species: list[int]
+    """Sorted structural trial-minus-phase species indices, without abundance thresholds."""
+    missing_species: list[int]
+    """Sorted structural phase-minus-trial species indices."""
+    composition_max_distance: float
+    """Maximum absolute mole-fraction distance over all species, dimensionless."""
+    volume_log_distance: float
+    """Absolute logarithm of trial/candidate molar volume, dimensionless; original retained volume."""
+
 class StabilityTrial:
     """One tangent-plane trial, numerical diagnostics and finite-split evidence."""
     phase: PhaseSpec
     """Declared trial phase and support."""
+    present_phase_comparisons: list[StabilityPhaseComparison]
+    """In declaration order on explicit indeterminate trials; empty on internal searches."""
+    diagnostic_cause: str
+    """Original density refusal/exception cause; empty when diagnostics complete or not requested.
+    Diagnostic root retention adds density_side, raw root_density_side (0 unspecified, 1 vapor,
+    2 liquid), identity_root_log_displacement and identity_root_residual to quantities.
+    No side is written on anchor refusal; partial identity quantities survive.
+    This reporting changes neither trial evidence nor measure availability.
+    """
     seed: str
     """Native seed label, not an additional physical constraint."""
     evidence: str

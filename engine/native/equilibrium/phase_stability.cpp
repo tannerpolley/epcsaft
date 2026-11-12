@@ -166,12 +166,15 @@ std::optional<DensityRoot> anchored_root(const HelmholtzModel& model, double T, 
     return root;
 }
 
-void retain_density_side(const HelmholtzModel& model, double T, double P, const std::vector<double>& w,
+constexpr auto density_refusal = "stability density branch unresolved";
+std::optional<DensityRoot> retain_density_side(const HelmholtzModel& model, double T, double P, const std::vector<double>& w,
     double v, PhaseKind kind, Quantities& q) {
     const auto root = anchored_root(model, T, P, w, v, kind, q, "identity_");
-    if (!root) throw std::invalid_argument("stability density branch unresolved");
+    if (!root) return root;
     const auto side = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
+    q["root_density_side"] = static_cast<double>(side);
     q["density_side"] = static_cast<double>(side == DensityBranch::Unspecified ? (kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor) : side);
+    return root;
 }
 
 // Reduced energy and Euler/association estimates use unit-mol amount columns and the SI volume column.
@@ -568,7 +571,8 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
 
 StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
-    std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr) {
+    std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false) {
+    if (diagnostics && limits) throw std::invalid_argument("stability diagnostics require an unlimited explicit test");
     auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     StabilityReport report;
     const bool fast = options.mode == DiscoveryMode::Fast;
@@ -636,6 +640,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         for (auto& [seed_name, seed] : seeds) {
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
+            enum class Operation { Trial, DiagnosticDensity };
+            auto operation = Operation::Trial;
             try {
                 if (options.evaluate_supplied_trials) {
                     if (seed.size() != z.size()) throw std::invalid_argument("supplied trial composition size");
@@ -742,9 +748,29 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 }
                 trial.evidence = "no_resolved_descent";
                 if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options, limits);
+                if (diagnostics && trial.evidence == "indeterminate" && !trial.composition.empty()
+                    && q.count("volume_m3_per_mol")) {
+                    for (std::size_t p = 0; p < at.amount.size(); ++p) {
+                        StabilityPhaseComparison comparison; comparison.phase = p;
+                        const auto& support = c.problem.phases[p].support;
+                        std::set_difference(phase.support.begin(), phase.support.end(), support.begin(), support.end(),
+                            std::back_inserter(comparison.added_species));
+                        std::set_difference(support.begin(), support.end(), phase.support.begin(), phase.support.end(),
+                            std::back_inserter(comparison.missing_species));
+                        comparison.composition_max_distance = largest_difference(trial.composition, at.composition[p]);
+                        comparison.volume_log_distance = std::abs(std::log(volume / at.volume[p]));
+                        trial.present_phase_comparisons.push_back(std::move(comparison));
+                    }
+                    operation = Operation::DiagnosticDensity;
+                    if (!retain_density_side(*c.model, at.temperature, at.pressure, trial.composition, volume, phase.kind, q))
+                        trial.diagnostic_cause = density_refusal;
+                }
             } catch (const std::exception& error) {
-                trial.message += "; " + std::string(error.what());
-                trial.evidence = "unresolved";
+                if (operation == Operation::DiagnosticDensity) trial.diagnostic_cause = error.what();
+                else {
+                    trial.message += "; " + std::string(error.what());
+                    trial.evidence = "unresolved";
+                }
             }
             report.trials.push_back(std::move(trial));
             if (fast && report.trials.back().resolved_descent) stopped = true;
@@ -775,7 +801,7 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability testing is deferred");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
-    return test_snapshot(c, result, options, {});
+    return test_snapshot(c, result, options, {}, nullptr, nullptr, true);
 }
 
 StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
@@ -801,11 +827,11 @@ StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumRes
     try {
         const auto at = c.prepare(result.coordinates, true);
         for (std::size_t p = 0; p < out.report.present_phases.size(); ++p)
-            retain_density_side(*c.model, at.temperature, at.pressure, at.composition[p], at.volume[p],
-                c.problem.phases[p].kind, out.report.present_phases[p]);
+            if (!retain_density_side(*c.model, at.temperature, at.pressure, at.composition[p], at.volume[p],
+                c.problem.phases[p].kind, out.report.present_phases[p])) { out.cause = density_refusal; return out; }
         for (auto& t : out.report.trials)
-            retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
-                t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities);
+            if (!retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
+                t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities)) { out.cause = density_refusal; return out; }
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
     std::vector<SolvedStateObservable> plane;
     for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
