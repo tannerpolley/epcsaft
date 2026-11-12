@@ -195,7 +195,8 @@ and uploads the logs if the build fails.
 
 `tools/native-run <program> [case|--list]` rebuilds one native program in the
 checkout's Meson build directory (configured by setup with the shared HiGHS) and
-runs it without building the wheel. Do not use `meson install`; the wheel is the
+runs it without building the wheel. In a checkout with no build directory it first runs
+`tools/setup.sh --native`, which configures Meson without building the Python module. Do not use `meson install`; the wheel is the
 installation boundary.
 
 `bash engine/tools/run-native-tests.sh` compiles and runs the fast suites

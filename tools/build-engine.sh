@@ -8,6 +8,8 @@
 #   --install-wheel  build a wheel into build/environment-wheel/, install it non-editably and
 #                    record wheel.sha256 and preparation.json, for an analysis that records a
 #                    wheel; rerunning setup restores the editable install
+#   --native         configure the Meson tree only: tools/native-run then compiles one native
+#                    program and never the Python module or a wheel
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 python="$PWD/.venv/bin/python"
@@ -114,6 +116,10 @@ PY
     fi
     bash tools/prepare-serena-cpp.sh
     ;;
+--native)
+    [[ -f "$build_dir/build.ninja" ]] ||
+        meson setup -Db_ndebug=if-release "-Dpkg_config_path=$highs_prefix/pkgconfig" "$build_dir" engine >&2
+    ;;
 --wheel)
     (($# == 2)) && [[ ! -d "$2" || -z "$(ls -A "$2")" ]] || { echo "usage: $0 --wheel <new or empty dir>" >&2; exit 2; }
     build_wheel "$2"
@@ -128,7 +134,7 @@ PY
         build/engine-meson/shared "$wheel" "$(<"$records/wheel.sha256")" >"$records/preparation.json"
     ;;
 *)
-    echo "usage: $0 [--wheel <dir> | --install-wheel]" >&2
+    echo "usage: $0 [--native | --wheel <dir> | --install-wheel]" >&2
     exit 2
     ;;
 esac
