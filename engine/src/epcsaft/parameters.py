@@ -133,14 +133,16 @@ def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> dict
     record = dict(_mapping(document["cation_mixing"], "cation_mixing"))
     names = [record.get("solvent"), *_array(record.get("cations"), "cations"), record.get("anion")]
     available = {c["component_id"] for c in document["components"]}
-    if (
-        set(record) != {"solvent", "cations", "anion", "coefficients"}
-        or len(names) != 4
-        or len(_array(record.get("coefficients"), "cation_mixing coefficients")) != 2
-        or any(not isinstance(n, str) or n not in available for n in names)
-        or len(set(names)) != 4
-    ):
-        raise ParameterError("cation_mixing requires four distinct known participants and two coefficients")
+    if set(record) != {"solvent", "cations", "anion", "coefficients"}:
+        raise ParameterError(f"cation_mixing keys {sorted(record)}; expected anion, cations, coefficients, solvent")
+    if len(names) != 4:
+        raise ParameterError(f"cation_mixing names {len(names)} participants; expected a solvent, two cations and an anion")
+    if len(_array(record.get("coefficients"), "cation_mixing coefficients")) != 2:
+        raise ParameterError("cation_mixing requires two coefficients")
+    if unknown := [n for n in names if not isinstance(n, str) or n not in available]:
+        raise ParameterError(f"cation_mixing participants are not known components: {unknown}")
+    if len(set(names)) != 4:
+        raise ParameterError(f"cation_mixing participants are not distinct: {names}")
     record["cations"] = sorted(cast(list[str], names[1:3]))
     if not set(names[1:3]) <= set(selected):
         return None
@@ -450,8 +452,12 @@ class Parameters:
             indices = [positions[name] for name in (mixing["solvent"], *mixing["cations"], mixing["anion"])]
             for value in _array(mixing["coefficients"], "cation_mixing coefficients"):
                 item = _mapping(value, "cation_mixing coefficient")
-                if set(item) != {"identity", "family", "value"} or item.get("family") not in ("cation_pair_mixing", "cation_triple_mixing") or set(_mapping(item.get("value"), "cation_mixing value")) != {"magnitude", "unit"}:
-                    raise ParameterError("cation_mixing needs pair and triple coefficients")
+                if set(item) != {"identity", "family", "value"}:
+                    raise ParameterError(f"cation_mixing coefficient keys {sorted(item)}; expected family, identity, value")
+                if item.get("family") not in ("cation_pair_mixing", "cation_triple_mixing"):
+                    raise ParameterError(f"cation_mixing coefficient family {item.get('family')}; expected cation_pair_mixing or cation_triple_mixing")
+                if set(_mapping(item.get("value"), "cation_mixing value")) != {"magnitude", "unit"}:
+                    raise ParameterError(f"cation_mixing coefficient {item['identity']} value needs exactly magnitude and unit")
                 entries.add(item["identity"], cast(str, item["family"]), indices, item["value"], "cation_mixing")
         # Document families keep their native field name unless renamed here.
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
@@ -491,12 +497,12 @@ class Parameters:
             family_value = item.get("family")
             form_value = item.get("form")
             if not isinstance(family_value, str) or not isinstance(form_value, str):
-                raise _core.ParameterError(f"unknown correlation {correlation_id}")
+                raise _core.ParameterError(f"unknown correlation {correlation_id}: family and form must be strings")
             family = family_value
             form = form_value
             correlation_position = (positions[component_id],)
             if family not in {"segment_diameter", "relative_permittivity"} or form not in {"constant", "constant-plus-sum-of-exponentials", "constant-plus-polynomial-in-temperature"}:
-                raise _core.ParameterError(f"unknown correlation {correlation_id}")
+                raise _core.ParameterError(f"unknown correlation {correlation_id}: family {family}, form {form}")
             if form == "constant-plus-sum-of-exponentials" and family != "segment_diameter":
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
             if form == "constant-plus-polynomial-in-temperature" and family != "relative_permittivity":
@@ -720,8 +726,14 @@ class Parameters:
         for index, value in enumerate(_array(topology.get("no_cross_association", ()), "no_cross_association")):
             item = _mapping(value, "no_cross_association")
             a, b = str(item.get("component_id_a")), str(item.get("component_id_b"))
-            if {a, b} - set(component_records) or a == b or frozenset((a, b)) in declared or "provenance" not in item:
-                raise ParameterError(f"no_cross_association[{index}]: two known components, once, with provenance")
+            if unknown := {a, b} - set(component_records):
+                raise ParameterError(f"no_cross_association[{index}]: unknown components {sorted(unknown)}")
+            if a == b:
+                raise ParameterError(f"no_cross_association[{index}]: {a} paired with itself")
+            if frozenset((a, b)) in declared:
+                raise ParameterError(f"no_cross_association[{index}]: {a}/{b} declared twice")
+            if "provenance" not in item:
+                raise ParameterError(f"no_cross_association[{index}]: {a}/{b} has no provenance")
             declared.add(frozenset((a, b)))
             if a in positions and b in positions:
                 ab, zero = (positions[a], positions[b]), {"magnitude": 0.0, "unit": "dimensionless"}

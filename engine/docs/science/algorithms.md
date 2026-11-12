@@ -2315,8 +2315,29 @@ terms. Both final refinements require $Q_N=|I_N-I_{N/2}|/15\le F_N+F_{N/2}$,
 where $F_N$ contains only integration numerical estimates. The final $Q_{32}$
 remains in the complete error. Failed local admissions return unavailable with
 a cause; otherwise $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease,
-and the remaining interval overlaps zero. This supplied-split evaluator does
-not itself change any search verdict or establish global stability.
+and the remaining interval overlaps zero.
+
+An explicit optimized Full search uses this comparison for a reacting trial
+whose optimizer succeeded, whose raw plane is negative and whose anchored root
+lies on the gas side, unless it coincides with a declared vapour (same support,
+composition and log volume within the phase-coincidence distance). The trial's
+phase comparisons and density side are recorded before classification. The
+largest-capacity donor and the trial form a conserved two-phase fixed-$T/P$
+Gibbs cell of the original reactions, standards and reference: feed is the
+repaired donor inventory, both amounts are free, other phases stay outside. One
+boundary start and one cold shared-driver solve with reaction-relaxed charged
+bounds share one recovery allowance; a refused compilation, start or solve
+returns its cause. A cell refused for balance rank has rank one: each phase
+holds its own reaction equilibrium, the donor potentials equal the plane and
+the split change is at most $\beta\,\mathrm{tpd}$, with equality when the
+reactions conserve mole number, so a frozen descent is a witness and the frozen
+slope and finite splits below classify that trial, with the refusal kept as a note. The comparison decides the trial before the frozen slope:
+decrease is a witness, no decrease supplies no witness, and overlap or any
+refusal is indeterminate with its cause. A reacting trial with no admitted
+density side and no independently resolved split is likewise indeterminate.
+Coincident endpoints share one comparison. Nonreacting, liquid-side and
+supplied-point trials keep the frozen slope and finite splits above. This does
+not establish global stability.
 
 The adopted output is **numerically resolved descending split with estimated
 uncertainty**. Calling it a **proved instability witness** requires justified

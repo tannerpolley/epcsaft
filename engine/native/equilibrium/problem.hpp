@@ -841,7 +841,8 @@ struct CriticalSearch final {
     std::optional<std::size_t> selected;
 };
 
-EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr);
+// `counted`: the estimate's roots and energy evaluations count in the enclosing calculation work.
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false);
 struct DriverLimits;
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);

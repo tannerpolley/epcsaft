@@ -4,7 +4,10 @@
 #include "equilibrium_record.hpp"
 
 #include <charconv>
+#include <algorithm>
 #include <cctype>
+#include <cerrno>
+#include <cstdlib>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -16,7 +19,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <tuple>
 
 // Use the process stderr for retained diagnostics, including direct Pyomo calls without AE stdio hooks.
 #define NO_STDIO1
@@ -25,73 +27,30 @@
 
 namespace {
 
-using epcsaft::DerivativeOrder;
 using epcsaft::HelmholtzModel;
-using epcsaft::NeutralProperty;
-using epcsaft::NeutralPropertyDerivatives;
 using epcsaft::detail::family_values;
-
-struct PreparedModel final {
-    std::mutex mutex;
-    std::tuple<std::string, std::string, std::string, std::string> inputs;
-    std::unique_ptr<HelmholtzModel> model;
-};
-
-PreparedModel& prepared_model() {
-    static PreparedModel result;
-    return result;
-}
 
 thread_local std::string callback_error;
 
-double invalid_value() {
-    return std::numeric_limits<double>::quiet_NaN();
-}
+constexpr double invalid_value = std::numeric_limits<double>::quiet_NaN();
 
 void invalidate(arglist* arguments) {
     if (arguments == nullptr) return;
     if (arguments->derivs != nullptr) {
         for (int index = 0; index < arguments->nr; ++index) {
-            arguments->derivs[index] = invalid_value();
+            arguments->derivs[index] = invalid_value;
         }
     }
     if (arguments->hes != nullptr) {
         const int count = arguments->nr * (arguments->nr + 1) / 2;
         for (int index = 0; index < count; ++index) {
-            arguments->hes[index] = invalid_value();
+            arguments->hes[index] = invalid_value;
         }
     }
 }
 
 [[noreturn]] void reject(const std::string& message) {
     throw std::invalid_argument(message);
-}
-
-double parse_decimal(const char* value, const char* name) {
-    if (value == nullptr || *value == '\0') reject(std::string("missing ") + name);
-    const std::string text(value);
-    for (const char character : text) {
-        if (std::isspace(static_cast<unsigned char>(character)) != 0) {
-            reject(std::string("invalid ") + name);
-        }
-    }
-    std::size_t end = 0;
-    double result = 0.0;
-    try {
-        result = std::stod(text, &end);
-    } catch (const std::exception&) {
-        reject(std::string("invalid ") + name);
-    }
-    if (end != text.size() || !std::isfinite(result)) {
-        reject(std::string("invalid ") + name);
-    }
-    return result;
-}
-
-double real_argument(arglist* arguments, int position) {
-    const int index = arguments->at[position];
-    if (index < 0 || index >= arguments->nr) reject("invalid real argument map");
-    return arguments->ra[index];
 }
 
 const char* string_argument(arglist* arguments, int position) {
@@ -135,128 +94,6 @@ template <class Context> struct Prepared final {
     }
 };
 
-HelmholtzModel& model_for(
-    const std::tuple<std::string, std::string, std::string, std::string>& inputs
-) {
-    auto& prepared = prepared_model();
-    if (prepared.model != nullptr) {
-        if (prepared.inputs != inputs) reject("immutable neutral parameter tuple changed");
-        return *prepared.model;
-    }
-
-    const auto [m, sigma, epsilon, molar_mass] = inputs;
-    epcsaft::ParameterDocument document;
-    document.component_ids = {"component-0"};
-    document.base_choice = "pc-saft";
-    document.association_choice = "none";
-    document.electrolyte_choice = "none";
-    document.ionic_dispersion_choice = "";
-    document.permittivity_choice = "none";
-    auto add = [&](const char* field, double magnitude, const char* unit) {
-        epcsaft::ParameterEntry entry;
-        entry.identity = std::string("component/0/") + field;
-        entry.field = field;
-        entry.index = {0};
-        entry.magnitude = magnitude;
-        entry.unit = unit;
-        document.entries.push_back(std::move(entry));
-    };
-    add("segment_count", parse_decimal(m.c_str(), "segment_count"), "dimensionless");
-    add("sigma_constant", parse_decimal(sigma.c_str(), "sigma_constant"), "angstrom");
-    add(
-        "dispersion_energy_over_k",
-        parse_decimal(epsilon.c_str(), "dispersion_energy_over_k"),
-        "kelvin"
-    );
-    add("molar_mass", parse_decimal(molar_mass.c_str(), "molar_mass"), "kilogram / mole");
-    add("charge_number", 0.0, "elementary-charge");
-    prepared.model = std::make_unique<HelmholtzModel>(
-        epcsaft::build_parameters(document)
-    );
-    prepared.inputs = inputs;
-    return *prepared.model;
-}
-
-double evaluate(
-    arglist* arguments,
-    NeutralProperty property
-) {
-    const char* message = "epcsaft neutral function requires two real and four string arguments";
-    if (argument_count(arguments, 4, 2, message) != 2) reject(message);
-    const auto inputs = std::make_tuple(
-        std::string(string_argument(arguments, 2)),
-        std::string(string_argument(arguments, 3)),
-        std::string(string_argument(arguments, 4)),
-        std::string(string_argument(arguments, 5))
-    );
-    const double temperature = real_argument(arguments, 0);
-    const double density = real_argument(arguments, 1);
-    auto& prepared = prepared_model();
-    std::lock_guard<std::mutex> lock(prepared.mutex);
-    const auto order = arguments->hes != nullptr
-        ? DerivativeOrder::Hessian
-        : (arguments->derivs != nullptr ? DerivativeOrder::Gradient : DerivativeOrder::Value);
-    const NeutralPropertyDerivatives result = model_for(inputs).neutral_property(
-        temperature, density, property, order
-    );
-    if (arguments->derivs != nullptr) {
-        for (int position = 0; position < arguments->n; ++position) {
-            const int index = arguments->at[position];
-            if (index >= 0) {
-                if (index >= arguments->nr) reject("invalid derivative map");
-                arguments->derivs[index] = result.gradient.at(position);
-            }
-        }
-    }
-    if (arguments->hes != nullptr) {
-        arguments->hes[0] = result.hessian.at(0);
-        arguments->hes[1] = result.hessian.at(1);
-        arguments->hes[2] = result.hessian.at(3);
-    }
-    return result.value;
-}
-
-double callback(arglist* arguments, NeutralProperty property) {
-    if (arguments != nullptr) arguments->Errmsg = nullptr;
-    invalidate(arguments);
-    try {
-        return evaluate(arguments, property);
-    } catch (const std::exception& error) {
-        callback_error = arguments != nullptr && arguments->hes != nullptr
-            ? std::string("\"") + error.what()
-            : (arguments != nullptr && arguments->derivs != nullptr
-                ? std::string("'") + error.what()
-                : error.what());
-        if (arguments != nullptr) arguments->Errmsg = callback_error.data();
-        return invalid_value();
-    } catch (...) {
-        callback_error = "unknown epcsaft neutral callback error";
-        if (arguments != nullptr) arguments->Errmsg = callback_error.data();
-        return invalid_value();
-    }
-}
-
-double residual_helmholtz(arglist* arguments) {
-    return callback(arguments, NeutralProperty::ResidualHelmholtz);
-}
-
-double pressure(arglist* arguments) {
-    return callback(arguments, NeutralProperty::Pressure);
-}
-
-double recordings(arglist* arguments) {
-    if (arguments == nullptr || arguments->n != 0 || arguments->nr != 0) {
-        callback_error = "epcsaft neutral recordings requires zero arguments";
-        if (arguments != nullptr) arguments->Errmsg = callback_error.data();
-        return invalid_value();
-    }
-    auto& prepared = prepared_model();
-    std::lock_guard<std::mutex> lock(prepared.mutex);
-    return prepared.model == nullptr
-        ? 0.0
-        : static_cast<double>(prepared.model->counters().recordings);
-}
-
 namespace eq = epcsaft::equilibrium;
 using ActionStatus = eq::SolvedStateActionStatus;
 
@@ -286,29 +123,34 @@ public:
         position_ = colon + length + 2;
         return std::string(text_.substr(colon + 1, length));
     }
-    void field(const char* name) {
+    void tag(const char* name) {
         if (next() != name) reject(std::string("unexpected record field: ") + name);
     }
-    std::size_t integer(std::size_t maximum = 64) {
-        const auto value = next();
+    void text(std::string& value) { value = next(); }
+    void number(double& value) {  // a hexadecimal float as the writer prints it
+        const auto text = next();
+        if (text.empty()) reject("missing record number");
+        char* end = nullptr;
+        errno = 0;
+        value = std::strtod(text.c_str(), &end);
+        if (std::any_of(text.begin(), text.end(), [](unsigned char c) { return std::isspace(c) != 0; })
+            || end != text.c_str() + text.size() || errno == ERANGE || !std::isfinite(value))
+            reject("invalid record number");
+    }
+    template<class T> void whole(T& value, std::size_t maximum = 64) {
+        const auto text = next();
         std::size_t result = 0;
-        const auto parsed = std::from_chars(value.data(), value.data() + value.size(), result);
-        if (value.empty() || parsed.ec != std::errc{}
-            || parsed.ptr != value.data() + value.size() || result > maximum)
+        const auto parsed = std::from_chars(text.data(), text.data() + text.size(), result);
+        if (text.empty() || parsed.ec != std::errc{} || parsed.ptr != text.data() + text.size() || result > maximum)
             reject("invalid record integer");
-        return result;
+        value = static_cast<T>(result);
     }
-    double number() { return parse_decimal(next().c_str(), "record number"); }
-    template<class Read> auto optional(Read read) {  // a vector of length 0 or 1
-        const auto v = vector(read, 1);
-        return v.empty() ? std::nullopt : std::optional(v.front());
-    }
-    template<class Read> auto vector(Read read, std::size_t maximum = 64) {
-        std::vector<decltype(read())> result;
-        const auto count = integer(maximum);
-        result.reserve(count);
-        for (std::size_t i = 0; i < count; ++i) result.push_back(read());
-        return result;
+    void count(std::size_t& n, std::size_t maximum) { whole(n, maximum); }
+    bool present(const char* name, bool) {  // a named block the writer may omit
+        const auto start = position_;
+        if (next() == name) return true;
+        position_ = start;
+        return false;
     }
     void finish() const {
         if (position_ != text_.size()) reject("trailing equilibrium record data");
@@ -354,133 +196,29 @@ std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank
     return out.str();
 }
 
-void require_central(const EquilibriumContext& context, const eq::EquilibriumResult& result, const std::string& observable) {
+// The refusal of `result` as the context's central state, if any.
+std::optional<EquilibriumFailure> central_failure(const EquilibriumContext& context, const eq::EquilibriumResult& result,
+                                                 const std::string& observable) {
     const auto failure = [&](ActionStatus status) { return EquilibriumFailure(status, observable, result.message + conditioning_warnings(result.rank_records)
         + (result.first_numerical_failure ? "; first refusal: " + epcsaft::core::describe(*result.first_numerical_failure) : "")); };
     const auto count = context.map.offset.size(), identity = context.map.identity_component;
     if (result.topology_event == eq::TopologyEvent::PhasesCoalesced)
-        throw failure(ActionStatus::NonuniqueCoalescedPhases);
+        return failure(ActionStatus::NonuniqueCoalescedPhases);
     if (result.topology_event == eq::TopologyEvent::PhaseDisappeared)
-        throw failure(ActionStatus::PhaseBoundaryNotDifferentiable);
-    if (!result.has_state()) throw failure(ActionStatus::CentralSolveUnavailable);
+        return failure(ActionStatus::PhaseBoundaryNotDifferentiable);
+    if (!result.has_state()) return failure(ActionStatus::CentralSolveUnavailable);
     if (!result.requested_tolerance_met.value_or(false))
-        throw failure(ActionStatus::DefiningEquationsNotSatisfied);
+        return failure(ActionStatus::DefiningEquationsNotSatisfied);
     if (result.topology_event != eq::TopologyEvent::None || result.phase_count != context.anchor.phases.size()
         || result.mole_fractions.size() != result.phase_count * count || result.amounts.size() != result.phase_count
         || result.solid_amounts.size() != context.anchor.solids.size()
         || (result.phase_count == 2 && !(result.mole_fractions[identity] - result.mole_fractions[count + identity] > context.map.minimum_gap)))
-        throw failure(ActionStatus::PhaseBoundaryNotDifferentiable);
+        return failure(ActionStatus::PhaseBoundaryNotDifferentiable);
     for (std::size_t s = 0; s < result.solid_amounts.size(); ++s)  // native classification sets an absent amount to 0
         if (!(result.solid_amounts[s] > 0.0))
-            throw EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable,
+            return EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable,
                                      "solid " + context.anchor.solids[s].name + " is absent at the solved state");
-}
-
-epcsaft::ParameterDocument read_document(RecordReader& reader) {
-    epcsaft::ParameterDocument document;
-    reader.field("component_ids");
-    document.component_ids = reader.vector([&] { return reader.next(); });
-    reader.field("site_component");
-    document.site_component = reader.vector([&] { return static_cast<int>(reader.integer()); });
-    reader.field("site_multiplicity");
-    document.site_multiplicity = reader.vector([&] { return static_cast<int>(reader.integer()); });
-    reader.field("base_choice");
-    document.base_choice = reader.next();
-    reader.field("association_choice");
-    document.association_choice = reader.next();
-    reader.field("electrolyte_choice");
-    document.electrolyte_choice = reader.next();
-    reader.field("ionic_dispersion_choice");
-    document.ionic_dispersion_choice = reader.next();
-    reader.field("permittivity_choice");
-    document.permittivity_choice = reader.next();
-    reader.field("polar_choice");
-    document.polar_choice = reader.next();
-    reader.field("parameter_entries");
-    document.entries = reader.vector([&] {
-        epcsaft::ParameterEntry entry;
-        entry.identity = reader.next();
-        entry.field = reader.next();
-        entry.index = reader.vector([&] { return reader.integer(); });
-        entry.magnitude = reader.number();
-        entry.unit = reader.next();
-        return entry;
-    }, 4096);
-    return document;
-}
-
-std::vector<epcsaft::ActiveParameter> read_active(RecordReader& reader) {
-    reader.field("active_parameters");
-    return reader.vector([&] {
-        const auto family = epcsaft::ParameterFamily(reader.integer(epcsaft::detail::PARAMETER_FAMILY_COUNT - 1));
-        return epcsaft::ActiveParameter{family, reader.vector([&] { return reader.integer(SIZE_MAX); })};
-    });
-}
-
-// The writers' put_reaction and put_source_reference records.
-eq::ReactionSpec read_reaction(RecordReader& reader) {
-    eq::ReactionSpec r;
-    r.name = reader.next();
-    r.stoichiometry = reader.vector([&] { return reader.number(); });
-    const auto target = reader.next();
-    if (target == "K") r.equilibrium_constant = reader.number();
-    else if (target == "affinity") r.affinity_j_per_mol = reader.number();
-    else if (target == "correlation") {
-        auto& c = r.correlation.emplace();
-        for (double* v : eq::law_fields(c)) *v = reader.number();
-        c.standard_state_id = reader.next();
-    } else reject("unsupported reaction target");
-    if (reader.integer(1) != 0) r.reference = {reader.optional([&] { return reader.number(); }), epcsaft::ReferenceSourceBasis(reader.integer(1))};
-    return r;
-}
-
-std::optional<epcsaft::NeutralReferenceDeclaration> read_source_reference(RecordReader& reader) {
-    reader.field("source_reference");
-    if (reader.integer(1) == 0) return std::nullopt;  // braced initialization reads left to right
-    return epcsaft::NeutralReferenceDeclaration{reader.optional([&] { return reader.integer(); }), reader.vector([&] { return reader.number(); }),
-        reader.number(), reader.vector([&] { return epcsaft::SpeciesReference(reader.integer(2)); })};
-}
-
-// The block put_solids writes after its "solids" field, each solid declared present (Free).
-std::vector<eq::SolidSpec> read_solids(RecordReader& reader, std::optional<epcsaft::NeutralReferenceDeclaration>* reference = nullptr) {
-    const auto count = reader.integer();
-    if (reference && count > 0) *reference = read_source_reference(reader);
-    std::vector<eq::SolidSpec> solids;
-    for (std::size_t s = 0; s < count; ++s) {
-        const auto r = read_reaction(reader);
-        if (!r.correlation) reject("ASL solid rows require a ln K(T) law");
-        solids.push_back({r.name, r.stoichiometry, r.equilibrium_constant, r.correlation, r.reference, reader.number(), {}});
-    }
-    return solids;
-}
-
-// The block put_thermochemistry writes.
-std::optional<epcsaft::ThermochemistryRecord> read_thermochemistry(RecordReader& reader) {
-    if (reader.integer(1) == 0) return std::nullopt;
-    epcsaft::ThermochemistryRecord thermochemistry;
-    reader.field("standard_pressure");
-    thermochemistry.standard_pressure = reader.number();
-    reader.field("component_intervals");
-    thermochemistry.component_intervals = reader.vector([&] {
-        return reader.vector([&] {
-            epcsaft::IdealInterval item{reader.number(), reader.number(), reader.integer(1) != 0, reader.integer(1) != 0, {}};
-            item.correlation.source_pressure = reader.number();
-            const auto tag = reader.next();
-            const auto form = std::find(eq::ideal_tags.begin(), eq::ideal_tags.end(), tag) - eq::ideal_tags.begin();
-            if (form == 5) reject("unknown ASL thermochemistry form " + tag);
-            item.correlation.form = eq::ideal_forms[form];
-            std::visit([&](auto& c) {
-                const auto count = reader.integer();
-                if constexpr (std::is_same_v<decltype(c), epcsaft::IdealPolynomial&>) c.coefficients.resize(count);
-                if (count != c.coefficients.size()) reject("invalid ASL interval");
-                for (double& value : c.coefficients) value = reader.number();
-                if (reader.integer() != eq::ideal_anchors(c).size()) reject("invalid ASL interval");
-                for (double* value : eq::ideal_anchors(c)) *value = reader.number();
-            }, item.correlation.form);
-            return item;
-        });
-    });
-    return thermochemistry;
+    return std::nullopt;
 }
 
 // The model at theta, by the slot assignment of CoordinateSet::apply, in model.active_parameters() order.
@@ -494,63 +232,12 @@ auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.equilibrium.v8");
-    const auto document = read_document(reader);
+    epcsaft::ParameterDocument document;
+    std::vector<epcsaft::ActiveParameter> active;
+    std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
     auto context = std::make_unique<EquilibriumContext>();
     auto& problem = context->anchor;
-    reader.field("temperature");
-    problem.temperature = eq::FreeValue::fixed(reader.number());
-    reader.field("pressure");
-    problem.pressure = eq::FreeValue::fixed(reader.number());
-    reader.field("feed_kind");
-    if (reader.next() != "amounts") reject("equilibrium callback requires absolute amounts");
-    reader.field("feed_amounts");
-    problem.feed.values = reader.vector([&] { return reader.number(); });
-    reader.field("phases");
-    problem.phases = reader.vector([&] {
-        eq::PhaseSpec phase;
-        phase.name = reader.next();
-        const auto kind = reader.next();
-        if (kind != "liquid" && kind != "vapor") reject("equilibrium callback requires liquid or vapor phases");
-        phase.kind = kind == "liquid" ? eq::PhaseKind::Liquid : eq::PhaseKind::Vapor;
-        phase.support = reader.vector([&] { return reader.integer(); });
-        phase.support_declared = reader.integer(1) != 0;
-        if (reader.next() != "free") reject("equilibrium callback requires free phase amounts");
-        phase.amount.fraction = reader.number();
-        phase.composition_guess = reader.vector([&] { return reader.number(); });
-        phase.packing_guess = reader.optional([&] { return reader.number(); });
-        return phase;
-    });
-    reader.field("reactions");
-    problem.reactions = reader.vector([&] { return read_reaction(reader); });
-    reader.field("standard_gibbs_j_per_mol");
-    problem.standard_gibbs_j_per_mol = reader.vector([&] { return reader.number(); });
-    problem.source_reference = read_source_reference(reader);
-    auto field = reader.next();  // the solid block is present exactly when solids are declared
-    if (field == "solids") {
-        problem.solids = read_solids(reader);
-        field = reader.next();
-    }
-    if (field != "topology_declared") reject("unexpected record field: topology_declared");
-    problem.topology_declared = reader.integer(1) != 0;
-    reader.field("solver_options");
-    for (auto& value : problem.solver_options.values) value = reader.number();
-    const auto active = read_active(reader);
-    const auto thermochemistry = read_thermochemistry(reader);
-    reader.field("continuation_options");
-    context->options.initial_step = reader.number();
-    context->options.minimum_step = reader.number();
-    context->options.max_steps = reader.integer(SIZE_MAX);  // continue_equilibrium validates both counts
-    context->options.max_retries_per_step = reader.integer(SIZE_MAX);
-    reader.field("feed_offset");
-    context->map.offset = reader.vector([&] { return reader.number(); });
-    reader.field("feed_matrix");
-    context->map.matrix = reader.vector([&] { return reader.vector([&] { return reader.number(); }); });
-    reader.field("anchor_controls");
-    context->map.anchor = reader.vector([&] { return reader.number(); });
-    reader.field("phase_identity");
-    context->map.identity_component = reader.integer();
-    context->map.minimum_gap = reader.number();
+    eq::equilibrium_record(reader, document, active, thermochemistry, problem, context->options, context->map);
     reader.finish();
     context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, thermochemistry, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
@@ -563,7 +250,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         rows.hessians.assign(counts[kind], std::vector<double>(n * (n + 1) / 2));
     }
     context->anchor_result = eq::solve_equilibrium(*context->model, problem);
-    require_central(*context, context->anchor_result, observable);
+    if (auto failure = central_failure(*context, context->anchor_result, observable)) throw *failure;
     context->record = raw;
     return context;
 }
@@ -621,22 +308,29 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
     const bool moved = feed != context.map.anchor || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
     if (!moved && !context.shifted) context.central = context.anchor_result;
-    else try {
-        context.central = eq::solve_equilibrium(model, target);
-        require_central(context, context.central, observable);
-    } catch (const std::exception& original) {
-        for (const auto& solid : context.anchor.solids)
-            if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
-                throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + original.what());
-        if (!context.anchor.solids.empty()) throw;
-        const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
-            context.central = continuation_leg(context, path, to, targets, original.what(), name, observable);
-        };
-        context.central = context.anchor_result;
-        if (context.shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
-        if (moved) leg(model, target, std::vector<double>{}, "continuation");
+    else {
+        std::optional<EquilibriumFailure> refused;
+        std::string direct;  // the direct solve's refusal; empty when it succeeds
+        try { context.central = eq::solve_equilibrium(model, target); }
+        catch (const std::exception& error) { direct = error.what(); }
+        if (direct.empty() && (refused = central_failure(context, context.central, observable))) direct = refused->what();
+        if (!direct.empty()) {
+            for (const auto& solid : context.anchor.solids)
+                if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
+                    throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + direct);
+            if (!context.anchor.solids.empty()) {
+                if (refused) throw *refused;
+                throw std::runtime_error(direct);
+            }
+            const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
+                context.central = continuation_leg(context, path, to, targets, direct, name, observable);
+            };
+            context.central = context.anchor_result;
+            if (context.shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
+            if (moved) leg(model, target, std::vector<double>{}, "continuation");
+        }
     }
-    require_central(context, context.central, observable);
+    if (auto failure = central_failure(context, context.central, observable)) throw *failure;
     context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
     context.feed = q;
     for (auto& rows : context.rows) rows.order = -1;
@@ -694,7 +388,7 @@ double report_failure(arglist* arguments, const char* callback) {
         else if (arguments->derivs != nullptr) callback_error.insert(0, "'");
         arguments->Errmsg = callback_error.data();
     }
-    return invalid_value();
+    return invalid_value;
 }
 
 // kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J; kind 2: (q, record, solid), mol
@@ -751,9 +445,9 @@ double equilibrium_observable(arglist* arguments, int kind) {
         callback_error = error.what();
     } catch (const std::exception& error) {
         std::fprintf(stderr, "epcsaft_equilibrium diagnostic: %s\n", error.what());
-        callback_error = EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable, error.what()).what();
+        callback_error = "epcsaft_equilibrium:untyped:" + observable + ": " + error.what();
     } catch (...) {
-        callback_error = EquilibriumFailure(ActionStatus::Nonfinite, observable).what();
+        callback_error = "epcsaft_equilibrium:untyped:" + observable;
     }
     for (const auto& item : prepared.contexts) item->compiled.reset();  // every record re-solves at its next call
     return report_failure(arguments, "epcsaft_equilibrium");
@@ -785,19 +479,14 @@ struct PropertyContext final {
 
 std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     RecordReader reader(raw);
-    reader.field("epcsaft.asl.property.v5");
-    const bool require_phase_identity = reader.integer(1) != 0;
-    const auto document = read_document(reader);
+    epcsaft::ParameterDocument document;
+    std::vector<epcsaft::ActiveParameter> active;
+    std::optional<epcsaft::ThermochemistryRecord> thermochemistry;
     epcsaft::policy::SolverOptions solver_options;
-    reader.field("solver_options");
-    for (auto& value : solver_options.values) value = reader.number();
-    const auto active = read_active(reader);
-    const auto thermochemistry = read_thermochemistry(reader);
     auto context = std::make_unique<PropertyContext>();
-    reader.field("solids");
-    context->solids = read_solids(reader, &context->reference);
+    eq::property_record(reader, context->require_phase_identity, document, active, thermochemistry, solver_options,
+                        context->solids, context->reference);
     reader.finish();
-    context->require_phase_identity = require_phase_identity;
     context->model = std::make_unique<HelmholtzModel>(
         epcsaft::build_parameters(document), active, thermochemistry, solver_options);
     eq::admit_solid_declarations(*context->model, context->reference, context->solids);
@@ -1006,18 +695,6 @@ double pressure_property(arglist* arguments) {
 
 extern "C" void funcadd_ASL(AmplExports* exports) {
     if (exports == nullptr || exports->Addfunc == nullptr) return;
-    exports->Addfunc(
-        "epcsaft_neutral_ar", residual_helmholtz,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, 6, nullptr, exports
-    );
-    exports->Addfunc(
-        "epcsaft_neutral_pressure", pressure,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, 6, nullptr, exports
-    );
-    exports->Addfunc(
-        "epcsaft_neutral_recordings", recordings,
-        FUNCADD_REAL_VALUED, 0, nullptr, exports
-    );
     exports->Addfunc(
         "epcsaft_equilibrium_phase_component_amount", equilibrium_amount,
         FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -5, nullptr, exports

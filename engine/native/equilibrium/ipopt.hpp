@@ -143,29 +143,29 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const Ipopt::SmartPtr<Ipopt::IpoptApplication> app = options_file && *options_file ? ::IpoptApplicationFactory()
         : Ipopt::IsValid(logged) ? logged->clone() : base->clone();
     const auto options = app->Options();
-    const auto admit = [](bool ok) { if (!ok) throw std::invalid_argument("Ipopt option rejected"); };
-    admit(options->SetIntegerValue("print_level", 0));
-    admit(options->SetStringValue("sb", "yes"));  // no banner on stdout
-    admit(options->SetStringValue("nlp_scaling_method", "none"));
-    admit(options->SetNumericValue("obj_scaling_factor", objective_factor));
-    admit(options->SetStringValue("hessian_approximation", exact ? "exact" : "limited-memory"));
+    const auto admit = [](bool ok, const char* name) { if (!ok) throw std::invalid_argument(std::string("Ipopt option rejected: ") + name); };
+    admit(options->SetIntegerValue("print_level", 0), "print_level");
+    admit(options->SetStringValue("sb", "yes"), "sb");  // no banner on stdout
+    admit(options->SetStringValue("nlp_scaling_method", "none"), "nlp_scaling_method");
+    admit(options->SetNumericValue("obj_scaling_factor", objective_factor), "obj_scaling_factor");
+    admit(options->SetStringValue("hessian_approximation", exact ? "exact" : "limited-memory"), "hessian_approximation");
     for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol"})
-        admit(options->SetNumericValue(name, tolerance));
+        admit(options->SetNumericValue(name, tolerance), name);
     // ALG-EQUILIBRIUM: the absolute dual stop follows the extensive objective basis.
-    admit(options->SetNumericValue("dual_inf_tol", dual_tolerance));
-    admit(options->SetIntegerValue("acceptable_iter", 0));
-    admit(options->SetIntegerValue("max_iter", iterations));
-    if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds));
+    admit(options->SetNumericValue("dual_inf_tol", dual_tolerance), "dual_inf_tol");
+    admit(options->SetIntegerValue("acceptable_iter", 0), "acceptable_iter");
+    admit(options->SetIntegerValue("max_iter", iterations), "max_iter");
+    if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds), "max_cpu_time");
     // ALG-EQUILIBRIUM: unrelaxed variable bounds; a relaxed zero amount lets a vanished phase lower the objective.
-    admit(options->SetNumericValue("bound_relax_factor", 0.0));
+    admit(options->SetNumericValue("bound_relax_factor", 0.0), "bound_relax_factor");
     if (!exact) {
-        admit(options->SetStringValue("limited_memory_update_type", "bfgs"));
-        admit(options->SetNumericValue("compl_inf_tol", tolerance));
+        admit(options->SetStringValue("limited_memory_update_type", "bfgs"), "limited_memory_update_type");
+        admit(options->SetNumericValue("compl_inf_tol", tolerance), "compl_inf_tol");
     }
-    admit(options->SetStringValue("linear_solver", linear_solver()));
+    admit(options->SetStringValue("linear_solver", linear_solver()), "linear_solver");
 #if __has_include(<HSLLoader.h>)
-    admit(options->SetIntegerValue("ma57_pivot_order", 2));          // AMD, as measured in #509
-    admit(options->SetStringValue("ma57_automatic_scaling", "yes")); // unscaled, a trace moiety row reads as dependent
+    admit(options->SetIntegerValue("ma57_pivot_order", 2), "ma57_pivot_order");          // AMD, as measured in #509
+    admit(options->SetStringValue("ma57_automatic_scaling", "yes"), "ma57_automatic_scaling"); // unscaled, a trace moiety row reads as dependent
 #endif
     if (options_file && *options_file) {
         std::error_code error;
@@ -175,18 +175,18 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     const auto initialized = app->Initialize(options_file ? options_file : "");
     if (solver) options->GetStringValue("linear_solver", *solver, "");  // after any options-file override
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
-        double value = 0.0; admit(options->GetNumericValue(name, value, "")); (*consumed)[name] = value;
+        double value = 0.0; admit(options->GetNumericValue(name, value, ""), name); (*consumed)[name] = value;
     }
     if (initialized == Ipopt::Solve_Succeeded && warm) {
         double cap = 0.0;
         options->GetNumericValue("warm_start_mult_init_max", cap, "");
         if (warm(options_file && *options_file ? 0.0 : cap)) {
-            admit(options->SetStringValue("warm_start_init_point", "yes"));
+            admit(options->SetStringValue("warm_start_init_point", "yes"), "warm_start_init_point");
             for (const auto* name : {"warm_start_bound_push", "warm_start_bound_frac", "warm_start_mult_bound_push",
                                     "warm_start_slack_bound_push", "warm_start_slack_bound_frac"})
-                admit(options->SetNumericValue(name, policy::EQUILIBRIUM_WARM_PUSH.value));
-            admit(options->SetStringValue("mu_strategy", "monotone"));
-            admit(options->SetNumericValue("mu_init", policy::EQUILIBRIUM_WARM_MU.value));
+                admit(options->SetNumericValue(name, policy::EQUILIBRIUM_WARM_PUSH.value), name);
+            admit(options->SetStringValue("mu_strategy", "monotone"), "mu_strategy");
+            admit(options->SetNumericValue("mu_init", policy::EQUILIBRIUM_WARM_MU.value), "mu_init");
         }
     }
     return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};

@@ -8,7 +8,7 @@ inline void solver_option(policy::SolverOptions& options, const std::string& nam
     nanobind::handle declared, unsigned scope = 63, bool zero_unset = false) {
     if (nanobind::isinstance<nanobind::bool_>(declared)
         || !(nanobind::isinstance<nanobind::float_>(declared) || nanobind::isinstance<nanobind::int_>(declared)))
-        throw std::invalid_argument(name + " requires a finite positive number");
+        throw std::invalid_argument(name + " requires a number");
     const double value = nanobind::cast<double>(declared);
     if (!zero_unset || value != 0.0) options.set(name, value, scope);
 }

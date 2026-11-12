@@ -295,7 +295,11 @@ void register_equilibrium(nb::module_& module) {
             if (coordinates.size() != system.unknown_count()
                 || amounts.size() != phases || composition.size() != phases * components
                 || (!system.ideal && (densities.size() != phases || packing.size() != phases)))
-                throw std::invalid_argument("numerical estimate snapshot shape");
+                throw std::invalid_argument("numerical estimate snapshot shape: coordinates " + std::to_string(coordinates.size())
+                    + " of " + std::to_string(system.unknown_count()) + ", amounts " + std::to_string(amounts.size())
+                    + ", composition " + std::to_string(composition.size()) + " of phases x components "
+                    + std::to_string(phases) + " x " + std::to_string(components) + ", densities "
+                    + std::to_string(densities.size()) + ", packing " + std::to_string(packing.size()));
             EquilibriumResult result;
             result.success = true; result.temperature = temperature; result.pressure = pressure;
             result.declaration = std::make_shared<const EquilibriumProblem>(system.problem);

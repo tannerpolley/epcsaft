@@ -1633,10 +1633,28 @@ DensityBranch properties::density_side(DensityBranch branch, double density, std
     return density < *sample ? DensityBranch::Vapor : DensityBranch::Liquid;
 }
 
-std::optional<std::string> properties::vapor_side(const State& state) {
+std::optional<std::string> properties::liquid_reference_refusal(const State& state) {
     if (density_side(state.density_branch, state.molar_density, state.negative_slope_density) != DensityBranch::Vapor) return std::nullopt;
     return "liquid branch not admitted by the finite search: the sole stable root " + core::optional_number(state.molar_density)
         + " mol/m3 lies below the negative-slope sample " + core::optional_number(state.negative_slope_density) + " mol/m3";
+}
+
+State properties::close_density(const HelmholtzModel& model, double temperature, double pressure,
+                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density) {
+    if (prior_density) {
+        core::Scope scope("density_anchor");
+        try {
+            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
+            if (regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
+            if (state.density_convergence) scope.finish(*state.density_convergence);
+            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
+        } catch (const DensityStructureError&) { throw;
+        } catch (const std::runtime_error& error) {
+            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
+            scope.probe("anchor_failure", {*prior_density}, 0, error.what());
+        }
+    }
+    return model.state_at_pressure(temperature, pressure, composition, branch);
 }
 
 DensityRoot solve_density(

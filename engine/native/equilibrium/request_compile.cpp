@@ -1682,17 +1682,20 @@ static CompiledSystem compile_with_basis(
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     if (request.loading) {
         const auto& a = *request.loading;
-        if (request.temperature.free || !request.pressure.free || compiled.pinned_count != 1
-            || request.phases.size() != 2
+        if (request.temperature.free || !request.pressure.free || !request.solids.empty() || request.critical
+            || request.spinodal || request.envelope || request.azeotrope || compiled.has_caloric_condition()
+            || request.feed.kind != FeedKind::Amounts || a.initial.size() != components || a.direction.size() != components)
+            throw std::invalid_argument("affine saturation loading needs fixed temperature, free pressure, an amounts feed, "
+                "no solid or special-point condition, and initial and direction with one entry per component");
+        if (compiled.pinned_count != 1 || request.phases.size() != 2
             || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_zero_pinned() && p.kind == PhaseKind::Vapor; }) != 1
-            || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_free() && p.kind == PhaseKind::Liquid; }) != 1
-            || !request.solids.empty() || request.critical || request.spinodal || request.envelope
-            || request.azeotrope || compiled.has_caloric_condition() || request.feed.kind != FeedKind::Amounts
-            || a.initial.size() != components || a.direction.size() != components
-            || !(std::isfinite(a.lower) && std::isfinite(a.upper) && std::isfinite(a.seed)
-                 && a.lower > 0 && a.upper > a.lower && a.seed >= a.lower && a.seed <= a.upper
-                 && std::isfinite(a.pressure) && a.pressure > 0))
-            throw std::invalid_argument("invalid affine saturation loading declaration");
+            || std::count_if(request.phases.begin(), request.phases.end(), [](const auto& p) { return p.is_free() && p.kind == PhaseKind::Liquid; }) != 1)
+            throw std::invalid_argument("affine saturation loading needs one zero-pinned vapor and one free liquid phase");
+        if (!(std::isfinite(a.lower) && std::isfinite(a.upper) && a.lower > 0 && a.upper > a.lower
+              && std::isfinite(a.pressure) && a.pressure > 0))
+            throw std::invalid_argument("affine saturation loading needs finite bounds 0 < lower < upper and a positive pressure");
+        if (!(std::isfinite(a.seed) && a.seed >= a.lower && a.seed <= a.upper))
+            throw std::invalid_argument("affine saturation loading seed lies outside [lower, upper]");
         for (std::size_t i = 0; i < components; ++i)
             if (!std::isfinite(a.initial[i]) || a.initial[i] < 0 || !std::isfinite(a.direction[i])
                 || a.direction[i] < 0 || compiled.n_feed[i] != a.initial[i] + a.seed * a.direction[i])

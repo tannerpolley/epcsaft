@@ -16,41 +16,23 @@
 
 namespace epcsaft {
 
-State properties::close_density(const HelmholtzModel& model, double temperature, double pressure,
-                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density) {
-    if (prior_density) {
-        core::Scope scope("density_anchor");
-        try {
-            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
-            if (properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
-            if (state.density_convergence) scope.finish(*state.density_convergence);
-            scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
-        } catch (const DensityStructureError&) { throw;
-        } catch (const std::runtime_error& error) {
-            if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) scope.finish(failure->record);
-            scope.probe("anchor_failure", {*prior_density}, 0, error.what());
-        }
-    }
-    return model.state_at_pressure(temperature, pressure, composition, branch);
-}
-
 namespace {
 
-// A declaration whose solvent, pure reference species, solute ratios or reaction carry net charge.
-struct NonNeutralDeclaration final : std::invalid_argument {
-    using std::invalid_argument::invalid_argument;
+// Status and message of a neutral-reference declaration; NonNeutralDeclaration when its solvent, pure reference
+// species, solute ratios or reaction carry net charge.
+struct DeclarationCheck final {
+    NeutralReferenceStatus status = NeutralReferenceStatus::Available;
+    std::string message;
+    double solvent_mass = 0.0;
 };
 
-NeutralReferenceStatus declaration_status(const std::invalid_argument& error) {
-    return dynamic_cast<const NonNeutralDeclaration*>(&error) != nullptr
-        ? NeutralReferenceStatus::NonNeutralDeclaration : NeutralReferenceStatus::InvalidDeclaration;
-}
-
-double validate_neutral_reference_declaration(
+DeclarationCheck check_neutral_reference_declaration(
     const Parameters& parameters,
     const NeutralReferenceDeclaration& declaration,
     const std::vector<double>& stoichiometry
 ) {
+    const auto invalid = [](const char* message) { return DeclarationCheck{NeutralReferenceStatus::InvalidDeclaration, message}; };
+    const auto charged = [](const char* message) { return DeclarationCheck{NeutralReferenceStatus::NonNeutralDeclaration, message}; };
     const std::size_t components = parameters.component_count();
     if (!declaration.solvent_index.has_value()
         || *declaration.solvent_index >= components
@@ -58,28 +40,28 @@ double validate_neutral_reference_declaration(
         || !std::isfinite(declaration.standard_molality_mol_per_kg)
         || declaration.standard_molality_mol_per_kg <= 0.0
         || stoichiometry.size() != components) {
-        throw std::invalid_argument("invalid neutral reference declaration");
+        return invalid("invalid neutral reference declaration");
     }
     if (!declaration.species_reference.empty()) {
         if (declaration.species_reference.size() != components)
-            throw std::invalid_argument("species reference size");
+            return invalid("species reference size");
         for (std::size_t i = 0; i < components; ++i) {
             const auto choice = declaration.species_reference[i];
             if (choice != SpeciesReference::InfiniteDilution && choice != SpeciesReference::PureLiquid
                 && choice != SpeciesReference::PureGas)
-                throw std::invalid_argument("species reference convention");
+                return invalid("species reference convention");
             if (choice != SpeciesReference::InfiniteDilution && parameters.charge_number[i] != 0)
-                throw NonNeutralDeclaration("pure reference species is charged");
+                return charged("pure reference species is charged");
         }
     }
     const std::size_t solvent = *declaration.solvent_index;
     if (parameters.charge_number[solvent] != 0) {
-        throw NonNeutralDeclaration("neutral reference solvent is charged");
+        return charged("neutral reference solvent is charged");
     }
     const auto& molar_masses = parameters.molar_mass_kg_per_mol;
     const double solvent_mass = molar_masses[solvent];
     if (!std::isfinite(solvent_mass) || solvent_mass <= 0.0) {
-        throw std::invalid_argument("neutral reference solvent has invalid molar mass");
+        return invalid("neutral reference solvent has invalid molar mass");
     }
     double charge = 0.0;
     double reaction_charge = 0.0;
@@ -87,22 +69,22 @@ double validate_neutral_reference_declaration(
         const double ratio = declaration.solute_molality_ratios[component];
         if (!std::isfinite(ratio)
             || (component == solvent ? ratio != 0.0 : ratio <= 0.0)) {
-            throw std::invalid_argument("invalid neutral reference solute ratio");
+            return invalid("invalid neutral reference solute ratio");
         }
         const double coefficient = stoichiometry[component];
         if (!std::isfinite(coefficient)) {
-            throw std::invalid_argument("invalid neutral reference stoichiometry");
+            return invalid("invalid neutral reference stoichiometry");
         }
         charge += ratio * static_cast<double>(parameters.charge_number[component]);
         reaction_charge += coefficient * static_cast<double>(parameters.charge_number[component]);
     }
     if (!std::isfinite(charge) || charge != 0.0) {
-        throw NonNeutralDeclaration("neutral reference solute ratios are not charge neutral");
+        return charged("neutral reference solute ratios are not charge neutral");
     }
     if (!std::isfinite(reaction_charge) || reaction_charge != 0.0) {
-        throw NonNeutralDeclaration("neutral reference reaction is not charge neutral");
+        return charged("neutral reference reaction is not charge neutral");
     }
-    return solvent_mass;
+    return {NeutralReferenceStatus::Available, {}, solvent_mass};
 }
 
 }  // namespace
@@ -171,22 +153,23 @@ struct NeutralReferenceTrace final {
 
 void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
     NeutralReferenceReactionDiagnostic& diagnostic) {
+    const auto refuse = [&](std::string cause) { diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = std::move(cause); };
     try {
-        if (!diagnostic.trace) throw std::runtime_error("reference state unavailable");
+        if (!diagnostic.trace) return refuse("reference state unavailable");
         const auto& trace = *diagnostic.trace;
         diagnostic.numerical_error = {0.0, 0.0};
         std::array<WiderScalar, 2> replayed_sum{};
         const auto accumulate = [&](const State& state, const std::vector<double>& composition,
-            const std::vector<double>& insertion, bool dilute) {
+            const std::vector<double>& insertion, bool dilute) -> const char* {
             ReferenceTaylorError constant_error, error;
             PressureActionDirection direction; direction.temperature = temperature;
             const auto constant = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, {}, 0, dilute, &constant_error);
             const auto value = model.reference_taylor(temperature, 1 / state.molar_density, composition, insertion, direction, 1, dilute, &error);
             if (constant.status != PropertyActionStatus::Available || value.status != PropertyActionStatus::Available)
-                throw std::runtime_error("reference error column unavailable");
+                return "reference error column unavailable";
             const auto cp = reference_partial_from_state(model, temperature, composition, insertion, 0, 1, {}, state, dilute);
             const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
-            if (!cp.action || !ctp.action) throw std::runtime_error("reference pressure sensitivity unavailable");
+            if (!cp.action || !ctp.action) return "reference pressure sensitivity unavailable";
             double b0 = wide_math::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
                 + std::numeric_limits<double>::epsilon() * wide_math::abs(trace.pressure);
             if (state.density_convergence && state.density_convergence->floor)
@@ -197,27 +180,26 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
                 + wide_math::abs(*ctp.action) * b0;
             replayed_sum[0] += constant.contraction[0];
             replayed_sum[1] += static_cast<WiderScalar>(value.contraction[1]) / temperature;
+            return nullptr;
         };
         auto dilute = nu;
         for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i]) dilute[i] = 0;
         if (std::any_of(dilute.begin(), dilute.end(), [](double v) { return v != 0; }))
-            accumulate(trace.state, trace.composition, dilute, true);
+            if (const auto cause = accumulate(trace.state, trace.composition, dilute, true)) return refuse(cause);
         for (std::size_t i = 0; i < trace.pure_state.size(); ++i) if (trace.pure_state[i] && nu[i] != 0) {
             std::vector<double> composition(nu.size(), 0), insertion(nu.size(), 0);
             composition[i] = 1; insertion[i] = nu[i];
-            accumulate(*trace.pure_state[i], composition, insertion, false);
+            if (const auto cause = accumulate(*trace.pure_state[i], composition, insertion, false)) return refuse(cause);
         }
         if (!diagnostic.terminal_contraction || !diagnostic.terminal_contraction_temperature_derivative)
-            throw std::runtime_error("reference consumed center unavailable");
+            return refuse("reference consumed center unavailable");
         diagnostic.numerical_error[0] = static_cast<double>(diagnostic.numerical_error[0] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction) - replayed_sum[0]));
         diagnostic.numerical_error[1] = static_cast<double>(diagnostic.numerical_error[1] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]));
         if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += wide_math::abs(*diagnostic.observed_terminal_change);
         if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += wide_math::abs(*diagnostic.observed_temperature_derivative_change);
-        for (double e : diagnostic.numerical_error) if (!wide_math::isfinite(e) || e < 0) throw std::runtime_error("nonfinite reference error");
+        for (double e : diagnostic.numerical_error) if (!wide_math::isfinite(e) || e < 0) return refuse("nonfinite reference error");
         diagnostic.numerical_error_cause.clear();
-    } catch (const std::exception& error) {
-        diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = error.what();
-    }
+    } catch (const std::exception& error) { refuse(error.what()); }
 }
 
 namespace {
@@ -241,8 +223,13 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     NeutralReferenceTraceResult result;
     try {
         const std::size_t components = model.parameters().component_count();
-        validate_neutral_reference_declaration(
+        auto check = check_neutral_reference_declaration(
             model.parameters(), declaration, std::vector<double>(components, 0.0));
+        if (check.status != NeutralReferenceStatus::Available) {
+            result.status = check.status;
+            result.message = std::move(check.message);
+            return result;
+        }
         if (!std::isfinite(temperature) || temperature <= 0.0
             || !std::isfinite(pressure) || pressure <= 0.0) {
             result.status = NeutralReferenceStatus::InvalidDeclaration;
@@ -326,10 +313,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         result.trace = std::make_shared<const NeutralReferenceTrace>(std::move(trace));
         result.status = NeutralReferenceStatus::Available;
         return result;
-    } catch (const std::invalid_argument& error) {
-        result.status = declaration_status(error);
-        result.message = error.what();
-        return result;
     } catch (const std::exception& error) {
         result.status = NeutralReferenceStatus::Nonfinite;
         result.message = error.what();
@@ -404,7 +387,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         for (std::size_t i = 0; i < stoichiometry.size(); ++i)
             solvent_consumed = solvent_consumed || (stoichiometry[i] != 0.0
                 && (trace.pure_state.empty() || !trace.pure_state[i]));
-        if (const auto cause = solvent_consumed ? properties::vapor_side(trace.state) : std::nullopt) {
+        if (const auto cause = solvent_consumed ? properties::liquid_reference_refusal(trace.state) : std::nullopt) {
             result.status = NeutralReferenceStatus::DensityUnavailable;
             result.message = "neutral reference solvent species " + std::to_string(trace.solvent_index) + ": " + *cause;
             return result;
@@ -445,7 +428,7 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
         result.status = NeutralReferenceStatus::Available;
         return result;
     } catch (const std::invalid_argument& error) {
-        result.status = declaration_status(error);
+        result.status = NeutralReferenceStatus::InvalidDeclaration;
         result.message = error.what();
         return result;
     } catch (const std::exception& error) {
@@ -549,8 +532,9 @@ double reaction_reference_log_scale(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<double>& stoichiometry
 ) {
-    const double solvent_mass = validate_neutral_reference_declaration(
-        model.parameters(), declaration, stoichiometry);
+    const auto check = check_neutral_reference_declaration(model.parameters(), declaration, stoichiometry);
+    if (check.status != NeutralReferenceStatus::Available) throw std::invalid_argument(check.message);
+    const double solvent_mass = check.solvent_mass;
     double solute_stoichiometry = 0.0;
     const std::size_t solvent = *declaration.solvent_index;
     for (std::size_t component = 0; component < stoichiometry.size(); ++component)
@@ -646,12 +630,10 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     for (std::size_t row = 0; row < stoichiometries.size(); ++row) {
         auto& diagnostic = result[row];
         const auto& reference = references[row];
-        try {
-            validate_neutral_reference_declaration(
-                model.parameters(), declaration, stoichiometries[row]);
-        } catch (const std::invalid_argument& error) {
-            diagnostic.status = declaration_status(error);
-            diagnostic.message = error.what();
+        if (auto check = check_neutral_reference_declaration(model.parameters(), declaration, stoichiometries[row]);
+            check.status != NeutralReferenceStatus::Available) {
+            diagnostic.status = check.status;
+            diagnostic.message = std::move(check.message);
             continue;
         }
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
@@ -757,8 +739,10 @@ SpeciesActivities species_activities(const std::vector<double>& composition, con
     result.causes.resize(composition.size());
     for (std::size_t i = 0; i < composition.size(); ++i) {
         try {
-            if (!references.empty() && !references.at(i).value)
-                throw std::runtime_error("species reference unavailable: " + references[i].message);
+            if (!references.empty() && !references.at(i).value) {
+                result.causes[i] = "species reference unavailable: " + references[i].message;
+                continue;
+            }
             const double standard = references.empty() ? 0.0 : *references[i].value;
             double log_concentration = std::log(composition[i]);
             if (declaration && basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution && i != *declaration->solvent_index)
@@ -767,7 +751,7 @@ SpeciesActivities species_activities(const std::vector<double>& composition, con
             const double value = composition[i] == 0.0 ? -INFINITY : state ? (std::log(state->molar_density / 1.0)
                 + require_component_property(state->residual_chemical_potential_over_rt.at(i)) - standard) + log_concentration
                 : log_concentration;
-            if (std::isnan(value) || value == INFINITY) throw std::runtime_error("nonfinite log activity");
+            if (std::isnan(value) || value == INFINITY) { result.causes[i] = "nonfinite log activity"; continue; }
             result.log_activities[i] = value;
             const double activity = state ? std::exp(value) : composition[i];
             if (!std::isfinite(activity) || (activity == 0.0 && composition[i] > 0.0))
@@ -868,7 +852,7 @@ InfiniteDilutionReference solvent_reference(const HelmholtzModel& model, double 
     try {
         result.pure_solvent_state = properties::close_density(model, temperature, pressure, pure, DensityBranch::Liquid, density);
         const auto& state = *result.pure_solvent_state;
-        if (const auto cause = properties::vapor_side(state)) result.solvent_cause = "VaporSideState: pure solvent: " + *cause;
+        if (const auto cause = properties::liquid_reference_refusal(state)) result.solvent_cause = "VaporSideState: pure solvent: " + *cause;
         else if (!properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence))
             result.solvent_cause = "DensityUnavailable: pure solvent regularity";
         else {
@@ -926,7 +910,7 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         return result;
     }
     const auto& state = result.state;
-    if (const auto cause = properties::vapor_side(state)) { result.cause = "VaporSideState: mixture: " + *cause; return result; }
+    if (const auto cause = properties::liquid_reference_refusal(state)) { result.cause = "VaporSideState: mixture: " + *cause; return result; }
     if (!properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) {
         result.status = PropertyActionStatus::DensityUnavailable; result.cause = "DensityUnavailable: mixture regularity"; return result;
     }
@@ -984,7 +968,7 @@ InfiniteDilutionReference infinite_dilution_reference(
     result.solvent_state = properties::close_density(model, temperature, pressure,
         solvent_fractions, DensityBranch::Liquid, solvent_density);
     const auto& state = *result.solvent_state;
-    if (const auto cause = properties::vapor_side(state)) throw std::runtime_error(*cause);
+    if (const auto cause = properties::liquid_reference_refusal(state)) throw std::runtime_error(*cause);
     if (!properties::regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence))
         throw std::runtime_error("DensityUnavailable: infinite-dilution solvent regularity");
     const std::size_t columns = model.active_parameters().size();
@@ -1042,7 +1026,7 @@ ElectrolyteActivity electrolyte_activity(
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
-    if (const auto cause = properties::vapor_side(result.state)) throw std::runtime_error(*cause);
+    if (const auto cause = properties::liquid_reference_refusal(result.state)) throw std::runtime_error(*cause);
     const auto& state = result.state;
     if (!state.log_fugacity_coefficient) throw std::runtime_error("reference fugacity is unavailable");
     const std::array<double, 2> log_fugacity{

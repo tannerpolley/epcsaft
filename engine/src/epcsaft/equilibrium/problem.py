@@ -793,8 +793,8 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
         "row_tolerance", "solver_options", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3", "internal_energy_j",
     }
-    if set(mapping) - allowed:
-        raise _core.ParameterError("unknown Problem key")
+    if unknown := set(mapping) - allowed:
+        raise _core.ParameterError(f"unknown Problem key {', '.join(sorted(map(str, unknown)))}")
     phases_value = mapping.get("phases")
     if isinstance(phases_value, Discover):
         phases: Sequence[Phase] | Discover = phases_value

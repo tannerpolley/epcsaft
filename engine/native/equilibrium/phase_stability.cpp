@@ -545,6 +545,7 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
         }
         StabilityReport split_report;
         const auto split = stability_candidate(split_c, result, split_report);
+        out.coordinates = split_report.candidate_coordinates;
         out.quantities = parent.repair_quantities;
         const double repair =
             parent.repair_error + repair_effect(split_c, split_c.prepare(result.coordinates), split.physical,
@@ -558,11 +559,11 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
         const size_t ns = c.n_feed.size();
         double rt = GAS_CONSTANT_J_PER_MOL_K * r.temperature;
         std::vector<long double> n0(ns), dn(ns);
-        long double v0 = r.amount[donor] * r.volume[donor], dv = er.amount[donor] * er.volume[donor] - v0;
+        long double v0 = r.amount[donor] * r.volume[donor], dv = er.amount[0] * er.volume[0] - v0;
         long double plane_defect = 0, trial_plane = 0, parent_error = 0, standard_error = 0, plane_mag = 0;
         for (size_t i = 0; i < ns; ++i) {
             n0[i] = (long double)r.amount[donor] * r.composition[donor][i];
-            dn[i] = (long double)er.amount[donor] * er.composition[donor][i] - n0[i];
+            dn[i] = (long double)er.amount[0] * er.composition[0][i] - n0[i];
             trial_plane += (long double)er.composition.back()[i] * s.plane_over_rt[i];
             plane_defect += (dn[i] + (long double)er.amount.back() * er.composition.back()[i]) * s.plane_over_rt[i];
             const long double weight =
@@ -745,8 +746,9 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     return w;
 }
 namespace {
+// `relaxed`: a reaction-relaxed split classifies this trial, so the species-frozen slope and splits do not.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
-    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits) {
+    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed) {
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
@@ -792,6 +794,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     q["arithmetic_error_estimate_over_rt"] = arithmetic;
     if (options.evaluate_supplied_trials) { trial.evidence = "evaluated"; return; }
     trial.evidence = "indeterminate";
+    if (relaxed) return;
     if (std::isfinite(slope) && std::isfinite(uncertainty) && uncertainty >= 0.0 && slope >= -uncertainty) {
         trial.evidence = "no_resolved_descent";
         return;
@@ -857,9 +860,87 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     }
 }
 
+// ALG-STABILITY: the donor and the trial as one conserved fixed-T/P Gibbs cell of the original reactions and
+// standards, one cold shared-driver solve under one allowance, then the supplied-split Gibbs difference.
+GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, const StabilityTrial& trial, std::size_t p,
+    const GibbsDifferenceReference& parent, const StabilityOptions& options, Quantities& work) {
+    GibbsDifference out;
+    StageWork stages;
+    try {
+        EquilibriumProblem local;
+        local.temperature = FreeValue::fixed(at.temperature);
+        local.pressure = FreeValue::fixed(at.pressure);
+        local.reactions = c.problem.reactions;
+        local.standard_gibbs_j_per_mol = c.problem.standard_gibbs_j_per_mol;
+        local.source_reference = c.problem.source_reference;
+        local.solver_options = c.problem.solver_options;
+        local.phases = {c.problem.phases[p], trial.phase};
+        local.phases[1].kind = PhaseKind::Vapor;
+        local.phases[1].name = "reaction-relaxed-trial";
+        const std::vector<double>* guess[] = {&at.composition[p], &trial.composition};
+        const double volume[] = {at.volume[p], trial.quantities.at("volume_m3_per_mol")};
+        for (std::size_t j = 0; j < 2; ++j) {
+            local.phases[j].amount = AmountSpec{};
+            local.phases[j].composition_guess = *guess[j];
+            local.phases[j].packing_guess = c.model->packing_fraction_coefficient(at.temperature, *guess[j]) / volume[j];
+        }
+        for (const double x : at.composition[p]) local.feed.values.push_back(at.amount[p] * x);
+        auto compiled = compile_problem(*c.model, local);
+        compiled.reaction_relaxed_split = true;
+        const auto limits = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
+            static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value));
+        const auto start = [&] {
+            try { return boundary_start(compiled, true, &limits, &stages); }
+            catch (...) {  // a refused initialization keeps its sub-solve work, with no driver invocation
+                work["iterations"] += stages.iterations;
+                work["evaluations"] += stages.evaluations;
+                work["hessian_calls"] += stages.hessian_calls;
+                throw;
+            }
+        }();
+        core::Scope scope("reaction_relaxed_split");
+        EquilibriumResult split, audit;
+        try {
+            split = run_driver(*c.model, compiled, start, structural_result(compiled, scope), scope, nullptr, &audit,
+                &limits, Attempt::Cold, {}, false, false, Retry::None);
+        } catch (const std::exception& error) { split = audit; split.message = error.what(); }
+        std::move(stages).report(split);
+        count_driver(work, split, "split_driver_invocations");
+        if (!split.success) throw std::runtime_error(split.message);
+        limits.check();
+        out = conserved_split_difference(c, parent, compiled, split, p, options);
+    } catch (const std::exception& error) { out.cause = error.what(); }
+    return out;
+}
+
+// The one mapping of a split comparison to trial evidence: decrease, no decrease, or unavailable with its cause.
+void classify_split(const CompiledSystem& c, const StabilityReport& report, StabilityTrial& trial, const GibbsDifference& d) {
+    auto check = d.quantities;
+    check["admitted"] = d.status != GibbsDifferenceStatus::Unavailable;
+    trial.evidence = d.status == GibbsDifferenceStatus::Decrease ? "numerically_resolved_descending_split_with_estimated_uncertainty"
+        : d.status == GibbsDifferenceStatus::NoDecrease ? "no_resolved_descent" : "indeterminate";
+    trial.resolved_descent = d.status == GibbsDifferenceStatus::Decrease;
+    if (d.status == GibbsDifferenceStatus::Overlap) trial.message += "; reaction-relaxed split: split Gibbs difference overlaps zero";
+    if (d.status == GibbsDifferenceStatus::Unavailable) trial.message += "; reaction-relaxed split: " + d.cause;
+    else {
+        // Parent phases in their order with the repaired local donor substituted, then the repaired trial.
+        std::size_t offset = 0, width = c.problem.phases[*trial.donor].support.size() + 2;
+        for (std::size_t p = 0; p < *trial.donor; ++p) offset += c.problem.phases[p].support.size() + 2;
+        trial.split_coordinates = report.candidate_coordinates;
+        std::copy(d.coordinates.begin(), d.coordinates.begin() + width, trial.split_coordinates.begin() + offset);
+        trial.split_coordinates.insert(trial.split_coordinates.end(), d.coordinates.begin() + width, d.coordinates.end());
+        auto& q = trial.quantities;
+        q["split_beta_mol"] = check["beta_mol"] = d.coordinates.end()[-2];
+        q["split_delta_g_over_rt"] = d.quantities.at("gibbs_change_over_rt_mol");
+        q["split_error_estimate_over_rt"] = d.quantities.at("complete_error_over_rt_mol");
+    }
+    trial.split_checks.push_back(std::move(check));
+}
+
 StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& options, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
-    std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false) {
+    std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false,
+    std::optional<GibbsDifferenceReference>* reference = nullptr) {
     if (diagnostics && limits) throw std::invalid_argument("stability diagnostics require an unlimited explicit test");
     auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     StabilityReport report;
@@ -880,6 +961,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     const auto& form = c.model->parameters().permittivity_form;
     std::vector<double> shift = report.standard_over_rt;
     for (std::size_t i = 0; i < shift.size(); ++i) shift[i] -= report.plane_over_rt[i];
+    std::optional<GibbsDifferenceReference> own;
+    auto& parent = reference ? *reference : own;
+    std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;  // one comparison per coincident gas endpoint
     for (const auto& phase : supports) {
         std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
         for (auto i : phase.support) identity += std::to_string(i) + ",";
@@ -928,8 +1012,6 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         for (auto& [seed_name, seed] : seeds) {
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
-            enum class Operation { Trial, DiagnosticDensity };
-            auto operation = Operation::Trial;
             try {
                 if (options.evaluate_supplied_trials) {
                     if (seed.size() != z.size()) throw std::invalid_argument("supplied trial composition size");
@@ -1035,9 +1117,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     if (!found) q["raw_objective_over_rt"] = trial.optimizer.objective;
                 }
                 trial.evidence = "no_resolved_descent";
-                if (options.evaluate_supplied_trials || q["tpd_over_rt"] < 0.0) donor_descent(c, candidate, trial, report, options, limits);
-                if (diagnostics && trial.evidence == "indeterminate" && !trial.composition.empty()
-                    && q.count("volume_m3_per_mol")) {
+                const bool negative = q["tpd_over_rt"] < 0.0, explicit_negative = diagnostics && negative && !options.evaluate_supplied_trials;
+                bool gas = false, coincident = false;
+                if (explicit_negative) {
                     for (std::size_t p = 0; p < at.amount.size(); ++p) {
                         StabilityPhaseComparison comparison; comparison.phase = p;
                         const auto& support = c.problem.phases[p].support;
@@ -1047,18 +1129,47 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             std::back_inserter(comparison.missing_species));
                         comparison.composition_max_distance = largest_difference(trial.composition, at.composition[p]);
                         comparison.volume_log_distance = std::abs(std::log(volume / at.volume[p]));
+                        coincident |= support == phase.support && c.problem.phases[p].kind == PhaseKind::Vapor
+                            && comparison.composition_max_distance <= policy::PHASE_COINCIDENCE_DISTANCE.value
+                            && comparison.volume_log_distance <= policy::PHASE_COINCIDENCE_DISTANCE.value;
                         trial.present_phase_comparisons.push_back(std::move(comparison));
                     }
-                    operation = Operation::DiagnosticDensity;
-                    if (!retain_density_side(*c.model, at.temperature, at.pressure, trial.composition, volume, phase.kind, q))
-                        trial.diagnostic_cause = density_refusal;
+                    try {
+                        if (!retain_density_side(*c.model, at.temperature, at.pressure, trial.composition, volume, phase.kind, q))
+                            trial.diagnostic_cause = density_refusal;
+                        else gas = q.at("root_density_side") == static_cast<double>(DensityBranch::Vapor);
+                    } catch (const std::exception& error) { trial.diagnostic_cause = error.what(); }
+                }
+                // A reacting gas-side trial, not a declared vapour itself, is classified by its relaxed split.
+                const bool reacting = explicit_negative && c.has_reaction && trial.optimizer.success;
+                if (options.evaluate_supplied_trials || negative)
+                    donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident);
+                if (reacting && gas && !coincident && trial.evidence == "indeterminate") {
+                    auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) { return same_stationary_trial(s.first, trial, false); });
+                    if (shared == splits.end()) {
+                        if (!parent) {  // the original plane and repair, their numerical estimates counted here
+                            auto counted = result;
+                            const auto prepared = input.prepare(result.coordinates);
+                            if (!counted.numerical_estimates) counted.numerical_estimates = equilibrium_numerical_estimates(input, result, &prepared, true);
+                            parent = conserved_split_reference(input, counted);
+                        }
+                        shared = splits.emplace(splits.end(), trial, relaxed_split(c, at, trial, *trial.donor, *parent, options, report.work));
+                    }
+                    const auto& d = shared->second;
+                    // A rank-refused two-phase cell has rank one: each phase holds its own reaction equilibrium,
+                    // the donor potentials are the plane and the split change is at most beta * tpd (equal when the
+                    // reactions conserve mole number), so a frozen descent is a witness and the frozen slope and splits decide.
+                    if (d.status == GibbsDifferenceStatus::Unavailable && d.cause.rfind("phase count exceeds balance rank", 0) == 0) {
+                        donor_descent(c, candidate, trial, report, options, limits, false);
+                        trial.message += "; reaction-relaxed split: " + d.cause;
+                    } else classify_split(c, report, trial, d);
+                } else if (reacting && !trial.diagnostic_cause.empty() && trial.evidence == "no_resolved_descent") {
+                    trial.evidence = "indeterminate";  // without an admitted side the frozen slope decides nothing
+                    trial.message += "; " + trial.diagnostic_cause;
                 }
             } catch (const std::exception& error) {
-                if (operation == Operation::DiagnosticDensity) trial.diagnostic_cause = error.what();
-                else {
-                    trial.message += "; " + std::string(error.what());
-                    trial.evidence = "unresolved";
-                }
+                trial.message += "; " + std::string(error.what());
+                trial.evidence = "unresolved";
             }
             report.trials.push_back(std::move(trial));
             if (fast && report.trials.back().resolved_descent) stopped = true;
@@ -1081,30 +1192,41 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     report_work(report.work, work);
     return report;
 }
-} // namespace
 
-StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
-    core::Scope scope("stability_test");
+// `reference` keeps the original plane and repair a reaction-relaxed split computed, for the measure.
+StabilityReport explicit_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
+    std::optional<GibbsDifferenceReference>* reference) {
     if (options.mode != DiscoveryMode::Full) throw std::invalid_argument("discovery mode is only admitted in Discover");
     if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability testing is deferred");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
-    return test_snapshot(c, result, options, {}, nullptr, nullptr, true);
+    return test_snapshot(c, result, options, {}, nullptr, nullptr, true, reference);
+}
+} // namespace
+
+StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    core::Scope scope("stability_test");
+    return explicit_test(c, result, options, nullptr);
 }
 
-StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
-    core::Scope scope("stability_measure");
+namespace {
+StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
+    std::optional<GibbsDifferenceReference>& parent) {
     StabilityMeasure out;
     if (options.mode != DiscoveryMode::Full || options.evaluate_supplied_trials)
         throw std::invalid_argument("stability requirements need Full optimized trials");
-    out.report = stability_test(c, result, options);
+    {
+        core::Scope test("stability_test");
+        out.report = explicit_test(c, result, options, &parent);
+    }
     if (!out.report.completed || out.report.trials.empty()) { out.cause = "incomplete trial schedule"; return out; }
     for (std::size_t i = 0; i < out.report.trials.size(); ++i) {
         const auto& t = out.report.trials[i];
         const auto at = t.quantities.find("tpd_over_rt");
         if (!t.optimizer.success || at == t.quantities.end() || !std::isfinite(at->second)
             || (t.evidence != "no_resolved_descent" && !t.resolved_descent)) {
-            out.cause = "failed final trial optimizer or undetermined evidence: " + std::to_string(i);
+            out.cause = t.message.empty() ? "failed final trial optimizer or undetermined evidence: " + std::to_string(i)
+                : "trial " + std::to_string(i) + " (" + t.evidence + "): " + t.message;
         }
         if (at == t.quantities.end() || !std::isfinite(at->second)) continue;
         if (!out.raw_minimum || at->second < *out.raw_minimum) {
@@ -1121,21 +1243,27 @@ StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumRes
             if (!retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
                 t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities)) { out.cause = density_refusal; return out; }
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
-    std::vector<SolvedStateObservable> plane;
-    for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
-    SolvedStateActionDirection zero; zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
-    zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
-    const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
+    auto rows = parent ? parent->row_errors : std::vector<double>{};  // the split's original plane errors, when made
+    if (rows.size() != c.n_feed.size()) {
+        rows.clear();
+        std::vector<SolvedStateObservable> plane;
+        for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
+        SolvedStateActionDirection zero; zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
+        zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
+        const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
+        for (const auto& action : actions.results) {
+            if (!action.numerical_error) { out.cause = "parent plane uncertainty unavailable"; return out; }
+            rows.push_back(*action.numerical_error);
+        }
+    }
     std::vector<double> error(out.report.trials.size());
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
         auto& t = out.report.trials[j];
         error[j] = energy_estimate(t.quantities);
-        for (std::size_t i = 0; i < t.composition.size(); ++i) {
-            if (!actions.results[i].numerical_error) { out.cause = "parent plane uncertainty unavailable"; return out; }
-            error[j] += t.composition[i] * (*actions.results[i].numerical_error
+        for (std::size_t i = 0; i < t.composition.size(); ++i)
+            error[j] += t.composition[i] * (rows[i]
                 + (options.standard_uncertainty_over_rt.empty() ? 0.0 : options.standard_uncertainty_over_rt[i])
                 + std::numeric_limits<double>::epsilon() * std::abs(out.report.plane_over_rt[i]));
-        }
         for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
             if (t.quantities.count(name)) error[j] += std::abs(t.quantities.at(name));
         t.quantities["plane_value_error_estimate_over_rt"] = error[j];
@@ -1152,6 +1280,17 @@ StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumRes
     if (!out.event.empty()) { out.cause = out.event; return out; }
     out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;
     out.available = true;
+    return out;
+}
+} // namespace
+
+// Work totals include the search and every evaluation after it.
+StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    core::Scope scope("stability_measure");
+    core::CalculationWork work;
+    std::optional<GibbsDifferenceReference> parent;
+    auto out = measure_value(c, result, options, parent);
+    report_work(out.report.work, work);
     return out;
 }
 

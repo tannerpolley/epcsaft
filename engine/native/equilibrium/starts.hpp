@@ -44,17 +44,20 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
             try {
                 auto initial = seed.coordinates;
                 const auto offsets = compiled.phase_offsets();
-                const auto check = [](bool ok, const std::string& field = "invalid declared seed") {
-                    if (!ok) throw std::invalid_argument(field);
-                };
+                const auto check = [](bool ok, const std::string& text) { if (!ok) throw std::invalid_argument(text); };
+                const auto field = [](const std::string& text) { return "invalid declared seed: " + text; };
                 check((initial.empty() && !seed.previous) || (seed.compositions.empty() && seed.packing_fractions.empty()
-                    && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())));
-                if (seed.previous) { check(seed.previous->has_state()); initial = seed.previous->coordinates; }
+                    && seed.amounts.empty() && !seed.temperature && !seed.pressure && !(seed.previous && !initial.empty())),
+                    field("coordinates or a previous state exclude every other seed field"));
+                if (seed.previous) { check(seed.previous->has_state(), field("previous state has no solved state")); initial = seed.previous->coordinates; }
                 else if (initial.empty()) {
                     auto seeded = compiled;
-                    check(seed.compositions.empty() || seed.compositions.size() == compiled.problem.phases.size());
-                    check(seed.packing_fractions.empty() || seed.packing_fractions.size() == compiled.problem.phases.size());
-                    check(seed.amounts.empty() || seed.amounts.size() == compiled.problem.phases.size());
+                    check(seed.compositions.empty() || seed.compositions.size() == compiled.problem.phases.size(),
+                          field("compositions: one entry per declared phase"));
+                    check(seed.packing_fractions.empty() || seed.packing_fractions.size() == compiled.problem.phases.size(),
+                          field("packing_fractions: one entry per declared phase"));
+                    check(seed.amounts.empty() || seed.amounts.size() == compiled.problem.phases.size(),
+                          field("amounts: one entry per declared phase"));
                     // Complete: the seed supplies every coordinate the plain solve's cold start would generate.
                     bool uncomposed = true, complete = (!seed.amounts.empty() || compiled.problem.phases.size() == compiled.pinned_count)
                         && (seed.temperature || !problem.temperature.free) && (seed.pressure || !problem.pressure.free);
@@ -64,14 +67,16 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         auto& phase = seeded.problem.phases[p];
                         if (composed(p)) {
                             check(seed.compositions[p].size() == compiled.declared_supports[p].size()
-                                  && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }));
+                                  && std::all_of(seed.compositions[p].begin(), seed.compositions[p].end(), [](double x) { return std::isfinite(x) && x >= 0.0 && x <= 1.0; }),
+                                  field("composition for phase " + phase.name + ": one fraction in [0, 1] per declared species"));
                             phase.composition_guess = seed.compositions[p];
                             phase.declared_composition_guess = false;
                             restrict_composition_guess(phase, compiled.declared_supports[p]);
                         }
                         check(!model.parameters().ideal_gas || !packed(p), "ideal-gas packing seeds are undefined");
                         if (packed(p)) phase.packing_guess = seed.packing_fractions[p];
-                        check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size());
+                        check(phase.composition_guess.empty() || phase.composition_guess.size() == phase.support.size(),
+                              field("composition for phase " + phase.name + " does not match its species support"));
                         for (const double x : phase.composition_guess)
                             check(std::isfinite(x) && x > 0.0 && x <= 1.0,
                                   "composition for phase " + phase.name + " is outside the admitted range");
@@ -83,8 +88,8 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                         complete = complete && composed(p) && packed(p);
                         uncomposed = uncomposed && !composed(p);
                     }
-                    if (seed.temperature) { check(problem.temperature.free); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
-                    if (seed.pressure) { check(problem.pressure.free); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
+                    if (seed.temperature) { check(problem.temperature.free, field("temperature seed on a fixed temperature")); seeded.problem.temperature = FreeValue::variable(*seed.temperature); }
+                    if (seed.pressure) { check(problem.pressure.free, field("pressure seed on a fixed pressure")); seeded.problem.pressure = FreeValue::variable(*seed.pressure); }
                     work.check("elapsed work budget exhausted in initialization");
                     auto speciated = complete || !uncomposed ? std::nullopt : speciated_start(seeded, &work, stages);
                     std::vector<bool> packings(seeded.problem.phases.size());
@@ -104,18 +109,20 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     if (problem.pressure.free && seed.pressure) initial[cursor] = *seed.pressure;
                 }
                 if (work.consumed >= work.iterations) throw std::runtime_error("iteration budget exhausted by the seed solves");
-                check(initial.size() == compiled.unknown_count() && all_numeric(initial));
+                check(initial.size() == compiled.unknown_count() && all_numeric(initial), field("coordinates: one finite value per unknown"));
                 for (std::size_t p = 0; p < offsets.size(); ++p) {
                     const auto& phase = compiled.problem.phases[p]; auto cursor = offsets[p];
                     for (std::size_t j = 0; j < phase.support.size(); ++j) {
                         const double x = std::exp(initial[cursor++]);
-                        check(x > 0.0);
+                        check(x > 0.0, field("composition coordinate for phase " + phase.name + " is not positive"));
                     }
-                    if (phase.is_free()) check(initial[cursor++] >= 0.0);
+                    if (phase.is_free()) check(initial[cursor++] >= 0.0, field("amount for phase " + phase.name + " is negative"));
                     check(model.parameters().ideal_gas ? std::isfinite(std::exp(initial[cursor])) && std::exp(initial[cursor]) > 0.0
-                          : admitted_packing_fraction(std::exp(initial[cursor])));
+                          : admitted_packing_fraction(std::exp(initial[cursor])),
+                          field("packing for phase " + phase.name + " is outside the admitted range"));
                 }
-                for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j) check(initial[j] > 0.0);
+                for (auto j = compiled.primal_size - compiled.free_intensive_count; j < compiled.primal_size; ++j)
+                    check(initial[j] > 0.0, field("free temperature or pressure is not positive"));
                 audit = structural_result(compiled, scope);
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
                 auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)

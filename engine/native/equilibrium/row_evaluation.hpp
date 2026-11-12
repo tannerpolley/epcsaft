@@ -95,11 +95,11 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         Base total = 0.0;
         for (std::size_t i = 0; i < layout.x.size(); ++i) {
             const Base value = wide_math::exp(point[layout.x[i]]);
-            if (!wide_math::isfinite(value) || value <= 0.0) throw std::invalid_argument("invalid composition");
+            if (!wide_math::isfinite(value) || value <= 0.0) throw std::invalid_argument("invalid composition in phase " + problem.phases[phase].name);
             values[problem.phases[phase].support[i]] = value;
             total += value;
         }
-        if (!(total > 0.0)) throw std::invalid_argument("composition has zero total");
+        if (!(total > 0.0)) throw std::invalid_argument("composition in phase " + problem.phases[phase].name + " has zero total");
         result.packing[phase] = packing_terms(*model, result.temperature, values);
         result.eta[phase] = wide_math::exp(point[layout.volume]);
         if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(double(result.eta[phase])))

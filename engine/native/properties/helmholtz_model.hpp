@@ -763,10 +763,10 @@ void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const 
     const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
-// liquid-side; explicit labels and roots without a sample are kept. vapor_side refuses a liquid reference (#423).
+// liquid-side; explicit labels and roots without a sample are kept. liquid_reference_refusal names a vapor-side root.
 DensityBranch density_side(DensityBranch branch, double density, std::optional<double> sample);
-std::optional<std::string> vapor_side(const State& state);
-// Anchored closure, regularity-checked; a failed anchor is traced and retried once cold on the same branch.
+std::optional<std::string> liquid_reference_refusal(const State& state);
+// Anchored closure, regularity-checked; a failed anchor is retried once cold on the same branch.
 State close_density(const HelmholtzModel& model, double temperature, double pressure,
                     const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
 }  // namespace properties

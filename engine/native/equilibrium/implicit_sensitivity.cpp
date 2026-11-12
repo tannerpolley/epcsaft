@@ -1422,9 +1422,9 @@ template PhysicalProjection<double> physical_projection(const CompiledSystem&, c
 template PhysicalProjection<WiderScalar> physical_projection(const CompiledSystem&, const PhasePointValues<WiderScalar>&);
 
 template <typename Base>
-EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr) {
+EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false) {
     core::Capture isolated(false);
-    core::CalculationWork excluded(false);
+    core::CalculationWork excluded(counted);
     EquilibriumNumericalEstimates out;
     out.dimension = result.coordinates.size(); out.precision_bits = std::numeric_limits<Base>::digits;
     using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;
@@ -1545,9 +1545,9 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
     return out;
 }
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared) {
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted) {
     if (result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
-    return numerical_estimates<double>(c, result, {}, prepared, !prepared);
+    return numerical_estimates<double>(c, result, {}, prepared, !prepared, nullptr, counted);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
     return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits);

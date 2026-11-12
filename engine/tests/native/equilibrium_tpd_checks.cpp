@@ -1376,6 +1376,72 @@ void check_reaction_relaxed_split() {
 
 }
 
+// The exact A32 bubble enters the Full search without a supplied split; the Engine forms its own.
+void check_reaction_relaxed_search() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/piperazine-a32-split.inc"
+    q.pressure = FreeValue::variable(20600.0);
+    q.phases = {l, v};
+    const auto compiled = compile_problem(model, q);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.success);
+    CHECK(std::abs(*parent.pressure - 19047.0282327363) <= 1e-6);
+    StabilityOptions options;
+    auto trial = v;
+    trial.amount = AmountSpec{};
+    options.trials = std::vector<PhaseSpec>{l, trial};
+    const std::size_t ns = q.feed.values.size();
+    for (const bool uncertain : {false, true}) {
+        options.standard_uncertainty_over_rt.assign(uncertain ? ns : 0, 1e-4);
+        const auto measure = stability_measure(compiled, parent, options);
+        const double raw = -6.8379823972009035e-6;
+        CHECK(measure.raw_minimum && std::abs(*measure.raw_minimum - raw) <= std::max(1e-12, 1e-10 * std::abs(raw)));
+        const auto& t = measure.report.trials.at(measure.minimizing_trial.value_or(0));
+        CHECK(t.phase.kind == PhaseKind::Liquid && t.split_checks.size() == 1);
+        const auto& q3 = t.quantities;
+        CHECK(q3.count("split_delta_g_over_rt") && q3.count("split_error_estimate_over_rt") && q3.at("split_beta_mol") > 0.0);
+        if (uncertain) {
+            CHECK(!measure.available && !measure.value && t.evidence == "indeterminate");
+            CHECK(measure.cause.find("split Gibbs difference overlaps zero") != std::string::npos);
+            continue;
+        }
+        CHECK(measure.available && measure.value && *measure.value == *measure.raw_minimum && t.resolved_descent);
+        // Retained endpoint: D = -4.209873518572459e-12 mol, E = 1.266171843225926e-13 mol.
+        const double D = q3.at("split_delta_g_over_rt"), E = q3.at("split_error_estimate_over_rt");
+        const bool same = D + E < 0.0 && std::abs(D + 4.209873518572459e-12) <= E + 1.266171843225926e-13;
+        recording_support::compare("reaction-relaxed-search/A32", "split Gibbs change over RT", "mol", D,
+            -4.209873518572459e-12, recording_support::fields({recording_support::field("T_K", 313.161),
+                recording_support::field("beta_mol", q3.at("split_beta_mol"))}),
+            "declared feed mol", "Full search, Engine-formed conserved split", "retained supplied endpoint",
+            "absolute", E + 1.266171843225926e-13, 0.0, same);
+        CHECK(same);
+        // Independent admission of the reported split: conserved moieties, positive support, phase charge.
+        std::vector<double> inventory(ns, 0.0);
+        std::size_t k = 0;
+        for (std::size_t p = 0; p <= q.phases.size(); ++p) {
+            const auto& support = p < q.phases.size() ? q.phases[p].support : t.phase.support;
+            std::vector<double> x(ns, 0.0);
+            double charge = 0.0;
+            for (auto i : support) x[i] = std::exp(t.split_coordinates.at(k++));
+            const double amount = t.split_coordinates.at(k++);
+            k++;
+            for (auto i : support) {
+                CHECK(x[i] > 0.0);
+                inventory[i] += amount * x[i];
+                charge += model.parameters().charge_number[i] * x[i];
+            }
+            CHECK(std::abs(charge) <= 1e-10);
+        }
+        CHECK(k == t.split_coordinates.size());
+        for (const auto& row : compiled.B) {
+            double defect = 0.0;
+            for (std::size_t i = 0; i < ns; ++i) defect += row[i] * (inventory[i] - compiled.n_feed[i]);
+            CHECK(std::abs(defect) <= 1e-10 * compiled.feed_total);
+        }
+    }
+}
+
 // Identical associating isomers: the residual contribution cancels analytically.
 void check_associating_isomer_gibbs() {
     using namespace epcsaft;

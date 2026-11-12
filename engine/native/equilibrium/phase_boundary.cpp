@@ -767,7 +767,7 @@ BoundaryAttempt advance(const HelmholtzModel& trial, const CompiledSystem& start
         attempt.stop = numeric ? ContinuationStop::singular_jacobian : ContinuationStop::nonfinite;
         attempt.message = numeric
             ? "implicit tangent is unavailable at the accepted state (rank " + std::to_string(info.rank) + " of "
-                + std::to_string(y.size()) + ", condition estimate " + std::to_string(info.condition_estimate) + ")"
+                + std::to_string(y.size()) + ", condition estimate " + core::optional_number(info.condition_estimate) + ")"
             : "nonfinite operands in the implicit tangent";
     } else {
         std::vector<double> predicted = y;
@@ -1777,7 +1777,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
             const auto stop = halved < options.minimum_step ? ContinuationStop::step_too_small : ContinuationStop::budget_exhausted;
             if (!(w_before > w && w > 0.0 && fold <= q_failed)) return finish(std::move(result), stop, attempt.message);
             return finish(std::move(result), ContinuationStop::turning_point, "path component of the tangent vanishes at s "
-                + std::to_string(fold) + "; " + continuation_stop_name(stop) + ": " + attempt.message);
+                + core::optional_number(fold) + "; " + continuation_stop_name(stop) + ": " + attempt.message);
         }
         dq = halved;
         ++local_retries;

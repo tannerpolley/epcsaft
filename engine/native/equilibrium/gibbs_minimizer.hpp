@@ -176,6 +176,7 @@ enum class GibbsDifferenceStatus { Decrease, NoDecrease, Overlap, Unavailable };
 struct GibbsDifference final {
   GibbsDifferenceStatus status = GibbsDifferenceStatus::Unavailable;
   std::map<std::string, double> quantities;
+  std::vector<double> coordinates; // repaired split, candidate-coordinate layout
   std::string cause;
 };
 struct GibbsDifferenceReference final {
@@ -188,7 +189,7 @@ struct GibbsDifferenceReference final {
 };
 EPC_API GibbsDifferenceReference
 conserved_split_reference(const CompiledSystem &, const EquilibriumResult &);
-// The trial is the supplied split's last phase.
+// `donor` indexes the parent; the split's donor is its first phase, the trial its last.
 EPC_API GibbsDifference conserved_split_difference(
     const CompiledSystem &, const GibbsDifferenceReference &,
     const CompiledSystem &, const EquilibriumResult &, std::size_t donor,
