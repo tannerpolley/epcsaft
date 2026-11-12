@@ -1321,4 +1321,59 @@ void check_stability_phase_comparison() {
     CHECK(trial.present_phase_comparisons[0].volume_log_distance > 3.0);
 }
 
+
+// The declared twelve-species A32 split retains every ion and the original admission.
+void check_reaction_relaxed_split() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/piperazine-a32-split.inc"
+    auto compiled = compile_problem(model, q);
+    core::Scope scope("reaction-relaxed-split");
+    auto structural = structural_result(compiled, scope);
+    const auto solve = [&] {
+        return run_driver(model, compiled, seed, structural, scope, nullptr, nullptr, nullptr,
+                          Attempt::PhysicalAmounts, {}, false, false, Retry::None);
+    };
+    const auto ordinary = solve();
+    CHECK(!ordinary.has_state());
+    CHECK(std::abs(ordinary.residual_norm() - 657.68450047028728) < 1e-8);
+    compiled.reaction_relaxed_split = true;
+    const auto split = solve();
+    CHECK(split.has_state());
+    CHECK(split.requested_tolerance_met);
+    recording_support::compare("reaction-relaxed-split/raw", "raw row infinity norm", "RT",
+        split.residual_norm(), 0.0, recording_support::fields({recording_support::field("T_K", 313.161),
+            recording_support::field("P_Pa", 19047.028232736302)}),
+        "declared feed mol", "unchanged full-row admission", "positive full-support split",
+        "absolute", 1e-10, 0.0, split.residual_norm() <= 1e-10);
+    CHECK(split.residual_norm() <= 1e-10);
+    CHECK(split.convergence.residual <= 1e-10);
+    CHECK(split.amounts.size() == 2);
+    CHECK(split.amounts[1] > policy::PHASE_DISAPPEARANCE_AMOUNT.value * compiled.feed_total);
+    for (const auto x : split.mole_fractions) CHECK(x > 0.0);
+    for (std::size_t p = 0; p < 2; ++p) {
+        double charge = 0.0;
+        for (std::size_t i = 0; i < compiled.n_feed.size(); ++i)
+            charge += model.parameters().charge_number[i] * split.mole_fractions[p * compiled.n_feed.size() + i];
+        CHECK(std::abs(charge) <= 1e-10);
+    }
+    for (const auto& balance : compiled.B) {
+        double defect = 0.0;
+        for (std::size_t i = 0; i < compiled.n_feed.size(); ++i) {
+            double amount = -compiled.n_feed[i];
+            for (std::size_t p = 0; p < 2; ++p)
+                amount += split.amounts[p] * split.mole_fractions[p * compiled.n_feed.size() + i];
+            defect += balance[i] * amount;
+        }
+        CHECK(std::abs(defect) <= 1e-10 * compiled.feed_total);
+    }
+    recording_support::observe("reaction-relaxed-split/vapor", "vapor amount", "mol", split.amounts[1], std::nullopt,
+        recording_support::fields({recording_support::field("iterations", static_cast<int>(split.iterations)),
+            recording_support::field("evaluations", static_cast<int>(split.evaluations)),
+            recording_support::field("hessians", static_cast<int>(split.hessian_calls)),
+            recording_support::field("classified", split.convergence.residual)}),
+        "declared feed mol", "full-support split", "numerical verification");
+
+}
+
 }  // namespace equilibrium_checks

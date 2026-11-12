@@ -2958,7 +2958,7 @@ enthalpy target (PH), the temperature A1 along the enthalpy target supplies the
 value and the mixed temperature A2(H,w) its first action, which holds H, P and feed
 fixed. The call shares the prepared center and factorization across ordinary,
 thermal and mixed requests; nothing is reused across calls. One admission predicate
-serves the action and the regression validator; free P, PS, UV, TV, pinned incipient
+serves the action and the parameter regression validator; free P, PS, UV, TV, pinned incipient
 charts and higher apparent-Cp actions are refused. An unavailable outer action
 preserves an independently available Cp value.
 
@@ -3339,6 +3339,9 @@ unbounded or failed program keeps $\beta$. A uniform box $\beta$ is a solution d
 $\sum_p \beta n_p > u_i$: it forces more of $i$ into the phases than exists and the subproblem
 is infeasible, and just above that the optimum sits on the box beyond the polish's reach
 (for example 61 mol aqueous $\times$ 1e-8 = 6.1e-7 mol against 3e-7 mol Li fed; stalls up to 3e-6 mol).
+For an explicitly selected reaction-relaxed split, charged supported species instead use
+`EQUILIBRIUM_BOX_FLOOR` in both phases. This internal selection leaves the ordinary box,
+feasibility-cell representability limits and all final admission criteria unchanged.
 The upper bound of each `log(x_i)` is 0, except in a one-species phase, which has none: its normalization row
 fixes $\log x = 0$, so that bound would be active at every solution and, unrelaxed, hold the solution on the
 barrier (a water-only vapor took 6/7 instead of 3/4 iterations, with a bound multiplier near $10^{13}$).

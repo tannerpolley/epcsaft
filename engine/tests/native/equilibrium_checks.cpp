@@ -40,6 +40,7 @@ void check_trace_ion_curvature();
 void check_candidate_publication();
 void check_budget_retry();
 void check_physical_amount_work();
+void check_reaction_relaxed_split();
 void check_solve_error_curvature();
 void check_stability_phase_comparison();
 void check_stability_amount_correction();
@@ -110,6 +111,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
         {{"native.equilibrium.candidate-publication", "candidate-publication", "Automatic_fast"}, check_candidate_publication},
         {{"native.equilibrium.budget-retry", "budget-retry", "Automatic_fast"}, check_budget_retry},
+        {{"native.equilibrium.reaction-relaxed-split", "reaction-relaxed-split", "Automatic_fast"}, check_reaction_relaxed_split},
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},
         {{"native.equilibrium.stability-phase-comparison", "stability-phase-comparison", "Automatic_fast"}, check_stability_phase_comparison},

@@ -501,8 +501,9 @@ bool GibbsMinimizer::get_bounds_info(
     if (!feasibility) {
         if (limits_ && limits_->expired()) return false;
         for (std::size_t i = 0; i < species; ++i)
-            box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
-                policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled_.inventory_upper_bounds[i]));
+            if (!(compiled_.reaction_relaxed_split && compiled_.model->parameters().charge_number[i] != 0.0))
+                box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
+                    policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled_.inventory_upper_bounds[i]));
     }
     if (limits_ && limits_->expired()) return false;
     std::size_t offset = 0;

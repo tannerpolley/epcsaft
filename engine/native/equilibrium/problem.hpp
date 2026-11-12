@@ -401,6 +401,8 @@ struct SpinodalSearch final {
 };
 
 struct CompiledSystem final {
+    // Internal split context; ordinary declarations retain the inventory-limited optimizer box.
+    bool reaction_relaxed_split = false;
     PhaseCalculation phase_calculation = PhaseCalculation::Unknown;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::NumericalRank> last_rank;
