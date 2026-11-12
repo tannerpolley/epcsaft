@@ -249,10 +249,8 @@ double frozen_chemical_potential(const epcsaft::Parameters& p, const StatePoint&
     const auto sigma = epcsaft::segment_sigma(temperature, p);
     const auto diameter = epcsaft::segment_diameter(temperature, p, sigma);
     const std::vector<Series> site(sites.begin(), sites.end());
-    const std::vector<Series> energy(p.association_energy_over_k.begin(), p.association_energy_over_k.end());
-    const std::vector<Series> volume(p.association_volume.begin(), p.association_volume.end());
-    const auto delta = epcsaft::association_delta_values(temperature, density, x, p, sigma, diameter, energy, volume);
-    const auto terms = epcsaft::residual_helmholtz(temperature, density, x, p, sigma, diameter, site, Series(0.0), Series(0.0),
+    const auto delta = epcsaft::association_delta(temperature, density, x, p, sigma, diameter);
+    const auto terms = epcsaft::residual_helmholtz(temperature, density, x, p, sigma, diameter, site,
         epcsaft::association_products(density, x, p, site, delta));
     return (total * (terms.hard_chain + terms.dispersion + terms.association)).c[1];
 }

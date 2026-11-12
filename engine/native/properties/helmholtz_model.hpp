@@ -535,18 +535,14 @@ public:
     std::vector<double> active_parameter_values() const;
     const std::optional<ThermochemistryRecord>& thermochemistry() const { return thermochemistry_; }
 
-private:
-    friend DensityRoot solve_density(
-        const HelmholtzModel&, double, double, const std::vector<double>&,
-        DensityBranch, std::optional<double>, DensityRoot*
-    );
+    void validate_composition(const std::vector<double>& composition) const;
 
+private:
     void validate_point(
         double temperature,
         double volume,
         const std::vector<double>& amounts
     ) const;
-    void validate_composition(const std::vector<double>& composition) const;
     detail::PredicateSignature predicate_signature(
         double temperature, const std::vector<double>& composition, bool ideal = false
     ) const;

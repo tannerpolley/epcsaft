@@ -81,12 +81,6 @@ struct ReferenceTaylorPreparation final {
 HelmholtzModel::~HelmholtzModel() = default;
 namespace {
 
-bool finite_vector(const std::vector<double>& values) {
-    return std::all_of(values.begin(), values.end(), [](double value) {
-        return std::isfinite(value);
-    });
-}
-
 bool positive_vector(const std::vector<double>& values) {
     return std::all_of(values.begin(), values.end(), [](double value) {
         return std::isfinite(value) && value > 0.0;
@@ -164,18 +158,28 @@ template<class Result> Result association_result(Result result, const core::Asso
     return result;
 }
 
+// association_delta at a central state, or none for a model without sites.
+std::vector<double> central_strength(const Parameters& parameters, double temperature, double density,
+    const std::vector<double>& composition, const detail::SegmentGeometry<double>& geometry) {
+    return parameters.site_component.empty() ? std::vector<double>{}
+        : association_delta(temperature, density, composition, parameters, geometry.sigma, geometry.diameter);
+}
+std::vector<double> central_strength(const Parameters& parameters, double temperature, double density,
+    const std::vector<double>& composition) {
+    return parameters.site_component.empty() ? std::vector<double>{} : central_strength(parameters, temperature, density,
+        composition, detail::admitted_segment_geometry(temperature, parameters));
+}
+
 // One central association factorization with its rank and pivot diagnostics; a failure
 // is reported through `status` and the factorization is still returned.
 std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> association_factorization(
-    const Parameters& parameters, double temperature, double density, const std::vector<double>& sites,
+    const Parameters& parameters, double density, const std::vector<double>& sites, const std::vector<double>& strength,
     const std::vector<double>& composition, PropertyActionStatus& status, PropertyActionDiagnostics& diagnostics, const policy::SolverOptions& options
 ) {
     if (sites.empty()) return nullptr;
-    const auto sigma = segment_sigma(temperature, parameters), diameter = segment_diameter(temperature, parameters, sigma);
     auto result = std::make_unique<Eigen::FullPivLU<Eigen::MatrixXd>>();
     properties::site_factorization(*result,
-        sites, composition, parameters, density * NUMBER_DENSITY_PER_ANGSTROM3,
-        association_delta(temperature, density, composition, parameters, sigma, diameter), &status);
+        sites, composition, parameters, density * NUMBER_DENSITY_PER_ANGSTROM3, strength, &status);
     diagnostics.site_factorizations = 1;
     diagnostics.site_rank = static_cast<std::size_t>(result->rank());
     if (!options.nested_solve) core::retain_rank(diagnostics.site_conditioning,
@@ -493,16 +497,13 @@ PropertyJets property_jets(
     return result;
 }
 
-bool is_ideal(PropertyObservable observable) { return static_cast<std::size_t>(observable) < 5; }
+bool is_caloric(PropertyObservable observable) { return static_cast<std::size_t>(observable) < CALORIC_PROPERTY_COUNT; }
+bool is_ideal(PropertyObservable observable) { return is_caloric(observable) && property_family(observable) == 0; }
 bool is_fugacity(PropertyObservable observable) { return observable == PropertyObservable::LogFugacityCoefficient; }
-bool is_volume_partial(PropertyObservable observable) {
-    return static_cast<std::size_t>(observable) >= 15 && !is_fugacity(observable);
-}
-bool is_total(PropertyObservable observable) {
-    return static_cast<std::size_t>(observable) >= 10 && !is_volume_partial(observable) && !is_fugacity(observable);
-}
+bool is_volume_partial(PropertyObservable observable) { return !is_caloric(observable) && !is_fugacity(observable); }
+bool is_total(PropertyObservable observable) { return is_caloric(observable) && property_family(observable) == 2; }
 std::size_t property_index(PropertyObservable observable) {
-    return is_volume_partial(observable) ? 3 : is_fugacity(observable) ? 0 : static_cast<std::size_t>(observable) % 5;
+    return is_volume_partial(observable) ? 3 : is_fugacity(observable) ? 0 : property_kind(observable);
 }
 bool is_heat_capacity(PropertyObservable observable) {
     const auto index = property_index(observable);
@@ -569,7 +570,7 @@ void validate_action_request(
     const std::vector<DensityActionDirection>& directions
 ) {
     require(directions.size() >= 1 && directions.size() <= 3, "action order");
-    std::vector<bool> seen(18, false);
+    std::vector<bool> seen(static_cast<std::size_t>(PropertyObservable::LogFugacityCoefficient) + 1, false);
     for (const auto observable : observables) {
         const auto index = static_cast<std::size_t>(observable);
         require(index < seen.size() && !seen[index], "observables");
@@ -581,7 +582,7 @@ void validate_action_request(
             "direction composition");
         require(std::isfinite(direction.temperature)
             && std::isfinite(direction.molar_density), "direction");
-        require(finite_vector(direction.composition), "direction composition");
+        require(all_finite(direction.composition), "direction composition");
         // A direction's size carries its coordinate's units, so each sum's defect is relative to its own terms.
         double balance = 0.0, charge = 0.0, size = 0.0, charge_size = 0.0;
         for (std::size_t i = 0; i < components; ++i) {
@@ -774,7 +775,7 @@ void validate_cation_mixing(const Parameters& p) {
     require(i < j && p.charge_number[s] == 0 && p.charge_number[i] > 0 && p.charge_number[j] > 0
         && p.charge_number[k] < 0 && p.electrolyte_form.declared(), "cation mixing participants");
     require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
-        && finite_vector(p.cation_pair_mixing) && finite_vector(p.cation_triple_mixing), "cation mixing values");
+        && all_finite(p.cation_pair_mixing) && all_finite(p.cation_triple_mixing), "cation mixing values");
 }
 
 HelmholtzModel::HelmholtzModel(
@@ -860,32 +861,32 @@ HelmholtzModel::HelmholtzModel(
         require(std::isfinite(mass) && mass >= 0.0, "molar_mass");
         require(parameters_.charge_number[component] != 0 || mass > 0.0, "molar_mass");
     }
-    require(finite_vector(parameters_.k_ij), "k_ij");
-    require(finite_vector(parameters_.l_ij), "l_ij");
-    require(finite_vector(parameters_.k_ij_reciprocal_temperature_slope),
+    require(all_finite(parameters_.k_ij), "k_ij");
+    require(all_finite(parameters_.l_ij), "l_ij");
+    require(all_finite(parameters_.k_ij_reciprocal_temperature_slope),
             "k_ij_temperature_slope");
-    require(finite_vector(parameters_.k_ij_reference_temperature_k),
+    require(all_finite(parameters_.k_ij_reference_temperature_k),
             "k_ij_reference_temperature");
-    require(finite_vector(parameters_.sigma_term_amplitude), "sigma_amplitude");
-    require(finite_vector(parameters_.sigma_term_exponent), "sigma_exponent");
-    require(finite_vector(parameters_.molar_mass_kg_per_mol), "molar_mass");
-    require(finite_vector(parameters_.relative_permittivity), "relative_permittivity");
-    require(finite_vector(parameters_.permittivity_term_coefficient),
+    require(all_finite(parameters_.sigma_term_amplitude), "sigma_amplitude");
+    require(all_finite(parameters_.sigma_term_exponent), "sigma_exponent");
+    require(all_finite(parameters_.molar_mass_kg_per_mol), "molar_mass");
+    require(all_finite(parameters_.relative_permittivity), "relative_permittivity");
+    require(all_finite(parameters_.permittivity_term_coefficient),
             "permittivity_coefficient");
-    require(finite_vector(parameters_.permittivity_reference_temperature_k),
+    require(all_finite(parameters_.permittivity_reference_temperature_k),
             "permittivity_reference_temperature");
-    require(finite_vector(parameters_.ion_suppression_coefficient),
+    require(all_finite(parameters_.ion_suppression_coefficient),
             "ion_suppression_coefficient");
-    require(finite_vector(parameters_.dielectric_volume_m3_per_mol), "dielectric_volume");
-    require(finite_vector(parameters_.dielectric_temperature_k), "dielectric_temperature");
-    require(finite_vector(parameters_.dipole_scaling_debye2), "dipole_scaling");
-    require(finite_vector(parameters_.polarizability_scaling_angstrom3),
+    require(all_finite(parameters_.dielectric_volume_m3_per_mol), "dielectric_volume");
+    require(all_finite(parameters_.dielectric_temperature_k), "dielectric_temperature");
+    require(all_finite(parameters_.dipole_scaling_debye2), "dipole_scaling");
+    require(all_finite(parameters_.polarizability_scaling_angstrom3),
             "polarizability_scaling");
-    require(finite_vector(parameters_.correlation_integral_parameter),
+    require(all_finite(parameters_.correlation_integral_parameter),
             "correlation_integral");
-    require(finite_vector(parameters_.association_energy_over_k),
+    require(all_finite(parameters_.association_energy_over_k),
             "association_energy_over_k");
-    require(finite_vector(parameters_.association_volume), "association_volume");
+    require(all_finite(parameters_.association_volume), "association_volume");
     require(symmetric(parameters_.k_ij, components), "k_ij symmetry");
     require(symmetric(parameters_.l_ij, components), "l_ij symmetry");
     require(symmetric(parameters_.association_active, sites), "association_active symmetry");
@@ -896,7 +897,7 @@ HelmholtzModel::HelmholtzModel(
     // build_parameters admits law structure; coefficients are the active values a fit may change.
     const std::size_t terms = parameters_.temperature_law_term_law.size();
     require(parameters_.temperature_law_coefficient.size() == terms && parameters_.temperature_law_term_power.size() == terms
-        && finite_vector(parameters_.temperature_law_coefficient), "temperature_law_coefficient");
+        && all_finite(parameters_.temperature_law_coefficient), "temperature_law_coefficient");
     for (const int component : parameters_.site_component) {
         require(component >= 0 && static_cast<std::size_t>(component) < components,
                 "site_component");
@@ -986,21 +987,16 @@ HelmholtzModel::HelmholtzModel(
 template <typename Fixed>
 static Taylor<2, Fixed> virial_energy(const Parameters& parameters, const Fixed& temperature, const std::vector<Fixed>& composition) {
     using Series = Taylor<2, Fixed>;
-    const auto sigma = segment_sigma(temperature, parameters);
-    const auto diameter = segment_diameter(temperature, parameters, sigma);
-    for (const auto* values : {&sigma, &diameter})
-        require(std::all_of(values->begin(), values->end(), [](const Fixed& v) { return std::isfinite(scalar_lead(v)) && scalar_lead(v) > 0.0; }), "segment geometry");
+    const auto [sigma, diameter] = detail::admitted_segment_geometry(temperature, parameters);
     Series density;
     density.c[1] = Fixed(1.0);
-    const std::vector<Fixed> energy(parameters.association_energy_over_k.begin(), parameters.association_energy_over_k.end());
-    const std::vector<Fixed> volume(parameters.association_volume.begin(), parameters.association_volume.end());
-    const auto delta = parameters.ideal_gas ? std::vector<Series>{} : association_delta_values(
-        temperature, density, composition, parameters, sigma, diameter, energy, volume);
+    const auto delta = parameters.ideal_gas ? std::vector<Series>{} : association_delta(
+        temperature, density, composition, parameters, sigma, diameter);
     for (const auto& strength : delta)
         require(std::isfinite(scalar_lead(strength)) && scalar_lead(strength) >= 0.0, "association strength");
     const auto sites = association_density_coefficients(density, composition, parameters, delta);
     const auto terms = residual_helmholtz(temperature, density, composition, parameters, sigma, diameter,
-        sites, Series(0.0), Series(0.0), association_products(density, composition, parameters, sites, delta));
+        sites, association_products(density, composition, parameters, sites, delta));
     return terms.hard_chain + terms.dispersion + terms.association + terms.dipolar;
 }
 
@@ -1079,7 +1075,7 @@ void HelmholtzModel::validate_point(
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     require(std::isfinite(volume) && volume > 0.0, "volume");
     require(amounts.size() == parameters_.component_count(), "amounts size");
-    require(finite_vector(amounts), "amounts");
+    require(all_finite(amounts), "amounts");
     require(std::all_of(amounts.begin(), amounts.end(), [](double value) {
         return value >= 0.0;
     }), "amounts");
@@ -1176,16 +1172,13 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::vector<double> composition;
     composition.reserve(components);
     for (double amount : amounts) composition.push_back(amount / total);
-    const auto sigma = segment_sigma(temperature, parameters_);
-    require(positive_vector(sigma), "sigma correlation");
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    require(positive_vector(diameter), "segment diameter");
+    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
     require_law_domain(temperature, parameters_);
     core::Convergence site_record;
     std::optional<core::Convergence> first;
-    const auto sites = solve_site_fractions(
-        temperature, density, composition, parameters_, sigma, diameter, &site_record, nullptr, nullptr, false, solver_options_, &first
-    );
+    const auto delta = central_strength(parameters_, temperature, density, composition, geometry);
+    const auto sites = solve_site_fractions(temperature, density, composition, parameters_, geometry.sigma, geometry.diameter,
+        &site_record, nullptr, delta.empty() ? nullptr : &delta, false, solver_options_, &first);
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
     scope.observe([&] {
@@ -1232,8 +1225,6 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         return finish(std::move(result));
     }
-    const auto delta = parameters_.ideal_gas ? std::vector<double>{} : association_delta(
-        temperature, density, composition, parameters_, sigma, diameter);
     Eigen::FullPivLU<Eigen::MatrixXd> factorization;
     properties::site_factorization(factorization,
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
@@ -1394,18 +1385,10 @@ static std::vector<double> coefficient_errors(const Parameters& p, detail::Helmh
     for (std::size_t i = 0; i < x.size(); ++i) amount += q[2 + i];
     for (std::size_t i = 0; i < x.size(); ++i) x[i] = q[2 + i] / amount;
     const Series density = amount / q[1];
-    ParameterRecord<Series> series_parameters;
-    static_cast<FixedParameters&>(series_parameters) = p;
-    for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT; ++f) {
-        const auto family = static_cast<detail::ParameterFamily>(f);
-        const auto source = detail::family_values(p, family);
-        const auto target = detail::family_values(series_parameters, family, source.second);
-        for (std::size_t i = 0; i < source.second; ++i) target.first[i] = Series(source.first[i]);
-    }
+    const auto series_parameters = detail::make_tape_parameters<Series>(p, {}, {});
     const auto series_sigma = segment_sigma(q[0], series_parameters);
     const auto series_diameter = segment_diameter(q[0], series_parameters, series_sigma);
-    const auto delta = association_delta_values(q[0], density, x, series_parameters, series_sigma, series_diameter,
-        series_parameters.association_energy_over_k, series_parameters.association_volume);
+    const auto delta = association_delta(q[0], density, x, series_parameters, series_sigma, series_diameter);
     const auto absolute = [](Series v) { for (double& c : v.c) c = std::abs(c); return v; };
     std::vector<Series> terms(ns);
     for (std::size_t a = 0; a < ns; ++a) {
@@ -1470,7 +1453,7 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     if (count > 4 || count == 0) throw std::invalid_argument("coefficient error order");
     const std::size_t width = regular.front().size();
     for (const auto& row : regular)
-        if (row.size() != width || !finite_vector(row)) throw std::invalid_argument("coefficient error path");
+        if (row.size() != width || !all_finite(row)) throw std::invalid_argument("coefficient error path");
     if (width != 2 + parameters_.component_count() + active_.size()) throw std::invalid_argument("coefficient error width");
     std::vector<double> errors(count, 0.0);
     if (ns == 0) return errors;
@@ -1511,7 +1494,7 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
     const std::size_t width = 2 + components + active_.size();
     require(order >= 3 && order <= 5, "energy action order");
     for (const auto& direction : directions)
-        require(direction.size() == width && finite_vector(direction), "direction");
+        require(direction.size() == width && all_finite(direction), "direction");
     double total = 0.0; for (double amount : amounts) total += amount;
     core::AssociationObservations observations(true);
     ResidualEnergyAction result;
@@ -1539,8 +1522,9 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
     result.status = PropertyActionStatus::Available;
     observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = association_factorization(parameters_, temperature, density,
-        refreshed.site_fractions, composition, result.status, result.diagnostics, solver_options_);
+    const auto factorization = association_factorization(parameters_, density, refreshed.site_fractions,
+        central_strength(parameters_, temperature, density, composition),
+        composition, result.status, result.diagnostics, solver_options_);
     if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return association_result(std::move(result), observations); }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;
@@ -1617,16 +1601,12 @@ static Taylor<D, WiderScalar> reference_coefficients(const Parameters& p, const 
     for (std::size_t j = 0; j < nc; ++j) x[j] = q[2 + j] / total;
     const S rho = total / q[1];
     const auto sigma = segment_sigma(q[0], mapped), diameter = segment_diameter(q[0], mapped, sigma);
-    const auto delta = p.ideal_gas ? std::vector<S>{} : association_delta_values(q[0], rho, x, mapped, sigma, diameter,
-        mapped.association_energy_over_k, mapped.association_volume);
+    const auto delta = p.ideal_gas ? std::vector<S>{} : association_delta(q[0], rho, x, mapped, sigma, diameter);
     std::vector<double> reference(path[0].begin() + 2, path[0].begin() + 2 + nc);
     auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped);
     born = born_contribution(q[0], x, mapped, electro.bulk_relative_permittivity);
-    const auto terms = residual_helmholtz(q[0], rho, x, mapped, sigma, diameter, xs, electro.debye_huckel, born, association_products(rho, x, mapped, xs, delta));
-    auto result = total * (terms.hard_chain + terms.dispersion + terms.debye_huckel + terms.born
-        + terms.association + terms.dipolar);
-    if (!p.cation_mixing.empty()) result += total * terms.cation_mixing;
-    return result;
+    return extensive_residual_helmholtz(total, residual_helmholtz(q[0], rho, x, mapped, sigma, diameter, xs,
+        association_products(rho, x, mapped, xs, delta)), electro.debye_huckel, born, p);
 }
 
 static double precision_estimate(double center, WiderScalar wide, WiderScalar scale, std::size_t count) {
@@ -1665,7 +1645,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     validate_point(temperature, volume, composition);
     validate_composition(composition);
     require(order <= 4 && stoichiometry.size() == composition.size()
-        && finite_vector(stoichiometry) && wide_math::isfinite(direction.temperature)
+        && all_finite(stoichiometry) && wide_math::isfinite(direction.temperature)
         && wide_math::isfinite(direction.pressure) && direction.composition.empty(), "reference path");
     if (error && order > 1) throw std::invalid_argument("reference error order");
     core::AssociationObservations observations(true);
@@ -1758,8 +1738,9 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
                 result.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*result.diagnostics.site_conditioning);
             result.diagnostics.recordings = recordings;
             result.diagnostics.site_factorizations = 0;
-        } else prepared->factorization = association_factorization(parameters_, temperature, 1.0 / volume,
-            central.site_fractions, composition, result.status, result.diagnostics, solver_options_);
+        } else prepared->factorization = association_factorization(parameters_, 1.0 / volume, central.site_fractions,
+            central_strength(parameters_, temperature, 1.0 / volume, composition),
+            composition, result.status, result.diagnostics, solver_options_);
         if (batch) {
             prepared->site_fractions = central.site_fractions;
             prepared->factorization_diagnostics = result.diagnostics;
@@ -1890,7 +1871,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     }
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value)
         result.status = PropertyActionStatus::AssociationResidual;
-    else if (!finite_vector(result.contraction) || !finite_vector(result.volume)) result.status = PropertyActionStatus::Nonfinite;
+    else if (!all_finite(result.contraction) || !all_finite(result.volume)) result.status = PropertyActionStatus::Nonfinite;
     counters_.directional_paths += result.diagnostics.directional_paths;
     counters_.forward += result.diagnostics.forward_sweeps;
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order + 1);
@@ -1974,17 +1955,15 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     PropertyActionBatch result;
     std::optional<core::Convergence> first;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
-    std::vector<double> sites;
-    const auto sigma = segment_sigma(temperature, parameters_);
-    require(positive_vector(sigma), "sigma correlation");
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    require(positive_vector(diameter), "segment diameter");
-    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, diameter);  // ideal-only actions too
+    std::vector<double> sites, strength;
+    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
+    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, geometry.diameter);  // ideal-only actions too
     if (need_residual) {
         require_law_domain(temperature, parameters_);
+        strength = central_strength(parameters_, temperature, molar_density, mole_fractions, geometry);
         try {
-            sites = solve_site_fractions(temperature, molar_density, mole_fractions,
-                parameters_, sigma, diameter, nullptr, nullptr, nullptr, false, solver_options_, &first);
+            sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, geometry.sigma,
+                geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
             need_residual = false;
@@ -1998,8 +1977,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
     tape_->site_values = sites;
     observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = need_residual ? association_factorization(parameters_, temperature, molar_density,
-        tape_->site_values, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
+    const auto factorization = need_residual ? association_factorization(parameters_, molar_density,
+        tape_->site_values, strength, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
     context.maximum_order = directions.size()
@@ -2075,7 +2054,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result.molar_density = molar_density;
         result.density_status = status[1];
         for (const auto& direction : lifted) result.density_action.push_back(direction.molar_density);
-        if (!finite_vector(result.density_action)) result.density_status = PropertyActionStatus::Nonfinite;
+        if (!all_finite(result.density_action)) result.density_status = PropertyActionStatus::Nonfinite;
         std::array<double, 3> density_pairs{};
         if (directions.size() >= 2 && !observables.empty()) {
             density_pairs[0] = density_solve(-pressure_of({lifted_ids[0], lifted_ids[1]}));
@@ -2481,7 +2460,7 @@ State HelmholtzModel::state(
             scope.diagnostics_on() ? DerivativeOrder::Hessian : DerivativeOrder::StateHessian);
     }();
     const auto& sites = derivatives.site_fractions;
-    const auto [electro, terms] = [&] {
+    const auto [electro, born, terms] = [&] {
         core::CalculationWork::energy_evaluation();
         core::Scope scope("state_residual_recompute"), evaluation("evaluate");
         const auto sigma = segment_sigma(temperature, parameters_);
@@ -2492,9 +2471,8 @@ State HelmholtzModel::state(
         );
         const auto terms = residual_helmholtz(
             temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
-            sites, electro.debye_huckel, born
-        , association_products(molar_density, mole_fractions, parameters_, sites, parameters_.ideal_gas ? std::vector<double>{} : association_delta_values(temperature, molar_density, mole_fractions, parameters_, sigma, diameter, parameters_.association_energy_over_k, parameters_.association_volume)));
-        return std::pair{electro, terms};
+            sites, association_products(molar_density, mole_fractions, parameters_, sites, parameters_.ideal_gas ? std::vector<double>{} : association_delta(temperature, molar_density, mole_fractions, parameters_, sigma, diameter)));
+        return std::tuple{electro, born, terms};
     }();
     // EqID: residual_chemical_potential
     const double phi_v = derivatives.gradient[1];
@@ -2519,8 +2497,8 @@ State HelmholtzModel::state(
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
     result.association = terms.association;
-    result.debye_huckel = terms.debye_huckel;
-    result.born = terms.born;
+    result.debye_huckel = electro.debye_huckel;
+    result.born = born;
     result.dipolar = terms.dipolar;
     result.cation_mixing = terms.cation_mixing;
     result.bulk_relative_permittivity = electro.bulk_relative_permittivity;
@@ -2778,12 +2756,12 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     const auto diameter_ad = segment_diameter(t, parameters, sigma_ad);
     const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters);
     const std::vector<AD> site(sites.begin(), sites.end());
-    const auto delta = parameters_.ideal_gas ? std::vector<AD>{} : association_delta_values(t, density, composition,
-        parameters, sigma_ad, diameter_ad, parameters.association_energy_over_k, parameters.association_volume);
+    const auto delta = parameters_.ideal_gas ? std::vector<AD>{} : association_delta(t, density, composition,
+        parameters, sigma_ad, diameter_ad);
     const auto a = residual_helmholtz(t, density, composition, parameters, sigma_ad, diameter_ad, site,
-        electrolyte.debye_huckel, born, association_products(density, composition, parameters, site, delta));
+        association_products(density, composition, parameters, site, delta));
     CppAD::ADFun<double> function(input, std::vector<AD>{total * a.hard_chain, total * a.dispersion,
-        total * a.association, total * a.debye_huckel, total * a.born, total * a.dipolar, total * a.cation_mixing});
+        total * a.association, total * electrolyte.debye_huckel, total * born, total * a.dipolar, total * a.cation_mixing});
     recording.active = false;
     auto jacobian = function.Jacobian(point);
     const std::size_t width = point.size();
@@ -2856,11 +2834,8 @@ double HelmholtzModel::packing_fraction_coefficient(
     validate_composition(mole_fractions);
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     if (parameters_.ideal_gas) return 0.0;
-    const auto sigma = segment_sigma(temperature, parameters_);
-    const auto diameter = segment_diameter(temperature, parameters_, sigma);
-    require(positive_vector(sigma), "sigma correlation");
-    require(positive_vector(diameter), "segment diameter");
-    return packing_fraction_from_geometry(1.0, mole_fractions, parameters_, diameter);
+    return packing_fraction_from_geometry(1.0, mole_fractions, parameters_,
+        detail::admitted_segment_geometry(temperature, parameters_).diameter);
 }
 
 double HelmholtzModel::molar_density_upper_bound(

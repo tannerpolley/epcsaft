@@ -1487,6 +1487,7 @@ void check_pure_association_publication() {
     compiled.problem.phases = {equilibrium_support::phase("L", eq::PhaseKind::Liquid, eq::AmountSpec::pinned(1)),
         equilibrium_support::phase("V", eq::PhaseKind::Vapor, eq::AmountSpec::pinned(0))};
     for (auto& phase : compiled.problem.phases) phase.support = {0};
+    compiled.shape = {{{0}, std::nullopt, 1}, {{2}, std::nullopt, 3}}; compiled.charge_row.resize(2);  // as compilation lays them out
     eq::PhasePoint prepared; prepared.temperature = 200; prepared.point = {0, std::log(0.2), 0, std::log(0.01)};
     core::Scope scope("pure_association_publication"); core::AssociationObservations observations;
     eq::EquilibriumResult candidate; // Manufactured refusal; no equilibrium prediction is requested.
@@ -1607,6 +1608,7 @@ void check_association_preparation() {
         c.problem.pressure = equilibrium::FreeValue::fixed(1e5);
         auto phase = equilibrium_support::phase("liquid", equilibrium::PhaseKind::Liquid,
             equilibrium::AmountSpec::pinned(1)); phase.support = {0, 1}; c.problem.phases = {phase};
+        c.shape = {{{0, 1}, std::nullopt, 2}}; c.charge_row.resize(1);  // as compilation lays them out
         const auto packing = model.packing_fraction_coefficient(temperature, x);
         std::vector<double> point{std::log(x[0]), std::log(x[1]), std::log(packing * density)};
         equilibrium::EquilibriumResult result; result.first_numerical_failure = refusal;
@@ -1768,13 +1770,7 @@ void check_conditioning() {
         std::optional<core::NumericalRank> warning;
         std::optional<core::Convergence> first = refusal;
         Matrix singular = Matrix::Identity(2, 2); singular(1, 1) = 0;
-        bool refused = false;
-        try { solve_linear(singular, {0, 1}, nullptr, &first, &warning, {0.5, 0.5}, 3); }
-        catch (const std::runtime_error& error) {
-            refused = std::string(error.what()) == "association Jacobian is ill-conditioned";
-            if (!refused) throw;
-        }
-        CHECK(refused);
+        CHECK(!solve_linear(singular, {0, 1}, nullptr, &first, &warning, {0.5, 0.5}, 3));
         if (!warning || !warning->first_conditioning_warning || warning->first_conditioning_warning->available
             || warning->first_conditioning_warning->coordinates != std::vector<double>({0.5, 0.5})
             || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))

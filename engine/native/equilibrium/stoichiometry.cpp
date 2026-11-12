@@ -502,11 +502,15 @@ std::optional<std::size_t> thermal_reference_missing(
     return std::nullopt;
 }
 
-std::vector<std::vector<double>> standard_state_series(
+struct StandardStateFactor final { Eigen::BDCSVD<Eigen::MatrixXd> svd; };
+
+// `kept`, when given, holds the factorization of this reaction matrix across calls.
+static std::vector<std::vector<double>> standard_state_series(
     double temperature, std::size_t components,
     const std::vector<ReactionSpec>& reactions,
     const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry,
-    std::vector<std::vector<double>>* inverse_map, CompiledSystem* observations
+    std::vector<std::vector<double>>* inverse_map, CompiledSystem* observations,
+    std::shared_ptr<const StandardStateFactor>* kept
 ) {
     require_positive(temperature, "temperature");
     if (inverse_map) inverse_map->clear();
@@ -545,7 +549,11 @@ std::vector<std::vector<double>> standard_state_series(
         result[0] = supplied;
         return result;
     }
-    const auto svd = matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV);
+    std::shared_ptr<const StandardStateFactor> local;
+    auto& factor = kept ? *kept : local;
+    if (!factor) factor = std::make_shared<const StandardStateFactor>(
+        StandardStateFactor{matrix.bdcSvd(Eigen::ComputeThinU | Eigen::ComputeThinV)});
+    const auto& svd = factor->svd;
     if (observations) core::retain_rank(observations->rank_records, svd, "minimum_norm_standard_state");
     if (inverse_map) {
         inverse_map->assign(components, std::vector<double>(reactions.size(), 0.0));
@@ -566,6 +574,30 @@ std::vector<std::vector<double>> standard_state_series(
         result[k].assign(solution.data(), solution.data() + solution.size());
     }
     return result;
+}
+
+std::vector<std::vector<double>> standard_state_series(
+    double temperature, std::size_t components,
+    const std::vector<ReactionSpec>& reactions,
+    const std::vector<double>& supplied, std::size_t order, const ThermochemistryRecord* thermochemistry,
+    std::vector<std::vector<double>>* inverse_map, CompiledSystem* observations
+) {
+    return standard_state_series(temperature, components, reactions, supplied, order, thermochemistry, inverse_map,
+                                 observations, nullptr);
+}
+
+SpeciesSlopeMap::SpeciesSlopeMap(double temperature, std::size_t components, std::vector<ReactionSpec> reactions)
+    : temperature_(temperature), components_(components), reactions_(std::move(reactions)) {
+    for (auto& reaction : reactions_) {
+        reaction.equilibrium_constant.reset();
+        reaction.correlation.reset();
+        reaction.reference.reset();
+    }
+}
+
+std::vector<double> SpeciesSlopeMap::operator()(const std::vector<double>& values) {
+    for (std::size_t row = 0; row < reactions_.size(); ++row) reactions_[row].affinity_j_per_mol = values[row];
+    return standard_state_series(temperature_, components_, reactions_, {}, 0, nullptr, nullptr, nullptr, &factor_).front();
 }
 
 bool conserves_total_moles(const std::vector<std::vector<double>>& basis) {

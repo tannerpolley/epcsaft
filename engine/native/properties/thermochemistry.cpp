@@ -12,17 +12,11 @@
 namespace epcsaft {
 namespace {
 
-bool finite_values(const std::vector<double>& values) {
-    return std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
-}
-bool nonnegative_values(const std::vector<double>& values) {
-    return finite_values(values) && std::all_of(values.begin(), values.end(), [](double value) { return value >= 0.0; });
-}
 void validate_identity(const std::string& identity) {
     if (identity.empty()) throw std::invalid_argument("missing standard-state identity");
 }
 void validate_composition(const std::vector<double>& composition) {
-    if (!nonnegative_values(composition)) throw std::invalid_argument("invalid thermochemistry composition");
+    if (!all_finite(composition) || !std::all_of(composition.begin(), composition.end(), [](double value) { return value >= 0.0; })) throw std::invalid_argument("invalid thermochemistry composition");
     if (std::abs(std::accumulate(composition.begin(), composition.end(), 0.0) - 1.0)
         > policy::COMPOSITION_SUM_TOLERANCE.value)
         throw std::invalid_argument("invalid thermochemistry composition sum");
@@ -95,12 +89,9 @@ IdealPropertiesEvaluation evaluate_ideal_properties(
             correlations.push_back(ideal_interval(record.component_intervals[component], temperature)->correlation);
             supported.push_back(mole_fractions[component] > 0.0);
         }
-        const auto value = evaluate_ideal_mixture(
+        const auto result = evaluate_ideal_mixture(
             correlations, record.standard_pressure, temperature, molar_density,
             mole_fractions, supported);
-        IdealProperties result{
-            value.enthalpy, value.internal_energy, value.entropy,
-            value.isobaric_heat_capacity, value.isochoric_heat_capacity};
         if (!std::isfinite(result.enthalpy) || !std::isfinite(result.internal_energy)
             || !std::isfinite(result.entropy) || !std::isfinite(result.isobaric_heat_capacity)
             || !std::isfinite(result.isochoric_heat_capacity))
@@ -123,7 +114,7 @@ ReactionThermochemistry reaction_thermochemistry_density(
 ) {
     core::Scope scope("reaction_thermochemistry_density");
     validate_thermochemistry(record, stoichiometry.size());
-    if (!std::isfinite(temperature) || temperature <= 0.0 || !finite_values(stoichiometry))
+    if (!std::isfinite(temperature) || temperature <= 0.0 || !all_finite(stoichiometry))
         throw std::invalid_argument("invalid reaction thermochemistry request");
     ReactionThermochemistry result;
     Taylor<3> T(temperature), gp(0.0);

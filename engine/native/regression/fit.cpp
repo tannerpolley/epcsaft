@@ -23,9 +23,6 @@
 #ifdef __APPLE__
 #include <crt_externs.h>
 #include <spawn.h>
-#ifndef MSG_NOSIGNAL
-#define MSG_NOSIGNAL 0  // SO_NOSIGPIPE on each worker socket
-#endif
 #endif
 #else
 #ifndef _WIN32_WINNT
@@ -59,10 +56,6 @@
 #include <utility>
 #include <variant>
 
-#if !defined(SYS_close_range) && defined(__linux__) && defined(__x86_64__)
-#define SYS_close_range 436  // The package targets linux-64, including the glibc 2.17 sysroot.
-#endif
-
 namespace epcsaft::regression {
 namespace {
 
@@ -70,10 +63,6 @@ const char* compute_cpu_directory = std::getenv("EPCSAFT_FIT_CPU_PROFILE");
 
 void require(bool condition, const char* what) {
     if (!condition) throw std::invalid_argument(std::string("fit ") + what);
-}
-
-bool finite(const std::vector<double>& values) {
-    return std::all_of(values.begin(), values.end(), [](double value) { return std::isfinite(value); });
 }
 
 // The same point-local D maps raw observation columns and covariance.
@@ -226,11 +215,10 @@ struct ObservationEvaluator::Impl final {
         if (request.uncertainty) for (std::size_t i = 0; i < sqrt_weights_.size(); ++i)
             if (sqrt_weights_[i] > 0.0 && request.observations[i].kind != ObservationKind::Stability) sqrt_weights_[i] = request.observations[i].scale / request.uncertainty->output_sigma[i];
     }
-    std::size_t width() const { return request_.coordinates.coordinates.size() + measurement_.groups.size(); }
+    std::size_t width() const { return request_.coordinates.coordinates.size() + measurement_.width(); }
     std::pair<std::vector<double>, std::vector<double>> bounds() const {
         auto box = request_.coordinates.optimizer_bounds();
-        box.first.insert(box.first.end(), measurement_.lower.begin(), measurement_.lower.end());
-        box.second.insert(box.second.end(), measurement_.upper.begin(), measurement_.upper.end());
+        measurement_.bounds(box);
         return box;
     }
 
@@ -239,12 +227,7 @@ struct ObservationEvaluator::Impl final {
     void start_workers(int requested) {
         interruptible_ = true;
         const std::size_t count = core::current_trace() || fit_host.worker.empty() ? 1
-            : requested > 0 ? static_cast<std::size_t>(requested) :
-#ifdef _WIN32
-                std::max(1ul, GetActiveProcessorCount(ALL_PROCESSOR_GROUPS));
-#else
-                std::max(1u, std::thread::hardware_concurrency());
-#endif
+            : requested > 0 ? static_cast<std::size_t>(requested) : processors();
         std::size_t rank = 0;
         for (std::size_t i = 0; i < groups_.size(); ++i) {
             owner_[i] = groups_[i] != i ? owner_[groups_[i]] : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
@@ -256,87 +239,7 @@ struct ObservationEvaluator::Impl final {
                 if (same_state(reference, prior)) { owner_[i] = owner_[j]; --rank; break; }
             }
         }
-#ifdef _WIN32
         for (std::size_t k = 1; k < std::min(count, rank); ++k) workers_.start();
-#else
-        std::vector<char*> command;
-        for (auto& word : fit_host.worker) command.push_back(word.data());
-        command.push_back(nullptr);
-        char** arguments = command.data();
-#ifdef __APPLE__
-        for (std::size_t k = 1; k < std::min(count, rank); ++k) {
-            int pair[2];
-            if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
-            workers_.sockets.push_back(pair[0]);
-            const int on = 1;
-            // As on Linux: socket end as fd 0, images as fd 3/4, the standard streams, its own process group.
-            posix_spawn_file_actions_t actions;
-            posix_spawnattr_t attributes;
-            posix_spawn_file_actions_init(&actions);
-            posix_spawnattr_init(&attributes);
-            pid_t process = 0;
-            const int error = fcntl(pair[0], F_SETFD, FD_CLOEXEC) || fcntl(pair[1], F_SETFD, FD_CLOEXEC)
-                || setsockopt(pair[0], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on) || setsockopt(pair[1], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on)
-                || posix_spawn_file_actions_adddup2(&actions, pair[1], 0) || posix_spawn_file_actions_adddup2(&actions, extension_image, 3)
-                || posix_spawn_file_actions_adddup2(&actions, native_image, 4) || posix_spawn_file_actions_addinherit_np(&actions, 1)
-                || posix_spawn_file_actions_addinherit_np(&actions, 2) || posix_spawnattr_setflags(&attributes, POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP)
-                || posix_spawnattr_setpgroup(&attributes, 0) || posix_spawn(&process, arguments[0], &actions, &attributes, arguments, *_NSGetEnviron());
-            posix_spawn_file_actions_destroy(&actions);
-            posix_spawnattr_destroy(&attributes);
-            close(pair[1]);
-            if (error != 0) throw std::runtime_error("fit worker process unavailable");
-            workers_.processes.push_back(process);
-        }
-#else
-        rlimit descriptors;
-        if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
-        // linux-64: nr_open bounds descriptor allocation, even when the soft limit was lowered.
-        rlim_t nr_open = std::numeric_limits<int>::max();
-        std::ifstream("/proc/sys/fs/nr_open") >> nr_open;
-        const rlim_t descriptor_limit = std::min(descriptors.rlim_max, nr_open);
-        for (std::size_t k = 1; k < std::min(count, rank); ++k) {
-            int pair[2];
-            if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
-            workers_.sockets.push_back(pair[0]);
-            // The worker keeps its socket end as fd 0, the extension/native images as fd 3/4 and the standard streams. Its own
-            // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
-            pid_t process = 0;
-            const int error = (process = fork()) < 0;
-            if (process == 0) {
-                if (setpgid(0, 0) != 0) _exit(127);
-                const int sources[] = {fcntl(pair[1], F_DUPFD_CLOEXEC, 5), fcntl(extension_image, F_DUPFD_CLOEXEC, 5), fcntl(native_image, F_DUPFD_CLOEXEC, 5)};
-                const int targets[] = {0, 3, 4};
-                for (int i = 0; i < 3; ++i)
-                    if (sources[i] < 0 || dup2(sources[i], targets[i]) < 0 || fcntl(targets[i], F_SETFD, 0) < 0) _exit(127);
-                if (syscall(SYS_close_range, 5, ~0U, 0) != 0) {
-                    const int directory = static_cast<int>(syscall(SYS_open, "/proc/self/fd", O_RDONLY | O_DIRECTORY | O_CLOEXEC));
-                    if (directory >= 0) {
-                        char buffer[4096];
-                        long bytes;
-                        while ((bytes = syscall(SYS_getdents64, directory, buffer, sizeof buffer)) > 0) {
-                            for (long at = 0; at < bytes;) {
-                                // linux_dirent64 has d_reclen at byte 16 and d_name at byte 19 on linux-64.
-                                unsigned short length;
-                                std::memcpy(&length, buffer + at + 16, sizeof length);
-                                int fd = 0;
-                                for (const char* digit = buffer + at + 19; *digit >= '0' && *digit <= '9'; ++digit) fd = 10 * fd + *digit - '0';
-                                if (fd >= 5 && fd != directory && close(fd) != 0) _exit(127);
-                                at += length;
-                            }
-                        }
-                        if (bytes < 0 || close(directory) != 0) _exit(127);
-                    } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd)
-                        if (close(static_cast<int>(fd)) != 0 && errno != EBADF) _exit(127);
-                }
-                execve(arguments[0], arguments, environ);
-                _exit(127);
-            }
-            close(pair[1]);
-            if (error != 0) throw std::runtime_error("fit worker process unavailable");
-            workers_.processes.push_back(process);
-        }
-#endif
-#endif
         for (std::size_t k = 1; k <= workers_.sockets.size(); ++k) {
             put(workers_.sockets[k - 1], request_.parameters, request_.thermochemistry, request_.coordinates.coordinates,
                 request_.observations, request_.holds, request_.uncertainty, request_.controls.solver_options.values, measurement_, sqrt_weights_);
@@ -388,7 +291,7 @@ struct ObservationEvaluator::Impl final {
             // A trial refused before its rows sends none; any other reply carries every row.
             const bool rows = part.statuses.size() == n && part.predictions.size() == n && part.residuals.size() == n
                 && part.gradient.size() == (jacobian ? n * width : 0)
-                && part.input_gradient.size() == (jacobian ? n * measurement_.groups.size() : 0);
+                && part.input_gradient.size() == (jacobian ? n * measurement_.width() : 0);
             if (!rows && !(theirs && part.statuses.empty())) throw std::runtime_error("fit worker reply size");
             for (std::size_t i = 0; rows && out.statuses.size() == n && i < n; ++i) if (owner_[i] == k) {
                 out.predictions[i] = part.predictions[i];
@@ -399,8 +302,8 @@ struct ObservationEvaluator::Impl final {
                 if (!part.saturation_predictions.empty()) out.saturation_predictions[i] = std::move(part.saturation_predictions[i]);
                 if (request_.uncertainty) { out.state_densities[i] = part.state_densities.at(i); out.reference_values[i] = part.reference_values.at(i); }
                 if (jacobian) std::copy_n(part.gradient.begin() + i * width, width, out.gradient.begin() + i * width);
-                if (jacobian && !measurement_.groups.empty()) std::copy_n(part.input_gradient.begin() + i * measurement_.groups.size(),
-                    measurement_.groups.size(), out.input_gradient.begin() + i * measurement_.groups.size());
+                if (jacobian && !measurement_.groups.empty()) std::copy_n(part.input_gradient.begin() + i * measurement_.width(),
+                    measurement_.width(), out.input_gradient.begin() + i * measurement_.width());
             }
             if (theirs && (!failure || theirs->row < failure->row)) failure = std::move(theirs);
             if (part.first_numerical_failure && (!out.first_numerical_failure
@@ -449,7 +352,7 @@ struct ObservationEvaluator::Impl final {
             const double cost = 0.5 * out.weighted[i] * out.weighted[i];
             (request_.observations[i].kind == ObservationKind::Stability ? out.stability_cost : out.data_cost) += cost;
         }
-        const std::size_t parameters = request_.coordinates.coordinates.size(), latent = measurement_.groups.size(), columns = this->width();
+        const std::size_t parameters = request_.coordinates.coordinates.size(), latent = measurement_.width(), columns = this->width();
         if (jacobian) out.optimizer_gradient.resize((n + latent) * columns);
         for (std::size_t i = 0; jacobian && i < n; ++i) {
             if (sqrt_weights_[i] == 0.0) continue;
@@ -462,62 +365,9 @@ struct ObservationEvaluator::Impl final {
                 static_cast<Eigen::Index>(columns)).allFinite())
                 return {Disposition::Rejected, {i, i, ObservationStatus::Nonfinite, true, "optimizer Jacobian not finite"}};
         }
-        if (request_.uncertainty) {
-            auto& reconciled = out.reconciliation.emplace();
-            reconciled.output_cost = out.data_cost;
-            reconciled.row_groups = measurement_.membership;
-            reconciled.column_groups = measurement_.groups; reconciled.column_inputs = measurement_.inputs;
-            for (std::size_t c = 0; c < latent; ++c) {
-                const double u = optimizer[parameters + c];
-                reconciled.values.push_back(measurement_.measured[c] + measurement_.sigma[c] * u);
-                reconciled.corrections.push_back(u); reconciled.penalties.push_back(u*u);
-                reconciled.row_groups.push_back(measurement_.groups[c]);
-                reconciled.input_cost += 0.5 * u*u; out.weighted.push_back(u);
-                if (jacobian) out.optimizer_gradient[(n + c) * columns + parameters + c] = 1.0;
-            }
-            out.cost += reconciled.input_cost;
-            if (!std::isfinite(out.cost))
-                return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, "input penalty not finite"}};
-            if (!measurement_.factor.empty() && !whiten(out, columns))
-                return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, "whitened residual or Jacobian not finite"}};
-            if (jacobian) reconciled.jacobian = out.optimizer_gradient;
-        }
+        if (request_.uncertainty) if (const char* cause = measurement_.reconcile(out, optimizer, parameters, jacobian))
+            return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, cause}};
         return {};
-    }
-
-    // z = L^-1 e on the compact rows of the residual and of every complete column; excluded rows stay zero.
-    // Output-first order makes the output cost marginal and the input cost conditional on the outputs.
-    bool whiten(ObservationEvaluation& out, std::size_t columns) const {
-        const auto& rows = measurement_.rows;
-        const auto m = static_cast<Eigen::Index>(rows.size()), inputs = static_cast<Eigen::Index>(measurement_.groups.size());
-        const std::size_t width = out.optimizer_gradient.empty() ? 0 : columns;
-        Eigen::MatrixXd e(m, static_cast<Eigen::Index>(1 + width));
-        for (std::size_t k = 0; k < rows.size(); ++k) {
-            e(static_cast<Eigen::Index>(k), 0) = out.weighted[rows[k]];
-            for (std::size_t c = 0; c < width; ++c) e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c)) = out.optimizer_gradient[rows[k] * columns + c];
-        }
-        Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(measurement_.factor.data(), m, m)
-            .triangularView<Eigen::Lower>().solveInPlace(e);
-        for (std::size_t k = 0; k < rows.size(); ++k) {
-            out.weighted[rows[k]] = e(static_cast<Eigen::Index>(k), 0);
-            for (std::size_t c = 0; c < width; ++c) out.optimizer_gradient[rows[k] * columns + c] = e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c));
-        }
-        auto& reconciled = *out.reconciliation;
-        reconciled.output_cost = 0.5 * e.col(0).head(m - inputs).squaredNorm();
-        reconciled.input_cost = 0.5 * e.col(0).tail(inputs).squaredNorm();
-        for (Eigen::Index c = 0; c < inputs; ++c) reconciled.penalties[static_cast<std::size_t>(c)] = e(m - inputs + c, 0) * e(m - inputs + c, 0);
-        out.data_cost = reconciled.output_cost;
-        out.cost = reconciled.output_cost + reconciled.input_cost + out.stability_cost;
-        const bool finite = e.allFinite() && std::isfinite(out.cost);
-        if (!finite) {
-            core::Convergence record; record.residual = out.cost; record.stop = core::Stop::nonfinite;
-            record.cause = e.allFinite() ? "whitened cost not finite" : "whitened residual or Jacobian not finite";
-            core::retain_first(out.first_numerical_failure, record);
-            core::Scope scope("fit_whitening");
-            scope.probe("solved_operands", e.data(), e.size());
-            scope.probe("cost", out.cost); scope.finish(record);
-        }
-        return finite;
     }
 
     // A worker answers each evaluation with its rows and first failure, then publishes on the fit's verdict.
@@ -547,7 +397,7 @@ struct ObservationEvaluator::Impl final {
         const Eigen::Map<const Eigen::VectorXd> r(trial.weighted.data(), static_cast<Eigen::Index>(trial.weighted.size()));
         const Eigen::VectorXd gradient = j.transpose() * r;
         out.assign(gradient.data(), gradient.data() + gradient.size());
-        return finite(out) || fail(trial.weighted.size(), point, ObservationStatus::Nonfinite, "weighted objective gradient not finite", true);
+        return all_finite(out) || fail(trial.weighted.size(), point, ObservationStatus::Nonfinite, "weighted objective gradient not finite", true);
     }
 
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
@@ -639,7 +489,7 @@ struct ObservationEvaluator::Impl final {
             out.statuses.assign(n, ObservationStatus::NotEvaluated);
             if (request_.uncertainty) { out.state_densities.resize(n); out.reference_values.resize(n); }
             if (jacobian) out.gradient.assign(n * width, 0.0);
-            if (jacobian) out.input_gradient.assign(n * measurement_.groups.size(), 0.0);
+            if (jacobian) out.input_gradient.assign(n * measurement_.width(), 0.0);
             std::vector<std::vector<PredictionGradient>> gradients(n);
             std::vector<std::size_t> position(n, 0);
             for (i = 0; i < n; ++i) {
@@ -697,7 +547,7 @@ struct ObservationEvaluator::Impl final {
                     for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g && sqrt_weights_[row] > 0.0) rows.push_back(&trial.observations[row]);
                     std::vector<ObservationInputDirection> directions;
-                    for (std::size_t c = 0; c < measurement_.groups.size(); ++c) if (measurement_.membership[i] == measurement_.groups[c]) {
+                    for (std::size_t c = 0; c < measurement_.width(); ++c) if (measurement_.membership[i] == measurement_.groups[c]) {
                         const auto kind = request_.uncertainty->groups[measurement_.groups[c]].inputs[measurement_.inputs[c]].kind;
                         ObservationInputDirection d;
                         d.state.feed_amounts_mol = measurement_.composition[c];
@@ -722,8 +572,8 @@ struct ObservationEvaluator::Impl final {
                 std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
                 std::size_t local = width;
-                for (std::size_t c = 0; c < measurement_.groups.size(); ++c) if (measurement_.membership[i] == measurement_.groups[c])
-                    out.input_gradient[i * measurement_.groups.size() + c] = gradient.value.at(local++);
+                for (std::size_t c = 0; c < measurement_.width(); ++c) if (measurement_.membership[i] == measurement_.groups[c])
+                    out.input_gradient[i * measurement_.width() + c] = gradient.value.at(local++);
             }
             return std::nullopt;
         } catch (const std::bad_alloc&) {
@@ -823,7 +673,7 @@ bool ObservationEvaluator::evaluate(const std::vector<double>& optimizer, bool c
     if (!impl_->evaluate(optimizer, columns, out)) return false;
     if (columns) out.residual_optimizer_gradient = out.optimizer_gradient;
     const auto& measurement = impl_->measurement_;
-    const std::size_t parameters = impl_->request_.coordinates.coordinates.size(), latent = measurement.groups.size();
+    const std::size_t parameters = impl_->request_.coordinates.coordinates.size(), latent = measurement.width();
     if (columns) for (std::size_t i = 0; i < out.predictions.size(); ++i) if (out.statuses[i] == ObservationStatus::Available) {
         double* row = out.optimizer_gradient.data() + i * optimizer.size();
         if (measurement.factor.empty()) {
@@ -946,7 +796,7 @@ class Cost final : public ceres::CostFunction {
 public:
     Cost(const FitRequest& request, ObservationEvaluator::Impl& evaluator)
         : evaluator_(evaluator) {
-        set_num_residuals(static_cast<int>(request.observations.size() + evaluator.measurement_.groups.size()));
+        set_num_residuals(static_cast<int>(request.observations.size() + evaluator.measurement_.width()));
         mutable_parameter_block_sizes()->push_back(static_cast<int>(evaluator.width()));
     }
 
@@ -1040,7 +890,7 @@ FitCovarianceStatus covariance(FitResult& result, const FitRequest& request, std
     const Eigen::MatrixXd physical = map * optimizer * map.transpose();
     cov.optimizer.assign(optimizer.data(), optimizer.data() + optimizer.size());
     cov.physical.assign(physical.data(), physical.data() + physical.size());
-    if (finite(cov.optimizer) && finite(cov.physical)) return FitCovarianceStatus::Available;
+    if (all_finite(cov.optimizer) && all_finite(cov.physical)) return FitCovarianceStatus::Available;
     cov.optimizer.clear(); cov.physical.clear();
     return FitCovarianceStatus::Unavailable;
 }
@@ -1385,7 +1235,7 @@ FitResult fit(const FitRequest& request) {
     }
     publish_candidate(result, std::move(final), optimizer);
     outcome.candidate = outcome.termination != T::Failure && outcome.termination != T::CallbackFailure
-        && finite(result.physical) ? FitCandidate::Usable : FitCandidate::Values;
+        && all_finite(result.physical) ? FitCandidate::Usable : FitCandidate::Values;
     if (outcome.candidate == FitCandidate::Usable) {
         outcome.covariance = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
         if (request.uncertainty) {

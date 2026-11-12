@@ -280,11 +280,11 @@ Tape make_tape(const TestCase& test_case, std::size_t depth) {
         std::vector<AD>(independent.begin() + 2 + static_cast<std::ptrdiff_t>(components), independent.end()));
     const auto sigma = epcsaft::segment_sigma(independent[0], parameters);
     const auto diameter = epcsaft::segment_diameter(independent[0], parameters, sigma);
-    const auto delta = epcsaft::association_delta_values(independent[0], density, mole_fractions,
-        parameters, sigma, diameter, parameters.association_energy_over_k, parameters.association_volume);
+    const auto delta = epcsaft::association_delta(independent[0], density, mole_fractions,
+        parameters, sigma, diameter);
     const auto sites = fixed_candidate(density, mole_fractions, parameters, delta, depth);
     const auto terms = epcsaft::residual_helmholtz(independent[0], density, mole_fractions,
-        parameters, sigma, diameter, sites, AD(0.0), AD(0.0), epcsaft::association_products(density, mole_fractions, parameters, sites, delta));
+        parameters, sigma, diameter, sites, epcsaft::association_products(density, mole_fractions, parameters, sites, delta));
     const AD association = total * terms.association;
     const AD residual = total * (terms.hard_chain + terms.dispersion + terms.association);
     const auto mass_action = epcsaft::association_residuals(density, mole_fractions, parameters, sites, delta);
@@ -332,7 +332,7 @@ Reference evaluate_reference(const TestCase& test_case, bool derivatives = true)
     result.mass_action = epcsaft::association_residuals(density, mole_fractions, test_case.parameters,
         result.sites, delta);
     const auto terms = epcsaft::residual_helmholtz(test_case.temperature, density, mole_fractions,
-        test_case.parameters, sigma, diameter, result.sites, 0.0, 0.0, epcsaft::association_products(density, mole_fractions, test_case.parameters, result.sites, delta));
+        test_case.parameters, sigma, diameter, result.sites, epcsaft::association_products(density, mole_fractions, test_case.parameters, result.sites, delta));
     result.association = total * terms.association;
     result.residual = total * (terms.hard_chain + terms.dispersion + terms.association);
     const std::size_t sites = result.sites.size();

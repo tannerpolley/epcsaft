@@ -38,6 +38,26 @@ bool charged_support(const std::vector<double>& composition, const ParameterSet&
     return false;
 }
 
+template <typename Fixed>
+struct SegmentGeometry final { std::vector<Fixed> sigma, diameter; };
+
+// Segment sigma and the temperature-dependent diameter, admitted finite and positive (series by their lead value).
+template <typename Fixed, class ParameterSet>
+SegmentGeometry<Fixed> admitted_segment_geometry(const Fixed& temperature, const ParameterSet& parameters) {
+    const auto require_positive = [](const std::vector<Fixed>& values, const char* message) {
+        if (!std::all_of(values.begin(), values.end(), [](const Fixed& value) {
+                const auto lead = scalar_lead(value);
+                return wide_math::isfinite(lead) && lead > 0.0; }))
+            throw std::invalid_argument(message);
+    };
+    SegmentGeometry<Fixed> result;
+    result.sigma = segment_sigma(temperature, parameters);
+    require_positive(result.sigma, "invalid sigma correlation");
+    result.diameter = segment_diameter(temperature, parameters, result.sigma);
+    require_positive(result.diameter, "invalid segment diameter");
+    return result;
+}
+
 template <typename Scalar, class ParameterSet, typename Fixed>
 std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Fixed& temperature,
     const Scalar& density,
@@ -194,20 +214,13 @@ struct HelmholtzTape final {
             // retain the Born first insertion only on the separate ion-free reference tape.
             if (reference_insertion) born = born_contribution(independent[0], composition,
                 tape_parameters, electrolyte.bulk_relative_permittivity);
-            const auto delta = parameters.ideal_gas ? std::vector<AD>{} : association_delta_values(
+            const auto delta = parameters.ideal_gas ? std::vector<AD>{} : association_delta(
                 independent[0], density, composition, tape_parameters, sigma,
-                diameter, tape_parameters.association_energy_over_k,
-                tape_parameters.association_volume);
+                diameter);
             const auto products = association_products(density, composition, tape_parameters, sites, delta);
             const auto& residuals = products.second;
-            const auto contributions = residual_helmholtz(
-                independent[0], density, composition, tape_parameters, sigma,
-                diameter, sites, electrolyte.debye_huckel, born, products);
-            dependent.push_back(total * (
-                contributions.hard_chain + contributions.dispersion
-                + contributions.debye_huckel + contributions.born + contributions.association
-                + contributions.dipolar));
-            if (!parameters.cation_mixing.empty()) dependent.back() += total * contributions.cation_mixing;
+            dependent.push_back(extensive_residual_helmholtz(total, residual_helmholtz(independent[0], density, composition,
+                tape_parameters, sigma, diameter, sites, products), electrolyte.debye_huckel, born, parameters));
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
         if (!ideal_correlations.empty()) {

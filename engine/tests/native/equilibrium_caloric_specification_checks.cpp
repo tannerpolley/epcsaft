@@ -79,18 +79,14 @@ void roundtrips() {
     sat.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor,AmountSpec::pinned(0)));
     auto ref=solve_equilibrium(pure,sat);CHECK(ref.has_state());ref.amounts={2.5*0.65,2.5*0.35};
     auto q=sat;q.phases[1].amount=AmountSpec{};
+    const auto liquid=pure.state(*ref.temperature,ref.molar_densities[0],{1});
+    const auto vapor=pure.state(*ref.temperature,ref.molar_densities[1],{1});
+    const double hl=*liquid.total_enthalpy,hv=*vapor.total_enthalpy,sl=*liquid.total_entropy,sv=*vapor.total_entropy;
     for(bool h:{true,false}) {
-        recovered(pure,q,ref,h,300,h?"PH3":"PS3");
-        const auto result=solve_equilibrium(pure,condition(q,h,total(pure,ref,h),300));
-        for(std::size_t i=0;i<2;++i) {
-            const auto state=pure.state(*result.temperature,result.molar_densities[i],{1});
-            CHECK(state.pressure_density_derivative>0);
-            const auto liquid=pure.state(*ref.temperature,ref.molar_densities[0],{1});
-            const auto vapor=pure.state(*ref.temperature,ref.molar_densities[1],{1});
-            const double hl=*liquid.total_enthalpy,hv=*vapor.total_enthalpy,sl=*liquid.total_entropy,sv=*vapor.total_entropy;
-            compare(std::string(h?"PH3":"PS3")+"/H-lever",(total(pure,result,true)/2.5-hl)/(hv-hl),0.35,1,1e-8);
-            compare(std::string(h?"PH3":"PS3")+"/S-lever",(total(pure,result,false)/2.5-sl)/(sv-sl),0.35,1,1e-8);
-        }
+        const auto result=recovered(pure,q,ref,h,300,h?"PH3":"PS3");
+        for(std::size_t i=0;i<2;++i) CHECK(pure.state(*result.temperature,result.molar_densities[i],{1}).pressure_density_derivative>0);
+        compare(std::string(h?"PH3":"PS3")+"/H-lever",(total(pure,result,true)/2.5-hl)/(hv-hl),0.35,1,1e-8);
+        compare(std::string(h?"PH3":"PS3")+"/S-lever",(total(pure,result,false)/2.5-sl)/(sv-sl),0.35,1,1e-8);
     }
     // #579: Gross (2001) pure benzene and toluene, k_ij -0.003 from hda-pc-saft/1 (Yu 2026, Table 2), NASA Glenn (2002)
     // NASA9 calorics at 1 bar. The start 1.05 x 370 K lies above the dew point, so the fixed-T seed has no liquid; it

@@ -25,7 +25,7 @@ plan:
 # Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
 # the counting and the band rule.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-code_budgets: {"core": 1572, "contributions": 1458, "properties": 7325, "equilibrium": 15504, "regression": 4975, "surface": 851, "bindings": 2981, "python": 2837, "total": 37503}
+code_budgets: {"core": 1572, "contributions": 1444, "properties": 7318, "equilibrium": 15504, "regression": 4975, "surface": 851, "bindings": 2981, "python": 2837, "total": 37482}
 
 property_categories: [Ideal, Residual, Total]
 
@@ -129,7 +129,7 @@ native:
   layers: [core, contributions, properties, equilibrium, regression, surface, bindings]
   layer_content:
     core: policy, the declared-choice and convergence contracts, the trace, shared numerical error calculations
-    contributions: ideal-gas and individual residual Helmholtz formulations; no CppAD-specific types or equilibrium solver
+    contributions: ideal-gas and individual residual Helmholtz formulations; no equilibrium solver; CppAD named only by the parameter-liveness predicate
     properties: Ideal, Residual and Total outputs derived from Contributions, reusable state evaluation and exact derivatives; no phase-equilibrium solver
     equilibrium: one equilibrium driver, shared rows and branch continuation; explicit native tangent-plane testing and phase discovery
     regression: parameter fitting against declared problems

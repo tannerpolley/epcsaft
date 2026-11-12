@@ -9,7 +9,6 @@ std::vector<std::string> CompiledSystem::coordinate_labels() const {
         for (std::size_t j = 0; j < primal_size; ++j) labels[j] = "ln(n[" + id(problem.phases[0].support[j]) + "]/N_feed)";
         return labels;
     }
-    const auto shape = layouts(*this);
     for (std::size_t p = 0; p < shape.size(); ++p) {
         const auto& name = problem.phases[p].name;
         for (std::size_t i = 0; i < shape[p].x.size(); ++i)
@@ -80,7 +79,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     const std::size_t components = model->parameters().component_count();
     PhasePointValues<Base> result;
     result.point = point;
-    result.shape = layouts(*this);
+    result.shape = shape;
     std::size_t offset = primal_size - free_intensive_count;
     result.temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
@@ -122,7 +121,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
                     static_cast<std::uint32_t>(phase));
         result.composition[phase] = std::move(values);
     }
-    result.standard = standard_term(
+    result.standard = fixed_standard ? *fixed_standard : standard_term(
         *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
     if constexpr (std::is_same_v<Base, double>) if (anchored_calorics())
         result.calorics = caloric_reference(*this, result.temperature, result.pressure);
@@ -143,9 +142,8 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     core::Scope scope("equilibrium_evaluate");
     if constexpr (std::is_same_v<Base, double>) if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
-    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) return matvec(B, feed_at(point)); else return this->balance; }();
+    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) if (problem.loading) return matvec(B, feed_at(point)); return this->balance; }();
     const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(prepared); else return this->feed_total; }();
-    const auto& shape = prepared.shape;
     const std::size_t components = model->parameters().component_count();
     const auto& z = model->parameters().charge_number;
     const auto& x = prepared.composition;
@@ -164,11 +162,6 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     const auto& standard = prepared.standard.derivative[0];
     PointEvaluationValues<Base> result;
     if (!chemical_phase) for (const auto& derivative : prepared.derivative) result.floor = std::max(result.floor, derivative.gradient_floor);
-    std::vector<std::optional<std::size_t>> phase_phi(shape.size());
-    std::size_t phi_index = 0;
-    for (const auto& item : rows) {
-        if (item.kind == RowKind::Electro) phase_phi[item.phase] = phi_index++;
-    }
     std::vector<Base> series;  // every condition row from one zeroth coefficient
     for (const auto& row : rows) {
         if (chemical_phase && (row.kind != RowKind::Chemical || row.phase != *chemical_phase)) {
@@ -183,7 +176,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
                 constraint += lambda[balance_row] * B[balance_row][species];
             }
             const Base electro = z[species] * (
-                phase_phi[row.phase].has_value() ? phi[*phase_phi[row.phase]] : 0.0);
+                charge_row[row.phase].has_value() ? phi[*charge_row[row.phase]] : 0.0);
             value = wide_math::log(std::max(x[row.phase][species] / volume[row.phase],
                                       std::numeric_limits<Base>::min()))
                 + derivative.gradient[2 + species] + standard[species]
@@ -247,7 +240,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
 template PointEvaluationValues<WiderScalar> CompiledSystem::evaluate_at(const PhasePointValues<WiderScalar>&, std::optional<std::size_t>) const;
 
 RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
-    const auto balance = matvec(B, feed_at(at.point));
+    const auto balance = problem.loading ? matvec(B, feed_at(at.point)) : this->balance;
     const double feed_total = feed_total_at(at);
     RowUncertainty out;
     out.terms.assign(rows.size(), 0.0); out.inner = out.terms;
@@ -314,7 +307,10 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             const double denominator = feed_total * GAS_CONSTANT_J_PER_MOL_K * ((enthalpy || internal) ? at.temperature : 1.0);
             terms = wide_math::abs(internal ? *problem.internal_energy_j : enthalpy ? *problem.enthalpy_j : *problem.entropy_j_per_k) / denominator;
             // Anchored g and g_T carry the reference and completion errors of their owner.
-            const auto errors = at.calorics ? reference_calorics(*this, at.temperature, at.pressure, false, false, false, 1, true) : ReferenceCalorics{};
+            ReferenceJets jets;
+            jets.temperature_order = 1;
+            jets.errors = true;
+            const auto errors = at.calorics ? reference_calorics(*this, at.temperature, at.pressure, jets) : ReferenceCalorics{};
             if (!errors.numerical_error_cause.empty()) { out.cause = errors.numerical_error_cause; continue; }
             for (std::size_t a = 0; a < at.shape.size(); ++a) {
                 const auto& support = problem.phases[a].support;
@@ -369,11 +365,9 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
             if (!reference.numerical_error_cause.empty() || !standard_error.cause.empty()) {
                 inner = NAN; out.cause = !reference.numerical_error_cause.empty() ? reference.numerical_error_cause : standard_error.cause;
             } else {
-                const double source = spec.correlation ? evaluate_reaction_properties(*spec.correlation, at.temperature).ln_k : wide_math::log(*spec.equilibrium_constant);
-                const double scale = spec.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
-                    ? reaction_reference_log_scale(*model, *problem.source_reference, spec.stoichiometry) : 0.0;
+                const auto source = source_log_k(*model, problem.source_reference, solid_law(spec), at.temperature);
                 inner = reference.numerical_error[0] + std::numeric_limits<double>::epsilon()
-                    * (wide_math::abs(source) + wide_math::abs(scale) + wide_math::abs(*reference.terminal_contraction));
+                    * (wide_math::abs(source.ln_k) + wide_math::abs(source.scale) + wide_math::abs(*reference.terminal_contraction));
                 for (std::size_t j = 0; j < components; ++j) if (!standard_error.absolute[0].empty())
                     inner += wide_math::abs(spec.stoichiometry[j]) * standard_error.absolute[0][j];
             }
@@ -386,15 +380,12 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
 template <typename Base>
 RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointValues<Base>& at,
     const std::vector<std::vector<Base>>& gradient_error) const {
-    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) return matvec(B, feed_at(at.point)); else return this->balance; }();
+    const auto balance = [&] { if constexpr (std::is_same_v<Base, double>) if (problem.loading) return matvec(B, feed_at(at.point)); return this->balance; }();
     const double feed_total = [&] { if constexpr (std::is_same_v<Base, double>) return feed_total_at(at); else return this->feed_total; }();
     RowUncertaintyValues<Base> out;
     out.terms.assign(rows.size(), 0); out.inner = out.terms;
     const auto components = model->parameters().component_count();
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * at.temperature;
-    std::vector<std::optional<std::size_t>> phi(at.shape.size());
-    std::size_t charge = 0;
-    for (const auto& row : rows) if (row.kind == RowKind::Electro) phi[row.phase] = primal_size + rank + charge++;
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i]; const auto p = row.phase, species = row.index;
         Base& terms = out.terms[i]; Base& inner = out.inner[i];
@@ -403,7 +394,7 @@ RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointVa
                 + wide_math::abs(at.derivative[p].gradient[2 + species]) + wide_math::abs(at.standard.derivative[0][species]);
             inner = gradient_error[p][2 + species];
             for (std::size_t k = 0; k < rank; ++k) terms += wide_math::abs(at.point[primal_size + k] * B[k][species]);
-            if (phi[p]) terms += wide_math::abs(model->parameters().charge_number[species] * at.point[*phi[p]]);
+            if (charge_row[p]) terms += wide_math::abs(model->parameters().charge_number[species] * at.point[primal_size + rank + *charge_row[p]]);
         } else if (row.kind == RowKind::Pressure) {
             terms = (model->parameters().ideal_gas ? wide_math::abs(sum(at.composition[p])) : 1.0)
                 + wide_math::abs(at.volume[p] * at.derivative[p].gradient[1]) + wide_math::abs(at.pressure * at.volume[p] / rt);
@@ -581,10 +572,6 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * T;
     const auto& standard_temperature_derivative = prepared.standard.derivative[1];
     const auto& z = model->parameters().charge_number;
-    std::vector<std::optional<std::size_t>> phi(problem.phases.size());
-    std::size_t phi_offset = 0;
-    for (const auto& row : rows)
-        if (row.kind == RowKind::Electro) phi[row.phase] = rank + phi_offset++;
     std::vector<Base> result(rows.size() * n, 0.0);
     auto at = [&](std::size_t row, std::size_t column) -> Base& {
         return result[row * n + column];
@@ -617,7 +604,7 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
                 prepared.standard.pressure_derivative[species];
             for (std::size_t balance_row = 0; balance_row < rank; ++balance_row)
                 at(row_index, primal_size + balance_row) = -B[balance_row][species];
-            if (phi[row.phase].has_value()) at(row_index, primal_size + *phi[row.phase]) = -z[species];
+            if (charge_row[row.phase].has_value()) at(row_index, primal_size + rank + *charge_row[row.phase]) = -z[species];
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = derivatives[row.phase];
             const std::size_t width = derivative.gradient.size();
@@ -994,6 +981,7 @@ RowSeries CompiledSystem::row_series(
             functions.push_back(q[1] * LTT);
         }
         CppAD::ADFun<double> source(q, functions);
+        SpeciesSlopeMap slopes(prepared.temperature, components, problem.reactions);
         for (auto &family : result.reaction_shift)
             family.assign(problem.reactions.size(), std::vector<double>(order + 1, 0.0));
         for (std::size_t k = 0; k <= order; ++k) {
@@ -1005,8 +993,7 @@ RowSeries CompiledSystem::row_series(
                     result.reaction_shift[j][r][k] = values[3 * r + j];
                 targets[r] = -values[3 * r];
             }
-            const auto species =
-                species_standard_slopes(prepared.temperature, components, problem.reactions, targets);
+            const auto species = slopes(targets);
             if (plane) for (std::size_t i = 0; i < components; ++i) result.standard_minus_plane[i][k] += species[i];
             for (std::size_t row = 0; row < rows.size(); ++row)
                 if (rows[row].kind == RowKind::Chemical)

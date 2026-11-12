@@ -36,6 +36,20 @@ EPC_API std::vector<std::vector<double>> standard_state_series(
     std::vector<std::vector<double>>* inverse_map = nullptr, CompiledSystem* observations = nullptr
 );
 
+// standard_state_series(T, C, reactions with affinity targets `values`, {}, 0).front(): the same validation, solve and
+// consistency refusal, so the same bits, with the stoichiometric matrix factored on first use and kept for later columns.
+struct StandardStateFactor;
+class SpeciesSlopeMap final {
+public:
+    SpeciesSlopeMap(double temperature, std::size_t components, std::vector<ReactionSpec> reactions);
+    std::vector<double> operator()(const std::vector<double>& values);
+private:
+    double temperature_;
+    std::size_t components_;
+    std::vector<ReactionSpec> reactions_;
+    std::shared_ptr<const StandardStateFactor> factor_;
+};
+
 // series[k][r] is d^k t_r / dT^k of the reaction target t_r = nu_r . g in J/mol:
 // affinity, -R T ln K, or -R T ln K(T) from the P3 correlation on the EOS density basis.
 EPC_API std::vector<std::vector<double>> reaction_target_series(

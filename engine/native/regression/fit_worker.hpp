@@ -2,6 +2,13 @@
 #ifdef _WIN32
 #include "fit_windows.hpp"
 #else
+#ifdef __APPLE__
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0  // SO_NOSIGPIPE on each worker socket
+#endif
+#elif !defined(SYS_close_range) && defined(__linux__) && defined(__x86_64__)
+#define SYS_close_range 436  // The package targets linux-64, including the glibc 2.17 sysroot.
+#endif
 using Channel = int;
 int extension_image = -1;
 
@@ -58,7 +65,7 @@ FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)
-FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j)
+FIELDS(MeasurementChart, a, b, c, d, e, f, g, h, i, j, k)
 // Observation validation refuses discovery and spinodal conditions, so these are not sent.
 auto fields(equilibrium::EquilibriumProblem& item) {
     auto& [origin, a, b, c, d, e, f, g, h, discovery, j, k, volume_m3, internal_energy_j, spinodal, l, m, loading, n, o, solids] = item;
@@ -217,5 +224,76 @@ struct Workers final {
         for (const pid_t process : processes)
             while (waitpid(process, nullptr, 0) < 0 && errno == EINTR) {}
     }
+    // One worker: its socket end as fd 0, the extension/native images as fd 3/4 and the standard streams. Its own
+    // process group keeps terminal signals away: the fit, not its workers, answers an interrupt.
+    void start() {
+        std::vector<char*> command;
+        for (auto& word : fit_host.worker) command.push_back(word.data());
+        command.push_back(nullptr);
+        char** arguments = command.data();
+        int pair[2];
+#ifdef __APPLE__
+        if (socketpair(AF_UNIX, SOCK_STREAM, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
+        sockets.push_back(pair[0]);
+        const int on = 1;
+        posix_spawn_file_actions_t actions;
+        posix_spawnattr_t attributes;
+        posix_spawn_file_actions_init(&actions);
+        posix_spawnattr_init(&attributes);
+        pid_t process = 0;
+        const int error = fcntl(pair[0], F_SETFD, FD_CLOEXEC) || fcntl(pair[1], F_SETFD, FD_CLOEXEC)
+            || setsockopt(pair[0], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on) || setsockopt(pair[1], SOL_SOCKET, SO_NOSIGPIPE, &on, sizeof on)
+            || posix_spawn_file_actions_adddup2(&actions, pair[1], 0) || posix_spawn_file_actions_adddup2(&actions, extension_image, 3)
+            || posix_spawn_file_actions_adddup2(&actions, native_image, 4) || posix_spawn_file_actions_addinherit_np(&actions, 1)
+            || posix_spawn_file_actions_addinherit_np(&actions, 2) || posix_spawnattr_setflags(&attributes, POSIX_SPAWN_CLOEXEC_DEFAULT | POSIX_SPAWN_SETPGROUP)
+            || posix_spawnattr_setpgroup(&attributes, 0) || posix_spawn(&process, arguments[0], &actions, &attributes, arguments, *_NSGetEnviron());
+        posix_spawn_file_actions_destroy(&actions);
+        posix_spawnattr_destroy(&attributes);
+#else
+        rlimit descriptors;
+        if (getrlimit(RLIMIT_NOFILE, &descriptors) != 0) throw std::runtime_error("fit worker process unavailable");
+        // linux-64: nr_open bounds descriptor allocation, even when the soft limit was lowered.
+        rlim_t nr_open = std::numeric_limits<int>::max();
+        std::ifstream("/proc/sys/fs/nr_open") >> nr_open;
+        const rlim_t descriptor_limit = std::min(descriptors.rlim_max, nr_open);
+        if (socketpair(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, pair) != 0) throw std::runtime_error("fit worker socket unavailable");
+        sockets.push_back(pair[0]);
+        pid_t process = 0;
+        const int error = (process = fork()) < 0;
+        if (process == 0) {
+            if (setpgid(0, 0) != 0) _exit(127);
+            const int sources[] = {fcntl(pair[1], F_DUPFD_CLOEXEC, 5), fcntl(extension_image, F_DUPFD_CLOEXEC, 5), fcntl(native_image, F_DUPFD_CLOEXEC, 5)};
+            const int targets[] = {0, 3, 4};
+            for (int i = 0; i < 3; ++i)
+                if (sources[i] < 0 || dup2(sources[i], targets[i]) < 0 || fcntl(targets[i], F_SETFD, 0) < 0) _exit(127);
+            if (syscall(SYS_close_range, 5, ~0U, 0) != 0) {
+                const int directory = static_cast<int>(syscall(SYS_open, "/proc/self/fd", O_RDONLY | O_DIRECTORY | O_CLOEXEC));
+                if (directory >= 0) {
+                    char buffer[4096];
+                    long bytes;
+                    while ((bytes = syscall(SYS_getdents64, directory, buffer, sizeof buffer)) > 0) {
+                        for (long at = 0; at < bytes;) {
+                            // linux_dirent64 has d_reclen at byte 16 and d_name at byte 19 on linux-64.
+                            unsigned short length;
+                            std::memcpy(&length, buffer + at + 16, sizeof length);
+                            int fd = 0;
+                            for (const char* digit = buffer + at + 19; *digit >= '0' && *digit <= '9'; ++digit) fd = 10 * fd + *digit - '0';
+                            if (fd >= 5 && fd != directory && close(fd) != 0) _exit(127);
+                            at += length;
+                        }
+                    }
+                    if (bytes < 0 || close(directory) != 0) _exit(127);
+                } else for (rlim_t fd = 5; fd < descriptor_limit; ++fd)
+                    if (close(static_cast<int>(fd)) != 0 && errno != EBADF) _exit(127);
+            }
+            execve(arguments[0], arguments, environ);
+            _exit(127);
+        }
+#endif
+        close(pair[1]);
+        if (error != 0) throw std::runtime_error("fit worker process unavailable");
+        processes.push_back(process);
+    }
 };
+unsigned processors() { return std::max(1u, std::thread::hardware_concurrency()); }
 #endif

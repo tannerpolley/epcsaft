@@ -59,13 +59,13 @@ class WideIonic {
         const AD N=independent[2]+independent[3]+independent[4],rho=N/independent[1];
         const std::vector<AD> x{independent[2]/N,independent[3]/N,independent[4]/N};
         const auto sigma=segment_sigma(independent[0],p),diameter=segment_diameter(independent[0],p,sigma);
-        const auto delta=association_delta_values(independent[0],rho,x,p,sigma,diameter,p.association_energy_over_k,p.association_volume);
+        const auto delta=association_delta(independent[0],rho,x,p,sigma,diameter);
         const AD site=2/(1+CppAD::sqrt(1+4*rho*NUMBER_DENSITY_PER_ANGSTROM3*x[0]*delta[1]));
         const std::vector<AD> sites{site,site};
         const auto electro=electrolyte_contribution(independent[0],rho,x,rx,p);
         const auto born=born_contribution(independent[0],x,p,electro.bulk_relative_permittivity);
-        const auto terms=residual_helmholtz(independent[0],rho,x,p,sigma,diameter,sites,electro.debye_huckel,born, association_products(rho, x, p, sites, delta));
-        std::vector<AD> dependent{N*(terms.hard_chain+terms.dispersion+terms.association+terms.debye_huckel+terms.born+terms.dipolar)};
+        const auto terms=residual_helmholtz(independent[0],rho,x,p,sigma,diameter,sites, association_products(rho, x, p, sites, delta));
+        std::vector<AD> dependent{N*(terms.hard_chain+terms.dispersion+terms.association+electro.debye_huckel+born+terms.dipolar)};
         CppAD::ADFun<Wide> energy(independent,dependent);auto nested=energy.base2ad();
         std::vector<AD> point{Wide(c.problem.temperature.value),Wide(1.8e-5),Wide(rx[0]),Wide(y),Wide(y),Wide(c.parameters.dispersion_energy_over_k[0])};
         CppAD::Independent(point);

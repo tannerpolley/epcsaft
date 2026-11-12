@@ -17,16 +17,6 @@ struct ThermochemistryRecord final {
     double standard_pressure = 0.0;
     std::vector<std::vector<IdealInterval>> component_intervals;
 };
-struct IdealProperties final {
-    double enthalpy = 0.0, internal_energy = 0.0, entropy = 0.0;
-    double isobaric_heat_capacity = 0.0, isochoric_heat_capacity = 0.0;
-};
-
-struct IdealPropertiesEvaluation final {
-    std::optional<IdealProperties> value;
-    ThermochemistryStatus status = ThermochemistryStatus::Nonfinite;
-};
-
 template <typename Scalar>
 struct IdealMixtureValue final {
     Scalar enthalpy = Scalar(0.0);
@@ -34,6 +24,11 @@ struct IdealMixtureValue final {
     Scalar entropy = Scalar(0.0);
     Scalar isobaric_heat_capacity = Scalar(0.0);
     Scalar isochoric_heat_capacity = Scalar(0.0);
+};
+
+struct IdealPropertiesEvaluation final {
+    std::optional<IdealMixtureValue<double>> value;
+    ThermochemistryStatus status = ThermochemistryStatus::Nonfinite;
 };
 
 template <typename Scalar>

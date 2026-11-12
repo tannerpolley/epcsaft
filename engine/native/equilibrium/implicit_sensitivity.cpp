@@ -420,7 +420,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     if (!rows_through(state, order, path.series)) return path;
     if (compiled.has_caloric_condition() && std::any_of(path.series.temperature.begin() + 1,
             path.series.temperature.end(), [](double v) { return v != 0.0; })) {
-        const auto calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, false, false, false, 1);
+        const auto calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, {});
         if (calorics.thermal_boundary) {
             path.status = SolvedStateActionStatus::ThermalBoundary;
             path.diagnostic_message = "caloric condition derivative crosses an interval endpoint";
@@ -1087,8 +1087,12 @@ static SolvedStateActionBatch evaluate_action(
         if (!shared->calorics || need != shared->caloric || pairs != shared->pairs) {
             shared->caloric = need;
             shared->pairs = pairs;
-            shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure,
-                                                  true, need[2], need[1], need[0], false, pairs);
+            ReferenceJets jets;
+            jets.temperature_order = std::max<std::size_t>(need[0], 2);  // with the heat-capacity column
+            jets.pressure = need[2];
+            jets.parameters = need[1];
+            jets.pairs = pairs;
+            shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, jets);
         }
         calorics = &*shared->calorics;
     }

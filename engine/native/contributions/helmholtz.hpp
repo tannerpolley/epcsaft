@@ -129,8 +129,6 @@ struct HelmholtzResult final {
     Scalar hard_chain;
     Scalar dispersion;
     Scalar association;
-    Scalar debye_huckel;
-    Scalar born;
     Scalar dipolar;
     Scalar cation_mixing;
 };
@@ -282,11 +280,6 @@ Scalar hard_sphere_contact_departure(const Fixed& reduced_diameter, const Scalar
         + 3.0 * reduced_diameter * zeta_2 / (one_minus_eta * one_minus_eta)
         + 2.0 * reduced_diameter * reduced_diameter * zeta_2 * zeta_2
             / (one_minus_eta * one_minus_eta * one_minus_eta);
-}
-
-template <typename Scalar, typename Fixed>
-Scalar hard_sphere_contact(const Fixed& reduced_diameter, const Scalar& zeta_2, const Scalar& eta) {
-    return Scalar(1.0) + hard_sphere_contact_departure(reduced_diameter, zeta_2, eta);
 }
 
 template <typename Scalar, typename Fixed>
@@ -600,12 +593,10 @@ HelmholtzResult<Scalar> residual_helmholtz(
     const std::vector<Fixed>& sigma,
     const std::vector<Fixed>& diameter,
     const std::vector<Scalar>& site_fraction,
-    const Scalar& debye_huckel,
-    const Scalar& born,
     const std::pair<std::vector<Scalar>, std::vector<Scalar>>& products,
     const IsothermMoments<Fixed>* prepared = nullptr
 ) {
-    if (parameters.ideal_gas) return {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
+    if (parameters.ideal_gas) return {Scalar(0), Scalar(0), Scalar(0), Scalar(0), Scalar(0)};
     const std::size_t size = parameters.segment_count.size();
     // EqID: angstrom_number_density
     const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
@@ -688,9 +679,18 @@ HelmholtzResult<Scalar> residual_helmholtz(
         }
         association += term;
     }
-    // EqID: residual_helmholtz
-    return {hard_chain, dispersion, association, debye_huckel, born, dipolar,
-        cation_mixing_helmholtz(mole_fractions, parameters)};
+    return {hard_chain, dispersion, association, dipolar, cation_mixing_helmholtz(mole_fractions, parameters)};
+}
+
+// EqID: residual_helmholtz
+// N a_res in one addition order, shared by the tape, the density series and the wider replay so they agree to the
+// last bit; the electrostatic terms come from supported_electrostatics. Cation mixing enters only when declared.
+template <typename Total, typename Scalar, typename ParameterSet>
+auto extensive_residual_helmholtz(const Total& total, const HelmholtzResult<Scalar>& terms, const Scalar& debye_huckel,
+    const Scalar& born, const ParameterSet& parameters) {
+    auto result = total * (terms.hard_chain + terms.dispersion + debye_huckel + born + terms.association + terms.dipolar);
+    if (!parameters.cation_mixing.empty()) result += total * terms.cation_mixing;
+    return result;
 }
 
 // EqExclude: error-estimate gradient

@@ -919,6 +919,10 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int
     rows = {q, std::vector<double>(S), std::vector<std::vector<double>>(S, std::vector<double>(n)),
             std::vector<std::vector<double>>(S, std::vector<double>(n * (n + 1) / 2)), std::vector<std::pair<int, std::string>>(S, {3, ""}), order};
     const double T = q[0], P = q[1], RT = epcsaft::GAS_CONSTANT_J_PER_MOL_K * T;
+    eq::ReferenceJets jets;
+    jets.temperature_order = std::max(order, 0);
+    jets.parameters = order >= 1 && first < n;
+    jets.pairs = pairs;
     for (std::size_t s = 0; s < S; ++s) {
         const auto& solid = context.solids[s];
         const auto row = std::to_string(first + s) + ": solid " + solid.name + ": ";
@@ -928,7 +932,7 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int
         const double P0 = *solid.reference->reference_pressure_pa;
         eq::SolidLogK law;
         try {  // the reference is evaluated at its fixed source pressure, so it is independent of P
-            law = eq::solid_log_k(*context.model, T, P0, context.reference, {solid}, std::max(order, 0), order >= 1 && first < n, pairs)[0];
+            law = eq::solid_log_k(*context.model, T, P0, context.reference, {solid}, jets)[0];
         } catch (const std::exception& error) {
             const bool outside = T < solid.correlation->temperature_min || T > solid.correlation->temperature_max;
             fail(0, outside ? "OutsideInterval" : "unavailable_derivative", error.what());

@@ -303,6 +303,18 @@ struct SolidLogK final {
     NeutralReferenceReactionDiagnostic reference;
 };
 
+// The reference columns a caller asks for at (T, P): temperature derivatives through temperature_order, pressure jets,
+// jets in every active parameter, the order of the consumed mixed reference columns, the parameter coordinates whose
+// second derivatives are needed, and numerical error estimates. Each owner reads only the fields it uses.
+struct ReferenceJets final {
+    std::size_t temperature_order = 0;
+    bool pressure = false;
+    bool parameters = false;
+    std::size_t reference_order = 0;
+    std::vector<std::size_t> pairs;
+    bool errors = false;
+};
+
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.
 struct StandardTerm final {
@@ -438,6 +450,9 @@ struct CompiledSystem final {
     std::size_t jacobian_rank = 0;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
     std::vector<CompiledSolid> solids;
+    std::vector<Layout> shape;  // per phase: its solved-chart columns
+    std::vector<std::optional<std::size_t>> charge_row;  // per phase: ordinal of its charge row and multiplier, if any
+    std::optional<StandardTerm> fixed_standard;  // the prepared standard term when T and P are both fixed
 
     // EqIDs solid_standard_gibbs and solid_saturation_index: g_s/RT and A_s/RT = lambda.B nu_s - g_s/RT.
     double solid_gibbs(const PhasePoint& prepared, std::size_t solid) const;
@@ -514,6 +529,7 @@ struct CompiledSystem final {
         return feed;
     }
     double feed_total_at(const PhasePoint& at) const {
+        if (!problem.loading) return feed_total;
         const auto feed = feed_at(at.point);
         return std::accumulate(feed.begin(), feed.end(), 0.0);
     }
@@ -569,9 +585,9 @@ EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const Equilibri
 
 // Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
 void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
+// Reads jets.temperature_order, parameters and pairs.
 std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,
-    const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&, std::size_t temperature_order = 1,
-    bool parameter_jets = false, const std::vector<std::size_t>& pairs = {});
+    const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&, const ReferenceJets& jets);
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
 CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 
@@ -1065,10 +1081,9 @@ struct ReferenceCalorics final {
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::string message;
 };
+// T columns through max(jets.temperature_order, 1); reads pressure, parameters, pairs and errors.
 EPC_API ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
-                                     bool heat_capacity, bool pressure_slope = false,
-                                     bool parameter_slopes = false, std::size_t derivative_order = 2, bool numerical_errors = false,
-                                     const std::vector<std::size_t> &pair_coordinates = {});
+                                             const ReferenceJets &jets);
 // Per unit x of one phase: ideal h = sum x(g - T g_T + RT), s = sum x(R - g_T - R ln(x/v rho0)) and cp = sum x(R - T g_TT)
 // from the Taylor polynomial of the anchored g at its centre in (dT, dP, dtheta), exact through the computed order.
 // Unavailable columns are skipped; their consumers refuse the motions that read them.

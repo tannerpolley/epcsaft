@@ -444,21 +444,27 @@ void properties_thermochemistry_p3() {
 }
 
 
+// The aqueous 2B-water Na+/Cl- liquid under the component-mixing, density-temperature and dipolar permittivity forms.
+std::array<epcsaft::Parameters, 3> permittivity_variants() {
+    auto component_mixing = properties_support::aqueous_electrolyte();
+    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
+    component_mixing.relative_permittivity = {78.09, 8.0, 8.0};
+    auto density_temperature = properties_support::aqueous_electrolyte();  // Yang2024 water d_V, d_T (full EOS 6.2)
+    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
+    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+    auto dipolar = properties_support::aqueous_electrolyte();  // Rueben2024 PT2 records (full EOS 6.4)
+    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563};
+    dipolar.correlation_integral_parameter = {0.1276, 0.215, 0.138};
+    return {component_mixing, density_temperature, dipolar};
+}
+
 // Issue 26: every native permittivity form on the aqueous 2B-water Na+/Cl- liquid.
 // A density-dependent eps_r enters pressure, the closure and every pressure-chart chain.
 void modular_permittivity_actions() {
     auto ion_suppression = properties_support::aqueous_electrolyte();
-    auto component_mixing = ion_suppression;
-    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
-    component_mixing.relative_permittivity = {78.09, 8.0, 8.0};
-    auto density_temperature = ion_suppression;  // Yang2024 water d_V, d_T (full EOS 6.2)
-    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
-    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
-    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
-    auto dipolar = ion_suppression;  // Rueben2024 PT2 records (full EOS 6.4)
-    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
-    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563};
-    dipolar.correlation_integral_parameter = {0.1276, 0.215, 0.138};
+    const auto [component_mixing, density_temperature, dipolar] = permittivity_variants();
     const std::array<std::pair<const char*, epcsaft::Parameters>, 4> forms = {{
         {"ion-suppression", ion_suppression}, {"component-mixing", component_mixing},
         {"density-temperature", density_temperature}, {"dipolar", dipolar}}};
@@ -687,17 +693,7 @@ double shifted_energy(const EnergyCase& item, const std::vector<std::vector<doub
 }
 
 void energy_action_ladders() {
-    auto density_temperature = properties_support::aqueous_electrolyte();
-    density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
-    density_temperature.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
-    density_temperature.dielectric_temperature_k = {1403.0, 0.0, 0.0};
-    auto dipolar = properties_support::aqueous_electrolyte();
-    dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
-    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563};
-    dipolar.correlation_integral_parameter = {0.1276, 0.215, 0.138};
-    auto component_mixing = properties_support::aqueous_electrolyte();
-    component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
-    component_mixing.relative_permittivity = {78.09, 8.0, 8.0};
+    const auto [component_mixing, density_temperature, dipolar] = permittivity_variants();
     const std::vector<epcsaft::ActiveParameter> aqueous_active = {
         {epcsaft::ParameterFamily::Kij, {1, 3}},
         {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 2}}};

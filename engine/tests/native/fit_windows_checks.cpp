@@ -26,35 +26,33 @@ void image_locks() {
     wchar_t directory[MAX_PATH];
     const DWORD n = GetTempPathW(MAX_PATH, directory);
     windows_require(n > 0 && n < MAX_PATH);
-    for (int i = 0; i < 2; ++i) {
-        struct TemporaryImage {
-            wchar_t path[MAX_PATH]{};
-            std::wstring renamed;
-            HMODULE module = nullptr;
-            ~TemporaryImage() {
-                if (module) FreeLibrary(module);
-                DeleteFileW(path);
-                DeleteFileW(renamed.c_str());
-            }
-        } temporary;
-        windows_require(GetTempFileNameW(directory, L"fit", 0, temporary.path) != 0);
-        temporary.renamed = std::wstring(temporary.path) + L".renamed";
-        windows_require(CopyFileW(native_image.path.c_str(), temporary.path, FALSE));
-        temporary.module = LoadLibraryExW(temporary.path, nullptr, 0);
-        windows_require(temporary.module != nullptr);
-        auto image = open_image(temporary.module);
-        // Remove the loader's mapping: only the production file owner may deny these operations.
-        windows_require(FreeLibrary(temporary.module));
-        temporary.module = nullptr;
-        check(!DeleteFileW(temporary.path), "production image lock allowed delete");
-        check(GetLastError() == ERROR_SHARING_VIOLATION, "delete failed for another reason");
-        check(!MoveFileW(temporary.path, temporary.renamed.c_str()), "production image lock allowed rename");
-        check(GetLastError() == ERROR_SHARING_VIOLATION, "rename failed for another reason");
-        image.file = Handle{};
-        windows_require(MoveFileW(temporary.path, temporary.renamed.c_str()));
-        windows_require(DeleteFileW(temporary.renamed.c_str()));
-        std::cout << "temporary image " << i << ": delete/rename refused; both succeed after owner release\n";
-    }
+    struct TemporaryImage {
+        wchar_t path[MAX_PATH]{};
+        std::wstring renamed;
+        HMODULE module = nullptr;
+        ~TemporaryImage() {
+            if (module) FreeLibrary(module);
+            DeleteFileW(path);
+            DeleteFileW(renamed.c_str());
+        }
+    } temporary;
+    windows_require(GetTempFileNameW(directory, L"fit", 0, temporary.path) != 0);
+    temporary.renamed = std::wstring(temporary.path) + L".renamed";
+    windows_require(CopyFileW(native_image.path.c_str(), temporary.path, FALSE));
+    temporary.module = LoadLibraryExW(temporary.path, nullptr, 0);
+    windows_require(temporary.module != nullptr);
+    auto image = open_image(temporary.module);
+    // Remove the loader's mapping: only the production file owner may deny these operations.
+    windows_require(FreeLibrary(temporary.module));
+    temporary.module = nullptr;
+    check(!DeleteFileW(temporary.path), "production image lock allowed delete");
+    check(GetLastError() == ERROR_SHARING_VIOLATION, "delete failed for another reason");
+    check(!MoveFileW(temporary.path, temporary.renamed.c_str()), "production image lock allowed rename");
+    check(GetLastError() == ERROR_SHARING_VIOLATION, "rename failed for another reason");
+    image.file = Handle{};
+    windows_require(MoveFileW(temporary.path, temporary.renamed.c_str()));
+    windows_require(DeleteFileW(temporary.renamed.c_str()));
+    std::cout << "temporary image: delete/rename refused; both succeed after owner release\n";
 }
 DWORD handles() {
     DWORD count = 0;

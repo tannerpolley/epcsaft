@@ -832,8 +832,11 @@ void check_s2() {
             const double coarse = (value_at_shift(2.0 * step) - value_at_shift(-2.0 * step)) / (4.0 * step);
             const double fine = (value_at_shift(step) - value_at_shift(-step)) / (2.0 * step);
             const double richardson = (4.0 * fine - coarse) / 3.0;
+            epcsaft::equilibrium::ReferenceJets jets;
+            jets.temperature_order = 2;
+            jets.parameters = true;
             const auto calorics = epcsaft::equilibrium::reference_calorics(
-                compiled, problem.temperature.value, problem.pressure.value, false, false, true);
+                compiled, problem.temperature.value, problem.pressure.value, jets);
             CHECK(calorics.status == epcsaft::equilibrium::SolvedStateActionStatus::Available);
             double direct = 0.0;
             for (std::size_t component = 0; component < solved.mole_fractions.size(); ++component) {

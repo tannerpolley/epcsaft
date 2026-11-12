@@ -9,8 +9,6 @@
 #include "core/linear_error.hpp"
 #include "contributions/helmholtz.hpp"
 
-#include <cppad/cppad.hpp>
-
 #include <Eigen/Dense>
 
 #include <algorithm>
@@ -25,15 +23,13 @@
 namespace epcsaft {
 
 template <typename Scalar, typename ParameterSet, typename Fixed>
-std::vector<Scalar> association_delta_values(
+std::vector<Scalar> association_delta(
     const Fixed& temperature,
     const Scalar& molar_density,
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
     const std::vector<Fixed>& sigma,
-    const std::vector<Fixed>& diameter,
-    const std::vector<Fixed>& association_energy_over_k,
-    const std::vector<Fixed>& association_volume
+    const std::vector<Fixed>& diameter
 ) {
     const std::size_t sites = parameters.site_component.size();
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
@@ -43,8 +39,8 @@ std::vector<Scalar> association_delta_values(
     const bool thermal = !parameters.temperature_law_slot.empty() || !parameters.association_thermal_rule.empty();
     std::vector<Fixed> law_energy, law_volume;
     if (thermal) {
-        law_energy = association_energy_over_k;
-        law_volume = association_volume;
+        law_energy.assign(parameters.association_energy_over_k.begin(), parameters.association_energy_over_k.end());
+        law_volume.assign(parameters.association_volume.begin(), parameters.association_volume.end());
         for (std::size_t a = 0; a < sites; ++a)
             for (std::size_t b = a; b < sites; ++b) {
                 const std::size_t slot = a * sites + b, mirror = b * sites + a;
@@ -65,9 +61,6 @@ std::vector<Scalar> association_delta_values(
             law_volume[slot] = law_volume[mirror] = volume;
         }
     }
-    const auto& energy = thermal ? law_energy : association_energy_over_k;
-    const auto& volume = thermal ? law_volume : association_volume;
-
     std::vector<Scalar> delta(sites * sites, Scalar(0.0));
     for (std::size_t a = 0; a < sites; ++a) {
         const auto i = static_cast<std::size_t>(parameters.site_component[a]);
@@ -78,7 +71,7 @@ std::vector<Scalar> association_delta_values(
             }
             const auto j = static_cast<std::size_t>(parameters.site_component[b]);
             // EqID: association_contact
-            const Scalar contact = hard_sphere_contact(
+            const Scalar contact = Scalar(1.0) + hard_sphere_contact_departure(
                 diameter[i] * diameter[j] / (diameter[i] + diameter[j]), zeta[2], zeta[3]);
             // Wolbach--Sandler pairs (active == 2): the Gross2002 Eq. 3 size
             // factor times sigma_ij^3 is the geometric-mean diameter cubed.
@@ -86,24 +79,17 @@ std::vector<Scalar> association_delta_values(
                     ? scalar_sqrt(sigma[i] * sigma[j]) : Fixed(0.5) * (sigma[i] + sigma[j]))
                 * (Fixed(1.0) - pair_correction(temperature, parameters, laws, TemperatureLaw::Lij, i, j));
             // EqID: association_strength
+            const Fixed energy = thermal ? law_energy[pair] : Fixed(parameters.association_energy_over_k[pair]);
+            const Fixed volume = thermal ? law_volume[pair] : Fixed(parameters.association_volume[pair]);
             delta[pair] = contact
                 * (scalar_exp(
-                       energy[pair] / temperature
+                       energy / temperature
                    ) - Fixed(1.0))
                 * size_ij * size_ij * size_ij
-                * volume[pair];
+                * volume;
         }
     }
     return delta;
-}
-
-// EqExclude: scalar utility dispatch
-inline std::vector<double> association_delta(
-    double temperature, double molar_density, const std::vector<double>& mole_fractions,
-    const Parameters& parameters, const std::vector<double>& sigma, const std::vector<double>& diameter
-) {
-    return association_delta_values(temperature, molar_density, mole_fractions, parameters, sigma, diameter,
-        parameters.association_energy_over_k, parameters.association_volume);
 }
 
 template <typename Scalar, typename ParameterSet, typename Fixed>
@@ -163,9 +149,9 @@ inline std::optional<double> admitted_pivot_ratio(const Eigen::FullPivLU<Eigen::
 
 // EqExclude: numerical iteration mechanics
 // Dense and small: the site count is single digits, so the factorisation never
-// shows up next to the tape sweeps. A nearly singular Jacobian is the signal to
-// fall back to substitution.
-inline std::vector<double> solve_linear(
+// shows up next to the tape sweeps. A nearly singular Jacobian returns nothing,
+// the signal to fall back to substitution.
+inline std::optional<std::vector<double>> solve_linear(
     const Eigen::MatrixXd& matrix,
     const std::vector<double>& right_hand_side,
     double* pivot_ratio = nullptr, std::optional<core::Convergence>* first = nullptr,
@@ -191,14 +177,14 @@ inline std::vector<double> solve_linear(
                 + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
             return r;
         });
-        throw std::runtime_error("association Jacobian is ill-conditioned");
+        return std::nullopt;
     }
     if (pivot_ratio != nullptr) *pivot_ratio = *ratio;
     const auto size = static_cast<Eigen::Index>(right_hand_side.size());
     const Eigen::VectorXd solution = factorization.solve(
         Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), size)
     );
-    return {solution.data(), solution.data() + size};
+    return std::vector<double>(solution.data(), solution.data() + size);
 }
 
 // EqExclude: numerical iteration mechanics
@@ -341,10 +327,15 @@ inline std::vector<double> solve_site_fractions(
                 if (!in_domain(next)) next.clear();
                 else if (detailed) scope.observe([&] { method.emplace("analytic association start"); });
             }
-            if (next.empty()) try {
-                double pivot_ratio = 0.0;
-                const auto step = solve_linear(mass_action_jacobian(mole_fractions, parameters, fractions,
-                    number_density, delta, bonded), negative_residual, &pivot_ratio, &first, &conditioning, fractions, iteration);
+            double pivot_ratio = 0.0;
+            const auto solved = next.empty() ? solve_linear(mass_action_jacobian(mole_fractions, parameters, fractions,
+                number_density, delta, bonded), negative_residual, &pivot_ratio, &first, &conditioning, fractions, iteration)
+                : std::nullopt;
+            // singular or ill-conditioned: fall through to substitution
+            if (next.empty() && !solved && detailed)
+                scope.observe([&] { method.emplace("association Jacobian is ill-conditioned"); });
+            if (solved) {
+                const auto& step = *solved;
                 // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.
                 double alpha = 1.0;
                 for (std::size_t a = 0; a < sites; ++a) {
@@ -364,9 +355,6 @@ inline std::vector<double> solve_site_fractions(
                     }
                 }
                 if (detailed && next.empty()) scope.observe([&] { method.emplace("Newton line search exhausted"); });
-            } catch (const std::exception& error) {
-                if (detailed) scope.observe([&] { method.emplace(error.what()); });
-                // singular or ill-conditioned: fall through to substitution
             }
         }
         if (next.empty()) {

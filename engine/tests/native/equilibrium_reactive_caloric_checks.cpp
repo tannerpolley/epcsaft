@@ -166,7 +166,8 @@ inline Local local(const HelmholtzModel& model,const CompiledSystem& compiled,do
     result.diagnostics=raw.diagnostics;
     result.v=1/result.rho;result.vt=*raw.results[0].value;result.vp=*raw.results[1].value;
     if (!compiled.problem.reactions.empty()) {
-        const auto ref=reference_calorics(compiled,T,P,true,true,false,2);
+        ReferenceJets jets; jets.temperature_order=2; jets.pressure=true;
+        const auto ref=reference_calorics(compiled,T,P,jets);
         if(ref.status!=SolvedStateActionStatus::Available) throw std::runtime_error(ref.message);
         for(std::size_t i=0;i<x.size();++i) {
             const double g=column(ref,0,0,i),gt=column(ref,1,0,i);
@@ -537,7 +538,7 @@ public:
     // h,s,cp,v,u,cv,vT,vP, all at fixed x; increment actions retain the unit.
     Frozen(const Case& source,const CompiledSystem& compiled,const Sample& center):
         c(source),T(*center.solved.temperature),P(*center.solved.pressure),x(center.solved.mole_fractions),
-        baseline(c.parameters,c.active,complete(c)),ref(reference_calorics(compiled,T,P,true,true,true,4)) {
+        baseline(c.parameters,c.active,complete(c)),ref(reference_calorics(compiled,T,P,[]{ReferenceJets j; j.temperature_order=4; j.pressure=j.parameters=true; return j;}())) {
         CHECK(ref.status==SolvedStateActionStatus::Available);
         using AD=CppAD::AD<double>;std::vector<AD> independent{T};CppAD::Independent(independent);
         const AD t=independent[0];const auto thermal=evaluate_ideal_correlation(c.records.component_intervals[0][0].correlation,t,1e5);
@@ -600,7 +601,8 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
             {c.problem.reactions[0].stoichiometry},{*c.problem.reactions[0].reference},true,std::nullopt,1);
         CHECK(references[0].terminal_contraction_pressure_derivative);
         const double rtcp=R*T**references[0].terminal_contraction_pressure_derivative;
-        const auto ref=reference_calorics(compiled,T,P,true,true,false,2);
+        ReferenceJets jets; jets.temperature_order=2; jets.pressure=true;
+        const auto ref=reference_calorics(compiled,T,P,jets);
         const double anchored_a=column(ref,0,1,0),anchored_b=column(ref,0,1,1);
         check("F4/gauge-A","v_G",anchored_a,0,1e-10);
         check("F4/gauge-B","v_G",anchored_b,-rtcp,1e-10);
@@ -728,7 +730,8 @@ inline std::vector<std::vector<NamedDirection>> requests(const Case& c,const std
 // Sum_i nu_i g_{i,T^m P^n theta_p theta_q} = -R (T C_{mn} + m C_{m-1,n}) for the contraction C, mixed-differenced in binary128.
 inline void ionic_columns(const Case& c,const CompiledSystem& compiled,const Sample& center,const std::string& inputs,WideIonic& oracle) {
     const std::vector<std::size_t> coordinates{0,1};
-    const auto ref=reference_calorics(compiled,c.problem.temperature.value,c.problem.pressure.value,true,true,true,4,false,coordinates);
+    ReferenceJets jets; jets.temperature_order=4; jets.pressure=jets.parameters=true; jets.pairs=coordinates;
+    const auto ref=reference_calorics(compiled,c.problem.temperature.value,c.problem.pressure.value,jets);
     const auto& nu=c.problem.reactions[0].stoichiometry;
     const Wide T=c.problem.temperature.value,P=c.problem.pressure.value,epsilon=c.parameters.dispersion_energy_over_k[0],na=c.parameters.dispersion_energy_over_k[1];
     const std::size_t family[3][3]={{0,3,5},{1,4,0},{2,0,0}};  // C, C_P, C_PP / C_T, C_TP / C_TT by (m,n)
@@ -926,7 +929,8 @@ inline void partial_ion_records() {
         if (complete) records.component_intervals[2] = records.component_intervals[0];
         HelmholtzModel model(parameters, {}, records);
         const auto compiled = compile_problem(model, problem);
-        const auto ref = reference_calorics(compiled, 298.15, 1e5, true, false, false, 2);
+        ReferenceJets jets; jets.temperature_order = 2;
+        const auto ref = reference_calorics(compiled, 298.15, 1e5, jets);
         auto ph = problem;
         ph.temperature = FreeValue::variable(298.15);
         ph.enthalpy_j = 0.0;
@@ -978,7 +982,8 @@ inline void mixed_record_conflict() {
     for (double slope : {0.0, 0.25}) {
         records.component_intervals[0] = {{200, 400, true, true, {IdealPolynomial{{30}, 298.15, 100, 10}, 1e5}}};
         records.component_intervals[1] = {{200, 400, true, true, {IdealPolynomial{{30, slope}, 298.15, 100, 10}, 1e5}}};
-        const auto ref = reference_calorics(compile_problem(HelmholtzModel(parameters, {}, records), problem), 318.15, 1e5, true);
+        ReferenceJets jets; jets.temperature_order = 2;
+        const auto ref = reference_calorics(compile_problem(HelmholtzModel(parameters, {}, records), problem), 318.15, 1e5, jets);
         std::string cause;
         double g_cation = 0.0;
         try { g_cation = column(ref, 0, 0, 2); } catch (const std::exception& e) { cause = e.what(); }
@@ -997,7 +1002,8 @@ inline void dependency_checks() {
     const auto solved = solve_compiled(compiled);
     CHECK(solved.has_state());
     const auto q = quantities(2);
-    const auto ref = reference_calorics(compiled, 260.0, 3e6, true, true, false, 2);
+    ReferenceJets jets; jets.temperature_order = 2; jets.pressure = true;
+    const auto ref = reference_calorics(compiled, 260.0, 3e6, jets);
     const double hB = column(ref, 0, 0, 1) - 260.0 * column(ref, 1, 0, 1) + R * 260.0;
     const double sB = -column(ref, 1, 0, 1) + R * (1 + std::log(R * 260.0 / 1e5));
     const double cpB = -260.0 * column(ref, 2, 0, 1) + R;

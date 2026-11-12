@@ -39,20 +39,6 @@ std::vector<double> CompiledSystem::optimizer_identity() const {
 
 namespace {
 
-std::vector<Layout> layouts(const CompiledSystem& compiled) {
-    std::vector<Layout> result;
-    std::size_t offset = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        Layout item;
-        item.x.resize(phase.support.size());
-        for (std::size_t i = 0; i < phase.support.size(); ++i) item.x[i] = offset++;
-        if (phase.amount.kind == AmountKind::Free) item.amount = offset++;
-        item.volume = offset++;
-        result.push_back(std::move(item));
-    }
-    return result;
-}
-
 // EqIDs ideal_mole_fraction_reaction, ideal_molarity_reaction and ideal_reaction_amount_coordinates.
 CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
     using AD = CppAD::AD<double>;
@@ -167,12 +153,25 @@ std::optional<double> reference_solvent_anchor(const std::vector<NeutralReferenc
     return d.empty() || !(d.front().solvent_density > 0.0) ? std::nullopt : std::optional(d.front().solvent_density);
 }
 
+// The source part of ln K^rho = ln_k + scale + C of a reaction or solid law at T: ln K_src with its T slope and curvature
+// from a correlation, or the log of a scalar K, and the common-molality scale when its source basis needs one.
+SolidLogK source_log_k(const HelmholtzModel& model, const std::optional<NeutralReferenceDeclaration>& declaration,
+                       const ReactionSpec& reaction, double temperature) {
+    SolidLogK result;
+    if (reaction.correlation) {
+        const auto law = evaluate_reaction_properties(*reaction.correlation, temperature);
+        result.ln_k = law.ln_k, result.slope = law.derivative, result.curvature = law.second_derivative;
+    } else result.ln_k = std::log(*reaction.equilibrium_constant);
+    if (reaction.reference && reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
+        result.scale = reaction_reference_log_scale(model, *declaration, reaction.stoichiometry);
+    return result;
+}
+
+// Reads jets.temperature_order, pressure, parameters, reference_order and pairs.
 std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
-    std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, bool pressure_jets,
-    const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure = nullptr,
-    std::size_t temperature_order = 0, bool parameter_jets = false, std::size_t reference_order = 0,
-    const std::vector<std::size_t>& pairs = {}) {
+    std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, const ReferenceJets& jets,
+    const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure = nullptr) {
     if (!has_reaction_reference(request)) return request.reactions;
     if (!request.source_reference.has_value()) {
         throw ReferenceUnavailable("source reference declaration is missing");
@@ -185,7 +184,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     };
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
-    if (fixed_pressure != nullptr && temperature_order == 0 && !parameter_jets) {
+    if (fixed_pressure != nullptr && jets.temperature_order == 0 && !jets.parameters) {
         // Fixed-pressure references depend only on the compiled model, temperature,
         // declaration and stoichiometry; rebuild only system-pressure traces.
         for (const auto& diagnostic : *fixed_pressure)
@@ -211,8 +210,8 @@ std::vector<ReactionSpec> central_reference_reactions(
     }
     const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
     const auto reference_results = reaction_references(
-        model, temperature, pressure, *request.source_reference, stoichiometries, references, pressure_jets,
-        solvent_anchor, temperature_order, parameter_jets, reference_order, nullptr, pairs);
+        model, temperature, pressure, *request.source_reference, stoichiometries, references, jets.pressure,
+        solvent_anchor, jets.temperature_order, jets.parameters, jets.reference_order, nullptr, jets.pairs);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -227,16 +226,13 @@ std::vector<ReactionSpec> central_reference_reactions(
         diagnostics.push_back(reference);
         if (reference.status != NeutralReferenceStatus::Available || !reference.terminal_contraction.has_value())
             throw unavailable(row, reference.message.empty() ? "" : " " + reference.message);
-        double ln_k = 0.0, scale = 0.0;
+        SolidLogK source;
         try {
-            ln_k = reaction.correlation.has_value() ? evaluate_reaction_properties(*reaction.correlation, temperature).ln_k
-                                                    : std::log(*reaction.equilibrium_constant);
-            if (reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
-                scale = reaction_reference_log_scale(model, *request.source_reference, reaction.stoichiometry);
+            source = source_log_k(model, request.source_reference, reaction, temperature);
         } catch (const std::exception& error) {
             throw unavailable(row, std::string(" ") + error.what());
         }
-        const double ln_k_density = ln_k + scale + *reference.terminal_contraction;
+        const double ln_k_density = source.ln_k + source.scale + *reference.terminal_contraction;
         const double target = -GAS_CONSTANT_J_PER_MOL_K * temperature * ln_k_density;
         if (!std::isfinite(target)) throw unavailable(row, " has a nonfinite density-basis target");
         result[row].equilibrium_constant.reset();
@@ -245,18 +241,6 @@ std::vector<ReactionSpec> central_reference_reactions(
         result[row].reference.reset();
     }
     return result;
-}
-
-// The same minimum-norm reaction-to-species map for dimensionless standard-term slopes.
-std::vector<double> species_standard_slopes(double temperature, std::size_t components,
-    std::vector<ReactionSpec> reactions, const std::vector<double>& values) {
-    for (std::size_t row = 0; row < reactions.size(); ++row) {
-        reactions[row].equilibrium_constant.reset();
-        reactions[row].correlation.reset();
-        reactions[row].reference.reset();
-        reactions[row].affinity_j_per_mol = values[row];
-    }
-    return standard_state_series(temperature, components, reactions, {}, 0).front();
 }
 
 static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd& w, const Eigen::VectorXd& b,
@@ -276,7 +260,11 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
     const bool parameters = std::any_of(control.begin(), control.end(), [](double v) { return v != 0.0; });
     const std::size_t thermal = order > 1 && temperature_jets ? 2 : 0;
     if (solids.empty() || (!parameters && !thermal)) return {};
-    auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, thermal, parameters, pairs);
+    ReferenceJets jets;
+    jets.temperature_order = thermal;
+    jets.parameters = parameters;
+    jets.pairs = pairs;
+    auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, jets);
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto need = [&](std::size_t a, std::optional<std::size_t> p = {}, std::optional<std::size_t> q = {}) {
             if (const auto column = laws[s].reference.column(a, 0, p, q); column.state != ReferenceColumnState::Available)
@@ -321,11 +309,14 @@ StandardTerm standard_term(
         // Fixed-T/P references do not change with phase coordinates or feed directions.
         const std::size_t thermal = temperature_jets ? order : 0;
         if (problem.pressure.free || pressure_jets || temperature_jets || parameter_jets) {
+            ReferenceJets jets;
+            jets.temperature_order = thermal;
+            jets.pressure = pressure_jets;
+            jets.parameters = parameter_jets;
+            jets.reference_order = parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
+            jets.pairs = pairs;
             reactions = central_reference_reactions(
-                *compiled.model, problem, temperature, pressure, diagnostics, pressure_jets,
-                &compiled.reference_diagnostics,
-                thermal, parameter_jets,
-                parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0, pairs);
+                *compiled.model, problem, temperature, pressure, diagnostics, jets, &compiled.reference_diagnostics);
             gibbs = standard_state_series(temperature, components, reactions, {}, 0, nullptr, error ? &inverse : nullptr).front();
         }
         StandardTerm result;
@@ -337,8 +328,10 @@ StandardTerm standard_term(
         for (std::size_t species = 0; species < components; ++species)
             result.derivative[0][species] = gibbs[species] / rt;
         // One slope of s_r = g_r/(RT) per row, mapped to species by the same linear minimum-norm
-        // owner as s. A referenced row has s_r = -ln K_rho, so its slope is -(source slope + slope
-        // of C); an unadmitted slope of C refuses the direction. Only pure T slopes move the source.
+        // owner as s, factored once for every column. A referenced row has s_r = -ln K_rho, so its slope
+        // is -(source slope + slope of C); an unadmitted slope of C refuses the direction. Only pure T
+        // slopes move the source.
+        std::optional<SpeciesSlopeMap> slopes;
         const auto species_slope = [&](std::vector<double> values, const std::string& name, std::size_t a,
                                        std::size_t b = 0, std::optional<std::size_t> parameter = std::nullopt,
                                        std::optional<std::size_t> second = std::nullopt) {
@@ -355,7 +348,8 @@ StandardTerm standard_term(
                 const auto law = source ? evaluate_reaction_properties(*source, temperature) : ReactionProperties{};
                 values[row] = -slope.value - (source_order == 1 ? law.derivative : source_order == 2 ? law.second_derivative : 0.0);
             }
-            return species_standard_slopes(temperature, components, reactions, values);
+            if (!slopes) slopes.emplace(temperature, components, reactions);
+            return (*slopes)(values);
         };
         const std::vector<double> zero(reactions.size(), 0.0);
         // EqIDs: standard_state_transfer_temperature_(second_)derivative. Unreferenced rows keep
@@ -417,10 +411,9 @@ StandardTerm standard_term(
                 for (const auto& diagnostic : diagnostics) {
                     const auto r = diagnostic.reaction_index;
                     const auto& reaction = problem.reactions[r];
-                    const auto law = reaction.correlation ? evaluate_reaction_properties(*reaction.correlation, temperature) : ReactionProperties{};
-                    const double source = k ? law.derivative : reaction.correlation ? law.ln_k : std::log(*reaction.equilibrium_constant);
-                    const double scale = !k && reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
-                        ? reaction_reference_log_scale(*compiled.model, *problem.source_reference, reaction.stoichiometry) : 0.0;
+                    const auto law = source_log_k(*compiled.model, problem.source_reference, reaction, temperature);
+                    const double source = k ? law.slope.value_or(0.0) : law.ln_k;
+                    const double scale = k ? 0.0 : law.scale;
                     const double c = k ? *diagnostic.terminal_contraction_temperature_derivative : *diagnostic.terminal_contraction;
                     b(r) = -source - scale - c;
                     eb(r) = diagnostic.numerical_error[k] + std::numeric_limits<double>::epsilon() * (std::abs(source) + std::abs(scale) + std::abs(c));
@@ -490,8 +483,11 @@ void admit_calorics(const CompiledSystem& compiled, double temperature) {
 // reference, whose row series stop at order 2; else 4) must exist, else the callback is refused with its cause.
 std::shared_ptr<const ReferenceCalorics> caloric_reference(const CompiledSystem& c, double T, double P,
                                                            bool pressure = false, bool parameters = false) {
-    auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, false, pressure, parameters,
-        c.reference_diagnostics.empty() ? 4 : 3));
+    ReferenceJets jets;
+    jets.temperature_order = c.reference_diagnostics.empty() ? 4 : 3;
+    jets.pressure = pressure;
+    jets.parameters = parameters;
+    auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, jets));
     if (result->status != SolvedStateActionStatus::Available)
         throw std::invalid_argument("caloric reference at " + std::to_string(T) + " K: " + result->message);
     for (const auto& e : result->gibbs)
@@ -763,7 +759,7 @@ CppAD::ADFun<double> record_geometry(
         center.begin() + static_cast<std::ptrdiff_t>(n + compiled.control_width()));
     std::vector<double> chemical(components, 0.0);
     if (entropy) {
-        const auto reference = reference_calorics(compiled, prepared.temperature, prepared.pressure, false, false, false, 0);
+        const auto reference = reference_calorics(compiled, prepared.temperature, prepared.pressure, {});
         if (reference.status != SolvedStateActionStatus::Available) throw std::invalid_argument(reference.message);
         for (std::size_t p = 0; p < prepared.shape.size(); ++p)
             for (auto i : problem.phases[p].support)
@@ -785,10 +781,6 @@ CppAD::ADFun<double> record_geometry(
     const auto sigma = segment_sigma(T, tape_parameters);
     const auto diameter = segment_diameter(T, tape_parameters, sigma);
     const auto& charges = parameters.charge_number;
-    std::vector<std::optional<std::size_t>> phi(problem.phases.size());
-    std::size_t phi_offset = 0;
-    for (const auto& row : compiled.rows)
-        if (row.kind == RowKind::Electro) phi[row.phase] = compiled.primal_size + compiled.rank + phi_offset++;
     std::vector<AD> output;
     std::vector<AD> row_values(compiled.rows.size(), AD(0.0));
     AD material_potential = 0.0;
@@ -890,7 +882,8 @@ CppAD::ADFun<double> record_geometry(
                 AD value = add_standard(CppAD::log(x[species]) - CppAD::log(volume), species);
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
                     value -= u[compiled.primal_size + balance] * compiled.B[balance][species];
-                if (phi[phase].has_value()) value -= AD(charges[species]) * u[*phi[phase]];
+                if (const auto& charge = compiled.charge_row[phase])
+                    value -= AD(charges[species]) * u[compiled.primal_size + compiled.rank + *charge];
                 row_values[row] = value;
             } else if (item.kind == RowKind::Pressure) {
                 row_values[row] = (tape_parameters.ideal_gas ? std::accumulate(x.begin(), x.end(), AD(0.0)) : AD(1.0))
@@ -1129,7 +1122,9 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
             if (solid.stoichiometry[i] != 0.0 && !covered[i]) throw refuse("species " + std::to_string(i) + " has no phase support");
         if (solid.amount.kind == AmountKind::Pinned && solid.amount.fraction != 0.0) throw refuse("amount must be Free or Pinned(0)");
     }
-    const auto laws = solid_log_k(*compiled.model, p.temperature.value, p.pressure.value, p.source_reference, p.solids);
+    ReferenceJets jets;
+    jets.temperature_order = 1;
+    const auto laws = solid_log_k(*compiled.model, p.temperature.value, p.pressure.value, p.source_reference, p.solids, jets);
     for (std::size_t s = 0; s < p.solids.size(); ++s) {
         const auto& law = laws[s];
         CompiledSolid item{std::nullopt, matvec(compiled.B, p.solids[s].stoichiometry),
@@ -1165,25 +1160,20 @@ void admit_solid_declarations(const HelmholtzModel& model, const std::optional<N
 
 std::vector<SolidLogK> solid_log_k(const HelmholtzModel& model, double temperature, double pressure,
     const std::optional<NeutralReferenceDeclaration>& declaration, const std::vector<SolidSpec>& solids,
-    std::size_t temperature_order, bool parameter_jets, const std::vector<std::size_t>& pairs) {
+    const ReferenceJets& jets) {
     admit_solid_declarations(model, declaration, solids);
     std::vector<std::vector<double>> nu;
     std::vector<ReactionReference> references;
     for (const auto& solid : solids) nu.push_back(solid.stoichiometry), references.push_back(*solid.reference);
     const auto diagnostics = reaction_references(model, temperature, pressure, *declaration, nu, references, false, std::nullopt,
-                                                 temperature_order, parameter_jets, 0, nullptr, pairs);
+                                                 jets.temperature_order, jets.parameters, 0, nullptr, jets.pairs);
     std::vector<SolidLogK> result;
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto& solid = solids[s];
         if (diagnostics[s].status != NeutralReferenceStatus::Available || !diagnostics[s].terminal_contraction)
             throw ReferenceUnavailable("solid " + solid.name + " " + diagnostics[s].message);
-        auto& item = result.emplace_back(SolidLogK{0.0, 0.0, std::nullopt, std::nullopt, diagnostics[s]});
-        if (solid.correlation) {
-            const auto law = evaluate_reaction_properties(*solid.correlation, temperature);
-            item.ln_k = law.ln_k, item.slope = law.derivative, item.curvature = law.second_derivative;
-        } else item.ln_k = std::log(*solid.equilibrium_constant);
-        if (solid.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
-            item.scale = reaction_reference_log_scale(model, *declaration, solid.stoichiometry);
+        result.push_back(source_log_k(model, declaration, solid_law(solid), temperature));
+        result.back().reference = diagnostics[s];
     }
     return result;
 }
@@ -1202,11 +1192,11 @@ bool CompiledSystem::anchored_calorics() const {
 // N_D x_D = Delta_r x - N_S x_S on the density basis for x = h, cp (min-norm), where only
 // the ionic charge gauge may remain free: it cancels in every electroneutral phase.
 ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temperature, double pressure,
-                                     bool heat_capacity, bool pressure_slope, bool parameter_slopes,
-                                     std::size_t derivative_order, bool numerical_errors,
-                                     const std::vector<std::size_t> &pair_coordinates) {
+                                     const ReferenceJets &jets) {
     if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
-    derivative_order = std::max(derivative_order, heat_capacity ? std::size_t(2) : std::size_t(1));
+    const std::size_t derivative_order = std::max(jets.temperature_order, std::size_t(1));
+    const bool pressure_slope = jets.pressure, parameter_slopes = jets.parameters, numerical_errors = jets.errors;
+    const auto &pair_coordinates = jets.pairs;
     using AD = CppAD::AD<double>;
     ReferenceCalorics result;
     const auto &model = *compiled.model;
@@ -1260,15 +1250,9 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         if (reaction.affinity_j_per_mol)
             g = *reaction.affinity_j_per_mol;
         else {
-            AD L = reaction.equilibrium_constant ? std::log(*reaction.equilibrium_constant) : 0.0;
-            if (reaction.correlation) {
-                const auto &law = *reaction.correlation;
-                (void)evaluate_reaction_properties(law, temperature);
-                L = reaction_log_value(law, T[0]);
-            }
-            if (reaction.reference &&
-                reaction.reference->source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution)
-                L += reaction_reference_log_scale(model, *problem.source_reference, reaction.stoichiometry);
+            const auto source = source_log_k(model, problem.source_reference, reaction, temperature);
+            AD L = reaction.correlation ? reaction_log_value(*reaction.correlation, T[0]) : AD(source.ln_k);
+            if (reaction.reference) L += source.scale;
             g = -rt * L;
         }
         output.push_back(g);
@@ -1658,8 +1642,7 @@ static CompiledSystem compile_with_basis(
         }
     }
     const auto central_reactions = central_reference_reactions(
-        model, request, temperature_guess, pressure_guess,
-        compiled.reference_diagnostics, false);
+        model, request, temperature_guess, pressure_guess, compiled.reference_diagnostics, {});
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
     compiled.standard_gibbs = standard_state_series(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, 0, model.thermochemistry() ? &*model.thermochemistry() : nullptr, nullptr, &compiled).front();
     admit_solids(compiled, covered);
@@ -1683,9 +1666,17 @@ static CompiledSystem compile_with_basis(
         for (std::size_t row = 0; row < compiled.rows.size(); ++row)
             if (compiled.rows[row].kind == RowKind::Moiety && compiled.rows[row].index == 1)
                 compiled.log_charge_rows.emplace_back(row, 0);
-    const auto shape = layouts(compiled);
-    compiled.primal_size = 0;
-    for (const auto& item : shape) compiled.primal_size = std::max(compiled.primal_size, item.volume + 1);
+    std::size_t offset = 0, charge = 0;
+    for (const auto& phase : compiled.problem.phases) {
+        auto& item = compiled.shape.emplace_back();
+        for (std::size_t i = 0; i < phase.support.size(); ++i) item.x.push_back(offset++);
+        if (phase.amount.kind == AmountKind::Free) item.amount = offset++;
+        item.volume = offset++;
+    }
+    compiled.primal_size = offset;
+    compiled.charge_row.resize(compiled.problem.phases.size());
+    for (const auto& row : compiled.rows)
+        if (row.kind == RowKind::Electro) compiled.charge_row[row.phase] = charge++;
     for (std::size_t s = 0; s < compiled.solids.size(); ++s)  // free solid amounts follow the phase coordinates
         if (request.solids[s].amount.kind == AmountKind::Free) compiled.solids[s].column = compiled.primal_size++;
     compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
@@ -1714,7 +1705,9 @@ static CompiledSystem compile_with_basis(
     const auto point = compiled.generic_point();
     const bool state_only = !compiled.problem.loading
         && std::none_of(compiled.rows.begin(), compiled.rows.end(), [](const auto& row) { return condition_row(row.kind); });
-    const auto jacobian = compiled.jacobian_at(compiled.prepare(point, state_only));
+    const auto prepared = compiled.prepare(point, state_only);
+    if (!compiled.problem.temperature.free && !compiled.problem.pressure.free) compiled.fixed_standard = prepared.standard;
+    const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
         jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
     for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
@@ -1913,7 +1906,6 @@ std::vector<double> CompiledSystem::generic_point() const {
         if (!guess.empty()) for (std::size_t j = 0; j < point.size(); ++j) point[j] = std::log(guess[j]);
         return point;
     }
-    const auto shape = layouts(*this);
     std::vector<double> point(primal_size + rank + charge_row_count, 0.0);
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         double total = 0.0;
@@ -1942,7 +1934,7 @@ std::vector<double> CompiledSystem::generic_point() const {
 std::vector<std::size_t> CompiledSystem::phase_offsets() const {
     if (ideal) return {0};
     std::vector<std::size_t> result;
-    for (const auto& item : layouts(*this)) result.push_back(item.x.front());
+    for (const auto& item : shape) result.push_back(item.x.front());
     return result;
 }
 

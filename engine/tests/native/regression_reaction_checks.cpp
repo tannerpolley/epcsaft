@@ -977,7 +977,7 @@ void check_ionic_addition_enthalpy() {
         const auto solved = equilibrium::solve_equilibrium(rebuilt, problem);
         CHECK(solved.success);
         const auto compiled = equilibrium::compile_problem(rebuilt, problem);
-        const auto source = equilibrium::reference_calorics(compiled, T, P, false, false, false, 1);
+        const auto source = equilibrium::reference_calorics(compiled, T, P, {});
         CHECK(source.status == equilibrium::SolvedStateActionStatus::Available);
         const auto standard = [&](std::size_t order) -> const std::vector<double>& {
             const auto found = std::find_if(source.gibbs.begin(), source.gibbs.end(), [&](const auto& column) {
@@ -1519,7 +1519,7 @@ void check_shift_columns(const std::string& id, const FitRequest& request, const
 }
 
 // Fixture K (check_reaction_enthalpy_shift's ln K pair, data at truth (1200, -700) J/mol): the sequence and the ordinary fit.
-void check_shift_sequence(const FitRequest& request) {
+void check_shift_sequence(const FitRequest& request, const FitRequest& joint) {
     const auto optimizer = [](double a, double b) { return std::vector<double>{(a - 100.0) / 1000.0, (b - 100.0) / 1000.0}; };
     const auto close = [](const std::string& id, double value, double reference, double atol, double rtol, const char* claim) {
         agree("reaction-shift-start/" + id, "value", "1", value, reference, atol, rtol, "fixture K, truth (1200, -700) J/mol", claim, "issue-1060");
@@ -1568,17 +1568,9 @@ void check_shift_sequence(const FitRequest& request) {
         close("F3/sequence_column/" + std::to_string(i), one.optimizer_jacobian[i], reader.residual_optimizer_gradient[i], 1e-10, 1e-10,
             "the sequence columns equal the ordinary columns at the endpoint");
     check_shift_columns("reaction-shift-start/F4/K", request, optimizer(700.0, -300.0), false);
-    // F6: an EOS coordinate between two shifts keeps its start rewrite beside the shift start.
-    auto joint = request;
-    Coordinate eos{{{ParameterFamily::SegmentCount, {0}}}, request.parameters.segment_count[0], 0.1};
-    eos.lower = eos.origin - 0.5; eos.upper = eos.origin + 0.5;
-    joint.coordinates.coordinates.insert(joint.coordinates.coordinates.begin() + 1, eos);
-    joint.observations.push_back(density(300.0, 1e5, {1.0, 0.0, 0.0}, DensityBranch::Vapor));
+    // F6: an EOS coordinate between two shifts (the joint request, truth 1.1, 0.2, -0.8) keeps its start rewrite
+    // beside the shift start.
     const std::vector<double> truth_point{1.1, 0.2, -0.8};
-    auto truth_rows = joint.observations;
-    joint.coordinates.apply(truth_rows, truth_point);
-    const HelmholtzModel truth_model(joint.coordinates.apply(joint.parameters, truth_point));
-    for (std::size_t i = 0; i < truth_rows.size(); ++i) joint.observations[i].observed = *predict(truth_model, truth_rows[i]).value;
     const auto mixed = sequence(joint, {0.4, 0.0, 0.2});
     for (std::size_t i = 0; i < 3; ++i)
         close("F6/optimizer/" + std::to_string(i), mixed.optimizer[i], truth_point[i], 1e-8, 0.0, "the EOS start rewrite and the shift start coexist");
@@ -1863,7 +1855,7 @@ void check_reaction_enthalpy_shift() {
         catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
     }
-    check_shift_sequence(request);
+    check_shift_sequence(request, joint);
     check_shift_minimax();
     auto wrong = request;
     wrong.coordinates.coordinates[0].reaction->pivot_temperature = 0.0;

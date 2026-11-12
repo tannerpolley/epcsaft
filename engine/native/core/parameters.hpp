@@ -122,7 +122,7 @@ struct FixedParameters {
 };
 
 // Active parameter families; topology and source conventions remain fixed.
-// Scalar is supplied by the consuming layer, so Core has no AD dependency.
+// Scalar is supplied by the consuming layer; Core's scalar dispatch (core/scalar.hpp) names CppAD.
 template <class Scalar>
 struct ParameterRecord final : FixedParameters {
     Scalar ionic_region_relative_permittivity = Scalar(0.0);

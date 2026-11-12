@@ -172,3 +172,4 @@ struct Workers final {
         sockets.push_back({std::exchange(server.handle, nullptr), process.hProcess});
     }
 };
+unsigned long processors() { return std::max(1ul, GetActiveProcessorCount(ALL_PROCESSOR_GROUPS)); }

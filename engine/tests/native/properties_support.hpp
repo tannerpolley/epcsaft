@@ -322,21 +322,17 @@ inline ReferenceTensor reference_tensor(
         independent[0], composition, parameters,
         electrolyte.bulk_relative_permittivity
     );
-    const auto delta = epcsaft::association_delta_values(
-        independent[0], density, composition, tape_parameters, sigma, diameter,
-        tape_parameters.association_energy_over_k,
-        tape_parameters.association_volume
-    );
+    const auto delta = epcsaft::association_delta(
+        independent[0], density, composition, tape_parameters, sigma, diameter);
     const auto terms = epcsaft::residual_helmholtz(
         independent[0], density, composition, tape_parameters, sigma, diameter,
-        sites, electrolyte.debye_huckel, born
-    , epcsaft::association_products(density, composition, tape_parameters, sites, delta));
+        sites, epcsaft::association_products(density, composition, tape_parameters, sites, delta));
     const auto residuals = epcsaft::association_residuals(
         density, composition, tape_parameters, sites, delta
     );
     AD value = total * (association_only ? terms.association : (
-        terms.hard_chain + terms.dispersion + terms.debye_huckel
-        + terms.born + terms.association
+        terms.hard_chain + terms.dispersion + electrolyte.debye_huckel
+        + born + terms.association
     ));
     std::vector<AD> dependents = {value};
     for (const AD& residual : residuals) dependents.push_back(residual);

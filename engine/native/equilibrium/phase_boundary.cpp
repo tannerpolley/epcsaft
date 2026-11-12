@@ -1220,7 +1220,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         const bool anchored = compiled.anchored_calorics();
         const auto inside = [&](double t) {  // every declared species' caloric record admits t
             if (anchored) try {  // records, reaction laws and completion
-                return reference_calorics(compiled, t, compiled.seed_pressure(), false, false, false, 1).status == SolvedStateActionStatus::Available;
+                return reference_calorics(compiled, t, compiled.seed_pressure(), {}).status == SolvedStateActionStatus::Available;
             } catch (const std::invalid_argument&) { return false; }
             for (const auto& phase : compiled.problem.phases)
                 for (auto i : phase.support) {

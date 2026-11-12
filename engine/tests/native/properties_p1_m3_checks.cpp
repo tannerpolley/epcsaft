@@ -257,10 +257,10 @@ void derivatives_and_limits() {
     using Wide = __float128;
     CHECK(FLT128_MANT_DIG == 113);
     for (double rho : {1e-3, 1e-6, 1e-9, 1e-12, 1e-15, 1e-20, 1e-50, 1e-100, 1e-150, 1e-300}) {
-        const auto delta = epcsaft::association_delta(300, rho, pure_dilute, dilute, dsigma, dd);
+        const auto delta = epcsaft::association_delta(300.0, rho, pure_dilute, dilute, dsigma, dd);
         const auto sites = epcsaft::solve_site_fractions(300, rho, pure_dilute, dilute, dsigma, dd);
         const auto actual = epcsaft::residual_helmholtz(300.0, rho, pure_dilute, dilute, dsigma, dd,
-            sites, 0.0, 0.0, epcsaft::association_products(rho, pure_dilute, dilute, sites, delta));
+            sites, epcsaft::association_products(rho, pure_dilute, dilute, sites, delta));
         const Wide eta = Wide(epcsaft::PI) / 6 * Wide(rho) * Wide(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3)
             * Wide(dilute.segment_count[0]) * Wide(dd[0]) * Wide(dd[0]) * Wide(dd[0]);
         const Wide u = 1 - eta;

@@ -3,6 +3,7 @@
 
 #include <cppad/cppad.hpp>
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -12,6 +13,11 @@
 // evaluating a double, a Taylor series or recording a tape.
 
 namespace epcsaft {
+
+template <typename Range>
+bool all_finite(const Range& values) {
+    return std::all_of(std::begin(values), std::end(values), [](const auto& value) { return wide_math::isfinite(value); });
+}
 
 template <typename Scalar>
 Scalar scalar_sqrt(const Scalar& value);

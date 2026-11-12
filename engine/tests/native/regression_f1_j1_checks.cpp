@@ -529,11 +529,12 @@ HydrationHold coupled_hold() {
     ob.observed = *predict(HelmholtzModel(coupled_lengths(3.2)), ob).value;
     return {ob, 1, 8, 1e-6, 1e-10, 50};
 }
-std::vector<Observation> coupled_observations() {
+// The six activity and osmotic rows copy the hold's reference declaration.
+std::vector<Observation> coupled_observations(const Observation& reference) {
     std::vector<Observation> rows;
     for (const auto kind : {ObservationKind::MeanIonicActivityCoefficient, ObservationKind::OsmoticCoefficient})
         for (const double m : {0.1, 1.0, 4.5}) {
-            auto ob = coupled_hold().reference;
+            auto ob = reference;
             ob.kind = kind; ob.species.clear(); ob.molality = m;
             ob.form = ResidualForm::LogRatio; ob.observed = 1;
             rows.push_back(ob);
@@ -542,7 +543,10 @@ std::vector<Observation> coupled_observations() {
 }
 void affine_difference(const std::string& id, double exact, const std::function<double(double)>& value,
                        double step, double scale, const char* group) {
-    const auto a = ladder(value, step), b = ladder(value, step / 2);
+    // The step/2 ladder's coarse rung is this ladder's fine rung; only its finest rung is new.
+    const auto a = ladder(value, step);
+    const double half = step / 2;
+    const Ladder b{a.fine, (value(0.5 * half) - value(-0.5 * half)) / half};
     const double reference = scale * (4 * b.fine - b.coarse) / 3;
     const double uncertainty = scale * std::abs((4 * b.fine - b.coarse - 4 * a.fine + a.coarse) / 3);
     const double tolerance = 1e-7 + 2e-5 * std::abs(exact);
@@ -590,8 +594,8 @@ void check_affine_start_signed() {
 }
 void check_coupled_columns() {
     FitRequest request; request.parameters = coupled_lengths(3.2); request.coordinates = coupled_coordinate();
-    request.observations = coupled_observations();
     const auto hold = coupled_hold();
+    request.observations = coupled_observations(hold.reference);
     for (const bool held : {false,true}) {
         request.holds = held ? std::vector<HydrationHold>{hold} : std::vector<HydrationHold>{};
         const auto exact = evaluated_columns(request,{1});
@@ -630,7 +634,7 @@ void check_coupled_columns() {
 void check_coupled_recovery() {
     FitRequest request; request.parameters = coupled_lengths(3.0); request.coordinates = coupled_coordinate();
     request.controls = budgeted_controls();
-    request.holds = {coupled_hold()}; request.observations = coupled_observations();
+    request.holds = {coupled_hold()}; request.observations = coupled_observations(request.holds[0].reference);
     const HelmholtzModel truth_model(coupled_lengths(3.2));
     for (auto& ob : request.observations) ob.observed = *predict(truth_model,ob).value;
     request.controls.solver_options.values[epcsaft::policy::function] = 1e-15; request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-14;

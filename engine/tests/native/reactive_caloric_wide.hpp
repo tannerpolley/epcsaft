@@ -51,7 +51,7 @@ public:
         for(auto& e:p.dispersion_energy_over_k) e=independent[2];
         const std::vector<AD> x{AD(1),AD(0)};
         const auto sigma=segment_sigma(independent[0],p),diameter=segment_diameter(independent[0],p,sigma);
-        const auto terms=residual_helmholtz(independent[0],AD(1)/independent[1],x,p,sigma,diameter,{},AD(0),AD(0), {});
+        const auto terms=residual_helmholtz(independent[0],AD(1)/independent[1],x,p,sigma,diameter,{}, {});
         std::vector<AD> dependent{terms.hard_chain+terms.dispersion};
         CppAD::ADFun<Wide> energy(independent,dependent);
         auto nested=energy.base2ad();

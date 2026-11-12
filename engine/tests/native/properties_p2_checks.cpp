@@ -46,10 +46,8 @@ P2AssociationAction p2_association_action(
         temperature_ad, tape_parameters, sigma
     );
     const auto density_ad = AD(1.0) / volume_ad;
-    const auto delta = epcsaft::association_delta_values(
-        temperature_ad, density_ad, composition_ad, tape_parameters, sigma, diameter,
-        tape_parameters.association_energy_over_k, tape_parameters.association_volume
-    );
+    const auto delta = epcsaft::association_delta(
+        temperature_ad, density_ad, composition_ad, tape_parameters, sigma, diameter);
     const auto residuals = epcsaft::association_residuals(
         density_ad, composition_ad, tape_parameters, sites_ad, delta
     );

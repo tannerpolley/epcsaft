@@ -903,15 +903,9 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         result.state.density_convergence = reference.solvent_convergence; return result;
     }
     const auto solvent = std::size_t(std::max_element(reference.solvent_fractions.begin(), reference.solvent_fractions.end()) - reference.solvent_fractions.begin());
-    if (composition.size() != model.parameters().component_count()) throw std::invalid_argument("invalid composition size");
-    double sum = 0.0, charge = 0.0, solute = 0.0;
-    for (std::size_t i = 0; i < composition.size(); ++i) {
-        if (!std::isfinite(composition[i]) || composition[i] < 0.0) throw std::invalid_argument("invalid composition fraction");
-        sum += composition[i]; charge += composition[i] * model.parameters().charge_number[i];
-        if (i != solvent) solute += composition[i];
-    }
-    if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value
-        || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value) throw std::invalid_argument("invalid normalized neutral composition");
+    model.validate_electroneutrality(composition);
+    double solute = 0.0;
+    for (std::size_t i = 0; i < composition.size(); ++i) if (i != solvent) solute += composition[i];
     if (composition[solvent] <= 0.0) { result.cause = "PureSolventUnavailable: zero solvent fraction"; return result; }
     const auto& pure = *reference.pure_solvent_state;
     // Preserve the one-salt declaration's particle ratio without a round trip through mole fractions.

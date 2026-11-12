@@ -4,6 +4,7 @@ struct MeasurementChart final {
     std::vector<std::size_t> membership, groups, inputs, rows;  // rows: compact matrix order, n + c for inputs
     std::vector<double> measured, sigma, lower, upper, factor;  // factor: row-major L of R = LL^T
     std::vector<std::vector<double>> composition;
+    std::vector<std::vector<double>> feeds;  // per group: the declared feed resolved to amounts, when a mole fraction is measured
     MeasurementChart() = default;
 
     explicit MeasurementChart(const FitRequest& request) {
@@ -22,6 +23,7 @@ struct MeasurementChart final {
         const HelmholtzModel model(request.parameters, {}, request.thermochemistry, request.controls.solver_options);
         const auto& charges = request.parameters.charge_number;
         const std::size_t count = request.parameters.component_count();
+        feeds.resize(uncertainty.groups.size());
         for (std::size_t g = 0; g < uncertainty.groups.size(); ++g) {
             const auto& group = uncertainty.groups[g];
             require(!group.rows.empty(), "empty measurement group");
@@ -53,6 +55,7 @@ struct MeasurementChart final {
             if (feed) {
                 require(!ionic && !law, "composition uncertainty is unsupported for this observation");
                 x = pressure ? anchor.composition : equilibrium::resolve_feed(model, anchor.problem.feed);
+                if (!pressure) feeds[g] = x;
                 total = std::accumulate(x.begin(), x.end(), 0.0);
                 if (pressure) { require(std::abs(total - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value, "measured composition sum"); total = 1.0; }
                 require(pressure || (std::isfinite(group.feed_total_mol) && group.feed_total_mol > 0.0
@@ -149,7 +152,7 @@ struct MeasurementChart final {
         for (std::size_t c = 0; c < groups.size(); ++c) { rows.push_back(membership.size() + c); deviations.push_back(sigma[c]); }
         const auto m = static_cast<Eigen::Index>(rows.size());
         require(matrix->size() == rows.size() * rows.size(), "measurement matrix dimension");
-        require(finite(*matrix), "finite measurement matrix");
+        require(all_finite(*matrix), "finite measurement matrix");
         Eigen::MatrixXd r = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(matrix->data(), m, m);
         const Eigen::Map<const Eigen::VectorXd> s(deviations.data(), m);
         if (uncertainty.covariance) r.array() /= (s * s.transpose()).array();  // R = D^-1 C D^-1
@@ -184,8 +187,7 @@ struct MeasurementChart final {
                 if (input.kind == MeasuredInputKind::Molality) observation.molality = value;
                 if (input.kind == MeasuredInputKind::MoleFraction) {
                     if (!pressure && observation.problem.feed.kind != equilibrium::FeedKind::Amounts) {
-                        const HelmholtzModel model(request.parameters, {}, request.thermochemistry, request.controls.solver_options);
-                        observation.problem.feed.values = equilibrium::resolve_feed(model, observation.problem.feed);
+                        observation.problem.feed.values = feeds[groups[c]];
                         observation.problem.feed.kind = equilibrium::FeedKind::Amounts;
                     }
                     auto& x = pressure ? observation.composition : observation.problem.feed.values;
@@ -195,4 +197,65 @@ struct MeasurementChart final {
         }
     }
 
+    std::size_t width() const { return groups.size(); }
+    void bounds(std::pair<std::vector<double>, std::vector<double>>& box) const {
+        box.first.insert(box.first.end(), lower.begin(), lower.end());
+        box.second.insert(box.second.end(), upper.begin(), upper.end());
+    }
+
+    // The input rows appended to one evaluated trial's weighted residual, then whitening; the refusal cause, or null.
+    const char* reconcile(ObservationEvaluation& out, const std::vector<double>& optimizer, std::size_t parameters, bool jacobian) const {
+        const std::size_t n = out.weighted.size(), latent = groups.size(), columns = parameters + latent;
+        auto& reconciled = out.reconciliation.emplace();
+        reconciled.output_cost = out.data_cost;
+        reconciled.row_groups = membership;
+        reconciled.column_groups = groups; reconciled.column_inputs = inputs;
+        for (std::size_t c = 0; c < latent; ++c) {
+            const double u = optimizer[parameters + c];
+            reconciled.values.push_back(measured[c] + sigma[c] * u);
+            reconciled.corrections.push_back(u); reconciled.penalties.push_back(u*u);
+            reconciled.row_groups.push_back(groups[c]);
+            reconciled.input_cost += 0.5 * u*u; out.weighted.push_back(u);
+            if (jacobian) out.optimizer_gradient[(n + c) * columns + parameters + c] = 1.0;
+        }
+        out.cost += reconciled.input_cost;
+        if (!std::isfinite(out.cost)) return "input penalty not finite";
+        if (!factor.empty() && !whiten(out, columns)) return "whitened residual or Jacobian not finite";
+        if (jacobian) reconciled.jacobian = out.optimizer_gradient;
+        return nullptr;
+    }
+
+    // z = L^-1 e on the compact rows of the residual and of every complete column; excluded rows stay zero.
+    // Output-first order makes the output cost marginal and the input cost conditional on the outputs.
+    bool whiten(ObservationEvaluation& out, std::size_t columns) const {
+        const auto m = static_cast<Eigen::Index>(rows.size()), inputs = static_cast<Eigen::Index>(groups.size());
+        const std::size_t width = out.optimizer_gradient.empty() ? 0 : columns;
+        Eigen::MatrixXd e(m, static_cast<Eigen::Index>(1 + width));
+        for (std::size_t k = 0; k < rows.size(); ++k) {
+            e(static_cast<Eigen::Index>(k), 0) = out.weighted[rows[k]];
+            for (std::size_t c = 0; c < width; ++c) e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c)) = out.optimizer_gradient[rows[k] * columns + c];
+        }
+        Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(factor.data(), m, m)
+            .triangularView<Eigen::Lower>().solveInPlace(e);
+        for (std::size_t k = 0; k < rows.size(); ++k) {
+            out.weighted[rows[k]] = e(static_cast<Eigen::Index>(k), 0);
+            for (std::size_t c = 0; c < width; ++c) out.optimizer_gradient[rows[k] * columns + c] = e(static_cast<Eigen::Index>(k), static_cast<Eigen::Index>(1 + c));
+        }
+        auto& reconciled = *out.reconciliation;
+        reconciled.output_cost = 0.5 * e.col(0).head(m - inputs).squaredNorm();
+        reconciled.input_cost = 0.5 * e.col(0).tail(inputs).squaredNorm();
+        for (Eigen::Index c = 0; c < inputs; ++c) reconciled.penalties[static_cast<std::size_t>(c)] = e(m - inputs + c, 0) * e(m - inputs + c, 0);
+        out.data_cost = reconciled.output_cost;
+        out.cost = reconciled.output_cost + reconciled.input_cost + out.stability_cost;
+        const bool finite = e.allFinite() && std::isfinite(out.cost);
+        if (!finite) {
+            core::Convergence record; record.residual = out.cost; record.stop = core::Stop::nonfinite;
+            record.cause = e.allFinite() ? "whitened cost not finite" : "whitened residual or Jacobian not finite";
+            core::retain_first(out.first_numerical_failure, record);
+            core::Scope scope("fit_whitening");
+            scope.probe("solved_operands", e.data(), e.size());
+            scope.probe("cost", out.cost); scope.finish(record);
+        }
+        return finite;
+    }
 };

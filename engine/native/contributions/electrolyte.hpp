@@ -5,8 +5,6 @@
 #include "core/physical_constants.hpp"
 #include "core/scalar.hpp"
 
-#include <cppad/cppad.hpp>
-
 #include <algorithm>
 #include <cmath>
 #include <cstddef>

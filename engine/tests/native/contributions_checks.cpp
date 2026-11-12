@@ -145,8 +145,8 @@ epcsaft::HelmholtzResult<double> evaluate(
         temperature, molar_density, x, p, sigma, diameter
     );
     return epcsaft::residual_helmholtz(
-        temperature, molar_density, x, p, sigma, diameter, sites, 0.0, 0.0
-    , epcsaft::association_products(molar_density, x, p, sites, epcsaft::association_delta_values(temperature, molar_density, x, p, sigma, diameter, p.association_energy_over_k, p.association_volume)));
+        temperature, molar_density, x, p, sigma, diameter, sites,
+        epcsaft::association_products(molar_density, x, p, sites, epcsaft::association_delta(temperature, molar_density, x, p, sigma, diameter)));
 }
 
 // Carnahan-Starling. For one component the log term in the hard-sphere
@@ -275,14 +275,14 @@ void residual_vanishes_at_zero_density() {
     epcsaft::Taylor<2> density;
     density.c[1] = 1.0;
     const auto terms = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
-        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0), {});
+        std::vector<epcsaft::Taylor<2>>{}, {});
     const double v = epcsaft::PI / 6.0 * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3
         * std::pow(0.88 * spheres.sigma_constant[0], 3);
     CHECK(std::abs(terms.hard_chain.c[1] / (4.0 * v) - 1.0) < 1e-14);
     CHECK(std::abs(2.0 * terms.hard_chain.c[2] / (10.0 * v * v) - 1.0) < 1e-14);
     spheres.ideal_gas = true;
     const auto ideal = epcsaft::residual_helmholtz(300.0, density, pure, spheres, sigma, diameter,
-        std::vector<epcsaft::Taylor<2>>{}, epcsaft::Taylor<2>(0.0), epcsaft::Taylor<2>(0.0), {});
+        std::vector<epcsaft::Taylor<2>>{}, {});
     CHECK(ideal.hard_chain.c[1] == 0.0 && ideal.hard_chain.c[2] == 0.0);
     auto associated = p;
     associated.site_component = {0, 0, 1};
@@ -290,8 +290,7 @@ void residual_vanishes_at_zero_density() {
     associated.association_active.assign(9, 1);
     associated.association_energy_over_k.assign(9, 1500.0);
     associated.association_volume.assign(9, 0.03);
-    const auto ds = epcsaft::association_delta_values(300.0, density, x, associated, sigma, diameter,
-        associated.association_energy_over_k, associated.association_volume);
+    const auto ds = epcsaft::association_delta(300.0, density, x, associated, sigma, diameter);
     const auto sites = epcsaft::association_density_coefficients(density, x, associated, ds);
     const auto residuals = epcsaft::association_residuals(density, x, associated, sites, ds);
     for (std::size_t site = 0; site < sites.size(); ++site) {
@@ -348,15 +347,20 @@ void relabelling_components_changes_nothing() {
     CHECK(close(direct.dispersion, relabelled.dispersion, 1.0e-14));
 }
 
-// One associating component, two sites, one bonding pair. The solve has to land
-// inside the domain and satisfy the mass-action residual to the policy tolerance.
-void association_solve_satisfies_mass_action() {
+// One associating component, two sites, one bonding pair.
+Parameters two_site_binary() {
     Parameters p = neutral_binary();
     p.site_component = {0, 0};
     p.site_multiplicity = {1, 1};
     p.association_active = {0, 1, 1, 0};
     p.association_energy_over_k = {0.0, 2425.7, 2425.7, 0.0};
     p.association_volume = {0.0, 0.0451, 0.0451, 0.0};
+    return p;
+}
+
+// The solve has to land inside the domain and satisfy the mass-action residual to the policy tolerance.
+void association_solve_satisfies_mass_action() {
+    const Parameters p = two_site_binary();
 
     const double temperature = 300.0;
     const double molar_density = 1.5e4;
@@ -428,12 +432,7 @@ void association_solve_satisfies_mass_action() {
 void association_equations_match_closed_forms_and_limits() {
     const double temperature = 300.0, density = 1.5e4;
     const std::vector<double> pure = {1.0, 0.0};
-    Parameters symmetric = neutral_binary();
-    symmetric.site_component = {0, 0};
-    symmetric.site_multiplicity = {1, 1};
-    symmetric.association_active = {0, 1, 1, 0};
-    symmetric.association_energy_over_k = {0.0, 2425.7, 2425.7, 0.0};
-    symmetric.association_volume = {0.0, 0.0451, 0.0451, 0.0};
+    const Parameters symmetric = two_site_binary();
     const auto sigma = epcsaft::segment_sigma(temperature, symmetric);
     const auto diameter = epcsaft::segment_diameter(temperature, symmetric, sigma);
     const auto fractions = epcsaft::solve_site_fractions(
@@ -533,8 +532,8 @@ void association_equations_match_closed_forms_and_limits() {
                recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
            "rho_N -> 0 gives X=1");
     const auto zero_density_terms = epcsaft::residual_helmholtz(
-        temperature, zero_density, pure, symmetric, sigma, diameter, zero_density_fractions, 0.0, 0.0
-    , epcsaft::association_products(zero_density, pure, symmetric, zero_density_fractions, epcsaft::association_delta_values(temperature, zero_density, pure, symmetric, sigma, diameter, symmetric.association_energy_over_k, symmetric.association_volume)));
+        temperature, zero_density, pure, symmetric, sigma, diameter, zero_density_fractions,
+        epcsaft::association_products(zero_density, pure, symmetric, zero_density_fractions, epcsaft::association_delta(temperature, zero_density, pure, symmetric, sigma, diameter)));
     record("limit-zero-density-energy", "association_helmholtz",
            zero_density_terms.association, 0.0,
            recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
@@ -1241,8 +1240,7 @@ void kernels_record_a_tape() {
     const std::vector<AD> no_sites;
     const auto residual = epcsaft::residual_helmholtz(
         independent[0], independent[1], composition, p, sigma, diameter,
-        no_sites, AD(0.0), AD(0.0)
-    , {});
+        no_sites, {});
     std::vector<AD> dependent = {residual.hard_chain + residual.dispersion};
     CppAD::ADFun<double> tape(independent, dependent);
 
@@ -1278,19 +1276,39 @@ void kernels_record_a_tape() {
         "p8-value", "state", "a^{res}", "T,\\rho,\\mathbf{x}", "a_{AD}=a_{double}", "state");
 }
 
+struct IdealCase {
+    const char* name;
+    epcsaft::IdealCorrelation correlation;
+    double cp, h, s;
+    const char* inputs;
+};
+// Six ideal correlations, each with independent cp, h and s at 550 K and 2e5 Pa.
+const std::vector<IdealCase> ideal_cases = {
+    {"constant", {epcsaft::IdealPolynomial{{25.0}, 400.0, 1000.0, 2.0}, 1.0e5},
+     25.0, 4750.0, 4.198196956319387, "cp:25;Tref:400;href:1000;sref:2;Psrc:1e5"},
+    {"polynomial", {epcsaft::IdealPolynomial{{20.0, 0.03, -1.0e-4}, 400.0, 1000.0, 2.0}, 1.0e5},
+     22.25, 4225.0, 3.0642238294077453, "cp:20,.03,-1e-4;Tref:400;href:1000;sref:2;Psrc:1e5"},
+    {"shomate", {epcsaft::IdealShomate{{20.0, 3.0, -1.0, 0.2, 4.0, 2.0, 3.0, 4.0}, 1000.0}, 1.0e5},
+     34.60391549586777, 3130.139706439393, -19.821614918023606,
+     "A..H:20,3,-1,.2,4,2,3,4;formation_h:1000;Psrc:1e5"},
+    {"nasa7", {epcsaft::IdealNASA7{{3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5},
+     33.415773296966506, 17034.45396995443, 206.5148184322377,
+     "a0..a6:3.5,1e-3,-2e-6,4e-9,-1e-12,2,3;Psrc:1e5"},
+    {"nasa9", {epcsaft::IdealNASA9{{1.0e5, -20.0, 3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5},
+     35.862011885447956, 14473.461900968241, 205.44287118559976,
+     "a0..a8:1e5,-20,3.5,1e-3,-2e-6,4e-9,-1e-12,2,3;Psrc:1e5"},
+    {"dippr107", {epcsaft::IdealDIPPR107{{15.0, 22.0, 700.0, 8.0, 500.0}, 400.0, 1000.0, 2.0}, 1.0e5},
+     31.34268666475855, 5422.806964662188, 5.5912660099491704,
+     "A..E:15,22,700,8,500;Tref:400;href:1000;sref:2;Psrc:1e5"},
+};
+
 void ideal_thermal_forms_match_integrals() {
     const double pressure = 2.0e5;
     const double lower = 450.0;
     const double upper = 650.0;
-    const std::vector<std::pair<const char*, epcsaft::IdealCorrelation>> forms = {
-        {"constant", {epcsaft::IdealPolynomial{{25.0}, 400.0, 1000.0, 2.0}, 1.0e5}},
-        {"polynomial", {epcsaft::IdealPolynomial{{20.0, 0.03, -1.0e-4}, 400.0, 1000.0, 2.0}, 1.0e5}},
-        {"shomate", {epcsaft::IdealShomate{{20.0, 3.0, -1.0, 0.2, 4.0, 2.0, 3.0, 4.0}, 1000.0}, 1.0e5}},
-        {"nasa7", {epcsaft::IdealNASA7{{3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5}},
-        {"nasa9", {epcsaft::IdealNASA9{{1.0e5, -20.0, 3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5}},
-        {"dippr107", {epcsaft::IdealDIPPR107{{15.0, 22.0, 700.0, 8.0, 500.0}, 400.0, 1000.0, 2.0}, 1.0e5}},
-    };
-    for (const auto& [name, correlation] : forms) {
+    for (const auto& item : ideal_cases) {
+        const char* name = item.name;
+        const auto& correlation = item.correlation;
         const auto start = epcsaft::evaluate_ideal_correlation(correlation, lower, pressure);
         const auto finish = epcsaft::evaluate_ideal_correlation(correlation, upper, pressure);
         const double coarse_h = simpson(
@@ -1371,31 +1389,7 @@ void ideal_thermal_forms_match_integrals() {
 void ideal_thermal_absolute_values_and_ad_derivatives() {
     const double temperature = 550.0;
     const double pressure = 2.0e5;
-    struct Case {
-        const char* name;
-        epcsaft::IdealCorrelation correlation;
-        double cp, h, s;
-        const char* inputs;
-    };
-    const std::vector<Case> cases = {
-        {"constant", {epcsaft::IdealPolynomial{{25.0}, 400.0, 1000.0, 2.0}, 1.0e5},
-         25.0, 4750.0, 4.198196956319387, "cp:25;Tref:400;href:1000;sref:2;Psrc:1e5"},
-        {"polynomial", {epcsaft::IdealPolynomial{{20.0, 0.03, -1.0e-4}, 400.0, 1000.0, 2.0}, 1.0e5},
-         22.25, 4225.0, 3.0642238294077453, "cp:20,.03,-1e-4;Tref:400;href:1000;sref:2;Psrc:1e5"},
-        {"shomate", {epcsaft::IdealShomate{{20.0, 3.0, -1.0, 0.2, 4.0, 2.0, 3.0, 4.0}, 1000.0}, 1.0e5},
-         34.60391549586777, 3130.139706439393, -19.821614918023606,
-         "A..H:20,3,-1,.2,4,2,3,4;formation_h:1000;Psrc:1e5"},
-        {"nasa7", {epcsaft::IdealNASA7{{3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5},
-         33.415773296966506, 17034.45396995443, 206.5148184322377,
-         "a0..a6:3.5,1e-3,-2e-6,4e-9,-1e-12,2,3;Psrc:1e5"},
-        {"nasa9", {epcsaft::IdealNASA9{{1.0e5, -20.0, 3.5, 1.0e-3, -2.0e-6, 4.0e-9, -1.0e-12, 2.0, 3.0}}, 1.0e5},
-         35.862011885447956, 14473.461900968241, 205.44287118559976,
-         "a0..a8:1e5,-20,3.5,1e-3,-2e-6,4e-9,-1e-12,2,3;Psrc:1e5"},
-        {"dippr107", {epcsaft::IdealDIPPR107{{15.0, 22.0, 700.0, 8.0, 500.0}, 400.0, 1000.0, 2.0}, 1.0e5},
-         31.34268666475855, 5422.806964662188, 5.5912660099491704,
-         "A..E:15,22,700,8,500;Tref:400;href:1000;sref:2;Psrc:1e5"},
-    };
-    for (const auto& item : cases) {
+    for (const auto& item : ideal_cases) {
         const auto value = epcsaft::evaluate_ideal_correlation(item.correlation, temperature, pressure);
         const std::string inputs = std::string(item.inputs) + ";T:550;P:2e5";
         const auto check = [&](const char* prefix, const char* quantity, const char* unit,

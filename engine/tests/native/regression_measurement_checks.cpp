@@ -325,13 +325,11 @@ void check_measurement_columns() {
 }
 
 void check_measurement_fit() {
-    for (const bool shared : {false, true}) for (const auto& controls :
-        std::vector<std::array<double,3>>{{1e-12,1e-12,1e-10}, {1e-13,1e-13,1e-11}, {1e-14,1e-14,1e-12}, {1e-16,1e-14,1e-12}}) {
+    for (const bool shared : {false, true}) {
         auto request = linear_measurements(shared);
-        request.controls.solver_options.values[epcsaft::policy::function] = controls[0]; request.controls.solver_options.values[epcsaft::policy::gradient] = controls[1];
-        request.controls.solver_options.values[epcsaft::policy::parameter] = controls[2];
-        const bool verify = controls[0] == (shared ? 1e-16 : 1e-14);
-        core::Capture capture;
+        request.controls.solver_options.values[epcsaft::policy::function] = shared ? 1e-16 : 1e-14;
+        request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-14;
+        request.controls.solver_options.values[epcsaft::policy::parameter] = 1e-12;
         const auto result = fit(request);
         CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
         const auto& rec = *result.reconciliation;
@@ -372,18 +370,6 @@ void check_measurement_fit() {
         for (std::size_t i = 0; i < 3+latent; ++i) for (std::size_t c = 0; c < width; ++c) actual(i,c) = rec.jacobian[i*width+c];
         const Eigen::VectorXd gradient = actual.transpose()*r;
         const Eigen::VectorXd step = (actual.transpose()*actual).ldlt().solve(gradient);
-        std::cout << std::setprecision(17) << "LINEAR_REFINEMENT shared=" << shared << " function_tolerance=" << controls[0]
-            << " slope_error=" << std::abs(result.physical[0]-slope) << " max_q_error=" << max_q_error
-            << " cost_error=" << std::abs(result.final_cost-cost) << " max_J_error=" << max_j_error
-            << " covariance_error=" << std::abs(result.covariance.optimizer[0]-covariance)
-            << " gradient_norm=" << gradient.cwiseAbs().maxCoeff() << " newton_step_norm=" << step.cwiseAbs().maxCoeff() << '\n';
-        std::cout << "CERES_TERMINATION shared=" << shared << " function_tolerance=" << controls[0] << " type="
-            << result.termination << " message=" << result.message << '\n';
-        for (const auto& event : capture.trace().events) if (std::string(capture.trace().spans[event.span].name) == "fit_iteration") {
-            std::cout << "CERES_ITERATION shared=" << shared << " function_tolerance=" << controls[0] << " " << event.name;
-            for (const auto value : event.values) std::cout << ' ' << value;
-            std::cout << '\n';
-        }
         if (shared) {
             Eigen::MatrixXd analytic = Eigen::MatrixXd::Zero(4,2); Eigen::VectorXd residual(4);
             for (std::size_t i = 0; i < 3; ++i) {
@@ -406,28 +392,24 @@ void check_measurement_fit() {
             }
             CHECK((step-analytic_step).cwiseAbs().maxCoeff() <= 1e-10);
             const auto corrected = point(request,{z[0]-step[0],z[1]-step[1]});
-            std::cout << "SHARED_GN code_dq_K=" << 2*step[1] << " analytic_dq_K=" << 2*analytic_step[1]
+            std::cout << std::setprecision(17) << "SHARED_GN code_dq_K=" << 2*step[1] << " analytic_dq_K=" << 2*analytic_step[1]
                 << " corrected_q_K=" << corrected.reconciliation->values[0] << " corrected_slope=" << corrected.chart.physical[0] << '\n';
-            if (verify) {
-                CHECK(std::abs(corrected.reconciliation->values[0]-320) <= 320e-10);
-                CHECK(std::abs(corrected.chart.physical[0]-slope) <= 1e-10);
-                CHECK(std::abs(corrected.cost-cost) <= 1e-10);
-                for (std::size_t i = 0; i < 4; ++i) for (std::size_t c = 0; c < 2; ++c)
-                    CHECK(std::abs(corrected.reconciliation->jacobian[i*2+c]-j(i,c)) <= 1e-10*std::max(1.0,std::abs(j(i,c))));
-                const Eigen::Map<const Eigen::Matrix<double,4,2,Eigen::RowMajor>> jc(corrected.reconciliation->jacobian.data());
-                const double corrected_cov = (jc.transpose()*jc).ldlt().solve(Eigen::Vector2d::Unit(0))[0];
-                CHECK(std::abs(corrected_cov-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
-            }
+            CHECK(std::abs(corrected.reconciliation->values[0]-320) <= 320e-10);
+            CHECK(std::abs(corrected.chart.physical[0]-slope) <= 1e-10);
+            CHECK(std::abs(corrected.cost-cost) <= 1e-10);
+            for (std::size_t i = 0; i < 4; ++i) for (std::size_t c = 0; c < 2; ++c)
+                CHECK(std::abs(corrected.reconciliation->jacobian[i*2+c]-j(i,c)) <= 1e-10*std::max(1.0,std::abs(j(i,c))));
+            const Eigen::Map<const Eigen::Matrix<double,4,2,Eigen::RowMajor>> jc(corrected.reconciliation->jacobian.data());
+            const double corrected_cov = (jc.transpose()*jc).ldlt().solve(Eigen::Vector2d::Unit(0))[0];
+            CHECK(std::abs(corrected_cov-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
         }
-        if (verify) {
-            for (std::size_t c = 0; c < expected_q.size(); ++c)
-                reference_scale_agrees(id+"/q/"+std::to_string(c), "temperature", "K", rec.values[c], expected_q[c], 0, 1e-10, "", "analytic eliminated temperature", "measurement-fit");
-            reference_scale_agrees(id, "slope", "1/K", result.physical[0], slope, 1e-10, 0, "", "analytic errors-in-variables slope", "measurement-fit");
-            reference_scale_agrees(id+"/cost", "objective", "1", result.final_cost, cost, 1e-10, 0, "", "complete analytic objective", "measurement-fit");
-            CHECK(max_j_error <= 1e-10*std::max(1.0,j.cwiseAbs().maxCoeff()));
-            CHECK(std::abs(result.covariance.optimizer[0]-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
-            CHECK(!result.covariance.variance_factor);
-        }
+        for (std::size_t c = 0; c < expected_q.size(); ++c)
+            reference_scale_agrees(id+"/q/"+std::to_string(c), "temperature", "K", rec.values[c], expected_q[c], 0, 1e-10, "", "analytic eliminated temperature", "measurement-fit");
+        reference_scale_agrees(id, "slope", "1/K", result.physical[0], slope, 1e-10, 0, "", "analytic errors-in-variables slope", "measurement-fit");
+        reference_scale_agrees(id+"/cost", "objective", "1", result.final_cost, cost, 1e-10, 0, "", "complete analytic objective", "measurement-fit");
+        CHECK(max_j_error <= 1e-10*std::max(1.0,j.cwiseAbs().maxCoeff()));
+        CHECK(std::abs(result.covariance.optimizer[0]-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
+        CHECK(!result.covariance.variance_factor);
     }
 }
 

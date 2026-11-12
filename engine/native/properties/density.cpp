@@ -86,26 +86,13 @@ public:
     PressureSeries(const HelmholtzModel& model, Base temperature, const std::vector<Base>& amounts)
         : model_(model), parameters_([&]() -> decltype(auto) {
             if constexpr (std::is_same_v<Base, double>) return model.parameters();
-            else {
-                ParameterRecord<Base> mapped;
-                static_cast<FixedParameters&>(mapped) = model.parameters();
-                for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT; ++f) {
-                    const auto family = static_cast<detail::ParameterFamily>(f);
-                    const auto source = detail::family_values(model.parameters(), family);
-                    const auto target = detail::family_values(mapped, family, source.second);
-                    std::copy_n(source.first, source.second, target.first);
-                }
-                return mapped;
-            }
+            else return detail::make_tape_parameters<Base>(model.parameters(), {}, {});
         }()), temperature_(temperature), amounts_((std::is_same_v<Base, double> && !Composition) ? std::vector<Base>{} : amounts) {
         for (Base amount : amounts) total_ += amount;
         for (Base amount : amounts) composition_.push_back(amount / total_);
-        sigma_ = segment_sigma(temperature, parameters_);
-        if (!std::all_of(sigma_.begin(), sigma_.end(), [](Base v) { return wide_math::isfinite(v) && v > 0.0; }))
-            throw std::invalid_argument("invalid sigma correlation");
-        diameter_ = segment_diameter(temperature, parameters_, sigma_);
-        if (!std::all_of(diameter_.begin(), diameter_.end(), [](Base v) { return wide_math::isfinite(v) && v > 0.0; }))
-            throw std::invalid_argument("invalid segment diameter");
+        auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
+        sigma_ = std::move(geometry.sigma);
+        diameter_ = std::move(geometry.diameter);
         if constexpr (!std::is_same_v<Base, double>) {
             const auto laws = temperature_law_values(temperature_, parameters_);
             const auto checked = narrow_values(laws.begin(), laws.end());
@@ -133,7 +120,7 @@ public:
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
     bool thermal_chart_resolved(Base density) const {
-        const auto zeta = packing_moments(density, composition_, parameters_, diameter_);
+        const auto zeta = packing_moments(density, composition_, parameters_, diameter_, held_packing());
         const Base cube = zeta[2] * zeta[2] * zeta[2], volume = 1.0 / density;
         // The finite-density hard-sphere expression loses relative coefficients in subnormal cubes.
         return cube >= std::numeric_limits<Base>::min() && wide_math::isfinite(volume * volume);
@@ -168,7 +155,8 @@ public:
         }();
         const auto& [total, composition] = path;
         const Series rho = total / v;
-        (void)packing_fraction_from_geometry(rho0, composition_, parameters_, diameter_);  // before any density term
+        if (const auto* packing = held_packing()) (void)packing_fraction_from_geometry(rho0, (*packing)[3]);  // before any density term
+        else (void)packing_fraction_from_geometry(rho0, composition_, parameters_, diameter_);
         // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
         static thread_local std::vector<Series> delta, site_series, residuals;
         static thread_local std::vector<double> strength;
@@ -176,12 +164,9 @@ public:
         delta.clear(); strength.clear(); site_series.clear(); residuals.clear();
         if (!parameters_.site_component.empty()) {
             if constexpr (std::is_same_v<Base, double> && !Composition)
-                delta = association_delta_values(temperature_, rho, composition_, parameters_, sigma_, diameter_,
-                    parameters_.association_energy_over_k, parameters_.association_volume);
-            else delta = association_delta_values(Series(temperature_), rho, composition, parameters_,
-                std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
-                std::vector<Series>(parameters_.association_energy_over_k.begin(), parameters_.association_energy_over_k.end()),
-                std::vector<Series>(parameters_.association_volume.begin(), parameters_.association_volume.end()));
+                delta = association_delta(temperature_, rho, composition_, parameters_, sigma_, diameter_);
+            else delta = association_delta(Series(temperature_), rho, composition, parameters_,
+                std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()));
             for (const auto& d : delta) {
                 if constexpr (!std::is_same_v<Base, double>)
                     if (!(d.c[0] >= 0) || !wide_math::isfinite(d.c[0])) throw std::invalid_argument("invalid extended association strength");
@@ -322,7 +307,7 @@ public:
             }
         }
         const auto products = association_products(rho, composition, parameters_, site_series, delta);
-        const auto contributions = [&] {
+        const auto result = [&] {
             if constexpr (Thermal) {
                 // The pure nonassociating thermal request differentiates geometry and pair laws too.
                 Series temperature(temperature_); temperature.c[1] = temperature_direction;
@@ -330,31 +315,39 @@ public:
                 const auto sigma = segment_sigma(temperature, parameters_);
                 const auto diameter = segment_diameter(temperature, parameters_, sigma);
                 const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_);
-                return residual_helmholtz(temperature, rho, x, parameters_, sigma, diameter,
-                    site_series, electro.first.debye_huckel, electro.second, products);
+                return extensive_residual_helmholtz(total, residual_helmholtz(temperature, rho, x, parameters_, sigma,
+                    diameter, site_series, products), electro.first.debye_huckel, electro.second, parameters_);
             } else {
                 const auto electrostatics = [&] {
                     if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
                     else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
                 }();
-                if constexpr (std::is_same_v<Base, double> && !Composition) return residual_helmholtz(temperature_, rho, composition_, parameters_, sigma_,
-                    diameter_, site_series, electrostatics.first.debye_huckel, electrostatics.second, products, &moments_);
-                else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
-                    std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
-                    site_series, electrostatics.first.debye_huckel, electrostatics.second, products);
+                const auto terms = [&] {
+                    if constexpr (std::is_same_v<Base, double> && !Composition) return residual_helmholtz(temperature_, rho,
+                        composition_, parameters_, sigma_, diameter_, site_series, products, &moments_);
+                    else return residual_helmholtz(Series(temperature_), rho, composition, parameters_,
+                        std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
+                        site_series, products);
+                }();
+                return extensive_residual_helmholtz(total, terms, electrostatics.first.debye_huckel, electrostatics.second,
+                    parameters_);
             }
         }();
         if (sites_out != nullptr) {
             sites_out->clear();
             for (const auto& x : site_series) sites_out->insert(sites_out->end(), x.c.begin(), x.c.begin() + N);
         }
-        auto result = total * (contributions.hard_chain + contributions.dispersion + contributions.debye_huckel
-                         + contributions.born + contributions.association + contributions.dipolar);
-        if (!parameters_.cation_mixing.empty()) result += total * contributions.cation_mixing;
         return result;
     }
 
+    const std::vector<Base>& diameter() const { return diameter_; }
+
 private:
+    // The packing moments prepared once per isotherm, when this series holds them.
+    const std::array<Base, 4>* held_packing() const {
+        if constexpr (std::is_same_v<Base, double> && !Composition) if (!parameters_.ideal_gas) return &moments_.packing;
+        return nullptr;
+    }
     const HelmholtzModel& model_;
     std::conditional_t<std::is_same_v<Base, double>, const Parameters&, ParameterRecord<Base>> parameters_;
     IsothermMoments<Base> moments_;
@@ -397,7 +390,7 @@ PressurePoint at_density(const PressureSeries<>& series, double temperature, dou
     if (order == DerivativeOrder::PressureSlope) {
         double floor = 0.0;
         const auto energy = series.residual<2>(density, floor);
-        if (!std::all_of(energy.c.begin(), energy.c.end(), [](double v) { return std::isfinite(v); }))
+        if (!all_finite(energy.c))
             throw std::runtime_error("nonfinite density derivatives");
         const double calculated = rt * (density - energy.c[1]);
         const PressurePoint point{calculated / scale - pressure / scale, calculated,
@@ -409,8 +402,7 @@ PressurePoint at_density(const PressureSeries<>& series, double temperature, dou
         return point;
     }
     const auto derivatives = series.model().evaluate(temperature, 1.0 / density, composition, order);
-    if (!std::all_of(derivatives.gradient.begin(), derivatives.gradient.end(), [](double v) { return std::isfinite(v); })
-        || !std::all_of(derivatives.hessian.begin(), derivatives.hessian.end(), [](double v) { return std::isfinite(v); }))
+    if (!all_finite(derivatives.gradient) || !all_finite(derivatives.hessian))
         throw std::runtime_error("nonfinite density derivatives");
     const double calculated = rt * (density - derivatives.gradient[1]);
     return {calculated / scale - pressure / scale, calculated, 0.0, derivatives.gradient_floor};
@@ -1540,7 +1532,7 @@ PureIsothermalValues<Base> HelmholtzModel::pure_isothermal(Base temperature, Bas
     d.rank_records = series.rank_records;
     d.association_refinement = series.refinement;
     if (series.observations_) series.observations_->merge(d.rank_records);
-    if (!std::all_of(energy.c.begin(), energy.c.end(), [](Base v) { return wide_math::isfinite(v); }))
+    if (!all_finite(energy.c))
         throw std::runtime_error("nonfinite pure isothermal derivatives");
     project_pure(d, volume, amount, 3 + active_.size(),
         std::array<Base, 6>{energy.c[0], 0.0, energy.c[1], 0.0, 0.0, 2.0 * energy.c[2]});
@@ -1566,7 +1558,7 @@ HelmholtzDerivatives HelmholtzModel::pure_state_derivatives(double temperature, 
     const std::array<double, 6> c{t.c[0], t.c[1] / temperature, v.c[1] / volume,
         2.0 * t.c[2] / (temperature * temperature),
         (tv.c[2] - t.c[2] - v.c[2]) / (temperature * volume), 2.0 * v.c[2] / (volume * volume)};
-    if (!std::all_of(c.begin(), c.end(), [](double value) { return std::isfinite(value); }))
+    if (!all_finite(c))
         throw std::runtime_error("nonfinite pure thermal derivatives");
     HelmholtzDerivatives d;
     project_pure(d, volume, 1.0, 3, c);
@@ -1683,13 +1675,15 @@ DensityRoot solve_density(
         if (sibling_root) *sibling_root = root;
         return root;
     }
+    const PressureSeries<> series(model, temperature, mole_fractions);
     const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
-    const double upper = model.molar_density_upper_bound(temperature, mole_fractions)
-        * policy::DENSITY_UPPER_FRACTION.value;
+    // EqID: density_upper_bound, from the series' admitted diameter.
+    const double coefficient = packing_fraction_from_geometry(1.0, mole_fractions, model.parameters(), series.diameter());
+    if (!(std::isfinite(coefficient) && coefficient > 0.0)) throw std::invalid_argument("invalid packing coefficient");
+    const double upper = policy::CLOSE_PACKING_FRACTION.value / coefficient * policy::DENSITY_UPPER_FRACTION.value;
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
-    const PressureSeries<> series(model, temperature, mole_fractions);
     if (anchor_density.has_value()) {
         try {
             if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");

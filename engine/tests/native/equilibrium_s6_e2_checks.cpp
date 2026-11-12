@@ -1771,7 +1771,8 @@ void check_species_thermochemistry() {
         bool refused=false;try{compile_problem(absent,request);}catch(const std::invalid_argument&e){const std::string cause=e.what();refused=cause.find(value.cause)!=std::string::npos&&cause.find("N2O4=2NO2")!=std::string::npos;}
         CHECK(refused); std::printf("unavailable,%s\n",value.cause.c_str());
     }
-    const auto fourth=reference_calorics(c,500,100000,true,false,false,4), caloric_source=reference_calorics(c,500,100000,true,false,false,2);
+    ReferenceJets fourth_order, second_order; fourth_order.temperature_order=4; second_order.temperature_order=2;
+    const auto fourth=reference_calorics(c,500,100000,fourth_order), caloric_source=reference_calorics(c,500,100000,second_order);
     CHECK(fourth.status==SolvedStateActionStatus::EnergyOrderUnavailable);
     CHECK(caloric_source.status==SolvedStateActionStatus::ReferenceUnavailable);
     std::printf("refusal,reference-calorics,order=4,T=500,P=100000,cause=%s\n",fourth.message.c_str());
@@ -1812,7 +1813,7 @@ void check_species_thermochemistry() {
     }
     HelmholtzModel nonideal(properties_support::neutral_binary(),{},r);
     const auto nonideal_compiled=compile_problem(nonideal,problem);
-    CHECK(reference_calorics(nonideal_compiled,500,100000,true,false,false,2).status==SolvedStateActionStatus::ReferenceUnavailable);
+    CHECK(reference_calorics(nonideal_compiled,500,100000,second_order).status==SolvedStateActionStatus::ReferenceUnavailable);
     const auto nonideal_solved=solve_equilibrium(nonideal,problem); CHECK(nonideal_solved.success);
     const auto deferred=solved_state_actions(nonideal_compiled,nonideal_solved,
         {{{SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity}},{{1,0,{0,0},{}}}});

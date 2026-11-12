@@ -85,7 +85,22 @@ void binary_critical() {
         const std::string id="C3/"+std::to_string(z0);
         const auto p=critical_cell({z0,1-z0},260,6000);const auto r=solved(m,p,id);const auto c=compile_problem(m,p);
         const SolvedStateActionDirection d{0,0,{0.1,-0.1},{}},d0{0,0,{0.1,0},{}},d1{0,0,{0,-0.1},{}};
-        for(const auto kind:{SolvedStateObservableKind::Temperature,SolvedStateObservableKind::Pressure,SolvedStateObservableKind::PhaseMolarDensity}) {
+        constexpr std::array kinds{SolvedStateObservableKind::Temperature,SolvedStateObservableKind::Pressure,SolvedStateObservableKind::PhaseMolarDensity};
+        // Each rung and side solves its shifted critical problem once; its three values and their first actions along d
+        // serve both ladders of every observable.
+        double value[5][2][3],first[5][2][3];
+        for(int rung=0;rung<5;++rung) for(int s:{0,1}) {
+            const double h=std::ldexp(0.02,-rung);
+            auto q=p;q.feed.values={z0+(2*s-1)*h*0.1,1-z0-(2*s-1)*h*0.1};
+            const auto rr=solve_equilibrium_from_coordinates(m,q,r.coordinates);if(!rr.has_state())throw std::runtime_error(id+": "+rr.message);
+            const auto a=solved_state_actions(compile_problem(m,q),rr,{{{kinds[0]},{kinds[1]},{kinds[2]}},{d}}).results;
+            for(std::size_t k=0;k<3;++k) {
+                if(!a[k].action)throw std::runtime_error(id+": shifted first action: "+a[k].diagnostic_message.value_or(""));
+                value[rung][s][k]=k==0?*rr.temperature:k==1?*rr.pressure:rr.molar_densities[0];first[rung][s][k]=*a[k].action;
+            }
+        }
+        for(std::size_t k=0;k<3;++k) {
+            const auto kind=kinds[k];
             const auto action=[&](const SolvedStateActionDirection& v) {
                 const auto a=solved_state_actions(c,r,{{{kind}},{v}}).results[0];
                 if(!a.action)throw std::runtime_error(id+": critical first action: "+a.diagnostic_message.value_or(""));
@@ -94,33 +109,20 @@ void binary_critical() {
             const double exact=action(d),scale=std::abs(action(d0))+std::abs(action(d1));
             double best=INFINITY,previous=0;
             for(int rung=0;rung<5;++rung) {
-                const double h=std::ldexp(0.02,-rung);double side[2];
-                for(int s:{0,1}) {
-                    auto q=p;q.feed.values={z0+(2*s-1)*h*0.1,1-z0-(2*s-1)*h*0.1};
-                    const auto rr=solve_equilibrium_from_coordinates(m,q,r.coordinates);if(!rr.has_state())throw std::runtime_error(id+": "+rr.message);
-                    side[s]=kind==SolvedStateObservableKind::Temperature?*rr.temperature:kind==SolvedStateObservableKind::Pressure?*rr.pressure:rr.molar_densities[0];
-                }
-                const double reference=(side[1]-side[0])/(2*h);
+                const double h=std::ldexp(0.02,-rung),reference=(value[rung][1][k]-value[rung][0][k])/(2*h);
                 if(rung)best=std::min(best,std::abs(exact-(4*reference-previous)/3)/scale);
                 previous=reference;
             }
             compare(id+"/first-action/"+std::to_string(static_cast<int>(kind)),best,0,1,1e-6);
         }
         // A2 along (d, d) against Richardson-refined central differences of A1 at the perturbed critical solves.
-        for(const auto kind:{SolvedStateObservableKind::Temperature,SolvedStateObservableKind::Pressure,SolvedStateObservableKind::PhaseMolarDensity}) {
+        for(std::size_t k=0;k<3;++k) {
+            const auto kind=kinds[k];
             const auto second=solved_state_actions(c,r,{{{kind}},{d,d}}).results[0];
             if(!second.action)throw std::runtime_error(id+": critical second action: "+std::string(solved_state_status_name(second.status)));
             double best=INFINITY,previous=0;
             for(int rung=0;rung<5;++rung) {
-                const double h=std::ldexp(0.02,-rung);double side[2];
-                for(int s:{0,1}) {
-                    auto q=p;q.feed.values={z0+(2*s-1)*h*0.1,1-z0-(2*s-1)*h*0.1};
-                    const auto rr=solve_equilibrium_from_coordinates(m,q,r.coordinates);if(!rr.has_state())throw std::runtime_error(id+": "+rr.message);
-                    const auto a=solved_state_actions(compile_problem(m,q),rr,{{{kind}},{d}}).results[0];
-                    if(!a.action)throw std::runtime_error(id+": shifted first action: "+a.diagnostic_message.value_or(""));
-                    side[s]=*a.action;
-                }
-                const double reference=(side[1]-side[0])/(2*h);
+                const double h=std::ldexp(0.02,-rung),reference=(first[rung][1][k]-first[rung][0][k])/(2*h);
                 if(rung)best=std::min(best,std::abs(*second.action-(4*reference-previous)/3)/std::abs(*second.action));
                 previous=reference;
             }
@@ -367,8 +369,8 @@ void spinodal() {
         const double middle=(endpoints[0][0]+endpoints[0][1])/2;
         const std::vector<std::vector<double>> grids={{7490,7560,8000},{100,7000,7500,8000,15000},{7000,7600,15000},
             {100,middle,endpoints[0][1]*1.01},{endpoints[0][0]*.99,middle,20000}};
-        for (std::size_t grid=0;grid<grids.size();++grid) for (int branch=0;branch<2;++branch) for (double step : {1.,.1}) for (bool supplied : {false,true}) {
-            ++runs;
+        for (std::size_t grid=0;grid<grids.size();++grid) for (int branch=0;branch<2;++branch) {
+            // The initial solve and both scans depend only on the grid and branch; each continuation variant below reuses them.
             auto p=cell(T,branch?13000:1); p.spinodal->density_nodes=grids[grid];
             auto target=p; target.temperature=FreeValue::fixed(target_T);
             const auto initial=solve_equilibrium(model,p);
@@ -381,9 +383,8 @@ void spinodal() {
             const bool expected_coverage=std::any_of(coverage.spinodal_search->brackets.begin(),coverage.spinodal_search->brackets.end(),
                 [&](const auto& b) { return endpoints[0][branch]>=b.lower && endpoints[0][branch]<=b.upper; });
             CHECK(covered==expected_coverage);
-            bool compatible=false; ContinuationResult path;
+            bool compatible=false;
             if (covered) {
-                ++available;
                 auto compiled=compile_problem(model,target);
                 try { spinodal_search(compiled); } catch (const std::domain_error& error) {
                     if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
@@ -394,43 +395,47 @@ void spinodal() {
                     if (endpoints[1][branch]>=bracket.lower && endpoints[1][branch]<=bracket.upper
                         && bracket.lower<=before.upper && bracket.upper>=before.lower) compatible=true;
             }
-            path=continue_equilibrium(model,{p,target,supplied?std::make_optional(intended[branch]):std::nullopt,{step,1e-7,100,6},{}});
-            if (covered) {
-                CHECK(!path.states.empty());
-                for (const auto& state:path.states) {
-                    const double rho=state.molar_densities[0],scale=endpoints[1][branch];
-                    CHECK(rho>=std::min(endpoints[0][branch],endpoints[1][branch])-1e-8*scale);
-                    CHECK(rho<=std::max(endpoints[0][branch],endpoints[1][branch])+1e-8*scale);
-                    CHECK(state.spinodal->normalized_null_residual<=1e-10);
+            for (double step : {1.,.1}) for (bool supplied : {false,true}) {
+                ++runs;
+                if (covered) ++available;
+                const auto path=continue_equilibrium(model,{p,target,supplied?std::make_optional(intended[branch]):std::nullopt,{step,1e-7,100,6},{}});
+                if (covered) {
+                    CHECK(!path.states.empty());
+                    for (const auto& state:path.states) {
+                        const double rho=state.molar_densities[0],scale=endpoints[1][branch];
+                        CHECK(rho>=std::min(endpoints[0][branch],endpoints[1][branch])-1e-8*scale);
+                        CHECK(rho<=std::max(endpoints[0][branch],endpoints[1][branch])+1e-8*scale);
+                        CHECK(state.spinodal->normalized_null_residual<=1e-10);
+                    }
+                    if (compatible) CHECK(path.success);
+                    if (path.success) CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][branch])/endpoints[1][branch]<=1e-8);
+                    else {
+                        CHECK(path.cause_stop==ContinuationStop::branch_lost);
+                        CHECK(path.last_result && path.last_result->spinodal);
+                        CHECK(path.last_result->spinodal->search.evaluations>0);
+                    }
                 }
-                if (compatible) CHECK(path.success);
-                if (path.success) CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][branch])/endpoints[1][branch]<=1e-8);
-                else {
-                    CHECK(path.cause_stop==ContinuationStop::branch_lost);
-                    CHECK(path.last_result && path.last_result->spinodal);
-                    CHECK(path.last_result->spinodal->search.evaluations>0);
+                if (!covered) {
+                    if (supplied || !initial.success) {
+                        CHECK(!path.success); CHECK(path.states.empty());
+                        CHECK(path.stop==ContinuationStop::initial_failure);
+                        CHECK(path.cause_stop==ContinuationStop::branch_lost);
+                        CHECK(path.last_result && path.last_result->spinodal);
+                        CHECK(path.last_result->spinodal->search.evaluations==grids[grid].size());
+                        CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_search->brackets.size());
+                    } else {
+                        CHECK(path.success);
+                        CHECK(std::abs(path.states.front().molar_densities[0]-endpoints[0][1-branch])/endpoints[0][1-branch]<=1e-8);
+                        CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][1-branch])/endpoints[1][1-branch]<=1e-8);
+                    }
                 }
+                const auto* last=path.states.empty()?nullptr:&path.states.back();
+                if (csv) csv<<T<<','<<target_T<<','<<grid<<','<<branch<<','<<step<<','<<supplied<<','<<covered<<','<<compatible<<','<<path.success<<','
+                    <<continuation_stop_name(path.stop)<<','
+                    <<(path.cause_stop?continuation_stop_name(*path.cause_stop):"")<<','
+                    <<(last?*last->temperature:NAN)<<','<<(last?last->molar_densities[0]:NAN)<<','<<endpoints[1][branch]<<','
+                    <<path.states.size()<<','<<path.retries<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.evaluations:0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.brackets.size():0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.finite_limits.size():0)<<','<<initial.success<<','<<(initial.success?initial.molar_densities[0]:NAN)<<','<<(initial.spinodal?initial.spinodal->search.evaluations:0)<<'\n';
             }
-            if (!covered) {
-                if (supplied || !initial.success) {
-                    CHECK(!path.success); CHECK(path.states.empty());
-                    CHECK(path.stop==ContinuationStop::initial_failure);
-                    CHECK(path.cause_stop==ContinuationStop::branch_lost);
-                    CHECK(path.last_result && path.last_result->spinodal);
-                    CHECK(path.last_result->spinodal->search.evaluations==grids[grid].size());
-                    CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_search->brackets.size());
-                } else {
-                    CHECK(path.success);
-                    CHECK(std::abs(path.states.front().molar_densities[0]-endpoints[0][1-branch])/endpoints[0][1-branch]<=1e-8);
-                    CHECK(std::abs(path.states.back().molar_densities[0]-endpoints[1][1-branch])/endpoints[1][1-branch]<=1e-8);
-                }
-            }
-            const auto* last=path.states.empty()?nullptr:&path.states.back();
-            if (csv) csv<<T<<','<<target_T<<','<<grid<<','<<branch<<','<<step<<','<<supplied<<','<<covered<<','<<compatible<<','<<path.success<<','
-                <<continuation_stop_name(path.stop)<<','
-                <<(path.cause_stop?continuation_stop_name(*path.cause_stop):"")<<','
-                <<(last?*last->temperature:NAN)<<','<<(last?last->molar_densities[0]:NAN)<<','<<endpoints[1][branch]<<','
-                <<path.states.size()<<','<<path.retries<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.evaluations:0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.brackets.size():0)<<','<<(path.last_result && path.last_result->spinodal?path.last_result->spinodal->search.finite_limits.size():0)<<','<<initial.success<<','<<(initial.success?initial.molar_densities[0]:NAN)<<','<<(initial.spinodal?initial.spinodal->search.evaluations:0)<<'\n';
         }
     }
     CHECK(runs==400); CHECK(available==320);
