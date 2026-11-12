@@ -379,6 +379,116 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     return candidate;
 }
 
+double repair_effect(const CompiledSystem &c, const PhasePoint &at, const PhasePoint &corrected,
+                     const std::vector<double> &plane, Quantities &diagnostics, const std::string &prefix) {
+    const auto &m = *c.model;
+    long double allowance = 0;
+    size_t ns = c.n_feed.size();
+    double T = at.temperature, P = at.pressure, rt = GAS_CONSTANT_J_PER_MOL_K * T;
+    std::vector<double> phi(at.amount.size(), 0);
+    size_t electro = 0;
+    for (auto &row : c.rows)
+        if (row.kind == RowKind::Electro) phi[row.phase] = at.point[c.primal_size + c.rank + electro++];
+    const long double limit = std::sqrt(std::numeric_limits<double>::epsilon());
+    for (size_t p = 0; p < at.amount.size(); ++p) {
+        if (!(at.amount[p] > 0)) continue;
+        std::vector<long double> n(ns), actual(ns);
+        long double N = 0, V = (long double)at.amount[p] * at.volume[p],
+                    dV = (long double)corrected.amount[p] * corrected.volume[p] - V, rho = std::abs(dV) / V,
+                    plane_movement = 0;
+        std::vector<double> dn(ns), x(ns);
+        for (size_t i = 0; i < ns; ++i) {
+            n[i] = (long double)at.amount[p] * at.composition[p][i];
+            actual[i] = (long double)corrected.amount[p] * corrected.composition[p][i] - n[i];
+            plane_movement += plane[i] * actual[i];
+            dn[i] = actual[i];
+            N += n[i];
+
+            if (n[i] > 0)
+                rho = std::max(rho, std::abs(actual[i]) / n[i]);
+            else if (actual[i] != 0)
+                throw std::domain_error("repair changes structural support");
+        }
+        for (size_t i = 0; i < ns; ++i) x[i] = n[i] / N;
+        double v = V / N;
+        ReferenceTaylorError e;
+        auto action = m.reference_taylor(T, v, x, dn, PressureActionDirection{}, 0, false, &e);
+        if (action.status != PropertyActionStatus::Available) throw std::domain_error("repair action unavailable");
+        long double projected = action.contraction.at(0) + (P - e.pressure[0]) * dV / rt;
+        for (size_t i = 0; i < ns; ++i)
+            if (x[i] > 0)
+                projected +=
+                    (long double)dn[i] * (std::log((long double)x[i]) + at.standard.derivative[0][i] - plane[i]);
+
+        diagnostics[prefix + std::to_string(p) + "_projected_over_rt_mol"] = projected;
+        diagnostics[prefix + std::to_string(p) + "_plane_over_rt_mol"] = plane_movement;
+        allowance += std::abs(projected);
+        allowance += e.fixed[0] + std::abs(dV / rt) * e.pressure_floor[0];
+
+        size_t width = 1 + ns;
+        std::vector<long double> delta = actual, scale = n;
+        delta.insert(delta.begin(), dV);
+        scale.insert(scale.begin(), V);
+        using Matrix = Eigen::Matrix<long double, Eigen::Dynamic, Eigen::Dynamic>;
+        Matrix first, envelope = Matrix::Zero(width, width), spread = envelope;
+        Eigen::Map<const Eigen::Matrix<long double, Eigen::Dynamic, 1>> scaling(scale.data(), width),
+            movement(delta.data(), width);
+        const auto scale_matrix = scaling.asDiagonal();
+        long double norm = 0, change = 0;
+        for (long double t : {0.L, .5L, 1.L}) {
+            std::vector<double> amount(ns);
+            for (size_t i = 0; i < ns; ++i) amount[i] = n[i] + t * actual[i];
+            auto d = m.evaluate(T, V + t * dV, amount, DerivativeOrder::IsothermalPhaseHessian);
+            size_t dw = d.gradient.size();
+            Matrix h(width, width);
+            long double total = std::accumulate(amount.begin(), amount.end(), 0.L);
+            long double vol = V + t * dV;
+            for (size_t i = 0; i < width; ++i)
+                for (size_t j = 0; j < width; ++j) {
+                    long double a = d.hessian[(1+i)*dw+1+j];
+                    if (i == 0 && j == 0)
+                        a += total / (vol * vol);
+                    else if (i == 0 || j == 0)
+                        a -= 1 / vol;
+                    else if (i == j && amount[i - 1] > 0)
+                        a += 1 / amount[i - 1];
+                    h(i, j) = a;
+                }
+            if (!h.allFinite()) throw std::domain_error("repair Hessian unavailable");
+            if (t == 0) first = h;
+            const Matrix variation = h - first;
+            norm = std::max(norm, (scale_matrix * h * scale_matrix).cwiseAbs().rowwise().sum().maxCoeff());
+            change = std::max(change, (scale_matrix * variation * scale_matrix).cwiseAbs().rowwise().sum().maxCoeff());
+            envelope = envelope.cwiseMax(h.cwiseAbs());
+            spread = spread.cwiseMax(variation.cwiseAbs());
+        }
+        const long double remainder =
+            .5L * (movement.cwiseAbs().transpose() * (envelope + spread) * movement.cwiseAbs())(0, 0);
+        long double hchange = norm ? change / norm : (change ? INFINITY : 0);
+
+        if (!(std::isfinite(rho) && rho <= limit && std::isfinite(hchange) && hchange <= limit))
+            throw std::domain_error("Gibbs repair outside local small-repair domain");
+        allowance += remainder;
+        long double charge = 0, rounding = 0;
+        auto d = m.evaluate(T, v, x, DerivativeOrder::IsothermalPhaseHessian);
+        for (size_t i = 0; i < ns; ++i) {
+            if (x[i] > 0)
+                rounding += std::abs(actual[i] - dn[i]) *
+                            (std::abs(d.gradient[2 + i]) + std::abs(std::log((long double)x[i] / v)) +
+                             std::abs(at.standard.derivative[0][i]));
+            charge += (long double)corrected.amount[p] * corrected.composition[p][i] * m.parameters().charge_number[i];
+        }
+
+        allowance += rounding + std::abs(phi[p] * charge);
+        long double magnitude = std::abs(projected) + std::abs(action.contraction[0]) + std::abs(dV * P / rt);
+        for (size_t i = 0; i < ns; ++i)
+            magnitude += std::abs((long double)dn[i]) * (std::abs(plane[i]) + std::abs(at.standard.derivative[0][i]));
+        allowance += (8 * ns + 24) * std::numeric_limits<long double>::epsilon() * magnitude;
+    }
+    if (!(std::isfinite(allowance) && allowance >= 0)) throw std::domain_error("repair estimate unavailable");
+    return allowance;
+}
+
 // Density-independent permittivity is a condensed-liquid correlation: a charged trial counts only on its own liquid side.
 void condensed_admission(const std::optional<DensityRoot>& root, Quantities* q = nullptr) {
     if (!root || properties::density_side(root->branch, root->molar_density, root->negative_slope_density) != DensityBranch::Liquid)
@@ -396,6 +506,184 @@ std::vector<double> trial_coordinates(const CompiledSystem& c, const std::vector
     return point;
 }
 } // namespace
+
+// ALG-STABILITY: cache the original solved-state row uncertainty and supported
+// repair once.
+GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, const EquilibriumResult &result) {
+    GibbsDifferenceReference out;
+    try {
+
+        out.physical = stability_candidate(c, result, out.report).physical;
+        std::vector<SolvedStateObservable> o;
+        for (size_t i = 0; i < c.n_feed.size(); ++i)
+            o.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
+        SolvedStateActionDirection zero;
+        zero.feed_amounts_mol.assign(c.n_feed.size(), 0);
+        zero.active_parameters.assign(c.model->active_parameters().size(), 0);
+        auto actions = solved_state_first_actions(c, result, o, {zero}).front();
+
+        for (auto &a : actions.results) {
+            if (!a.numerical_error) throw std::domain_error("parent row uncertainty unavailable");
+            out.row_errors.push_back(*a.numerical_error);
+        }
+
+        out.repair_error = repair_effect(c, c.prepare(result.coordinates), out.physical, out.report.plane_over_rt,
+                                         out.repair_quantities, "parent_repair_");
+    } catch (const std::exception &error) {
+        out.cause = error.what();
+    }
+    return out;
+}
+GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsDifferenceReference &parent,
+                                           const CompiledSystem &split_c, const EquilibriumResult &result,
+                                           std::size_t donor, const StabilityOptions &options) {
+    GibbsDifference out;
+    try {
+        if (!parent.cause.empty()) {
+            out.cause = parent.cause;
+            return out;
+        }
+        StabilityReport split_report;
+        const auto split = stability_candidate(split_c, result, split_report);
+        out.quantities = parent.repair_quantities;
+        const double repair =
+            parent.repair_error + repair_effect(split_c, split_c.prepare(result.coordinates), split.physical,
+                                                parent.report.plane_over_rt, out.quantities, "split_repair_");
+        // Affine donor path in extensive species amounts and volume; exact native
+        // gradients.
+        const auto &m = *c.model;
+        const auto &r = parent.physical;
+        const auto &er = split.physical;
+        const auto &s = parent.report;
+        const size_t ns = c.n_feed.size();
+        double rt = GAS_CONSTANT_J_PER_MOL_K * r.temperature;
+        std::vector<long double> n0(ns), dn(ns);
+        long double v0 = r.amount[donor] * r.volume[donor], dv = er.amount[donor] * er.volume[donor] - v0;
+        long double plane_defect = 0, trial_plane = 0, parent_error = 0, standard_error = 0, plane_mag = 0;
+        for (size_t i = 0; i < ns; ++i) {
+            n0[i] = (long double)r.amount[donor] * r.composition[donor][i];
+            dn[i] = (long double)er.amount[donor] * er.composition[donor][i] - n0[i];
+            trial_plane += (long double)er.composition.back()[i] * s.plane_over_rt[i];
+            plane_defect += (dn[i] + (long double)er.amount.back() * er.composition.back()[i]) * s.plane_over_rt[i];
+            const long double weight =
+                std::abs(dn[i]) + (long double)er.amount.back() * std::abs(er.composition.back()[i]);
+            parent_error += weight * parent.row_errors.at(i);
+            if (!options.standard_uncertainty_over_rt.empty())
+                standard_error += weight * options.standard_uncertainty_over_rt[i];
+            plane_mag += weight * std::abs(s.plane_over_rt[i]);
+        }
+        long double last = NAN, last_floor = NAN;
+        bool previous_refined = false;
+        for (int steps : {4, 8, 16, 32}) {
+            long double integral = 0, owner_error = 0, arithmetic = 0, volumeerror = 0, charterror = 0;
+            for (int j = 0; j <= steps; ++j) {
+                long double t = (long double)j / steps, N = 0, V = v0 + t * dv;
+                std::vector<double> x(ns), nu(ns);
+                for (size_t i = 0; i < ns; ++i) N += n0[i] + t * dn[i];
+                for (size_t i = 0; i < ns; ++i) {
+                    x[i] = (n0[i] + t * dn[i]) / N;
+                    nu[i] = dn[i];
+                }
+                if (!(V > 0 && N > 0 && std::isfinite(V) && std::isfinite(N)))
+                    throw std::domain_error("nonpositive Gibbs path");
+                for (size_t i = 0; i < ns; ++i)
+                    if ((n0[i] > 0 && !(x[i] > 0)) || (n0[i] == 0 && dn[i] != 0))
+                        throw std::domain_error("Gibbs path changes positive support");
+                double v = V / N;
+                ReferenceTaylorError error;
+                auto action = m.reference_taylor(r.temperature, v, x, nu, PressureActionDirection{}, 0, false, &error);
+                if (action.contraction.empty() || action.status != PropertyActionStatus::Available)
+                    throw std::domain_error("reference contraction unavailable");
+                if (!(error.fixed.at(0) >= 0 && error.pressure_floor.at(0) >= 0))
+                    throw std::domain_error("directional Gibbs error unavailable");
+                long double val = action.contraction[0] + (r.pressure - error.pressure[0]) * dv / rt,
+                            mag =
+                                std::abs(action.contraction[0]) + std::abs((r.pressure - error.pressure[0]) * dv / rt),
+                            logerror = 0;
+                for (size_t i = 0; i < ns; ++i)
+                    if (x[i] > 0) {
+                        long double term = std::log((long double)x[i]) + s.standard_over_rt[i] - s.plane_over_rt[i];
+                        val += dn[i] * term;
+                        mag += std::abs(dn[i]) * (std::abs(std::log((long double)x[i])) +
+                                                  std::abs(s.standard_over_rt[i]) + std::abs(s.plane_over_rt[i]));
+                        logerror += std::abs(dn[i]) * (std::abs(std::log((long double)x[i]) - std::log(x[i])) +
+                                                       std::numeric_limits<long double>::epsilon() *
+                                                           std::abs(std::log((long double)x[i])));
+                    }
+                auto d = m.evaluate(r.temperature, v, x, DerivativeOrder::IsothermalPhaseHessian);
+                long double chart = 0;
+                size_t width = 2 + ns;
+                for (size_t col = 1; col < width; ++col) {
+                    long double movement = col == 1 ? (long double)v - V / N
+                                                    : (long double)x[col - 2] - (n0[col - 2] + t * dn[col - 2]) / N;
+                    long double deriv = dv * (d.hessian[width + col] + (col == 1 ? 1 / (v * v) : -1 / v));
+                    for (size_t i = 0; i < ns; ++i)
+                        if (x[i] > 0)
+                            deriv += dn[i] * (d.hessian[(2 + i) * width + col] + (col == 1       ? -1 / v
+                                                                                  : col == 2 + i ? 1 / x[i]
+                                                                                                 : 0));
+                    chart += std::abs(movement * deriv);
+                }
+                for (size_t i = 0; i < ns; ++i)
+                    if (x[i] > 0) chart += std::abs(dn[i] - nu[i]) * std::abs(d.gradient[2 + i] - std::log(v));
+                long double gamma = (8 * ns + 24) * std::numeric_limits<long double>::epsilon();
+                int weight = (j == 0 || j == steps) ? 1 : (j % 2 ? 4 : 2);
+                integral += weight * val;
+                const long double simpson_weight = (long double)weight / (3 * steps);
+                charterror += simpson_weight * chart;
+                owner_error += simpson_weight * error.fixed[0];
+                volumeerror += simpson_weight * std::abs(dv / rt) * error.pressure_floor[0];
+                arithmetic += simpson_weight * (logerror + gamma / (1 - gamma) * mag);
+            }
+            long double trial = (long double)er.amount.back() * (split.quantities.back().at("g_over_rt") - trial_plane);
+            long double current_integral = integral / (3 * steps), delta = current_integral + trial + plane_defect;
+            double trialerror = er.amount.back() * energy_estimate(split.quantities.back());
+            long double quadrature = std::abs(current_integral - last) / 15;
+            long double round = (8 * ns + 2 * steps + 40) * std::numeric_limits<long double>::epsilon() *
+                                (plane_mag + std::abs(current_integral) + std::abs(trial));
+
+            long double integration_floor = owner_error + volumeerror + arithmetic + round + charterror;
+            bool refined = std::isfinite(quadrature) && quadrature <= integration_floor + last_floor;
+
+            long double complete = integration_floor + trialerror + quadrature + std::abs(plane_defect) + parent_error +
+                                   standard_error + repair;
+            if (steps == 32) {
+                out.quantities.merge(Quantities{{"gibbs_change_over_rt_mol", (double)delta},
+                                                {"complete_error_over_rt_mol", (double)complete},
+                                                {"gradient_error_over_rt_mol", (double)(owner_error)},
+                                                {"pressure_error_over_rt_mol", (double)(volumeerror)},
+                                                {"parent_error_over_rt_mol", (double)parent_error},
+                                                {"standard_error_over_rt_mol", (double)standard_error},
+                                                {"trial_error_over_rt_mol", trialerror},
+                                                {"repair_error_over_rt_mol", repair},
+                                                {"inventory_plane_over_rt_mol", (double)plane_defect},
+                                                {"quadrature_error_over_rt_mol", (double)quadrature},
+                                                {"ideal_error_over_rt_mol", (double)(arithmetic)},
+                                                {"summation_error_over_rt_mol", (double)round},
+                                                {"chart_error_over_rt_mol", (double)charterror}});
+                if (!(previous_refined && refined)) {
+                    out.cause = "incomplete Gibbs integral refinement";
+                    return out;
+                }
+                for (const auto &[name, value] : out.quantities)
+                    if (!std::isfinite(value) || (name.find("error_") != std::string::npos && value < 0)) {
+                        out.cause = "unavailable Gibbs difference estimate: " + name;
+                        return out;
+                    }
+
+                out.status = delta + complete < 0   ? GibbsDifferenceStatus::Decrease
+                             : delta - complete > 0 ? GibbsDifferenceStatus::NoDecrease
+                                                    : GibbsDifferenceStatus::Overlap;
+            }
+            last = current_integral;
+            last_floor = integration_floor;
+            previous_refined = refined;
+        }
+    } catch (const std::exception &error) {
+        out.cause = error.what();
+    }
+    return out;
+}
 
 // EqID michelsen_modified_tangent_plane: J_ij = F_ij + 1 + p_i p_j / p_V, p_i = 1/v - F_iV, p_V = -F_VV - 1/v^2.
 std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double v, const std::vector<std::size_t>& support) {

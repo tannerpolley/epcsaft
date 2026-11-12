@@ -2282,6 +2282,42 @@ finite-split requirements; failure to establish the finite decrease remains
 indeterminate. The label neither asserts a nonnegative exact distance nor
 certifies equilibrium.
 
+For an already supplied conserved reacting split, the native Equilibrium owner
+also evaluates the extensive Gibbs difference by integrating the exact gradients
+along the affine donor path in species amounts and volume. With the original
+standards and conserved plane $\pi$ frozen,
+
+$$
+D=\int_0^1[(\mu/RT-\pi)\cdot\Delta n+(P-P_{EOS})\Delta V/(RT)]\,dt
+ +\beta(g_t/RT-\pi\cdot w)+\pi\cdot(\Delta n+\beta w).
+$$
+
+This is the differential identity of the existing Helmholtz-plus-$PV$ energy,
+not a pressure-root condition on intermediate points. The last signed term stays
+in the central value and its absolute value enters the local error estimate.
+The complete estimate adds the Properties directional and pressure estimates,
+the original solved-state standard-minus-plane row errors weighted by
+$|\Delta n_i|+\beta|w_i|$, the same weights times the existing supplied standard
+uncertainties, the amount-weighted trial energy estimate, per-phase absolute
+projected repair effects and their sampled Hessian remainders, Simpson error,
+ideal and summation arithmetic, and represented-chart errors. Empty supplied
+uncertainty contributes zero; unavailable numerical estimates refuse comparison.
+
+The supported-amount repair remains the sole correction owner. Each repaired
+phase must keep positive supported coordinates and unchanged structural zeros.
+Its maximum relative coordinate displacement and scaled sampled Hessian change
+must both be at most $\sqrt{\epsilon_{double}}$. The remainder uses the absolute
+Hessian envelope and variation at the raw, midpoint and corrected phase states;
+this is a local estimate, not a bound between samples.
+Composite Simpson integration uses 4, 8, 16 and 32 panels. The integral differences
+are accumulated in `long double`, before adding the fixed trial and inventory
+terms. Both final refinements require $Q_N=|I_N-I_{N/2}|/15\le F_N+F_{N/2}$,
+where $F_N$ contains only integration numerical estimates. The final $Q_{32}$
+remains in the complete error. Failed local admissions return unavailable with
+a cause; otherwise $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease,
+and the remaining interval overlaps zero. This supplied-split evaluator does
+not itself change any search verdict or establish global stability.
+
 The adopted output is **numerically resolved descending split with estimated
 uncertainty**. Calling it a **proved instability witness** requires justified
 bounds on feasibility and every error term, which native association floors do

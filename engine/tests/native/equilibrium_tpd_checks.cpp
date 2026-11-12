@@ -1376,4 +1376,104 @@ void check_reaction_relaxed_split() {
 
 }
 
+// Identical associating isomers: the residual contribution cancels analytically.
+void check_associating_isomer_gibbs() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto p = properties_support::parameters(2);
+    p.segment_count = {1.5255, 1.5255};
+    p.sigma_constant = {3.2300, 3.2300};
+    p.dispersion_energy_over_k = {188.90, 188.90};
+    p.molar_mass_kg_per_mol = {.032042, .032042};
+    p.site_component = {0, 0, 1, 1};
+    p.site_multiplicity = {1, 1, 1, 1};
+    p.association_active.assign(16, 0);
+    p.association_energy_over_k.assign(16, 0);
+    p.association_volume.assign(16, 0);
+    for (int a = 0; a < 4; ++a)
+        for (int b = 0; b < 4; ++b)
+            if (a % 2 != b % 2) {
+                p.association_active[a * 4 + b] = 1;
+                p.association_energy_over_k[a * 4 + b] = 2899.5;
+                p.association_volume[a * 4 + b] = .035176;
+            }
+    HelmholtzModel m(p);
+    EquilibriumProblem q;
+    q.temperature = FreeValue::fixed(300);
+    q.pressure = FreeValue::variable(1e6);
+    q.feed.values = {1, 0};
+    PhaseSpec l;
+    l.name = "L";
+    l.support = {0, 1};
+    l.support_declared = true;
+    auto v = l;
+    v.name = "V";
+    v.kind = PhaseKind::Vapor;
+    v.support = {0};
+    v.amount = AmountSpec::pinned(0);
+    q.phases = {l, v};
+    ReactionSpec rx;
+    rx.name = "neutral-isomerization";
+    rx.stoichiometry = {-1, 1};
+    rx.equilibrium_constant = 1e-8;
+    q.reactions = {rx};
+    auto c = compile_problem(m, q);
+    auto r = solve_compiled(c);
+    CHECK(r.success);
+    auto reference = conserved_split_reference(c, r);
+    PhaseSpec fullv = v;
+    fullv.support = {0, 1};
+    fullv.amount = AmountSpec{};
+    auto eq = q;
+    eq.pressure = FreeValue::fixed(*r.pressure);
+    eq.phases[1] = fullv;
+    eq.phases[1].amount = AmountSpec{};
+    EquilibriumResult er;
+    er.success = true;
+    for (int j = 0; j < 2; ++j) {
+        auto one = eq;
+        one.phases = {eq.phases[j]};
+        one.feed.values = {j == 0 ? .9999 : .0001, 0};
+        auto oc = compile_problem(m, one);
+        auto part = solve_compiled(oc);
+        er.success &= part.success;
+        er.amounts.push_back(part.amounts.at(0));
+        er.mole_fractions.insert(er.mole_fractions.end(), part.mole_fractions.begin(), part.mole_fractions.end());
+        er.packing_fractions.push_back(part.packing_fractions.at(0));
+        er.molar_densities.push_back(part.molar_densities.at(0));
+        er.iterations += part.iterations;
+        er.evaluations += part.evaluations;
+        er.hessian_calls += part.hessian_calls;
+    }
+    CHECK(er.success);
+
+    eq.pressure = FreeValue::variable(*r.pressure);
+    eq.phases[1].amount = AmountSpec::pinned(.0001);
+    auto sc = compile_problem(m, eq);
+    std::vector<double> point;
+    for (size_t j = 0; j < 2; ++j) {
+        for (size_t i = 0; i < 2; ++i) point.push_back(std::log(er.mole_fractions[j * 2 + i]));
+        if (j == 0) point.push_back(er.amounts[j]);
+        point.push_back(std::log(er.packing_fractions[j]));
+    }
+    point.push_back(*r.pressure);
+    er.coordinates = add_multipliers(sc, point);
+    er.declaration = std::make_shared<const EquilibriumProblem>(sc.problem);
+    er.model_identity = &m;
+    er.temperature = r.temperature;
+    er.pressure = r.pressure;
+    er.residuals = sc.evaluate(er.coordinates).values;
+    er.multipliers.assign(er.coordinates.begin() + sc.primal_size, er.coordinates.begin() + sc.primal_size + sc.rank);
+    auto d = conserved_split_difference(c, reference, sc, er, 0, {});
+
+    double target = -.0001 * std::log1p(1e-8);
+    CHECK(d.status == GibbsDifferenceStatus::Decrease);
+    const double value = d.quantities.at("gibbs_change_over_rt_mol"),
+                 error = d.quantities.at("complete_error_over_rt_mol");
+    CHECK(error < 1.41e-13);
+    recording_support::compare("associating-isomer-gibbs", "Gibbs change over RT", "mol", value, target, {},
+                               "one mol feed", "identical residual interactions", "analytic ideal mixing decrease",
+                               "absolute", error, 0, std::abs(value - target) <= error);
+    CHECK(std::abs(value - target) <= error);
+}
 }  // namespace equilibrium_checks

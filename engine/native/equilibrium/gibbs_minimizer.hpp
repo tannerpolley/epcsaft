@@ -172,6 +172,27 @@ EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const
 // ALG-STABILITY: one trial of the vanished phase's kind and support from the declaration without it, charged to `limits`.
 StabilityReport vanished_phase_stability(const CompiledSystem& compiled, std::size_t phase, const DriverLimits& limits);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
+enum class GibbsDifferenceStatus { Decrease, NoDecrease, Overlap, Unavailable };
+struct GibbsDifference final {
+  GibbsDifferenceStatus status = GibbsDifferenceStatus::Unavailable;
+  std::map<std::string, double> quantities;
+  std::string cause;
+};
+struct GibbsDifferenceReference final {
+  PhasePoint physical;
+  StabilityReport report;
+  std::map<std::string, double> repair_quantities;
+  std::vector<double> row_errors;
+  double repair_error = 0;
+  std::string cause;
+};
+EPC_API GibbsDifferenceReference
+conserved_split_reference(const CompiledSystem &, const EquilibriumResult &);
+// The trial is the supplied split's last phase.
+EPC_API GibbsDifference conserved_split_difference(
+    const CompiledSystem &, const GibbsDifferenceReference &,
+    const CompiledSystem &, const EquilibriumResult &, std::size_t donor,
+    const StabilityOptions &);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void refuse(EquilibriumResult& result, Candidate as = Candidate::Refused);
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
