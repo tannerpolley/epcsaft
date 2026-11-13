@@ -50,12 +50,8 @@ freshness flags.
 
 ## Maintaining agreement
 
-A scientific change updates or explicitly revalidates its equation IDs,
-algorithm IDs and domain assumptions in the same change as implementation and
-numerical evidence. Record that disposition in the change description; do not
-copy equations into another ledger. A code defect is corrected against the
-accepted mathematics. A proposed change to mathematics needs its own source or
-derivation and review; observed code behavior cannot silently redefine it.
+`CODING_STANDARDS.md` owns revalidating the mathematics with a scientific
+change; record that disposition in the change description.
 
 Run `python3 engine/scripts/docs/sync_equation_registry.py` after editing
 [definitions](../../engine/docs/equations.md), then `bash tools/check-affected.sh HEAD`

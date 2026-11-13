@@ -2,7 +2,7 @@
 
 Issues and specs for this repo live as GitHub issues in `tannerpolley/ePC-SAFT`. Use the `gh` CLI for all operations.
 
-The repository's roadmap rules own issue bodies, `work:*` labels, claims and native relationships: read `.agents/skills/manage-github-roadmap/SKILL.md` before creating, editing, claiming or closing an issue. Only `tools/reconcile-issue-roadmap.py` writes `status:*` labels.
+The repository's roadmap rules own issue bodies, `work:*` labels, claims and native relationships: read `.agents/skills/manage-github-roadmap/SKILL.md` before creating, editing, claiming or closing an issue.
 
 ## Conventions
 

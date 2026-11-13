@@ -136,10 +136,11 @@ native:
     surface: the parameter builder, which model is asked for
     bindings: the only nanobind includes
   # regression/ may call solve_equilibrium and solve_phase_boundary on a problem
-  # with declared phases; it may not reach phase stability, because a fit needs
-  # differentiable residuals and a discovered phase count is not one.
+  # with declared phases, and stability_measure on the solved state for a Stability
+  # observation; it may not discover phases, because a fit needs differentiable
+  # residuals and a discovered phase count is not one.
   regression_boundary:
-    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
+    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, stability_measure, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
     forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
   invariants:
     native_pic_object_sets: 1

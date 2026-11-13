@@ -12,4 +12,4 @@ The skills speak in terms of five canonical triage roles. This file maps those r
 
 When a skill mentions a role (e.g. "apply the AFK-ready triage label"), use the corresponding label string from this table.
 
-`work:authorized` and `wontfix` already exist; the other three are created on first use. Leave `status:*` labels to the roadmap reconciler, which derives them.
+`work:authorized` and `wontfix` already exist; the other three are created on first use.

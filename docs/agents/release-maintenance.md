@@ -25,10 +25,7 @@ any HSL member and runs `verify-installed-wheel.py` and the Python suite in a
 digest-pinned `python:3.13-slim` container without those host libraries.
 It retains the wheel in `build/wheels/main-<short-commit>/`, verifies a draft's
 uploaded bytes and full commit tag, then publishes the private prerelease
-`main-<full-commit>` with `latest=false`. Retries reuse the retained wheel and
-resume missing assets in the same draft. An interruption before an upload can
-resume; a failed transfer may leave an incomplete `starter` asset. Incomplete,
-unequal or unreadable existing assets stop for owner diagnosis; the tool never
-deletes or replaces them. A different identity also stops without replacement.
-`build/wheels/main-current/` is updated after confirmed publication. The
-[downstream guide](../../downstream/README.md) owns authenticated download and file pins.
+`main-<full-commit>` with `latest=false`; a different identity stops without
+replacement. `build/wheels/main-current/` is updated after confirmed publication.
+The [downstream guide](../../downstream/README.md) owns retries, authenticated
+download and file pins.

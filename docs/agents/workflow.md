@@ -25,9 +25,9 @@ per-case epsilons, application selectors or outer retries; never pushes, opens
 pull requests, merges or edits issue bodies or labels (comments are fine); and
 keeps evidence under `build/` or the analysis leaf, never `/tmp`. A promoted
 study's producer source, unique inputs and run command live in its analysis
-leaf; `build/` holds scratch output and logs only. Current
-key-solve work counts are in `build/wheels/main-current/README` of the main
-checkout.
+leaf; `build/` holds scratch output and logs only. The current main wheel's
+key-solve comparison is listed under `numerical_evidence` in the main checkout's
+`build/wheels/main-<short-commit>/release.json`.
 
 ## Review tiers
 
@@ -45,25 +45,18 @@ Reviewers apply `CODING_STANDARDS.md`.
 Develop with `nice -n 10 tools/native-run <program> [case]`, the native test
 programs, or small C++ drivers that write CSV. Python declares inputs and reads
 results. The runner prepares missing dependencies automatically; native iteration
-needs no wheel or binding management. Builds use explicit `-j` parallelism sized
-from CPUs and available memory; `EPCSAFT_BUILD_JOBS` can select it for a measured
-run. Use one-thread numerical pools only for timing measurements.
+needs no wheel or binding management. Use one-thread numerical pools only for
+timing measurements.
 
 Adapt justified existing native fitting and evaluator logic through the plan's
 adoption gate, and implement only observation forms consumed by current scope;
 the parameter regression formulation's broader algebra defines meaning rather
 than requiring unused nodes.
 
-A tolerance-gated check (ALG-TERMINATION) is a diagnosis, not an end state: the
-owning issue attempts the root-cause fix that lowers the floor below the
-criterion, and the check stays gated only while that fix is open or after
-retained evidence shows it impossible.
-
-Before a scientific behavior change is accepted, update or explicitly revalidate
-the affected equation/algorithm IDs and execute the smallest independent
-falsifier identified in the owning issue (examples in ALG-TERMINATION
-"Verification meaning"). Documentation readiness checks cannot replace them.
-Expensive application/reproduction sweeps remain explicit.
+`CODING_STANDARDS.md` owns revalidating the mathematics with a scientific change
+and treating a gated result as a diagnosis; run the owning issue's smallest
+independent falsifier before acceptance (examples in ALG-TERMINATION
+"Verification meaning").
 
 ## Gates
 
@@ -97,8 +90,7 @@ toolchain, external headers, locked environment and build flags. Compiler,
 header, environment or flag changes replace stale Meson objects; base/selection
 changes rerun checks with reusable objects. Failed checks resume incomplete work.
 Native tests use `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to restore
-random heap fill. Ordinary setup and the shared heavy gate both honor
-`EPCSAFT_BUILD_JOBS` with explicit Ninja parallelism.
+random heap fill.
 
 Work counts are the key-solve gate; `--pairs` above 1 is only for a timing
 claim, run back to back with the A=A control and judged against its spread.
@@ -128,23 +120,13 @@ Missing accuracy/runtime thresholds stay owner decisions.
 
 ## Closeout
 
-After each merge, and in a regular sweep, the lead runs
-`tools/prune-worktrees WORKTREE ...` (owner, 2026-10-20), naming each task
-worktree whose agent task is terminal with no queued turn and whose pull request
-is merged or issue closed. The tool refuses a worktree with a process inside it
-or an open pull request, archives the rest through `tools/archive-worktree`, and
-deletes their local branches and any remote branch whose tip is on
-`origin/main`. Unmerged branches are kept unless `--archive-unmerged` is given
-and their issue is closed; they are then first tagged `archive/<branch>` on the
-exact commit. `--dry-run` plans without changing anything. The daily
-`tools/clean-build` timer (owner, 2026-11-03) runs the same tool on every linked
-worktree, keeps only reports in `build/issue-N` three days after issue N closes,
-removes `build/pr-gates/pr-N` once pull request N is closed, and expires old
-`build/archive` files. It keeps a closed issue's folder whole while it holds a
-file that a tracked `analyses/` record names by SHA-256 and whose exact bytes
-no Git ref holds, listing each in `build/evidence-to-promote.md`; the lead
-promotes it (commits those exact bytes into the analysis) or discards it
-(deletes it and records the loss there by issue number, never by the path
-`build/issue-N`). Worktrees it keeps (dirty, nested clones, in use) are
-listed in `build/worktrees-to-resolve.md`; the lead commits or discards each
-and prunes it.
+After each merge, the lead runs `tools/prune-worktrees WORKTREE ...` (owner,
+2026-10-20) on each task worktree whose agent task is terminal with no queued
+turn and whose pull request is merged or issue closed; the daily
+`tools/clean-build` timer (owner, 2026-11-03) sweeps the rest. Their header comments
+gives what each refuses, archives and expires. The lead resolves the two lists
+`clean-build` writes: each entry in `build/evidence-to-promote.md` is promoted
+(its exact bytes committed into the analysis) or discarded (deleted, with the
+loss recorded there by issue number, never by the path `build/issue-N`); each
+worktree in `build/worktrees-to-resolve.md` is committed or discarded, then
+pruned.

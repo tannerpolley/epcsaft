@@ -53,10 +53,11 @@ calculation's inputs.
 Each checkout or extracted source tree owns its `.venv`. `bash tools/setup.sh`
 syncs the locked environment and installs `engine/` editable through
 `tools/build-engine.sh` into `build/engine-meson/shared`. Imports rebuild changed
-native sources with Ninja; Python edits need no rebuild. Rerun setup after a
-lock change. Setup rebuilds after a compiler or HiGHS change; after another
+native sources with Ninja; Python edits need no rebuild. `uv.lock` is the only dependency lock;
+declarations and lock changes land together. Rerun setup after a lock change. Setup rebuilds after a compiler or HiGHS change; after another
 system library upgrade, remove `build/engine-meson/shared` and rerun setup.
-`epcsaft.provenance()` identifies the loaded Engine.
+`epcsaft.provenance()` identifies the loaded Engine. Compile jobs default to
+the memory-sized count in `tools/build-engine.sh`; `EPCSAFT_BUILD_JOBS` overrides it.
 
 The native owner checks additionally require `clang-18`, `clang++-18`,
 `clang-tidy-18`, `run-clang-tidy-18`, `file` and `nm`. The line budgets need
