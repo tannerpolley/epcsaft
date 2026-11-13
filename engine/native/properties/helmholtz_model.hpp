@@ -778,6 +778,15 @@ EPC_API ElectrolyteActivity electrolyte_activity(
     const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt
 );
 
+// The packing coefficient c = sum_i component[i] with component[i] = (pi/6) N_A 1e-30 x_i m_i d_i^3 [m^3 per
+// amount of x], so eta = c / V; temperature_derivative is dc/dT at fixed x. The ideal-gas base takes c = 1 with zero partials.
+template <typename Base>
+struct PackingTermsValues final {
+    Base coefficient = 0.0;
+    Base temperature_derivative = 0.0;
+    std::vector<Base> component;
+};
+
 namespace properties {
 // Unit-amount residual Helmholtz coefficients in V+t.
 EPC_API Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temperature, double density,

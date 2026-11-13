@@ -448,7 +448,7 @@ void check_f5() {
             weights[row] = 0.35 + 0.1 * static_cast<double>(row);
         check_weighted_hessian_gradient_ladder(compiled, callback_point, weights, label, 1.0e-5);
         if (variant == 4) {
-            // #641: a charged molecule's neutral d(T) reaches the T column through packing_terms' hand-written dd/dT.
+            // A charged molecule's neutral d(T) reaches the T column through segment_diameter_temperature_derivative.
             auto charged = properties_support::aqueous_electrolyte();
             charged.molecular_ion = {0, 1, 0};
             const epcsaft::HelmholtzModel charged_model(charged);

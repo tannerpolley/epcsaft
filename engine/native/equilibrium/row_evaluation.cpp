@@ -45,49 +45,6 @@ CppAD::ADFun<double> ideal_rows(const CompiledSystem& c, const PhasePoint& p) {
     return CppAD::ADFun<double>(y, rows);
 }
 
-template <typename Base>
-PackingTermsValues<Base> packing_terms(const HelmholtzModel& model, Base temperature,
-                           const std::vector<Base>& composition) {
-    const auto& parameters = [&]() -> decltype(auto) {
-        if constexpr (std::is_same_v<Base, double>) return model.parameters();
-        else return detail::make_tape_parameters<Base>(model.parameters(), {}, {});
-    }();
-    if (parameters.ideal_gas) {
-        PackingTermsValues<Base> result;
-        result.coefficient = 1.0; // q is log inverse unit-amount volume; composition and T partials vanish.
-        result.component.assign(composition.size(), 0.0);
-        return result;
-    }
-    const auto sigma = segment_sigma(temperature, parameters);
-    const auto diameter = segment_diameter(temperature, parameters, sigma);
-    std::vector<Base> sigma_t(sigma.size(), 0.0);
-    for (std::size_t term = 0; term < parameters.sigma_term_component.size(); ++term) {
-        const auto component = static_cast<std::size_t>(parameters.sigma_term_component[term]);
-        sigma_t[component] += parameters.sigma_term_amplitude[term]
-            * parameters.sigma_term_exponent[term] * wide_math::exp(
-                parameters.sigma_term_exponent[term] * temperature);
-    }
-    PackingTermsValues<Base> result;
-    result.component.resize(composition.size());
-    const Base scale = (Base(PI) / Base(6.0)) * Base(NUMBER_DENSITY_PER_ANGSTROM3);
-    for (std::size_t i = 0; i < composition.size(); ++i) {
-        Base diameter_t = 0.0;
-        if (gross_diameter(parameters, i)) {
-            const Base exponential = wide_math::exp(-3.0
-                * parameters.dispersion_energy_over_k[i] / temperature);
-            diameter_t = sigma_t[i] * (1.0 - 0.12 * exponential)
-                - sigma[i] * 0.36 * parameters.dispersion_energy_over_k[i]
-                    * exponential / (temperature * temperature);
-        }
-        result.component[i] = scale * composition[i] * parameters.segment_count[i]
-            * diameter[i] * diameter[i] * diameter[i];
-        result.coefficient += result.component[i];
-        result.temperature_derivative += scale * composition[i]
-            * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i] * diameter_t;
-    }
-    return result;
-}
-
 // Compare supplied species thermochemistry with every reaction target on the density
 // basis: [t, T t', T^2 t''] against [g, g - h, -T cp] at the same J/mol scale.
 void check_reference_consistency(
@@ -1398,7 +1355,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
             total += value;
         }
         if (!(total > 0.0)) throw std::invalid_argument("composition in phase " + problem.phases[phase].name + " has zero total");
-        result.packing[phase] = packing_terms(*model, result.temperature, values);
+        result.packing[phase] = detail::packing_terms(model->parameters(), result.temperature, values);
         result.eta[phase] = wide_math::exp(point[layout.volume]);
         if (!model->parameters().ideal_gas && log_packing_unbounded() && !admitted_packing_fraction(double(result.eta[phase])))
             throw std::invalid_argument("phase " + problem.phases[phase].name + " packing fraction outside the fluid domain");

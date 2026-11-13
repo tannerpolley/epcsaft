@@ -781,6 +781,71 @@ trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
 
+### Execution of one solve
+
+This is the call order of one `solve_equilibrium` request on current source; the
+include dependencies between layers are a separate view in the
+[project map](../../../docs/scientific/CONTEXT.md#dependency-view-and-scientific-owners).
+Symbols are in `engine/native/equilibrium/gibbs_minimizer.cpp` unless named otherwise.
+
+```mermaid
+flowchart TD
+  A[compile_problem] -->|declaration error| X[throw to caller]
+  A --> B[structural_result]
+  B -->|not feasible| P[return structural record]
+  B --> C[continue_compiled: initialize]
+  C --> D{Newton-eligible?}
+  D -->|yes| E[one-component reduction or newton_attempt]
+  E -->|success| S[refine_selected_endpoint]
+  E -->|refused| F
+  D -->|no| F[run_driver: Ipopt attempt]
+  F -->|speciated start unsuccessful| C
+  F -->|exception on declared start| X
+  F -->|success| G[branch admission]
+  G -->|accepted| S
+  G -->|refused on speciated start| C
+  G -->|refused on declared start: no recovery| S
+  F -->|unsuccessful on declared start| H[recover_physical_amounts and recovery]
+  H --> S
+  S --> R[publish result]
+```
+
+```text
+solve_equilibrium(model, request, start)
+  if request.discovery: return discover_phases(...)            # ALG-STABILITY, phase_stability.cpp
+  compiled = compile_problem(model, request)                    # request_compile.cpp; declaration errors throw
+  try_solve_compiled(compiled, start)
+    structural = structural_result(compiled)                    # balances, rank, feasibility record
+    if not compiled.feasible: return structural
+    if compiled.ideal: return run_driver_once(generic_point)     # ideal mole-fraction model: one cold attempt; generic_point is in request_compile.cpp
+    result = continue_compiled(...)                             # an exception becomes result.failure
+      initial = speciated_start: no start, reactive, fixed T, free P,  # attempt 0, when it applies
+                with zero-pinned phases; solved at the seed pressure
+             | boundary_start (phase_boundary.cpp) or start_point(previous result)  # attempt 1, or after attempt 0 fails
+      if newton_eligible or free_amount_newton_eligible:
+        fast = one_component_two_density_attempt (one_component_two_density.cpp) | newton_attempt
+        if fast.success: return refine_selected_endpoint(fast)
+      result = run_driver(initial, Attempt::Cold, warm)
+        run_driver_once: GibbsMinimizer (Ipopt) on CompiledSystem rows
+          (CompiledSystem::prepare, jacobian, hessian in row_evaluation.cpp),
+          stop classification, polish, publish_candidate
+        a failed warm attempt falls back once to a cold attempt
+      if attempt 0 is unsuccessful: repeat from the declared start (attempt 1)
+      if result.success: check_density_branches (phase_boundary.cpp) | admit_null_mode
+        refused: the record is kept; attempt 0 repeats from the declared start (attempt 1);
+        a refusal on either attempt switches off the physical-amount retry and the neutral recovery
+      result = recover_physical_amounts(result)                  # reacting PhaseDisappeared or exhausted budget
+      PhaseDisappeared at fixed T, P: vanished_phase_stability (phase_stability.cpp) names the phase
+      neutral recovery (Retry::Source): recovery_stability (phase_stability.cpp),
+        then recover_from_source (phase_boundary.cpp)
+    one-component two-density eligible and failed: recover_from_source (phase_boundary.cpp)
+    critical declaration and failed: recover_critical
+  solve_compiled rethrows result.failure; otherwise the result is published
+```
+
+Attempts record their work in `StageWork`, which reports it on the returned result.
+A recovery appends its cause to the original message rather than replacing it.
+
 ### One-component two-density reduction
 
 The general driver and native prepared `CompiledSystem.solve_saturation()` entry

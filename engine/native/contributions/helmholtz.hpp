@@ -204,6 +204,28 @@ std::vector<Scalar> segment_diameter(
     return diameter;
 }
 
+// d d_i/dT [angstrom/K] at fixed parameters: segment_sigma_correlation's exponential terms through
+// neutral_segment_diameter; a declared ionic_packing_diameter is temperature-independent.
+template <typename Scalar, typename ParameterSet>
+std::vector<Scalar> segment_diameter_temperature_derivative(
+    const Scalar& temperature, const ParameterSet& parameters, const std::vector<Scalar>& sigma) {
+    std::vector<Scalar> sigma_t(sigma.size(), 0.0);
+    for (std::size_t term = 0; term < parameters.sigma_term_component.size(); ++term) {
+        const auto component = static_cast<std::size_t>(parameters.sigma_term_component[term]);
+        sigma_t[component] += parameters.sigma_term_amplitude[term]
+            * parameters.sigma_term_exponent[term] * wide_math::exp(
+                parameters.sigma_term_exponent[term] * temperature);
+    }
+    std::vector<Scalar> diameter_t(sigma.size(), 0.0);
+    for (std::size_t i = 0; i < sigma.size(); ++i) {
+        if (!gross_diameter(parameters, i)) continue;
+        const Scalar exponential = wide_math::exp(-3.0 * parameters.dispersion_energy_over_k[i] / temperature);
+        diameter_t[i] = sigma_t[i] * (1.0 - 0.12 * exponential)
+            - sigma[i] * 0.36 * parameters.dispersion_energy_over_k[i] * exponential / (temperature * temperature);
+    }
+    return diameter_t;
+}
+
 // EqID: packing_moments
 // Density-independent composition moments, Gross and Sadowski (2001), A.8.
 template <std::size_t Count = 4, typename Fixed, typename ParameterSet>

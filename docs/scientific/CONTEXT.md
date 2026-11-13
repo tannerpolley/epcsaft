@@ -95,6 +95,51 @@ Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 | surface | Physical input resolution and admission | Explicit parameters, units, choices and applicability |
 | bindings | The Python/native boundary | One extension; follow the [native calculation rule](../../AGENTS.md#native-calculation-rule) |
 
+### Dependency view and scientific owners
+
+Includes run only downward, in the `ARCHITECTURE.yaml` `layers` order; an arrow
+below is an include edge present in the source, and every layer also includes
+core. The execution order of one equilibrium solve is a
+different view, kept in [ALG-EQUILIBRIUM](../../engine/docs/science/algorithms.md#execution-of-one-solve).
+
+```mermaid
+flowchart LR
+  S[surface: parameter admission] --> P
+  B[bindings and Python] --> S
+  B --> R[regression: observations and fits]
+  B --> Q[equilibrium: compile, rows, driver, actions]
+  B --> P
+  R --> Q
+  R --> P
+  Q --> P[properties: state, density, tapes, packing]
+  Q --> C
+  P --> C[contributions: Helmholtz terms and correlations]
+  C --> K[core: constants, coordinates, policy]
+```
+
+Paths are under `engine/native/`. Equations keep their IDs in
+[`equations.md`](../../engine/docs/equations.md); each owner below names the
+symbol that evaluates them.
+
+| Question | Owner | Symbols |
+|---|---|---|
+| Which parameter document is admitted, and with what structure? | `surface/parameter_builder.cpp` | `build_parameters` |
+| Which parameter values are admitted for a model? | `properties/helmholtz_model.cpp` | `HelmholtzModel` constructor |
+| Segment sigma, diameter and their temperature derivative | `contributions/helmholtz.hpp` | `segment_sigma`, `segment_diameter`, `segment_diameter_temperature_derivative` |
+| Residual and ideal Helmholtz terms | `contributions/` | `helmholtz.hpp`, `association.hpp`, `electrolyte.hpp`, `born.hpp`, `ideal.hpp` |
+| State properties and their derivative tapes | `properties/helmholtz_model.cpp`, `properties/helmholtz_tape.hpp` | `HelmholtzModel::state`, `admitted_segment_geometry` |
+| Packing coefficient read by compiled rows | `properties/helmholtz_tape.hpp`, `properties/helmholtz_model.hpp` | `packing_terms`, `PackingTermsValues` |
+| Density closure at T, P, x | `properties/density.cpp` | `solve_density` |
+| Specification compilation | `equilibrium/request_compile.cpp` | `compile_problem` |
+| Row values, Jacobians and Hessians | `equilibrium/row_evaluation.cpp` | `CompiledSystem::prepare`, `CompiledSystem::jacobian`, `CompiledSystem::hessian` |
+| The one equilibrium driver | `equilibrium/gibbs_minimizer.cpp` | `solve_equilibrium`, `try_solve_compiled`, `run_driver` |
+| Recovery, continuation and branch admission | `equilibrium/phase_boundary.cpp` | `recover_from_source`, `continue_equilibrium`, `check_density_branches` |
+| Stability testing and phase discovery | `equilibrium/phase_stability.cpp` | `stability_test`, `discover_phases` |
+| Solved-state actions | `equilibrium/implicit_sensitivity.cpp` | `sensitivity` |
+| Reaction activities of a returned state | `equilibrium/reaction_activities.cpp` | `reaction_activities` |
+| Weighted fitting | `regression/fit.cpp` | `fit` |
+| Python/native boundary | `bindings/`, `engine/src/epcsaft/` | `module.cpp`; `eos_bindings.cpp`, `equilibrium_bindings.cpp`, `regression_bindings.cpp`, `diagnostics_bindings.cpp`; `asl_adapter.cpp` |
+
 Issue #225's reactive caloric actions, their numerical record and delivered review are in the [reactive caloric actions leaf](../../analyses/2026-reactive-caloric-actions/README.md).
 
 ### Residual, ideal and state responsibilities

@@ -4,8 +4,7 @@
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
 #include "contributions/helmholtz.hpp"
-#include "properties/parameter_families.hpp"
-#include "properties/thermochemistry.hpp"
+#include "properties/helmholtz_model.hpp"
 
 #include <cppad/cppad.hpp>
 
@@ -272,5 +271,36 @@ struct HelmholtzTape final {
         return output;
     }
 };
+
+// EqIDs packing_fraction and neutral_segment_diameter: the packing coefficient of composition x at T with its
+// per-component terms and T derivative. No admission: callers own the packing domain.
+template <typename Base>
+PackingTermsValues<Base> packing_terms(const Parameters& model_parameters, Base temperature,
+                                       const std::vector<Base>& composition) {
+    const auto& parameters = [&]() -> decltype(auto) {
+        if constexpr (std::is_same_v<Base, double>) return model_parameters;
+        else return make_tape_parameters<Base>(model_parameters, {}, {});
+    }();
+    if (parameters.ideal_gas) {
+        PackingTermsValues<Base> result;
+        result.coefficient = 1.0; // q is log inverse unit-amount volume; composition and T partials vanish.
+        result.component.assign(composition.size(), 0.0);
+        return result;
+    }
+    const auto sigma = segment_sigma(temperature, parameters);
+    const auto diameter = segment_diameter(temperature, parameters, sigma);
+    const auto diameter_t = segment_diameter_temperature_derivative(temperature, parameters, sigma);
+    PackingTermsValues<Base> result;
+    result.component.resize(composition.size());
+    const Base scale = (Base(PI) / Base(6.0)) * Base(NUMBER_DENSITY_PER_ANGSTROM3);
+    for (std::size_t i = 0; i < composition.size(); ++i) {
+        result.component[i] = scale * composition[i] * parameters.segment_count[i]
+            * diameter[i] * diameter[i] * diameter[i];
+        result.coefficient += result.component[i];
+        result.temperature_derivative += scale * composition[i]
+            * parameters.segment_count[i] * 3.0 * diameter[i] * diameter[i] * diameter_t[i];
+    }
+    return result;
+}
 
 }  // namespace epcsaft::detail

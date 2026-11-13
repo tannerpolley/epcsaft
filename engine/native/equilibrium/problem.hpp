@@ -296,14 +296,6 @@ inline bool admitted_packing_fraction(double eta) {
         && eta <= policy::PACKING_FRACTION_CEILING.value;
 }
 
-template <typename Base>
-struct PackingTermsValues final {
-    Base coefficient = 0.0;
-    Base temperature_derivative = 0.0;
-    std::vector<Base> component;
-};
-using PackingTerms = PackingTermsValues<double>;
-
 // EqID solid_standard_gibbs: ln K^rho_s(T, P0) = ln_k + scale + C_s, with C_s the reference contraction at the source
 // pressure P0. slope and curvature (d ln K_src/dT, d2/dT2) exist only for a correlation: a scalar K has no T law.
 struct SolidLogK final {
