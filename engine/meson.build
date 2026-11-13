@@ -126,6 +126,7 @@ equilibrium_sources = files(
   'native/equilibrium/phase_stability.cpp',
   'native/equilibrium/phase_boundary.cpp',
   'native/equilibrium/implicit_sensitivity.cpp',
+  'native/equilibrium/singular_value_decompositions.cpp',
 )
 # Stage 7
 regression_sources = files(

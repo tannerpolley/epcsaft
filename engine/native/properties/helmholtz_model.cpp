@@ -6,6 +6,7 @@
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
 #include "contributions/helmholtz.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <Eigen/Dense>
 

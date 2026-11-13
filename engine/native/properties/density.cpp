@@ -5,6 +5,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 #include "core/trace.hpp"
+#include "properties/helmholtz_tape.hpp"
 
 #include <algorithm>
 #include <array>

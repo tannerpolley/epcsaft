@@ -19,6 +19,10 @@
 #include <stdexcept>
 #include <string>
 
+// Instantiated once in equilibrium/singular_value_decompositions.cpp.
+extern template class Eigen::JacobiSVD<Eigen::MatrixXd>;
+extern template class Eigen::BDCSVD<Eigen::MatrixXd>;
+
 namespace epcsaft::equilibrium {
 static void validate_reaction_set(std::size_t components, const std::vector<ReactionSpec>& reactions);
 namespace {

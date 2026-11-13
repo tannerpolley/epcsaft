@@ -56,6 +56,9 @@
 #include <utility>
 #include <variant>
 
+// Instantiated once in equilibrium/singular_value_decompositions.cpp.
+extern template class Eigen::JacobiSVD<Eigen::MatrixXd>;
+
 namespace epcsaft::regression {
 namespace {
 

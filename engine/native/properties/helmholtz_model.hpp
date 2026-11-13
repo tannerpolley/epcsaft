@@ -4,8 +4,13 @@
 #include "core/trace.hpp"
 
 #include "core/convergence.hpp"
-#include "properties/helmholtz_tape.hpp"
+#include "core/numerical_policy.hpp"
+#include "core/parameters.hpp"
+#include "core/scalar.hpp"
+#include "properties/parameter_families.hpp"
 #include "properties/thermochemistry.hpp"
+
+#include <Eigen/Dense>
 
 #include <array>
 #include <cstddef>
@@ -13,6 +18,7 @@
 #include <mutex>
 #include <limits>
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <stdexcept>
@@ -21,6 +27,8 @@
 #include <vector>
 
 namespace epcsaft {
+
+namespace detail { struct HelmholtzTape; }
 
 EPC_API void density_conditioning(core::Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization");
 

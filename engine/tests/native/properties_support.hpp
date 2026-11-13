@@ -1,6 +1,7 @@
 #pragma once
 
 #include "properties/helmholtz_model.hpp"
+#include "properties/helmholtz_tape.hpp"
 #include "core/physical_constants.hpp"
 
 #include <Eigen/Dense>

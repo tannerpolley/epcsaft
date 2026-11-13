@@ -25,6 +25,10 @@
 #include <memory>
 #include <string>
 
+// Instantiated once in equilibrium/singular_value_decompositions.cpp.
+extern template class Eigen::JacobiSVD<Eigen::MatrixXd>;
+extern template class Eigen::JacobiSVD<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>;
+
 namespace epcsaft::equilibrium {
 namespace { constexpr double bound_infinity = 1.0e19; }
 
