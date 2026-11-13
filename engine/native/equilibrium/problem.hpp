@@ -207,12 +207,20 @@ struct EquilibriumProblem final {
     // Caller row criterion for the solve; the named policy value is the only default.
     policy::SolverOptions solver_options;
     std::vector<SolidSpec> solids;
+
+    bool has_reaction_reference() const {
+        return std::any_of(reactions.begin(), reactions.end(),
+            [](const ReactionSpec& reaction) { return reaction.reference.has_value(); });
+    }
 };
 
 enum class RowKind {
     Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, InternalEnergy, Volume, ReactionMassAction,
     CriticalMode, CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
 };
+
+// Caloric, critical and envelope rows: analytic in record_geometry, completed by row_series.
+inline bool condition_row(RowKind kind) noexcept { return kind >= RowKind::Enthalpy && kind != RowKind::SolidAffinity; }
 
 // Rows a Gibbs cell classifies at its minimum; they are never optimizer constraints there.
 inline bool stationarity_row(RowKind kind) noexcept {
@@ -866,6 +874,8 @@ EPC_API std::vector<ReactionActivities> reaction_activities(const HelmholtzModel
 EPC_API std::vector<ReactionActivities> reaction_activities(const IdealMoleFraction&, const EquilibriumResult&);
 // Per declared solid: 1 when present, absent otherwise.
 EPC_API std::vector<std::optional<double>> solid_activities(const EquilibriumResult&);
+// Finite non-negative amounts and compositions, positive densities and normalized phases, or throws.
+void require_solution_shape(const EquilibriumResult& result, std::size_t phases, std::size_t components);
 
 struct StabilityPhaseComparison final {
     std::size_t phase = 0;
@@ -951,6 +961,17 @@ EPC_API EquilibriumResult solve_compiled(const CompiledSystem& compiled, const s
                                  std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false);
 
 EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
+bool one_component_two_density_eligible(const CompiledSystem&);
+struct SensitivityInfo final {
+    std::size_t rank = 0;
+    double condition_estimate = 0.0, threshold = 0.0;
+    bool nonsingular = false;
+};
+
+EPC_API SensitivityInfo inspect_sensitivity(
+    const CompiledSystem& compiled,
+    const std::vector<double>& point
+);
 struct SolvedStateActionDiagnostics;
 // All operands are generated from one exact trial declaration in declared phase order.
 struct SaturationOperand final {

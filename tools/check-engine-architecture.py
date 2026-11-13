@@ -189,8 +189,7 @@ CASE_TOKENS = re.compile(
 SOLVER_FILES = {
     "equilibrium/gibbs_minimizer.hpp", "equilibrium/gibbs_minimizer.cpp",
     "equilibrium/phase_boundary.cpp", "equilibrium/implicit_sensitivity.cpp",
-    "equilibrium/request_compile.cpp",
-    "equilibrium/row_evaluation.hpp", "equilibrium/reaction_activities.hpp", "equilibrium/starts.hpp",
+    "equilibrium/request_compile.cpp", "equilibrium/row_evaluation.cpp", "equilibrium/reaction_activities.cpp",
     "equilibrium/phase_stability.cpp",
 }
 

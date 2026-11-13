@@ -118,7 +118,9 @@ surface_sources = files('native/surface/parameter_builder.cpp')
 equilibrium_sources = files(
   'native/equilibrium/stoichiometry.cpp',
   'native/equilibrium/request_compile.cpp',
+  'native/equilibrium/row_evaluation.cpp',
   'native/equilibrium/gibbs_minimizer.cpp',
+  'native/equilibrium/reaction_activities.cpp',
   'native/equilibrium/one_component_two_density.cpp',
   'native/equilibrium/phase_stability.cpp',
   'native/equilibrium/phase_boundary.cpp',

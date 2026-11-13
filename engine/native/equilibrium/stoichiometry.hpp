@@ -15,6 +15,11 @@ EPC_API bool exact_zero_dot(const std::vector<double>& left, const std::vector<d
 std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
     const std::vector<ReactionSpec>& reactions);
 void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active);
+// The problem's reactions with each referenced one replaced by its central reference reaction at T and P.
+std::vector<ReactionSpec> central_reference_reactions(
+    const HelmholtzModel& model, const EquilibriumProblem& request, double temperature, double pressure,
+    std::vector<NeutralReferenceReactionDiagnostic>& diagnostics, const ReferenceJets& jets,
+    const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr);
 
 EPC_API std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed

@@ -1,4 +1,12 @@
-// Included once, by gibbs_minimizer.cpp in namespace epcsaft::equilibrium: species activities and ln Q at a returned state.
+// Species activities and ln Q at a returned equilibrium state.
+#include "equilibrium/stoichiometry.hpp"
+
+#include <cmath>
+#include <optional>
+#include <string>
+#include <vector>
+
+namespace epcsaft::equilibrium {
 namespace {
 // EqID reaction_activity_quotient: products-positive sum of nu_i ln a_i; a species cause or opposing infinities leave `cause`.
 std::optional<double> log_quotient(const std::vector<double>& nu, const SpeciesActivities& species, std::string& cause) {
@@ -133,3 +141,5 @@ std::vector<std::optional<double>> solid_activities(const EquilibriumResult& res
     for (const double amount : result.solid_amounts) activities.push_back(amount > 0.0 ? std::optional<double>(1.0) : std::nullopt);
     return activities;
 }
+
+}  // namespace epcsaft::equilibrium
