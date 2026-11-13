@@ -41,26 +41,6 @@ struct IdealInterval final {
 template <typename Scalar>
 struct IdealThermalValue final { Scalar cp, h, s; };
 
-// EqExclude: explicit coefficient and domain admission
-inline void validate_ideal_correlation(const IdealCorrelation& correlation) {
-    if (!(correlation.source_pressure > 0.0) || !std::isfinite(correlation.source_pressure))
-        throw std::invalid_argument("invalid ideal source pressure");
-    std::visit([](const auto& c) {
-        using C = std::decay_t<decltype(c)>;
-        if (c.coefficients.empty()) throw std::invalid_argument("missing ideal coefficients");
-        for (double value : c.coefficients)
-            if (!std::isfinite(value)) throw std::invalid_argument("nonfinite ideal coefficient");
-        if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) {
-            if (!(c.reference_temperature > 0.0) || !std::isfinite(c.reference_temperature)
-                || !std::isfinite(c.reference_enthalpy) || !std::isfinite(c.reference_entropy))
-                throw std::invalid_argument("invalid ideal thermal anchor");
-        } else if constexpr (std::is_same_v<C, IdealShomate>) {
-            if (!std::isfinite(c.formation_enthalpy))
-                throw std::invalid_argument("missing Shomate formation enthalpy");
-        }
-    }, correlation.form);
-}
-
 inline bool ideal_interval_contains(const IdealInterval& interval, double temperature) {
     return (temperature > interval.lower
             || (interval.lower_inclusive && temperature == interval.lower))
@@ -77,13 +57,23 @@ inline void validate_ideal_intervals(const std::vector<IdealInterval>& intervals
         if (!(interval.lower > 0.0) || !(interval.upper > interval.lower)
             || !std::isfinite(interval.upper))
             throw std::invalid_argument("invalid ideal interval");
-        validate_ideal_correlation(interval.correlation);
+        // EqExclude: explicit coefficient and domain admission
+        if (!(interval.correlation.source_pressure > 0.0) || !std::isfinite(interval.correlation.source_pressure))
+            throw std::invalid_argument("invalid ideal source pressure");
         std::visit([&](const auto& c) {
             using C = std::decay_t<decltype(c)>;
-            if constexpr (std::is_same_v<C, IdealPolynomial>
-                          || std::is_same_v<C, IdealDIPPR107>) {
+            if (c.coefficients.empty()) throw std::invalid_argument("missing ideal coefficients");
+            for (double value : c.coefficients)
+                if (!std::isfinite(value)) throw std::invalid_argument("nonfinite ideal coefficient");
+            if constexpr (std::is_same_v<C, IdealPolynomial> || std::is_same_v<C, IdealDIPPR107>) {
+                if (!(c.reference_temperature > 0.0) || !std::isfinite(c.reference_temperature)
+                    || !std::isfinite(c.reference_enthalpy) || !std::isfinite(c.reference_entropy))
+                    throw std::invalid_argument("invalid ideal thermal anchor");
                 if (!ideal_interval_contains(interval, c.reference_temperature))
                     throw std::invalid_argument("ideal anchor outside its correlation interval");
+            } else if constexpr (std::is_same_v<C, IdealShomate>) {
+                if (!std::isfinite(c.formation_enthalpy))
+                    throw std::invalid_argument("missing Shomate formation enthalpy");
             }
         }, interval.correlation.form);
     }
@@ -172,9 +162,6 @@ template <typename Scalar>
 IdealThermalValue<Scalar> evaluate_ideal_correlation(
     const IdealCorrelation& correlation, const Scalar& temperature, double pressure
 ) {
-    validate_ideal_correlation(correlation);
-    if (!(pressure > 0.0) || !std::isfinite(pressure))
-        throw std::invalid_argument("invalid ideal standard pressure");
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(temperature > 0.0) || !std::isfinite(temperature))
             throw std::invalid_argument("invalid ideal temperature");

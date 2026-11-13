@@ -84,7 +84,7 @@ def _scalar(item: Mapping[str, object], field: str, index: Sequence[int], laws: 
     for term_value in _array(law.get("terms", ()), f"{identity} terms"):
         term = _mapping(term_value, f"{identity} term")
         power, coefficient = term.get("power"), _mapping(term.get("coefficient"), f"{identity} coefficient")
-        if not isinstance(power, int) or isinstance(power, bool) or not 0 <= power <= 3:
+        if not isinstance(power, int) or isinstance(power, bool) or power < 0:
             raise _core.ParameterError(f"invalid temperature law power {power} for {identity}")
         entries.add(coefficient.get("identity"), "temperature_law_coefficient", (number, power), coefficient.get("value"), identity, repeat_of=cast(str, coefficient.get("identity")) if first is not item else None)
     if "reciprocal_temperature_slope" in law:
@@ -568,11 +568,6 @@ class Parameters:
                 raise ParameterError("permittivity solvents must name known components")
             if len(set(cast(Sequence[str], solvents))) != len(solvents):
                 raise ParameterError("duplicate permittivity solvent")
-            for solvent in cast(Sequence[str], solvents):
-                fixed = _mapping(component_records[solvent].get("fixed", {}), "solvent fixed")
-                charge = _mapping(fixed.get("charge_number"), "solvent charge")
-                if _mapping(charge.get("value"), "solvent charge value").get("magnitude") != 0:
-                    raise ParameterError("permittivity solvent must be neutral")
             for name in selected_ids:
                 if name in solvents:
                     entries.add(f"permittivity/solvent/{name}", "permittivity_solvent", (positions[name],),

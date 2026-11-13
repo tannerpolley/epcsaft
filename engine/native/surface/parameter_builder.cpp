@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstring>
 #include <map>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -29,12 +30,59 @@ std::string where(const ParameterEntry& entry) {
     return entry.identity.empty() ? entry.field : entry.identity;
 }
 
+using Family = detail::ParameterFamily;
+enum class Kind { Component, Pair, Site, Other };
+
+// Document fields stored one value per component, component pair or site pair, and the fitted families.
+struct Field final {
+    const char* name;
+    Kind kind;
+    const char* unit;
+    std::vector<double> Parameters::* values;
+    std::optional<Family> family;
+};
+const std::array<Field, 31> FIELDS = {{
+    {"molar_mass", Kind::Component, "molar mass", &Parameters::molar_mass_kg_per_mol, std::nullopt},
+    {"segment_count", Kind::Component, "dimensionless", &Parameters::segment_count, Family::SegmentCount},
+    {"sigma_constant", Kind::Component, "length", &Parameters::sigma_constant, Family::SigmaConstant},
+    {"dispersion_energy_over_k", Kind::Component, "kelvin", &Parameters::dispersion_energy_over_k, Family::DispersionEnergyOverK},
+    {"solvation_factor", Kind::Component, "dimensionless", &Parameters::solvation_factor, std::nullopt},
+    {"relative_permittivity", Kind::Component, "dimensionless", &Parameters::relative_permittivity, std::nullopt},
+    {"packing_diameter", Kind::Component, "length", &Parameters::packing_diameter_angstrom, Family::PackingDiameter},
+    {"debye_huckel_diameter", Kind::Component, "length", &Parameters::debye_huckel_diameter_angstrom, Family::DebyeHuckelDiameter},
+    {"born_diameter", Kind::Component, "length", &Parameters::born_diameter_angstrom, Family::BornDiameter},
+    {"ion_suppression_coefficient", Kind::Component, "dimensionless", &Parameters::ion_suppression_coefficient, Family::IonSuppressionCoefficient},
+    {"permittivity_reference_temperature", Kind::Component, "kelvin", &Parameters::permittivity_reference_temperature_k, std::nullopt},
+    {"dielectric_volume", Kind::Component, "molar volume", &Parameters::dielectric_volume_m3_per_mol, Family::DielectricVolume},
+    {"dielectric_temperature", Kind::Component, "kelvin", &Parameters::dielectric_temperature_k, Family::DielectricTemperature},
+    {"dipole_scaling", Kind::Component, "debye ** 2", &Parameters::dipole_scaling_debye2, std::nullopt},
+    {"polarizability_scaling", Kind::Component, "angstrom ** 3", &Parameters::polarizability_scaling_angstrom3, std::nullopt},
+    {"correlation_integral_parameter", Kind::Component, "dimensionless", &Parameters::correlation_integral_parameter, std::nullopt},
+    {"dipole_moment", Kind::Component, "debye", &Parameters::dipole_moment_debye, std::nullopt},
+    {"dipole_count", Kind::Component, "dimensionless", &Parameters::dipole_count, std::nullopt},
+    {"quadrupole_moment", Kind::Component, "debye * angstrom", &Parameters::quadrupole_moment_debye_angstrom, std::nullopt},
+    {"quadrupole_count", Kind::Component, "dimensionless", &Parameters::quadrupole_count, std::nullopt},
+    {"k_ij", Kind::Pair, "dimensionless", &Parameters::k_ij, Family::Kij},
+    {"l_ij", Kind::Pair, "dimensionless", &Parameters::l_ij, Family::Lij},
+    {"k_ij_reciprocal_temperature_slope", Kind::Pair, "kelvin", &Parameters::k_ij_reciprocal_temperature_slope, Family::KijReciprocalTemperatureSlope},
+    {"k_ij_reference_temperature", Kind::Pair, "kelvin", &Parameters::k_ij_reference_temperature_k, std::nullopt},
+    {"association_energy_over_k", Kind::Site, "kelvin", &Parameters::association_energy_over_k, Family::AssociationEnergyOverK},
+    {"association_volume", Kind::Site, "dimensionless", &Parameters::association_volume, Family::AssociationVolume},
+    {"born_c_dielectric", Kind::Other, nullptr, nullptr, Family::BornCDielectric},
+    {"ionic_region_relative_permittivity", Kind::Other, nullptr, nullptr, Family::IonicRegionRelativePermittivity},
+    {"cation_pair_mixing", Kind::Other, nullptr, nullptr, Family::CationPairMixing},
+    {"cation_triple_mixing", Kind::Other, nullptr, nullptr, Family::CationTripleMixing},
+    {"temperature_law_coefficient", Kind::Other, nullptr, nullptr, Family::TemperatureLawCoefficient},
+}};
+
+const Field* find_field(const std::string& name) {
+    const auto found = std::find_if(FIELDS.begin(), FIELDS.end(), [&](const Field& field) { return name == field.name; });
+    return found == FIELDS.end() ? nullptr : &*found;
+}
+
 bool symmetric_field(const std::string& field) {
-    return field == "k_ij" || field == "l_ij"
-        || field == "k_ij_reciprocal_temperature_slope"
-        || field == "k_ij_reference_temperature"
-        || field == "association_energy_over_k"
-        || field == "association_volume"
+    const Field* row = find_field(field);
+    return (row && (row->kind == Kind::Pair || row->kind == Kind::Site))
         || field == "association_volume_correction" || field == "no_cross_association" || field == "k_ij_complement";
 }
 
@@ -167,8 +215,6 @@ Parameters build_parameters(const ParameterDocument& document) {
                 if (entry.magnitude != 0.0 || unit_factor(entry, "dimensionless") != 1.0) reject("ideal-gas requires neutral species");
             } else ideal.molar_mass_kg_per_mol[i] = entry.magnitude * unit_factor(entry, "molar mass");
         }
-        if (components == 0 || std::any_of(ideal.molar_mass_kg_per_mol.begin(), ideal.molar_mass_kg_per_mol.end(),
-            [](double mass) { return !std::isfinite(mass) || mass <= 0.0; })) reject("ideal-gas requires positive molar masses");
         return ideal;
     }
     if (document.base_choice != "pc-saft") reject("unknown base choice " + document.base_choice);
@@ -258,7 +304,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.quadrupole_count.assign(components, 0.0);
     }
 
-    std::set<std::tuple<std::string, Index>> seen;
+    std::map<std::pair<std::string, Index>, std::string> seen;  // (field, canonical index) -> where(entry)
     std::set<std::pair<std::string, std::size_t>> component_fields;
     std::set<std::string> scalar_fields;
     std::set<std::string> mixing_identities;
@@ -303,8 +349,7 @@ Parameters build_parameters(const ParameterDocument& document) {
             owned.field = law ? entry.field.substr(0, entry.field.size() - suffix.size()) : entry.field;
             owned.index = {entry.index[1], entry.index[2]};
         }
-        const auto key = std::make_tuple(owned.field, canonical_index(owned));
-        if (!seen.emplace(key).second) reject("duplicate " + where(entry));
+        if (!seen.emplace(std::pair{owned.field, canonical_index(owned)}, where(entry)).second) reject("duplicate " + where(entry));
         double factor = 1.0;
         if (entry.field == "cation_pair_mixing" || entry.field == "cation_triple_mixing") {
             require_index(entry, 4, "solvent/cation/cation/anion indices");
@@ -320,11 +365,22 @@ Parameters build_parameters(const ParameterDocument& document) {
             const bool pair = entry.field == "cation_pair_mixing";
             auto& values = pair ? result.cation_pair_mixing : result.cation_triple_mixing;
             values.push_back(entry.magnitude * unit_factor(entry, pair ? "kilogram / mole" : "kilogram ** 2 / mole ** 2"));
-        } else if (entry.field == "molar_mass") {
-            factor = unit_factor(entry, "molar mass");
-            const auto i = component_index(entry, components);
-            component_fields.emplace(entry.field, i);
-            result.molar_mass_kg_per_mol[i] = entry.magnitude * factor;
+        } else if (const Field* row = find_field(entry.field);
+                   row && row->values && !(entry.field == "ion_suppression_coefficient" && entry.index.empty())) {
+            auto& values = result.*row->values;
+            if (row->kind == Kind::Component) {
+                const auto i = component_index(entry, components);
+                component_fields.emplace(entry.field, i);
+                const double factor = unit_factor(entry, row->unit);
+                if ((dipole_field || quadrupole_field) && (!std::isfinite(entry.magnitude) || entry.magnitude < 0.0)) reject("negative or nonfinite " + where(entry));
+                values[i] = entry.magnitude * factor;
+            } else {
+                const bool site = row->kind == Kind::Site;
+                const auto [i, j] = site ? site_index(entry, sites) : pair_index(entry, components);
+                const auto n = site ? sites : components;
+                values[i * n + j] = values[j * n + i] = entry.magnitude * unit_factor(entry, row->unit);
+                if (site) result.association_active[i * n + j] = result.association_active[j * n + i] = 1;
+            }
         } else if (entry.field == "charge_number") {
             factor = unit_factor(entry, "charge");
             const auto i = component_index(entry, components);
@@ -350,48 +406,6 @@ Parameters build_parameters(const ParameterDocument& document) {
             const auto i = component_index(entry, components);
             if (entry.magnitude * unit_factor(entry, "dimensionless") != 1.0) reject("charged_molecule_ion is not 1: " + where(entry));
             result.molecular_ion[i] = 1;
-        } else if (entry.field == "segment_count" || entry.field == "sigma_constant"
-                   || entry.field == "dispersion_energy_over_k" || entry.field == "solvation_factor"
-                   || entry.field == "relative_permittivity" || entry.field == "packing_diameter"
-                   || entry.field == "debye_huckel_diameter" || entry.field == "born_diameter"
-                   || (entry.field == "ion_suppression_coefficient" && !entry.index.empty())) {
-            const auto i = component_index(entry, components);
-            component_fields.emplace(entry.field, i);
-            const std::string dimension = entry.field == "segment_count"
-                || entry.field == "solvation_factor" || entry.field == "relative_permittivity"
-                || entry.field == "ion_suppression_coefficient" ? "dimensionless"
-                : (entry.field == "dispersion_energy_over_k" ? "kelvin" : "length");
-            factor = unit_factor(entry, dimension);
-            if (entry.field == "segment_count") result.segment_count[i] = entry.magnitude * factor;
-            else if (entry.field == "sigma_constant") result.sigma_constant[i] = entry.magnitude * factor;
-            else if (entry.field == "dispersion_energy_over_k") result.dispersion_energy_over_k[i] = entry.magnitude * factor;
-            else if (entry.field == "solvation_factor") result.solvation_factor[i] = entry.magnitude * factor;
-            else if (entry.field == "relative_permittivity") result.relative_permittivity[i] = entry.magnitude * factor;
-            else if (entry.field == "packing_diameter") result.packing_diameter_angstrom[i] = entry.magnitude * factor;
-            else if (entry.field == "debye_huckel_diameter") result.debye_huckel_diameter_angstrom[i] = entry.magnitude * factor;
-            else if (entry.field == "born_diameter") result.born_diameter_angstrom[i] = entry.magnitude * factor;
-            else result.ion_suppression_coefficient[i] = entry.magnitude * factor;
-        } else if (density_field || dipolar_field) {
-            const auto i = component_index(entry, components);
-            component_fields.emplace(entry.field, i);
-            factor = unit_factor(entry, entry.field == "dielectric_volume" ? "molar volume"
-                : entry.field == "dielectric_temperature" ? "kelvin"
-                : entry.field == "dipole_scaling" ? "debye ** 2"
-                : entry.field == "polarizability_scaling" ? "angstrom ** 3" : "dimensionless");
-            const double value = entry.magnitude * factor;
-            if (entry.field == "dielectric_volume") result.dielectric_volume_m3_per_mol[i] = value;
-            else if (entry.field == "dielectric_temperature") result.dielectric_temperature_k[i] = value;
-            else if (entry.field == "dipole_scaling") result.dipole_scaling_debye2[i] = value;
-            else if (entry.field == "polarizability_scaling") result.polarizability_scaling_angstrom3[i] = value;
-            else result.correlation_integral_parameter[i] = value;
-        } else if (dipole_field || quadrupole_field) {
-            const auto i = component_index(entry, components);
-            component_fields.emplace(entry.field, i);
-            factor = unit_factor(entry, entry.field == "dipole_moment" ? "debye"
-                : entry.field == "quadrupole_moment" ? "debye * angstrom" : "dimensionless");
-            if (!std::isfinite(entry.magnitude) || entry.magnitude < 0.0) reject("negative or nonfinite " + where(entry));
-            (entry.field == "dipole_moment" ? result.dipole_moment_debye : entry.field == "dipole_count" ? result.dipole_count
-                : entry.field == "quadrupole_moment" ? result.quadrupole_moment_debye_angstrom : result.quadrupole_count)[i] = entry.magnitude * factor;
         } else if (entry.field == "sigma_term_amplitude" || entry.field == "sigma_term_exponent") {
             require_index(entry, 2, "sigma term index");
             if (entry.index[0] >= sigma_term_components.size() + 1 || entry.index[1] >= components) {
@@ -404,44 +418,6 @@ Parameters build_parameters(const ParameterDocument& document) {
                 reject("permittivity term index out of range for " + where(entry));
             }
             permittivity_term_components[entry.index[0]] = entry.index[1];
-        } else if (entry.field == "permittivity_reference_temperature") {
-            const auto i = component_index(entry, components);
-            component_fields.emplace(entry.field, i);
-            factor = unit_factor(entry, "kelvin");
-            result.permittivity_reference_temperature_k[i] = entry.magnitude * factor;
-        } else if (entry.field == "k_ij" || entry.field == "l_ij"
-                   || entry.field == "k_ij_reciprocal_temperature_slope"
-                   || entry.field == "k_ij_reference_temperature") {
-            const auto [i, j] = pair_index(entry, components);
-            const auto offset = i * components + j;
-            const std::string dimension = entry.field == "k_ij" || entry.field == "l_ij"
-                ? "dimensionless" : "kelvin";
-            factor = unit_factor(entry, dimension);
-            if (entry.field == "k_ij") {
-                result.k_ij[offset] = entry.magnitude * factor;
-                result.k_ij[j * components + i] = entry.magnitude * factor;
-            } else if (entry.field == "l_ij") {
-                result.l_ij[offset] = entry.magnitude * factor;
-                result.l_ij[j * components + i] = entry.magnitude * factor;
-            } else if (entry.field == "k_ij_reciprocal_temperature_slope") {
-                result.k_ij_reciprocal_temperature_slope[offset] = entry.magnitude * factor;
-                result.k_ij_reciprocal_temperature_slope[j * components + i] = entry.magnitude * factor;
-            } else {
-                result.k_ij_reference_temperature_k[offset] = entry.magnitude * factor;
-                result.k_ij_reference_temperature_k[j * components + i] = entry.magnitude * factor;
-            }
-        } else if (entry.field == "association_energy_over_k" || entry.field == "association_volume") {
-            const auto [s, t] = site_index(entry, sites);
-            factor = unit_factor(entry, entry.field == "association_volume" ? "dimensionless" : "kelvin");
-            result.association_active[s * sites + t] = 1;
-            result.association_active[t * sites + s] = 1;
-            if (entry.field == "association_energy_over_k") {
-                result.association_energy_over_k[s * sites + t] = entry.magnitude * factor;
-                result.association_energy_over_k[t * sites + s] = entry.magnitude * factor;
-            } else {
-                result.association_volume[s * sites + t] = entry.magnitude * factor;
-                result.association_volume[t * sites + s] = entry.magnitude * factor;
-            }
         } else if (entry.field == "association_combining_rule") {
             if (entry.identity != "arithmetic-energy-geometric-volume" && entry.identity != "wolbach-sandler") reject("unknown association rule " + entry.identity);
             require_index(entry, 6, "combining rule index");
@@ -567,8 +543,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     }
     for (std::size_t i = 0; i < components; ++i) {
         if (component_fields.find({"charge_number", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/charge_number");
-        if (result.charge_number[i] == 0 && (component_fields.find({"molar_mass", i}) == component_fields.end()
-                                             || result.molar_mass_kg_per_mol[i] <= 0.0)) {
+        if (result.charge_number[i] == 0 && component_fields.find({"molar_mass", i}) == component_fields.end()) {
             reject("missing component/" + document.component_ids[i] + "/molar_mass");
         }
         if (component_fields.find({"segment_count", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_count");
@@ -598,38 +573,22 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (k_law && result.k_ij_reference_temperature_k[i * components + j] != 0.0) reject("unconsumed k_ij slope of a temperature law pair");
         if (same_sign && result.ionic_dispersion.is(IonicDispersion::ExcludeSameSign) && !(result.molecular_ion[i] && result.molecular_ion[j])) {
             if (k_law) reject("unconsumed k_ij temperature law under exclude-same-sign-ion-pairs");
-            for (const auto& entry : document.entries) {
-                if (entry.index.size() != 2
-                    || !((entry.index[0] == i && entry.index[1] == j)
-                         || (entry.index[0] == j && entry.index[1] == i))) {
-                    continue;
-                }
-                if (entry.field == "k_ij"
-                    || entry.field == "k_ij_reciprocal_temperature_slope"
-                    || entry.field == "k_ij_reference_temperature") {
-                    const std::string identity = where(entry);
-                    reject("unconsumed " + identity + " under exclude-same-sign-ion-pairs");
-                }
+            for (const char* field : {"k_ij", "k_ij_reciprocal_temperature_slope", "k_ij_reference_temperature"}) {
+                const auto found = seen.find({field, {i, j}});
+                if (found != seen.end()) reject("unconsumed " + found->second + " under exclude-same-sign-ion-pairs");
             }
             continue;
         }
-        if (!k_law && result.k_ij[i * components + j] == 0.0 && result.k_ij[j * components + i] == 0.0) {
-            bool present = false;
-            for (const auto& entry : document.entries) if (entry.field == "k_ij" && entry.index.size() == 2 && ((entry.index[0] == i && entry.index[1] == j) || (entry.index[0] == j && entry.index[1] == i))) present = true;
-            if (!present) {
-                const auto& first = std::min(document.component_ids[i], document.component_ids[j]);
-                const auto& second = std::max(document.component_ids[i], document.component_ids[j]);
-                reject("missing pair/" + first + "/" + second + "/k_ij");
-            }
+        if (!k_law && !seen.count({"k_ij", {i, j}})) {
+            const auto& first = std::min(document.component_ids[i], document.component_ids[j]);
+            const auto& second = std::max(document.component_ids[i], document.component_ids[j]);
+            reject("missing pair/" + first + "/" + second + "/k_ij");
         }
         if (result.k_ij_reciprocal_temperature_slope[i * components + j] != 0.0 && result.k_ij_reference_temperature_k[i * components + j] == 0.0) reject("missing pair reference temperature/" + document.component_ids[i] + "/" + document.component_ids[j]);
     }
-    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
-        && scalar_fields.find("ionic_region_relative_permittivity") == scalar_fields.end()) reject("missing ionic_region_relative_permittivity");
-    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
-        && scalar_fields.find("born_c_shell") == scalar_fields.end()) reject("missing born_c_shell");
-    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)
-        && scalar_fields.find("born_c_dielectric") == scalar_fields.end()) reject("missing born_c_dielectric");
+    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn))
+        for (const char* field : {"ionic_region_relative_permittivity", "born_c_shell", "born_c_dielectric"})
+            if (!scalar_fields.count(field)) reject(std::string("missing ") + field);
     if (document.permittivity_choice == "ion-fraction-suppression") {
         if (!scalar_fields.count("ion_suppression_coefficient")) reject("missing model/relative_permittivity/ion_fraction_suppression_coefficient");
         for (std::size_t i = 0; i < components; ++i) result.ion_suppression_coefficient[i] = result.charge_number[i] == 0 ? 0.0 : ion_fraction_suppression;
@@ -696,7 +655,6 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.permittivity_solvent.clear();
         result.permittivity_solvent_normalized = false;
     }
-    validate_cation_mixing(result);
     return result;
 }
 
@@ -718,12 +676,10 @@ ThermochemistryRecord prepare_thermochemistry(ThermochemistryRecord record, doub
 
 ParameterDocument fitted_document(const ParameterDocument& start, const Parameters& fitted) {
     core::Scope scope("fitted_document");
-    // ParameterFamily order up to TemperatureLawCoefficient; a fitted PathwayWeight is not written to a document.
-    static const std::array<std::string, detail::PARAMETER_FAMILY_COUNT - 1> fields({"segment_count", "sigma_constant",
-        "dispersion_energy_over_k", "k_ij", "l_ij", "association_energy_over_k", "association_volume", "born_diameter",
-        "debye_huckel_diameter", "packing_diameter", "ion_suppression_coefficient", "born_c_dielectric",
-        "ionic_region_relative_permittivity", "k_ij_reciprocal_temperature_slope", "dielectric_volume",
-        "dielectric_temperature", "cation_pair_mixing", "cation_triple_mixing", "temperature_law_coefficient"});
+    // A fitted PathwayWeight is not written to a document; every other family has its FIELDS row.
+    const auto family_name = [](std::size_t f) {
+        return std::find_if(FIELDS.begin(), FIELDS.end(), [&](const Field& row) { return row.family == Family(f); })->name;
+    };
     const Parameters base = build_parameters(start);
     if (fitted.pathway_weight != base.pathway_weight) reject("fitted pathway_weight cannot be written to the document");
     const auto charged = std::find_if(base.charge_number.begin(), base.charge_number.end(), [](int z) { return z != 0; });
@@ -740,26 +696,27 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
             if (charged == base.charge_number.end()) continue;
             k = static_cast<std::size_t>(charged - base.charge_number.begin());
         }
-        auto f = static_cast<std::size_t>(std::find(fields.begin(), fields.end(), entry.field) - fields.begin());
+        const Field* row = find_field(entry.field);
+        std::optional<Family> family = row ? row->family : std::nullopt;
         const bool term = entry.field.find("temperature_law_") == 0 || entry.field == "association_volume_correction";
         const auto law = term ? std::find(laws.begin(), laws.end(), entry.identity) : laws.end();
-        if (law != laws.end()) f = fields.size() - 1, k = static_cast<std::size_t>(law - laws.begin());
-        if (f == fields.size()) continue;
-        const auto family = static_cast<detail::ParameterFamily>(f);
+        if (law != laws.end()) family = Family::TemperatureLawCoefficient, k = static_cast<std::size_t>(law - laws.begin());
+        if (!family) continue;
+        const auto f = static_cast<std::size_t>(*family);
         units[{f, k}] = entry.unit;
-        const auto now = detail::family_values(fitted, family), was = detail::family_values(base, family);
+        const auto now = detail::family_values(fitted, *family), was = detail::family_values(base, *family);
         if (now.second != was.second || std::memcmp(now.first + k, was.first + k, sizeof(double)) == 0) continue;
         entry.magnitude = now.first[k] / (entry.unit == "liter / mole" ? unit_factor(entry, "molar volume") : 1.0);
     }
     const Parameters rebuilt = build_parameters(result);
-    for (std::size_t f = 0; f < fields.size(); ++f) {
-        const auto family = static_cast<detail::ParameterFamily>(f);
+    for (std::size_t f = 0; f < detail::PARAMETER_FAMILY_COUNT - 1; ++f) {
+        const auto family = static_cast<Family>(f);
         const auto want = detail::family_values(fitted, family), got = detail::family_values(rebuilt, family);
-        if (want.second != got.second) reject("fitted " + fields[f] + " slot count differs from the document's");
+        if (want.second != got.second) reject("fitted " + std::string(family_name(f)) + " slot count differs from the document's");
         for (std::size_t k = 0; k < want.second; ++k) {
             if (std::memcmp(want.first + k, got.first + k, sizeof(double)) == 0) continue;
             const auto unit = units.find({f, k});
-            reject("fitted " + fields[f] + " slot " + std::to_string(k)
+            reject("fitted " + std::string(family_name(f)) + " slot " + std::to_string(k)
                 + (unit == units.end() ? " has no document entry" : " does not round-trip in " + unit->second));
         }
     }

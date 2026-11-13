@@ -480,7 +480,7 @@ void temperature_laws() {
         const auto constant_state = [&] { return epcsaft::HelmholtzModel(pair).state(300, 1000, {0.5, 0.5}); };
         const auto law_state = [&] { return epcsaft::HelmholtzModel(law).state(300, 1000, {0.5, 0.5}); };
         if (l >= 1) {
-            refused("domain/constant/" + number(l), [&] { (void)constant_state(); }, "invalid evaluated l_ij");
+            refused("domain/constant/" + number(l), [&] { (void)constant_state(); }, "invalid l_ij for pair 0/1");
             refused("domain/law/" + number(l), [&] { (void)law_state(); }, "invalid evaluated l_ij");
         } else {
             normalized("domain/valid/" + number(l), "pressure", "Pa", constant_state().pressure,
@@ -501,7 +501,7 @@ void temperature_laws() {
     CHECK(evaluator.evaluate({0}, true, evaluation));
     for (double l : {1.0, 2.0}) {
         CHECK(!evaluator.evaluate({l}, true, evaluation));
-        CHECK(failures.failures.back().message.find("invalid evaluated l_ij") != std::string::npos);
+        CHECK(failures.failures.back().message.find("invalid l_ij for pair 0/1") != std::string::npos);
     }
     CHECK(evaluator.evaluate({0.99}, true, evaluation));
     // 5. Law-owned constants are unconsumed; one of value or law per quantity; declared units.

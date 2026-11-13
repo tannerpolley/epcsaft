@@ -202,13 +202,10 @@ void require_molar_density(double molar_density) {
             + " mol/m^3; need finite rho > 0 mol/m^3");
 }
 
-// Pair constants and each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
+// Each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
 void require_law_domain(double T, const Parameters& parameters) {
     const auto laws = temperature_law_values(T, parameters);
     const std::size_t sites = parameters.site_component.size(), components = parameters.segment_count.size();
-    for (std::size_t i = 0; i < components; ++i)
-        for (std::size_t j = i + 1; j < components; ++j)
-            (void)pair_correction(T, parameters, laws, TemperatureLaw::Lij, i, j);
     for (const auto& [kind, slot, law] : parameters.temperature_law_slot)  // kinds 3, 4 own site-pair slots
         temperature_law_value(T, parameters, laws, TemperatureLaw(kind), slot, kind > 2 ? sites : components);
 }
@@ -765,8 +762,6 @@ PropertyActionBatch evaluate_actions(
     }
     return result;
 }
-}  // namespace
-
 void validate_cation_mixing(const Parameters& p) {
     const auto size = p.cation_mixing.size();
     require(size <= 1 && p.cation_pair_mixing.size() == size && p.cation_triple_mixing.size() == size, "cation mixing record");
@@ -778,6 +773,7 @@ void validate_cation_mixing(const Parameters& p) {
     require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
         && all_finite(p.cation_pair_mixing) && all_finite(p.cation_triple_mixing), "cation mixing values");
 }
+}  // namespace
 
 HelmholtzModel::HelmholtzModel(
     Parameters parameters,
@@ -864,6 +860,11 @@ HelmholtzModel::HelmholtzModel(
     }
     require(all_finite(parameters_.k_ij), "k_ij");
     require(all_finite(parameters_.l_ij), "l_ij");
+    auto l_ij = parameters_.l_ij;  // l_ij < 1 keeps the cross diameter positive; a law owns its pair's value
+    for (const auto& [target, slot, law] : parameters_.temperature_law_slot)
+        if (target == static_cast<int>(TemperatureLaw::Lij)) l_ij.at(slot) = l_ij.at(slot % components * components + slot / components) = 0.0;
+    for (std::size_t pair = 0; pair < pairs; ++pair)
+        require(l_ij[pair] < 1.0, ("l_ij for pair " + std::to_string(pair / components) + "/" + std::to_string(pair % components)).c_str());
     require(all_finite(parameters_.k_ij_reciprocal_temperature_slope),
             "k_ij_temperature_slope");
     require(all_finite(parameters_.k_ij_reference_temperature_k),

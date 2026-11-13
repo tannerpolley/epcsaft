@@ -408,8 +408,6 @@ inline std::string law_domain_failure(const char* quantity, std::size_t slot, st
         + std::to_string(slot % size) + " at T = " + std::to_string(temperature) + " K";
 }
 
-inline bool valid_lij(double value) { return std::isfinite(value) && value < 1.0; }
-
 // The law value owning `slot` (row-major over `size`, smaller index first). An evaluated value outside its
 // quantity's domain is refused with its target and temperature, never clamped: finite k_ij, l_ij < 1
 // (positive unlike diameter), nonnegative association energy and volume.
@@ -420,7 +418,7 @@ std::optional<Fixed> temperature_law_value(const Fixed& temperature, const Param
         if (owner != static_cast<int>(target) || static_cast<std::size_t>(owned) != slot) continue;
         const Fixed& value = laws[static_cast<std::size_t>(law)];
         if constexpr (std::is_same_v<Fixed, double>) {
-            if (!std::isfinite(value) || (target == TemperatureLaw::Lij && !valid_lij(value))
+            if (!std::isfinite(value) || (target == TemperatureLaw::Lij && !(value < 1.0))
                 || (target >= TemperatureLaw::AssociationEnergyOverK && !(value >= 0.0)))
                 throw std::invalid_argument(law_domain_failure(
                     target <= TemperatureLaw::Kij ? "k_ij" : target == TemperatureLaw::Lij ? "l_ij"
@@ -441,12 +439,7 @@ Fixed pair_correction(const Fixed& temperature, const ParameterSet& parameters, 
     if (!laws.empty())
         if (auto value = temperature_law_value(temperature, parameters, laws, target, std::min(i, j) * size + std::max(i, j), size))
             return *value;
-    if (target == TemperatureLaw::Lij) {
-        if constexpr (std::is_same_v<Fixed, double>)
-            if (!valid_lij(parameters.l_ij[pair]))
-                throw std::invalid_argument(law_domain_failure("l_ij", pair, size, temperature));
-        return parameters.l_ij[pair];
-    }
+    if (target == TemperatureLaw::Lij) return parameters.l_ij[pair];
     const double reference_temperature = parameters.k_ij_reference_temperature_k[pair];
     Fixed k_ij = parameters.k_ij[pair];
     if (reference_temperature > 0.0) {

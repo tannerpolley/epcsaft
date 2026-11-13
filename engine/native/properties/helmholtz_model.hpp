@@ -34,7 +34,6 @@ EPC_API void density_conditioning(core::Convergence& record, double density, dou
 
 using ParameterFamily = detail::ParameterFamily;
 using ActiveParameter = detail::ActiveParameter;
-void validate_cation_mixing(const Parameters& parameters);
 
 // Phase Hessians differentiate only V, positive amounts and (unless isothermal) T; other
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
