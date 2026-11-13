@@ -555,6 +555,11 @@ callback. Pyomo owns any additional control products, ratios and process units.
 A real argument that is a constant of the caller's problem, which ASL marks in `arglist::dig`
 (a fixed T, P, feed or parameter), costs no derivative work: its gradient column and Hessian
 pairs are neither computed nor written, and every other entry is unchanged.
+`epcsaft_equilibrium_phase_component_amount_first_order`, `epcsaft_equilibrium_system_enthalpy_first_order`
+and `epcsaft_equilibrium_solid_amount_first_order` take their exact counterparts' arguments and record, share their
+solved state per record and `q`, and return the same value and gradient but compute no second derivative: every
+Hessian entry ASL reads is NaN, meaning "not computed". They are for a solver that reads no Hessian (Ipopt's
+`hessian_approximation limited-memory`); a caller chooses per call site by the function name in its problem file.
 Both functions share one solved state per record and `q`, and each fills only its own
 rows: an enthalpy refusal fails only the enthalpy function. Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap
@@ -595,7 +600,12 @@ record, row (`0` molar density mol/m3, `1` total molar enthalpy J/mol, `2 + i`
 `ln(phi_i)`, `2 + C + s` the solid row `l_s`) and phase (`0` liquid, the highest stable density root; `1` vapor,
 the lowest). It returns the value, gradient and packed Hessian in physical `q`
 from the native pressure actions plus the exact normalization chain; a `theta` column
-is one native parameter-direction action at fixed `(T, P, x)`. At another `theta` the
+is one native parameter-direction action at fixed `(T, P, x)`. A real argument marked constant
+in `arglist::dig` costs no derivative work: its gradient column and Hessian pairs are neither
+computed nor written, and an action unavailable only in such a column does not fail the call.
+Two exceptions remain: with T constant, the first native call at a `q` still carries its T
+action, unread; a solid row with one live parameter still computes the first-order reference
+jets of every active parameter. At another `theta` the
 record's model is rebuilt with every slot of each active parameter set to its value;
 a value the model refuses returns `invalid_input`. IDAES `PressureProperties` declares
 them as `epcsaft_active_parameter[k]` on the parameter block, dimensionless to Pyomo,

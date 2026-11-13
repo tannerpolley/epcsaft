@@ -547,3 +547,38 @@ def test_scalar_k_solid_refused() -> None:
     native.correlation, native.equilibrium_constant = None, 2.0
     with pytest.raises(ValueError, match=r"ASL solid rows require a ln K\(T\) law"):
         property_asl_record(model, solids=[native], neutral_reference=reference._native(model))
+
+
+def test_constant_arguments_keep_the_other_columns() -> None:
+    """A1: at a new q, a call with arguments marked constant (dig) writes none of their entries, and its value and other
+    entries equal those of the unmarked call that follows bitwise; that call's constant-argument columns are nonzero."""
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
+    gas, solid = property_asl_record(methane_ethane()), halite()
+    theta = solid[0]._model.active_parameter_values
+    cases = [(gas, [*STATES["liquid"], 0.31, 0.69, 0.0, 150.03], range(4), (0, 1)),
+             (gas, [*STATES["liquid"], 0.32, 0.68, 0.0, 150.03], range(4), (4, 5)),
+             (solid[1], [298.15, 1.5e5, 0.9, 0.05, 0.05, *theta], [5], (0,))]
+    for text, q, rows, constant in cases:
+        n, fixed = len(q), [i in constant for i in range(len(q))]
+        pairs = [(i, j) for j in range(n) for i in range(j + 1)]
+        dead = [*(fixed[i] for i in range(n)), *(fixed[i] or fixed[j] for i, j in pairs)]
+        for row in rows:
+            masked, full = (callback._evaluate([*q, text, str(row), "0"], [*f, False, False, False], 2) for f in (fixed, [False] * n))
+            got, want = ([v, *g[:n], *h[:len(pairs)]] for v, g, h in (masked, full))
+            assert [x for x, d in zip(got[1:], dead, strict=True) if d] == [0.0] * sum(dead), (q, row)
+            assert [x.hex() for x, d in zip(got, [False, *dead], strict=True) if not d] == [
+                x.hex() for x, d in zip(want, [False, *dead], strict=True) if not d], (q, row)
+            assert all(full[1][i] != 0.0 for i in constant), (q, row)
+
+
+def test_constant_temperature_at_thermochemistry_endpoint() -> None:
+    """A2: at 350 K, the end of the cp interval, only the T action is refused; with T constant the enthalpy row returns
+    its value and the other gradient entries."""
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
+    args = [350.0, 1.0e6, 0.3, 0.7, 0.0, 150.03, property_asl_record(methane_ethane()), "1", "1"]
+    v, g, _ = callback._evaluate(args, [True, *[False] * 8], 1)
+    assert np.isfinite(v) and g[0] == 0.0 and all(np.isfinite(g[1:6])) and g[1] != 0.0
+    with pytest.raises(RuntimeError, match=r"thermochemistry interval at T=350 K"):
+        callback._evaluate(args, [False] * 9, 1)

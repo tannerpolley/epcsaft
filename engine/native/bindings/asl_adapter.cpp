@@ -19,6 +19,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <tuple>
 
 // Use the process stderr for retained diagnostics, including direct Pyomo calls without AE stdio hooks.
 #define NO_STDIO1
@@ -393,8 +394,9 @@ double report_failure(arglist* arguments, const char* callback) {
 }
 
 // kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J; kind 2: (q, record, solid), mol
-// of the solid's formula unit. Kinds 0 and 2 read one batch; every kind shares one solved state per record and q.
-double equilibrium_observable(arglist* arguments, int kind) {
+// of the solid's formula unit. Kinds 0 and 2 read one batch; every kind shares one solved state per record and q. Without
+// `second`, no Hessian pair is computed and its read entries keep the NaN written on entry.
+double equilibrium_observable(arglist* arguments, int kind, bool second = true) {
     static Prepared<EquilibriumContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
     std::string observable = "request";
@@ -433,7 +435,7 @@ double equilibrium_observable(arglist* arguments, int kind) {
             to[entry] = out[row][entry];
         };
         for (int i = 0; arguments->derivs != nullptr && i < n; ++i) fill({i}, rows.filled[1 + i], rows.gradients, i, arguments->derivs);
-        for (int j = 0, packed = 0; arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
+        for (int j = 0, packed = 0; second && arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
             fill({i, j}, rows.filled[1 + n + packed], rows.hessians, packed, arguments->hes);
         if (!rows.filled[0]) actions(context, {-1}, kind == 1);
         return rows.values[row];  // On the caller's declared absolute batch basis.
@@ -448,10 +450,6 @@ double equilibrium_observable(arglist* arguments, int kind) {
     for (const auto& item : prepared.contexts) item->compiled.reset();  // every record re-solves at its next call
     return report_failure(arguments, "epcsaft_equilibrium");
 }
-
-double equilibrium_amount(arglist* arguments) { return equilibrium_observable(arguments, 0); }
-double equilibrium_enthalpy(arglist* arguments) { return equilibrium_observable(arguments, 1); }
-double equilibrium_solid_amount(arglist* arguments) { return equilibrium_observable(arguments, 2); }
 
 // Pressure-chart property callback (#73): q = (T, P, w_1..w_C, theta_1..theta_m), u = Pw with P = I - zz'/z'z the charge-null projector
 // (identity for a neutral record), s = sum(u), x = u/s. Native pressure actions along the O(1), sum- and charge-free
@@ -468,6 +466,7 @@ struct PropertyContext final {
         std::vector<std::vector<double>> gradients, hessians;
         std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
         int order = -1;
+        std::vector<bool> live;  // per q column: whether its derivatives were computed
     } branches[2], solid_rows;  // liquid (highest stable root), vapor (lowest); solid rows need no density root
     std::vector<eq::SolidSpec> solids;
     std::optional<epcsaft::NeutralReferenceDeclaration> reference;
@@ -490,9 +489,9 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     return context;
 }
 
-void evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, int order) {
+void evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, const std::vector<bool>& live, int order) {
     auto& branch = context.branches[phase];
-    if (branch.q == q && branch.order >= order) return;
+    if (branch.q == q && branch.live == live && branch.order >= order) return;
     using Status = epcsaft::PropertyActionStatus;
     const std::size_t c = context.model->parameters().component_count(), rows = 2 + c, n = q.size();
     const auto active = context.model->active_parameters();
@@ -526,6 +525,7 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     // The first, exhaustive root search at this q owns branch identity and every value; later directions start from its root.
     std::optional<double> anchor;
     branch.q = q;
+    branch.live = live;
     branch.order = -1;
     branch.values.assign(rows, 0.0);
     branch.failures.assign(rows, {3, std::string()});
@@ -572,17 +572,20 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
             if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
             if (first && !item.value) fail(row, 0, item.status);
             actions[row] = item.action.value_or(0.0);
-            if (item.status != Status::Available || !item.action) fail(row, static_cast<int>(directions.size()), item.status);
+            // With T constant, the first run's T action is neither read nor allowed to fail the call.
+            if ((!first || live[0]) && (item.status != Status::Available || !item.action)) fail(row, static_cast<int>(directions.size()), item.status);
         }
         return actions;
     };
     for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
+        if (k > 0 && !live[k]) continue;
         const auto actions = run({basis[k]});
         for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
     }
     std::size_t packed = 0;
     for (std::size_t j = 0; order >= 2 && j < n; ++j)
         for (std::size_t i = 0; i <= j; ++i, ++packed) {
+            if (!live[i] || !live[j]) continue;
             const auto actions = run({basis[i], basis[j]});
             for (std::size_t row = 0; row < rows; ++row)
                 branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2 && i < rows) + (j >= 2 && j < rows))
@@ -593,20 +596,21 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
 
 // EqID solid_standard_gibbs on the record basis: l_s = ln K^rho_s(T, P0) + V_s (P - P0)/RT - dnu ln(P/(RT rho0)), rho0 =
 // 1 mol/m^3, so sum_i nu_i (ln x_i + ln phi_i) = l_s at saturation. It depends on (T, P, theta) only.
-void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int order) {
+void evaluate_solids(PropertyContext& context, const std::vector<double>& q, const std::vector<bool>& live, int order) {
     auto& rows = context.solid_rows;
-    if (rows.q == q && rows.order >= order) return;
+    if (rows.q == q && rows.live == live && rows.order >= order) return;
     const std::size_t S = context.solids.size(), n = q.size(), first = n - context.model->active_parameters().size();
     const std::vector<double> theta(q.begin() + first, q.end());
     if (theta != context.model->active_parameter_values()) context.model = model_at(*context.model, theta);
-    std::vector<std::size_t> pairs(order >= 2 ? n - first : 0);
-    std::iota(pairs.begin(), pairs.end(), 0);
+    std::vector<std::size_t> pairs;  // the live parameters
+    for (std::size_t k = first; order >= 2 && k < n; ++k) if (live[k]) pairs.push_back(k - first);
     rows = {q, std::vector<double>(S), std::vector<std::vector<double>>(S, std::vector<double>(n)),
             std::vector<std::vector<double>>(S, std::vector<double>(n * (n + 1) / 2)), std::vector<std::pair<int, std::string>>(S, {3, ""}), order};
+    rows.live = live;
     const double T = q[0], P = q[1], RT = epcsaft::GAS_CONSTANT_J_PER_MOL_K * T;
     eq::ReferenceJets jets;
-    jets.temperature_order = std::max(order, 0);
-    jets.parameters = order >= 1 && first < n;
+    jets.temperature_order = live[0] ? std::max(order, 0) : 0;
+    jets.parameters = order >= 1 && std::find(live.begin() + first, live.end(), true) != live.end();
     jets.pairs = pairs;
     for (std::size_t s = 0; s < S; ++s) {
         const auto& solid = context.solids[s];
@@ -636,17 +640,17 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, int
         auto& g = rows.gradients[s];
         const auto h = [&](std::size_t i, std::size_t j) -> double& { return rows.hessians[s][j * (j + 1) / 2 + i]; };  // i <= j
         if (order >= 1) {
-            g[0] = *law.slope + column(1, 1) - V * (P - P0) / (RT * T) + dnu / T;
-            g[1] = V / RT - dnu / P;
-            for (std::size_t k = first; k < n; ++k) g[k] = column(1, 0, k - first);
+            if (live[0]) g[0] = *law.slope + column(1, 1) - V * (P - P0) / (RT * T) + dnu / T;
+            if (live[1]) g[1] = V / RT - dnu / P;
+            for (std::size_t k = first; k < n; ++k) if (live[k]) g[k] = column(1, 0, k - first);
         }
         if (order < 2) continue;
-        h(0, 0) = *law.curvature + column(2, 2) + 2.0 * V * (P - P0) / (RT * T * T) - dnu / (T * T);
-        h(0, 1) = -V / (RT * T);
-        h(1, 1) = dnu / (P * P);
+        if (live[0]) h(0, 0) = *law.curvature + column(2, 2) + 2.0 * V * (P - P0) / (RT * T * T) - dnu / (T * T);
+        if (live[0] && live[1]) h(0, 1) = -V / (RT * T);
+        if (live[1]) h(1, 1) = dnu / (P * P);
         for (std::size_t k = first; k < n; ++k) {
-            h(0, k) = column(2, 1, k - first);
-            for (std::size_t l = first; l <= k; ++l) h(l, k) = column(2, 0, l - first, k - first);
+            if (live[0] && live[k]) h(0, k) = column(2, 1, k - first);
+            for (std::size_t l = first; l <= k; ++l) if (live[l] && live[k]) h(l, k) = column(2, 0, l - first, k - first);
         }
     }
 }
@@ -671,12 +675,17 @@ double pressure_property(arglist* arguments) {
         if (!(std::accumulate(q.begin() + 2, q.begin() + 2 + c, 0.0) > 0.0)) reject("weights must have a positive sum");
         const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
         const bool solid = row >= 2 + c;
-        solid ? evaluate_solids(context, q, order) : evaluate_property(context, phase, q, order);
+        std::vector<bool> used(n);
+        for (int i = 0; i < n; ++i) used[i] = live(arguments, i);
+        solid ? evaluate_solids(context, q, used, order) : evaluate_property(context, phase, q, used, order);
         const auto& branch = solid ? context.solid_rows : context.branches[phase];
         const auto r = solid ? row - 2 - c : row;
         if (branch.failures[r].first <= order) throw std::runtime_error(branch.failures[r].second);
-        if (arguments->derivs != nullptr) std::copy(branch.gradients[r].begin(), branch.gradients[r].end(), arguments->derivs);
-        if (arguments->hes != nullptr) std::copy(branch.hessians[r].begin(), branch.hessians[r].end(), arguments->hes);
+        for (int j = 0, packed = 0; j < n; ++j) {  // only the entries ASL reads
+            if (arguments->derivs != nullptr && used[j]) arguments->derivs[j] = branch.gradients[r][j];
+            for (int i = 0; i <= j; ++i, ++packed)
+                if (arguments->hes != nullptr && used[i] && used[j]) arguments->hes[packed] = branch.hessians[r][packed];
+        }
         return branch.values[r];
     } catch (const std::invalid_argument& error) {
         callback_error = std::string("epcsaft_property:invalid_input:") + error.what();
@@ -689,22 +698,17 @@ double pressure_property(arglist* arguments) {
 
 }  // namespace
 
+// A `_first_order` name computes no Hessian pair, for a solver that reads no Hessian; it shares the exact name's solved states.
 extern "C" void funcadd_ASL(AmplExports* exports) {
     if (exports == nullptr || exports->Addfunc == nullptr) return;
-    exports->Addfunc(
-        "epcsaft_equilibrium_phase_component_amount", equilibrium_amount,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -5, nullptr, exports
-    );
-    exports->Addfunc(
-        "epcsaft_equilibrium_system_enthalpy", equilibrium_enthalpy,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -3, nullptr, exports
-    );
-    exports->Addfunc(
-        "epcsaft_equilibrium_solid_amount", equilibrium_solid_amount,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -4, nullptr, exports
-    );
-    exports->Addfunc(
-        "epcsaft_pressure_property", pressure_property,
-        FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, -7, nullptr, exports
-    );
+    const std::tuple<const char*, rfunc, int> functions[] = {
+        {"epcsaft_equilibrium_phase_component_amount", [](arglist* a) { return equilibrium_observable(a, 0); }, -5},
+        {"epcsaft_equilibrium_system_enthalpy", [](arglist* a) { return equilibrium_observable(a, 1); }, -3},
+        {"epcsaft_equilibrium_solid_amount", [](arglist* a) { return equilibrium_observable(a, 2); }, -4},
+        {"epcsaft_equilibrium_phase_component_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 0, false); }, -5},
+        {"epcsaft_equilibrium_system_enthalpy_first_order", [](arglist* a) { return equilibrium_observable(a, 1, false); }, -3},
+        {"epcsaft_equilibrium_solid_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 2, false); }, -4},
+        {"epcsaft_pressure_property", pressure_property, -7}};
+    for (const auto& [name, function, count] : functions)
+        exports->Addfunc(name, function, FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, count, nullptr, exports);
 }

@@ -662,3 +662,26 @@ def test_halite_record_refusals() -> None:
     enthalpy, solid = _core.solved_state_actions(_core.compile_problem(model._model, target._native(model)), central, request).results
     assert (enthalpy.status, enthalpy.value, enthalpy.action) == (_core.SolvedStateActionStatus.MissingThermochemistry, None, None)
     assert solid.value == central.solid_amounts[0] and solid.action == pytest.approx(-hs.MW * 6.29890460910619, rel=1e-12)
+
+
+def raw(function: str, arguments: list[Any], order: int) -> Any:
+    """The wrapper's raw call with every argument variable and a buffer for each derivative order through `order`."""
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    return PropertyExternalFunction(library=str(asl_library()), function=function)._evaluate(arguments, [False] * len(arguments), order)
+
+
+def test_first_order_names_compute_no_hessian() -> None:
+    """Q1: each `_first_order` name, at a state it enters first, returns the direct Engine's value and gradient bitwise and
+    NaN in every Hessian entry; the exact amount name called next at that state returns the direct Engine's Hessian."""
+    (model, (h_model, h_text)), (r_model, target) = (mixture(), halite()), reference_mea()
+    cases = [(FUNCTION, record(model), [*TP0, *G0, *THETA0], [*TP0, *G1, *THETA0], ["0", "1"], native(model, G0)[1]),
+             (ENTHALPY, reference_record(), [*R_Q0], [353.65, 45500.0, *R_Q0[2:]], [], native(r_model, R_Q0[2:], target(R_Q0), enthalpy=True)[0]),
+             (SOLID, h_text, [*H_Q0], [*H_Q0[:6], -0.24], ["0"], native(h_model, H_Q0[2:4], halite_problem(H_Q0), matrix=H_MATRIX)[3])]
+    for function, text, q, away, strings, want in cases:
+        n = len(q)
+        raw(function, [*away, text, *strings], 0)  # the record now holds another state
+        v, g, h = raw(function + "_first_order", [*q, text, *strings], 2)
+        assert [x.hex() for x in (v, *g[:n])] == [float(x).hex() for x in want[:1 + n]] and np.isnan(h[:n * (n + 1) // 2]).all(), function
+        if function == FUNCTION:
+            v, g, h = raw(function, [*q, text, *strings], 2)
+            assert [x.hex() for x in (v, *g[:n], *h[:n * (n + 1) // 2])] == [float(x).hex() for x in want]
