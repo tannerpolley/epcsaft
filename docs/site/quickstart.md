@@ -101,16 +101,20 @@ a declared solve does not perform an implicit stability search.
 A reaction accepts at most one explicit equilibrium target. Omitting it selects
 species thermochemistry; supplying two targets is an error.
 This small example runs as a documentation doctest and checks the declaration
-exception before a thermodynamic solve:
+exception when the problem is compiled, before a thermodynamic solve:
 
 ```{doctest}
 >>> from epcsaft import ParameterError
->>> from epcsaft.equilibrium import Reaction
+>>> from epcsaft import equilibrium as eq
+>>> model = eq.IdealMoleFraction(["A", "B"], [0, 0])
+>>> problem = eq.Problem(phases=[eq.Phase("L", kind="liquid")], T=300.0, P=1.0e5,
+...     feed=eq.Amounts({"A": 1.0, "B": 1.0}), reactions=[eq.Reaction(
+...         {"A": -1.0, "B": 1.0}, name="A=B", equilibrium_constant=1.0, affinity_j_per_mol=0.0)])
 >>> try:
-...     Reaction({"A": -1.0, "B": 1.0}, equilibrium_constant=1.0, affinity_j_per_mol=0.0)
+...     eq.compile_problem(model, problem)
 ... except ParameterError as error:
 ...     print(error)
-reaction admits at most one equilibrium_constant, affinity_j_per_mol or correlation
+inconsistent standard state: reaction A=B needs at most one target; a source reference requires a target
 ```
 
 For failures after admission, retain the returned cause and residuals; see

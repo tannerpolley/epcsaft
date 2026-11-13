@@ -164,7 +164,7 @@ public:
         delta.clear(); strength.clear(); site_series.clear(); residuals.clear();
         if (!parameters_.site_component.empty()) {
             if constexpr (std::is_same_v<Base, double> && !Composition)
-                delta = association_delta(temperature_, rho, composition_, parameters_, sigma_, diameter_);
+                delta = association_delta(temperature_, rho, composition_, parameters_, sigma_, diameter_, held_packing());
             else delta = association_delta(Series(temperature_), rho, composition, parameters_,
                 std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()));
             for (const auto& d : delta) {
@@ -180,7 +180,8 @@ public:
             if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
             const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
             if constexpr (std::is_same_v<Base, double>)
-                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure,
+                    held_packing());
             else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
                 narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
                 narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure);
@@ -1328,7 +1329,13 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     DensityDiagnostics result;
     result.solver_options = solver_options();
     result.evaluation_order = evaluation_order;
-    result.geometric_cap = molar_density_upper_bound(temperature, composition);
+    // Composition and temperature are admitted above: the coefficient is computed once for the cap and every row.
+    const double coefficient = [&] {
+        core::Scope cap("molar_density_upper_bound");
+        const double value = admitted_packing_coefficient(temperature, composition);
+        result.geometric_cap = density_upper_bound(value);
+        return value;
+    }();
     if (nodes.size() < 2) throw std::invalid_argument("density diagnostics require at least two declared nodes");
     for (std::size_t i = 0; i < nodes.size(); ++i)
         if (!std::isfinite(nodes[i]) || nodes[i] <= 0.0 || nodes[i] >= result.geometric_cap
@@ -1356,7 +1363,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     auto row = [&](double rho, const PressurePoint& point, double lo, double hi, bool spinodal) {
         DensityDiagnosticPoint value;
         value.molar_density = rho;
-        value.packing_fraction = rho * packing_fraction_coefficient(temperature, composition);
+        value.packing_fraction = rho * coefficient;
         value.pressure = point.pressure;
         value.pressure_density_derivative = point.slope;
         value.mechanical_sign = spinodal ? 0 : (point.slope > 0.0) - (point.slope < 0.0);

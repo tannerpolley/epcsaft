@@ -125,7 +125,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     check(initial[j] > 0.0, field("free temperature or pressure is not positive"));
                 audit = structural_result(compiled, scope);
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
-                auto result = compiled.feasible ? run_driver(model, compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
+                auto result = compiled.feasible ? run_driver(compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
                                                 : *audit;
                 StageWork(stages).report(result);
                 if (work.expired()) { result.message += "; elapsed work budget exhausted";
@@ -134,7 +134,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     BranchCheck branch;
                     try {
                         branch = compiled.mode_count ? admit_null_mode(compiled, result)
-                              : check_density_branches(model, compiled, result, {}, true, scope, &work);
+                              : check_density_branches(compiled, result, {}, true, scope, &work);
                         if (!branch.accepted || work.expired()) {
                             result.message = (work.expired() ? "elapsed work budget exhausted in admission" : branch.message) + "; driver: " + result.message;
                             if (work.expired()) reject_elapsed(result, scope); else refuse(result);

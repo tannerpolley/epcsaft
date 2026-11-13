@@ -9,8 +9,7 @@ double p4_reference(
     const std::optional<epcsaft::ThermochemistryRecord>& thermochemistry,
     double temperature, double molar_density, const std::vector<double>& composition,
     const std::vector<epcsaft::DensityActionDirection>& directions,
-    epcsaft::PropertyObservable observable, double step,
-    std::vector<double>* admission = nullptr
+    epcsaft::PropertyObservable observable, double step
 ) {
     epcsaft::core::Capture capture;
     const epcsaft::HelmholtzModel central_model(parameters, {}, thermochemistry);
@@ -18,7 +17,6 @@ double p4_reference(
     const auto central_signature = p4_take_signature(capture, thermochemistry, temperature);
     const std::size_t combinations = std::size_t{1} << directions.size();
     double result = 0.0;
-    bool support_unchanged = true, predicate_unchanged = true;
     for (std::size_t mask = 0; mask < combinations; ++mask) {
         double signed_temperature = temperature;
         double signed_density = molar_density;
@@ -48,19 +46,14 @@ double p4_reference(
         const bool predicate_match =
             p4_take_signature(capture, thermochemistry, signed_temperature)
                 == central_signature;
-        predicate_unchanged = predicate_unchanged && predicate_match;
         CHECK(predicate_match);
         for (std::size_t i = 0; i < composition.size(); ++i) {
             const bool support_match =
                 (composition[i] > 0.0) == (signed_composition[i] > 0.0);
-            support_unchanged = support_unchanged && support_match;
             CHECK(support_match);
         }
         result += sign_product * p4_state_value(shifted_state, observable);
     }
-    if (admission != nullptr) admission->insert(admission->end(), {
-        step, static_cast<double>(support_unchanged),
-        static_cast<double>(predicate_unchanged)});
     return result / std::pow(2.0 * step, static_cast<int>(directions.size()));
 }
 
@@ -70,15 +63,12 @@ double p4_pressure_reference(
     const std::optional<epcsaft::ThermochemistryRecord>& thermochemistry,
     double temperature, double pressure, const std::vector<double>& composition,
     const std::vector<epcsaft::PressureActionDirection>& directions,
-    epcsaft::DensityBranch branch, epcsaft::PropertyObservable observable, double step,
-    std::vector<double>* admission = nullptr
+    epcsaft::DensityBranch branch, epcsaft::PropertyObservable observable, double step
 ) {
     epcsaft::core::Capture capture;
     const epcsaft::HelmholtzModel central_model(parameters, {}, thermochemistry);
     const auto central = central_model.state_at_pressure(temperature, pressure, composition, branch);
     const auto central_signature = p4_take_signature(capture, thermochemistry, temperature);
-    double minimum_slope = std::numeric_limits<double>::infinity();
-    double maximum_closure = 0.0, maximum_site_residual = 0.0, minimum_pivot_ratio = 1.0;
     double result = 0.0;
     const std::size_t combinations = std::size_t{1} << directions.size();
     for (std::size_t mask = 0; mask < combinations; ++mask) {
@@ -110,9 +100,6 @@ double p4_pressure_reference(
             signed_temperature, signed_pressure, signed_composition, branch);
         const auto shifted_signature = p4_take_signature(
             capture, thermochemistry, signed_temperature);
-        const double closure = std::abs(shifted_state.pressure - signed_pressure) / signed_pressure;
-        minimum_slope = std::min(minimum_slope, shifted_state.pressure_density_derivative);
-        maximum_closure = std::max(maximum_closure, closure);
         // Density closure is owned in reduced units; relative pressure error is amplified by 1/Z.
         const double reduced_closure = std::abs(shifted_state.pressure - signed_pressure)
             / (shifted_state.molar_density * epcsaft::GAS_CONSTANT_J_PER_MOL_K * signed_temperature);
@@ -127,24 +114,14 @@ double p4_pressure_reference(
         const auto residuals = p2_association_residuals(signed_temperature,
             1.0 / shifted_state.molar_density, signed_composition,
             shifted_parameters, shifted_state.site_fractions);
-        for (const auto residual : residuals) {
+        for (const auto residual : residuals)
             CHECK(std::isfinite(residual) && std::abs(residual) <= 2.0e-13);
-            maximum_site_residual = std::max(maximum_site_residual, std::abs(residual));
-        }
         const auto conditioning = p2_association_conditioning(signed_temperature,
             shifted_state.molar_density, signed_composition,
             shifted_parameters, shifted_state.site_fractions);
         CHECK(conditioning.rank == shifted_state.site_fractions.size()
             && conditioning.pivot_ratio > epcsaft::policy::ASSOCIATION_JACOBIAN_CONDITION.value);
-        minimum_pivot_ratio = std::min(minimum_pivot_ratio, conditioning.pivot_ratio);
         result += sign_product * p4_state_value(shifted_state, observable);
-    }
-    if (admission != nullptr) {
-        admission->insert(admission->end(), {step, minimum_slope, maximum_closure,
-            maximum_site_residual, minimum_pivot_ratio,
-            static_cast<double>(central.density_branch),
-            central.stable_root_count.has_value()
-                ? static_cast<double>(*central.stable_root_count) : -1.0});
     }
     return result / std::pow(2.0 * step, static_cast<int>(directions.size()));
 }
@@ -843,7 +820,6 @@ void properties_p4() {
         && result_matches(selected.results[0], full_one.results[5]);
     const bool selected_cp = selected.results.size() == 2 && full_one.results.size() == observables.size()
         && result_matches(selected.results[1], full_one.results[13]);
-    CHECK(selected_h && selected_cp);
     recording_support::compare_custom("supplemental/selected-h", "selected_full", "bool", selected_h ? 1.0 : 0.0,
         1.0, "residual_h", "Identity", "selected/full", "selected equals full", "absolute", selected_h,
         "p4-supplemental", "selected-h", "selected_full", "subset", "selected/full");

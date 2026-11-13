@@ -538,6 +538,12 @@ public:
     void validate_composition(const std::vector<double>& composition) const;
 
 private:
+    // `composition_admitted`: the caller has already validated this composition.
+    State state(double temperature, double molar_density, const std::vector<double>& mole_fractions,
+        bool derived_properties, bool composition_admitted) const;
+    // Packing coefficient and density upper bound for an already validated temperature and composition.
+    double admitted_packing_coefficient(double temperature, const std::vector<double>& mole_fractions) const;
+    static double density_upper_bound(double packing_coefficient);
     void validate_point(
         double temperature,
         double volume,

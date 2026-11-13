@@ -82,7 +82,7 @@ void check_discovery_work() {
         const auto result = discover_phases(model, problem);
         CHECK(result.success && result.phase_count == 2);
         const auto& work = result.discovery->work;
-        CHECK(work.at("root_calls") == 109 && work.at("root_evaluations") == 1146 && work.at("energy_evaluations") == 1318);
+        CHECK(work.at("root_calls") == 109 && work.at("root_evaluations") == 1146 && work.at("energy_evaluations") == 1314);
         const std::array<std::array<double, 3>, 2> rounds{{{46, 589, 647}, {52, 484, 556}}};
         CHECK(result.discovery->rounds.size() == rounds.size());
         for (std::size_t i = 0; i < rounds.size(); ++i) {
@@ -104,14 +104,14 @@ void check_discovery_work() {
             CHECK(roots == work.at("root_calls") && density == work.at("root_evaluations") && energy == work.at("energy_evaluations"));
         }
         const auto before = request.counts();
-        CHECK(before.root_calls == 109 && before.root_evaluations == 1146 && before.energy_evaluations == 1318);
+        CHECK(before.root_calls == 109 && before.root_evaluations == 1146 && before.energy_evaluations == 1314);
         bool refused = false;
         try { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); }
         catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
         (void)model.evaluate(190.0, 1.0 / result.molar_densities[0], {0.5, 0.5}, DerivativeOrder::Gradient);
         const auto after = request.counts();
-        CHECK(after.root_calls == 110 && after.root_evaluations == 1146 && after.energy_evaluations == 1319);
+        CHECK(after.root_calls == 110 && after.root_evaluations == 1146 && after.energy_evaluations == 1315);
         CHECK(std::abs(result.molar_densities[0] / 18534.052764709064 - 1.0) <= 1e-10);
         CHECK(std::abs(result.mole_fractions[0] - 0.21537559277379345) <= 1e-10);
         const auto compiled = compile_problem(model, *result.declaration);
@@ -160,7 +160,7 @@ void check_trace_ion_curvature() {
         std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
         core::Capture capture(true);
         core::Scope scope("trace-ion-curvature");
-        const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope);
+        const auto result = run_driver(trial, point, structural_result(trial, scope), scope);
         const auto id = "trace-ion-curvature/" + recording_support::number(q);
         const auto inputs = recording_support::fields({recording_support::field("q", q),
             recording_support::field("residual", result.convergence.residual),
@@ -372,7 +372,7 @@ void check_trial_refinement() {
     std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
     core::Capture capture(true); core::Scope scope("trial-refinement");
     std::vector<double> attempt;
-    const auto result = run_driver(model, trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, Attempt::Cold, {}, false, true);
+    const auto result = run_driver(trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, Attempt::Cold, {}, false, true);
     const auto raw = trial.prepare(attempt, true);
     const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number, phase.kind);
     const auto inputs = recording_support::fields({recording_support::field("composition", composition),
@@ -928,9 +928,6 @@ void check_normalized_reaction_affinity() {
         affinity += (species == 0 ? -1.0 : 2.0) * (std::log(physical.composition[0][species] / physical.volume[0])
             + physical.derivative[0].gradient[2 + species] + report.standard_over_rt[species]);
     tpd_compare("reaction/candidate-affinity", affinity, 0.0, 1e-10);
-    // Algebraic k=-0.1, pi=lambda*(2,1), mu+s=pi+k*e gives nu.(mu+s)=k*sum(nu).
-    const std::array<double, 2> algebraic{2.0, 1.0};
-    tpd_compare("reaction/negative-normalized-affinity", -(2.0 * algebraic[0] - 0.1) + 2.0 * (2.0 * algebraic[1] - 0.1), -0.1, 1e-15);
 }
 
 // #390: Ascani 2023 esterification, acid/alcohol/ester/water, printed parameters of #387
@@ -1331,7 +1328,7 @@ void check_reaction_relaxed_split() {
     core::Scope scope("reaction-relaxed-split");
     auto structural = structural_result(compiled, scope);
     const auto solve = [&] {
-        return run_driver(model, compiled, seed, structural, scope, nullptr, nullptr, nullptr,
+        return run_driver(compiled, seed, structural, scope, nullptr, nullptr, nullptr,
                           Attempt::PhysicalAmounts, {}, false, false, Retry::None);
     };
     const auto ordinary = solve();

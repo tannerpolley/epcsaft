@@ -123,7 +123,7 @@ struct BranchCheck final {
 
 EPC_API BranchCheck admit_null_mode(const CompiledSystem&, EquilibriumResult&);
 BranchCheck check_density_branches(
-    const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
+    const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr,
     const PhasePoint* prepared = nullptr
 );
@@ -201,7 +201,7 @@ EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, cons
     const PhasePoint* cached_prepared = nullptr, const PointEvaluation* cached_rows = nullptr);
 EPC_API EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
 EPC_API EquilibriumResult run_driver(
-    const HelmholtzModel& model, const CompiledSystem& compiled,
+    const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt = nullptr, EquilibriumResult* audit = nullptr, const DriverLimits* limits = nullptr, Attempt kind = Attempt::Cold,
     std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, Retry runs = Retry::PhysicalAmounts

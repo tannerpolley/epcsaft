@@ -91,7 +91,7 @@ void check_reactive_cp() {
                     mapped.residual_optimizer_gradient[2*row+k],sigma,k?2/b.scale:0.02/epsilon.scale,value,diagnostics);
             }
             agree("F7/grouped/H/"+std::to_string(point)+"/"+std::to_string(row),"H","J",*hp.value,
-                endpoint_enthalpy(model,h.problem,*hp.compiled,*hp.solved).enthalpy,1e-5,1e-10,diagnostics,"H and Cp coexist without losing row identity","reactive-cp");
+                endpoint_enthalpy(model,h.problem,*hp.compiled,*hp.solved),1e-5,1e-10,diagnostics,"H and Cp coexist without losing row identity","reactive-cp");
         }
     }
     auto signed_row=request.observations.front();signed_row.form=ResidualForm::LogRatio;

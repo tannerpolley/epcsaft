@@ -674,7 +674,7 @@ ContinuationStop stop_of(const EquilibriumResult& result, bool& terminal) {
 
 // `supplied`: a caller's result; the driver's own results already carry this problem's classified rows.
 BoundaryAttempt admit_result(
-    const HelmholtzModel& model, const CompiledSystem& compiled, EquilibriumResult result,
+    const CompiledSystem& compiled, EquilibriumResult result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, bool supplied = false
 ) {
     BoundaryAttempt outcome;
@@ -702,7 +702,7 @@ BoundaryAttempt admit_result(
         return refuse(stop_of(result, outcome.terminal), "supplied state fails the candidate topology predicate");
     }
     BranchCheck branches;
-    try { branches = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(model, compiled, result, anchors, initial, scope); }
+    try { branches = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
     catch (const std::exception& error) {
         if (compiled.problem.spinodal && compiled.spinodal_search && !std::isfinite(compiled.spinodal_search->seed))
             result = spinodal_search_failure(compiled, std::move(result), error.what());
@@ -742,7 +742,7 @@ void reject(ContinuationResult& result, const BoundaryAttempt& attempt, double q
 // rank, the Euler predictor over `delta` along the implicit tangent at the accepted state, the admitted
 // domain and the same-driver corrector. `predict_anchors`: the previous accepted density or else the density at
 // the predicted coordinates witnesses each phase's branch (the envelope passes its own Euler-predicted densities).
-BoundaryAttempt advance(const HelmholtzModel& trial, const CompiledSystem& start, const CompiledSystem& current,
+BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
                 std::vector<double> anchors, bool predict_anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
@@ -782,21 +782,21 @@ BoundaryAttempt advance(const HelmholtzModel& trial, const CompiledSystem& start
                     const auto& before = spinodal_search(current, limits, anchors[0]);
                     const auto offset = compiled.phase_offsets()[0] + compiled.feed_composition.size() + 1;
                     const auto& next = spinodal_search(compiled, limits, anchors[0], &before);
-                    predicted[offset] = std::log(next.seed * trial.packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
+                    predicted[offset] = std::log(next.seed * compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
                 } catch (const std::bad_alloc&) { throw; }
                 catch (const std::exception& error) {
-                    return admit_result(trial, compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
+                    return admit_result(compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
                 }
             }
             EquilibriumResult solved;
             try { solved = solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm), &audit); }
             catch (...) { if (observations) observations->observe(audit); throw; }
-            if (!predict_anchors || compiled.mode_count) return admit_result(trial, compiled, std::move(solved), anchors, false, scope);
-            auto previous = admit_result(trial, compiled, solved, anchors, false, scope);
+            if (!predict_anchors || compiled.mode_count) return admit_result(compiled, std::move(solved), anchors, false, scope);
+            auto previous = admit_result(compiled, solved, anchors, false, scope);
             if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
             const auto at = compiled.prepare(predicted, true);
-            for (std::size_t p = 0; p < anchors.size(); ++p) anchors[p] = chart_density(trial, at, p);
-            auto witnessed = admit_result(trial, compiled, std::move(solved), anchors, false, scope);
+            for (std::size_t p = 0; p < anchors.size(); ++p) anchors[p] = chart_density(*compiled.model, at, p);
+            auto witnessed = admit_result(compiled, std::move(solved), anchors, false, scope);
             return witnessed.accepted ? witnessed : previous;
         }
         attempt.terminal = false;
@@ -899,7 +899,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     const bool pure = start.n_feed.size() == 1;
     EquilibriumResult audit;
     auto admitted = [&] {
-        try { return admit_result(model, start, solve_equilibrium_from_coordinates(model, base,
+        try { return admit_result(start, solve_equilibrium_from_coordinates(model, base,
             request.start_result ? request.start_result->coordinates : boundary_start(start, true, nullptr, &observations),
             nullptr, nullptr, {}, &audit), {}, true, scope); }
         catch (...) { observations.observe(audit); throw; }
@@ -986,7 +986,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
         CompiledSystem compiled = compile_problem(model, problem);
-        auto attempt = advance(model, start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, false, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
+        auto attempt = advance(start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, false, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted) {
             const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
@@ -1455,10 +1455,11 @@ namespace {
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
 // state is recomputed from the coordinates, never taken from the supplied result's arrays.
 BranchCheck density_branches_at(
-    const HelmholtzModel& model, const CompiledSystem& compiled, const PhasePoint& prepared,
+    const CompiledSystem& compiled, const PhasePoint& prepared,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
     const std::array<DensityRoot, 2>* roots
 ) {
+    const auto& model = *compiled.model;
     BranchCheck outcome;
     const bool pure = one_component_two_density_eligible(compiled);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
@@ -1531,14 +1532,20 @@ BranchCheck density_branches_at(
 }  // namespace
 
 BranchCheck check_density_branches(
-    const HelmholtzModel& model, const CompiledSystem& compiled, const EquilibriumResult& result,
+    const CompiledSystem& compiled, const EquilibriumResult& result,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
     const PhasePoint* supplied
 ) {
+    const auto& model = *compiled.model;
     if (limits) limits->check();
+    // The driver's published point serves when it is this result's point: admission reads only its
+    // compositions, volumes, packing fractions, T and P. A one-component point needs the pure state.
+    const bool pure = one_component_two_density_eligible(compiled);
+    if (!supplied && !pure && result.prepared_endpoint && result.prepared_endpoint->point == result.coordinates)
+        supplied = result.prepared_endpoint.get();
     const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
     const auto& prepared = supplied ? *supplied : *owned;
-    if (initial && !limits && one_component_two_density_eligible(compiled)) {
+    if (initial && !limits && pure) {
         std::array<DensityRoot, 2> roots;
         bool complete = false;
         try {
@@ -1554,11 +1561,11 @@ BranchCheck check_density_branches(
             // Ordinary admission owns the phase and first cause of any failed shared search.
         }
         if (complete) {
-            const auto shared = density_branches_at(model, compiled, prepared, anchors, initial, scope, limits, &roots);
+            const auto shared = density_branches_at(compiled, prepared, anchors, initial, scope, limits, &roots);
             if (shared.accepted) return shared;
         }
     }
-    return density_branches_at(model, compiled, prepared, anchors, initial, scope, limits, nullptr);
+    return density_branches_at(compiled, prepared, anchors, initial, scope, limits, nullptr);
 }
 
 const char* continuation_stop_name(ContinuationStop stop) noexcept {
@@ -1674,7 +1681,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
                 initial.probe(continuation_stop_name(ContinuationStop::invalid_path), 1.0);
                 return finish(std::move(result), ContinuationStop::invalid_path, "supplied start result layout differs");
             }
-            admitted = admit_result(model, start, parameter_path
+            admitted = admit_result(start, parameter_path
                 ? solve_initial(supplied.coordinates) : supplied, anchors, anchors.empty(), initial,
                 !parameter_path);
         } else {
@@ -1685,7 +1692,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
                 if (!start.problem.spinodal || !start.spinodal_search || std::isfinite(start.spinodal_search->seed)) throw;
                 seed = spinodal_search_failure(start, structural_result(start, initial), error.what());
             }
-            admitted = admit_result(model, start, std::move(seed), anchors, true, initial);
+            admitted = admit_result(start, std::move(seed), anchors, true, initial);
         }
         if (!output || !request.start_result || parameter_path) observations.observe(admitted.observations);
         else core::retain_first(observations.first_numerical_failure, admitted.observations.first_numerical_failure);
@@ -1723,7 +1730,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         auto trial_model = parameter_model(q_try);
         const auto& trial = trial_model ? *trial_model : model;
         CompiledSystem compiled = compile_problem(trial, problem);
-        BoundaryAttempt attempt = advance(trial, start, current, y_current, compiled, problem, [&](auto* failure) {
+        BoundaryAttempt attempt = advance(start, current, y_current, compiled, problem, [&](auto* failure) {
             auto tangent = sensitivity(current, y_current, path.lever(current), failure);
             w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
             return tangent;
@@ -1872,7 +1879,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
             return publish(std::move(refused));
         }
         auto reached = std::move(path.states.back());
-        const auto admitted = check_density_branches(model, target, reached, {}, true, scope, &limits);
+        const auto admitted = check_density_branches(target, reached, {}, true, scope, &limits);
         if (!admitted.accepted || !(target.classified_residual_norm(reached.coordinates) <= tolerance)) {
             refused.message = "reached target refused: " + admitted.message;
                 core::retain_failure(observations.first_numerical_failure, refused.message, "source recovery admission");

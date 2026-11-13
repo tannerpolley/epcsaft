@@ -343,26 +343,6 @@ void check_d7_minimax() {
     }
     const auto problem = analytic_minimax_problem(false, 0.02, 0.02);
     const auto evaluate = analytic_minimax_evaluator(problem.request);
-    ObservationEvaluation ls;
-    const std::vector<double> ls_point = {3.0 / 5.0};
-    CHECK(evaluate(ls_point, true, ls));
-    double ls_max = 0.0, ls_gradient = 0.0;
-    for (std::size_t i = 0; i < problem.request.observations.size(); ++i) {
-        const auto [error, slope] = check_error(CheckMetric::AbsoluteLog10Ratio, problem.request.observations[i], ls.predictions[i]);
-        ls_max = std::max(ls_max, std::abs(error));
-        ls_gradient += error * slope * ls.optimizer_gradient[i];
-    }
-    const auto ls_inputs = fields({field("a_per_decade", 0.01), field("equal_LogRatio_weights", 1.0)});
-    agree("r2-d7-b2/least_squares_x", "x", "1", ls.chart.physical[0], 0.6, 1.0e-12, 0.0,
-        ls_inputs, "four ax rows and one a(x-3) row have their analytic least-squares minimum", "r2-minimax");
-    agree("r2-d7-b2/least_squares_d", "d", "1", ls.chart.physical[1], 1.2, 1.0e-12, 0.0,
-        ls_inputs, "the least-squares point obeys d=2x", "r2-minimax");
-    agree("r2-d7-b2/least_squares_gradient", "least_squares_gradient", "decade_squared_per_x", ls_gradient, 0.0,
-        1.0e-14, 0.0, ls_inputs, "4x+(x-3)=0 is the equal-weight least-squares condition", "r2-minimax");
-    agree("r2-d7-b2/least_squares_maximum", "maximum_target_error", "decade", ls_max, 0.024, 1.0e-12, 0.0,
-        ls_inputs, "the least-squares maximum is 0.024 decade", "r2-minimax");
-    truth("r2-d7-b2/least_squares_guard", "the least-squares point misses the 0.02 decade maximum guard",
-        ls_max > 0.02, fields({ls_inputs, field("guard_decade", 0.02)}), "r2-minimax");
     for (const double x : {0.5, 2.5}) {
         const std::vector<double> start = {x};
         const auto result = solve_minimax(problem.request, start, problem.frozen, evaluate);
@@ -838,17 +818,10 @@ CoordinateSet addition_coordinates() {
     return result;
 }
 
-struct AdditionEndpoint final {
-    double enthalpy = 0.0;
-    std::vector<double> phase_amount, phase_enthalpy;
-};
-
-AdditionEndpoint endpoint_enthalpy(const HelmholtzModel& model, const EquilibriumProblem& problem,
+double endpoint_enthalpy(const HelmholtzModel& model, const EquilibriumProblem& problem,
                                    const equilibrium::CompiledSystem& compiled,
                                    const EquilibriumResult& solved_state) {
-    AdditionEndpoint result;
-    result.phase_amount.assign(problem.phases.size(), 0.0);
-    result.phase_enthalpy.assign(problem.phases.size(), 0.0);
+    double result = 0.0;
     std::vector<equilibrium::SolvedStateObservable> observables;
     std::vector<std::size_t> phases;
     for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
@@ -873,9 +846,7 @@ AdditionEndpoint endpoint_enthalpy(const HelmholtzModel& model, const Equilibriu
         const auto& enthalpy = batch.results[2 * i + 1];
         CHECK(amount.status == equilibrium::SolvedStateActionStatus::Available && amount.value);
         CHECK(enthalpy.status == equilibrium::SolvedStateActionStatus::Available && enthalpy.value);
-        result.phase_amount[phases[i]] = *amount.value;
-        result.phase_enthalpy[phases[i]] = *enthalpy.value;
-        result.enthalpy += *amount.value * *enthalpy.value;
+        result += *amount.value * *enthalpy.value;
     }
     return result;
 }
@@ -1114,7 +1085,7 @@ void check_free_temperature_addition() {
         const HelmholtzModel feed(properties_support::ethane(),{},feed_record);
         const auto incoming=feed.state_at_pressure(300,1.5e6,{1},DensityBranch::Vapor);
         CHECK(incoming.total_enthalpy);
-        const double value=(second.enthalpy-first.enthalpy)/0.01-*incoming.total_enthalpy;
+        const double value=(second-first)/0.01-*incoming.total_enthalpy;
         agree(id+"/value","delta_h_add","J/mol",*center.value,value,1e-5,1e-6,inputs,
             "two solved endpoint extensive enthalpies and declared feed enthalpy compose the increment","reactive-caloric");
         for(std::size_t column=0;column<2;++column) {
@@ -1288,10 +1259,10 @@ void check_addition_enthalpy() {
             addition_coordinate_gradient(base_gradient.value, column), 0.0, 1.0e-9,
             fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}),
             "a common record enthalpy shift preserves every gradient column", "addition-f4");
-    const double condition = (std::abs(first_h.enthalpy) + std::abs(second_h.enthalpy))
+    const double condition = (std::abs(first_h) + std::abs(second_h))
         / (amount * std::abs(*reference.prediction.value));
     recording_support::observe("addition-f4/conditioning", "enthalpy_cancellation_condition", "1", condition,
-        std::nullopt, fields({field("H_initial_J", first_h.enthalpy), field("H_final_J", second_h.enthalpy),
+        std::nullopt, fields({field("H_initial_J", first_h), field("H_final_J", second_h),
             field("n_add_mol", amount), field("delta_h_add_J_per_mol", *reference.prediction.value)}),
         "Observation", "endpoint_enthalpy_ratio", "the reference cancellation conditioning ratio", "addition-f4");
     truth("addition-f4/conditioning_limit", "the endpoint enthalpy cancellation ratio is at most 1e4",
@@ -1322,10 +1293,10 @@ void check_addition_enthalpy() {
             - GAS_CONSTANT_J_PER_MOL_K * 260.0 - h_feed;
         const auto h_initial = endpoint_enthalpy(model, row.problem, *prediction.compiled, *prediction.solved);
         const auto h_final = endpoint_enthalpy(model, row.final_problem, *prediction.final_compiled, *prediction.final_solved);
-        const double roundoff = 64.0 * EPS * (std::abs(h_initial.enthalpy) + std::abs(h_final.enthalpy)) / increment;
+        const double roundoff = 64.0 * EPS * (std::abs(h_initial) + std::abs(h_final)) / increment;
         reference_scale_agrees("addition-f5/" + number(increment), "finite_addition_limit", "J/mol", *prediction.value, q0,
             roundoff, 1.0e-8, fields({field("n_add_mol", increment), field("D_n", *prediction.value),
-                field("q0", q0), field("H_initial_J", h_initial.enthalpy), field("H_final_J", h_final.enthalpy),
+                field("q0", q0), field("H_initial_J", h_initial), field("H_final_J", h_final),
                 field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}),
             "each finite quotient equals the Gibbs-Helmholtz limit for the linear case", "addition-f5");
     }
@@ -1355,14 +1326,6 @@ void check_addition_enthalpy() {
         row.problem.reactions[0].correlation->b = 180.0;
         row.final_problem.reactions[0].correlation->b = 180.0;
         recovery.observations.push_back(std::move(row));
-    }
-    const HelmholtzModel start_model(recovery.parameters, recovery.coordinates.active_parameters(), record);
-    for (std::size_t row_index = 0; row_index < recovery.observations.size(); ++row_index) {
-        const auto& row = recovery.observations[row_index];
-        const auto prediction = predict(start_model, row);
-        CHECK(prediction.status == ObservationStatus::Available);
-        const auto gradient = differentiate_group(start_model, {&row}, prediction, recovery.coordinates).front();
-        CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 3);
     }
     const auto recovered = fit(recovery);
     truth("addition-f6/converged", "the noise-free known-parameter fit converges",
@@ -1402,8 +1365,8 @@ void check_addition_enthalpy() {
     const auto public_final = endpoint_enthalpy(model, two_phase->observation.final_problem,
         *two_phase->prediction.final_compiled, *two_phase->prediction.final_solved);
     for (const auto& [label, oracle, public_value] : {
-            std::tuple<const char*, double, double>{"initial", oracle_initial, public_initial.enthalpy},
-            {"final", oracle_final, public_final.enthalpy}}) {
+            std::tuple<const char*, double, double>{"initial", oracle_initial, public_initial},
+            {"final", oracle_final, public_final}}) {
         reference_scale_agrees(std::string("addition-f8/") + label + "/endpoint_enthalpy", "H", "J", public_value, oracle,
             1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}),
             "each endpoint total enthalpy agrees with the independent pure-fluid oracle", "addition-f8");

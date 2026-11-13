@@ -701,37 +701,6 @@ void branch_rows(const char* group, const char* label, const epcsaft::HelmholtzM
     }
 }
 
-std::size_t attempt_rows(const char* group, const epcsaft::core::Trace& trace) {
-    std::size_t rows = 0;
-    for (std::size_t span = 0; span < trace.spans.size(); ++span) {
-        const std::string name = trace.spans[span].name;
-        if (name != "equilibrium_continuation_attempt" && name != "equilibrium_continuation_initial") continue;
-        double q = std::numeric_limits<double>::quiet_NaN(), accepted = 0.0, present = 0.0, projected = 0.0;
-        std::string cause = "absent";
-        std::optional<double> residual;
-        for (const auto& event : trace.events) {
-            if (event.span != span) continue;
-            const std::string label = event.name;
-            if (label == "path_value") q = event.values.front();
-            else if (label == "accepted") accepted = event.values.front();
-            else if (label == "driver_result_present") present = event.values.front();
-            else if (label == "row_residual") residual = event.values.front();
-            else if (label == "predictor_projected") projected = event.values.front();
-            else if (label != "selected_density" && label != "corrected_density" && label != "anchor_density"
-                     && label != "corrected_displacement" && label != "corrected_slope" && label != "density_residual") cause = label;
-        }
-        const auto id = std::string(group) + "/attempt/" + std::to_string(rows);
-        recording_support::observe(id.c_str(), "path_value", "1", q, std::nullopt,
-            recording_support::fields({recording_support::field("span", name), recording_support::field("accepted", accepted),
-                recording_support::field("driver_result_present", present), recording_support::field("cause", cause),
-                recording_support::field("predictor_projected", projected),
-                recording_support::field("row_residual", residual.has_value() ? recording_support::number(*residual) : "unmeasured")}),
-            "Relationship", "continuation-attempt", "retained attempt from the existing Core trace", group, id.c_str());
-        ++rows;
-    }
-    return rows;
-}
-
 }  // namespace e4
 
 void check_e4_a() {
@@ -741,7 +710,6 @@ void check_e4_a() {
     request.start_problem = equilibrium_support::bubble_at(180.0);
     request.target_problem = equilibrium_support::bubble_at(181.0);
     request.options = options(0.25, 0.25, 4, 2);
-    epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
     const std::vector<double> expected = {0.0, 0.25, 0.5, 0.75, 1.0};
     bool path_ok = result.success && result.path_values.size() == 5 && result.states.size() == 5;
@@ -765,7 +733,6 @@ void check_e4_a() {
             "strict_absolute", 1.0e-8, 0.0, verdict, "e4-a", id.c_str(), "\\\\Delta P/P", "q,T", "\\\\Delta P/P\\\\leq10^{-8}", "q");
     }
     branch_rows("e4-a", "bubble", model, request.start_problem, result);
-    attempt_rows("e4-a", capture.trace());
 }
 
 void check_e4_b() {
@@ -781,7 +748,6 @@ void check_e4_b() {
     request.target_problem.feed.values = {0.4 * x_l[0] + 0.6 * x_v[0], 0.4 * x_l[1] + 0.6 * x_v[1]};
     request.start_result = start.start;
     request.options = options(0.25, 0.25, 4, 2);
-    epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
     record_bool("e4-b/path", "e4-b", "interior tie line follows the feed lever to the target", result.success, summary(result));
     for (std::size_t k = 0; k < result.states.size(); ++k) {
@@ -814,7 +780,6 @@ void check_e4_b() {
             "strict_absolute", 1.0e-8, 0.0, verdict, "e4-b", id.c_str(), "\\\\Delta z", "q", "\\\\Delta z\\\\leq10^{-8}", "q");
     }
     branch_rows("e4-b", "tie-line", model, start.problem, result);
-    attempt_rows("e4-b", capture.trace());
 }
 
 void check_e4_c() {
@@ -827,7 +792,6 @@ void check_e4_c() {
     request.target_problem.pressure = FreeValue::fixed(2.0 * start.bubble_pressure);
     request.start_result = start.start;
     request.options = options(0.01, 0.000625, 8192, 4);
-    epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
     bool distinct = true;
     for (std::size_t k = 1; k < result.states.size(); ++k)
@@ -839,7 +803,6 @@ void check_e4_c() {
             recording_support::field("feed", start.feed), recording_support::field("start_coordinates", start.start.coordinates),
             recording_support::field("states", result.states.size())}));
     branch_rows("e4-c", "prefix", model, start.problem, result);
-    attempt_rows("e4-c", capture.trace());
     // #356: below the dew pressure the liquid genuinely vanishes. The amount step rule measured on the amount instead
     // of its distance to Ipopt's relaxed bound refuses every step into (l, 0) and stops at the iteration budget.
     auto dew = start.problem;
@@ -896,7 +859,6 @@ void check_e4_d() {
     request.start_problem = seeded(260.0);
     request.target_problem = seeded(280.0);
     request.options = options(0.005, 0.0003125, 20000, 4);
-    epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
     // The bubble branch passes through the mixture critical point: the pair's identities swap
     // between consecutive accepted states, which the controller reports as the pair's coalescence
@@ -930,27 +892,6 @@ void check_e4_d() {
             "Relationship", "phase-swap", "every nonzero inter-phase difference component changes sign across the critical point",
             "model < reference", worst < 0.0, "e4-d", "swap", "\\max_i \\Delta_i^- \\Delta_i^+", "component", "\\Delta_i^- \\Delta_i^+ < 0", "component");
     }
-    // Retained degeneration measurements at the last accepted state before the swap: phase
-    // distance, corrected slopes and densities.
-    if (!result.states.empty()) {
-        const auto& last = result.states.back();
-        const auto compiled = epcsaft::equilibrium::compile_problem(model, equilibrium_support::bubble_at(260.0 + 20.0 * result.reached_path));
-        const auto topology = epcsaft::equilibrium::check_topology(compiled, last.coordinates);
-        std::vector<double> slopes;
-        for (std::size_t phase = 0; phase < 2; ++phase) {
-            const std::vector<double> x(last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase),
-                                        last.mole_fractions.begin() + static_cast<std::ptrdiff_t>(2 * phase + 2));
-            slopes.push_back(model.state(*last.temperature, last.molar_densities[phase], x).pressure_density_derivative);
-        }
-        recording_support::observe("e4-d/last-state", "phase_distance", "1", topology.distances.empty() ? 0.0 : topology.distances.front(), std::nullopt,
-            recording_support::fields({recording_support::field("T", *last.temperature), recording_support::field("P", *last.pressure),
-                recording_support::field("x", last.mole_fractions), recording_support::field("rho", last.molar_densities),
-                recording_support::field("corrected_slopes", slopes), recording_support::field("row_residual", last.convergence.residual),
-                recording_support::field("coincidence_threshold", epcsaft::policy::PHASE_COINCIDENCE_DISTANCE.value)}),
-            "Relationship", "anchored-branch", "degeneration measurements at the last accepted state before the swap",
-            "e4-d", "last-state");
-    }
-    attempt_rows("e4-d", capture.trace());
 }
 
 void check_e4_e() {
@@ -975,7 +916,6 @@ void check_e4_e() {
     for (std::size_t i = 0; i < 3; ++i) request.target_problem.feed.values[i] = 0.4 * x1[i] + 0.6 * x2[i];
     request.start_result = first;
     request.options = options(0.25, 0.25, 4, 2);
-    epcsaft::core::Capture capture;
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
     record_bool("e4-e/path", "e4-e", "reactive two-liquid branch follows the feed path to the target", result.success, summary(result));
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
@@ -1011,7 +951,6 @@ void check_e4_e() {
             "strict_absolute", 1.0e-8, 0.0, verdict, "e4-e", id.c_str(), "\\\\Delta N", "q", "\\\\Delta N\\\\leq10^{-8}", "q");
     }
     branch_rows("e4-e", "reactive", model, problem, result);
-    attempt_rows("e4-e", capture.trace());
 }
 
 void check_e4_paths() {

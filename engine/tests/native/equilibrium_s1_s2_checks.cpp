@@ -796,7 +796,6 @@ void check_s2() {
                                    const epcsaft::equilibrium::EquilibriumProblem& problem) {
             const auto solved = epcsaft::equilibrium::solve_equilibrium(model, problem);
             CHECK(solved.success);
-            if (!solved.success) return std::numeric_limits<double>::quiet_NaN();
             const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
             ActionDirection zero;
             zero.feed_amounts_mol.assign(problem.feed.values.size(), 0.0);

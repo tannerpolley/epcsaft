@@ -3297,8 +3297,6 @@ class EquilibriumResult:
     last_full_evaluation: Convergence | None
     phase_pressures: list[float]
 
-    def saturation_values(self) -> dict[str, Any]: ...
-
     """Solved phases and numerical evidence on the declared feed basis.
 
     Notes

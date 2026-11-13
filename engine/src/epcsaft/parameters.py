@@ -688,10 +688,9 @@ class Parameters:
                 association_identities.setdefault(identity, (family, edge_index))
 
         def resolve_inputs(values: Sequence[object], family: str) -> list[tuple[int, int]]:
-            try:
-                found = [association_identities[cast(str, value)] for value in values]
-            except KeyError as error:
-                raise _core.ParameterError(f"missing association input {error.args[0]}") from error
+            if missing := [value for value in values if value not in association_identities]:
+                raise _core.ParameterError(f"missing association input {missing[0]}")
+            found = [association_identities[cast(str, value)] for value in values]
             if any(item[0] != family for item in found):
                 raise _core.ParameterError(f"association {family} input has wrong family")
             return [item[1] for item in found]

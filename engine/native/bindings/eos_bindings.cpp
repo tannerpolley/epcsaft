@@ -41,52 +41,21 @@ void state_field(nb::class_<epcsaft::State>& scalar, nb::class_<epcsaft::StateBa
 }
 #define STATE_FIELD(T, name) state_field(state, batch, #name, &T::name);
 
-// Match scalar __bool__ conversion; containers' __len__ alone is insufficient.
-bool interval_inclusive(nb::handle value) {
-    const auto* number = Py_TYPE(value.ptr())->tp_as_number;
-    const int truth = value.is_none() ? 0 : number && number->nb_bool ? PyObject_IsTrue(value.ptr()) : -1;
-    if (truth == 0 || truth == 1) return truth == 1;
-    PyErr_Clear();
-    throw nb::type_error("expected a Boolean-convertible scalar");
-}
-
-template <class T, class... Values, class... Args>
-auto bind_coefficients(nb::module_& module, const char* name, Args... args) {
-    const auto convert = [](nb::handle value) {
-        const std::string_view type = Py_TYPE(value.ptr())->tp_name;
-        if (nb::isinstance<nb::str>(value) || nb::isinstance<nb::bytes>(value)
-            || !(PySequence_Check(value.ptr()) || PyGen_Check(value.ptr()) || PyAnySet_Check(value.ptr())
-                || type == "dict_keys" || type == "dict_values" || type == "dict_items" || type == "map" || type == "zip"))
-            throw nb::type_error("expected a coefficient sequence or iterable");
-        std::vector<double> values;
-        for (nb::handle item : nb::iter(value)) {
-            if (!nb::try_cast(item, values.emplace_back())) throw nb::type_error("invalid coefficient value");
-        }
-        decltype(T::coefficients) result{};
-        if constexpr (std::is_same_v<decltype(result), std::vector<double>>) result = std::move(values);
-        else if (values.size() == result.size()) std::copy(values.begin(), values.end(), result.begin());
-        else throw nb::type_error("invalid coefficient count");
-        return result;
-    };
-    return nb::class_<T>(module, name)
-        .def("__init__", [convert](T* self, nb::handle values, Values... rest) { new (self) T{convert(values), rest...}; },
-            nb::arg("coefficients"), args...)
-        .def_prop_rw("coefficients", [](const T& v) { return v.coefficients; },
-            [convert](T& v, nb::handle values) { v.coefficients = convert(values); });
-}
-
 // Physical input records: every field is required and transported unchanged; the native
 // model copies them at construction and native admission owns their consistency.
 void register_thermal_inputs(nb::module_& module) {
     using namespace epcsaft;
     module.attr("GAS_CONSTANT_J_PER_MOL_K") = GAS_CONSTANT_J_PER_MOL_K;
-    bind_coefficients<IdealPolynomial, double, double, double>(module, "IdealPolynomial", nb::arg("reference_temperature"),
-        nb::arg("reference_enthalpy"), nb::arg("reference_entropy"))
-        EPCSAFT_READWRITE(IdealPolynomial, reference_temperature, reference_enthalpy, reference_entropy);
+    nb::class_<IdealPolynomial>(module, "IdealPolynomial")
+        .def(nb::init<std::vector<double>, double, double, double>(), nb::arg("coefficients"), nb::arg("reference_temperature"),
+            nb::arg("reference_enthalpy"), nb::arg("reference_entropy"))
+        EPCSAFT_READWRITE(IdealPolynomial, coefficients, reference_temperature, reference_enthalpy, reference_entropy);
     nb::class_<IdealShomate>(module, "IdealShomate")
         .def(nb::init<std::array<double, 8>, double>(), nb::arg("coefficients"), nb::arg("formation_enthalpy"))
         EPCSAFT_READWRITE(IdealShomate, coefficients, formation_enthalpy);
-    bind_coefficients<IdealNASA7>(module, "IdealNASA7");
+    nb::class_<IdealNASA7>(module, "IdealNASA7")
+        .def(nb::init<std::array<double, 7>>(), nb::arg("coefficients"))
+        .def_rw("coefficients", &IdealNASA7::coefficients);
     nb::class_<IdealNASA9>(module, "IdealNASA9")
         .def(nb::init<std::array<double, 9>>(),
              nb::arg("coefficients"))
@@ -98,14 +67,10 @@ void register_thermal_inputs(nb::module_& module) {
     nb::class_<IdealCorrelation>(module, "IdealCorrelation")
         .def(nb::init<decltype(IdealCorrelation::form), double>(), nb::arg("form"), nb::arg("source_pressure"))
         EPCSAFT_READWRITE(IdealCorrelation, form, source_pressure);
-    auto interval = nb::class_<IdealInterval>(module, "IdealInterval");
-    interval.def("__init__", [](IdealInterval* self, double lower, double upper, nb::handle lo, nb::handle hi, IdealCorrelation corr) {
-            new (self) IdealInterval{lower, upper, interval_inclusive(lo), interval_inclusive(hi), std::move(corr)};
-        }, nb::arg("lower"), nb::arg("upper"), nb::arg("lower_inclusive").none(), nb::arg("upper_inclusive").none(), nb::arg("correlation"))
-        EPCSAFT_READWRITE(IdealInterval, lower, upper, correlation);
-    for (const auto& [name, field] : {std::pair{"lower_inclusive", &IdealInterval::lower_inclusive}, std::pair{"upper_inclusive", &IdealInterval::upper_inclusive}})
-        interval.def_prop_rw(name, [field](const IdealInterval& v) { return v.*field; },
-            [field](IdealInterval& v, nb::handle value) { v.*field = interval_inclusive(value); }, nb::for_setter(nb::arg("value").none()));
+    nb::class_<IdealInterval>(module, "IdealInterval")
+        .def(nb::init<double, double, bool, bool, IdealCorrelation>(), nb::arg("lower"), nb::arg("upper"),
+            nb::arg("lower_inclusive"), nb::arg("upper_inclusive"), nb::arg("correlation"))
+        EPCSAFT_READWRITE(IdealInterval, lower, upper, lower_inclusive, upper_inclusive, correlation);
     nb::class_<ThermochemistryRecord>(module, "ThermochemistryRecord")
         .def(nb::init<double, std::vector<std::vector<IdealInterval>>>(), nb::arg("standard_pressure"), nb::arg("component_intervals"))
         EPCSAFT_READWRITE(ThermochemistryRecord, standard_pressure) EPCSAFT_COPIED(ThermochemistryRecord, component_intervals);

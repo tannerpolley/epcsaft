@@ -276,11 +276,7 @@ class Mixture:
         branch = _branch(phase)
         value = rho if rho is not None else P
         values = cast(Sequence[float], value) if hasattr(value, "__iter__") else (cast(float, value),)
-        if hasattr(value, "__iter__") and len(values) != len(T):
-            raise ParameterError("invalid state input array length")
         matrix = x is not None and not isinstance(x, Mapping) and len(x) > 0 and hasattr(x[0], "__iter__")
-        if matrix and len(cast(Sequence[Sequence[float]], x)) != len(T):
-            raise ParameterError("invalid composition array length")
         composition = cast(Sequence[Sequence[float]], x) if matrix else (self._composition(cast(Any, x)),)
         result = self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
         result.cause = [self._association_message(message) for message in result.cause]
@@ -436,10 +432,9 @@ class Mixture:
                 native = _core.solvent_reference(self._model, T, P, fractions)
             return Reference(self._model, self.component_ids, T, P, fractions, None, None, native)
         assert stoichiometry is not None
-        try:
-            ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
-        except (ValueError, IndexError) as error:
-            raise ParameterError(f"unknown ion component in {ions}") from error
+        if len(ions) < 2 or ions[0] not in self.component_ids or ions[1] not in self.component_ids:
+            raise ParameterError(f"unknown ion component in {ions}")
+        ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
         # The reference keeps its own copies: later caller edits cannot mix states with the native fugacities.
         fractions, formula = tuple(solvent_fractions), cast(tuple[int, int], tuple(stoichiometry))
         with self._association_error():

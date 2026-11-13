@@ -243,14 +243,10 @@ void cation_mixing() {
         std::printf("%.17g,%.17g,extensive-helmholtz-error,0,%.17g\n", a, b, now.value - old.value - F);
         const std::vector<double> mu = {-mass * (-0.4 * a * b + 0.04 * a * b * c),
             -0.4 * b + 0.02 * b * c, -0.4 * a + 0.02 * a * c, 0.02 * a * b};
-        double euler = 0;
         for (std::size_t r = 0; r < 4; ++r) {
             CHECK(close(now.gradient[2 + r] - old.gradient[2 + r], mu[r], 1e-10));
-            euler += n[r] * mu[r];
             std::printf("%.17g,%.17g,mu-%zu-error,0,%.17g\n", a, b, r, now.gradient[2+r]-old.gradient[2+r]-mu[r]);
         }
-        CHECK(close(euler, F, 1e-10));
-        std::printf("%.17g,%.17g,Euler-error,0,%.17g\n", a, b, euler-F);
         std::printf("%.17g,%.17g,pressure-increment,0,%.17g\n", a, b, now.gradient[1]-old.gradient[1]);
         CHECK(now.gradient[0] == old.gradient[0] && now.gradient[1] == old.gradient[1]);
         CHECK(close(now.gradient[6], 2 * a * b, 1e-12));

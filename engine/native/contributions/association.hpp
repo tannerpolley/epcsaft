@@ -29,10 +29,11 @@ std::vector<Scalar> association_delta(
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
     const std::vector<Fixed>& sigma,
-    const std::vector<Fixed>& diameter
+    const std::vector<Fixed>& diameter,
+    const std::array<Fixed, 4>* prepared = nullptr
 ) {
     const std::size_t sites = parameters.site_component.size();
-    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter);
+    const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter, prepared);
     // Declared laws, then thermal combining rules over their explicit self edges, give energy and
     // volume at this temperature; without them the stored values are read unchanged.
     const auto laws = temperature_law_values(temperature, parameters);
@@ -202,11 +203,13 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>* start = nullptr,
     const std::vector<double>* strength = nullptr,
     bool pair_start = false,
-    const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr
+    const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr,
+    const std::array<double, 4>* prepared = nullptr
 ) {
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
-    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
+    if (prepared) (void)packing_fraction_from_geometry(molar_density, (*prepared)[3]);
+    else (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters, diameter);
     const std::size_t sites = parameters.site_component.size();
     if (sites == 0) {
         if (record != nullptr) {
@@ -223,7 +226,7 @@ inline std::vector<double> solve_site_fractions(
     }
     core::Scope scope("association_newton");
     const auto computed = strength != nullptr ? std::vector<double>{}
-        : association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter);
+        : association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter, prepared);
     const auto& delta = strength != nullptr ? *strength : computed;
     const double number_density =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;

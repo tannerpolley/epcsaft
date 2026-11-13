@@ -92,8 +92,8 @@ def test_correlated_reaction_target_governs_the_solved_quotient(evidence: Any) -
         assert abs(quotients(model, frozen)[phase]) <= 1.0e-9 < abs(expected)
     with pytest.raises(ParameterError, match="reference-basis-mismatch"):
         solve_equilibrium(model, reactive_problem(T0, correlation=correlation("pressure-basis-P0")))
-    with pytest.raises(ParameterError, match="admits at most one equilibrium_constant, affinity_j_per_mol or correlation"):
-        reactive_problem(T0, correlation=correlation(), equilibrium_constant=1.0)
+    with pytest.raises(ParameterError, match="needs at most one target"):
+        solve_equilibrium(model, reactive_problem(T0, correlation=correlation(), equilibrium_constant=1.0))
 
 
 def actions(model: Any, problem: Problem, observables: list[Any], directions: list[tuple[float, float, list[float]]]) -> Any:

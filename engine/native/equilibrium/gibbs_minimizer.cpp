@@ -966,7 +966,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         topology_failure = "phases_coincide: phase distance between "
             + compiled.problem.phases[topology.pair->first].name + " and "
             + compiled.problem.phases[topology.pair->second].name + " is too small: "
-            + std::to_string(topology.distance);
+            + core::optional_number(topology.distance);
     }
     // The recomputed rows classify: a criterion-meeting point is accepted after any non-error
     // stop (error stops never classify as converged); a floor-limited point needs success.
@@ -1027,11 +1027,11 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         return result;
     }
     if (result.requested_tolerance_met.has_value() && !*result.requested_tolerance_met) {
-        result.message += "; requested row tolerance " + std::to_string(row_tolerance)
+        result.message += "; requested row tolerance " + core::optional_number(row_tolerance)
             + " not met by an available floor-limited state";
     }
     result.candidate = Candidate::Published; result.success = true;
-    if (mixture_precision_eligible(compiled)) result.prepared_endpoint = std::make_shared<const PhasePoint>(prepared);
+    result.prepared_endpoint = std::make_shared<const PhasePoint>(prepared);
     result.temperature = temperature;
     result.pressure = prepared.pressure;
     if (!prepared.standard.reference_diagnostics.empty()) {
@@ -1541,7 +1541,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             if (accepted) {
                 refined.numerical_estimates = equilibrium_numerical_estimates(compiled, refined, point, limits);
                 const auto& returned = *refined.numerical_estimates;
-                const auto admission = check_density_branches(*compiled.model, compiled, refined, {}, true, scope, limits, &at);
+                const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits, &at);
                 accepted = admission.accepted && returned.cause.empty() && returned.physical_radius <= policy::MIXTURE_FORWARD_ERROR.value;
                 if (!accepted) refined.message = admission.accepted ? "returned-point error target not met" : admission.message;
             }
@@ -1573,7 +1573,7 @@ Retry retry_after(Attempt kind, bool reaction, bool non_error, bool fatal, Ipopt
 
 // The one Ipopt lifecycle shared by the public seed route and the private coordinate route.
 static EquilibriumResult run_driver_once(
-    const HelmholtzModel* model, const CompiledSystem& declared,
+    const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, Attempt kind,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, bool publishing = false
@@ -1718,7 +1718,7 @@ static EquilibriumResult run_driver_once(
                 if (!(total > 0.0) || !std::isfinite(total)) throw std::domain_error("invalid trial normalization");
                 for (const auto i : prepared.shape[p].x) view.coordinates[i] -= std::log(total);
             }
-            const auto branch = check_density_branches(*model, compiled, view, {}, true, scope, limits);
+            const auto branch = check_density_branches(compiled, view, {}, true, scope, limits);
             if (branch.accepted && !expired()) return true;
             core::retain_failure(result.first_numerical_failure, branch.message, "trial branch");
         } catch (const core::ConvergenceFailure& error) {
@@ -1849,11 +1849,11 @@ EquilibriumResult recover_physical_amounts(
         if (exhausted()) throw std::runtime_error("work budget exhausted before physical-mol retry");
         stage = "driver";
         if (invoked) *invoked = true;
-        retried = run_driver_once(compiled.model, compiled, std::move(initial), retried, retry_scope,
+        retried = run_driver_once(compiled, std::move(initial), retried, retry_scope,
             &raw, &retried, limits, Attempt::PhysicalAmounts, {}, false, false);
         if (retried.success && admit_density) {
             stage = "density branch admission";
-            const auto branches = check_density_branches(*compiled.model, compiled, retried, {}, true, retry_scope, limits);
+            const auto branches = check_density_branches(compiled, retried, {}, true, retry_scope, limits);
             if (!branches.accepted) throw std::runtime_error(branches.message);
         }
         if (limits) limits->check();
@@ -1876,7 +1876,7 @@ EquilibriumResult recover_physical_amounts(
 }
 
 EquilibriumResult run_driver(
-    const HelmholtzModel& model, const CompiledSystem& compiled,
+    const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, EquilibriumResult* audit, const DriverLimits* limits, Attempt kind,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, Retry runs
@@ -1886,11 +1886,11 @@ EquilibriumResult run_driver(
         std::chrono::steady_clock::time_point::max()};
     const auto* work = limits ? limits : warm ? &shared : nullptr;
     const auto primary = [&]() -> EquilibriumResult {
-    if (!warm || kind == Attempt::Newton) return run_driver_once(&model, compiled, std::move(initial), std::move(result), scope, attempt, audit, limits, kind, {}, predicted, refine_trial);
+    if (!warm || kind == Attempt::Newton) return run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt, audit, limits, kind, {}, predicted, refine_trial);
     EquilibriumResult tried = result;
     try {
         core::Scope warm_scope("equilibrium_warm_attempt");
-        tried = run_driver_once(&model, compiled, initial, result, warm_scope, attempt, &tried, work, Attempt::Warm, warm, predicted, refine_trial);
+        tried = run_driver_once(compiled, initial, result, warm_scope, attempt, &tried, work, Attempt::Warm, warm, predicted, refine_trial);
         if (tried.attempt != Attempt::Warm || tried.success) return tried;
     } catch (const std::exception& error) { core::retain_failure(tried.first_numerical_failure, error, "warm attempt"); scope.probe("warm_failed", {}, 0, error.what()); }
     scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
@@ -1898,7 +1898,7 @@ EquilibriumResult run_driver(
     core::Scope cold_scope("equilibrium_cold_fallback");
     StageWork stages; stages.add(tried);
     EquilibriumResult cold;
-    try { cold = run_driver_once(&model, compiled, std::move(initial), result, cold_scope, attempt, &cold, work, Attempt::Cold, {}, predicted, refine_trial); }
+    try { cold = run_driver_once(compiled, std::move(initial), result, cold_scope, attempt, &cold, work, Attempt::Cold, {}, predicted, refine_trial); }
     catch (...) { stages.report_observations(cold); if (audit) StageWork::publish_observations(cold, *audit); throw; }
     std::move(stages).report(cold);
     return cold;
@@ -2133,8 +2133,8 @@ EquilibriumResult newton_attempt(const CompiledSystem& compiled, const std::vect
     auto fast = structural;
     std::vector<double> coordinates;
     try {
-        fast = run_driver(*compiled.model, compiled, initial, structural, scope, &coordinates, &fast, limits, Attempt::Newton);
-        const auto branch = fast.success ? check_density_branches(*compiled.model, compiled, fast, {}, true, scope, limits) : BranchCheck{};
+        fast = run_driver(compiled, initial, structural, scope, &coordinates, &fast, limits, Attempt::Newton);
+        const auto branch = fast.success ? check_density_branches(compiled, fast, {}, true, scope, limits) : BranchCheck{};
         const bool accepted = fast.success && branch.accepted;
         if (fast.success && !accepted) core::retain_failure(fast.first_numerical_failure, branch.message, "Newton admission");
         scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
@@ -2227,7 +2227,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             stages.add(fast);
         }
         try {
-            result = run_driver(model, compiled, std::move(initial), structural, scope, nullptr, &result, limits, Attempt::Cold, warm, false, false, Retry::None);
+            result = run_driver(compiled, std::move(initial), structural, scope, nullptr, &result, limits, Attempt::Cold, warm, false, false, Retry::None);
         } catch (const std::bad_alloc&) { throw; }
         catch (const std::exception& error) {
             core::retain_failure(result.first_numerical_failure, error, "seeded driver");
@@ -2239,7 +2239,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         BranchCheck branches;
         try {
             branches = compiled.mode_count ? admit_null_mode(compiled, result)
-                : check_density_branches(model, compiled, result, {}, true, scope, limits);
+                : check_density_branches(compiled, result, {}, true, scope, limits);
         } catch (const std::bad_alloc&) { throw; }
         catch (const std::exception& error) {
             branches.message = std::string("density branch admission failed: ") + error.what();
@@ -2413,7 +2413,7 @@ EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::opti
     if (compiled.ideal && start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
     const EquilibriumResult structural = structural_result(compiled, scope);
     if (!compiled.feasible) return structural;
-    if (compiled.ideal) return run_driver_once(nullptr, compiled, compiled.generic_point(), structural, scope,
+    if (compiled.ideal) return run_driver_once(compiled, compiled.generic_point(), structural, scope,
         nullptr, nullptr, limits, Attempt::Cold, {}, false, false);
     const bool pure_recovery = recover && !limits && !start && !warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && one_component_two_density_eligible(compiled);
     if (pure_recovery) {
@@ -2463,7 +2463,7 @@ EquilibriumResult solve_equilibrium_from_coordinates(
     if (!compiled.feasible) return result;
     if (coordinates.size() != compiled.unknown_count() || !all_numeric(coordinates))
         throw std::invalid_argument("continuation coordinates do not match the compiled layout");
-    return run_driver(*compiled.model, compiled, coordinates, std::move(result), scope, attempt, audit, limits, Attempt::Cold, std::move(warm), true);
+    return run_driver(compiled, coordinates, std::move(result), scope, attempt, audit, limits, Attempt::Cold, std::move(warm), true);
 }
 
 }  // namespace epcsaft::equilibrium

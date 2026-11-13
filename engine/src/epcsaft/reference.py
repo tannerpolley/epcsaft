@@ -265,8 +265,7 @@ class Reference:
         """
         if self._ion_indices is not None:
             raise _core.ParameterError("NonNeutralDeclaration: Henry constants need a solvent-only reference")
-        try:
-            indices = [self.component_ids.index(solute) for solute in solutes]
-        except ValueError as error:
-            raise _core.ParameterError(f"unknown solute component in {list(solutes)}") from error
+        if any(solute not in self.component_ids for solute in solutes):
+            raise _core.ParameterError(f"unknown solute component in {list(solutes)}")
+        indices = [self.component_ids.index(solute) for solute in solutes]
         return _core.henry_constants(self._model, self.T, self.P, self.solvent_fractions, indices)

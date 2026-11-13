@@ -653,8 +653,6 @@ void check_e5_pins() {
     const auto& a1 = batches[0].results;
     const auto& a2 = batches[1].results;
     const double N = *a1[0].value, rho = *a1[2].value, Na = *a1[0].action, ra = *a1[2].action;
-    const auto b1 = actions(positive, model, central, requested, 1);
-    (void)b1;
     const double v1 = Na / rho - N * ra / (rho * rho);
     SolvedStateActionRequest second;
     second.observables = requested;

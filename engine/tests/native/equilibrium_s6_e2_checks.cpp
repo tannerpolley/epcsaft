@@ -60,7 +60,6 @@ void check_s6() {
         "s6-objective-gap", "two-minus-one", "\\Delta g", "T,P,feed,objective,limit",
         "\\Delta g>\\ell", "objective");
     CHECK(one_result.success && two_result.success);
-    if (!one_result.success || !two_result.success) return;
     CHECK(two_result.objective < one_result.objective
           - convergence_limit(two_result.convergence));
 }
@@ -77,7 +76,6 @@ void check_s7() {
                 + fraction * first.mole_fractions[3 + i];
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem, first);
         CHECK(result.success);
-        if (!result.success) continue;
         for (std::size_t i = 0; i < 6; ++i) {
             const double difference = std::abs(
                 result.mole_fractions[i] - first.mole_fractions[i]);
@@ -108,7 +106,6 @@ void check_c1_multiplier_scale() {
     const auto small_result = epcsaft::equilibrium::solve_equilibrium(model, small);
     const auto large_result = epcsaft::equilibrium::solve_equilibrium(model, large);
     CHECK(small_result.success && large_result.success);
-    if (!small_result.success || !large_result.success) return;
 
     const bool same_intensives = small_result.temperature == large_result.temperature
         && small_result.pressure == large_result.pressure;
@@ -632,10 +629,6 @@ void check_s11() {
         problem.pressure.value = pressure;
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
         CHECK(result.success && result.mole_fractions.size() == 3);
-        if (!result.success || result.mole_fractions.size() != 3) {
-            std::fprintf(stderr, "S11 solve: %s\n", result.message.c_str());
-            return;
-        }
         const double gap = std::abs(std::log(result.mole_fractions[1] / result.mole_fractions[0])
             + affinity.front() / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * *result.temperature));
         const auto pressure_id = recording_support::number(pressure);
@@ -878,7 +871,6 @@ void check_s16() {
                 + fraction * first.mole_fractions[3 + i];
         const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem, first);
         CHECK(result.success);
-        if (!result.success) continue;
         const double limit = convergence_limit(result.convergence);
         for (std::size_t i = 0; i < 6; ++i) {
             const double difference = std::abs(
@@ -940,12 +932,6 @@ bool record_bool(const char* id, const char* group, const char* claim, bool verd
     return verdict;
 }
 
-// The classifying residual: KKT-scaled stationarity rows for free-amount cells, unscaled
-// rows for pinned cells (owner decision 2026-09-16); the unscaled rows stay diagnostics.
-double largest_row(const epcsaft::equilibrium::EquilibriumResult& result) {
-    return result.convergence.residual;
-}
-
 std::string solve_inputs(const epcsaft::equilibrium::EquilibriumProblem& problem,
                          const epcsaft::equilibrium::EquilibriumResult& result) {
     return recording_support::fields({
@@ -975,6 +961,9 @@ bool not_run_record(const epcsaft::equilibrium::EquilibriumResult& result,
 
 }  // namespace e2
 
+// The E2 rows judge convergence.residual, the classifying residual: KKT-scaled stationarity rows
+// for free-amount cells, unscaled rows for pinned cells (owner decision 2026-09-16); the unscaled
+// rows stay diagnostics.
 void check_e2_thermal() {
     using namespace e2;
     const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
@@ -1012,7 +1001,7 @@ void check_e2_thermal() {
                 recording_support::field("density_gap", density_gap),
                 recording_support::field("dilute_row_bound", dilute_bound)});
             const bool verdict = result.success && std::abs(observed - expected) <= 1.0e-10
-                && largest_row(result) <= result.convergence.criterion->value && density_gap <= 1.0e-9;
+                && result.convergence.residual <= result.convergence.criterion->value && density_gap <= 1.0e-9;
             recording_support::compare(id.c_str(), "mole_fraction", "1", observed, expected, inputs,
                 "Relationship", "reaction-equilibrium", offset.qualified
                     ? "identical-species isomerisation follows x_B=K/(1+K) with the EOS density"
@@ -1080,7 +1069,7 @@ void check_e2_thermal() {
                    std::abs(doubling_result.amounts[0] * doubling_result.mole_fractions[1] - total * y))
         : std::numeric_limits<double>::quiet_NaN();
     const bool doubling_ok = doubling_result.success && composition_gap <= 1.0e-8 && amount_gap <= 1.0e-8
-        && largest_row(doubling_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+        && doubling_result.convergence.residual <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
     recording_support::compare("e2-2/a-to-2b/x_B", "mole_fraction", "1",
         doubling_result.success ? doubling_result.mole_fractions[1] : std::numeric_limits<double>::quiet_NaN(), y,
         recording_support::fields({solve_inputs(doubling, doubling_result), recording_support::field("Z", compressibility),
@@ -1138,7 +1127,7 @@ void check_e2_thermal() {
         // Rows use the suite's solved-row comparator max(criterion, floor): the association
         // gradient floor limits this ionic state (converged_to_floor), as in S1.
         const double limit = result.convergence.criterion == nullptr ? 0.0 : convergence_limit(result.convergence);
-        const bool ok = result.success && amount_gap <= 1.0e-8 && std::abs(charge) <= 1.0e-10 && largest_row(result) <= limit;
+        const bool ok = result.success && amount_gap <= 1.0e-8 && std::abs(charge) <= 1.0e-10 && result.convergence.residual <= limit;
         const auto id = std::string("e2-2/charged-solve/") + (order[0] == 0 ? "identity" : "permuted");
         recording_support::compare(id.c_str(), "amount_gap", "mol", ok ? amount_gap : std::numeric_limits<double>::quiet_NaN(), 0.0,
             recording_support::fields({solve_inputs(problem, result), recording_support::field("n_star", expected),
@@ -1349,9 +1338,9 @@ void check_e2_solve() {
         const auto result = epcsaft::equilibrium::solve_equilibrium(ternary, pinned, bubble_result);
         const auto id = std::string("e2-6/positive-pin/") + (free_pressure ? "free-P" : "free-T");
         const bool ok = result.success && compiled.pinned_count == 1 && compiled.free_intensive_count == 1
-            && largest_row(result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value
+            && result.convergence.residual <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value
             && result.amounts[1] == 0.01 * compiled.feed_total;
-        recording_support::compare(id.c_str(), "row_residual", "1", largest_row(result), 0.0,
+        recording_support::compare(id.c_str(), "row_residual", "1", result.convergence.residual, 0.0,
             recording_support::fields({solve_inputs(pinned, result), recording_support::field("pin", 0.01)}),
             "Relationship", "equilibrium-residual", "one positive pin with one free intensive solves through the shared driver",
             "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0, ok, "e2-6-solve", id.c_str(),
@@ -1384,7 +1373,7 @@ void check_e2_solve() {
     ethane_bubble.pressure = FreeValue::variable(1.0e5);
     const auto ethane_compiled = epcsaft::equilibrium::compile_problem(ethane, ethane_bubble);
     const auto ethane_result = epcsaft::equilibrium::solve_equilibrium(ethane, ethane_bubble);
-    recording_support::compare("e2-6/ethane-bubble", "row_residual", "1", largest_row(ethane_result), 0.0,
+    recording_support::compare("e2-6/ethane-bubble", "row_residual", "1", ethane_result.convergence.residual, 0.0,
         recording_support::fields({solve_inputs(ethane_bubble, ethane_result),
             recording_support::field("pressure_Pa", epcsaft::core::optional_number(ethane_result.pressure)),
             recording_support::field("jacobian_rank", ethane_compiled.jacobian_rank),
@@ -1392,19 +1381,19 @@ void check_e2_solve() {
         "Relationship", "equilibrium-residual", "the ethane bubble declaration has full rank and solves at 108.6365 K",
         "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
         ethane_compiled.jacobian_rank == 7 && ethane_compiled.generic_nullity == 0 && ethane_result.success
-            && ethane_result.has_state() && largest_row(ethane_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
+            && ethane_result.has_state() && ethane_result.convergence.residual <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
         "e2-6-solve", "ethane-bubble", "|r|", "T,feed,pins", "|r|\\leq10^{-10}", "case");
     auto vapor = equilibrium_support::flash(1);
     vapor.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
     vapor.temperature.value = 320.0;
     const auto vapor_result = epcsaft::equilibrium::solve_equilibrium(ethane, vapor);
     const auto vapor_root = epcsaft::solve_density(ethane, 320.0, 1.0e5, {1.0}, epcsaft::DensityBranch::Vapor, std::nullopt);
-    recording_support::compare("e2-7/pure-vapor", "row_residual", "1", largest_row(vapor_result), 0.0,
+    recording_support::compare("e2-7/pure-vapor", "row_residual", "1", vapor_result.convergence.residual, 0.0,
         recording_support::fields({solve_inputs(vapor, vapor_result), recording_support::field("root_density", vapor_root.molar_density),
             recording_support::field("stable_root_count", vapor_root.stable_root_count.value_or(0))}),
         "Relationship", "equilibrium-residual", "a single declared pure phase solves from its unique density root",
         "strict_absolute", epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
-        vapor_result.success && largest_row(vapor_result) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
+        vapor_result.success && vapor_result.convergence.residual <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
         "e2-7-criterion", "pure-vapor", "|r|", "T,P", "|r|\\leq10^{-10}", "case");
     std::size_t default_evaluations = 0;
     for (const double tolerance : {epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 1.0e-8, 1.0e-12, 1.0e-5}) {

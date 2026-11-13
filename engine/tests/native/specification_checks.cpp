@@ -257,31 +257,6 @@ void check_c5() {
     };
     const auto basis_coordinates = epcsaft::equilibrium::balance_basis(components, basis);
     const auto mixed_coordinates = epcsaft::equilibrium::balance_basis(components, mixed);
-    for (std::size_t row = 0; row < basis_coordinates.size(); ++row) {
-        for (std::size_t column = 0; column < basis_coordinates[row].size(); ++column) {
-            const auto point = std::to_string(row) + "/" + std::to_string(column);
-            recording_support::observe(
-                (std::string("basis-entry/") + point).c_str(), "balance_basis", "1",
-                basis_coordinates[row][column], std::nullopt,
-                recording_support::fields({
-                    recording_support::field("T", temperature),
-                    recording_support::field("basis_row", basis_coordinates[row]),
-                    recording_support::field("row", row),
-                    recording_support::field("column", column),
-                }), "Relationship", "balance-basis", "basis entry is finite",
-                "c5-basis", point.c_str(), "B_{ij}", "T,row,column", "B_{ij}", "row,column");
-            recording_support::observe(
-                (std::string("mixed-basis-entry/") + point).c_str(), "balance_basis", "1",
-                mixed_coordinates[row][column], std::nullopt,
-                recording_support::fields({
-                    recording_support::field("T", temperature),
-                    recording_support::field("basis_row", mixed_coordinates[row]),
-                    recording_support::field("row", row),
-                    recording_support::field("column", column),
-                }), "Relationship", "balance-basis", "mixed basis entry is finite",
-                "c5-mixed-basis", point.c_str(), "B_{ij}", "T,row,column", "B_{ij}", "row,column");
-        }
-    }
     const bool equal_subspace = same_subspace(
         basis_coordinates, mixed_coordinates, 1.0e-12);
     recording_support::compare(
@@ -695,13 +670,6 @@ void check_e2_pins() {
             && doubling_message.find("all-pinned") == std::string::npos && doubling_balance <= 1.0e-12,
         recording_support::fields({pin_inputs(doubling), recording_support::field("balance_residual", doubling_balance),
             recording_support::field("message", doubling_message)}));
-    if (doubling_message.empty()) {
-        const auto doubling_compiled = epcsaft::equilibrium::compile_problem(model, doubling);
-        recording_support::observe("e2-0/doubling-generic-nullity", "generic_nullity", "count",
-            static_cast<double>(doubling_compiled.generic_nullity), std::nullopt, pin_inputs(doubling),
-            "Relationship", "rank-count", "retained rank admission of the A=2B all-pinned declaration",
-            "e2-0-pins", "doubling");
-    }
     // 2A <-> B: one phase, pin 0.75, one free intensive passes the sum stage.
     auto halving = equilibrium_support::flash(2);
     halving.feed.values = {1.0, 0.0};
@@ -1457,7 +1425,7 @@ void check_association_publication() {
     auto initial = eq::structural_result(compiled, scope);
     core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
     initial.first_numerical_failure = refusal;
-    const auto result = eq::run_driver(model, compiled, point, initial, scope, nullptr, nullptr, nullptr, eq::Attempt::Newton);
+    const auto result = eq::run_driver(compiled, point, initial, scope, nullptr, nullptr, nullptr, eq::Attempt::Newton);
     CHECK(result.success && std::abs(result.molar_densities[0] / density - 1) <= 1e-10);
     std::shared_ptr<core::ConditioningObservation> produced;
     for (const auto& span : capture.trace().spans) if (span.convergence && span.convergence->rank

@@ -342,7 +342,6 @@ void derivatives_and_limits() {
             close(value.value, state.residual_helmholtz, 1.0e-14),
             "m2-value-state", std::to_string(case_index).c_str(), "a^{res}",
             "T,V,\\mathbf{n}", "a_{eval}=a_{state}", "state");
-        CHECK(close(value.value, state.residual_helmholtz, 1e-14));
         const double residual_sum = state.hard_chain + state.dispersion
             + state.association + state.debye_huckel + state.born;
         recording_support::compare(
@@ -353,7 +352,6 @@ void derivatives_and_limits() {
             close(state.residual_helmholtz, residual_sum, 1.0e-12),
             "m2-residual-sum", std::to_string(case_index).c_str(), "a^{res}",
             "T,V,\\mathbf{n}", "a^{res}=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}", "case");
-        CHECK(close(state.residual_helmholtz, residual_sum, 1e-12));
         const auto gradient = model.evaluate(temperature, volume, item.second,
                                              epcsaft::DerivativeOrder::Gradient);
         recording_support::observe(
@@ -429,9 +427,6 @@ void derivatives_and_limits() {
             1.0e-12), "m2-chemical-potential", std::to_string(case_index).c_str(),
             "\\sum_i x_i\\mu_i", "T,V,\\mathbf{n}",
             "\\sum_i x_i\\mu_i/RT=a+Z-1", "component");
-        CHECK(close(chemical_identity,
-                    state_identity.residual_helmholtz
-                    + state_identity.compressibility_factor - 1.0, 1e-12));
     }
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     const double close_density = model.molar_density_upper_bound(300.0, {0.4, 0.6})

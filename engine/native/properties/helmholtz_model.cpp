@@ -2426,7 +2426,7 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
             validate_electroneutrality(x);
             const double value = input[input.size() == 1 ? 0 : k];
             result.rows[k] = at_pressure ? state_at_pressure(temperature[k], value, x, branch, {}, derived)
-                : state(temperature[k], value, x, derived);
+                : state(temperature[k], value, x, derived, true);
         } catch (const core::DeclarationError& e) { fail(StateStatus::DeclarationError, e, e.record);
         } catch (const core::ConvergenceFailure& e) { fail(StateStatus::ConvergenceError, e, e.record, e.first_numerical_failure);
         } catch (const DensityStructureError& e) { fail(StateStatus::DensityStructureError, e, e.first_numerical_failure, e.first_numerical_failure);
@@ -2442,11 +2442,20 @@ State HelmholtzModel::state(
     double molar_density,
     const std::vector<double>& mole_fractions,
     bool derived_properties
+) const {
+    return state(temperature, molar_density, mole_fractions, derived_properties, false);
+}
+
+State HelmholtzModel::state(
+    double temperature,
+    double molar_density,
+    const std::vector<double>& mole_fractions,
+    bool derived_properties, bool composition_admitted
 ) const try {
     core::AssociationObservations observations(true);
     State result;
     core::Scope scope("state");
-    validate_composition(mole_fractions);
+    if (!composition_admitted) validate_composition(mole_fractions);
     require_molar_density(molar_density);
     const double volume = 1.0 / molar_density;
     const auto derivatives = [&] {
@@ -2808,7 +2817,7 @@ State HelmholtzModel::state_at_pressure(
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
     );
-    State result = state(temperature, root.molar_density, mole_fractions, derived_properties);
+    State result = state(temperature, root.molar_density, mole_fractions, derived_properties, true);
     if (result.log_fugacity_coefficient) {
         // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
         const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));
@@ -2833,6 +2842,10 @@ double HelmholtzModel::packing_fraction_coefficient(
 ) const {
     validate_composition(mole_fractions);
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    return admitted_packing_coefficient(temperature, mole_fractions);
+}
+
+double HelmholtzModel::admitted_packing_coefficient(double temperature, const std::vector<double>& mole_fractions) const {
     if (parameters_.ideal_gas) return 0.0;
     return packing_fraction_from_geometry(1.0, mole_fractions, parameters_,
         detail::admitted_segment_geometry(temperature, parameters_).diameter);
@@ -2843,7 +2856,10 @@ double HelmholtzModel::molar_density_upper_bound(
     const std::vector<double>& mole_fractions
 ) const {
     core::Scope scope("molar_density_upper_bound");
-    const double coefficient = packing_fraction_coefficient(temperature, mole_fractions);
+    return density_upper_bound(packing_fraction_coefficient(temperature, mole_fractions));
+}
+
+double HelmholtzModel::density_upper_bound(double coefficient) {
     require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
     // EqID: density_upper_bound
     return policy::CLOSE_PACKING_FRACTION.value / coefficient;

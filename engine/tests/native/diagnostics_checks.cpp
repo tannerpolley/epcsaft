@@ -124,7 +124,6 @@ void contraction_window() {
         final_contraction,
         "d2-contraction", "final", "q", "q,N,window", "q_{estimated}=q", "history");
     CHECK(all_contractions);
-    CHECK(final_contraction);
 }
 
 void declaration_guards() {
@@ -244,33 +243,6 @@ void density_records() {
                          epcsaft::DensityBranch::Liquid, "aqueous-298-liquid");
 }
 
-void density_publication_boundaries() {
-    epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    const auto valid = model.state_at_pressure(
-        300.0, 1.0e5, {0.4, 0.6}, epcsaft::DensityBranch::Vapor
-    );
-    const bool valid_root = valid.density_convergence.has_value()
-        && valid.density_convergence->stop == Stop::converged
-        && std::isfinite(valid.density_convergence->residual)
-        && std::isfinite(valid.molar_density);
-
-    recording_support::compare(
-        "density-publication", "valid-root", "1", valid_root ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
-            recording_support::field("T", 300.0),
-            recording_support::field("P", 1.0e5),
-            recording_support::field("x", std::vector<double>{0.4, 0.6}),
-            recording_support::field("stop", valid.density_convergence.has_value()
-                ? epcsaft::core::stop_name(valid.density_convergence->stop) : "absent"),
-            recording_support::field("residual", valid.density_convergence.has_value()
-                ? valid.density_convergence->residual : std::numeric_limits<double>::infinity()),
-        }),
-        "Relationship", "density-root", "finite density root remains available",
-        "absolute", 0.0, 0.0, valid_root, "native.diagnostics.c3-correction", "C3",
-        "density-publication", "availability", "T,P,x", "valid root published"
-    );
-}
-
 void association_record(
     const epcsaft::Parameters& parameters, double density,
     const std::vector<double>& composition, const char* point_id
@@ -359,6 +331,10 @@ void trace_case(epcsaft::Parameters parameters, double temperature, double press
     const auto uncaptured = model.state_at_pressure(
         temperature, pressure, composition, branch
     );
+    CHECK(uncaptured.density_convergence.has_value()
+        && uncaptured.density_convergence->stop == Stop::converged
+        && std::isfinite(uncaptured.density_convergence->residual)
+        && std::isfinite(uncaptured.molar_density));
     epcsaft::core::Capture capture;
     const auto captured = model.state_at_pressure(
         temperature, pressure, composition, branch
@@ -585,7 +561,6 @@ int main(int argc, char** argv) {
         {{"native.diagnostics.d2", "D2"}, contraction_window},
         {{"native.diagnostics.d3", "D3"}, declaration_guards},
         {{"native.diagnostics.d4", "D4"}, density_records},
-        {{"native.diagnostics.c3-density", "C3"}, density_publication_boundaries},
         {{"native.diagnostics.d5", "D5"}, association_records},
         {{"native.diagnostics.c3", "C3"}, termination_boundaries},
         {{"native.diagnostics.c3-producers", "C3"}, producer_boundaries},

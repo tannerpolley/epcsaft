@@ -901,7 +901,7 @@ GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, con
         core::Scope scope("reaction_relaxed_split");
         EquilibriumResult split, audit;
         try {
-            split = run_driver(*c.model, compiled, start, structural_result(compiled, scope), scope, nullptr, &audit,
+            split = run_driver(compiled, start, structural_result(compiled, scope), scope, nullptr, &audit,
                 &limits, Attempt::Cold, {}, false, false, Retry::None);
         } catch (const std::exception& error) { split = audit; split.message = error.what(); }
         std::move(stages).report(split);
@@ -1061,7 +1061,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     EquilibriumResult audit;
                     StageWork prior; prior.observe(trial.optimizer);
                     try {
-                        trial.optimizer = run_driver(*c.model, compiled, initial, structural_result(compiled, scope),
+                        trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
                             scope, &trial.raw_coordinates, &audit, limits, Attempt::Cold, {}, false, true);
                     } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
                     prior.report_observations(trial.optimizer);
@@ -1598,7 +1598,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             if (!newton_accepted) {
                 invoked = true;
-                result = run_driver(model, c, seed, audit, scope, &attempt, &audit, nullptr, Attempt::Cold, {}, false, false, Retry::None);
+                result = run_driver(c, seed, audit, scope, &attempt, &audit, nullptr, Attempt::Cold, {}, false, false, Retry::None);
                 auto retried = audit;
                 if (!fast) (void)recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
                     &retry_attempt, &retried, true, &calls, budget, &invoked, Work::Invocation);
@@ -1611,7 +1611,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                     if (!retry_attempt.empty()) attempt = retry_attempt;
                 }
                 if (result.success && calls == before) {
-                    const auto branch = check_density_branches(model, c, result, {}, true, scope);
+                    const auto branch = check_density_branches(c, result, {}, true, scope);
                     if (!branch.accepted) {  result.message = branch.message; refuse(result); }
                 }
             }
