@@ -11,10 +11,14 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import KW_ONLY, dataclass, field
-from typing import Any, Literal, Protocol, cast
+from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from .. import _core
 from .._log import logged
+from ..parameters import _record_document
+
+if TYPE_CHECKING:
+    from ..eos import Mixture
 
 
 class _Species(Protocol):
@@ -274,18 +278,7 @@ class MoleFractions(Feed):
     """
 
     def __init__(self, values: Mapping[str, float]) -> None:
-        """Initialize the mole fractions feed declaration.
-
-        Parameters
-        ----------
-        values : mapping of str to float
-            Feed values on the basis documented by ``MoleFractions``.
-
-        Notes
-        -----
-        No equilibrium calculation occurs here; native feed admission is deferred
-        until compilation. See the class for units and normalization.
-        """
+        """Declare the feed; units and admission are documented by ``MoleFractions``."""
         super().__init__(_core.FeedKind.MoleFractions, values, solvent_mass_kg=None)
 
 
@@ -312,18 +305,7 @@ class Amounts(Feed):
     """
 
     def __init__(self, values: Mapping[str, float]) -> None:
-        """Initialize the amounts feed declaration.
-
-        Parameters
-        ----------
-        values : mapping of str to float
-            Feed values on the basis documented by ``Amounts``.
-
-        Notes
-        -----
-        No equilibrium calculation occurs here; native feed admission is deferred
-        until compilation. See the class for units and normalization.
-        """
+        """Declare the feed; units and admission are documented by ``Amounts``."""
         super().__init__(_core.FeedKind.Amounts, values, solvent_mass_kg=None)
 
 
@@ -345,18 +327,7 @@ class MassFractions(Feed):
     """
 
     def __init__(self, values: Mapping[str, float]) -> None:
-        """Initialize the mass fractions feed declaration.
-
-        Parameters
-        ----------
-        values : mapping of str to float
-            Feed values on the basis documented by ``MassFractions``.
-
-        Notes
-        -----
-        No equilibrium calculation occurs here; native feed admission is deferred
-        until compilation. See the class for units and normalization.
-        """
+        """Declare the feed; units and admission are documented by ``MassFractions``."""
         super().__init__(_core.FeedKind.MassFractions, values, solvent_mass_kg=None)
 
 
@@ -391,22 +362,7 @@ class Molalities(Feed):
         solvent: Sequence[str],
         solvent_mass_kg: float,
     ) -> None:
-        """Initialize the molalities feed declaration.
-
-        Parameters
-        ----------
-        values : mapping of str to float
-            Feed values on the basis documented by ``Molalities``.
-        solvent : sequence of str
-            Solvent identifiers for native conversion.
-        solvent_mass_kg : float
-            Positive total solvent mass in kg.
-
-        Notes
-        -----
-        No equilibrium calculation occurs here; native feed admission is deferred
-        until compilation. See the class for units and normalization.
-        """
+        """Declare the feed; units and admission are documented by ``Molalities``."""
         super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
 
 
@@ -1020,6 +976,49 @@ def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
     return _core.compile_problem(model._model, native)
+
+
+def asl_record(model: Mixture, problem: Problem, continuation: _core.ContinuationOptions, feed_offset: Sequence[float],
+               feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
+               identity_component: int, minimum_gap: float) -> str:
+    """Serialize the admitted two-liquid equilibrium and affine feed map for ASL.
+
+    Parameters
+    ----------
+    model : Mixture
+        Model whose parameters retain their source document.
+    problem : Problem
+        Fixed-T/P two-free-liquid declaration with explicit supports and absolute molar feed.
+    continuation : Continuation
+        Declared continuation controls for the adapter.
+    feed_offset : Sequence[float]
+        Length n of absolute feed offsets in mol.
+    feed_matrix : Sequence[Sequence[float]]
+        Row-major (n, k) affine coefficients mapping controls into feed mol; units are mol per caller control unit.
+    anchor_controls : Sequence[float]
+        Length k of nonnegative anchor controls in the caller-declared units.
+    identity_component : int
+        Component index used to preserve two-phase identity.
+    minimum_gap : float
+        Positive dimensionless mole-fraction separation required for that identity.
+
+    Returns
+    -------
+    str
+        Native record string for the equilibrium ASL adapter.
+
+    Raises
+    ------
+    ValueError
+        The parameters retain no document, or carry the stored cause a fit could not be written into it.
+
+    Notes
+    -----
+    The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
+    """
+    document = _record_document(model.parameters)
+    return _core.equilibrium_asl_record(document, model._model, problem._native(model), continuation, feed_offset, feed_matrix,
+                                        anchor_controls, identity_component, minimum_gap)
 
 
 solved_state_actions = _core.solved_state_actions

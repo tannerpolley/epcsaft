@@ -22,6 +22,7 @@
 #include <vector>
 
 namespace nb = nanobind;
+using epcsaft::PROPERTY_SCOPE;
 
 namespace {
 
@@ -103,15 +104,16 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_component, site_multiplicity, base_choice,
             association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice)
         EPCSAFT_COPIED(epcsaft::ParameterDocument, entries);
-    module.def("build_parameters", &epcsaft::build_parameters);
+    module.def("build_parameters", &epcsaft::build_parameters, nb::arg("document"));
     module.def("prepare_thermochemistry", &epcsaft::prepare_thermochemistry, nb::arg("record"), nb::arg("source_gas_constant"));
-    module.def("fitted_document", &epcsaft::fitted_document);
+    module.def("fitted_document", &epcsaft::fitted_document, nb::arg("start"), nb::arg("fitted"));
 
     nb::class_<epcsaft::Parameters>(module, "Parameters")
         .def_prop_ro("component_count", &epcsaft::Parameters::component_count)
         .def_prop_ro("site_count", &epcsaft::Parameters::site_count)
         .def_ro("ideal_gas", &epcsaft::Parameters::ideal_gas)
         .def_ro("molar_masses", &epcsaft::Parameters::molar_mass_kg_per_mol, "kg/mol, in component_ids order")
+        .def_ro("charge_number", &epcsaft::Parameters::charge_number, "elementary charges, in component_ids order")
         .def_ro("temperature_law_coefficient_identities", &epcsaft::Parameters::temperature_law_coefficient_identity,
             "source identity of each TemperatureLawCoefficient slot");
     nb::enum_<epcsaft::DerivativeOrder>(module, "DerivativeOrder")
@@ -158,7 +160,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
     nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, 7)
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
             density_action, density_mixed_action, density_message, density_convergence, density_status);
     nb::enum_<epcsaft::ThermochemistryStatus>(module, "ThermochemistryStatus")
@@ -190,7 +192,8 @@ void register_eos(nb::module_& module) {
     state.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
         .def_prop_ro("density_branch_mismatch", &epcsaft::State::density_branch_mismatch)
         .def_ro("first_numerical_failure", &epcsaft::State::first_numerical_failure)
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::State, 7);
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::State, PROPERTY_SCOPE)
+        EPCSAFT_REPR(State, "pressure", "molar_density", "compressibility_factor", "density_branch", "residual_helmholtz");
     state_field(state, batch, "requested_density_branch", &epcsaft::State::requested_density_branch);
     batch.def_prop_ro("returned_density_branch", [](const epcsaft::StateBatch& v) {
         return state_column(v, [](const epcsaft::State& r) { return r.returned_density_branch(); });
@@ -198,7 +201,7 @@ void register_eos(nb::module_& module) {
         return state_column(v, [](const epcsaft::State& r) { return r.density_branch_mismatch(); });
     }).def_prop_ro("solver_options", [](const epcsaft::StateBatch& v) {
         nb::list result;
-        for (const auto& row : v.rows) result.append(row ? epcsaft::bindings::solver_options_view(row->solver_options, 7) : nb::none());
+        for (const auto& row : v.rows) result.append(row ? epcsaft::bindings::solver_options_view(row->solver_options, PROPERTY_SCOPE) : nb::none());
         return result;
     });
         EPCSAFT_EACH(STATE_FIELD, epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
@@ -222,7 +225,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::DensityDiagnosticBracket>(module, "DensityDiagnosticBracket")
         EPCSAFT_READONLY(epcsaft::DensityDiagnosticBracket, lower, upper, lower_residual, upper_residual);
     nb::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, 7)
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
             evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop, first_numerical_failure);
     nb::class_<epcsaft::SweepCounters>(module, "SweepCounters")
@@ -230,11 +233,11 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
         .def("__init__", [](epcsaft::HelmholtzModel* self, epcsaft::Parameters p, std::vector<epcsaft::ActiveParameter> a,
                          std::optional<epcsaft::ThermochemistryRecord> t, nb::object options) {
-            new (self) epcsaft::HelmholtzModel(std::move(p), std::move(a), std::move(t), epcsaft::bindings::solver_options(options, 7));
+            new (self) epcsaft::HelmholtzModel(std::move(p), std::move(a), std::move(t), epcsaft::bindings::solver_options(options, PROPERTY_SCOPE));
         },
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
              nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
-        .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), 7); })
+        .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), PROPERTY_SCOPE); })
         .def_prop_ro("active_parameter_values", &epcsaft::HelmholtzModel::active_parameter_values)
         .def("virial_coefficients", &epcsaft::HelmholtzModel::virial_coefficients,
             nb::arg("temperature"), nb::arg("composition"))
@@ -248,8 +251,10 @@ void register_eos(nb::module_& module) {
              nb::arg("derived_properties") = false)
         .def("log_fugacity_terms", &epcsaft::HelmholtzModel::log_fugacity_terms,
             nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"))
-        .def("states", &epcsaft::HelmholtzModel::states)
-        .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property)
+        .def("states", &epcsaft::HelmholtzModel::states, nb::arg("temperature"), nb::arg("input"), nb::arg("composition"),
+             nb::arg("at_pressure"), nb::arg("branch"), nb::arg("derived_properties"))
+        .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property, nb::arg("temperature"), nb::arg("molar_density"),
+             nb::arg("property"), nb::arg("order"))
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
                                     double temperature, double molar_density,
                                     const std::vector<double>& composition,
@@ -259,7 +264,8 @@ void register_eos(nb::module_& module) {
             model.validate_electroneutrality(composition);
             return model.density_actions(
                 temperature, molar_density, composition, observables, directions);
-        })
+        }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"), nb::arg("observables"),
+             nb::arg("directions"))
         .def("pressure_actions", [](const epcsaft::HelmholtzModel& model,
                                      double temperature, double pressure,
                                      const std::vector<double>& composition,
@@ -282,7 +288,7 @@ void register_eos(nb::module_& module) {
                                                double temperature, const std::vector<double>& composition) {
             epcsaft::core::Scope scope("packing_fraction_coefficient");
             return model.packing_fraction_coefficient(temperature, composition);
-        })
+        }, nb::arg("temperature"), nb::arg("composition"))
         .def("state_at_pressure", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
                                      const std::vector<double>& composition, epcsaft::DensityBranch branch,
                                      std::optional<double> anchor_density, bool derived_properties) {
@@ -292,7 +298,8 @@ void register_eos(nb::module_& module) {
         },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("anchor_density") = std::nullopt, nb::arg("derived_properties") = false)
-        .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound)
+        .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound, nb::arg("temperature"),
+             nb::arg("composition"))
         .def("density_diagnostics", &epcsaft::HelmholtzModel::density_diagnostics,
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("nodes"),
              nb::arg("density_tolerance"), nb::arg("log_tolerance"), nb::arg("max_evaluations"),
@@ -301,7 +308,7 @@ void register_eos(nb::module_& module) {
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
     nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, 7)
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
             parameter_derivative, pure_solvent_log_fugacity, pure_solvent_state, solvent_state, diagnostics,
             solvent_status, solvent_cause, solvent_convergence);
@@ -312,25 +319,29 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::HenryConstant>(module, "HenryConstant")
         EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px,
             observed_terminal_change, status, message);
-    module.def("henry_constants", &epcsaft::henry_constants);
+    module.def("henry_constants", &epcsaft::henry_constants, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"),
+        nb::arg("solvent_fractions"), nb::arg("solute_indices"));
     module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {
         return epcsaft::solvent_reference(model, T, P, x);
-    });
+    }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"));
     module.def("solvent_activity", [](const epcsaft::HelmholtzModel& model, double T, double P,
         const std::vector<double>& x, const epcsaft::InfiniteDilutionReference& reference) {
         return epcsaft::solvent_activity(model, T, P, x, reference);
-    });
+    }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("reference"));
     nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
-        EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, 7)
+        EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
-            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative);
+            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative)
+        EPCSAFT_REPR(ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion");
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
         return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);
-    });
+    }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
+       nb::arg("stoichiometry"));
     module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
         double molality, const epcsaft::InfiniteDilutionReference& reference) {
         return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference);
-    });
+    }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
+       nb::arg("stoichiometry"), nb::arg("molality"), nb::arg("reference"));
 }

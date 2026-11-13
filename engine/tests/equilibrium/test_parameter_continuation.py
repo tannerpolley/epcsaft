@@ -65,7 +65,7 @@ def test_engine_readme_parameter_path_reaches_direct_solve() -> None:
         return [result.amounts[p] * result.mole_fractions[2 * p + c] for p in range(2) for c in range(2)]
 
     base = model()
-    theta0 = tuple(base._model.active_parameter_values)
+    theta0 = tuple(base.active_parameter_values)
     start = eq.solve_equilibrium(base, problem)
     for target in ((-0.0021, 257.13), (-0.0021, 258.13)):  # the k_ij shift +0.005 alone, then with eps/k +1 K
         path = eq.continue_equilibrium(base, problem, problem, eq.Continuation(

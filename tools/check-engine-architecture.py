@@ -500,7 +500,7 @@ def rule_exact_hessian_callback() -> list[str]:
 
 
 def rule_stub_matches_extension() -> list[str]:
-    """_core.pyi declares exactly the installed extension's public names and class members."""
+    """_core.pyi declares exactly the installed extension's public names, class members and argument names."""
     from epcsaft import _core
 
     def declared(body: list[ast.stmt]) -> set[str]:
@@ -511,8 +511,24 @@ def rule_stub_matches_extension() -> list[str]:
     def mismatch(where: str, stub: set[str], native: set[str]) -> list[str]:
         return [f"{where}: stub only {sorted(stub - native)}, extension only {sorted(native - stub)}"] if stub != native else []
 
+    def arguments(function: ast.FunctionDef) -> list[str]:
+        return [a.arg for a in (*function.args.posonlyargs, *function.args.args, *function.args.kwonlyargs)]
+
+    def argument_names(where: str, body: list[ast.stmt], owner: object) -> list[str]:
+        # Each stub definition matches one bound overload; a nanobind default prints as \N, which is not Python.
+        findings = []
+        for node in body:
+            if not isinstance(node, ast.FunctionDef) or node.name.startswith("_"):
+                continue
+            signatures = getattr(getattr(owner, node.name, None), "__nb_signature__", ())
+            native = [arguments(ast.parse(re.sub(r"\\\d+", "0", text) + ": ...").body[0]) for text, *_ in signatures]
+            if native and arguments(node) not in native:
+                findings.append(f"{where}{node.name}: stub arguments {arguments(node)}, extension {native}")
+        return findings
+
     tree = ast.parse((ROOT / "engine" / "src" / "epcsaft" / "_core.pyi").read_text())
     findings = mismatch("_core", declared(tree.body), {name for name in dir(_core) if not name.startswith("_")})
+    findings += argument_names("", tree.body, _core)
     for node in tree.body:
         if isinstance(node, ast.ClassDef) and hasattr(_core, node.name):
             native = getattr(_core, node.name)
@@ -522,6 +538,7 @@ def rule_stub_matches_extension() -> list[str]:
             instance_fields = {n.target.id for n in node.body if isinstance(n, ast.AnnAssign) and isinstance(n.target, ast.Name)} if issubclass(native, BaseException) else set()
             # Native translators attach exception fields to instances, not their classes.
             findings += mismatch(node.name, declared(node.body) - instance_fields, members)
+            findings += argument_names(f"{node.name}.", node.body, native)
     return findings
 
 

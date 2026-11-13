@@ -19,6 +19,7 @@ from .. import _core
 from .problem import (
     _Model,
     Amounts,
+    asl_record,
     IdealMoleFraction,
     reaction_activities,
     solid_activities,
@@ -56,6 +57,7 @@ inventory_bounds = _core.inventory_bounds
 InventoryBound = _core.InventoryBound
 
 EquilibriumResult = _core.EquilibriumResult
+TopologyEvent = _core.TopologyEvent
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
 SpinodalDeclaration = _core.SpinodalDeclaration
@@ -79,7 +81,6 @@ EOS_STANDARD_STATE_ID = _core.EOS_STANDARD_STATE_ID
 IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = _core.IDEAL_MOLE_FRACTION_STANDARD_STATE_ID
 IDEAL_MOLARITY_STANDARD_STATE_ID = _core.IDEAL_MOLARITY_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
-asl_record = _core.equilibrium_asl_record
 cooling_onset = _core.cooling_onset
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
@@ -150,6 +151,7 @@ __all__ = (
     "SolvedStateActionStatus",
     "SolvedStateObservable",
     "SolvedStateObservableKind",
+    "TopologyEvent",
     "tp_flash",
     "critical_point",
     "bubble_point",

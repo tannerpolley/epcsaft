@@ -77,7 +77,7 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy
     central = eq.solve_equilibrium(model, target)
     compiled = _core.compile_problem(model._model, target._native(model))
     F, S = central.phase_count, len(central.solid_amounts)
-    k, n, m = len(feed), len(central.mole_fractions) // F, len(model._model.active_parameter_values)
+    k, n, m = len(feed), len(central.mole_fractions) // F, len(model.active_parameter_values)
     e = np.eye(2 + k + m).tolist()
     d = [eq.SolvedStateActionDirection(c[0], c[1], (np.array(matrix) @ c[2:2 + k]).tolist() if matrix else c[2:2 + k] + [0.0] * (n - k),
                                        c[2 + k:]) for c in e]
@@ -103,7 +103,7 @@ def test_record_equals_direct_engine() -> None:
     """F1: at theta0 (G0) and with no active parameters (G0, G1) every row's value, gradient and Hessian equal the direct
     Engine bitwise, and each order returns the same value; at theta* (G0, G1) they match the edited packet to 1e-12."""
     model, inactive = mixture(), mixture(active=False)
-    assert model._model.active_parameter_values == list(THETA0)
+    assert model.active_parameter_values == list(THETA0)
     cases = [(record(model), [*TP0, *G0, *THETA0], native(model, G0), True)]
     cases += [(record(inactive), [*TP0, *G], native(inactive, G), True) for G in (G0, G1)]
     cases += [(record(model), [*TP0, *G, *THETA_STAR], native(mixture(THETA_STAR), G), False) for G in (G0, G1)]
@@ -523,7 +523,7 @@ def test_halite_record_equals_direct_engine() -> None:
     bitwise at theta0 and to 1e-12 relative at k_ij + 0.01, and each order returns the same value."""
     from tests.equilibrium import test_pure_solid as hs
     model, text = halite()
-    assert model._model.active_parameter_values == list(H_Q0[4:])
+    assert model.active_parameter_values == list(H_Q0[4:])
     sodium, solid = (fgh(text, H_Q0, row, 0, 3, 1)[0] for row in (1, 3))
     assert sodium / (H_Q0[2] * hs.MW) == pytest.approx(6.29890460910619, rel=1e-12, abs=0.0)
     assert solid == pytest.approx(3.7010953908938036, rel=1e-12, abs=0.0) and abs(solid + sodium - H_Q0[3]) <= 1e-13

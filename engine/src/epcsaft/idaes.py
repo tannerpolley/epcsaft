@@ -196,7 +196,7 @@ def property_configuration(
     """
     if not phases or len(set(phases)) != len(phases) or set(phases) - {"liquid", "vapor"}:
         raise ValueError("phases must select liquid, vapor, or both once")
-    charge = {model.component_ids[e.index[0]]: e.magnitude for e in model.parameters._document.entries if e.field == "charge_number"}
+    charge = dict(zip(model.component_ids, model.parameters._native.charge_number))
     charged = any(charge.values())
     if charged and phases != ("liquid",):
         raise ValueError("a charged record admits only phases=('liquid',); an ion-free vapor record is out of scope")

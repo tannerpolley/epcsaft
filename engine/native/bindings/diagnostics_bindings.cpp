@@ -27,11 +27,6 @@ struct CaptureWrapper final {
     CaptureWrapper(bool detail, std::string destination, int level) : diagnostics(detail), ipopt_log(std::move(destination)), ipopt_print_level(level) {}
 };
 
-nb::object tolerance_reference(const epcsaft::policy::Tolerance& tolerance) {
-    if (tolerance.upstream == nullptr) return nb::none();
-    return nb::cast(tolerance.upstream, nb::rv_policy::reference);
-}
-
 }  // namespace
 
 void register_diagnostics(nb::module_& module) {
@@ -46,7 +41,9 @@ void register_diagnostics(nb::module_& module) {
         EPCSAFT_VALUES(policy::Category, ThermodynamicConstraint, AlgorithmTolerance);
     nb::class_<policy::Tolerance>(module, "Tolerance")
         EPCSAFT_READONLY(policy::Tolerance, name, value, category, source, factor)
-        .def_prop_ro("upstream", tolerance_reference);
+        .def_prop_ro("upstream", [](const policy::Tolerance& tolerance) -> nb::object {
+            return tolerance.upstream ? nb::cast(tolerance.upstream, nb::rv_policy::reference) : nb::none();
+        });
     module.def("tolerances", [] {
         nb::list entries;
         for (const auto* entry : policy::ENTRIES) entries.append(nb::cast(entry, nb::rv_policy::reference));

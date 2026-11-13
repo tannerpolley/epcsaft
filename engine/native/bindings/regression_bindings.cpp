@@ -32,7 +32,7 @@ auto fit_entry(Function&& function) {
 // The point readers' request: fit's model inputs at a declared point, without optimizer controls.
 FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> coordinates, std::vector<HydrationHold> holds,
                          std::vector<Observation> observations, std::optional<ThermochemistryRecord> thermochemistry, const nb::object& solver_options) {
-    FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, 7).resolved({}); request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
+    FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, PROPERTY_SCOPE).resolved({}); request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
     request.coordinates.coordinates = std::move(coordinates); request.holds = std::move(holds); request.observations = std::move(observations);
     return request;
 }
@@ -105,7 +105,7 @@ m._serve_fit(channel)
         const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry, double molality) {
         core::Scope scope("formula_composition");
         return formula_composition(solvent, parameters, ions, stoichiometry, molality);
-    });
+    }, nb::arg("solvent_fractions"), nb::arg("parameters"), nb::arg("ion_indices"), nb::arg("stoichiometry"), nb::arg("molality"));
     nb::enum_<ObservationKind>(module, "ObservationKind")
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
@@ -154,7 +154,7 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, events, candidates, comparisons, causes, groups,
             accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
     nb::class_<Prediction>(module, "Prediction")
-        EPCSAFT_SOLVER_OPTIONS(Prediction, 7)
+        EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)
         EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
             requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
@@ -183,16 +183,16 @@ m._serve_fit(channel)
                          nb::object gradient_tolerance, nb::object parameter_tolerance, int workers, nb::object solver_options) {
             FitControls c{bindings::solver_options(solver_options), maximum_iterations, maximum_elapsed_time_seconds, workers};
             for (const auto& [i, value] : {std::pair{policy::function, function_tolerance}, {policy::gradient, gradient_tolerance}, {policy::parameter, parameter_tolerance}})
-                bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, value, 63, true);
+                bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, value, ALL_SCOPE, true);
             new (self) FitControls(std::move(c));
         }, nb::kw_only(), nb::arg("maximum_iterations"), nb::arg("maximum_elapsed_time_seconds"),
             nb::arg("function_tolerance").none() = 0.0, nb::arg("gradient_tolerance").none() = 0.0, nb::arg("parameter_tolerance").none() = 0.0,
             nb::arg("workers") = 0, nb::arg("solver_options") = nb::none())
-        EPCSAFT_SOLVER_OPTIONS(FitControls, 63)
+        EPCSAFT_SOLVER_OPTIONS(FitControls, ALL_SCOPE)
         EPCSAFT_READWRITE(FitControls, maximum_iterations, maximum_elapsed_time_seconds, workers);
     for (const auto& [name, i] : {std::pair{"function_tolerance", policy::function}, {"gradient_tolerance", policy::gradient}, {"parameter_tolerance", policy::parameter}})
         controls.def_prop_rw(name, [i](const FitControls& c) { return c.solver_options.value(i); }, [i](FitControls& c, nb::object v) {
-            bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, 63, true);
+            bindings::solver_option(c.solver_options, policy::SOLVER_POLICIES[i]->name, v, ALL_SCOPE, true);
         }, nb::for_setter(nb::arg("v").none()));
     nb::class_<TrialFailure>(module, "TrialFailure")
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure);
@@ -225,11 +225,12 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(StabilityTransition, observation, previous_optimizer, optimizer, previous_trial, trial,
             previous_classification, classification, kind);
     nb::class_<FitResult>(module, "FitResult")
-        EPCSAFT_SOLVER_OPTIONS(FitResult, 63)
+        EPCSAFT_SOLVER_OPTIONS(FitResult, ALL_SCOPE)
         EPCSAFT_READONLY(FitResult, stability_transitions, stability_predictions, data_cost, stability_cost, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure);
+            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure)
+        EPCSAFT_REPR(FitResult, "status", "usable", "final_cost", "iterations", "physical");
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
         validate(observation, model);
@@ -266,7 +267,7 @@ m._serve_fit(channel)
     }, nb::arg("parameters"), nb::arg("coordinates"), nb::arg("optimizer"), nb::arg("holds"), nb::arg("observations"),
        nb::arg("errors"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     nb::class_<ObservationEvaluation>(module, "ObservationEvaluation")
-        EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, 63)
+        EPCSAFT_SOLVER_OPTIONS(ObservationEvaluation, ALL_SCOPE)
         EPCSAFT_READONLY(ObservationEvaluation, data_cost, stability_cost, stability_predictions, saturation_predictions, predictions, gradient, optimizer_gradient, chart,
             residual_optimizer_gradient, statuses, reconciliation, state_densities, reference_values, first_numerical_failure, first_numerical_failure_observation);
     module.def("evaluate_observations", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
@@ -297,12 +298,12 @@ m._serve_fit(channel)
        nb::arg("checks"), nb::arg("baseline"), nb::arg("minimax"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     module.def("evaluate_coordinates", [](const Parameters& p, const CoordinateSet& c, const std::vector<double>& u,
         const std::vector<HydrationHold>& h, const std::optional<ThermochemistryRecord>& t, nb::object options) {
-        return evaluate_coordinates(p, c, u, h, t, bindings::solver_options(options, 7).resolved({}));
+        return evaluate_coordinates(p, c, u, h, t, bindings::solver_options(options, PROPERTY_SCOPE).resolved({}));
     }, nb::arg("parameters"), nb::arg("set"), nb::arg("optimizer"),
         nb::arg("holds"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     module.def("evaluate_checks", [](const Parameters& stored, std::vector<Observation> observations,
         std::vector<CheckGroup> checks, std::optional<Parameters> baseline, nb::object solver_options) {
-        FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, 7).resolved({}); request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
+        FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, PROPERTY_SCOPE).resolved({}); request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
         return evaluate_checks(request, stored);
     }, nb::arg("stored"), nb::arg("observations"), nb::arg("checks"), nb::arg("baseline") = std::nullopt, nb::arg("solver_options") = nb::none());
 }

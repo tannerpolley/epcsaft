@@ -45,7 +45,8 @@ class Reference:
         solvent-only references refuse access.
     convergence_error : float or None
         None: the analytic limit has no terminal sequence comparison.
-        Solvent density and association diagnostics describe its inner calculations.
+        Solvent density and association diagnostics describe its inner calculations;
+        solvent-only references refuse access.
     pure_solvent_log_fugacity : float or None
         Dimensionless natural-log pure-solvent fugacity coefficient at the
         stored T and P. None retains native unavailability, not zero.
@@ -74,106 +75,39 @@ class Reference:
 
     @property
     def ion_indices(self) -> tuple[int, int]:
-        """Read ``ion_indices`` from the stored reference.
-
-        Returns
-        -------
-        value : tuple of int
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-
-        Raises
-        ------
-        ParameterError
-            ``IonicReferenceUnavailable``: this reference is solvent-only.
-        """
+        """Read ``ion_indices``, documented in the ``Reference`` Attributes section."""
         self._require_ions()
         assert self._ion_indices is not None
         return self._ion_indices
 
     @property
     def stoichiometry(self) -> tuple[int, int]:
-        """Read ``stoichiometry`` from the stored reference.
-
-        Returns
-        -------
-        value : tuple of int
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-
-        Raises
-        ------
-        ParameterError
-            ``IonicReferenceUnavailable``: this reference is solvent-only.
-        """
+        """Read ``stoichiometry``, documented in the ``Reference`` Attributes section."""
         self._require_ions()
         assert self._stoichiometry is not None
         return self._stoichiometry
 
     @property
     def log_fugacity(self) -> tuple[float, float]:
-        """Read ``log_fugacity`` from the stored reference.
-
-        Returns
-        -------
-        value : tuple of float
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-
-        Raises
-        ------
-        ParameterError
-            ``IonicReferenceUnavailable``: this reference is solvent-only.
-        """
+        """Read ``log_fugacity``, documented in the ``Reference`` Attributes section."""
         self._require_ions()
         return self._native.log_fugacity
 
     @property
     def molality(self) -> float:
-        """Read ``molality`` from the stored reference.
-
-        Returns
-        -------
-        value : float
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-
-        Raises
-        ------
-        ParameterError
-            ``IonicReferenceUnavailable``: this reference is solvent-only.
-        """
+        """Read ``molality``, documented in the ``Reference`` Attributes section."""
         self._require_ions()
         return self._native.molality
 
     @property
     def convergence_error(self) -> float | None:
-        """Read ``convergence_error`` from the stored reference.
-
-        Returns
-        -------
-        value : float
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-
-        Raises
-        ------
-        ParameterError
-            ``IonicReferenceUnavailable``: this reference is solvent-only.
-        """
+        """Read ``convergence_error``, documented in the ``Reference`` Attributes section."""
         self._require_ions()
         return self._native.convergence_error
 
     @property
     def pure_solvent_log_fugacity(self) -> float | None:
-        """Read ``pure_solvent_log_fugacity`` from the stored reference.
-
-        Returns
-        -------
-        value : float or None
-            Field documented with its unit, basis and availability in the
-            ``Reference`` Attributes section.
-        """
+        """Read ``pure_solvent_log_fugacity``, documented in the ``Reference`` Attributes section."""
         return self._native.pure_solvent_log_fugacity
 
     def activity(self, molality: float) -> Activity:

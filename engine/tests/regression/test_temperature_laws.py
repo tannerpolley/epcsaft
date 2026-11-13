@@ -187,9 +187,9 @@ def test_fitted_document_mapping_round_trip() -> None:
 
 def test_document_mapping_refusal() -> None:
     parameters = Parameters.from_mapping(_document())
-    parameters._document = 'the start document cannot represent the fit: missing l_ij slot'
+    parameters._document, parameters._document_refusal = None, 'the start document cannot represent the fit: missing l_ij slot'
     with pytest.raises(ValueError, match='missing l_ij slot'):
         document_mapping(parameters)
-    parameters._document = None
+    parameters._document_refusal = None
     with pytest.raises(ValueError, match='no retained source document'):
         document_mapping(parameters)

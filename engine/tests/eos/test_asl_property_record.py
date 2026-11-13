@@ -360,7 +360,7 @@ def test_parameter_columns_equal_engine(phase: str) -> None:
     """F1: at the packet values every row and its (T, P, theta) gradient and Hessian equal the direct Engine bitwise;
     at theta* = (0.01, 151.03 K) they match a model built from the edited packet to 1e-12 relative."""
     model, columns = methane_ethane(), (0, 1, 4, 5)  # q = (T, P, w_methane, w_ethane, k_ij, eps/k)
-    text, theta0 = property_asl_record(model), model._model.active_parameter_values
+    text, theta0 = property_asl_record(model), model.active_parameter_values
     assert theta0 == [0.0, 150.03]
     for theta, direct in ((theta0, model), (list(THETA_STAR), methane_ethane(THETA_STAR))):
         values, gradient, hessian = native_columns(direct, phase)
@@ -382,7 +382,7 @@ def test_parameter_columns_match_central_differences(phase: str) -> None:
     every Hessian entry with a parameter (tau 1e-5) meet the charged-record criterion."""
     model = methane_ethane()
     text, eps = property_asl_record(model), float(np.finfo(float).eps)
-    q = np.array([*STATES[phase], 0.3, 0.7, *model._model.active_parameter_values])
+    q = np.array([*STATES[phase], 0.3, 0.7, *model.active_parameter_values])
     exact = [property_fgh(text, q, row, 2, phase) for row in range(4)]
     for b, h0 in ((4, 1e-5), (5, 1e-3)):
         for h in (4 * h0, h0, 0.25 * h0):
@@ -447,7 +447,7 @@ def test_halite_solid_row_values() -> None:
     saturated liquid (10 mol/kg feed)."""
     from tests.equilibrium import test_pure_solid as hs
     model, text, _, _ = halite()
-    theta = model._model.active_parameter_values
+    theta = model.active_parameter_values
     for (T, P), target in HALITE_STATES.items():
         result = solve_equilibrium(model, hs.problem(10.0, temperature=T, pressure=P))
         assert result.success, result.message
@@ -462,7 +462,7 @@ def test_halite_solid_row_values() -> None:
 @pytest.mark.parametrize("temperature", [287.0, 310.0])
 def test_halite_solid_row_outside_interval(temperature: float) -> None:
     model, text, _, _ = halite()
-    q = [temperature, 101325.0, 0.9, 0.05, 0.05, *model._model.active_parameter_values]
+    q = [temperature, 101325.0, 0.9, 0.05, 0.05, *model.active_parameter_values]
     with pytest.raises(RuntimeError, match=r"epcsaft_property:OutsideInterval:5: solid halite:"):
         property_fgh(text, q, 5, 0)
 
@@ -477,7 +477,7 @@ def test_halite_record_with_thermochemistry() -> None:
     start, end = text.index("1:1,17:standard_pressure,"), text.index("6:solids,")
     assert text[:start] + "1:0," + text[end:] == without
     for temperature, pressure in HALITE_STATES:
-        q = [temperature, pressure, 0.9, 0.05, 0.05, *model._model.active_parameter_values]
+        q = [temperature, pressure, 0.9, 0.05, 0.05, *model.active_parameter_values]
         assert property_fgh(text, q, 5, 0)[0] == property_fgh(without, q, 5, 0)[0]
 
 
@@ -486,7 +486,7 @@ def test_halite_solid_row_derivatives() -> None:
     differences at h x {4, 1, 0.25} (T 1e-3 K, P 10 Pa, theta 1e-5 max(1, |theta|)), charged-record criterion; weight
     columns are exactly zero."""
     model, text, _, _ = halite()
-    q = np.array([298.15, 101325.0, 0.9, 0.05, 0.05, *model._model.active_parameter_values])
+    q = np.array([298.15, 101325.0, 0.9, 0.05, 0.05, *model.active_parameter_values])
     _, gradient, hessian = property_fgh(text, q, 5, 2)
     # L' + C_T + 2/T from the Clarke and Glew law and the reference owner's C_T = 4.535300259138e-02 /K.
     assert gradient[0] == pytest.approx(0.057281431319578, rel=1e-12, abs=0.0)
@@ -555,7 +555,7 @@ def test_constant_arguments_keep_the_other_columns() -> None:
     from epcsaft.idaes import PropertyExternalFunction, asl_library
     callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
     gas, solid = property_asl_record(methane_ethane()), halite()
-    theta = solid[0]._model.active_parameter_values
+    theta = solid[0].active_parameter_values
     cases = [(gas, [*STATES["liquid"], 0.31, 0.69, 0.0, 150.03], range(4), (0, 1)),
              (gas, [*STATES["liquid"], 0.32, 0.68, 0.0, 150.03], range(4), (4, 5)),
              (solid[1], [298.15, 1.5e5, 0.9, 0.05, 0.05, *theta], [5], (0,))]

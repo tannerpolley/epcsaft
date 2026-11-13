@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from . import _core
 from .equilibrium.problem import _vector
-from .parameters import Parameters
+from .parameters import Parameters, _record_document
 from .reference import Reference
 
 if TYPE_CHECKING:
@@ -41,6 +41,7 @@ ThermochemistryRecord = _core.ThermochemistryRecord
 ThermochemistryStatus = _core.ThermochemistryStatus
 DensityBranch = _core.DensityBranch
 DensityDiagnostics = _core.DensityDiagnostics
+DerivativeOrder = _core.DerivativeOrder
 ParameterFamily = _core.ParameterFamily
 ActiveParameter = _core.ActiveParameter
 GAS_CONSTANT_J_PER_MOL_K = _core.GAS_CONSTANT_J_PER_MOL_K
@@ -55,7 +56,40 @@ PropertyActionBatch = _core.PropertyActionBatch
 ParameterError = _core.ParameterError
 EosError = _core.EosError
 DensityStructureError = _core.DensityStructureError
-property_asl_record = _core.property_asl_record
+
+
+def property_asl_record(model: Mixture, require_phase_identity: bool | None = None, solids: Sequence[_core.SolidSpec] | None = None,
+                        neutral_reference: _core.NeutralReferenceDeclaration | None = None) -> str:
+    """Serialize a declared model for native ASL property callbacks.
+
+    Parameters
+    ----------
+    model : Mixture
+        Model whose parameters retain their source document; its thermochemistry and
+        solver options are serialized with it.
+    require_phase_identity : bool, default False
+        Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
+    solids : Sequence[SolidSpec], optional
+        Pure solids, each with a ln K(T) correlation (a scalar K is refused); each adds one solid row.
+    neutral_reference : NeutralReferenceDeclaration or None
+        Source-basis neutral reference, required when solids are given.
+
+    Returns
+    -------
+    str
+        Native record string containing the parameter, thermochemistry and solid declarations.
+
+    Raises
+    ------
+    ValueError
+        The parameters retain no document, or carry the stored cause a fit could not be written into it.
+
+    Notes
+    -----
+    Serialization supplies no state prediction. The native ASL adapter owns subsequent values and exact derivatives.
+    """
+    return _core.property_asl_record(_record_document(model.parameters), model._model, bool(require_phase_identity), solids or (),
+                                     neutral_reference)
 
 
 
@@ -465,9 +499,8 @@ class Mixture:
         directions : sequence of DensityActionDirection
             One to three physical directions: temperature in K, rho in mol/m³,
             composition dimensionless and parameters in native family units.
-            Each composition increment must have one entry per component; an
-            empty increment is refused. Supply an explicit zero vector when
-            composition is fixed.
+            Each composition increment must have one entry per component; a
+            mixture refuses an empty increment and one component reads it as zero.
 
         Returns
         -------
@@ -492,6 +525,8 @@ class Mixture:
         use the supplied directions together, rather than separate first actions
         (ALG-ACTIONS).
         """
+        if len(self.component_ids) == 1:
+            directions = [DensityActionDirection(d.temperature, d.molar_density, d.composition or (0.0,), d.parameter) for d in directions]
         return self._model.density_actions(T, rho, self._composition(x), observables, directions)
 
     def pressure_actions(
@@ -520,9 +555,8 @@ class Mixture:
         directions : sequence of PressureActionDirection
             One to three physical directions: temperature in K, P in Pa,
             composition dimensionless and parameters in native family units.
-            Each composition increment must have one entry per component; an
-            empty increment is refused. Supply an explicit zero vector when
-            composition is fixed.
+            Each composition increment must have one entry per component; a
+            mixture refuses an empty increment and one component reads it as zero.
         phase : {'liquid', 'vapor'}
             Branch retained by the pressure-closed derivative calculation.
         anchor : State, optional
@@ -551,6 +585,8 @@ class Mixture:
         use the supplied directions together, rather than separate first actions
         (ALG-ACTIONS).
         """
+        if len(self.component_ids) == 1:
+            directions = [PressureActionDirection(d.temperature, d.pressure, d.composition or (0.0,), d.parameter) for d in directions]
         return self._model.pressure_actions(
             T, P, self._composition(x), _branch(phase), observables, directions,
             anchor.molar_density if anchor else None,
@@ -597,7 +633,7 @@ class Mixture:
         self, T: float, P: float, *, x: Sequence[float] | None = None, nodes: Sequence[float] | None = None,
         density_tolerance: float | None = None, log_tolerance: float | None = None,
         max_evaluations: int | None = None, max_seconds: float | None = None, adaptive: bool | None = None,
-        finite_upper: float | None = None, evaluation_order: _core.DerivativeOrder | None = None,
+        finite_upper: float | None = None, evaluation_order: DerivativeOrder | None = None,
         finite_anchor: float | None = None,
     ) -> DensityDiagnostics:
         """Inspect pressure roots and mechanical turning points on a declared grid.
@@ -656,7 +692,7 @@ class Mixture:
         if nodes is None:
             span = math.log(0.999 * self.molar_density_upper_bound(T, x=x) / 1e-3)
             nodes = [math.exp(math.log(1e-3) + k / 512 * span) for k in range(513)]
-        order = _core.DerivativeOrder.PressureSlope if evaluation_order is None else evaluation_order
+        order = DerivativeOrder.PressureSlope if evaluation_order is None else evaluation_order
         return self._model.density_diagnostics(
             T, P, self._composition(x), nodes, 1e-9 if density_tolerance is None else density_tolerance,
             1e-14 if log_tolerance is None else log_tolerance, 100000 if max_evaluations is None else max_evaluations,
@@ -692,6 +728,11 @@ class Mixture:
         if len(self.component_ids) != 1:
             raise ParameterError("a mixture requires its composition x")
         return (1.0,)
+
+    @property
+    def active_parameter_values(self) -> list[float]:
+        """Active parameter values in active order, each in its family's native unit."""
+        return self._model.active_parameter_values
 
     def counters(self) -> _core.SweepCounters:
         """Read native work counts accumulated by this model.
@@ -735,138 +776,10 @@ class Pure(Mixture):
         active_parameters: Sequence[ActiveParameter] | None = None,
         solver_options: Mapping[str, float] | None = None,
     ) -> None:
-        """Construct the one-component native Helmholtz model.
-
-        Parameters
-        ----------
-        parameters : epcsaft.parameters.Parameters
-            Exactly one component, with source-declared physical parameter units.
-        thermochemistry : ThermochemistryRecord, optional
-            One component's ideal-gas molar thermochemistry; interval bounds in K
-            and standard pressure in Pa. Required for total caloric properties.
-        active_parameters : sequence of ActiveParameter, optional
-            Exact derivative coordinates in native parameter-family units.
-        solver_options : mapping of str to float, optional
-            Native tolerances and work limits, as for ``Mixture``.
-
-        Raises
-        ------
-        ParameterError
-            Component count differs from one, or native model admission fails.
-        """
+        """Construct the one-component native Helmholtz model; inputs as for ``Mixture``."""
         if len(parameters.component_ids) != 1:
             raise ParameterError("Pure requires exactly one component")
         super().__init__(parameters, thermochemistry=thermochemistry, active_parameters=active_parameters, solver_options=solver_options)
-
-    def density_actions(
-        self,
-        T: float,
-        rho: float,
-        *,
-        x: Sequence[float] | None = None,
-        observables: Sequence[PropertyObservable],
-        directions: Sequence[DensityActionDirection],
-    ) -> PropertyActionBatch:
-        """Evaluate exact first through third directional property actions.
-
-        Parameters
-        ----------
-        T : float
-            Temperature in K.
-        rho : float
-            Molar density in mol/m³.
-        x : sequence of float, optional
-            Dimensionless mole fractions in component order; defaults to (1,).
-        observables : sequence of PropertyObservable
-            Requested native properties in output order.
-        directions : sequence of DensityActionDirection
-            Physical increments: temperature in K, rho in mol/m³,
-            composition dimensionless and parameters in their native family units.
-
-        Returns
-        -------
-        batch : PropertyActionBatch
-            Values and directional contractions in each observable's unit:
-            molar energy in J/mol and entropy/heat capacity in J/(mol K).
-            LogFugacityCoefficient requires pressure_actions. Unavailable entries
-            retain their native causes.
-
-        Raises
-        ------
-        ParameterError
-            Inputs, branch, composition or direction dimensions are inadmissible.
-        EosError
-            The native state evaluation fails.
-
-        Notes
-        -----
-        Composition directions must preserve normalization and charge balance.
-        Directions are physical increments, not dimensionless coordinate labels;
-        contracted derivatives retain the observable unit. Higher mixed actions
-        use the supplied directions together, rather than separate first actions
-        (ALG-ACTIONS). An omitted composition increment is replaced by zero.
-        """
-        native = tuple(DensityActionDirection(item.temperature, item.molar_density, item.composition or (0.0,), item.parameter)
-                       for item in directions)
-        return super().density_actions(T, rho, x=x, observables=observables, directions=native)
-
-    def pressure_actions(
-        self,
-        T: float,
-        P: float,
-        *,
-        x: Sequence[float] | None = None,
-        phase: str,
-        observables: Sequence[PropertyObservable],
-        directions: Sequence[PressureActionDirection],
-        anchor: State | None = None,
-    ) -> PropertyActionBatch:
-        """Evaluate exact first through third directional property actions.
-
-        Parameters
-        ----------
-        T : float
-            Temperature in K.
-        P : float
-            Pressure in Pa.
-        x : sequence of float, optional
-            Dimensionless mole fractions in component order; defaults to (1,).
-        observables : sequence of PropertyObservable
-            Requested native properties in output order.
-        directions : sequence of PressureActionDirection
-            Physical increments: temperature in K, P in Pa,
-            composition dimensionless and parameters in their native family units.
-        phase : {'liquid', 'vapor'}
-            Branch retained by the pressure-closed derivative calculation.
-        anchor : State, optional
-            Density anchor in mol/m³ for that branch.
-
-        Returns
-        -------
-        batch : PropertyActionBatch
-            Values and directional contractions in each observable's unit:
-            molar energy in J/mol, entropy/heat capacity in J/(mol K), and
-            dimensionless natural ln(phi), with one fugacity result per component
-            in component order. Unavailable entries retain their native causes.
-
-        Raises
-        ------
-        ParameterError
-            Inputs, branch, composition or direction dimensions are inadmissible.
-        EosError
-            The native state evaluation fails.
-
-        Notes
-        -----
-        Composition directions must preserve normalization and charge balance.
-        Directions are physical increments, not dimensionless coordinate labels;
-        contracted derivatives retain the observable unit. Higher mixed actions
-        use the supplied directions together, rather than separate first actions
-        (ALG-ACTIONS). An omitted composition increment is replaced by zero.
-        """
-        native = tuple(PressureActionDirection(item.temperature, item.pressure, item.composition or (0.0,), item.parameter)
-                       for item in directions)
-        return super().pressure_actions(T, P, x=x, phase=phase, observables=observables, directions=native, anchor=anchor)
 
     def saturation(self, T: float) -> Problem:
         """Declare isothermal liquid-vapor saturation without solving it.

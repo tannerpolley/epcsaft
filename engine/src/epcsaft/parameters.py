@@ -35,28 +35,6 @@ def _array(value: object, name: str) -> Sequence[object]:
     return value
 
 
-def _value(value: object, name: str) -> tuple[float, str]:
-    item = _mapping(value, name)
-    magnitude = item.get("magnitude")
-    unit = item.get("unit")
-    if not isinstance(unit, str) or magnitude is None:
-        raise _core.ParameterError(f"{name} must contain magnitude and unit")
-    return cast(float, magnitude), unit
-
-
-def _entry(identity: object, field: str, index: Sequence[int], value: object, name: str) -> _core.ParameterEntry:
-    if not isinstance(identity, str):
-        raise _core.ParameterError(f"{name} has no parameter identity")
-    magnitude, unit = _value(value, f"{name}.value")
-    result = _core.ParameterEntry()
-    result.identity = identity
-    result.field = field
-    result.index = list(index)
-    result.magnitude = magnitude
-    result.unit = unit
-    return result
-
-
 class _Entries(list[_core.ParameterEntry]):
     """Keep each parsed scalar beside its source value for inverse mapping."""
 
@@ -70,7 +48,15 @@ class _Entries(list[_core.ParameterEntry]):
             slot = next(i for i, entry in enumerate(self) if entry.identity == repeat_of and entry.field == field)
             self.values[slot].append(value)
         else:
-            self.append(_entry(identity, field, index, value, name))
+            if not isinstance(identity, str):
+                raise _core.ParameterError(f"{name} has no parameter identity")
+            item = _mapping(value, f"{name}.value")
+            magnitude, unit = item.get("magnitude"), item.get("unit")
+            if not isinstance(unit, str) or magnitude is None:
+                raise _core.ParameterError(f"{name}.value must contain magnitude and unit")
+            entry = _core.ParameterEntry()
+            entry.identity, entry.field, entry.index, entry.magnitude, entry.unit = identity, field, list(index), cast(float, magnitude), unit
+            self.append(entry)
             self.values.append([value])
 
 
@@ -272,7 +258,7 @@ class Parameters:
     existing native record; it does not read a source document.
     """
 
-    __slots__ = ("component_ids", "site_ids", "_native", "_document", "_source")
+    __slots__ = ("component_ids", "site_ids", "_native", "_document", "_document_refusal", "_source")
 
     component_ids: tuple[str, ...]
     site_ids: tuple[tuple[str, str], ...]
@@ -301,7 +287,8 @@ class Parameters:
         It retains no source document for later property/ASL serialization.
         """
         self._native = native
-        self._document: _core.ParameterDocument | str | None = None
+        self._document: _core.ParameterDocument | None = None
+        self._document_refusal: str | None = None  # why a fit has no document
         self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
         self.component_ids = component_ids
         self.site_ids = site_ids
@@ -795,10 +782,8 @@ def document_mapping(parameters: Parameters) -> Mapping[str, object]:
     ValueError
         The document has a stored refusal cause, or no source mapping exists.
     """
-    if isinstance(parameters._document, str):
-        raise ValueError(parameters._document)
     if parameters._document is None or parameters._source is None:
-        raise ValueError("parameters have no retained source document")
+        raise ValueError(parameters._document_refusal or "parameters have no retained source document")
     document, values, scalars = deepcopy(parameters._source)
     for entry, declarations in zip(parameters._document.entries, values, strict=True):
         if float(declarations[0]["magnitude"]).hex() == entry.magnitude.hex():
@@ -810,3 +795,10 @@ def document_mapping(parameters: Parameters) -> Mapping[str, object]:
     for index, record, key in scalars:
         record[key] = values[index][0]["magnitude"]
     return document
+
+
+def _record_document(parameters: Parameters) -> _core.ParameterDocument:
+    """Return the retained document an ASL record serializes, or raise why there is none."""
+    if parameters._document is None:
+        raise ValueError(f"ASL record: {parameters._document_refusal or 'parameters built without a parameter document'}")
+    return parameters._document

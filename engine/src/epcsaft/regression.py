@@ -878,13 +878,12 @@ def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
     """
     fitted = Parameters(result.parameters, start.component_ids, start.site_ids)
     fitted._source = start._source
-    if isinstance(start._document, _core.ParameterDocument):
+    fitted._document_refusal = start._document_refusal
+    if start._document is not None:
         try:
             fitted._document = _core.fitted_document(start._document, result.parameters)
         except ValueError as refusal:  # the fit stays usable; the ASL record builders raise this cause
-            fitted._document = f"the start document cannot represent the fit: {refusal}"
-    elif isinstance(start._document, str):
-        fitted._document = start._document
+            fitted._document_refusal = f"the start document cannot represent the fit: {refusal}"
     return fitted
 
 

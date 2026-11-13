@@ -12,6 +12,7 @@ Re-exported names
 * ``epcsaft.DensityActionDirection`` → :py:obj:`epcsaft._core.DensityActionDirection`
 * ``epcsaft.DensityBranch`` → :py:obj:`epcsaft._core.DensityBranch`
 * ``epcsaft.DensityDiagnostics`` → :py:obj:`epcsaft._core.DensityDiagnostics`
+* ``epcsaft.DerivativeOrder`` → :py:obj:`epcsaft._core.DerivativeOrder`
 * ``epcsaft.EosError`` → :py:obj:`epcsaft._core.EosError`
 * ``epcsaft.DensityStructureError`` → :py:obj:`epcsaft._core.DensityStructureError`
 * ``epcsaft.GAS_CONSTANT_J_PER_MOL_K`` → :py:obj:`epcsaft._core.GAS_CONSTANT_J_PER_MOL_K`

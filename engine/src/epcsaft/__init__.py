@@ -31,6 +31,7 @@ from .eos import (  # noqa: E402
     DensityDiagnostics,
     EosError,
     DensityStructureError,
+    DerivativeOrder,
     GAS_CONSTANT_J_PER_MOL_K,
     IdealCorrelation,
     IdealDIPPR107,
@@ -101,24 +102,6 @@ def trace(diagnostics: bool | None = None, ipopt_log: str | None = None, ipopt_p
     return _core.Capture(bool(diagnostics), ipopt_log or "", ipopt_print_level)
 
 
-def _repr(record: type, *fields: str) -> None:
-    record.__repr__ = lambda self: f"{record.__name__}({', '.join(f'{n}={getattr(self, n)!r}' for n in fields)})"  # type: ignore
-
-
-def _phase_mole_fractions(self: _core.EquilibriumResult, phase: int) -> list[float]:
-    index = range(self.phase_count)[phase]  # IndexError outside the declared phases
-    n = len(self.mole_fractions) // self.phase_count
-    return self.mole_fractions[index * n : (index + 1) * n]
-
-
-_repr(_core.State, "pressure", "molar_density", "compressibility_factor", "density_branch", "residual_helmholtz")
-_repr(_core.EquilibriumResult, "success", "temperature", "pressure", "amounts", "mole_fractions")
-_repr(_core.ContinuationResult, "success", "stop", "reached_path", "accepted_steps", "message")
-_repr(_core.FitResult, "status", "usable", "final_cost", "iterations", "physical")
-_repr(_core.ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion")
-setattr(_core.EquilibriumResult, "phase_mole_fractions", _phase_mole_fractions)
-
-
 def provenance() -> tuple[Path, str] | tuple[str, bool]:
     """Identify the installed Engine and the source used by its editable build.
 
@@ -171,6 +154,7 @@ __all__ = (
     "DensityDiagnostics",
     "EosError",
     "DensityStructureError",
+    "DerivativeOrder",
     "GAS_CONSTANT_J_PER_MOL_K",
     "IdealCorrelation",
     "IdealDIPPR107",

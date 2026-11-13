@@ -3,16 +3,22 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 
+namespace epcsaft {
+// Owner scopes over policy::SolverOption: bit i admits option i.
+inline constexpr unsigned PROPERTY_SCOPE = 1u << policy::association | 1u << policy::density | 1u << policy::row;
+inline constexpr unsigned ROW_SCOPE = 1u << policy::row;
+inline constexpr unsigned ALL_SCOPE = (1u << (policy::parameter + 1)) - 1;
+}
 namespace epcsaft::bindings {
 inline void solver_option(policy::SolverOptions& options, const std::string& name,
-    nanobind::handle declared, unsigned scope = 63, bool zero_unset = false) {
+    nanobind::handle declared, unsigned scope = ALL_SCOPE, bool zero_unset = false) {
     if (nanobind::isinstance<nanobind::bool_>(declared)
         || !(nanobind::isinstance<nanobind::float_>(declared) || nanobind::isinstance<nanobind::int_>(declared)))
         throw std::invalid_argument(name + " requires a number");
     const double value = nanobind::cast<double>(declared);
     if (!zero_unset || value != 0.0) options.set(name, value, scope);
 }
-inline policy::SolverOptions solver_options(const nanobind::object& mapping, unsigned scope = 63) {
+inline policy::SolverOptions solver_options(const nanobind::object& mapping, unsigned scope = ALL_SCOPE) {
     policy::SolverOptions options;
     if (!mapping.is_none()) {
         const auto entries = nanobind::cast<nanobind::dict>(nanobind::module_::import_("builtins").attr("dict")(mapping));
@@ -21,7 +27,7 @@ inline policy::SolverOptions solver_options(const nanobind::object& mapping, uns
     }
     return options;
 }
-inline nanobind::list solver_options_view(const policy::SolverOptions& options, unsigned scope = 63) {
+inline nanobind::list solver_options_view(const policy::SolverOptions& options, unsigned scope = ALL_SCOPE) {
     nanobind::list records;
     for (std::size_t i = 0; i < options.values.size(); ++i) if (scope & (1u << i)) {
         nanobind::dict record;

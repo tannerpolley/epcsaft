@@ -91,6 +91,8 @@ epcsaft.equilibrium.problem
 
 .. autoapifunction:: epcsaft.equilibrium.problem.continue_equilibrium
 
+.. autoapifunction:: epcsaft.equilibrium.problem.asl_record
+
 .. autoapifunction:: epcsaft.equilibrium.problem.bubble_point
 
 .. autoapifunction:: epcsaft.equilibrium.problem.dew_point
@@ -132,6 +134,7 @@ Re-exported names
 * ``epcsaft.equilibrium.inventory_bounds`` → :py:obj:`epcsaft._core.inventory_bounds`
 * ``epcsaft.equilibrium.InventoryBound`` → :py:obj:`epcsaft._core.InventoryBound`
 * ``epcsaft.equilibrium.EquilibriumResult`` → :py:obj:`epcsaft._core.EquilibriumResult`
+* ``epcsaft.equilibrium.TopologyEvent`` → :py:obj:`epcsaft._core.TopologyEvent`
 * ``epcsaft.equilibrium.ContinuationResult`` → :py:obj:`epcsaft._core.ContinuationResult`
 * ``epcsaft.equilibrium.ContinuationStop`` → :py:obj:`epcsaft._core.ContinuationStop`
 * ``epcsaft.equilibrium.CriticalDeclaration`` → :py:obj:`epcsaft._core.CriticalDeclaration`
@@ -152,7 +155,7 @@ Re-exported names
 * ``epcsaft.equilibrium.SolvedStateObservableKind`` → :py:obj:`epcsaft._core.SolvedStateObservableKind`
 * ``epcsaft.equilibrium.EOS_STANDARD_STATE_ID`` → :py:obj:`epcsaft._core.EOS_STANDARD_STATE_ID`
 * ``epcsaft.equilibrium.solved_state_first_actions`` → :py:obj:`epcsaft._core.solved_state_first_actions`
-* ``epcsaft.equilibrium.asl_record`` → :py:obj:`epcsaft._core.equilibrium_asl_record`
+* ``epcsaft.equilibrium.asl_record`` → :py:obj:`epcsaft.equilibrium.problem.asl_record`
 * ``epcsaft.equilibrium.cooling_onset`` → :py:obj:`epcsaft._core.cooling_onset`
 * ``epcsaft.equilibrium.stability_test`` → :py:obj:`epcsaft._core.stability_test`
 * ``epcsaft.equilibrium.StabilityOptions`` → :py:obj:`epcsaft._core.StabilityOptions`

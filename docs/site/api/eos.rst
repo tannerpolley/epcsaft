@@ -21,6 +21,8 @@ epcsaft.eos
    :show-inheritance:
    :special-members: __init__, __enter__, __exit__
 
+.. autoapifunction:: epcsaft.eos.property_asl_record
+
 Re-exported names
 -----------------
 
@@ -38,6 +40,7 @@ Re-exported names
 * ``epcsaft.eos.ThermochemistryStatus`` → :py:obj:`epcsaft._core.ThermochemistryStatus`
 * ``epcsaft.eos.DensityBranch`` → :py:obj:`epcsaft._core.DensityBranch`
 * ``epcsaft.eos.DensityDiagnostics`` → :py:obj:`epcsaft._core.DensityDiagnostics`
+* ``epcsaft.eos.DerivativeOrder`` → :py:obj:`epcsaft._core.DerivativeOrder`
 * ``epcsaft.eos.ParameterFamily`` → :py:obj:`epcsaft._core.ParameterFamily`
 * ``epcsaft.eos.ActiveParameter`` → :py:obj:`epcsaft._core.ActiveParameter`
 * ``epcsaft.eos.GAS_CONSTANT_J_PER_MOL_K`` → :py:obj:`epcsaft._core.GAS_CONSTANT_J_PER_MOL_K`
@@ -52,4 +55,3 @@ Re-exported names
 * ``epcsaft.eos.ParameterError`` → :py:obj:`epcsaft._core.ParameterError`
 * ``epcsaft.eos.EosError`` → :py:obj:`epcsaft._core.EosError`
 * ``epcsaft.eos.DensityStructureError`` → :py:obj:`epcsaft._core.DensityStructureError`
-* ``epcsaft.eos.property_asl_record`` → :py:obj:`epcsaft._core.property_asl_record`

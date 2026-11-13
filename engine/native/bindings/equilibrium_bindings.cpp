@@ -45,14 +45,6 @@ bool IpoptIterations::exit(const nb::args&) {
     return false;
 }
 
-// A fit the start document cannot represent carries the refusal message in place of the document.
-static ParameterDocument record_document(const nb::object& model) {
-    const nb::object document = model.attr("parameters").attr("_document");
-    if (document.is_none()) throw std::invalid_argument("ASL record: parameters built without a parameter document");
-    if (nb::isinstance<nb::str>(document)) throw std::invalid_argument("ASL record: " + nb::cast<std::string>(document));
-    return nb::cast<ParameterDocument>(document);
-}
-
 void register_equilibrium(nb::module_& module) {
     nb::class_<core::ConditioningObservation>(module, "ConditioningObservation")
         EPCSAFT_READONLY(core::ConditioningObservation, operation, basis, norm, method, cause, point_kind, criterion,
@@ -89,27 +81,24 @@ void register_equilibrium(nb::module_& module) {
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
     module.def("equilibrium_numerical_estimates", nb::overload_cast<const IdealMoleFraction&, const EquilibriumResult&>(
         &equilibrium_numerical_estimates), nb::arg("model"), nb::arg("result"));
-    module.def("property_asl_record", [](nb::object model, bool require_phase_identity, const std::vector<SolidSpec>& solids,
-            const std::optional<NeutralReferenceDeclaration>& neutral_reference) {
-        const auto document = record_document(model);
-        const nb::object native_owner = model.attr("_model");
-        const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        return asl_property_record(document, native.active_parameters(), native.thermochemistry(), native.solver_options(),
+    module.def("property_asl_record", [](const ParameterDocument& document, const HelmholtzModel& model, bool require_phase_identity,
+            const std::vector<SolidSpec>& solids, const std::optional<NeutralReferenceDeclaration>& neutral_reference) {
+        return asl_property_record(document, model.active_parameters(), model.thermochemistry(), model.solver_options(),
             require_phase_identity, solids, neutral_reference);
-    }, nb::arg("model"), nb::arg("require_phase_identity") = false, nb::arg("solids") = std::vector<SolidSpec>{},
-       nb::arg("neutral_reference").none() = nb::none());
+    }, nb::arg("document"), nb::arg("model"), nb::arg("require_phase_identity"), nb::arg("solids"),
+       nb::arg("neutral_reference").none());
     module.attr("IDEAL_MOLE_FRACTION_STANDARD_STATE_ID") = IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
     module.attr("IDEAL_MOLARITY_STANDARD_STATE_ID") = IDEAL_MOLARITY_STANDARD_STATE_ID;
     nb::class_<IdealMoleFraction>(module, "IdealMoleFraction")
         .def("__init__", [](IdealMoleFraction* self, std::vector<std::string> ids, std::vector<int> charges, nb::object options,
             std::optional<std::string> basis, std::optional<double> volume, std::optional<std::string> solvent) {
-            new (self) IdealMoleFraction(std::move(ids), std::move(charges), bindings::solver_options(options, 4),
+            new (self) IdealMoleFraction(std::move(ids), std::move(charges), bindings::solver_options(options, ROW_SCOPE),
                 std::move(basis), volume, std::move(solvent));
         }, nb::arg("component_ids"), nb::arg("charge_number"), nb::arg("solver_options").none() = nb::none(),
            nb::arg("activity_basis").none() = nb::none(), nb::arg("solution_volume_m3").none() = nb::none(),
            nb::arg("unit_activity_solvent").none() = nb::none())
         EPCSAFT_READONLY(IdealMoleFraction, component_ids, charge_number, activity_basis, solution_volume_m3, unit_activity_solvent)
-        EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, 4);
+        EPCSAFT_SOLVER_OPTIONS(IdealMoleFraction, ROW_SCOPE);
     nb::class_<SpeciesActivities>(module, "SpeciesActivities")
         EPCSAFT_READONLY(SpeciesActivities, log_activities, activities, causes, solvent_index, standard_molality_mol_per_kg);
     nb::class_<ReactionActivities>(module, "ReactionActivities")
@@ -129,11 +118,11 @@ void register_equilibrium(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(AmountSpec, kind, fraction)
         .def_static("free", &AmountSpec::free)
-        .def_static("pinned", &AmountSpec::pinned);
+        .def_static("pinned", &AmountSpec::pinned, nb::arg("value"));
     nb::class_<FreeValue>(module, "FreeValue")
         .def(nb::init<>())
         EPCSAFT_READWRITE(FreeValue, free, value)
-        .def_static("fixed", &FreeValue::fixed)
+        .def_static("fixed", &FreeValue::fixed, nb::arg("value"))
         .def_static("variable", [](std::optional<double> guess) {
             return guess.has_value() ? FreeValue::variable(*guess) : FreeValue::variable();
         }, nb::arg("guess") = nb::none());
@@ -155,7 +144,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(NeutralReferenceStatus, Available, InvalidDeclaration, NonNeutralDeclaration,
             UnsupportedSourceBasis, FreeTemperature, FreePressure, DensityUnavailable, BranchChange, Nonfinite);
     nb::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
-        EPCSAFT_SOLVER_OPTIONS(NeutralReferenceReactionDiagnostic, 7)
+        EPCSAFT_SOLVER_OPTIONS(NeutralReferenceReactionDiagnostic, PROPERTY_SCOPE)
         EPCSAFT_READONLY(NeutralReferenceReactionDiagnostic, reaction_index, terminal_contraction,
             observed_terminal_change, diagnostics, density_convergence, terminal_contraction_pressure_derivative,
             terminal_contraction_pressure_second_derivative, reference_pressure_pa, status, message);
@@ -190,10 +179,10 @@ void register_equilibrium(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(EnvelopeCondition, kind, component, target);
     nb::class_<EquilibriumProblem>(module, "EquilibriumProblem")
-        .def_prop_rw("solver_options", [](const EquilibriumProblem& v) { return bindings::solver_options_view(v.solver_options, 4); },
-            [](EquilibriumProblem& v, nb::object mapping) { v.solver_options = bindings::solver_options(mapping, 4); }, nb::for_setter(nb::arg("mapping").none()))
+        .def_prop_rw("solver_options", [](const EquilibriumProblem& v) { return bindings::solver_options_view(v.solver_options, ROW_SCOPE); },
+            [](EquilibriumProblem& v, nb::object mapping) { v.solver_options = bindings::solver_options(mapping, ROW_SCOPE); }, nb::for_setter(nb::arg("mapping").none()))
         .def_prop_rw("row_tolerance", [](const EquilibriumProblem& v) { return v.solver_options.value(policy::row); },
-            [](EquilibriumProblem& v, nb::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, 4); }, nb::for_setter(nb::arg("value").none()))
+            [](EquilibriumProblem& v, nb::object value) { bindings::solver_option(v.solver_options, policy::EQUILIBRIUM_ROW_RESIDUAL.name, value, ROW_SCOPE); }, nb::for_setter(nb::arg("value").none()))
         .def(nb::init<>())
         EPCSAFT_READWRITE(EquilibriumProblem, temperature, pressure, feed) EPCSAFT_COPIED(EquilibriumProblem, phases, reactions, solids)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
@@ -240,12 +229,12 @@ void register_equilibrium(nb::module_& module) {
         }, nb::arg("coordinates"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("amounts"),
            nb::arg("composition"), nb::arg("densities"), nb::arg("packing"))
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
-            return system.evaluate(point); })
+            return system.evaluate(point); }, nb::arg("point"))
         .def("jacobian", [](const CompiledSystem& system, const std::vector<double>& point) {
-            return system.jacobian(point); })
-        .def("lever_jacobian", &CompiledSystem::lever_jacobian)
+            return system.jacobian(point); }, nb::arg("point"))
+        .def("lever_jacobian", &CompiledSystem::lever_jacobian, nb::arg("point"))
         .def("objective_gradient", [](const CompiledSystem& system, const std::vector<double>& point) {
-            return system.objective_gradient(point); })
+            return system.objective_gradient(point); }, nb::arg("point"))
         .def("hessian", [](const CompiledSystem& system, const std::vector<double>& point,
                            const std::vector<double>& multipliers) {
             return system.hessian(point, multipliers); },
@@ -273,7 +262,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
         .def_prop_ro("recovery_stability", [](const EquilibriumResult& r) { return r.recovery_stability ? nb::cast(*r.recovery_stability) : nb::none(); })
         .def_prop_ro("vanished_phase_stability", [](const EquilibriumResult& r) { return r.vanished_phase_stability ? nb::cast(*r.vanished_phase_stability) : nb::none(); })
-        .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, 7) : nb::list(); })
+        .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, PROPERTY_SCOPE) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         EPCSAFT_READONLY(EquilibriumResult, terminal_numerical_failure, last_full_evaluation, phase_pressures, discovery, success, message, solver_status, temperature, pressure, amounts,
@@ -286,7 +275,15 @@ void register_equilibrium(nb::module_& module) {
             hessian_calls, objective, reduced_hessian_minimum, convergence, last_rank, linear_solve_diagnostics, numerical_estimates, rows, unknown_count, jacobian_rank,
             generic_nullity, requested_tolerance_met, topology_event, topology_phase, topology_pair, critical, spinodal,
             // Per declared solid: amount in mol and saturation index SI_s in decades.
-            solid_amounts, solid_affinity_decades);
+            solid_amounts, solid_affinity_decades)
+        EPCSAFT_REPR(EquilibriumResult, "success", "temperature", "pressure", "amounts", "mole_fractions")
+        .def("phase_mole_fractions", [](const EquilibriumResult& r, std::ptrdiff_t phase) {  // Python sequence indexing
+            const auto count = static_cast<std::ptrdiff_t>(r.phase_count);
+            if (phase < -count || phase >= count) throw nb::index_error("phase outside the declared phases");
+            const auto n = static_cast<std::ptrdiff_t>(r.mole_fractions.size()) / count;
+            const auto first = (phase < 0 ? phase + count : phase) * n;
+            return std::vector<double>(r.mole_fractions.begin() + first, r.mole_fractions.begin() + first + n);
+        }, nb::arg("phase"));
     nb::class_<HelmholtzModeRecord>(module, "HelmholtzModeRecord")
         EPCSAFT_READONLY(HelmholtzModeRecord, eigenvalues, mode, zero_band, condition_estimate, backward_error, rank);
     nb::class_<CriticalRecord, HelmholtzModeRecord>(module, "CriticalRecord")
@@ -345,7 +342,8 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("recovered_ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.recovered_ipopt_diagnostics; })
         EPCSAFT_READONLY(ContinuationResult, success, message, stop, path_values, parameter_values, states,
             reached_path, attempted_path, event_phase, event_pair, attempts, accepted_steps, retries, last_result,
-            cause_stop, cause_convergence, cause_message, conditions, critical_points, critical_seeds);
+            cause_stop, cause_convergence, cause_message, conditions, critical_points, critical_seeds)
+        EPCSAFT_REPR(ContinuationResult, "success", "stop", "reached_path", "accepted_steps", "message");
     nb::class_<EquilibriumStart>(module, "EquilibriumStart")
         .def("__init__", [](EquilibriumStart* self, std::vector<double> coordinates, std::vector<double> amounts, std::vector<std::vector<double>> compositions,
                          std::vector<std::optional<double>> packing_fractions, std::optional<double> temperature,
@@ -367,7 +365,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult")
         EPCSAFT_READONLY(EquilibriumStartsResult, selected, results, causes, attempt_seconds, iterations, seconds,
             overrun_seconds, budget_exhausted);
-    module.def("solve_equilibrium_starts", &solve_equilibrium_starts);
+    module.def("solve_equilibrium_starts", &solve_equilibrium_starts, nb::arg("model"), nb::arg("problem"), nb::arg("starts"),
+        nb::arg("limits"));
     module.def("continue_equilibrium", &continue_equilibrium, nb::arg("model"), nb::arg("request"));
     // Solved-state actions: the existing native records and owner, transported unchanged.
     nb::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
@@ -414,29 +413,28 @@ void register_equilibrium(nb::module_& module) {
                "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"
                "Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments\n"
                "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
-    module.def("solved_state_first_actions", &solved_state_first_actions);
+    module.def("solved_state_first_actions", &solved_state_first_actions, nb::arg("compiled"), nb::arg("central"),
+        nb::arg("observables"), nb::arg("directions"));
     nb::class_<InventoryBound>(module, "InventoryBound")
         EPCSAFT_READONLY(InventoryBound, species, status, termination, maximum, feed_normalized_amount, log_fraction,
             balance_residual, normalization_residual, lower_bound_residual, witness, amounts_mol, finite_witness,
             limiting, supported, floor, lp_error, finite_residual, feasibility_termination);
     module.def("inventory_bounds", &inventory_bounds, nb::arg("compiled"), nb::arg("species"),
         nb::arg("fraction"), nb::arg("floor"));
-    module.def("equilibrium_asl_record", [](nb::object model, nb::object problem, const ContinuationOptions& continuation,
-            std::vector<double> offset, std::vector<std::vector<double>> matrix, std::vector<double> anchor,
-            std::size_t identity_component, double minimum_gap) {
-        const auto document = record_document(model);
-        const nb::object native_owner = model.attr("_model");
-        const auto& native = nb::cast<const HelmholtzModel&>(native_owner);
-        const auto p = nb::cast<EquilibriumProblem>(problem.attr("_native")(model));
+    module.def("equilibrium_asl_record", [](const ParameterDocument& document, const HelmholtzModel& model, const EquilibriumProblem& problem,
+            const ContinuationOptions& continuation, std::vector<double> offset, std::vector<std::vector<double>> matrix,
+            std::vector<double> anchor, std::size_t identity_component, double minimum_gap) {
         AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
-        map.validate(p, native.parameters());
-        compile_problem(native, p);
-        return asl_record(document, native.active_parameters(), native.thermochemistry(), p, continuation, map, native.solver_options());
-    }, nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
+        map.validate(problem, model.parameters());
+        compile_problem(model, problem);
+        return asl_record(document, model.active_parameters(), model.thermochemistry(), problem, continuation, map, model.solver_options());
+    }, nb::arg("document"), nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
-    module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
-    module.def("compile_problem", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&>(&compile_problem), nb::keep_alive<0, 1>());
+    module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&>(&compile_problem), nb::arg("model"),
+        nb::arg("problem"), nb::keep_alive<0, 1>());
+    module.def("compile_problem", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&>(&compile_problem), nb::arg("model"),
+        nb::arg("problem"), nb::keep_alive<0, 1>());
     module.def("sensitivity", [](const CompiledSystem& compiled, const std::vector<double>& point, const std::vector<double>& lever) {
         std::optional<core::Convergence> failure;
         auto result = sensitivity(compiled, point, lever, &failure);

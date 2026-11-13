@@ -380,6 +380,16 @@ class Parameters:
         """
         ...
     @property
+    def charge_number(self) -> list[int]:
+        """Read component charges.
+
+        Returns
+        -------
+        list[int]
+            Length n in component_ids order, elementary charges.
+        """
+        ...
+    @property
     def temperature_law_coefficient_identities(self) -> list[str]:
         """Read identities of native temperature-law coefficient slots.
 
@@ -4007,63 +4017,15 @@ def compile_problem(model: HelmholtzModel | IdealMoleFraction, problem: Equilibr
     Invalid support, units, charge, rank or constraint combinations are refused before solving. Keep model alive while the compiled object is used.
     """
     ...
-def equilibrium_asl_record(model: Any, problem: Any, continuation: ContinuationOptions, feed_offset: Sequence[float],
+def equilibrium_asl_record(document: ParameterDocument, model: HelmholtzModel, problem: EquilibriumProblem,
+                           continuation: ContinuationOptions, feed_offset: Sequence[float],
                            feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
                            identity_component: int, minimum_gap: float) -> str:
-    """Serialize the admitted two-liquid equilibrium and affine feed map for ASL.
-
-    Parameters
-    ----------
-    model : Any
-        Model declaration exposing its source parameter document.
-    problem : Any
-        Fixed-T/P two-free-liquid declaration with explicit supports and absolute molar feed.
-    continuation : ContinuationOptions
-        Declared continuation controls for the adapter.
-    feed_offset : Sequence[float]
-        Length n of absolute feed offsets in mol.
-    feed_matrix : Sequence[Sequence[float]]
-        Row-major (n, k) affine coefficients mapping controls into feed mol; units are mol per caller control unit.
-    anchor_controls : Sequence[float]
-        Length k of nonnegative anchor controls in the caller-declared units.
-    identity_component : int
-        Component index used to preserve two-phase identity.
-    minimum_gap : float
-        Positive dimensionless mole-fraction separation required for that identity.
-
-    Returns
-    -------
-    str
-        Native record string for the equilibrium ASL adapter.
-
-    Notes
-    -----
-    The map n_feed = feed_offset + feed_matrix*controls must preserve charge and reproduce the declared anchor feed. Source-reference and unsupported reaction forms are refused. Serialization is not a solve.
-    """
+    """Serialize ``document`` with the model's native declarations and the feed map; ``epcsaft.equilibrium.asl_record`` owns the arguments."""
     ...
-def property_asl_record(model: Any, require_phase_identity: bool = False, solids: Sequence[SolidSpec] = ..., neutral_reference: NeutralReferenceDeclaration | None = None) -> str:
-    """Serialize a declared model for native ASL property callbacks.
-
-    Parameters
-    ----------
-    model : Any
-        Python model/declaration exposing the source parameter document, optional thermochemistry and numerical options consumed by the native record writer.
-    require_phase_identity : bool
-        Refuse unclassified pressure roots in the declared initial VLE domain; false admits them for single-phase endpoint diagnostics.
-    solids : Sequence[SolidSpec]
-        Pure solids, each with a ln K(T) correlation (a scalar K is refused); each adds one solid row.
-    neutral_reference : NeutralReferenceDeclaration or None
-        Source-basis neutral reference, required when solids are given.
-
-    Returns
-    -------
-    str
-        Native record string containing the parameter, thermochemistry and solid declarations.
-
-    Notes
-    -----
-    Serialization supplies no state prediction. The native ASL adapter owns subsequent values and exact derivatives.
-    """
+def property_asl_record(document: ParameterDocument, model: HelmholtzModel, require_phase_identity: bool,
+                        solids: Sequence[SolidSpec], neutral_reference: NeutralReferenceDeclaration | None) -> str:
+    """Serialize ``document`` with the model's native declarations; ``epcsaft.eos.property_asl_record`` owns the arguments."""
     ...
 def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequence[float]) -> list[float]:
     """Solve the native implicit first-sensitivity equations.
