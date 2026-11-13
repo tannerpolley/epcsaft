@@ -46,11 +46,11 @@ inputs from parameter tables and plots.
 
 | Artifact | SHA-256 |
 |---|---|
-| `~/Zotero/storage/UGT3UV2L/Gross and Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.pdf` | `e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb` |
-| `~/Zotero/storage/3G4FGGY4/Nasrifar and Tafazzol - 2010 - Vapor-liquid equilibria of acid gas-aqueous ethanolamine solutions using the PC-SAFT equation of sta.pdf` | `29165d43cf374760cc17a730d92e15ed77a9e969af1f3355a1ca39a275f7110f` |
-| `~/Zotero/storage/YAUNIZGX/Pahlavanzadeh and Fakouri Baygi - 2013 - Modeling CO2 solubility in Aqueous Methyldiethanolamine Solutions by Perturbed Chain-SAFT Equation o.pdf` | `b737d0b83a13c5bb868d36459d1c0474eccb40e7ef700bde50fdaa77de31673a` |
-| `~/Zotero/storage/JWH69DKG/Baygi and Pahlavanzadeh - 2015 - Application of the PC-SAFT equation of state for modeling CO2 solubility in aqueous monoethanolamine.pdf` | `7e8e77577a34bd9867489faee992dd192e8cbbc728c50a26e8264b0e09192365` |
-| `~/Zotero/storage/TTAMHITN/Pakravesh and Zarei - 2025 - Thermodynamic Modeling of Pure, Binary, and Ternary Mixtures of Alkanolamines Using Three Versions o.pdf` | `29b1f1e115eecb11cde903aa12d1f9e6a98d2f85499879a5e05b34f429d6e0ea` |
+| `retained-source/Gross and Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.pdf` | `e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb` |
+| `retained-source/Nasrifar and Tafazzol - 2010 - Vapor-liquid equilibria of acid gas-aqueous ethanolamine solutions using the PC-SAFT equation of sta.pdf` | `29165d43cf374760cc17a730d92e15ed77a9e969af1f3355a1ca39a275f7110f` |
+| `retained-source/Pahlavanzadeh and Fakouri Baygi - 2013 - Modeling CO2 solubility in Aqueous Methyldiethanolamine Solutions by Perturbed Chain-SAFT Equation o.pdf` | `b737d0b83a13c5bb868d36459d1c0474eccb40e7ef700bde50fdaa77de31673a` |
+| `retained-source/Baygi and Pahlavanzadeh - 2015 - Application of the PC-SAFT equation of state for modeling CO2 solubility in aqueous monoethanolamine.pdf` | `7e8e77577a34bd9867489faee992dd192e8cbbc728c50a26e8264b0e09192365` |
+| `retained-source/Pakravesh and Zarei - 2025 - Thermodynamic Modeling of Pure, Binary, and Ternary Mixtures of Alkanolamines Using Three Versions o.pdf` | `29b1f1e115eecb11cde903aa12d1f9e6a98d2f85499879a5e05b34f429d6e0ea` |
 
 ## Gross--Sadowski property references
 

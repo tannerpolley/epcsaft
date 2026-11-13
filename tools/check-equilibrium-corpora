@@ -36,7 +36,7 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
-TPD = ROOT / 'analyses/2026-tpd-phase-discovery/scripts'
+TPD = ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
             'default_iterations', 'default_residual', 'declared_iterations', 'declared_residual',
@@ -75,13 +75,13 @@ REPLAY_RESULT_INVENTORIES = dict(
     asl=dict(rows=1471, keys='5612f9e7334cedd8'),)
 
 RETAINED_INPUTS = (
-    'analyses/reproduction/2001-gross/results/tables/table-002/source/table-002.csv',
-    'analyses/reproduction/2002-gross/results/tables/table-001/source/table-001.csv',
-    'analyses/reproduction/2002-gross/results/tables/table-002/source/table-002.csv',
-    'analyses/reproduction/2002-gross/results/data/calculation.json',
-    'analyses/reproduction/2005-cameretti/results/tables/table-005/source/table-005.csv',
-    'analyses/reproduction/2005-cameretti/results/digitized-lines.csv',
-    'analyses/reproduction/2005-cameretti/results/digitized-points.csv',
+    'engine/tests/cases/2001-gross/results/tables/table-002/source/table-002.csv',
+    'engine/tests/cases/2002-gross/results/tables/table-001/source/table-001.csv',
+    'engine/tests/cases/2002-gross/results/tables/table-002/source/table-002.csv',
+    'engine/tests/cases/2002-gross/results/data/calculation.json',
+    'engine/tests/cases/2005-cameretti/results/tables/table-005/source/table-005.csv',
+    'engine/tests/cases/2005-cameretti/results/digitized-lines.csv',
+    'engine/tests/cases/2005-cameretti/results/digitized-points.csv',
 )
 
 
@@ -296,11 +296,11 @@ def main():
         jobs = []
         for label in selections:
             d = out / label
-            jobs += [(label, 'cameretti', ROOT / 'analyses/reproduction/2005-cameretti/scripts/run.py', d / 'cameretti'),
-                     (label, 'gross', ROOT / 'analyses/reproduction/2002-gross/scripts/calculate.py', d / 'gross'),
+            jobs += [(label, 'cameretti', ROOT / 'engine/tests/cases/2005-cameretti/scripts/run.py', d / 'cameretti'),
+                     (label, 'gross', ROOT / 'engine/tests/cases/2002-gross/scripts/calculate.py', d / 'gross'),
                      (label, 'neutral', TPD / 'neutral.py', d / 'neutral.json')]
             jobs += [(label, f'replay-{s}', TPD / 'baseline.py', '--section', s, '--output', d / 'replay') for s in SECTIONS]
-            jobs += [(label, 'mea-family', ROOT / 'analyses/2026-mea-flash-family-seed/scripts/family.py', label, d / 'mea-family.jsonl')]
+            jobs += [(label, 'mea-family', ROOT / 'engine/tests/cases/mea-flash-family-seed/scripts/family.py', label, d / 'mea-family.jsonl')]
         with ThreadPoolExecutor(len(jobs) + 1) as pool:
             matrix = pool.submit(run, 'A', 'matrix-reference', TPD / 'physical_comparison.py', reference)
             futures = [pool.submit(run, *job) for job in jobs]
@@ -318,7 +318,7 @@ def main():
 
         if args.collect_only:
             inputs = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
-                      for directory in ('tools', 'data/packets', 'engine/data/reference', 'analyses')
+                      for directory in ('tools', 'data/packets', 'engine/data/reference', 'engine/tests/cases', 'analyses')
                       for p in (ROOT / directory).rglob('*') if p.is_file()
                       and not any(part in ('results', '__pycache__', '.venv') for part in p.relative_to(ROOT).parts)
                       and p.suffix in ('.py', '.json', '.csv', '.gz')}

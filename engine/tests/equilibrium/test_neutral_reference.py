@@ -553,8 +553,8 @@ def test_ascani_ions_in_both_liquids_meet_row_tolerance() -> None:
     import importlib.util
     from pathlib import Path
 
-    root = Path(__file__).resolve().parents[3] / "analyses/2026-ascani-carboxylic-acid-lle"
-    spec = importlib.util.spec_from_file_location("ascani_declaration", root / "scripts/run.py")
+    root = Path(__file__).resolve().parents[3] / "engine/tests/cases/ascani-carboxylic-acid-lle"
+    spec = importlib.util.spec_from_file_location("ascani_declaration", root / "scripts/ascani.py")
     assert spec is not None and spec.loader is not None
     ascani = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(ascani)

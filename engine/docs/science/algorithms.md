@@ -1105,8 +1105,8 @@ nonfinite/converged/floor/budget priority and the native optimizer termination.
 Measured rows that already meet the criterion can therefore remain numerically
 converged with success false and no published state after deadline rejection.
 This finite search establishes neither uniqueness nor global stability. Ordinary
-solve initialization retains its rules. The retained [declared-start falsifiers
-and default-solve cost](../../../analyses/2026-tpd-phase-discovery/results/issue238-cost/README.md)
+solve initialization retains its rules. The retained declared-start falsifiers
+and default-solve cost (private research repository)
 qualify the bounded inputs stated there.
 
 Public solves also apply the continuation owner's density-branch admission to
@@ -1837,7 +1837,7 @@ unresolved composition, amount, packing or phase-separation domains prevent a
 conditional comparison. Source-reference chemical and first-thermal rows use
 the local estimate described in [ALG-REFERENCE](#alg-reference); its returned
 method annotation preserves the separate reference-replay precision and limits.
-The [retained notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd)
+The retained notebook (private research repository)
 records the comparison coverage and limitations.
 
 The native comparison first requires the original admission, residual, branch,
@@ -1931,7 +1931,7 @@ reuse `CompiledSystem`,
 No production finite differences or Python search loop is admitted. One second minimizer is admitted: the native Michelsen trial minimizer below, for all-neutral, non-reacting systems only. It
 changes no acceptance check. The [formulation](../equilibrium/formulation.md#discovery-and-global-claims)
 owns physical admission and claim meaning; EqID: `tangent_plane_distance` owns
-the reduced molar objective. The [analysis](../../../analyses/2026-tpd-phase-discovery/)
+the reduced molar objective. The analysis (private research repository)
 retains numerical qualification on the stated neutral and admitted
 density-dependent ionic/reacting cases, explicit density-independent
 charged-search refusals and unchanged declared work. Method adoption is recorded in
@@ -2602,7 +2602,7 @@ while preserving the physical increments and mixed derivatives.
 The current-main density/scaling replay at `2428781b` revalidates this convention
 through F6/F1, P4, ionic, Hessian/pressure/volume, F8/F9/Born and the frozen
 binary128 residual-Cv check under unchanged criteria. The
-[retained notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd#integrated-density-closure-and-temperature-scaling)
+retained notebook (private research repository)
 records source/wheel identities, independent moved-row comparisons and the
 bounded numerical-verification meaning.
 For an E3 energy action with exactly two equal normalized directions, use the
@@ -2795,7 +2795,7 @@ inverse is unavailable.
 Actions use a dimensionless path variable and declared physical increments.
 They retain the observable unit. Raw T/P or fitting partials divide by every
 increment; Taylor factorial conversion is separate and applied once. The
-[retained numerical notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
+retained numerical notebook (private research repository)
 owns the tested cases, tolerances, errors and interpretation limits.
 
 ### Difference checks of exact actions
@@ -2915,7 +2915,7 @@ roundoff allowance does not bound arbitrary internal amplification. Fixed-input
 arithmetic excludes supplied operand uncertainty: an exact quotient at both
 precisions can still change under an uncertain denominator. The retained
 underflow and reciprocal examples and the qualified stencil are in the
-[forward-error notebook](../../../analyses/2026-equilibrium-forward-error/notebook.qmd).
+forward-error notebook (private research repository).
 Pressure/site propagation omits second-order sensitivity-error products and
 requires the existing admitted regular branch. The result annotation states
 these limits separately from failure causes and labels wider precision only as
@@ -3677,7 +3677,7 @@ the ideal-gas limit $\ln\phi_i^V=0$ (EqID: `log_fugacity_coefficient`,
 $\mu_i^r\to0$, $Z\to1$). The resulting compositions still receive actual EOS
 density closure on their declared branches; this estimate changes neither
 the equations nor final admission. Two-root estimates and caller-guessed
-compositions retain their existing rules. The [cold-vapor diagnosis](../../../analyses/2026-cold-vapor-branch/README.md)
+compositions retain their existing rules. The cold-vapor diagnosis (private research repository)
 retains the sole dense feed root and the recovered incipient vapor.
 Provisional $z/K,zK$ estimates consume fugacity coefficients only where the feed
 weight $z_i$ is nonzero; an exact-zero weight contributes zero without requesting
@@ -3698,8 +3698,8 @@ mechanically stable feed root lies on the liquid side of the scanned loop; it do
 show that the equilibrium phase is liquid. Near-critical methane/ethane feeds with one
 unlabelled root and no witness keep $z/K$, which retains their solutions. The incipient
 estimate, the pressure step and the density closures are unchanged.
-Default-start results: [Cameretti 2005](../../../analyses/reproduction/2005-cameretti/README.md) and
-[Gross 2002](../../../analyses/reproduction/2002-gross/README.md); `tools/check-equilibrium-corpora` pins them.
+Default-start results: Cameretti 2005 (private research repository) and
+Gross 2002 (private research repository); `tools/check-equilibrium-corpora` pins them.
 Some water/1-pentanol dews have two dew branches, one of them water-rich, so no single
 liquid start is a general answer; the explicit [cooling onset](#cooling-onset-dew) selects
 the intended branch.
@@ -3745,7 +3745,7 @@ below `PHASE_DISAPPEARANCE_AMOUNT` of the feed or a nonpositive fraction, the
 apparent-species start above follows before the one solve; an exhausted budget
 propagates and nothing retries after the solve. Supplied compositions skip the
 split; supplied amounts and packings replace its coordinates. Without the [amount step rule](#equilibrium-amount-step-retention) the split loses accepted MEA states, each ending on a vanished phase; the
-qualification is the [MEA flash family](../../../analyses/2026-mea-flash-family-seed/README.md).
+qualification is the MEA flash family (private research repository).
 
 #### Superancillary start
 
@@ -3858,7 +3858,7 @@ Without it, an unspeciated start (absent species at $1/|support|$, water ions at
 caller's zero) leaves under-populated species of the log-composition chart without
 restoring force: their objective gradient scales with $x_i$, the Lagrangian Hessian
 is indefinite there, and Ipopt cycled through restoration to the iteration budget
-([evidence](../../../analyses/2026-reactive-liquid-cold-start/README.md)).
+(evidence (private research repository)).
 
 #### Pure-fluid witness
 
@@ -3879,7 +3879,7 @@ witness does not prove the fluid supercritical or coexistence absent: a loop
 narrower than the scan grid near the critical point has no sampled negative slope.
 No pressure is invented by this rule; the complete cold calculation may enter
 the bounded pure recovery below after refusal. The witness rule was qualified on the near-critical
-alcohol saturation states of the [Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md)
+alcohol saturation states of the Gross 2002 reproduction (private research repository)
 . Final residual and stability checks are unchanged.
 
 #### Default amounts
@@ -3896,7 +3896,7 @@ Gibbs minimization; in pinned, caloric or critical feasibility problems, whose
 coordinates keep unit one, the change is only a different infeasible start. The
 $\kappa_N$ first-step retention in the [amount step rule](#equilibrium-amount-step-retention) becomes $0.1N$ per phase instead of $0.1N/k$; it is
 recomputed at every iterate, so it is no permanent floor. From $N/k$ the declared
-esterification liquid pairs of the [Ascani 2023 reproduction](../../../analyses/reproduction/2023-ascani/README.md)
+esterification liquid pairs of the Ascani 2023 reproduction (private research repository)
 lost their minor liquid at 1, 100 and 10,000 mol; from $N$ they return the lower-G distinct
 liquids. This is an empirically qualified initialization convention, not a
 convergence guarantee.
@@ -4025,7 +4025,7 @@ including work before a refusal.
 Finite coverage: a narrow negative-distance interval between samples or a missed
 composition minimum is not excluded, and a refusal means unresolved selection, not an
 absent dew. It is qualified on the water/1-pentanol dews of the
-[Gross 2002 reproduction](../../../analyses/reproduction/2002-gross/README.md) from several start temperatures.
+Gross 2002 reproduction (private research repository) from several start temperatures.
 
 ### Critical-equation candidates and phase envelopes
 

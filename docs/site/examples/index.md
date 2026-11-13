@@ -3,7 +3,7 @@
 Every notebook on this site was executed when the site was built. To run one
 yourself, open it from `docs/site/examples/` in the unpacked source archive:
 each notebook locates the archive root from its own directory and reads
-parameter packets and observations under `data/` and `analyses/`, which the
+parameter packets and observations under `data/` and `engine/tests/cases/`, which the
 conda package does not contain. See the
 [installation guide](../installation.md) for setup and the
 [optional process tools](../contributing.md#optional-process-example-tools)

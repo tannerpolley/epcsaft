@@ -1,0 +1,10 @@
+section,key,value,unit,notes
+provenance,paper,Gross and Sadowski 2002,,
+provenance,figure,figure-03,,
+provenance,source_image,analyses/reproduction/2002-gross/figures/figure-03/source/figure-03.png,,
+source_method,published_figure_curve_trace,retained visible PC-SAFT curve points from the published figure,,
+source_method,literature_table_overlay,external literature-table points retained where available,,
+data_file,source_points,analyses/reproduction/2002-gross/figures/figure-03/source/source-points.csv,,figure-local source points used for acceptance scoring
+data_file,literature_points,analyses/reproduction/2002-gross/figures/figure-03/source/literature-points.csv,,Goral et al. 2004 Table 3.9
+acceptance,normalized_plot_score,8.69530260974624,,temperature-coordinate RMSE against calibrated Gross 2002 Figure 3 retained PC-SAFT curve traces
+acceptance,derivative_status,verified_exact,,

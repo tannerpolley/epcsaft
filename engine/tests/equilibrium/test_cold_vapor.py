@@ -10,8 +10,8 @@ from tests.native_inputs import bubble, parameters, same
 
 
 def test_cold_free_temperature_vapor_recovers_j1(evidence: Any) -> None:
-    case = json.loads((Path(__file__).resolve().parents[3] / "analyses" /
-                       "2026-reaction-constant-fitting/results/cold-start.json").read_text())
+    case = json.loads((Path(__file__).resolve().parents[3] / "engine/tests/cases" /
+                       "reaction-constant-fitting/results/cold-start.json").read_text())
     inputs, reference = case["inputs"], case["J1"]
     model = Mixture(parameters(list(zip(inputs["molar_mass_g_mol"], inputs["m"],
                                         inputs["sigma_angstrom"], inputs["epsilon_K"])),

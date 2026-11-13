@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / 'build') as directory:
                 writer.writerow(dict(case='fitting/219-held-NaCl', quantity='physical/0', kind='float', value='-0.25'))
                 if label == 'A':
                     writer.writerow(dict(case='fitting/219-held-NaCl', quantity='iteration_costs/0', kind='float', value='3.196e-23'))
-    command = [sys.executable, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts/replay_compare.py'),
+    command = [sys.executable, str(ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts/replay_compare.py'),
                str(root / 'A'), str(root / 'B'), str(root / 'comparison.json')]
     assert subprocess.run(command, stdout=subprocess.DEVNULL).returncode == 0
     report = json.loads((root / 'comparison.json').read_text())

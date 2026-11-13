@@ -1,0 +1,13 @@
+{
+ "standard_uncertainty_w": {
+  "locator": "Mohammad 2016 SI Table S1 footnote a and Table S3 footnote a (standard uncertainties u)",
+  "table_s1": {"aq": {"water": 0.0044, "1-butanol": 0.0001, "salt": 0.0006}, "org": {"water": 0.0012, "1-butanol": 0.0040, "salt": 0.0001}},
+  "table_s3": {"aq": {"water": 0.0049, "1-butanol": 0.0005, "hmf": 0.0001, "salt": 0.0012}, "org": {"water": 0.0017, "1-butanol": 0.0033, "hmf": 0.0003, "salt": 0.0002}}
+ },
+ "reported_absolute_average_deviation_w": {
+  "locator": "Mohammad 2016 Table 4 (CH3COONa ternary) and Table 5 (CH3COONa quaternary groups); reported beside, without pass/fail",
+  "ternary": 0.01793,
+  "hmf_constant_rows_1_3": {"aq": 0.0252, "org": 0.0168},
+  "salt_constant_rows_4_7": {"aq": 0.0227, "org": 0.0102}
+ }
+}

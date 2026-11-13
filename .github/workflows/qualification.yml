@@ -15,6 +15,9 @@ jobs:
       IPOPT_PROBE_EVIDENCE: ${{ github.workspace }}${{ inputs.platform == 'win-64' && '\' || '/' }}evidence
     steps:
       - uses: actions/checkout@v4
+      - name: Restore non-commercial test packets
+        shell: bash
+        run: bash data/tools/restore_feos.sh
       - name: Build and qualify
         if: inputs.platform == 'win-64'
         shell: pwsh

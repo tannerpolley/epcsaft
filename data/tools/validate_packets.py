@@ -318,6 +318,8 @@ def _validate_derived_record_provenance(
         )
         if not _valid_hex(declared_hash, SHA256_LENGTH):
             errors.append(f"{prefix}: derived source {source_id} has invalid sha256")
+        elif repository_source and retained.parts[0] == "analyses" and not (repository_root / "analyses").is_dir():
+            pass  # Research sources are re-verified in the private research repository.
         elif not target.is_file() or sha256(target) != declared_hash:
             errors.append(f"{prefix}: derived source hash mismatch for {source_id}")
     return errors

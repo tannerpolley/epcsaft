@@ -1,0 +1,15 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+transformations = ["Make the already selected neutral species explicit with fixed zero charge in elementary-charge units; preserve all predecessor coefficients, units, sites, correlations, source locators and domains. Increment document version and append the project declaration source."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "6dc4d60f10ef4364c01cbccf9821447ff9c4c815cc8e94284b853d1cdee71ccb"
+
+[[sources]]
+source_id = "predecessor-neutral-parameters"
+role = "Immutable accepted neutral model and complete parameter document"
+packet_id = "gross-2001-propane"
+packet_version = "2"
+packet_member = "parameters/parameters.json"
+sha256 = "5b72b92f1b47162e5fffee8641a83fc5354d15eeec2ac51658cb051c727bd099"

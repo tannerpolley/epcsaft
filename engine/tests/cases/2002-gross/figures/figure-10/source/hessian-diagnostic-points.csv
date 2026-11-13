@@ -1,0 +1,17 @@
+source_series,phase_branch,temperature_C,temperature_K,pressure_bar,x_water,x_1_pentanol,x_uncertainty,temperature_uncertainty_K,source_status,source_reference
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,29.0,302.15,1.013,0.350,0.650,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,42.0,315.15,1.013,0.370,0.630,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,56.0,329.15,1.013,0.392,0.608,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,66.0,339.15,1.013,0.410,0.590,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,74.0,347.15,1.013,0.425,0.575,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,87.0,360.15,1.013,0.452,0.548,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_1_pentanol_rich_liquid,96.0,369.15,1.013,0.482,0.518,0.025,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_water_rich_liquid,64.0,337.15,1.013,0.992,0.008,0.012,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_water_rich_liquid,95.0,368.15,1.013,0.993,0.007,0.012,2.5,source_retained,figure-10_image
+Zhuravleva_1970,LLE_water_rich_liquid,98.0,371.15,1.013,0.998,0.002,0.012,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,138.0,411.15,1.013,0.000,1.000,0.025,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,132.0,405.15,1.013,0.180,0.820,0.025,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,122.0,395.15,1.013,0.450,0.550,0.025,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,108.0,381.15,1.013,0.730,0.270,0.025,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,97.0,370.15,1.013,0.870,0.130,0.025,2.5,source_retained,figure-10_image
+Cho_1984,VLE_or_VLLE_source_points,100.0,373.15,1.013,1.000,0.000,0.025,2.5,source_retained,figure-10_image

@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "dataset_id": "glos-2004-experimental-propane-saturation-110-340-k-v1",
+  "source_id": "glos-2004-propane-coexistence-experiment",
+  "format_note": "This file uses the JSON-compatible subset of YAML 1.2 for stdlib-only validation.",
+  "citation": {
+    "authors": ["Stefan Glos", "Reiner Kleinrahm", "Wolfgang Wagner"],
+    "title": "Measurement of the (p, rho, T) relation of propane, propylene, n-butane, and isobutane in the temperature range from (95 to 340) K at pressures up to 12 MPa using an accurate two-sinker densimeter",
+    "journal": "The Journal of Chemical Thermodynamics",
+    "year": 2004,
+    "volume": 36,
+    "issue": 12,
+    "pages": "1037-1059",
+    "doi": "10.1016/j.jct.2004.07.017",
+    "table_locator": "Table 2, propane vapour-pressure, saturated-liquid-density, and saturated-vapour-density measurements along the coexistence curve"
+  },
+  "sources": {
+    "nist_thermoml_json": {
+      "url": "https://trc.nist.gov/ThermoML/10.1016/j.jct.2004.07.017.json",
+      "retrieved_on": "2026-07-17",
+      "sha256": "322495c5a01c003e83376e5bad544c3abced330d5054ff0411a7a00b70a963c9",
+      "thermoml_md5_checksum": "2a4c230201baf295f61cf3f4e200275c",
+      "role": "Official NIST/TRC machine-readable serialization of the primary paper; controlling extraction source."
+    },
+    "nist_thermoml_xml": {
+      "url": "https://trc.nist.gov/ThermoML/10.1016/j.jct.2004.07.017.xml",
+      "retrieved_on": "2026-07-17",
+      "sha256": "1b2e47d4cafff0f21cf7779d8d01b522bc2fa8d885ce4d6ebc04c151e0504829",
+      "role": "Official NIST/TRC serialization cross-check for citation, component, datasets, values, methods, and uncertainties."
+    },
+    "publisher_landing_page": {
+      "url": "https://www.sciencedirect.com/science/article/pii/S0021961404001491",
+      "retrieved_on": "2026-07-17",
+      "role": "Primary-paper bibliographic, direct-measurement, method, table-locator, and abstract uncertainty cross-check; no publisher page hash is claimed because the dynamic page is not the numerical source result."
+    }
+  },
+  "source_audit": {
+    "source_kind": "Direct primary experimental measurements reported by Glos, Kleinrahm, and Wagner; not reference-equation output.",
+    "thermoml_identity": {
+      "source_type": "Original",
+      "experimental_purpose": "Principal objective of the work",
+      "component_number": 1,
+      "component": "propane",
+      "formula": "C3H8",
+      "inchi_key": "ATUOYWHBWRKTHZ-UHFFFAOYSA-N",
+      "sample_purity_mol_percent": 99.99,
+      "sample_purity_basis": "Stated by supplier"
+    },
+    "datasets": {
+      "1": {
+        "property": "Vapor or sublimation pressure",
+        "phase": "Liquid",
+        "unit": "kPa",
+        "method": "Closed cell (Static) method",
+        "temperature_range_k": [110, 340],
+        "rows": 24
+      },
+      "2": {
+        "property": "Mass density",
+        "phase": "Liquid",
+        "unit": "kg/m3",
+        "method": "Buoyancy - hydrostatic balance with magnetic suspension - two sinkers",
+        "temperature_range_k": [90, 340],
+        "rows": 27
+      },
+      "3": {
+        "property": "Mass density",
+        "phase": "Gas",
+        "unit": "kg/m3",
+        "method": "Buoyancy - hydrostatic balance with magnetic suspension - two sinkers",
+        "temperature_range_k": [230, 340],
+        "rows": 12
+      }
+    },
+    "uncertainty_meaning": {
+      "source": "The retained pointwise values are ThermoML nCombExpandUncertValue entries.",
+      "confidence_percent": 95,
+      "evaluation_method": "Propagation of evaluated standard uncertainties",
+      "evaluator": "Data file compiler",
+      "interpretation": "These are pointwise expanded uncertainties in each property's native unit as compiled by NIST/TRC. They are retained as source evidence, not relabeled as paper-reported standard uncertainties and not converted into an ePC-SAFT acceptance tolerance.",
+      "temperature": "ThermoML supplies no pointwise temperature uncertainty for these datasets; no temperature tolerance is created."
+    },
+    "use_basis": "Compact factual extraction and source result retained for scientific validation and reproducibility; the article and full four-compound ThermoML payload are not redistributed in this repository."
+  },
+  "extraction_record": {
+    "result": "Copy every value and pointwise expanded uncertainty from ThermoML PureOrMixtureData datasets 1, 2, and 3 for component nOrgNum=1 into the retained source result in dataset and temperature order.",
+    "target_join": "Create one target row for each 110 K through 340 K vapor-pressure temperature; join the same-temperature liquid density and the vapor density where dataset 3 reports it.",
+    "pressure_conversion": "p_sat_Pa = 1000 Pa/kPa * source dataset 1 value; expanded pressure uncertainty is multiplied by the same exact factor.",
+    "density_conversion": "None; source densities and expanded uncertainties remain in kg/m3.",
+    "omissions": "The source result retains the 90 K, 95 K, and 100 K liquid-density-only values. They are excluded from the fit target because the primary source does not report matching vapor-pressure measurements. Specific volumes are not reported in the three source datasets and are not generated. Vapor-density target fields remain blank below 230 K because the primary source reports none there."
+  },
+  "fields": {
+    "row_id": "Repository-assigned stable identifier from the primary-paper citation and temperature.",
+    "component_id": "Exact component identifier propane.",
+    "role": "Frozen before model output: training, held_out, or stress.",
+    "T_K": "ThermoML temperature in K.",
+    "p_sat_Pa": "Direct experimental source vapor pressure converted exactly from kPa to Pa.",
+    "p_sat_expanded_uncertainty_Pa": "ThermoML pointwise 95% expanded uncertainty converted exactly from kPa to Pa.",
+    "rho_sat_liq_kg_m3": "Direct experimental saturated-liquid mass density in kg/m3.",
+    "rho_sat_liq_expanded_uncertainty_kg_m3": "ThermoML pointwise 95% expanded uncertainty for saturated-liquid density.",
+    "rho_sat_vap_kg_m3": "Direct experimental saturated-vapor mass density where reported, otherwise blank.",
+    "rho_sat_vap_expanded_uncertainty_kg_m3": "ThermoML pointwise 95% expanded uncertainty for saturated-vapor density where reported, otherwise blank."
+  },
+  "fit_target_contract": {
+    "payload": {
+      "contract_version": 1,
+      "checkpoint_id": "neutral-hydrocarbon-regression-maturity-v1/checkpoint-a",
+      "specification_id": "pure-propane-saturation-lifted-volumes-v1",
+      "workflow": "fit_pure_saturation",
+      "component_id": "propane",
+      "dataset_id": "glos-2004-experimental-propane-saturation-110-340-k-v1",
+      "source_id": "glos-2004-propane-coexistence-experiment",
+      "fit_parameter_names": [
+        "segment_count",
+        "segment_diameter_angstrom",
+        "dispersion_energy_over_k_kelvin"
+      ],
+      "fit_parameter_units": ["1", "angstrom", "K"],
+      "target_observables": ["saturation_pressure_pa", "saturated_liquid_mass_density_kg_m3"],
+      "training_row_ids": [
+        "glos2004-propane-sat-150-k",
+        "glos2004-propane-sat-210-k",
+        "glos2004-propane-sat-270-k",
+        "glos2004-propane-sat-330-k"
+      ],
+      "held_out_row_ids": [
+        "glos2004-propane-sat-120-k",
+        "glos2004-propane-sat-130-k",
+        "glos2004-propane-sat-140-k",
+        "glos2004-propane-sat-160-k",
+        "glos2004-propane-sat-170-k",
+        "glos2004-propane-sat-180-k",
+        "glos2004-propane-sat-190-k",
+        "glos2004-propane-sat-200-k",
+        "glos2004-propane-sat-220-k",
+        "glos2004-propane-sat-230-k",
+        "glos2004-propane-sat-240-k",
+        "glos2004-propane-sat-250-k",
+        "glos2004-propane-sat-260-k",
+        "glos2004-propane-sat-280-k",
+        "glos2004-propane-sat-290-k",
+        "glos2004-propane-sat-300-k",
+        "glos2004-propane-sat-310-k",
+        "glos2004-propane-sat-320-k"
+      ],
+      "stress_row_ids": ["glos2004-propane-sat-110-k", "glos2004-propane-sat-340-k"],
+      "partition_basis": "Four training temperatures are uniformly spaced by 60 K from 150 K through 330 K. All remaining non-endpoint target rows are held out. The 110 K row is stress evidence because its expanded pressure uncertainty equals the measured pressure; 340 K is the high-temperature boundary of the reported propane coexistence measurements.",
+      "implementation_boundary": "This packet freezes source identity, observables, and row roles only. The regression owner must separately approve starts, bounds, scales, solver controls, and production implementation."
+    },
+    "sha256": "7f25259265dfa42f1de36bc04740baf6c78e09c8bc35a42392f06a4b8a32cb90"
+  },
+  "source_verification_contract": {
+    "payload": {
+      "contract_version": 1,
+      "mandatory_source_result": "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation-source.csv",
+      "mandatory_source_result_sha256": "ed5eb703ccd3e6bb4c4cfa82ecd58c58f9da0c93ab07a204dee94d8b0ae8d081",
+      "official_thermoml_json_sha256": "322495c5a01c003e83376e5bad544c3abced330d5054ff0411a7a00b70a963c9",
+      "official_thermoml_xml_sha256": "1b2e47d4cafff0f21cf7779d8d01b522bc2fa8d885ce4d6ebc04c151e0504829",
+      "required_datasets": [1, 2, 3],
+      "required_source_rows": 63,
+      "verification_rule": "The checker must load and hash the retained source result and reproduce every target value from it; source verification cannot be disabled."
+    },
+    "sha256": "7354e7d7c821140d38a68c32637d5af80adc96ccc2f486541799b4c4be0afb2c"
+  },
+  "comparison_contract": {
+    "payload": {
+      "contract_version": 1,
+      "pressure_comparison_allowance": null,
+      "liquid_density_comparison_allowance": null,
+      "vapor_density_comparison_allowance": null,
+      "model_accuracy_floor": null,
+      "interpretation": "Source uncertainties are retained but no multiplier, model discrepancy, or model-accuracy rule is approved. All future model errors remain descriptive until a separate pre-model decision establishes an acceptance contract."
+    },
+    "sha256": "522b55f8c9641bab7b572f1741fc24cf48b7a2df10706ade17064cd4c79ba2f2"
+  },
+  "retained_files": {
+    "source_result": {
+      "path": "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation-source.csv",
+      "sha256": "ed5eb703ccd3e6bb4c4cfa82ecd58c58f9da0c93ab07a204dee94d8b0ae8d081"
+    },
+    "target_csv": {
+      "path": "analyses/reproduction/2004-glos/inputs/source/glos-2004-propane-saturation.csv",
+      "sha256": "ccd1cfa15ec44432b06cbf22316d168c61b282631c9b1e1591e497b8d48b5676"
+    }
+  },
+  "claim_boundary": "This packet establishes a hash-bound direct experimental propane saturation target and frozen pre-model partition. It does not validate ePC-SAFT, approve model agreement or prediction, convert source uncertainty into a model tolerance, implement regression, or transfer authority."
+}

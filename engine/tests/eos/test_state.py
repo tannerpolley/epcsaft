@@ -339,7 +339,7 @@ def test_wolbach_sandler_rule_matches_source_cross_volumes() -> None:
     at one temperature fails. Residual entropy falsifies the temperature chain.
     """
     rule: dict[str, Any] = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
-    bundle = REPOSITORY_ROOT / "analyses/reproduction/2026-khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/association.csv"
+    bundle = REPOSITORY_ROOT / "engine/tests/cases/khudaida/inputs/parameters/bundle/khudaida-2026-figure-2-electrolyte-lle/2/association.csv"
     stored = {(r["component_id_a"], r["site_id_a"], r["component_id_b"], r["site_id_b"], r["family"]): float(r["value"])
               for r in csv.DictReader(bundle.open())}
     pure = {c: (stored[(c, "a", c, "b", "association_energy_over_k")], stored[(c, "a", c, "b", "association_volume")])

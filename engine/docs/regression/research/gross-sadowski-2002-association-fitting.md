@@ -42,8 +42,8 @@ The source artifacts inspected were:
 
 | Artifact | SHA-256 | Locators used |
 |---|---|---|
-| `~/Zotero/storage/UGT3UV2L/Gross and Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.pdf` | `e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb` | PDF pp. 5510--5515; especially Table 1 on p. 5511, Eqs. 1--3 and §3 on pp. 5511--5512, §4.1 and conclusions on pp. 5512--5514 |
-| `~/Zotero/storage/FZVTDKXU/Gross, Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.md` | `dc4695f03a2511f0ac416bfb54923ed2b7b7a9ced8240d10b112b42ad977d732` | lines 27--55 (Table 1), 76--112 (model and pure fit), 124--166 (results/conclusions), 174--207 (references) |
+| `retained-source/Gross and Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.pdf` | `e4991a757cad356c2d0f6ec20972adb74458218b2583cd92b19b825ccf1d89bb` | PDF pp. 5510--5515; especially Table 1 on p. 5511, Eqs. 1--3 and §3 on pp. 5511--5512, §4.1 and conclusions on pp. 5512--5514 |
+| `retained-source/Gross, Sadowski - 2002 - Application of the PC-SAFT equation of state to associating systems.md` | `dc4695f03a2511f0ac416bfb54923ed2b7b7a9ced8240d10b112b42ad977d732` | lines 27--55 (Table 1), 76--112 (model and pure fit), 124--166 (results/conclusions), 174--207 (references) |
 
 The PDF page numbers above are the journal page numbers, not the local PDF
 index.  The equation-heavy p. 5511 table/model page was also visually checked

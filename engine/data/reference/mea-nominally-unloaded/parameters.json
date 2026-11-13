@@ -1423,7 +1423,7 @@
     ],
     "equilibrium_solves_during_c_fit": 0,
     "equilibrium_unchanged": true,
-    "fitting_targets": "~/Workspaces/Engineering/ePC-SAFT/downstream/.worktrees/Amine-Thermodynamics-160-density-cp/analyses/mea_parameter_bundle/results/density-cp-160/D1-evidence/corrected-target-densities.csv",
+    "fitting_targets": "retained-source/corrected-target-densities.csv",
     "formula": "rho_corr = M_mix / (v_EOS + 1e-6*c_cm3_mol*(x_MEAH+ + x_MEACOO-))",
     "kind": "density-only-volume-translation",
     "log_ratio_sum_of_squares": 1.4509011826776184e-05,

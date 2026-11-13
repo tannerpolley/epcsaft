@@ -246,18 +246,443 @@ def test_true_species_split_ignores_an_unfed_spectator() -> None:
 
 
 def test_supplied_packings_need_no_boundary_density_root() -> None:
-    """#350: Born case 1 of analyses/2026-born-unavailable-states, the stable liquid at c_dielectric 0.33 (archive
+    """#350: Born case 1 of engine/tests/cases/born-unavailable-states, the stable liquid at c_dielectric 0.33 (archive
     member fine/case1-continuation-0.330000-state.csv of results/retired-charts.tar.gz) moved by a water-reaction
     extent of 0.2. The start supplies both compositions, both packing fractions and the pressure but
     no amounts. The liquid has no density root at the boundary pressure seed; the supplied packing replaces it, so
     the start reaches the driver instead of being refused at initialization."""
-    script = Path(__file__).resolve().parents[3] / "analyses/2026-born-unavailable-states/scripts/reproduce.py"
-    spec = importlib.util.spec_from_file_location("born_reproduce", script)
-    assert spec is not None and spec.loader is not None
-    born = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(born)
-    mapping, request, anchor = born.load_case(1)
-    problem = born.problem_from_request(request, anchor)
+    import json
+    mapping = json.loads((Path(__file__).resolve().parents[3] /
+        "engine/tests/cases/born-unavailable-states/inputs/case1-shell-only-1-0-parameters.json").read_text())
+    mapping["topology"]["no_cross_association"] = [{
+        "component_id_a": "carbon-dioxide", "component_id_b": "monoethanolamine",
+        "provenance": {"source_id": "case1-shell-only-1-0",
+                       "locator": "Born unavailable states case 1: no CO2/MEA edge"}}]
+    request: Any = {'reaction_system': {'balance_matrix': [[1.0, 2.0, 0.0, 2.0, 3.0, 1.0, 1.0, 0.0, 0.0],
+                                            [0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]],
+                         'charges': [0, 0, 0, 1, -1, -1, -2, 1, -1],
+                         'conserved_totals': [2.153, 1.0],
+                         'equilibrium_constants': [[-39.20847211814555,
+                                                    'Austgen1991',
+                                                    'aqueous-molality-infinite-dilution-water-v1',
+                                                    'products_positive',
+                                                    'source-standard-state-to-provider-neutral-reference',
+                                                    True,
+                                                    {'reaction_id': 'R1',
+                                                     'source_correlation': {'kind': 'ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t',
+                                                                            'a': 132.899,
+                                                                            'b_k': -13445.9,
+                                                                            'c': -22.4773,
+                                                                            'd_per_k': 0.0},
+                                                     'source_standard_state_id': 'aqueous-molality-infinite-dilution-water-v1'}],
+                                                   [-18.52157205941222,
+                                                    'Austgen1991',
+                                                    'aqueous-molality-infinite-dilution-water-v1',
+                                                    'products_positive',
+                                                    'source-standard-state-to-provider-neutral-reference',
+                                                    True,
+                                                    {'reaction_id': 'R2',
+                                                     'source_correlation': {'kind': 'ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t',
+                                                                            'a': 231.465,
+                                                                            'b_k': -12092.1,
+                                                                            'c': -36.7816,
+                                                                            'd_per_k': 0.0},
+                                                     'source_standard_state_id': 'aqueous-molality-infinite-dilution-water-v1',
+                                                     'effective_parameter_role': 'candidate',
+                                                     'effective_coefficient_identities': ['reaction:R2:correlation:a',
+                                                                                          'reaction:R2:correlation:b_k',
+                                                                                          'reaction:R2:correlation:c',
+                                                                                          'reaction:R2:correlation:d_per_k'],
+                                                     'effective_coefficient_values': {'a': 232.33141533884407,
+                                                                                      'b_k': -11105.640030520277,
+                                                                                      'c': -36.7816,
+                                                                                      'd_per_k': 0.0}}],
+                                                   [-27.55307337666852,
+                                                    'Austgen1991',
+                                                    'aqueous-molality-infinite-dilution-water-v1',
+                                                    'products_positive',
+                                                    'source-standard-state-to-provider-neutral-reference',
+                                                    True,
+                                                    {'reaction_id': 'R3',
+                                                     'source_correlation': {'kind': 'ln_a_plus_b_over_t_plus_c_ln_t_plus_d_t',
+                                                                            'a': 216.049,
+                                                                            'b_k': -12431.7,
+                                                                            'c': -35.4819,
+                                                                            'd_per_k': 0.0},
+                                                     'source_standard_state_id': 'aqueous-molality-infinite-dilution-water-v1'}],
+                                                   [-2.7836958326680508,
+                                                    'Tong2012+Aroua1999',
+                                                    'aqueous-molality-infinite-dilution-water-v1',
+                                                    'products_positive',
+                                                    'source-standard-state-to-provider-neutral-reference',
+                                                    True,
+                                                    {'coefficient_identities': ['reaction:R4:correlation:a',
+                                                                                'reaction:R4:correlation:b_k'],
+                                                     'coefficient_values': [2.151, -1545.3],
+                                                     'kind': 'ln-k-a-plus-b-over-t',
+                                                     'reaction_id': 'R4',
+                                                     'source_correlation': {'kind': 'ln_a_plus_b_over_t',
+                                                                            'a': 2.151,
+                                                                            'b_k': -1545.3},
+                                                     'source_standard_state_id': 'aqueous-molality-infinite-dilution-water-v1',
+                                                     'effective_parameter_role': 'candidate',
+                                                     'effective_coefficient_identities': ['reaction:R4:correlation:a',
+                                                                                          'reaction:R4:correlation:b_k'],
+                                                     'effective_coefficient_values': {'a': 2.151,
+                                                                                      'b_k': -1545.3}}],
+                                                   [-20.889878783626997,
+                                                    'BatesPinching1951',
+                                                    'aqueous-molality-infinite-dilution-water-v1',
+                                                    'products_positive',
+                                                    'source-standard-state-to-provider-neutral-reference',
+                                                    True,
+                                                    {'coefficient_identities': ['reaction:R5:correlation:a_k',
+                                                                                'reaction:R5:correlation:b',
+                                                                                'reaction:R5:correlation:c_per_k'],
+                                                     'coefficient_values': [3037.6399534696106,
+                                                                            -1.0173150837285996,
+                                                                            0.0004277],
+                                                     'kind': 'negative-log10-temperature-polynomial',
+                                                     'reaction_id': 'R5',
+                                                     'source_correlation': {'kind': 'ln_from_negative_log10_a_over_t_plus_b_plus_c_t',
+                                                                            'a_k': 2677.91,
+                                                                            'b': 0.3869,
+                                                                            'c_per_k': 0.0004277},
+                                                     'source_standard_state_id': 'aqueous-molality-infinite-dilution-water-v1',
+                                                     'effective_parameter_role': 'candidate',
+                                                     'effective_coefficient_identities': ['reaction:R5:correlation:a_k',
+                                                                                          'reaction:R5:correlation:b',
+                                                                                          'reaction:R5:correlation:c_per_k'],
+                                                     'effective_coefficient_values': {'a_k': 3037.6399534696106,
+                                                                                      'b': -1.0173150837285996,
+                                                                                      'c_per_k': 0.0004277}}]],
+                         'feed_amounts_mol': [0.1529,
+                                              0.99998,
+                                              7.910947365207347,
+                                              1e-05,
+                                              1e-05,
+                                              8e-05,
+                                              1e-05,
+                                              0.00011,
+                                              1e-05],
+                         'molar_masses_kg_per_mol': [0.04400839250000016,
+                                                     0.061080535833333255,
+                                                     0.018015221250000022,
+                                                     0.06208747291666655,
+                                                     0.10408199125000012,
+                                                     0.06101667666666688,
+                                                     0.06000973958333358,
+                                                     0.019022158333333324,
+                                                     0.01700828416666672],
+                         'reaction_matrix': [[0.0, 0.0, -2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+                                             [-1.0, 0.0, -2.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+                                             [0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 1.0, 1.0, 0.0],
+                                             [0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0],
+                                             [0.0, 1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0]],
+                         'source_standard_state': {'activity_convention_id': 'molality-infinite-dilution-v1',
+                                                   'activity_scale_id': 'aqueous-molality-infinite-dilution-water-v1',
+                                                   'component_ids': ['carbon-dioxide',
+                                                                     'monoethanolamine',
+                                                                     'water',
+                                                                     'protonated-monoethanolamine',
+                                                                     'carbamate-anion',
+                                                                     'bicarbonate-anion',
+                                                                     'carbonate-anion',
+                                                                     'hydronium-cation',
+                                                                     'hydroxide-anion'],
+                                                   'id': 'aqueous-molality-infinite-dilution-water-v1',
+                                                   'ion_pairs': [[['protonated-monoethanolamine',
+                                                                   'carbamate-anion'],
+                                                                  [1, 1]],
+                                                                 [['protonated-monoethanolamine',
+                                                                   'bicarbonate-anion'],
+                                                                  [1, 1]],
+                                                                 [['protonated-monoethanolamine',
+                                                                   'carbonate-anion'],
+                                                                  [2, 1]],
+                                                                 [['protonated-monoethanolamine',
+                                                                   'hydroxide-anion'],
+                                                                  [1, 1]],
+                                                                 [['hydronium-cation', 'carbamate-anion'],
+                                                                  [1, 1]]],
+                                                   'log_activity_scale_factors': [-4.016534992299479,
+                                                                                  -4.016534992299479,
+                                                                                  0.0,
+                                                                                  -4.016534992299479,
+                                                                                  -4.016534992299479,
+                                                                                  -4.016534992299479,
+                                                                                  -4.016534992299479,
+                                                                                  -4.016534992299479,
+                                                                                  -4.016534992299479],
+                                                   'phase': 'liquid',
+                                                   'pure_components': [],
+                                                   'reference_convention': 'molality-infinite-dilution',
+                                                   'reference_pressure_pa': 100000.0,
+                                                   'solvent_composition': [0.0,
+                                                                           0.0,
+                                                                           1.0,
+                                                                           0.0,
+                                                                           0.0,
+                                                                           0.0,
+                                                                           0.0,
+                                                                           0.0,
+                                                                           0.0],
+                                                   'standard_molality_mol_per_kg': 1.0},
+                         'species_ids': ['carbon-dioxide',
+                                         'monoethanolamine',
+                                         'water',
+                                         'protonated-monoethanolamine',
+                                         'carbamate-anion',
+                                         'bicarbonate-anion',
+                                         'carbonate-anion',
+                                         'hydronium-cation',
+                                         'hydroxide-anion'],
+                         'strict_interior_amount_floor_mol': 1e-12,
+                         'engine_reactions': [{'reaction_id': 'R1',
+                                               'stoichiometry': [0.0, 0.0, -2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0],
+                                               'engine_correlation': {'a': 3.7290977365566675,
+                                                                      'b': -13445.9,
+                                                                      'c': -22.4773,
+                                                                      'd': 0.0,
+                                                                      'reference_temperature': 313.15,
+                                                                      'temperature_min': 273.15,
+                                                                      'temperature_max': 498.15,
+                                                                      'standard_state_id': 'aqueous-mole-fraction-infinite-dilution-water-v1'},
+                                               'engine_reference': {'source_basis': 'RawMoleFractionInfiniteDilution',
+                                                                    'reference_pressure_pa': None},
+                                               'parameter_role': 'candidate'},
+                                              {'reaction_id': 'R2',
+                                               'stoichiometry': [-1.0, 0.0, -2.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0],
+                                               'engine_correlation': {'a': 20.959245323180852,
+                                                                      'b': -11105.640030520277,
+                                                                      'c': -36.7816,
+                                                                      'd': 0.0,
+                                                                      'reference_temperature': 313.15,
+                                                                      'temperature_min': 293.15,
+                                                                      'temperature_max': 393.15,
+                                                                      'standard_state_id': 'aqueous-molality-infinite-dilution-water-v1'},
+                                               'engine_reference': {'source_basis': 'CommonMolalityInfiniteDilution',
+                                                                    'reference_pressure_pa': None},
+                                               'parameter_role': 'candidate'},
+                                              {'reaction_id': 'R3',
+                                               'stoichiometry': [0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 1.0, 1.0, 0.0],
+                                               'engine_correlation': {'a': 12.145792981306897,
+                                                                      'b': -12431.7,
+                                                                      'c': -35.4819,
+                                                                      'd': 0.0,
+                                                                      'reference_temperature': 313.15,
+                                                                      'temperature_min': 273.15,
+                                                                      'temperature_max': 498.15,
+                                                                      'standard_state_id': 'aqueous-mole-fraction-infinite-dilution-water-v1'},
+                                               'engine_reference': {'source_basis': 'RawMoleFractionInfiniteDilution',
+                                                                    'reference_pressure_pa': None},
+                                               'parameter_role': 'candidate'},
+                                              {'reaction_id': 'R4',
+                                               'stoichiometry': [0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 0.0, 0.0],
+                                               'engine_correlation': {'a': 2.151,
+                                                                      'b': -1545.3,
+                                                                      'c': 0.0,
+                                                                      'd': 0.0,
+                                                                      'reference_temperature': 313.15,
+                                                                      'temperature_min': 293.15,
+                                                                      'temperature_max': 393.15,
+                                                                      'standard_state_id': 'aqueous-molality-infinite-dilution-water-v1'},
+                                               'engine_reference': {'source_basis': 'CommonMolalityInfiniteDilution',
+                                                                    'reference_pressure_pa': 100000.0},
+                                               'parameter_role': 'candidate'},
+                                              {'reaction_id': 'R5',
+                                               'stoichiometry': [0.0, 1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+                                               'engine_correlation': {'a': 2.3424545466714632,
+                                                                      'b': -6994.424474742253,
+                                                                      'c': 0.0,
+                                                                      'd': -0.0009848156442735533,
+                                                                      'reference_temperature': 313.15,
+                                                                      'temperature_min': 293.15,
+                                                                      'temperature_max': 393.15,
+                                                                      'standard_state_id': 'aqueous-molality-infinite-dilution-water-v1'},
+                                               'engine_reference': {'source_basis': 'CommonMolalityInfiniteDilution',
+                                                                    'reference_pressure_pa': 100000.0},
+                                               'parameter_role': 'candidate'}]},
+     'continuation': {'identity': 'vle_obs_0119-candidate-v1',
+                      'state': {'parameter_fingerprint': 'sha256:927cc368a166c5503566778d997e847f04a51c3e4d54b548fb3a0afe474640e1',
+                                'phase_identities': ['mea-nine-species-liquid', 'mea-neutral-incipient-vapor'],
+                                'phases': [{'chemical_potential_component_ids': ['carbon-dioxide',
+                                                                                 'monoethanolamine',
+                                                                                 'water',
+                                                                                 'protonated-monoethanolamine',
+                                                                                 'carbamate-anion',
+                                                                                 'bicarbonate-anion',
+                                                                                 'carbonate-anion',
+                                                                                 'hydronium-cation',
+                                                                                 'hydroxide-anion'],
+                                            'chemical_potential_over_rt': [-1.7807701953077713,
+                                                                           -5.525372665447866,
+                                                                           0.907041305065813,
+                                                                           -140.0970101799466,
+                                                                           -145.62158809336194,
+                                                                           -163.81338942329435,
+                                                                           -693.3375651249896,
+                                                                           -436.79815980646805,
+                                                                           -184.1958614080744],
+                                            'mechanical_class': 'strict_stable_local_minimum',
+                                            'molar_density_mol_m3': 46334.73206031395,
+                                            'molar_volume_m3_per_mol': 2.1582082285450563e-05,
+                                            'mole_fractions': [3.8375831729536946e-06,
+                                                               0.07841941911829836,
+                                                               0.8872339891687699,
+                                                               0.017177169756338484,
+                                                               0.01662184936338647,
+                                                               0.0005321487109934178,
+                                                               1.1585392864799337e-05,
+                                                               4.973258945471279e-12,
+                                                               9.012022545270151e-10],
+                                            'packing_fraction': 0.4462268591603337,
+                                            'pressure_pa': 6922.992893812543,
+                                            'role': 'liquid',
+                                            'support': 'all_components',
+                                            'supported_component_ids': ['carbon-dioxide',
+                                                                        'monoethanolamine',
+                                                                        'water',
+                                                                        'protonated-monoethanolamine',
+                                                                        'carbamate-anion',
+                                                                        'bicarbonate-anion',
+                                                                        'carbonate-anion',
+                                                                        'hydronium-cation',
+                                                                        'hydroxide-anion']},
+                                           {'chemical_potential_component_ids': ['carbon-dioxide',
+                                                                                 'monoethanolamine',
+                                                                                 'water'],
+                                            'chemical_potential_over_rt': [-1.7807701954802078,
+                                                                           -5.525372665620303,
+                                                                           0.9070413048933759],
+                                            'mechanical_class': 'strict_stable_vapor',
+                                            'molar_density_mol_m3': 2.6684316320746597,
+                                            'molar_volume_m3_per_mol': 0.3747519659038509,
+                                            'mole_fractions': [0.06320024527196401,
+                                                               0.0015096666698379718,
+                                                               0.935290088058198],
+                                            'packing_fraction': 2.2724417472390534e-05,
+                                            'pressure_pa': 6922.992893791599,
+                                            'role': 'vapor',
+                                            'support': 'declared_neutral_components',
+                                            'supported_component_ids': ['carbon-dioxide',
+                                                                        'monoethanolamine',
+                                                                        'water']}],
+                                'pressure_pa': 6922.992893791602,
+                                'problem_fingerprint': 'sha256:403523f408d25f81b3e57b3ecd257ad27df349f042ddf36df510056d1bfbbb9b',
+                                'reaction_fingerprint': 'sha256:dedb505877015ae3a64ff86bdfb8bb42d7b478669f54e06bc31603a52debb8e1',
+                                'topology_fingerprint': 'sha256:dd6450eb3b5361c40531e3e32dbb16e7815fe39b336af6020776d1b36a47c15b'}},
+     'phases': [{'amount_role': 'finite',
+                 'fluid_role': 'liquid',
+                 'identity': 'mea-nine-species-liquid',
+                 'model': {'admissible_packing_fraction_interval': [1e-06, 0.74],
+                           'kind': 'eos',
+                           'reference_id': 'installed-eos'},
+                 'start': None,
+                 'support': {'component_ids': [], 'kind': 'all_components'}},
+                {'amount_role': 'incipient',
+                 'fluid_role': 'vapor',
+                 'identity': 'mea-neutral-incipient-vapor',
+                 'model': {'admissible_packing_fraction_interval': [1e-08, 0.25],
+                           'kind': 'eos',
+                           'reference_id': 'installed-eos'},
+                 'start': None,
+                 'support': {'component_ids': ['carbon-dioxide', 'monoethanolamine', 'water'],
+                             'kind': 'declared_neutral_components'}}],
+     'temperature': {'role': 'fixed', 'unit': 'kelvin', 'value': 313.15}}
+    anchor: Any = {'mole_fractions': [3.8480681348098447e-08,
+                        0.07827110880066358,
+                        0.8863734508600574,
+                        0.01818111244399814,
+                        0.015766643324345936,
+                        0.0003959814177106597,
+                        0.0010068230563202352,
+                        1.3460805650294977e-11,
+                        4.841602761876763e-06],
+     'pressure_pa': 6420.455542224271}
+    system = request["reaction_system"]
+    species = system["species_ids"]
+    states = {p["role"]: p for p in request["continuation"]["state"]["phases"]}
+    phases = []
+    for p in request["phases"]:
+        support = (
+            species
+            if p["support"]["kind"] == "all_components"
+            else p["support"]["component_ids"]
+        )
+        guess = (
+            anchor["mole_fractions"]
+            if p["fluid_role"] == "liquid"
+            else states[p["fluid_role"]]["mole_fractions"]
+        )
+        phases.append(
+            eq.Phase(
+                p["identity"],
+                support=support,
+                kind=p["fluid_role"],
+                amount=eq.Pinned(0.0) if p["amount_role"] == "incipient" else eq.Free(),
+                composition_guess=guess,
+            )
+        )
+    reactions = []
+    for row, r in zip(
+        system["reaction_matrix"], system["engine_reactions"], strict=True
+    ):
+        c = r["engine_correlation"]
+        correlation = eq.ReactionLogPolynomial(
+            *(
+                c[k]
+                for k in (
+                    "a",
+                    "b",
+                    "c",
+                    "d",
+                    "reference_temperature",
+                    "temperature_min",
+                    "temperature_max",
+                    "standard_state_id",
+                )
+            )
+        )
+        ref = r["engine_reference"]
+        reactions.append(
+            eq.Reaction(
+                dict(zip(species, row, strict=True)),
+                name=r["reaction_id"],
+                correlation=correlation,
+                reference=eq.ReactionReference(
+                    getattr(eq.ReferenceSourceBasis, ref["source_basis"]),
+                    reference_pressure_pa=ref["reference_pressure_pa"],
+                ),
+            )
+        )
+    source = system["source_standard_state"]
+    solvent = species[
+        max(range(len(species)), key=source["solvent_composition"].__getitem__)
+    ]
+    ratios = {
+        s: float(z == 0)
+        for s, z in zip(species, system["charges"], strict=True)
+        if s != solvent
+    }
+    for pair, coefficients in source["ion_pairs"]:
+        for s, c in zip(pair, coefficients, strict=True):
+            ratios[s] += c
+    ratios = {s: v * 0.125 for s, v in ratios.items()}
+    problem: Any = eq.Problem(
+        phases=phases,
+        T=request["temperature"]["value"],
+        P=eq.Free(anchor["pressure_pa"]),
+        feed=eq.Amounts(dict(zip(species, system["feed_amounts_mol"], strict=True))),
+        reactions=reactions,
+        standard_gibbs_j_per_mol=system.get("standard_gibbs_j_per_mol", ()),
+        topology_declared=True,
+        neutral_reference=eq.NeutralReference(
+            solvent=solvent,
+            solute_molality_ratios=ratios,
+            standard_molality_mol_per_kg=1.0,
+        ),
+    )
     stable = [4.3156821899964646e-13, .06744004970829823, .8601794757184709, .04476857189213988, 1.02472867796729e-05,
               2.0895783143159884e-06, .017157150074218773, 2.404313692039684e-07, .010442175309977538]
     water = request["reaction_system"]["reaction_matrix"][0]
@@ -279,7 +704,7 @@ def test_pure_saturation_default_start_takes_the_loop_pressure(species: Any, ass
     """#391: Gross and Sadowski (2002) Table 1 methanol and 1-pentanol (2B) saturation, from the default start with
     the 0.1 MPa guess. That pressure has only a vapor root; main 3b307095 refused it as "no coexisting density
     roots". The pressure at the density scan's negative-slope node seeds both roots, and the solve reaches the
-    retained declared-start state of analyses/reproduction/2002-gross (state-comparisons.csv lines 21 and 41)."""
+    retained declared-start state of engine/tests/cases/2002-gross (state-comparisons.csv lines 21 and 41)."""
     model = Pure(parameters((species,), [("association_energy_over_k", (0, 1), association[0]),
                                          ("association_volume", (0, 1), association[1])], ((0, 0), (1, 1))))
     result = eq.solve_equilibrium(model, eq.Problem(
@@ -300,11 +725,11 @@ def test_water_pentanol_liquid_split() -> None:
     """
     import json
     root = Path(__file__).resolve().parents[3]
-    spec = importlib.util.spec_from_file_location("cross_check", root / "analyses/2026-competitor-cross-check/scripts/engine.py")
+    spec = importlib.util.spec_from_file_location("cross_check", root / "engine/tests/cases/competitor-cross-check/scripts/gross_sadowski.py")
     assert spec is not None and spec.loader is not None
     cross = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(cross)
-    inputs = json.loads((root / "analyses/2026-competitor-cross-check/inputs/cases.json").read_text())
+    inputs = json.loads((root / "engine/tests/cases/competitor-cross-check/inputs/cases.json").read_text())
     request = next(q for q in inputs["requests"] if q["id"] == "C4-298.15")
     model, problem, *_ = cross.prepare(inputs, request, declare_only=True)
     result = eq.solve_equilibrium(model, problem)

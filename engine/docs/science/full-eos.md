@@ -709,7 +709,7 @@ specified reference convention.
 Properties supplies the raw lower reference partials C_T, C_TT, C_theta,
 C_Ttheta and C_TP and the bounded higher-order reference columns in EqID:
 `reference_mixed_temperature_pressure_derivatives`, using EqID:
-`reference_single_insertion_taylor`. The [F8/F9 notebook](../../../analyses/2026-reactive-caloric-actions/notebook.qmd)
+`reference_single_insertion_taylor`. The F8/F9 notebook (private research repository)
 qualifies the stated finite-terminal derivatives and observed dilution changes.
 It does not extend reacting caloric/action consumers by implication.
 
@@ -935,10 +935,10 @@ The [current-wheel admission control](../../../docs/scientific/reviews/modular-b
 retains sampled values, derivative outputs, exact input identities, and limits.
 
 Figiel parameter roles and calibration rows remain with the existing
-[reproduction target ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.yaml):
+reproduction target ledger (private research repository):
 the canonical Data packet owns reusable model inputs, while the reproduction
 analysis owns paper-specific fitted targets and partitions. Its
-[parameter-role ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-parameter-provenance.csv)
+parameter-role ledger (private research repository)
 (SHA-256 `932e8baa90fcefbaa8c3a8730cdeadd83a4c01f0a3b109f4e4cd0319aee9312b`)
 covers 122 source cells from Tables 2–5, their association/segment-count
 footnotes, and Eq. 11. It classifies 57 cells as fitted in Figiel, 33 inherited
@@ -959,7 +959,7 @@ segment sigma remains distinct from the fitted Born diameter; packing and
 Debye–Huckel diameters use the source transformation
 `d_i^pack = d_i^DH = 0.88 sigma_i`.
 
-The 407-row [calibration-observation ledger](../../../analyses/reproduction/2025-figiel/inputs/source/figiel-2025-regression-target-ledger.csv)
+The 407-row calibration-observation ledger (private research repository)
 (SHA-256 `4d6ce439f732d44c6cee08d9d800cef6f844eb297a30ebf935daa1c65403c5e7`)
 records each row's role, value and unit, species/solvent, temperature,
 pressure, composition basis/value, thermodynamic basis, source locator and
@@ -1004,7 +1004,7 @@ convergence does not expand that evidence.
 
 The MEA nine-species packet from version 5 converts the Fakouri
 Baygi 2015 (DOI `10.1016/j.cherd.2014.07.017`, Eq. 4) MEA 2B volume this way;
-the [conversion analysis](../../../analyses/2026-mea-association-diameter/README.md)
+the conversion analysis (private research repository)
 owns the evidence.
 
 The Figiel2025, Figiel–Yu–Held 2025, Khudaida2026 and MEA nine-species packets
@@ -1078,7 +1078,7 @@ osmotic diagnostics are `0.97101`, `0.94640`, and `0.87190`; no acceptance claim
 is assigned to those three osmotic numbers here. The Schreckenberg reference
 path, which formerly failed on a lone stable root, now completes and gives
 `0.56348`. The common-data comparison
-([analyses/2026-dielectric-alternatives](../../../analyses/2026-dielectric-alternatives/README.md))
+(engine/tests/cases/dielectric-alternatives (private research repository))
 supersedes these single-point diagnostics for water/NaCl at 298.15 K and 1 bar.
 
 Since the retained ePC-SAFT ion, Born, and interaction parameters were not

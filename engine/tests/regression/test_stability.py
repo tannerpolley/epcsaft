@@ -8,7 +8,7 @@ from tests.native_inputs import parameters,ETHANE
 ROOT=Path(__file__).resolve().parents[3]
 
 def declarations() -> list[Any]:
-    neutral=Parameters.from_json(ROOT/'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',components=('water','isobutanol'))
+    neutral=Parameters.from_json(ROOT/'engine/tests/cases/khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',components=('water','isobutanol'))
     nc=[r.coordinate(neutral,[('k_ij',('water','isobutanol'),1)],origin=-.20,scale=.1,bounds=(-.5,.1))]
     np=eq.Problem(T=293.15,P=1e5,row_tolerance=1e-10,feed=eq.Amounts({'water':.6,'isobutanol':.4}),phases=[eq.Phase('L',kind='liquid',composition_guess=(.6,.4))])
     nr=eq.Problem(T=293.15,P=eq.Free(1e4),row_tolerance=1e-10,feed=np.feed,phases=[eq.Phase('L',kind='liquid',composition_guess=(.6,.4)),eq.Phase('V',kind='vapor',amount=eq.Pinned(0.))])

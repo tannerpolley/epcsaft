@@ -40,3 +40,6 @@ analyses/2026-reactive-caloric-actions/results/main-8298c602/qualification.tsv -
 # Raw comparator logs retain trailing blanks and their final empty line.
 analyses/2026-tpd-phase-discovery/results/main-8298c602/feos.log whitespace=-blank-at-eol,-blank-at-eof
 analyses/2026-tpd-phase-discovery/results/main-8298c602/initial-output-failure/feos.log whitespace=-blank-at-eol,-blank-at-eof
+
+# Engine qualification inputs retain the source bytes.
+engine/tests/cases/**/*.csv -text

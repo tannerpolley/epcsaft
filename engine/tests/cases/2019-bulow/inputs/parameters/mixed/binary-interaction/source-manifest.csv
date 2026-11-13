@@ -1,0 +1,25 @@
+parameter,component_i,component_j,value,source,provenance_status
+k_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_ij,BF4-,H2O,-0.17,2019_Bulow k_ij.csv,source_backed
+k_ij,C10mim+,H2O,0.30588,2019_Bulow k_ij.csv,source_backed
+k_ij,C2mim+,H2O,-0.0531984,2019_Bulow k_ij.csv,source_backed
+k_ij,C3mim+,H2O,-0.008328,2019_Bulow k_ij.csv,source_backed
+k_ij,C3mpy+,H2O,0.1495437,2019_Bulow k_ij.csv,source_backed
+k_ij,C3mpyr+,H2O,0.08991,2019_Bulow k_ij.csv,source_backed
+k_ij,C4m4py+,H2O,0.0718,2019_Bulow k_ij.csv,source_backed
+k_ij,C4mim+,H2O,0.0365712,2019_Bulow k_ij.csv,source_backed
+k_ij,C4mpy+,H2O,0.2098353,2019_Bulow k_ij.csv,source_backed
+k_ij,C4mpyr+,H2O,0.082899,2019_Bulow k_ij.csv,source_backed
+k_ij,C4py+,H2O,0.0946485,2019_Bulow k_ij.csv,source_backed
+k_ij,C5mim+,H2O,0.081432,2019_Bulow k_ij.csv,source_backed
+k_ij,C6mim+,H2O,0.126344,2019_Bulow k_ij.csv,source_backed
+k_ij,C6mpyr+,H2O,0.0688725,2019_Bulow k_ij.csv,source_backed
+k_ij,C6py+,H2O,0.1142841,2019_Bulow k_ij.csv,source_backed
+k_ij,C7mim+,H2O,0.171224,2019_Bulow k_ij.csv,source_backed
+k_ij,C8mim+,H2O,0.2161136,2019_Bulow k_ij.csv,source_backed
+k_ij,C8py+,H2O,0.1339217,2019_Bulow k_ij.csv,source_backed
+k_ij,H2O,NTf2-,0.11,2019_Bulow k_ij.csv,source_backed
+k_ij,H2O,PF6-,0.14,2019_Bulow k_ij.csv,source_backed
+k_ij,H2O,TFO-,-0.065,2019_Bulow k_ij.csv,source_backed
+l_ij,*,*,0,default zero for unpublished values,unresolved_default_zero
+k_hb_ij,*,*,0,default zero for unpublished values,unresolved_default_zero

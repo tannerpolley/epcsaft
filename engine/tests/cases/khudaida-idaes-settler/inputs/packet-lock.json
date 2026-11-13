@@ -1,0 +1,13 @@
+{
+  "packet_id": "khudaida-2026-figure-2-electrolyte-lle",
+  "packet_version": "7",
+  "packet_path": "data/packets/khudaida-2026-figure-2-electrolyte-lle/7",
+  "materialized_path": "analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7",
+  "packet_fingerprint": "23eb6e97e126f827f453b7e748548f5a7123828acac5ff8877e0c60902a3b418",
+  "materialization": "byte-for-byte",
+  "files": [
+    {"path": "packet.toml", "sha256": "6ff2684d816df92dc0c5a26b52dbce68d628e9961512fad479433edbfc92ee41"},
+    {"path": "parameters/parameters.json", "sha256": "8babed899e7347e58c403c7aff24a7fdd6d60411af3b4d81eb6aa90c2431dfa4"},
+    {"path": "provenance/source-origin.toml", "sha256": "cd12c9af98c214c5d68355823bf47662e27c4585ddce6cf5c29f592f29c50c8e"}
+  ]
+}

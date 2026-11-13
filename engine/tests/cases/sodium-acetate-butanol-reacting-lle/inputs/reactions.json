@@ -1,0 +1,27 @@
+{
+ "temperature_K": 298.15,
+ "pressure_Pa": 100000.0,
+ "reactions": {
+  "HAc": {
+   "stoichiometry": {
+    "acetic-acid": -1,
+    "hydrogen-cation": 1,
+    "acetate-anion": 1
+   },
+   "pK": 4.76,
+   "source": "ascani-2022-esi",
+   "locator": "Table S4 pKa of acetic acid at 298.15 K"
+  },
+  "H2O": {
+   "stoichiometry": {
+    "water": -1,
+    "hydrogen-cation": 1,
+    "hydroxide-anion": 1
+   },
+   "pK": 13.9945,
+   "source": "iapws-r11-07",
+   "locator": "IAPWS R11-07 (Bandura and Lvov 2006) pKw at 298.15 K and 0.1 MPa"
+  }
+ },
+ "basis": "molality, infinite dilution in pure water, standard molality 1 mol/kg (CommonMolalityInfiniteDilution, as in the acetic-acid analyses)"
+}

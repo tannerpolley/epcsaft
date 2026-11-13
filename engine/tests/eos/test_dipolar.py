@@ -17,7 +17,7 @@ from epcsaft import GAS_CONSTANT_J_PER_MOL_K, DensityActionDirection, Mixture, P
 from tests.native_inputs import mixed_difference
 from tests.packets import parameters_json
 
-ROWS = Path(__file__).resolve().parents[3] / "analyses/2026-polar-dipole/results/teqp-dipolar-rows.csv"
+ROWS = Path(__file__).resolve().parents[3] / "engine/tests/cases/polar-dipole/results/teqp-dipolar-rows.csv"
 # Typed CODATA 2018 constants: the polar terms are checked against an independent closed form.
 AVOGADRO, BOLTZMANN, EPS0, DEBYE = 6.02214076e23, 1.380649e-23, 8.8541878128e-12, 1.0e-21 / 299792458.0
 

@@ -577,7 +577,7 @@ relations describe source methods, not a selected current discovery algorithm.
 The adopted finite native controller does not implement those global-bound
 methods. Justified global bounds, replacement at the balance-rank phase limit
 and generalized multi-donor/reactive withdrawal remain separately scoped work.
-Budget exhaustion never means proven stable. The [qualification notebook](../../../analyses/2026-tpd-phase-discovery/notebook.qmd)
+Budget exhaustion never means proven stable. The qualification notebook (private research repository)
 retains neutral comparisons, admitted density-dependent ionic/reacting checks,
 density-independent charged-search refusals and unchanged declared work.
 These are numerical verification; physical validation and a global certificate

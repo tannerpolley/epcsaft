@@ -35,3 +35,7 @@ analyses/**/*.html
 analyses/2026-errors-in-variables/results/attempt-1/
 analyses/2026-errors-in-variables/results/mea/*/
 analyses/2026-errors-in-variables/results/ionic/*/
+
+# Restored locally from pinned FeOs sources (non-commercial use).
+data/packets/feos-esper-2023/
+data/packets/feos-rehner-2023/

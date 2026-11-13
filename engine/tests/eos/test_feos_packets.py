@@ -62,7 +62,7 @@ def test_gross_2001_values_equal_the_existing_packet_bitwise() -> None:
 
 
 def test_gross_2002_equals_table_1_and_declares_its_rules() -> None:
-    table = ROOT / "analyses/reproduction/2002-gross/results/tables/table-001/source/table-001.csv"
+    table = ROOT / "engine/tests/cases/2002-gross/results/tables/table-001/source/table-001.csv"
     rows = [r for r in csv.reader(table.open()) if len(r) > 6 and r[1]][1:]
     packet = document("feos-gross-sadowski-2002")
     components = {c["component_id"]: c for c in packet["components"]}

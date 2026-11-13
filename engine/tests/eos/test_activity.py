@@ -17,7 +17,7 @@ HAMER_WU_OBSERVATIONS = HAMER_WU_PACKET / "observations/hamer-wu-1972-aqueous-al
 HAMER_WU_SOURCE = HAMER_WU_PACKET / "sources/hamer-wu-1972-aqueous-alkali-halides.yaml"
 FIGIEL_DIGITIZED = (
     REPOSITORY_ROOT
-    / "analyses/reproduction/2025-figiel/figures/figure-05/source/libr-model-digitized.csv"
+    / "engine/tests/cases/2025-figiel/figures/figure-05/source/libr-model-digitized.csv"
 )
 HAMER_WU_TABLES = {"LiCl": 9, "LiBr": 10, "NaCl": 16, "NaBr": 17, "KCl": 28, "KBr": 29}
 HAMER_WU_IONS = {
@@ -474,7 +474,7 @@ def test_electrolyte_density_columns_and_debye_density_limit() -> None:
     from epcsaft import _core, regression as r
 
     components = ("water", "sodium-cation", "chloride-anion")
-    selection = REPOSITORY_ROOT / "analyses/2026-dielectric-alternatives/inputs/selections/density-temperature.json"
+    selection = REPOSITORY_ROOT / "engine/tests/cases/dielectric-alternatives/inputs/selections/density-temperature.json"
     p = Parameters.from_json(selection, components=components)
     cs = [r.coordinate(p, [("dispersion_energy_over_k", "water", 1)], origin=0, scale=1)]
     chart = r.CoordinateSet()

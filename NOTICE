@@ -3,7 +3,8 @@ ePC-SAFT third-party notices
 The project code is licensed under GNU GPL version 3, with the section 7
 additional permission for linking with EPL-licensed Ipopt in LICENSE and
 engine/LICENSE. That permission does not relicense third-party components
-or data. Public source releases and corresponding-source downloads are available at
+or data. The public source repository is https://github.com/tannerpolley/epcsaft.
+Corresponding-source downloads are available at
 https://github.com/tannerpolley/epcsaft/releases. Retain each component's
 upstream notices when redistributing it.
 
@@ -57,7 +58,7 @@ Native dependencies (not all are bundled in the source tree)
   ext/robin_map/include/tsl/robin_map.h header; retain it when redistributing.
   Source: https://github.com/Tessil/robin-map (nanobind's bundled revision).
 
-Build-selected transitive dependencies (not bundled in this source snapshot)
+Build-selected transitive dependencies (not bundled in the source tree)
 
 The inspected Ipopt links BLAS/LAPACK; the inspected Ceres links glog and
 SuiteSparse. These libraries keep their own terms, outside the Ipopt permission.

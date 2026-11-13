@@ -173,7 +173,7 @@ def worker():
     import epcsaft
     from epcsaft import equilibrium as eq, _core
     from engine_identity import loaded_identity
-    sys.path[:0] = [str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'), str(ROOT / 'analyses/2026-khudaida-idaes-settler/scripts')]
+    sys.path[:0] = [str(ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts'), str(ROOT / 'engine/tests/cases/khudaida-idaes-settler/scripts')]
     import baseline as b
     import run_fixed_settler as fixed
     sys.path.append(str(ROOT / 'engine'))
@@ -718,10 +718,10 @@ def main():
         summary['runtime_seconds'] = time.perf_counter() - begun
         summary['input_sha256'] = {path.relative_to(ROOT).as_posix(): digest(path) for path in (
             Path(__file__).resolve(), *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
-            ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
-            ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',
-            ROOT / 'analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv',
-            ROOT / 'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',
+            ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts/baseline.py',
+            ROOT / 'engine/tests/cases/khudaida-idaes-settler/scripts/run_fixed_settler.py',
+            ROOT / 'engine/tests/cases/khudaida/figures/figure-02/source/source-points.csv',
+            ROOT / 'engine/tests/cases/khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',
             ROOT / 'data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json',
             ROOT / 'engine/tests/native_inputs.py',
             *(ROOT / 'engine/data/reference' / path for path in (

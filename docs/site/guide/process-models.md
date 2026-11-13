@@ -35,7 +35,7 @@ It solves a neutral methane/ethane TP flash at 180 K and 1 MPa with a
 1 mol/s equimolar feed, using a standard IDAES `Flash`. It prints phase
 flows, compositions, densities, native comparisons and balance residuals.
 The separate qualification script retains numerical assertions:
-`analyses/2026-idaes-asl-adapter/scripts/qualify_properties.py`.
+`engine/tests/cases/idaes-asl-adapter/scripts/qualify_properties.py`.
 
 State variables are molar flow (mol/s), T (K), P (Pa) and component mole
 fractions. Choose `phases=("liquid",)`, `("vapor",)` or both in

@@ -31,7 +31,7 @@ from tests.native_inputs import (
 from tests.packets import parameters_json
 from tests.regression.test_temperature_laws import _document
 
-SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alternatives/inputs/selections"
+SELECTIONS = Path(__file__).resolve().parents[3] / "engine/tests/cases/dielectric-alternatives/inputs/selections"
 BRINE = ("water", "sodium-cation", "chloride-anion")
 
 

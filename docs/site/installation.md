@@ -2,7 +2,7 @@
 
 The Engine performs the thermodynamic calculations in C++; Python declares
 inputs and reads results. The examples read parameter packets and observation
-files under `data/` and `analyses/` of the source release. Run the examples
+files under `data/` and `engine/tests/cases/` of the source release. Run the examples
 from the root of the unpacked source archive of the same
 [release](https://github.com/tannerpolley/epcsaft/releases).
 The [water-state notebook](examples/parameters-and-water-state.ipynb) checks

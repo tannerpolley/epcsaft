@@ -1,0 +1,110 @@
+{
+  "source": "engine/tests/regression/test_fit.py:neutral_binary and bubble",
+  "inputs": {
+    "molar_mass_g_mol": [
+      16.043,
+      30.07
+    ],
+    "m": [
+      1.0,
+      1.6069
+    ],
+    "sigma_angstrom": [
+      3.7039,
+      3.5206
+    ],
+    "epsilon_K": [
+      150.03,
+      191.42
+    ],
+    "kij": 0.0,
+    "feed_mol": [
+      0.5,
+      0.5
+    ],
+    "T_guess_K": 180.0,
+    "P_fixed_Pa": 1596859.1113027716,
+    "reaction": "iso",
+    "stoichiometry": [
+      -1.0,
+      1.0
+    ],
+    "a": -5.172888631054627,
+    "b_K": 300.0,
+    "c": 0.5,
+    "d_per_K": 0.001,
+    "Tref_K": 200.0,
+    "Tmin_K": 150.0,
+    "Tmax_K": 220.0,
+    "standard_state_id": "eos-helmholtz-coordinate-basis",
+    "phases": [
+      "liquid, free amount",
+      "vapor, pinned zero amount"
+    ],
+    "cold_composition_guesses": [],
+    "cold_packing_guesses": [
+      null,
+      null
+    ],
+    "thermochemistry": null,
+    "source_reference": null,
+    "solver": "unchanged Engine defaults"
+  },
+  "J1": {
+    "success": true,
+    "solver_status": "SUCCESS",
+    "message": "converged: residual 3.1742396530863179e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 4 iterations, contraction absent, floor absent, amplification 0",
+    "topology": "TopologyEvent.None_",
+    "T_K": [
+      180.0
+    ],
+    "P_Pa": [
+      1596859.1113027716
+    ],
+    "x": [
+      0.500000000000001,
+      0.49999999999999895,
+      0.9563602429614723,
+      0.04363975703852779
+    ],
+    "packing": [
+      0.3677492924818144,
+      0.020390681605308048
+    ],
+    "residual": 3.174239653086318e-15
+  },
+  "cold": {
+    "success": false,
+    "solver_status": "SUCCESS",
+    "message": "phase V corrected density left the anchored branch window",
+    "topology": "TopologyEvent.None_",
+    "T_K": [],
+    "P_Pa": [],
+    "x": [],
+    "packing": [],
+    "residual": 1.2382095349039446e-11
+  },
+  "declared_J1": {
+    "success": true,
+    "solver_status": "SUCCESS",
+    "message": "converged: residual 6.2172489379008766e-15 against EQUILIBRIUM_ROW_RESIDUAL 1e-10 after 1 iterations, contraction absent, floor absent, amplification 0",
+    "topology": "TopologyEvent.None_",
+    "T_K": [
+      179.99999999999997
+    ],
+    "P_Pa": [
+      1596859.1113027716
+    ],
+    "x": [
+      0.5000000000000011,
+      0.49999999999999883,
+      0.9563602429614723,
+      0.04363975703852777
+    ],
+    "packing": [
+      0.3677492924818143,
+      0.020390681605308054
+    ],
+    "residual": 6.217248937900877e-15
+  }
+}

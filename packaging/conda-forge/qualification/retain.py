@@ -48,7 +48,7 @@ for name in ['association-binary128.csv','association-compare.py']:
 import os
 source = r/'comparison-source'
 source.mkdir()
-for directory in ['tools','analyses','data','engine']:
+for directory in ['tools','data','engine']:
  shutil.copytree(directory,source/directory,ignore=shutil.ignore_patterns('results','__pycache__','build','build-win','build-unix','qualification-939','*.png','*.pdf','*.svg','*.ipynb'))
 import runpy
 for name in runpy.run_path('tools/check-equilibrium-corpora')['RETAINED_INPUTS']:

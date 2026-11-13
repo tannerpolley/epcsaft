@@ -8,7 +8,7 @@ from typing import Any, cast
 
 from epcsaft import Mixture, Parameters, equilibrium as eq
 
-ANALYSIS = Path(__file__).resolve().parents[3] / "analyses" / "2026-sodium-acetate-butanol-reacting-lle"
+ANALYSIS = Path(__file__).resolve().parents[3] / "engine/tests/cases/sodium-acetate-butanol-reacting-lle"
 SPECIES = ("water", "1-butanol", "sodium-cation", "acetate-anion", "acetic-acid", "hydrogen-cation", "hydroxide-anion")
 CHARGE = (0, 0, 1, -1, 0, 1, -1)
 T, P, LN10, M_W = 298.15, 1.0e5, math.log(10.0), 0.01801528

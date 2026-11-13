@@ -470,7 +470,7 @@ def test_ideal_molarity_carbonate_reference(case: int) -> None:
     import json
 
     source = Path(__file__).resolve().parents[3] / (
-        "analyses/reproduction/2018-iapws/inputs/cases/carbonate-complexation/results/data/ideal-carbonate-reference.csv"
+        "engine/tests/cases/2018-iapws/inputs/cases/carbonate-complexation/results/data/ideal-carbonate-reference.csv"
     )
     with source.open() as stream:
         reference = list(csv.DictReader(stream))[case]
@@ -546,7 +546,7 @@ def test_fast_tested_flags_the_missed_third_liquid_and_leaves_a_stable_split() -
     # Post-flash check on the fast split: Full's endpoint trial set flags the 10 MPa three-liquid case
     # (tpd/RT ~ -6.9e-2) and passes methane/ethane 190 K 1 MPa with the fast state unchanged.
     ternary = Mixture(Parameters.from_json(
-        Path(__file__).parents[3] / "analyses/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json"))
+        Path(__file__).parents[3] / "engine/tests/cases/phase-stability-cutover/inputs/phase-stability-neutral-ternary.json"))
     feed = Amounts(dict.fromkeys(ternary.component_ids, 1 / 3))
     missed = solve_equilibrium(ternary, Problem(T=300.0, P=1e7, feed=feed, phases=equilibrium.Discover(mode="fast-tested")))
     record = missed.discovery

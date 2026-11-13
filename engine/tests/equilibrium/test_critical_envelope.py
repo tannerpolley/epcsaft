@@ -94,7 +94,7 @@ def test_polish_endpoint_conditioning() -> None:
     import sys
     from pathlib import Path
 
-    path = Path(__file__).resolve().parents[3] / "analyses/2026-tpd-phase-discovery/scripts/baseline.py"
+    path = Path(__file__).resolve().parents[3] / "engine/tests/cases/tpd-phase-discovery/scripts/baseline.py"
     spec = importlib.util.spec_from_file_location("conditioning_baseline", path)
     assert spec is not None and spec.loader is not None
     baseline = importlib.util.module_from_spec(spec)

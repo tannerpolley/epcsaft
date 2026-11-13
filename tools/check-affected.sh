@@ -63,7 +63,7 @@ python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 [[ "$1" == true ]] || python3 tools/tests/test-time-key-solves-gate.py
 .venv/bin/python data/tools/validate_packets.py' readiness "$tools_changed"
-if grep -Eq '^(analyses/|docs/|engine/docs/|engine/src/|engine/tests/.*\.py$|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
+if [[ -d analyses ]] && grep -Eq '^(analyses/|docs/|engine/docs/|engine/src/|engine/tests/.*\.py$|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
     timed analysis-layout python3 tools/check-analysis-layout.py
 fi
 
@@ -74,7 +74,7 @@ if grep -Eq "^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/)|$ana
 fi
 check_declarations() {
     # With tools changed, tools/tests/test-analysis-checks.py in check_tools runs the full check.
-    if [[ "$declarations_affected" == true && "$tools_changed" == false ]]; then
+    if [[ -d analyses && "$declarations_affected" == true && "$tools_changed" == false ]]; then
         timed declarations .venv/bin/python tools/check-analysis-declarations.py
     fi
 }
@@ -85,6 +85,7 @@ check_tools() {
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
     [[ "$tools_changed" == true ]] || return 0
     for test in tools/tests/*; do
+        [[ -d analyses || "$test" != tools/tests/test-analysis-checks.py ]] || continue
         if [[ "$test" == *.sh ]]; then timed "$test" bash "$test"; else timed "$test" .venv/bin/python "$test"; fi
     done
 }

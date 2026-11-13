@@ -1,0 +1,12 @@
+section,key,value,unit,notes
+provenance,paper,Gross and Sadowski 2002,,
+provenance,figure,figure-06,,
+provenance,source_image,analyses/reproduction/2002-gross/figures/figure-06/source/figure-06.png,,
+source_method,published_figure_curve_trace,retained visible PC-SAFT curve points from the published figure,,
+source_method,literature_table_overlay,external literature-table points retained where available,,
+data_file,source_points,analyses/reproduction/2002-gross/figures/figure-06/source/source-points.csv,,figure-local source points used for acceptance scoring
+data_file,model_curve,not-retained-model-output,,native ePC-SAFT model curve rows
+data_file,plotted_data,not-retained-model-output,,rows used by the retained figure image
+data_file,literature_points,analyses/reproduction/2002-gross/figures/figure-06/source/literature-points.csv,,Deak et al. 1995 Table 3
+acceptance,normalized_plot_score,8.923142039800089,,pressure-coordinate RMSE against calibrated Gross 2002 Figure 6 retained P-x_Butane source points
+acceptance,derivative_status,verified_exact,,

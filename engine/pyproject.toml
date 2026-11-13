@@ -21,6 +21,8 @@ junit_log_passing_tests = true
 
 [tool.ruff]
 target-version = "py313"
+# Relocated qualification drivers retain their source formatting and imports.
+extend-exclude = ["tests/cases"]
 
 [tool.ruff.lint]
 select = ["E4", "E7", "E9", "F"]
@@ -30,3 +32,4 @@ files = ["src/epcsaft", "tests"]
 mypy_path = "src"
 python_version = "3.13"
 strict = true
+exclude = ["tests/cases/"]

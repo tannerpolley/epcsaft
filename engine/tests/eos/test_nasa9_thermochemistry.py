@@ -18,7 +18,7 @@ RECORDS = PACKETS / "nasa-glenn-2002-hda-species/1/parameters/nasa9-records.json
 
 
 def former(components: tuple[str, ...]) -> ThermochemistryRecord:
-    """The former analyses/2026-hda-two-flash/scripts/hda_inputs.py construction at d0e992c2 (#73)."""
+    """The former engine/tests/cases/hda-two-flash/scripts/hda_inputs.py construction at d0e992c2 (#73)."""
     records = json.loads(RECORDS.read_text())
     scale, p0 = records["gas_constant_J_per_mol_K"] / GAS_CONSTANT_J_PER_MOL_K, records["standard_pressure_Pa"]
     by_id = {item["species_id"]: sorted(item["intervals"], key=lambda i: i["lower_K"]) for item in records["species"]}

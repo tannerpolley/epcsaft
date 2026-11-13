@@ -1,7 +1,7 @@
 """#27: admitted density-dependent permittivity forms (full EOS 6.2, 6.4).
 
 The selections are the retained Figiel-base hybrids of
-analyses/2026-dielectric-alternatives; each exchanges only the permittivity
+engine/tests/cases/dielectric-alternatives; each exchanges only the permittivity
 formulation. The checks falsify packet-to-native unit conversion, the ion-free
 limit, the single epsilon_r consumed by DH and Born, and the epsilon_r(T, rho)
 derivative chain through pressure and internal energy.
@@ -23,7 +23,7 @@ from epcsaft.equilibrium import (
     ReferenceSourceBasis, compile_problem, solve_equilibrium,
 )
 
-SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alternatives/inputs/selections"
+SELECTIONS = Path(__file__).resolve().parents[3] / "engine/tests/cases/dielectric-alternatives/inputs/selections"
 COMPONENTS = ("water", "sodium-cation", "chloride-anion")
 T, RHO, X = 298.15, 55000.0, (0.96, 0.02, 0.02)
 # Typed CODATA 2018 constants: the permittivity forms are checked against independent closed forms.
@@ -34,7 +34,7 @@ DEBYE_SQUARED_J_A3 = (1.0e-21 / 299792458.0) ** 2 / (4.0 * math.pi * 8.854187812
 
 def test_component_permittivity_zero_water() -> None:
     """Bülow 2019 Eq. (7), including support transitions on the same native model."""
-    declarations = runpy.run_path(str(SELECTIONS.parents[2] / "reproduction/2019-bulow/scripts/reproduce.py"))["declarations"]
+    declarations = runpy.run_path(str(SELECTIONS.parents[2] / "2019-bulow/scripts/reproduce.py"))["declarations"]
     model, _ = declarations()
     for path in ((0.5, 0.0, 0.5), (0.0, 0.5, 0.0), (1.0, 0.9, 1.0e-8, 1.0e-12)):
         for t in path:

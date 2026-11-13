@@ -355,9 +355,6 @@ install_subdir(
   install_dir: py.get_install_dir(),
 )
 
-executable('association_comparison', '../analyses/2026-association-native-comparison/scripts/association_comparison.cpp',
-  dependencies: [eigen_dep, cppad_headers_dep], include_directories: [native_inc, include_directories('tests/native')],
-  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 
 if host_machine.system() == 'windows'
   fit_windows_checks = executable('fit_windows_checks', 'tests/native/fit_windows_checks.cpp',

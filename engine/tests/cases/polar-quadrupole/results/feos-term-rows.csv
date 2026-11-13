@@ -1,0 +1,4 @@
+species,x,T_K,rho_mol_m3,a_qq_feos
+carbon-dioxide,1.0,250,1000,-0.047622080493574345
+carbon-dioxide,1.0,250,22000,-0.88658734462524991
+carbon-dioxide+nitrogen,0.7 0.3,240,15000,-0.34307990312073022

@@ -1,0 +1,25 @@
+figure_id,series,system,pressure_bar,T_C,T_K,x_water,x_1_pentanol,retained_x_px,retained_y_px,source_kind,source_reference,uncertainty_x,uncertainty_T_C,point_index
+figure-10,upper_vle_curve,water/1-pentanol,1.013,138.0,411.15,0.0,1.0,130.0,71.43200000000002,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,1
+figure-10,upper_vle_curve,water/1-pentanol,1.013,136.0,409.15,0.055,0.945,167.675,80.50400000000002,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,2
+figure-10,upper_vle_curve,water/1-pentanol,1.013,132.0,405.15,0.18,0.8200000000000001,253.3,98.64800000000002,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,3
+figure-10,upper_vle_curve,water/1-pentanol,1.013,128.0,401.15,0.32,0.6799999999999999,349.20000000000005,116.79200000000003,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,4
+figure-10,upper_vle_curve,water/1-pentanol,1.013,122.0,395.15,0.45,0.55,438.25,144.00800000000004,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,5
+figure-10,upper_vle_curve,water/1-pentanol,1.013,116.0,389.15,0.6,0.4,541.0,171.22400000000005,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,6
+figure-10,upper_vle_curve,water/1-pentanol,1.013,108.0,381.15,0.73,0.27,630.05,207.51200000000006,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,7
+figure-10,upper_vle_curve,water/1-pentanol,1.013,97.0,370.15,0.87,0.13,725.95,257.408,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,8
+figure-10,upper_vle_curve,water/1-pentanol,1.013,99.0,372.15,0.995,0.0050000000000000044,811.575,248.336,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.012,2.0,9
+figure-10,vlle_tie_line,water/1-pentanol,1.013,97.0,370.15,0.48,0.52,458.8,257.408,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,1
+figure-10,vlle_tie_line,water/1-pentanol,1.013,97.0,370.15,0.7,0.30000000000000004,609.5,257.408,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,2
+figure-10,vlle_tie_line,water/1-pentanol,1.013,97.0,370.15,0.87,0.13,725.95,257.408,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,3
+figure-10,vlle_tie_line,water/1-pentanol,1.013,97.0,370.15,0.995,0.0050000000000000044,811.575,257.408,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.012,2.0,4
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,25.0,298.15,0.325,0.675,352.625,584.0,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,1
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,29.0,302.15,0.35,0.65,369.75,565.856,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,2
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,42.0,315.15,0.37,0.63,383.45,506.88800000000003,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,3
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,56.0,329.15,0.392,0.608,398.52000000000004,443.384,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,4
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,66.0,339.15,0.41,0.5900000000000001,410.84999999999997,398.024,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,5
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,74.0,347.15,0.425,0.575,421.125,361.736,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,6
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,87.0,360.15,0.452,0.548,439.62,302.76800000000003,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,7
+figure-10,lle_1_pentanol_rich,water/1-pentanol,1.013,96.0,369.15,0.482,0.518,460.17,261.944,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.025,2.0,8
+figure-10,lle_water_rich,water/1-pentanol,1.013,64.0,337.15,0.992,0.008000000000000007,809.52,407.096,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.012,2.0,1
+figure-10,lle_water_rich,water/1-pentanol,1.013,95.0,368.15,0.993,0.007000000000000006,810.205,266.48,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.012,2.0,2
+figure-10,lle_water_rich,water/1-pentanol,1.013,98.0,371.15,0.998,0.0020000000000000018,813.63,252.872,calibrated_pc_saft_curve_trace,Gross 2002 Figure 10 visible PC-SAFT solid curve,0.012,2.0,3

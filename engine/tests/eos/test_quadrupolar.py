@@ -21,7 +21,7 @@ from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equ
 from tests.native_inputs import mixed_difference
 from tests.packets import parameters_json
 
-RESULTS = Path(__file__).resolve().parents[3] / "analyses/2026-polar-quadrupole/results"
+RESULTS = Path(__file__).resolve().parents[3] / "engine/tests/cases/polar-quadrupole/results"
 # Typed CODATA 2018 constants: the polar terms are checked against an independent closed form.
 AVOGADRO, BOLTZMANN, EPS0, DEBYE = 6.02214076e23, 1.380649e-23, 8.8541878128e-12, 1.0e-21 / 299792458.0
 

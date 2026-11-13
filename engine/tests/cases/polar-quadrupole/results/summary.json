@@ -1,0 +1,21 @@
+{
+  "engine_provenance": [
+    "92da4a082e3be181e1fef8ff9e603a8db261c65e",
+    true
+  ],
+  "max_relative_vs_clapeyron": {
+    "a_qq": 1.7763568394002505e-15,
+    "p_sat": 9.179323967600794e-13,
+    "p_bubble": 3.2307490016592055e-14,
+    "y_nitrogen": 6.328271240363392e-15
+  },
+  "max_relative_vs_feos": {
+    "a_qq": 4.361705485678158e-08
+  },
+  "aad_percent": {
+    "carbon-dioxide quadrupole vs Span-Wagner 220-300 K": 0.4212099352329997,
+    "carbon-dioxide nonpolar GS2001 vs Span-Wagner 220-300 K": 3.0146656723196683,
+    "benzene quadrupole vs DIPPR-101 290-540 K": 0.28089327326398367,
+    "benzene nonpolar GS2001 vs DIPPR-101 290-540 K": 0.5351567648448139
+  }
+}
