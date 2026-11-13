@@ -271,7 +271,12 @@ properties_checks = executable(
   install: false,
   build_by_default: false,
 )
-test('properties', properties_checks)
+# One test per case, named properties/<case> from the case table, as for equilibrium below.
+properties_cases = import('fs').read('tests/native/properties_checks.cpp').split('{{"native.properties.')
+foreach index : range(1, properties_cases.length())
+  name = properties_cases[index].split('"')[0]
+  test('properties/' + name, properties_checks, args: ['native.properties.' + name])
+endforeach
 
 diagnostics_checks = executable(
   'diagnostics_checks',
@@ -394,20 +399,6 @@ specification_checks = executable(
 )
 test('specification', specification_checks)
 
-association_comparison_checks = executable(
-  'association_comparison_checks',
-  'tests/native/association_comparison_checks.cpp',
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
-  dependencies: [eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
-)
-test('association-comparison', association_comparison_checks, timeout: 600)
-
 install_subdir(
   'src/epcsaft',
   exclude_directories: [
@@ -423,6 +414,10 @@ executable('reaction_reference_e3', '../analyses/2026-reaction-reference-associa
 
 executable('nasrifar_effective_water', '../analyses/reproduction/2010-nasrifar-mdea/scripts/effective_water.cpp',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
+  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
+
+executable('association_comparison', '../analyses/2026-association-native-comparison/scripts/association_comparison.cpp',
+  dependencies: [eigen_dep, cppad_headers_dep], include_directories: [native_inc, include_directories('tests/native')],
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 
 executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',

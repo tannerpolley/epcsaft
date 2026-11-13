@@ -3,7 +3,6 @@
 // symmetric_reactive_site_correction, pathway_weight and pathway_weighted_cross_dispersion. Hong Tables 1-3 values;
 // every linear law has T_r = 298.15 K. Test topology: each reactive CO2 site bonds MEA site b only. That is a
 // falsifier declaration, not a chemistry choice. Differences verify exact derivatives only.
-#include "equilibrium_support.hpp"
 #include "properties_checks_shared.hpp"
 #include "surface/parameter_builder.hpp"
 
@@ -466,15 +465,9 @@ void pathway_weight() {
             const double e_a = static_cast<double>(high - low);
             if (form == Form::Uncorrected) floor_correction_off = own_floor;
             const epcsaft::HelmholtzModel model(hong(form));
-            long double p_wider = NAN;
-            std::string stop;
-            try {
-                const auto wide = model.isothermal<epcsaft::WiderScalar>(s.temperature, volume, {s.x.begin(), s.x.end()});
-                p_wider = rt * (static_cast<long double>(s.density) - static_cast<long double>(wide.gradient[1]));
-                stop = wide.association_refinement->cause;
-            } catch (const std::exception& error) {
-                stop = error.what();
-            }
+            const auto wide = model.isothermal<epcsaft::WiderScalar>(s.temperature, volume, {s.x.begin(), s.x.end()});
+            const long double p_wider = rt * (static_cast<long double>(s.density) - static_cast<long double>(wide.gradient[1]));
+            const std::string stop = wide.association_refinement->cause;
             const double p = rt * (s.density - a_v);
             const double difference = static_cast<double>(p_wider - static_cast<long double>(p));
             const double bound = rt * own_floor + 4.0 * eps * std::abs(p) + rt * e_a;
@@ -482,12 +475,9 @@ void pathway_weight() {
             const auto context = fields({inputs(s, name), field("p_double", p), field("p_wider_minus_p_double", difference),
                 field("A_V", a_v), field("floor", own_floor), field("floor_correction_off", floor_correction_off), field("e_A", e_a),
                 field("bound", bound), field("wider_stop", stop)});
-            if (std::abs(difference) <= bound)
-                recording_support::compare_custom(id.c_str(), "|p_double - p_wider|", "Pa", std::abs(difference), bound, context,
-                    "Relationship", "wider replay", "the double pressure agrees with the wider replay within its rounding estimates",
-                    "error <= RT floor + 4 eps |p| + RT e_A", true);
-            else recording_support::observe(id.c_str(), "|p_double - p_wider|", "Pa", std::abs(difference), bound, context,
-                "Observation", "wider replay", "exceeds RT floor + 4 eps |p| + RT e_A: reported (lead, 2026-11-09)");
+            recording_support::compare_custom(id.c_str(), "|p_double - p_wider|", "Pa", std::abs(difference), bound, context,
+                "Relationship", "wider replay", "the double pressure agrees with the wider replay within its rounding estimates",
+                "error <= RT floor + 4 eps |p| + RT e_A", std::abs(difference) <= bound);
             if (s.name[0] != 'L' || form != Form::Blend) continue;
             // The bound still separates a site defect: a 1e-4 association tolerance moves p by more than it allows.
             epcsaft::policy::SolverOptions options;
@@ -632,39 +622,6 @@ void pathway_weight() {
                 "the per-term log-fugacity decomposition sums to ln phi, the implicit site chain included");
         }
     }
-
-    // F4(iii): tangent-plane stability of the declared w(alpha, T) liquid on the Table S1 grid (30 wt% MEA on a CO2-free
-    // basis, 313.15-393.15 K, alpha 0.1-1.0) at the F4 pressure; reported, not asserted. A negative liquid-trial minimum
-    // is a predicted split of this fluid, a negative vapor-trial minimum a liquid above its bubble pressure at 2e5 Pa.
-    // The minima are over the Engine's local trial set: no descent found is not a proof of stability.
-    for (std::size_t t = 0; t < 9; ++t)
-        for (std::size_t a = 1; a <= 10; ++a) {
-            const double temperature = 313.15 + 10.0 * static_cast<double>(t), loading = 0.1 * static_cast<double>(a);
-            const double amine = Z.x[0], total = 1.0 + amine * loading;
-            const std::vector<double> x{amine / total, (1.0 - amine) / total, amine * loading / total};
-            auto problem = equilibrium_support::flash(3);
-            problem.temperature = epcsaft::equilibrium::FreeValue::fixed(temperature);
-            problem.pressure = epcsaft::equilibrium::FreeValue::fixed(2e5);
-            problem.feed.values = x;
-            const auto compiled = epcsaft::equilibrium::compile_problem(blend, problem);
-            const auto parent = epcsaft::equilibrium::solve_compiled(compiled);
-            std::map<std::string, double> least{{"liquid", NAN}, {"vapor", NAN}};
-            std::string cause = parent.success ? "" : "liquid solve: " + parent.message;
-            if (parent.success) {
-                const auto measure = epcsaft::equilibrium::stability_measure(compiled, parent);
-                cause = measure.cause;
-                for (const auto& trial : measure.report.trials) {
-                    const auto tpd = trial.quantities.find("tpd_over_rt");
-                    auto& slot = least[equilibrium_support::phase_kind_name(trial.phase.kind)];
-                    if (tpd != trial.quantities.end() && !(tpd->second >= slot)) slot = tpd->second;
-                }
-            }
-            const auto id = "F4/stability/" + recording_support::number(temperature) + "/" + recording_support::number(loading);
-            recording_support::observe(id.c_str(), "min tpd/RT", "1", std::fmin(least["liquid"], least["vapor"]), std::nullopt,
-                fields({field("model", "blend"), field("T_K", temperature), field("p_Pa", 2e5), field("alpha", loading), field("x", x),
-                    field("liquid_trial_min", least["liquid"]), field("vapor_trial_min", least["vapor"]), field("cause", cause)}),
-                "Observation", "tangent-plane stability", "reported, not asserted: instability is a model prediction");
-        }
 
     // Domain: no MEA with CO2 present needs the loading only when b_alpha is nonzero or active.
     const std::vector<double> amine_free = {0.0, 0.6, 0.4};

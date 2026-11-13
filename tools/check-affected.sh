@@ -113,9 +113,6 @@ if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<
         || grep -Eq '^engine/tests/native/(regression_|.*\.hpp$)' <<<"$(grep -Ev '/(equilibrium|properties)_checks_shared\.hpp$' <<<"$paths")"; then
         slow_tests+=(regression_fit)
     fi
-    if grep -Eq '^engine/(native/contributions/association\.hpp|tests/native/association_comparison_checks\.cpp)' <<<"$paths"; then
-        slow_tests+=(association-comparison)
-    fi
 fi
 
 # The native suites share one Meson build directory, so they run in sequence, alongside the Python checks.

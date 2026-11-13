@@ -2,6 +2,11 @@
 #include "equilibrium_checks_shared.hpp"
 #include "surface/parameter_builder.hpp"
 
+#include <condition_variable>
+#include <future>
+#include <iostream>
+#include <mutex>
+
 namespace equilibrium_checks {
 
 void check_candidate_publication() {
@@ -122,6 +127,60 @@ void check_discovery_work() {
         CHECK(after_estimate.root_calls == before_estimate.root_calls
             && after_estimate.root_evaluations == before_estimate.root_evaluations
             && after_estimate.energy_evaluations == before_estimate.energy_evaluations);
+    }
+}
+
+// Concurrent cold discovery on shared parameter sets reports the same work as the serial solve.
+void check_concurrent_first_discovery() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto problem = [](bool ternary) {
+        auto p = equilibrium_support::flash(ternary ? 3 : 2);
+        p.temperature = FreeValue::fixed(190);
+        p.pressure = FreeValue::fixed(1e6);
+        p.feed.values = ternary ? std::vector<double>{.3, .3, .4} : std::vector<double>{.5, .5};
+        p.phases.clear();
+        p.topology_declared = false;
+        p.discovery = StabilityOptions{};
+        return p;
+    };
+    const auto parameters = [](bool ternary) {
+        return ternary ? properties_support::neutral_ternary() : properties_support::neutral_binary();
+    };
+    using Work = decltype(EquilibriumResult{}.discovery->work);
+    std::array<Work, 4> observed;
+    std::mutex mutex;
+    std::condition_variable ready;
+    int arrived = 0;
+    std::vector<std::future<void>> tasks;
+    for (std::size_t worker = 0; worker < observed.size(); ++worker) {
+        tasks.push_back(std::async(std::launch::async, [&, worker] {
+            HelmholtzModel model(parameters(worker % 2));
+            const auto p = problem(worker % 2);
+            {
+                std::unique_lock<std::mutex> lock(mutex);
+                ++arrived;
+                ready.notify_all();
+                ready.wait(lock, [&] { return arrived == 4; });
+            }
+            const auto first = discover_phases(model, p);
+            if (!first.success) throw std::runtime_error("cold discovery failed");
+            observed[worker] = first.discovery->work;
+            for (int repeat = 0; repeat < 20; ++repeat) {
+                const auto result = discover_phases(model, p);
+                if (!result.success || result.discovery->work != observed[worker])
+                    throw std::runtime_error("concurrent discovery work differs");
+            }
+        }));
+    }
+    for (auto& task : tasks) task.get();
+    for (std::size_t worker = 0; worker < observed.size(); ++worker) {
+        HelmholtzModel model(parameters(worker % 2));
+        const auto serial = discover_phases(model, problem(worker % 2));
+        if (!serial.success || serial.discovery->work != observed[worker])
+            throw std::runtime_error("serial discovery work differs");
+        for (const auto& [key, value] : serial.discovery->work)
+            std::cout << worker << ',' << key << ',' << value << '\n';
     }
 }
 

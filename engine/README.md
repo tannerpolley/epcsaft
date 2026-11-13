@@ -154,8 +154,7 @@ installation boundary.
 `bash engine/tools/run-native-tests.sh` compiles and runs the fast suites
 `contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
 and `regression`; name other tests to run them. `tools/check-affected.sh` selects
-the equilibrium, boundary, Explicit and `association-comparison` tests when their
-code changes (see [Checks](#checks)).
+the equilibrium, boundary and Explicit tests when their code changes (see [Checks](#checks)).
 
 ## C++ usage and debugging
 

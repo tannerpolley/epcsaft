@@ -1,6 +1,11 @@
 // M4-M9 and C2: Hessians, pressure slopes, parameter derivatives, density, cache invariance and
-// parameter coordinates.
+// parameter coordinates; Hessians under thread teardown.
 #include "properties_checks_shared.hpp"
+
+#include <condition_variable>
+#include <iostream>
+#include <mutex>
+#include <thread>
 
 namespace properties_checks {
 
@@ -1050,6 +1055,74 @@ void liquid_reference_branch_evidence() {
     CHECK(close(reference.pure_solvent_state->molar_density, 34616.636583442916, 1e-10));
     // gamma before #594 0.9996968293218973 times exp(-(10/9) mean 1e-12 -> 1e-14 rung change) = exp(-3.0408e-7).
     CHECK(close(activity.mean_ionic_molality_scale, 0.9996965253318902, 1e-10));
+}
+
+// Overlapping thread teardown and recycled callers keep the serial Hessian values.
+void thread_exit_hessian() {
+    using namespace epcsaft;
+    std::mutex mutex;
+    std::condition_variable ready;
+    const auto evaluate = [] {
+        HelmholtzModel model(properties_support::neutral_binary());
+        const auto value = model.evaluate(190., .001, {.5, .5}, DerivativeOrder::Hessian);
+        if (!std::isfinite(value.value) || !std::all_of(value.hessian.begin(), value.hessian.end(),
+                [](double entry) { return std::isfinite(entry); }))
+            throw std::runtime_error("nonfinite thread-exit Hessian");
+        return value.value;
+    };
+    const double reference = evaluate();
+    struct Cleanup final {
+        std::mutex& mutex;
+        std::condition_variable& ready;
+        bool& exiting;
+        bool& other_ready;
+        bool& go;
+        const decltype(evaluate)& run;
+        double reference;
+        ~Cleanup() {
+            {
+                std::unique_lock<std::mutex> lock(mutex);
+                exiting = true;
+                ready.notify_all();
+                ready.wait(lock, [&] { return other_ready; });
+                go = true;
+                ready.notify_all();
+            }
+            for (int repeat = 0; repeat < 100; ++repeat)
+                if (run() != reference) std::abort();
+        }
+    };
+    {
+        bool exiting = false, other_ready = false, go = false;
+        std::thread first([&] {
+            thread_local Cleanup cleanup{mutex, ready, exiting, other_ready, go, evaluate, reference};
+            (void)cleanup;
+            if (evaluate() != reference) std::abort();
+        });
+        {
+            std::unique_lock<std::mutex> lock(mutex);
+            ready.wait(lock, [&] { return exiting; });
+        }
+        std::thread second([&] {
+            if (evaluate() != reference) std::abort();
+            {
+                std::unique_lock<std::mutex> lock(mutex);
+                other_ready = true;
+                ready.notify_all();
+                ready.wait(lock, [&] { return go; });
+            }
+            for (int repeat = 0; repeat < 100; ++repeat)
+                if (evaluate() != reference) std::abort();
+        });
+        first.join();
+        second.join();
+    }
+    // More than 48 successive callers also falsify process-lifetime slot retention.
+    for (int caller = 0; caller < 50; ++caller) {
+        std::thread worker([&] { if (evaluate() != reference) std::abort(); });
+        worker.join();
+    }
+    std::cout << "thread-exit: overlapping teardown and 50 recycled callers matched serial values\n";
 }
 
 }  // namespace properties_checks

@@ -4,6 +4,7 @@
 // one equilibrium_*_checks.cpp unit.
 namespace equilibrium_checks {
 void check_discovery_work();
+void check_concurrent_first_discovery();
 void check_s1();
 void check_ideal_gas();
 void check_species_thermochemistry();
@@ -89,6 +90,7 @@ int main(int argc, char** argv) {
     using namespace equilibrium_checks;
     return recording_support::run(argc, argv, {
         {{"native.equilibrium.discovery-work", "discovery-work", "Automatic_fast"}, check_discovery_work},
+        {{"native.equilibrium.concurrent-first-discovery", "concurrent-first-discovery", "Automatic_fast"}, check_concurrent_first_discovery},
         {{"native.equilibrium.species-thermochemistry", "species-thermochemistry", "Automatic_fast"}, check_species_thermochemistry},
         {{"native.equilibrium.pressure-basis-quotient", "pressure-basis-quotient", "Automatic_fast"}, check_pressure_basis_quotient},
         {{"native.equilibrium.ideal-gas", "ideal-gas", "Automatic_fast"}, check_ideal_gas},

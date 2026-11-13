@@ -423,6 +423,50 @@ void association_solve_satisfies_mass_action() {
         "\\chi", "T,\\rho,\\mathbf{x},\\chi", "\\chi_0=\\chi_1", "site");
 }
 
+// A captured rejected trial at 298.15 K; density in mol/m^3, strengths in Angstrom^3.
+// The previous step bound exhausted 50 iterations at residual 5.480282894154698e-12.
+void association_unit_ceiling() {
+    constexpr double temperature = 298.15;
+    constexpr double density = 52992.32016447701;
+    const std::vector<double> mole_fractions = {
+        0.9967664629120051, 9.581789719163911e-29, 0.003232311646483076,
+        6.310494279431576e-07, 5.712187821800883e-10, 5.938208650913641e-07};
+    Parameters parameters;
+    parameters.site_component = {0, 0, 1, 1, 2, 2, 3, 3};
+    parameters.site_multiplicity = std::vector<int>(8, 1);
+    const std::vector<double> strength = {
+        0.0, 15964.491628191587, 0.0, 1986249.8013975348, 0.0, 4550137.1076187035, 0.0, 0.0,
+        15964.491628191587, 0.0, 1986249.8013975348, 0.0, 4550137.1076187035, 0.0, 0.0, 0.0,
+        0.0, 1986249.8013975348, 0.0, 286578809.8455787, 0.0, 633297185.5581268, 0.0, 61842.874171620366,
+        1986249.8013975348, 0.0, 286578809.8455787, 0.0, 633297185.5581268, 0.0, 61842.874171620366, 0.0,
+        0.0, 4550137.1076187035, 0.0, 633297185.5581268, 0.0, 1412151858.732317, 0.0, 0.0,
+        4550137.1076187035, 0.0, 633297185.5581268, 0.0, 1412151858.732317, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 61842.874171620366, 0.0, 0.0, 0.0, 0.0, 0.0,
+    };
+    // The capture kept no segment geometry. The 99.7 % species is water: its segment number and sigma
+    // (data/packets/held-2014-strategy2) for all six species give packing 0.44, inside the fluid domain.
+    parameters.segment_count = std::vector<double>(6, 1.2047);
+    const std::vector<double> diameter(6, 2.7927);
+    epcsaft::core::Convergence convergence;
+    const auto fractions = epcsaft::solve_site_fractions(temperature, density, mole_fractions,
+        parameters, {}, diameter, &convergence, nullptr, &strength);
+    const auto residuals = epcsaft::association_residuals(density, mole_fractions,
+        parameters, fractions, strength);
+    double residual = 0.0;
+    for (double value : residuals) {
+        CHECK(std::isfinite(value));
+        residual = std::max(residual, std::abs(value));
+    }
+    const double tolerance = epcsaft::policy::SolverOptions{}.value(epcsaft::policy::association);
+    CHECK(residual <= tolerance);
+    CHECK(convergence.iterations <= epcsaft::policy::ASSOCIATION_MAX_ITERATIONS.value);
+    CHECK(std::all_of(fractions.begin(), fractions.end(),
+        [](double value) { return std::isfinite(value) && value > 0.0 && value <= 1.0; }));
+    std::printf("association unit ceiling: residual=%.17g tolerance=%.17g iterations=%zu\n",
+        residual, tolerance, convergence.iterations);
+}
+
 // Closed forms here are independent reductions of the accepted mass-action
 // equation. They cover multiplicity and support without adding another solver.
 void association_equations_match_closed_forms_and_limits() {
@@ -1909,6 +1953,7 @@ int main(int argc, char** argv) {
         {{"native.contributions.p2", "P2"}, residual_vanishes_at_zero_density},
         {{"native.contributions.p3", "P3"}, relabelling_components_changes_nothing},
         {{"native.contributions.p4", "P4"}, association_solve_satisfies_mass_action},
+        {{"native.contributions.association-unit-ceiling", "association-unit-ceiling"}, association_unit_ceiling},
         {{"native.contributions.c2", "C2"}, association_equations_match_closed_forms_and_limits},
         {{"native.contributions.c3", "C3"}, electrolyte_born_and_dielectric_match_independent_equations},
         {{"native.contributions.p5", "P5"}, inactive_terms_contribute_nothing},
