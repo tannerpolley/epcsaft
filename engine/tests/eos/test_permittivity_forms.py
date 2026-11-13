@@ -271,10 +271,12 @@ def test_solvent_mole_weighting_declaration(mode: str) -> None:
         if mode == "solvent-normalized":
             with pytest.raises(ValueError, match="solvent denominator"):
                 model.state(T, rho=1000.0, x=[0.0 if name == "water" else 0.5 for name in order])
-    for solvents, normalization in (([], mode), (["water", "water"], mode),
-                                    (["sodium-cation"], mode), (["unknown"], mode), (["water"], "unknown")):
+    for solvents in ([], ["water", "water"], ["sodium-cation"], ["unknown"]):
         bad = copy.deepcopy(document)
-        next(f for f in bad["model_families"] if f["kind"] == "permittivity").update(
-            solvents=solvents, normalization=normalization)
+        next(f for f in bad["model_families"] if f["kind"] == "permittivity").update(solvents=solvents)
         with pytest.raises(ValueError):
             Parameters.from_mapping(bad)
+    if mode == "unnormalized":  # the unknown normalization replaces the mode, so one mode covers it
+        next(f for f in document["model_families"] if f["kind"] == "permittivity").update(normalization="unknown")
+        with pytest.raises(ValueError):
+            Parameters.from_mapping(document)

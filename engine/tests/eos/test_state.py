@@ -10,8 +10,7 @@ import pytest
 
 from epcsaft import (GAS_CONSTANT_J_PER_MOL_K as _R, DensityBranch, IdealCorrelation, IdealInterval, IdealPolynomial,
                      Mixture, ParameterError, Parameters, Pure, ThermochemistryRecord)
-from tests.equilibrium.test_trace_reliability import _mea_mapping
-from tests.native_inputs import packet_metadata, same
+from tests.native_inputs import mea_mapping, packet_metadata, same
 from tests.packets import parameters_json
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
@@ -34,7 +33,7 @@ def close(left: float, right: float, relative: float) -> None:
 
 def test_relabelling_and_state_identities(evidence: Any) -> None:
     packet = parameters_json("mea-co2-h2o-nine-species-estimation", 4)
-    declared = _mea_mapping(packet)
+    declared = mea_mapping(packet)
     order = _MEA_ORDER
     reverse = tuple(reversed(order))
     x = (0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0)
@@ -538,7 +537,7 @@ def test_derived_property_availability() -> None:
     assert all(getattr(unstable, key) is None for key in _DERIVED)
     assert unstable.partial_molar_volume == unstable.partial_molar_enthalpy == [None]
     # Associated neutral liquid with absent charged slots: neutral volumes finite, IonicInsertion entries None.
-    mea = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)), components=_MEA_ORDER))
+    mea = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)), components=_MEA_ORDER))
     liquid = mea.state(313.15, P=1e5, x=(0.85, 0.10, 0.05, 0, 0, 0, 0, 0, 0), phase="liquid", derived_properties=True)
     assert liquid.partial_molar_volume is not None
     assert all(value is not None for value in liquid.partial_molar_volume[:3])
@@ -548,7 +547,7 @@ def test_derived_property_availability() -> None:
 def test_contributions_sum_to_residual_helmholtz() -> None:
     # Acetone at 400 K, 10000 mol/m3 is the failing dipolar split (a negative-pressure algebraic check only).
     acetone = Pure(Parameters.from_json(parameters_json("gross-vrabec-2006", 1), components=("acetone",))).state(400.0, rho=1e4)
-    mea = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)), components=_MEA_ORDER))
+    mea = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)), components=_MEA_ORDER))
     nonpolar = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3))).state(300.0, rho=8000.0, x=(0.4, 0.6))
     ionic = mea.state(313.15, rho=3.0e4, x=(0.80, 0.10, 0.05, 0.02, 0.02, 0.005, 0.0, 0.005, 0.0))
     associated = mea.state(313.15, P=1e5, x=(0.85, 0.10, 0.05, 0, 0, 0, 0, 0, 0), phase="liquid")

@@ -169,8 +169,8 @@ def frozen_result(case, operation):
 def unloaded_declaration():
     """Reuse #261's declaration exactly, as in #272's unloaded_input.py probe.
 
-    Extract only its inputs and Problem, without running solves or caloric actions.
-    This keeps the existing test as the single owner of the declaration.
+    Extract only its Problem, without running solves or caloric actions; the inputs come from
+    engine/tests/native_inputs.py. This keeps the test and its shared inputs the single owners.
     """
     source = ROOT / 'engine/tests/equilibrium/test_trace_reliability.py'
     tree = ast.parse(source.read_text())
@@ -180,10 +180,6 @@ def unloaded_declaration():
             items.append(node)
         elif isinstance(node, ast.ImportFrom) and node.module in (
                 'pathlib', 'typing', 'epcsaft', 'epcsaft.equilibrium'):
-            items.append(node)
-        elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and node.targets[0].id == '_MEA':
-            items.append(node)
-        elif isinstance(node, ast.FunctionDef) and node.name in ('_mea_mapping', '_reference_mea'):
             items.append(node)
     function = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
                     and x.name == 'test_nominally_unloaded_mea_resolves_trace_ion_stationarity')
@@ -200,7 +196,9 @@ def unloaded_declaration():
     function.args = ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])
     function.body, function.decorator_list, function.returns = body, [], None
     items.append(function)
-    namespace = {'__file__': str(source)}
+    sys.path.insert(0, str(ROOT / 'engine'))
+    from tests.native_inputs import MEA, nominally_unloaded_mea
+    namespace = {'__file__': str(source), 'MEA': MEA, 'nominally_unloaded_mea': nominally_unloaded_mea}
     exec(compile(ast.fix_missing_locations(ast.Module(body=items, type_ignores=[])), str(source), 'exec'), namespace)
     return namespace['declaration']()
 
@@ -825,6 +823,7 @@ def main():
             ROOT / 'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',
             ROOT / 'data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json',
             ROOT / 'engine/tests/equilibrium/test_trace_reliability.py',
+            ROOT / 'engine/tests/native_inputs.py',
             *(ROOT / 'engine/data/reference' / path for path in (
                 'mea-nominally-unloaded/request.json', 'mea-nominally-unloaded/parameters.json', 'mea-zero-inventory/ideal-calorics.json')))}
         (out / 'summary.json').write_text(json.dumps(summary, indent=2, allow_nan=False) + '\n')

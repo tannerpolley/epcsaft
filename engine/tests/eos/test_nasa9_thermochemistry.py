@@ -40,6 +40,8 @@ def test_prepared_packet_equals_the_former_records_for_every_selection() -> None
     assert sum(len(s) for s in packet.select(species).component_intervals) == 9
     for selection in (species, species[::-1], ("toluene", "benzene"), ("methane",), species):
         assert fields(packet.select(selection)) == fields(former(selection))  # == on floats: bitwise here
+    with pytest.raises(ParameterError, match="no species ethanol"):
+        packet.select(["ethanol"])
 
 
 def test_interval_ends_are_half_open_with_the_last_closed() -> None:
@@ -72,5 +74,3 @@ def test_malformed_packets_refuse(tmp_path: Path, change: Any, cause: str) -> No
     (tmp_path / "records.json").write_text(json.dumps(document))
     with pytest.raises(ParameterError, match=cause):
         ThermochemistryPacket(tmp_path / "records.json")
-    with pytest.raises(ParameterError, match="no species ethanol"):
-        ThermochemistryPacket(RECORDS).select(["ethanol"])

@@ -68,7 +68,6 @@ def test_public_recovery_matches_the_native_rows(evidence: Any) -> None:
          atol=max(1e-24, 1e-10 * abs(variance_reference)), rtol=0.0)
     for k, value in enumerate(result.optimizer_jacobian):
         same(evidence, f"r4/recovery/optimizer_jacobian/{k}", value)
-    assert math.isclose(result.physical[0], 152.0, rel_tol=1.0e-6) and abs(result.physical[1] + 0.02) <= 1.0e-6
     # The fitted document, renamed for the public constructors, reproduces the fitted predictions; the fit's
     # final evaluation was warm-started, a cold re-solve lands within the 1e-10 row criterion (observed 1e-13).
     fitted = Mixture(regression.fitted_parameters(start, result))

@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import dataclasses
 import functools
-import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -21,38 +20,23 @@ import numpy as np
 import pytest
 from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Var, check_optimal_termination, value  # type: ignore[import-untyped]
 
-from epcsaft import Mixture, Parameters, _core, regression
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, ParameterError, Parameters, regression
 from epcsaft import equilibrium as eq
 from tests.equilibrium.test_declared_starts import _mea_flash
-from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS, _mea_mapping, _reference_mea
+from tests.native_inputs import (
+    HALITE_PARAMETERS, HALITE_SPECIES, MEA, MEA_REACTIONS, WATER_MOLAR_MASS, halite_in_water, held, mea_mapping,
+    nominally_unloaded_mea, water_isobutanol, water_isobutanol_problem,
+)
 from tests.packets import parameters_json
 
-NAMES, G0, G1, TP0 = ("water", "isobutanol"), (0.7, 0.3), (0.7, 0.285), (298.15, 1.0e5)
+G0, G1, TP0 = (0.7, 0.3), (0.7, 0.285), (298.15, 1.0e5)
 THETA0, THETA_STAR, THETA_MERGED = (-0.0071, 257.13), (-0.0021, 258.13), (-0.0371, 257.13)
 OPTIONS = eq.Continuation(initial_step=0.05, minimum_step=1e-3, max_steps=200, max_retries_per_step=5)
 FUNCTION, ENTHALPY, SOLID = "epcsaft_equilibrium_phase_component_amount", "epcsaft_equilibrium_system_enthalpy", "epcsaft_equilibrium_solid_amount"
 
 
-def mixture(theta: Any = None, active: bool = True) -> Mixture:
-    mapping = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
-    if theta is not None:  # the edited packet: k_ij and isobutanol eps/k at theta
-        pair = next(p for p in mapping["pairs"] if p["coefficients"][0]["identity"] == "pair/isobutanol/water/k_ij")
-        pair["coefficients"][0]["value"]["magnitude"] = theta[0]
-        iso = next(c for c in mapping["components"] if c["component_id"] == "isobutanol")
-        next(k for k in iso["coefficients"] if k["identity"].endswith("dispersion_energy_over_k"))["value"]["magnitude"] = theta[1]
-    parameters = Parameters.from_mapping(mapping, components=NAMES)
-    return Mixture(parameters, active_parameters=[regression.active_parameter(parameters, "k_ij", ("isobutanol", "water")),
-                   regression.active_parameter(parameters, "dispersion_energy_over_k", "isobutanol")] if active else None)
-
-
-def problem(feed: Any, T: float = 298.15) -> eq.Problem:
-    return eq.Problem(phases=[eq.Phase("L1", kind="liquid", support=NAMES, composition_guess=(0.46, 0.54)),
-                              eq.Phase("L2", kind="liquid", support=NAMES, composition_guess=(0.99, 0.01))],
-                      T=T, P=1.0e5, feed=eq.Amounts(dict(zip(NAMES, feed, strict=True))))
-
-
 def record(model: Mixture, T: float = 298.15) -> str:
-    return eq.asl_record(model, problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
+    return eq.asl_record(model, water_isobutanol_problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
 
 
 def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2, phases: int = 2, fixed: Any = None) -> tuple[float, Any, Any]:
@@ -73,9 +57,9 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy
     """Per row: value, first actions, second actions (i <= j, packed order) over (T, P, feed, theta), from solve_equilibrium
     and solved_state_actions; the feed controls move the components by `matrix`, else the first len(feed) components. The
     rows are the phase-component amounts then the solid amounts, or the system enthalpy alone."""
-    target = target or problem(feed)
+    target = target or water_isobutanol_problem(feed)
     central = eq.solve_equilibrium(model, target)
-    compiled = _core.compile_problem(model._model, target._native(model))
+    compiled = eq.compile_problem(model, target)
     F, S = central.phase_count, len(central.solid_amounts)
     k, n, m = len(feed), len(central.mole_fractions) // F, len(model.active_parameter_values)
     e = np.eye(2 + k + m).tolist()
@@ -86,7 +70,7 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy
         eq.SolvedStateObservable(eq.SolvedStateObservableKind.SolidAmount, s) for s in range(S)]
 
     def batch(*directions: Any) -> Any:
-        return _core.solved_state_actions(compiled, central, eq.SolvedStateActionRequest(observables, list(directions))).results
+        return eq.solved_state_actions(compiled, central, eq.SolvedStateActionRequest(observables, list(directions))).results
 
     zero = batch(eq.SolvedStateActionDirection(0.0, 0.0, [0.0] * n, [0.0] * m))
     first = [batch(d[i]) for i in range(2 + k + m)]
@@ -102,11 +86,11 @@ def callback_row(text: str, q: Any, row: int | None, components: int = 2, phases
 def test_record_equals_direct_engine() -> None:
     """F1: at theta0 (G0) and with no active parameters (G0, G1) every row's value, gradient and Hessian equal the direct
     Engine bitwise, and each order returns the same value; at theta* (G0, G1) they match the edited packet to 1e-12."""
-    model, inactive = mixture(), mixture(active=False)
+    model, inactive = water_isobutanol(), water_isobutanol(active=False)
     assert model.active_parameter_values == list(THETA0)
     cases = [(record(model), [*TP0, *G0, *THETA0], native(model, G0), True)]
     cases += [(record(inactive), [*TP0, *G], native(inactive, G), True) for G in (G0, G1)]
-    cases += [(record(model), [*TP0, *G, *THETA_STAR], native(mixture(THETA_STAR), G), False) for G in (G0, G1)]
+    cases += [(record(model), [*TP0, *G, *THETA_STAR], native(water_isobutanol(THETA_STAR), G), False) for G in (G0, G1)]
     for text, q, want, bitwise in cases:
         values = [[fgh(text, q, row, order)[0] for row in range(4)] for order in (0, 1)]  # before any Hessian at q
         got = [callback_row(text, q, row) for row in range(4)]
@@ -122,7 +106,7 @@ def test_constant_arguments_keep_the_other_columns() -> None:
     """A1: at a state the callback first enters with arguments marked constant, the value and every first and second
     action among the other arguments equal the direct Engine bitwise, and no entry of a constant argument is written."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
-    model, pairs = mixture(active=False), [(i, j) for j in range(4) for i in range(j + 1)]
+    model, pairs = water_isobutanol(active=False), [(i, j) for j in range(4) for i in range(j + 1)]
     for G, fixed in (((0.7, 0.295), [True, True, False, False]), ((0.7, 0.29), [False, False, True, False])):
         callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
         _, g, h = callback._evaluate([*TP0, *G, record(model), "0", "0"], [*fixed, False, False, False], 2)
@@ -137,7 +121,7 @@ def test_constant_arguments_keep_the_other_columns() -> None:
 def test_columns_match_central_differences() -> None:
     """F2, verification only: feed (h 1e-5 mol), k_ij (h 1e-5) and eps/k (h 1e-3 K) at h x {4, 1, 0.25}: every gradient
     entry (tau 1e-6) and every Hessian entry with a parameter (tau 1e-5) meet |D - A| <= tau|A| + 10 eps (|f+| + |f-|)/2h."""
-    text, eps, q = record(mixture()), float(np.finfo(float).eps), np.array([*TP0, *G0, *THETA0])
+    text, eps, q = record(water_isobutanol()), float(np.finfo(float).eps), np.array([*TP0, *G0, *THETA0])
     exact = [fgh(text, q, row, 2) for row in range(4)]
     for b, h0 in ((2, 1e-5), (3, 1e-5), (4, 1e-5), (5, 1e-3)):
         for h in (4 * h0, h0, 0.25 * h0):
@@ -159,7 +143,7 @@ def test_parameter_estimation_ipopt_round_trip(tmp_path: Path, monkeypatch: pyte
         pytest.skip("Ipopt executable unavailable")
     library = str(asl_library())
     monkeypatch.setenv("AMPLFUNC", library)
-    model, targets = mixture(), (0.002356016921554457, 0.004444355639825189)
+    model, targets = water_isobutanol(), (0.002356016921554457, 0.004444355639825189)
     m = ConcreteModel()
     m.theta = Var([0, 1], initialize=dict(enumerate(THETA0)))
     m.amount = ExternalFunction(library=library, function=FUNCTION)
@@ -182,7 +166,7 @@ def test_merged_liquids_name_the_cause_and_recover() -> None:
     """F4: at k_ij -0.0371 the liquids merge, so the direct solve and the parameter leg fail and the value-only call is NaN
     with the named cause; the following theta* and theta0 calls equal their earlier values bitwise."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
-    model = mixture()
+    model = water_isobutanol()
     text = record(model)
     star, start = [callback_row(text, [*TP0, *G0, *THETA_STAR], row) for row in range(4)], native(model, G0)
     callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
@@ -197,22 +181,22 @@ def test_merged_liquids_name_the_cause_and_recover() -> None:
 
 # M: the packet-3 MEA flash with the vapor support CO2, MEA and water; feed controls u = (CO2, MEA, water) mol.
 # Reaction targets are affinities -R T ln K: K of R3, exp(-948.2312), underflows. U_STAR is CO2 x 1.05.
-MEA_T, MEA_P, MEA_LN_K, C = 318.15, 5918.5286, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), len(_MEA)
+MEA_T, MEA_P, MEA_LN_K, C = 318.15, 5918.5286, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), len(MEA)
 U0 = (.25557798094241313 * 9.7292821, 9.7292821, 76.9751925)
 U_STAR = (2.61091978889402, *U0[1:])
 
 
 def mea_model() -> Mixture:
-    return Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
+    return Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
 
 
-def mea_problem(u: Any, vapor_support: Any = _MEA[:3]) -> eq.Problem:
-    reactions = [eq.Reaction(nu, affinity_j_per_mol=-_core.GAS_CONSTANT_J_PER_MOL_K * MEA_T * a) for nu, a in zip(_MEA_REACTIONS, MEA_LN_K, strict=True)]
-    return dataclasses.replace(_mea_flash(MEA_P), phases=[eq.Phase("L", kind="liquid", support=_MEA), eq.Phase("V", kind="vapor", support=vapor_support)],
-                               reactions=reactions, feed=eq.Amounts(dict(zip(_MEA[:3], u, strict=True))), row_tolerance=1e-12)
+def mea_problem(u: Any, vapor_support: Any = MEA[:3]) -> eq.Problem:
+    reactions = [eq.Reaction(nu, affinity_j_per_mol=-GAS_CONSTANT_J_PER_MOL_K * MEA_T * a) for nu, a in zip(MEA_REACTIONS, MEA_LN_K, strict=True)]
+    return dataclasses.replace(_mea_flash(MEA_P), phases=[eq.Phase("L", kind="liquid", support=MEA), eq.Phase("V", kind="vapor", support=vapor_support)],
+                               reactions=reactions, feed=eq.Amounts(dict(zip(MEA[:3], u, strict=True))), row_tolerance=1e-12)
 
 
-def mea_record(model: Mixture, vapor_support: Any = _MEA[:3]) -> str:
+def mea_record(model: Mixture, vapor_support: Any = MEA[:3]) -> str:
     matrix = np.eye(C, 3).tolist()  # the 9 x 3 identity on CO2, MEA and water
     options = eq.Continuation(initial_step=0.25, minimum_step=0.01, max_steps=40, max_retries_per_step=2)
     return eq.asl_record(model, mea_problem(U0, vapor_support), options, [0.0] * C, matrix, list(U0), 1, 0.03)
@@ -279,8 +263,8 @@ def test_vapor_support_refusals() -> None:
     the previous record version are refused."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
     model, contract = mea_model(), "invalid ASL affine feed/phase contract"
-    with pytest.raises(_core.ParameterError, match=contract):
-        mea_record(model, _MEA[:4])
+    with pytest.raises(ParameterError, match=contract):
+        mea_record(model, MEA[:4])
     text = mea_record(model)
     vapor = "1:V,5:vapor,1:3,1:0,1:1,1:2,"
     assert vapor in text
@@ -301,13 +285,13 @@ R_Q0 = (353.15, 45000.0, 0.358, 1.0, 7.929776437398854)
 @functools.cache
 def reference_mea(thermochemistry: bool = True) -> tuple[Mixture, Any]:
     """The model and target(q), the declared problem at q."""
-    model, reactions, reference, guess, _ = _reference_mea(thermochemistry)
+    model, reactions, reference, guess, _ = nominally_unloaded_mea(thermochemistry)
 
     def target(q: Any, liquid: Any = guess, vapor: Any = (0.01, 0.002, 0.988)) -> eq.Problem:
         return eq.Problem(T=q[0], P=q[1], row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
-                          feed=eq.Amounts(dict(zip(_MEA, (*q[2:], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), strict=True))),
-                          phases=[eq.Phase("L", kind="liquid", support=_MEA, amount=eq.Free(), composition_guess=list(liquid)),
-                                  eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Free(), composition_guess=list(vapor))])
+                          feed=eq.Amounts(dict(zip(MEA, (*q[2:], 0.0, 0.0, 0.0, 0.0, 0.0, 0.0), strict=True))),
+                          phases=[eq.Phase("L", kind="liquid", support=MEA, amount=eq.Free(), composition_guess=list(liquid)),
+                                  eq.Phase("V", kind="vapor", support=MEA[:3], amount=eq.Free(), composition_guess=list(vapor))])
     x = eq.solve_equilibrium(model, target(R_Q0)).mole_fractions
     return model, lambda q: target(q, x[:C], x[C:C + 3])
 
@@ -433,7 +417,7 @@ def test_reference_enthalpy_matches_central_differences() -> None:
 def test_enthalpy_parameter_columns_match_central_differences() -> None:
     from epcsaft import IdealPolynomial
     from tests.native_inputs import record as thermal_record
-    base = mixture()
+    base = water_isobutanol()
     form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
     model = Mixture(base.parameters, thermochemistry=thermal_record(form, form),
                     active_parameters=[regression.active_parameter(base.parameters, "k_ij", ("isobutanol", "water")),
@@ -505,27 +489,24 @@ H_Q0, H_MATRIX = (298.15, 101325.0, 55.508435061791985, 10.0, 230.0, 2.756, -0.2
 
 
 def halite_problem(q: Any, amount: Any = None) -> eq.Problem:
-    from tests.equilibrium import test_pure_solid as hs
-    target = hs.problem(10.0, amount or eq.Free(), q[0], q[1])
-    target.phases = [eq.Phase("L", kind="liquid", support=hs.SPECIES)]
-    target.feed = eq.Amounts(dict(zip(hs.SPECIES, (q[2], q[3], q[3]), strict=True)))
+    target = halite_in_water(10.0, amount or eq.Free(), q[0], q[1])
+    target.phases = [eq.Phase("L", kind="liquid", support=HALITE_SPECIES)]
+    target.feed = eq.Amounts(dict(zip(HALITE_SPECIES, (q[2], q[3], q[3]), strict=True)))
     return target
 
 
 def halite(shift: tuple[str, float] = ("", 0.0)) -> tuple[Mixture, str]:
-    from tests.equilibrium import test_pure_solid as hs
-    model = hs.held(shift, tuple(item for _, item, _ in hs.PARAMETERS))
+    model = held(shift, tuple(item for _, item, _ in HALITE_PARAMETERS))
     return model, eq.asl_record(model, halite_problem(H_Q0), OPTIONS, [0.0] * 3, H_MATRIX, list(H_Q0[2:4]), 0, 0.0)
 
 
 def test_halite_record_equals_direct_engine() -> None:
     """H1: the saturated molality and halite amount; every row's value, gradient and Hessian equal the direct Engine
     bitwise at theta0 and to 1e-12 relative at k_ij + 0.01, and each order returns the same value."""
-    from tests.equilibrium import test_pure_solid as hs
     model, text = halite()
     assert model.active_parameter_values == list(H_Q0[4:])
     sodium, solid = (fgh(text, H_Q0, row, 0, 3, 1)[0] for row in (1, 3))
-    assert sodium / (H_Q0[2] * hs.MW) == pytest.approx(6.29890460910619, rel=1e-12, abs=0.0)
+    assert sodium / (H_Q0[2] * WATER_MOLAR_MASS) == pytest.approx(6.29890460910619, rel=1e-12, abs=0.0)
     assert solid == pytest.approx(3.7010953908938036, rel=1e-12, abs=0.0) and abs(solid + sodium - H_Q0[3]) <= 1e-13
     star = (*H_Q0[:6], -0.24)
     for q, mixture_at, bitwise in ((H_Q0, model, True), (star, halite(("pair/chloride-anion/water/k_ij", 0.01))[0], False)):
@@ -560,14 +541,13 @@ def test_halite_columns_match_central_differences() -> None:
     Hessian row is zero and the liquid sodium row is the negative of the halite row elsewhere. The liquid water row is u_w
     exactly: its columns close that balance to 1e-14 of the largest halite entry of the same order. The u_NaCl Hessian column
     is that analytic zero, so its differences carry only re-solve noise (25 ulp of the gradient): 1e-13 replaces 10 eps there."""
-    from tests.equilibrium import test_pure_solid as hs
     _, text = halite()
     eps, q = float(np.finfo(float).eps), np.array(H_Q0)
     exact = [fgh(text, q, row, 2, 3, 1) for row in range(4)]
     solid = exact[3][1]
     assert solid == pytest.approx([-1.430830593594595e-02, -2.1295896304825715e-09, -0.11347653022633869, 1.0,
                                    8.92286053703689e-03, 2.304237756233167, -4.849349365690943], rel=1e-12, abs=0.0)
-    assert abs(solid[2] + exact[1][0] / (H_Q0[2] * hs.MW) * hs.MW) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
+    assert abs(solid[2] + exact[1][0] / (H_Q0[2] * WATER_MOLAR_MASS) * WATER_MOLAR_MASS) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
     assert not exact[1][2][3].any() and not exact[3][2][3].any()
     water = exact[0]
     # The two identities below hold exactly in the equations. The amount is the solved endpoint, which moves by ulps with
@@ -643,9 +623,8 @@ def test_halite_record_refusals() -> None:
     """H7: a Pinned(0) and a scalar-K halite are refused when the record is built; with halite present the system enthalpy
     is refused at every order naming the solid, and in a native batch it loses its value and action while the amounts keep
     theirs."""
-    from tests.equilibrium import test_pure_solid as hs
     model, text = halite()
-    with pytest.raises(_core.ParameterError, match="invalid ASL affine feed/phase contract"):
+    with pytest.raises(ParameterError, match="invalid ASL affine feed/phase contract"):
         eq.asl_record(model, halite_problem(H_Q0, eq.Pinned(0.0)), OPTIONS, [0.0] * 3, H_MATRIX, list(H_Q0[2:4]), 0, 0.0)
     scalar = halite_problem(H_Q0)
     scalar.solids = [dataclasses.replace(scalar.solids[0], correlation=None, equilibrium_constant=37.9)]
@@ -660,9 +639,9 @@ def test_halite_record_refusals() -> None:
     kinds = (eq.SolvedStateObservableKind.SystemEnthalpy, eq.SolvedStateObservableKind.SolidAmount)
     request = eq.SolvedStateActionRequest([eq.SolvedStateObservable(k) for k in kinds],
                                           [eq.SolvedStateActionDirection(0.0, 0.0, [1.0, 0.0, 0.0], [0.0] * 3)])
-    enthalpy, solid = _core.solved_state_actions(_core.compile_problem(model._model, target._native(model)), central, request).results
-    assert (enthalpy.status, enthalpy.value, enthalpy.action) == (_core.SolvedStateActionStatus.MissingThermochemistry, None, None)
-    assert solid.value == central.solid_amounts[0] and solid.action == pytest.approx(-hs.MW * 6.29890460910619, rel=1e-12)
+    enthalpy, solid = eq.solved_state_actions(eq.compile_problem(model, target), central, request).results
+    assert (enthalpy.status, enthalpy.value, enthalpy.action) == (eq.SolvedStateActionStatus.MissingThermochemistry, None, None)
+    assert solid.value == central.solid_amounts[0] and solid.action == pytest.approx(-WATER_MOLAR_MASS * 6.29890460910619, rel=1e-12)
 
 
 def raw(function: str, arguments: list[Any], order: int) -> Any:
@@ -674,7 +653,7 @@ def raw(function: str, arguments: list[Any], order: int) -> Any:
 def test_first_order_names_compute_no_hessian() -> None:
     """Q1: each `_first_order` name, at a state it enters first, returns the direct Engine's value and gradient bitwise and
     NaN in every Hessian entry; the exact amount name called next at that state returns the direct Engine's Hessian."""
-    (model, (h_model, h_text)), (r_model, target) = (mixture(), halite()), reference_mea()
+    (model, (h_model, h_text)), (r_model, target) = (water_isobutanol(), halite()), reference_mea()
     cases = [(FUNCTION, record(model), [*TP0, *G0, *THETA0], [*TP0, *G1, *THETA0], ["0", "1"], native(model, G0)[1]),
              (ENTHALPY, reference_record(), [*R_Q0], [353.65, 45500.0, *R_Q0[2:]], [], native(r_model, R_Q0[2:], target(R_Q0), enthalpy=True)[0]),
              (SOLID, h_text, [*H_Q0], [*H_Q0[:6], -0.24], ["0"], native(h_model, H_Q0[2:4], halite_problem(H_Q0), matrix=H_MATRIX)[3])]

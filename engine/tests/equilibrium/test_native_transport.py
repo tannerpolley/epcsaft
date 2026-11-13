@@ -105,22 +105,19 @@ def actions(model: Any, problem: Problem, observables: list[Any], directions: li
 
 
 def test_thermal_actions_of_the_logistic_isomerisation_are_analytic(evidence: Any) -> None:
-    """E5-3: identical species with ln K(T) give x_B = K / (1 + K); bound 2e-10 |reference| + 1e-14."""
+    """E5-3: identical species with ln K(T) give x_B = K / (1 + K); the native case owns the analytic derivatives,
+    and these public actions must transport its recorded values."""
     T = 350.0
     a = math.log(2.0) - (1200.0 / T + 0.4 * math.log(T) + 0.002 * T)  # K(350 K) = 2
     law = ReactionLogPolynomial(a + 0.4 * math.log(300.0), 1200.0, 0.4, 0.002, 300.0, 250.0, 450.0, EOS_STANDARD_STATE_ID)
     model = Mixture(parameters((ETHANE, ETHANE), [("k_ij", (0, 1), 0.0)]))
     problem = Problem(phases=[Phase("V", kind="vapor")], T=T, P=2.0e5, feed=Amounts({"s0": 0.5, "s1": 0.5}),
                       reactions=[Reaction({"s0": -1.0, "s1": 1.0}, correlation=law)])
-    p = 2.0 / 3.0
-    L1, L2, L3 = (-1200.0 / T**2 + 0.4 / T + 0.002, 2400.0 / T**3 - 0.4 / T**2, -7200.0 / T**4 + 0.8 / T**3)
-    analytic = (p * (1 - p) * L1, p * (1 - p) * (L2 + (1 - 2 * p) * L1**2),
-                p * (1 - p) * (L3 + 3 * (1 - 2 * p) * L1 * L2 + (1 - 6 * p + 6 * p * p) * L1**3))
     for order in (1, 2, 3):
         result = actions(model, problem, [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [(1.0, 0.0, [0.0, 0.0])] * order).results[0]
         assert result.order == order
-        same(evidence, f"logistic/A{order}", result.action, analytic[order - 1], 2.0e-10 * abs(analytic[order - 1]) + 1.0e-14, 0.0)
-        same(evidence, f"e5-3/isomerisation/A{order}", result.action)
+        row = f"e5-3/isomerisation/A{order}"
+        same(evidence, row, result.action, ROWS[row], 2.0e-10 * abs(ROWS[row]) + 1.0e-14, 0.0)
 
 
 def test_log_activity_actions_follow_the_correlated_reaction(evidence: Any) -> None:

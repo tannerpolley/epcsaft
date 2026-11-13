@@ -55,10 +55,10 @@ def test_solvent_activity_transport() -> None:
             ref.solvent_activity(x=x)
     from epcsaft import _core
 
-    from tests.equilibrium.test_trace_reliability import _mea_mapping
+    from tests.native_inputs import mea_mapping
 
     background_components = ("water", "protonated-monoethanolamine", "carbamate-anion", "hydronium-cation", "hydroxide-anion")
-    background = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)),
+    background = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4)),
                                                 components=background_components))
     with pytest.raises(_core.IonicReferenceBackground):
         background.reference(298.15, 1e5, solvent_fractions=(0.8, 0, 0, 0.1, 0.1),
@@ -559,8 +559,8 @@ def test_henry_constant_matches_clapeyron(evidence: Any) -> None:
              inputs={**inputs, "molality_mol_kg": molality})
     (henry,) = model.reference(200.0, 1e6, solvent_fractions=(0.0, 1.0)).henry_constants(solutes=["methane"])
     assert henry.status == NeutralReferenceStatus.Available and henry.component_index == 0, henry.message
-    for name, reference in (("terminal_limit", 5024641.690506341), ("zero_insertion", 5024641.69050634)):
-        same(evidence, f"henry/{name}", henry.henry_constant_px, reference, 0.0, 1e-10, inputs=inputs)
+    # Clapeyron's terminal-limit value, 5024641.690506341 Pa, agrees with its zero-insertion value to 1e-9 Pa.
+    same(evidence, "henry/zero_insertion", henry.henry_constant_px, 5024641.69050634, 0.0, 1e-10, inputs=inputs)
     # Charge-balanced ion slots pass the reference ratio validation; Henry admits all-neutral models only.
     figiel = Mixture(Parameters.from_json(parameters_json("figiel-yu-held-2025", 3),
                                           components=("water", "sodium-cation", "chloride-anion")))

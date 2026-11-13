@@ -9,8 +9,7 @@ import pytest
 from epcsaft import Mixture, Parameters, Pure
 from epcsaft import equilibrium as eq
 from epcsaft.equilibrium import EOS_STANDARD_STATE_ID, Reaction, ReactionLogPolynomial
-from tests.equilibrium.test_trace_reliability import _MEA, _MEA_REACTIONS, _mea_mapping
-from tests.native_inputs import ETHANE, parameters
+from tests.native_inputs import ETHANE, MEA, MEA_REACTIONS, mea_mapping, parameters
 from tests.packets import parameters_json
 
 
@@ -165,7 +164,7 @@ def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None
 def _mea_flash(pressure: Any, *vapor: eq.Phase) -> eq.Problem:
     """Packet-3 MEA at loading 0.2556 and 318.15 K: a liquid and the declared vapor phases."""
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450., EOS_STANDARD_STATE_ID))
-                 for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), strict=True)]
+                 for nu, a in zip(MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415), strict=True)]
     feed = eq.Amounts({"carbon-dioxide": .25557798094241313 * 9.7292821, "monoethanolamine": 9.7292821,
                        "water": 76.9751925})
     return eq.Problem(T=318.15, P=pressure, phases=[eq.Phase("L", kind="liquid"), *vapor], feed=feed,
@@ -177,10 +176,10 @@ def test_default_start_replays_the_cold_start_and_counts_the_bubble_presolve() -
     true-species split, the single-liquid speciation, the bubble's liquid pre-solve at its pressure seed and
     fugacity pressure step) under its work limits, so it returns the same state and summed work. The bubble reports
     that pre-solve's work, and a budget below it stops before the bubble solve."""
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
-    bubble = _mea_flash(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=_MEA[:3], amount=eq.Pinned(0.)))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
+    bubble = _mea_flash(eq.Free(7398.16), eq.Phase("V", kind="vapor", support=MEA[:3], amount=eq.Pinned(0.)))
     work = ("iterations", "evaluations", "hessian_calls")
-    for declared in (bubble, _mea_flash(5918.5286, eq.Phase("V", kind="vapor", support=_MEA[:3])), _mea_flash(8877.7929)):
+    for declared in (bubble, _mea_flash(5918.5286, eq.Phase("V", kind="vapor", support=MEA[:3])), _mea_flash(8877.7929)):
         plain = eq.solve_equilibrium(model, declared)
         started = eq.solve_equilibrium_starts(model, declared, [eq.EquilibriumStart()], eq.EquilibriumWorkLimits())
         result = started.results[0]
@@ -206,8 +205,8 @@ def test_feed_start_regrows_the_vapor_at_the_356_point() -> None:
     liquid species at 1/9 of the feed before normalization, equal amounts) one step nearly emptied the liquid on main
     7fa511b6, and the solve ended "phase V vanished"; the amount step rule refuses that step. That start and the
     generated true-species split both reach main's apparent-K state within 1e-10."""
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
-    problem = _mea_flash(3699.0803800848512, eq.Phase("V", kind="vapor", support=_MEA[:3]))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
+    problem = _mea_flash(3699.0803800848512, eq.Phase("V", kind="vapor", support=MEA[:3]))
     z = [.25557798094241313 * 9.7292821, 9.7292821, 76.9751925]
     liquid = z + [sum(z) / 9] * 6
     feed = eq.EquilibriumStart(compositions=[[v / sum(liquid) for v in liquid], [v / sum(z) for v in z]],

@@ -8,11 +8,11 @@ from epcsaft import (
     DensityActionDirection, Mixture, ParameterError, Parameters, PressureActionDirection, PropertyObservable, Pure, Stop,
     ThermochemistryPacket, _core,
 )
-from epcsaft._core import EquilibriumResult, EquilibriumStart, EquilibriumWorkLimits, StabilityReport
+from epcsaft._core import StabilityReport
 from epcsaft.equilibrium import (
-    Amounts, Phase, Problem, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
+    Amounts, EquilibriumResult, EquilibriumStart, EquilibriumWorkLimits, Phase, Problem, SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateObservable, SolvedStateObservableKind, bubble_point,
     compile_problem, equilibrium_numerical_estimates, jacobian_table, solve_equilibrium, solve_equilibrium_starts,
-    solved_state_difference,
+    solved_state_actions, solved_state_difference,
 )
 
 from tests.packets import PACKETS
@@ -127,29 +127,23 @@ def test_failed_neighbor_is_a_status() -> None:
     assert check.status == "neighbor_unavailable" and check.cause
 
 
-def test_polish_trial_beyond_close_packing_is_a_domain_refusal() -> None:
-    """#1000: N-(2-aminoethyl)ethanolamine (Esper 2023) saturation at 150 K; the polish's damped trial at 1.4e162
-    mol/m³ reached the site solve. No retained warning may carry a density at or above close packing."""
-    if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
-        pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
-    model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
-    result = solve_equilibrium(model, model.saturation(150.0))
-    close_packed = model.molar_density_upper_bound(150.0)
-    # Site-solve warnings report (T, molar density, x).
-    densities = [r.first_conditioning_warning.controls[1] for r in result.rank_records
-                 if r.basis == "mass_action_site_fractions" and r.first_conditioning_warning is not None]
-    assert all(0.0 < d < close_packed for d in densities), densities
-
-
 def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
     """#1007: at N-(2-aminoethyl)ethanolamine's (Esper 2023) 150 K saturation, P = 1.4e-16 Pa, the estimate once
     called the nonsingular rows rank 2. #1008: with the pressure scale h_P = P its pressure radius is 4.2e-13 P, not
-    the 11 P of a 1 Pa floor. At 300 K a zero or negative pressure coordinate refuses before it becomes a scale."""
+    the 11 P of a 1 Pa floor. #1000: the polish's damped trial at 1.4e162 mol/m³ reached the site solve; no retained
+    warning may carry a density at or above close packing. #1004: the dilute saturation meets P_sat = P0 phi_L(T, P0).
+    At 300 K a zero or negative pressure coordinate refuses before it becomes a scale."""
     if not (PACKETS / "feos-esper-2023/1/packet.toml").is_file():
         pytest.skip("CC BY-NC Esper packet absent; restore it with bash data/tools/restore_feos.sh")
     model = Pure(Parameters.from_packets(PACKETS, [("feos-esper-2023/1", ["n-(2-aminoethyl)ethanolamine"])]))
     result = solve_equilibrium(model, model.saturation(150.0))
     assert result.success, result.message
+    close_packed = model.molar_density_upper_bound(150.0)
+    # Site-solve warnings report (T, molar density, x).
+    densities = [r.first_conditioning_warning.controls[1] for r in result.rank_records
+                 if r.basis == "mass_action_site_fractions" and r.first_conditioning_warning is not None]
+    assert all(0.0 < d < close_packed for d in densities), densities
+    assert_dilute_saturation(model, 150.0, result)
     estimate = equilibrium_numerical_estimates(model, result)
     assert estimate.cause == "" and estimate.rank == estimate.dimension
     assert all(e.available and e.resolved and math.isfinite(e.absolute) for e in (estimate.pressure, *estimate.densities))
@@ -159,7 +153,7 @@ def test_dilute_vapor_estimate_resolves_with_pressure_in_pascal() -> None:
     pressure_index = compiled.coordinate_labels().index("P / Pa")
     request = SolvedStateActionRequest([SolvedStateObservable(SolvedStateObservableKind.Pressure, 0, 0)],
                                        [SolvedStateActionDirection(1.0, 0.0, [0.0], [])])
-    action = _core.solved_state_actions(compiled, result, request)
+    action = solved_state_actions(compiled, result, request)
     assert action.diagnostics.rank == estimate.rank
     derivative = action.results[0].action
     assert derivative is not None
@@ -186,7 +180,14 @@ def test_ideal_action_beyond_close_packing_refuses() -> None:
                               observables=(PropertyObservable.IdealEntropy,), directions=(DensityActionDirection(0.0, 1.0),))
 
 
-@pytest.mark.parametrize(("T", "packing"), [(150.0, None), (220.0, None), (300.0, 1e-200)])
+def assert_dilute_saturation(model: Pure, T: float, result: EquilibriumResult) -> None:
+    log_phi = model.state(T, P=1e-3, phase="liquid").log_fugacity_coefficient
+    assert log_phi is not None and log_phi[0] is not None
+    reference = 1e-3 * math.exp(log_phi[0])
+    assert result.pressure is not None and abs(result.pressure / reference - 1.0) <= 1e-6
+
+
+@pytest.mark.parametrize(("T", "packing"), [(220.0, None), (300.0, 1e-200)])
 def test_dilute_vapor_saturation_and_unrepresentable_refusal(T: float, packing: float | None) -> None:
     """#1004: N-(2-aminoethyl)ethanolamine (Esper 2023) saturation with vapor packing below 1e-12 meets
     P_sat = P0 phi_L(T, P0), P0 = 1e-3 Pa, within 1e-6 (the dropped Poynting and vapor terms are below 3e-10).
@@ -197,10 +198,7 @@ def test_dilute_vapor_saturation_and_unrepresentable_refusal(T: float, packing: 
     if packing is None:
         result = solve_equilibrium(model, model.saturation(T))
         assert result.success, result.message
-        log_phi = model.state(T, P=1e-3, phase="liquid").log_fugacity_coefficient
-        assert log_phi is not None and log_phi[0] is not None
-        reference = 1e-3 * math.exp(log_phi[0])
-        assert result.pressure is not None and abs(result.pressure / reference - 1.0) <= 1e-6
+        assert_dilute_saturation(model, T, result)
         return
     out = solve_equilibrium_starts(model, Problem(phases=[Phase("V", kind="vapor")], T=T, P=1e-192,
                                                   feed=Amounts({model.component_ids[0]: 1.0})),

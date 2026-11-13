@@ -15,12 +15,11 @@ from epcsaft import (
     PropertyObservable as Property, Pure,
 )
 from epcsaft.equilibrium import (
-    Amounts, NeutralReference, Phase, Problem, Reaction, ReactionLogPolynomial, ReactionReference,
-    ReferenceSourceBasis as Basis, SolvedStateActionDirection as Direction, SolvedStateActionRequest,
+    Problem, SolvedStateActionDirection as Direction, SolvedStateActionRequest,
     SolvedStateActionStatus as Status, SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
-from tests.native_inputs import A_RECORD, CP_A, DIMER_LAW, ETHANE, aqueous_electrolyte, dimer_problem, parameters, records, same, twin_ethane
+from tests.native_inputs import A_RECORD, CP_A, DIMER_LAW, ETHANE, aqueous_electrolyte, dimer_problem, ionic_problem, parameters, records, same, twin_ethane
 
 T0, P0 = 260.0, 3.0e6
 H, CP = (SolvedStateObservable(Kind.PhaseProperty, 0, 0, p) for p in (Property.TotalEnthalpy,
@@ -195,17 +194,6 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
                  inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step]})
 
 
-def _ionic(temperature: float, reference_pressure: float | None) -> Problem:
-    law = ReactionLogPolynomial(math.log(1e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source")
-    return Problem(
-        T=temperature, P=1.0e5, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}), phases=[Phase("L", kind="liquid")],
-        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
-                                           standard_molality_mol_per_kg=1.0),
-        reactions=[Reaction({"s0": -1.0, "s1": 1.0, "s2": 1.0}, correlation=law, reference=ReactionReference(
-            Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
-    )
-
-
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
 def test_ionic_reference_calorics_reproduce_native_rows_and_resolves(
     evidence: Any, reference_pressure: float | None,
@@ -218,17 +206,17 @@ def test_ionic_reference_calorics_reproduce_native_rows_and_resolves(
         IdealPolynomial([33.59], 298.15, -241826.0, 188.83), 1.0e5))]
     model = Mixture(aqueous_electrolyte(), thermochemistry=records(water, [], []))
     zero = Direction(0.0, 0.0, [0.0, 0.0, 0.0], [])
-    items = _values(model, _ionic(298.15, reference_pressure), [H, CP], zero)
+    items = _values(model, ionic_problem(298.15, 1.0e5, reference_pressure), [H, CP], zero)
     name = f"reference-calorics/ionic/{'system' if reference_pressure is None else 'fixed'}"
     same(evidence, name + "/h", items[0].value)
     same(evidence, name + "/cp", items[1].value)
-    thermal = _values(model, _ionic(298.15, reference_pressure), [H, AMOUNT], Direction(1.0, 0.0, [0.0, 0.0, 0.0], []))
+    thermal = _values(model, ionic_problem(298.15, 1.0e5, reference_pressure), [H, AMOUNT], Direction(1.0, 0.0, [0.0, 0.0, 0.0], []))
     assert all(item.status == Status.Available for item in thermal)
     h, n, dh, dn = (math.nan if v is None else v for v in (
         thermal[0].value, thermal[1].value, thermal[0].action, thermal[1].action))
 
     def extensive(temperature: float) -> float:
-        values = _values(model, _ionic(temperature, reference_pressure), [H, AMOUNT], zero)
+        values = _values(model, ionic_problem(temperature, 1.0e5, reference_pressure), [H, AMOUNT], zero)
         return float(values[0].value * values[1].value)
 
     action = n * dh + h * dn

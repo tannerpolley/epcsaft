@@ -7,6 +7,7 @@ import pytest
 
 import epcsaft
 from epcsaft import _core as c
+from epcsaft import equilibrium as eq
 from tests.native_inputs import decode, mea_cp
 
 
@@ -45,14 +46,14 @@ def packet(mode: str) -> Any:
     return data, m, decode(data["observations"][0]["fields"]["problem"])
 
 
-D = c.SolvedStateActionDirection
-Observable = c.SolvedStateObservable
-K = c.SolvedStateObservableKind
+D = eq.SolvedStateActionDirection
+Observable = eq.SolvedStateObservable
+K = eq.SolvedStateObservableKind
 os = [
     Observable(K.PhaseMolarDensity, 0),
     *[Observable(K.PhaseComponentAmount, 0, i) for i in [2, 1, 3]],
     Observable(K.PhaseResidualChemicalPotentialOverRt, 0, 3),
-    Observable(K.PhaseProperty, 0, 0, c.PropertyObservable.TotalEnthalpy),
+    Observable(K.PhaseProperty, 0, 0, epcsaft.PropertyObservable.TotalEnthalpy),
     Observable(K.SystemEnthalpy),
 ]
 names = ["rho", "water", "amine", "MEAH", "mu_res_RT", "h", "H"]
@@ -67,10 +68,10 @@ def action(m: Any, p: Any, ds: Any) -> Any:
     assert all(v > 0 for v in r.mole_fractions)
     state = m.state(p.temperature.value, r.molar_densities[0], r.mole_fractions)
     assert state.pressure_density_derivative > 0 and abs(state.pressure - p.pressure.value) < 1e-3
-    items = c.solved_state_actions(
-        c.compile_problem(m, p), r, c.SolvedStateActionRequest(os, ds or [D(0, 0, [0] * 9, [])])
+    items = eq.solved_state_actions(
+        c.compile_problem(m, p), r, eq.SolvedStateActionRequest(os, ds or [D(0, 0, [0] * 9, [])])
     ).results
-    assert all(x.status == c.SolvedStateActionStatus.Available for x in items), [
+    assert all(x.status == eq.SolvedStateActionStatus.Available for x in items), [
         (x.status, x.diagnostic_message) for x in items
     ]
     return [x.action if ds else x.value for x in items]
@@ -159,14 +160,14 @@ def test_solvent_mole_weighting_fit_workers(mode: str) -> None:
             coords,
             observations,
             data["weights"] * 2,
-            c.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=120, gradient_tolerance=1e12, workers=w),
+            epcsaft.regression.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=120, gradient_tolerance=1e12, workers=w),
         )
         for w in [1, 2]
     ]
     assert isinstance(params._document, c.ParameterDocument)
     for r in results:
         assert r.usable, r.message
-        assert all(s == c.ObservationStatus.Available for s in r.statuses)
+        assert all(s == epcsaft.regression.ObservationStatus.Available for s in r.statuses)
         rebuilt = c.fitted_document(params._document, r.parameters)
         assert [(e.field, e.index, e.magnitude) for e in rebuilt.entries if e.field.startswith("permittivity_")] == [
             (e.field, e.index, e.magnitude) for e in params._document.entries if e.field.startswith("permittivity_")

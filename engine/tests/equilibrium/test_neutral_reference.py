@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterFamily, Pure, _core
+from epcsaft import ActiveParameter, GAS_CONSTANT_J_PER_MOL_K as R, Mixture, ParameterError, ParameterFamily, Pure, _core
 from epcsaft.equilibrium import (
     Amounts, Continuation, ContinuationStop, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial,
     ReactionReference, ReferenceSourceBasis as Basis, SolvedStateActionDirection,
@@ -14,7 +14,7 @@ from epcsaft.equilibrium import (
     compile_problem, continue_equilibrium, problem_from_mapping, solve_equilibrium, solved_state_actions,
     solved_state_first_actions,
 )
-from tests.native_inputs import ETHANE, aqueous_electrolyte, parameters, same
+from tests.native_inputs import ETHANE, aqueous_electrolyte, ionic_problem, parameters, same
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
@@ -98,7 +98,7 @@ def test_pure_gas_reference_refuses_compressed_liquid_ethane() -> None:
                       reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=ReactionLogPolynomial(
                           math.log(0.3), 0.0, 0.0, 0.0, 180.0, 170.0, 200.0, "manufactured-compressed-liquid"),
                           reference=ReactionReference(Basis.RawMoleFractionInfiniteDilution))])
-    with pytest.raises(_core.ParameterError, match="pure reference species 1: vapor branch not established by the finite search"):
+    with pytest.raises(ParameterError, match="pure reference species 1: vapor branch not established by the finite search"):
         solve_equilibrium(model, problem)
 
 
@@ -307,20 +307,6 @@ def test_temperature_reference_chain_recovers_identical_species_law(
     # Driven feed A3 has native numerical witnesses; moving-T A3 is outside #225.
 
 
-def _ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
-    """Manufactured formula reaction H2O ⇌ Na+ + Cl- (charge neutral, not atom balanced) on
-    the native equilibrium_checks aqueous case."""
-    law = ReactionLogPolynomial(math.log(1e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source")
-    return Problem(
-        T=temperature, P=pressure, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}),
-        phases=[Phase("L", kind="liquid")],
-        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
-                                           standard_molality_mol_per_kg=1.0),
-        reactions=[Reaction({"s0": -1.0, "s1": 1.0, "s2": 1.0}, correlation=law, reference=ReactionReference(
-            Basis.RawMoleFractionInfiniteDilution, reference_pressure))],
-    )
-
-
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
 def test_ionic_temperature_action_matches_resolved_difference(
     evidence: Any, reference_pressure: float | None,
@@ -331,11 +317,11 @@ def test_ionic_temperature_action_matches_resolved_difference(
     model = Mixture(aqueous_electrolyte())
 
     def sodium(d_t: float, d_p: float) -> float:
-        result = solve_equilibrium(model, _ionic_problem(temperature + d_t, pressure + d_p, reference_pressure))
+        result = solve_equilibrium(model, ionic_problem(temperature + d_t, pressure + d_p, reference_pressure))
         assert result.success, result.message
         return float(result.mole_fractions[1])
 
-    problem = _ionic_problem(temperature, pressure, reference_pressure)
+    problem = ionic_problem(temperature, pressure, reference_pressure)
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
     compiled = compile_problem(model, problem)
@@ -367,7 +353,7 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
 
     @cache
     def solved(d_t: float) -> tuple[Any, Any]:
-        problem = _ionic_problem(temperature + d_t, pressure, reference_pressure)
+        problem = ionic_problem(temperature + d_t, pressure, reference_pressure)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
         return compile_problem(model, problem), result
@@ -400,19 +386,19 @@ def test_referenced_continuation_follows_the_cold_solves(reference_pressure: flo
     start, end = (298.15, 1.0e5), (318.15, 3.0e5)
 
     def at(q: float) -> Any:
-        result = solve_equilibrium(model, _ionic_problem(
+        result = solve_equilibrium(model, ionic_problem(
             (1 - q) * start[0] + q * end[0], (1 - q) * start[1] + q * end[1], reference_pressure))
         assert result.success, result.message
         return result
 
     central, step = at(0.0), 1e-3
     lever = [end[0] - start[0], end[1] - start[1], 0.0, 0.0, 0.0]
-    tangent = _core.sensitivity(compile_problem(model, _ionic_problem(*start, reference_pressure)),
+    tangent = _core.sensitivity(compile_problem(model, ionic_problem(*start, reference_pressure)),
                                 central.coordinates, lever)
     resolved = [(u - v) / (2 * step) for u, v in zip(at(step).coordinates, at(-step).coordinates)]
     assert max(abs(t - r) for t, r in zip(tangent, resolved)) <= 1e-6  # re-solve noise ~4e-8
     result = continue_equilibrium(
-        model, _ionic_problem(*start, reference_pressure), _ionic_problem(*end, reference_pressure),
+        model, ionic_problem(*start, reference_pressure), ionic_problem(*end, reference_pressure),
         Continuation(initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1),
     )
     assert result.success and result.stop == ContinuationStop.reached_target, result.message
@@ -433,7 +419,7 @@ def test_steep_permittivity_temperature_action_matches_resolved_difference(evide
     temperature = 298.15
 
     def problem(d_t: float) -> Problem:
-        item = _ionic_problem(temperature + d_t, 1.0e5, None)
+        item = ionic_problem(temperature + d_t, 1.0e5, None)
         if pure_solvent:
             assert item.neutral_reference is not None
             item.neutral_reference.species_reference = {"s0": SpeciesReference.PureGas}

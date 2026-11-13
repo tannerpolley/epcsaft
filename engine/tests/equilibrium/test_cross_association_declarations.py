@@ -4,7 +4,6 @@ audit probe (build/audit-2026-10-15/opus/probes/p11): without cross edges it fou
 x_ethanol 0.3, 0.5 and 0.7 as locally unstable; with Wolbach-Sandler cross edges it found all ten."""
 import ctypes
 import math
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -13,6 +12,7 @@ from epcsaft import (
     IdealCorrelation, IdealInterval, IdealNASA9, Mixture, ParameterError, Parameters, ThermochemistryRecord, _core,
 )
 from epcsaft.eos import property_asl_record
+from epcsaft.idaes import asl_library
 from epcsaft.equilibrium import MoleFractions, Phase, bubble_point, solve_equilibrium
 
 # x_ethanol: (P / Pa, y_ethanol) without cross edges (None: refused) and with Wolbach-Sandler edges.
@@ -121,7 +121,7 @@ def test_asl_record_transports_the_declaration_to_the_same_native_owner() -> Non
 
     interval = IdealInterval(200.0, 1000.0, True, True, IdealCorrelation(IdealNASA9([0.0, 0.0, 4.0] + [0.0] * 6), 1e5))
     mixture = Mixture(Parameters.from_mapping(document([NONE])), thermochemistry=ThermochemistryRecord(1e5, [[interval]] * 2))
-    external = ExternalFunction(library=str(Path(_core.__file__).parent / "libepcsaft_asl.so"), function="epcsaft_pressure_property")
+    external = ExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
     external.load_library()
     function = external._known_functions["epcsaft_pressure_property"][0]
 

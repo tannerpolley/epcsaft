@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from epcsaft import DeclarationError, Mixture, ParameterError, Parameters, _core, equilibrium
+from epcsaft import DeclarationError, Mixture, ParameterError, Parameters, Stop, _core, equilibrium, regression, tolerances
 from epcsaft.equilibrium import (
     Amounts,
     Free,
@@ -16,8 +16,7 @@ from epcsaft.equilibrium import (
 )
 
 from tests.equilibrium.test_declared_starts import _mea_flash
-from tests.equilibrium.test_trace_reliability import _MEA, _mea_mapping
-from tests.native_inputs import aqueous_electrolyte
+from tests.native_inputs import MEA, aqueous_electrolyte, mea_mapping
 from tests.packets import parameters_json
 
 
@@ -54,7 +53,7 @@ def test_phase_amount_guess_is_rejected_by_name() -> None:
 
 def test_named_guess_follows_the_declared_support() -> None:
     # A supported phase's guess has one entry per support component; a name map must start the same solve.
-    def solve(first: object, second: object) -> _core.EquilibriumResult:
+    def solve(first: object, second: object) -> equilibrium.EquilibriumResult:
         return solve_equilibrium(mixture(), Problem(T=200.0, P=2e6, feed=equilibrium.MoleFractions({"methane": 0.5, "ethane": 0.5}),
             phases=[Phase("Le", kind="liquid", support=["ethane"], composition_guess=first),  # type: ignore[arg-type]
                     Phase("Lm", kind="liquid", support=["methane"], composition_guess=second)]))  # type: ignore[arg-type]
@@ -68,7 +67,7 @@ def test_named_guess_follows_native_support_order() -> None:
     model = Mixture(Parameters.from_json(
         parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=("water", "isobutanol")))
 
-    def solve(first: object, second: object) -> _core.EquilibriumResult:
+    def solve(first: object, second: object) -> equilibrium.EquilibriumResult:
         return solve_equilibrium(model, Problem(T=293.15, P=1e5, feed=equilibrium.Amounts({"water": .6, "isobutanol": .4}),
             phases=[Phase("Lw", kind="liquid", support=["isobutanol", "water"], composition_guess=first),  # type: ignore[arg-type]
                     Phase("Lo", kind="liquid", support=["isobutanol", "water"], composition_guess=second)]))  # type: ignore[arg-type]
@@ -96,15 +95,15 @@ def test_omitted_and_explicit_empty_support_are_distinct() -> None:
     feed = Amounts({"methane": 0.5, "ethane": 0.0})
     omitted = problem(feed)._native(model)
     assert omitted.phases[0].support == [] and omitted.phases[0].support_declared is False
-    compiled = _core.compile_problem(model._model, omitted)
+    compiled = equilibrium.compile_problem(model, omitted)
     assert compiled.removed_species == [1]
     explicit = problem(feed, support=("methane", "ethane"))._native(model)
     assert explicit.phases[0].support == [0, 1] and explicit.phases[0].support_declared is True
-    assert _core.compile_problem(model._model, explicit).removed_species == [1]
+    assert equilibrium.compile_problem(model, explicit).removed_species == [1]
     empty = problem(feed, support=())._native(model)
     assert empty.phases[0].support == [] and empty.phases[0].support_declared is True
     with pytest.raises(ParameterError, match="empty support in phase L"):
-        _core.compile_problem(model._model, empty)
+        equilibrium.compile_problem(model, empty)
 
 
 def test_caller_row_tolerance_maps_and_reports_its_outcome() -> None:
@@ -123,7 +122,7 @@ def test_caller_row_tolerance_maps_and_reports_its_outcome() -> None:
     with pytest.raises(ParameterError):
         solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1.0e5, feed=feed, row_tolerance=-1.0))
 
-    defaults = {entry.name: entry.value for entry in _core.tolerances()}
+    defaults = {entry.name: entry.value for entry in tolerances()}
     inherited = Mixture(model.parameters, solver_options={"EQUILIBRIUM_ROW_RESIDUAL": 1e-7})
     inherited_result = solve_equilibrium(inherited, problem(feed))
     assert inherited_result.convergence.criterion is not None
@@ -166,13 +165,13 @@ def test_caller_row_tolerance_maps_and_reports_its_outcome() -> None:
     with pytest.raises(ParameterError, match="EQUILIBRIUM_ROW_RESIDUAL"):
         Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5, feed=feed, row_tolerance=True)._native(model)
     with pytest.raises(ParameterError, match="FIT_FUNCTION_TOLERANCE"):
-        _core.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10, function_tolerance=True)
+        regression.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10, function_tolerance=True)
     for tolerance in (math.ulp(0.0), float.fromhex("0x1.fffffffffffffp+1023")):
         with pytest.raises(ParameterError, match="EQUILIBRIUM_ROW_RESIDUAL.*dual_inf_tol"):
             solve_equilibrium(model, Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5,
                 feed=Amounts({"methane": 50.0, "ethane": 50.0}), solver_options={"EQUILIBRIUM_ROW_RESIDUAL": tolerance}))
     with pytest.raises(ParameterError, match="duplicate"):
-        _core.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10,
+        regression.FitControls(maximum_iterations=1, maximum_elapsed_time_seconds=10,
             function_tolerance=1e-8, solver_options={"FIT_FUNCTION_TOLERANCE": 1e-8})
     mapped = problem_from_mapping({
         "phases": [{"name": "L", "kind": "liquid"}], "T": 300.0, "P": 1.0e5,
@@ -216,8 +215,8 @@ def test_malformed_explicit_mapping_fields_are_rejected() -> None:
 def test_incidental_ipopt_options_preserve_equilibrium_state(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("EPCSAFT_IPOPT_OPTIONS_FILE", raising=False)
     monkeypatch.chdir(tmp_path)
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
-    declaration = _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3]))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
+    declaration = _mea_flash(5918.5286, Phase("V", kind="vapor", support=MEA[:3]))
     clean = solve_equilibrium(model, declaration)
     (tmp_path / "ipopt.opt").write_text("mu_strategy adaptive\nmax_iter 0\nbogus_option 1\n")
     stray = solve_equilibrium(model, declaration)
@@ -268,7 +267,7 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
             continue
         assert not result.success and result.amounts == [] and result.mole_fractions == []
         # The fallback rows meet the criterion: the fatal return alone withholds the state.
-        assert result.requested_tolerance_met is True and result.convergence.stop == _core.Stop.infeasible
+        assert result.requested_tolerance_met is True and result.convergence.stop == Stop.infeasible
 
 
 def test_supplied_charged_trials_count_only_on_their_liquid_side() -> None:
@@ -365,7 +364,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     vapor is refused before the reference calculation that would otherwise fail at 400 K."""
     nacl = ("water", "sodium-cation", "chloride-anion")
     salt = Mixture(Parameters.from_json(parameters_json("held-cameretti-sadowski-2008", 4), components=nacl))
-    mea = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
+    mea = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
     reactions = _mea_flash(0.).reactions
     cases: list[tuple[Mixture, float, Amounts | Molalities, Sequence[equilibrium.Reaction], float, int]]
     cases = [(salt, 373.15, Molalities({"sodium-cation": 1., "chloride-anion": 1.}, solvent=("water",), solvent_mass_kg=1.),
@@ -401,7 +400,7 @@ def test_omitted_vapor_support_is_the_zero_charge_components() -> None:
     start = equilibrium.EquilibriumStart(compositions=[result.mole_fractions[:n], vapor])
     narrow = equilibrium.EquilibriumStart(compositions=[result.mole_fractions[:n], vapor[:neutral]])
     pairs = ((solve_equilibrium(mea, _mea_flash(5918.5286, Phase("V", kind="vapor", composition_guess=guess))),
-              solve_equilibrium(mea, _mea_flash(5918.5286, Phase("V", kind="vapor", support=_MEA[:3],
+              solve_equilibrium(mea, _mea_flash(5918.5286, Phase("V", kind="vapor", support=MEA[:3],
                                                                  composition_guess=guess[:neutral])))),
              *(equilibrium.solve_equilibrium_starts(mea, problem, [seed], equilibrium.EquilibriumWorkLimits()).results
                for problem, seed in ((default, start), (explicit, narrow))))

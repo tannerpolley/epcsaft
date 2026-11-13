@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from epcsaft import (
+    ActiveParameter,
     GAS_CONSTANT_J_PER_MOL_K as R,
     IdealCorrelation,
     IdealDIPPR107,
@@ -21,14 +22,17 @@ from epcsaft import (
     IdealPolynomial,
     IdealShomate,
     Mixture,
+    ParameterFamily,
     Parameters,
     ThermochemistryRecord,
     _core,
+    regression,
 )
 from epcsaft.equilibrium import (
-    Amounts, Free, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial, ReactionReference,
-    ReferenceSourceBasis,
+    Amounts, Free, Molalities, NeutralReference, Phase, Pinned, Problem, Reaction, ReactionLogPolynomial, ReactionReference,
+    ReferenceSourceBasis, Solid,
 )
+from tests.packets import parameters_json
 
 ROWS = {
     line.split("\t")[1]: float(line.split("\t")[3])
@@ -241,3 +245,146 @@ def dimer_problem(temperature: float, reference_pressure: float | None,
         reactions=[Reaction({"s0": -2.0, "s1": 1.0}, correlation=DIMER_LAW, reference=ReactionReference(
             ReferenceSourceBasis.RawMoleFractionInfiniteDilution, reference_pressure))],
     )
+
+
+def ionic_problem(temperature: float, pressure: float, reference_pressure: float | None) -> Problem:
+    """Manufactured formula reaction H2O ⇌ Na+ + Cl- (charge neutral, not atom balanced) on
+    the native equilibrium_checks aqueous case."""
+    law = ReactionLogPolynomial(math.log(1e-8), 0.0, 0.0, 0.0, 298.15, 250.0, 350.0, "analytic-source")
+    return Problem(
+        T=temperature, P=pressure, feed=Amounts({"s0": 1.0, "s1": 1e-6, "s2": 1e-6}),
+        phases=[Phase("L", kind="liquid")],
+        neutral_reference=NeutralReference(solvent="s0", solute_molality_ratios={"s1": 1.0, "s2": 1.0},
+                                           standard_molality_mol_per_kg=1.0),
+        reactions=[Reaction({"s0": -1.0, "s1": 1.0, "s2": 1.0}, correlation=law, reference=ReactionReference(
+            ReferenceSourceBasis.RawMoleFractionInfiniteDilution, reference_pressure))],
+    )
+
+
+WATER_ISOBUTANOL = ("water", "isobutanol")
+
+
+def water_isobutanol(theta: Sequence[float] | None = None, active: bool = True) -> Mixture:
+    """The engine/README.md water/isobutanol record (Khudaida 2026 packet 7). `theta` edits k_ij(isobutanol, water)
+    and isobutanol eps/k, which are the active parameters unless `active` is False."""
+    mapping = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
+    if theta is not None:
+        pair = next(p for p in mapping["pairs"] if p["coefficients"][0]["identity"] == "pair/isobutanol/water/k_ij")
+        pair["coefficients"][0]["value"]["magnitude"] = theta[0]
+        iso = next(c for c in mapping["components"] if c["component_id"] == "isobutanol")
+        next(k for k in iso["coefficients"] if k["identity"].endswith("dispersion_energy_over_k"))["value"]["magnitude"] = theta[1]
+    p = Parameters.from_mapping(mapping, components=WATER_ISOBUTANOL)
+    return Mixture(p, active_parameters=[regression.active_parameter(p, "k_ij", ("isobutanol", "water")),
+                   regression.active_parameter(p, "dispersion_energy_over_k", "isobutanol")] if active else None)
+
+
+def water_isobutanol_problem(feed: Sequence[float] = (0.7, 0.3), T: float = 298.15) -> Problem:
+    """Two liquids at 1e5 Pa from the guesses (0.46, 0.54) and (0.99, 0.01); `feed` in mol of water, isobutanol."""
+    return Problem(phases=[Phase("L1", kind="liquid", support=WATER_ISOBUTANOL, composition_guess=(0.46, 0.54)),
+                           Phase("L2", kind="liquid", support=WATER_ISOBUTANOL, composition_guess=(0.99, 0.01))],
+                   T=T, P=1.0e5, feed=Amounts(dict(zip(WATER_ISOBUTANOL, feed, strict=True))))
+
+
+# Packet 3/4 nine-species MEA/CO2/water: species order and reactions R1-R5.
+MEA = ("carbon-dioxide", "monoethanolamine", "water", "protonated-monoethanolamine", "carbamate-anion",
+        "bicarbonate-anion", "carbonate-anion", "hydronium-cation", "hydroxide-anion")
+MEA_REACTIONS = (  # R1-R5: water, CO2 and bicarbonate dissociation, carbamate hydrolysis, MEAH+ dissociation
+    {"water": -2.0, "hydronium-cation": 1.0, "hydroxide-anion": 1.0},
+    {"carbon-dioxide": -1.0, "water": -2.0, "bicarbonate-anion": 1.0, "hydronium-cation": 1.0},
+    {"water": -1.0, "bicarbonate-anion": -1.0, "carbonate-anion": 1.0, "hydronium-cation": 1.0},
+    {"monoethanolamine": 1.0, "water": -1.0, "carbamate-anion": -1.0, "bicarbonate-anion": 1.0},
+    {"protonated-monoethanolamine": -1.0, "water": -1.0, "monoethanolamine": 1.0, "hydronium-cation": 1.0})
+
+
+def mea_mapping(path: Path) -> dict[str, Any]:
+    """An MEA document with its historical CO2/MEA omission declared explicitly (#569): no cross edge, not a
+    claim that the physical interaction is absent."""
+    mapping: dict[str, Any] = json.loads(path.read_text())
+    mapping["topology"].setdefault("no_cross_association", []).append({
+        "component_id_a": "carbon-dioxide", "component_id_b": "monoethanolamine",
+        "provenance": {"source_id": mapping["document_id"], "locator": f"{path.relative_to(Path(__file__).resolve().parents[2])}: no CO2/MEA edge"}})
+    return mapping
+
+
+def nominally_unloaded_mea(thermochemistry: bool = True) -> tuple[Any, list[Reaction], NeutralReference, list[float], dict[str, Any]]:
+    """The Engine-owned reference declaration engine/data/reference/mea-nominally-unloaded: model (with ideal
+    calorics unless thermochemistry is False), reactions, the application's neutral reference, the shipped liquid guess
+    and the reaction system."""
+    root = Path(__file__).resolve().parents[1] / "data" / "reference"
+    request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
+    system = request["reaction_system"]
+    mapping = mea_mapping(root / "mea-nominally-unloaded" / "parameters.json")
+    for family in mapping["model_families"]:
+        if family["kind"] == "electrolyte":
+            family.update(c_shell=1.0, c_dielectric=1.0)
+    calorics = json.loads((root / "mea-zero-inventory" / "ideal-calorics.json").read_text())
+    p0, components = calorics["reference_pressure_pa"], calorics["components"]
+    intervals: list[list[IdealInterval]] = [[] for _ in MEA]
+    for name in ("carbon-dioxide", "water"):
+        lower, upper = components[name]["range_k"]
+        intervals[MEA.index(name)] = [IdealInterval(lower, upper, True, True, IdealCorrelation(
+            IdealShomate(tuple(components[name]["coefficients"]), components[name]["formation_enthalpy_j_per_mol"]), p0))]
+    mea = components["monoethanolamine"]  # Cp(T) re-centred on the h = s = 0 anchor
+    centre = mea["enthalpy_entropy_anchor_k"]
+    shifted = [sum(a * math.comb(j, k) * centre ** (j - k) for j, a in enumerate(mea["coefficients"]) if j >= k)
+               for k in range(4)]
+    lower, upper = mea["range_k"]
+    intervals[1] = [IdealInterval(lower, upper, True, True, IdealCorrelation(IdealPolynomial(shifted, centre, 0.0, 0.0), p0))]
+    model = Mixture(Parameters.from_mapping(mapping), thermochemistry=ThermochemistryRecord(p0, intervals) if thermochemistry else None)
+    reactions = []
+    for record in system["engine_reactions"]:
+        law, reference = record["engine_correlation"], record["engine_reference"]
+        reactions.append(Reaction(dict(zip(MEA, record["stoichiometry"])), name=record["reaction_id"],
+            correlation=ReactionLogPolynomial(*(law[key] for key in (
+                "a", "b", "c", "d", "reference_temperature", "temperature_min", "temperature_max", "standard_state_id"))),
+            reference=ReactionReference(getattr(ReferenceSourceBasis, reference["source_basis"]),
+                                        reference_pressure_pa=reference["reference_pressure_pa"])))
+    # The application's neutral reference: neutral solutes 1, source ion pairs summed, scaled by 1/8.
+    ratios = dict(zip(MEA[:2] + MEA[3:], (0.125, 0.125, 0.625, 0.25, 0.125, 0.125, 0.125, 0.125)))
+    guess = request["continuation"]["state"]["phases"][0]["mole_fractions"]
+    reference = NeutralReference(solvent="water", solute_molality_ratios=ratios, standard_molality_mol_per_kg=1.0)
+    return model, reactions, reference, guess, system
+
+
+# Halite in water, Held 2014 strategy 2: Clarke and Glew 1985 (doi:10.1063/1.555730) Table 34 dissolution constants
+# at 25 C (Gibbs energy, enthalpy in J/mol; heat capacity in J/(mol K)); halite molar volume 27.1 cm3/mol from
+# PHREEQC pitzer.dat (phreeqpython 1.6.2).
+HALITE_T, HALITE_P = 298.15, 101325.0
+HALITE_SPECIES = ("water", "sodium-cation", "chloride-anion")
+_DG, _DH, _DCP = -9038.7, 3858.4, -134.03
+HALITE_LN_K = -_DG / (R * HALITE_T)
+_B = -(_DH - HALITE_T * _DCP) / R
+HALITE_LAW = ReactionLogPolynomial(HALITE_LN_K - _B / HALITE_T, _B, _DCP / R, 0.0, HALITE_T, 288.15, 308.15,
+                                   "molality-infinite-dilution")
+HALITE_V_SOLID = 27.1e-6
+HALITE_PARAMETERS = (
+    ("component/sodium-cation/dispersion_energy_over_k", ActiveParameter(ParameterFamily.DispersionEnergyOverK, (1,)), 230.0),
+    ("component/chloride-anion/segment_diameter", ActiveParameter(ParameterFamily.SigmaConstant, (2,)), 2.756),
+    ("pair/chloride-anion/water/k_ij", ActiveParameter(ParameterFamily.Kij, (2, 6)), -0.25))
+WATER_MOLAR_MASS = 18.01528e-3  # kg/mol
+
+
+def held_parameters(shift: tuple[str, float] = ("", 0.0)) -> Parameters:
+    """The Held 2014 set with one document coefficient shifted by an absolute amount."""
+    document = json.loads(parameters_json("held-2014-strategy2", 1).read_text())
+    for record in (*document["components"], *document["pairs"]):
+        for item in record["coefficients"]:
+            item["value"]["magnitude"] += shift[1] if item["identity"] == shift[0] else 0.0
+    return Parameters.from_mapping(document, components=list(HALITE_SPECIES))
+
+
+def held(shift: tuple[str, float] = ("", 0.0), active: tuple[ActiveParameter, ...] = ()) -> Mixture:
+    return Mixture(held_parameters(shift), active_parameters=list(active))
+
+
+def halite_in_water(molality: float, amount: Free | Pinned = Free(), temperature: float = HALITE_T,
+                   pressure: float = HALITE_P, correlation: ReactionLogPolynomial = HALITE_LAW) -> Problem:
+    """One liquid beside halite, Na+ and Cl- at `molality` in 1 kg water; the solid reference pressure is HALITE_P."""
+    halite = Solid("halite", formula={"sodium-cation": 1.0, "chloride-anion": 1.0}, correlation=correlation,
+                   reference=ReactionReference(ReferenceSourceBasis.CommonMolalityInfiniteDilution, HALITE_P),
+                   molar_volume_m3_per_mol=HALITE_V_SOLID, amount=amount)
+    return Problem(T=temperature, P=pressure, phases=[Phase("L", kind="liquid")], solids=[halite],
+                   feed=Molalities({"sodium-cation": molality, "chloride-anion": molality}, solvent=("water",),
+                                   solvent_mass_kg=1.0),
+                   neutral_reference=NeutralReference(solvent="water", standard_molality_mol_per_kg=1.0,
+                                                      solute_molality_ratios={"sodium-cation": 1.0, "chloride-anion": 1.0}))

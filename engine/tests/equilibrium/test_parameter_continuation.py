@@ -1,11 +1,9 @@
 """Identical pseudo-species cancel residual potentials in the two exchange laws (#234)."""
-import json
 from typing import Any
 
-from epcsaft import ActiveParameter, Mixture, ParameterFamily, Parameters, _core, regression
+from epcsaft import ActiveParameter, Mixture, ParameterFamily, _core
 from epcsaft import equilibrium as eq
-from tests.native_inputs import ETHANE, parameters, same
-from tests.packets import parameters_json
+from tests.native_inputs import ETHANE, parameters, same, water_isobutanol, water_isobutanol_problem
 
 
 def test_dispersion_path_preserves_exchange_amounts_and_compositions(evidence: Any) -> None:
@@ -31,11 +29,11 @@ def test_dispersion_path_preserves_exchange_amounts_and_compositions(evidence: A
         same(evidence, f"parameter-path/{index}/rows", max(map(abs, state.residuals)), 0.0, atol=1e-10, rtol=0.0)
         assert max(map(abs, state.classified_residuals)) <= 1e-10
     compiled = eq.compile_problem(model, problem)
-    observables = [_core.SolvedStateObservable(_core.SolvedStateObservableKind.PhaseAmount, phase) for phase in (0, 1)]
-    observables += [_core.SolvedStateObservable(_core.SolvedStateObservableKind.PhaseMoleFraction, phase, species)
+    observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseAmount, phase) for phase in (0, 1)]
+    observables += [eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseMoleFraction, phase, species)
                     for phase, support in enumerate(((0, 2, 4), (1, 3, 5))) for species in support]
-    action = _core.solved_state_first_actions(compiled, result.states[0], observables,
-        [_core.SolvedStateActionDirection(0.0, 0.0, (0.0,) * 6, (10.0,) * 6)])[0]
+    action = eq.solved_state_first_actions(compiled, result.states[0], observables,
+        [eq.SolvedStateActionDirection(0.0, 0.0, (0.0,) * 6, (10.0,) * 6)])[0]
     for index, item in enumerate(action.results):
         same(evidence, f"parameter-path/tangent/{index}", item.action, 0.0, atol=1e-9, rtol=0.0)
 
@@ -44,41 +42,24 @@ def test_engine_readme_parameter_path_reaches_direct_solve() -> None:
     """engine/README.md water/isobutanol record, k_ij and isobutanol eps/k active, fixed step 0.25. Each step's
     L1 density moves 1.03 %, beyond the 0.00995 ln-density window around the previous accepted density;
     the density at the predicted coordinates, which the exact tangent misses by O(h^2), also witnesses the branch."""
-    mapping = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
-
-    def model(theta: tuple[float, ...] | None = None) -> Mixture:
-        if theta is not None:
-            pair = next(p for p in mapping["pairs"] if p["coefficients"][0]["identity"] == "pair/isobutanol/water/k_ij")
-            pair["coefficients"][0]["value"]["magnitude"] = theta[0]
-            iso = next(c for c in mapping["components"] if c["component_id"] == "isobutanol")
-            next(k for k in iso["coefficients"] if k["identity"].endswith("dispersion_energy_over_k"))["value"]["magnitude"] = theta[1]
-        p = Parameters.from_mapping(mapping, components=("water", "isobutanol"))
-        return Mixture(p, active_parameters=[regression.active_parameter(p, "k_ij", ("isobutanol", "water")),
-                                             regression.active_parameter(p, "dispersion_energy_over_k", "isobutanol")])
-
-    both = ("water", "isobutanol")
-    problem = eq.Problem(phases=[eq.Phase("L1", kind="liquid", support=both, composition_guess=(0.46, 0.54)),
-                                 eq.Phase("L2", kind="liquid", support=both, composition_guess=(0.99, 0.01))],
-                         T=298.15, P=1.0e5, feed=eq.Amounts({"water": 0.7, "isobutanol": 0.3}))
-
     def amounts(result: eq.EquilibriumResult) -> list[float]:
         return [result.amounts[p] * result.mole_fractions[2 * p + c] for p in range(2) for c in range(2)]
 
-    base = model()
+    base, problem = water_isobutanol(), water_isobutanol_problem()
     theta0 = tuple(base.active_parameter_values)
     start = eq.solve_equilibrium(base, problem)
     for target in ((-0.0021, 257.13), (-0.0021, 258.13)):  # the k_ij shift +0.005 alone, then with eps/k +1 K
         path = eq.continue_equilibrium(base, problem, problem, eq.Continuation(
             initial_step=0.25, minimum_step=0.25, max_steps=4, max_retries_per_step=1), start, parameter_targets=target)
         assert path.success and path.accepted_steps == 4, path.message
-        direct = eq.solve_equilibrium(model(target), problem)
+        direct = eq.solve_equilibrium(water_isobutanol(target), problem)
         assert direct.success, direct.message
         assert max(abs(a / b - 1.0) for a, b in zip(amounts(path.states[-1]), amounts(direct), strict=True)) <= 1e-12
-    compiled = _core.compile_problem(base._model, problem._native(base))
+    compiled = eq.compile_problem(base, problem)
     tangent = _core.sensitivity(compiled, start.coordinates, [0.0, 0.0, 0.0, 0.0, *(b - a for a, b in zip(theta0, target))])
 
     def predictor_error(s: float) -> float:
-        y = eq.solve_equilibrium(model(tuple(a + s * (b - a) for a, b in zip(theta0, target))), problem).coordinates
+        y = eq.solve_equilibrium(water_isobutanol(tuple(a + s * (b - a) for a, b in zip(theta0, target))), problem).coordinates
         return max(abs(v - v0 - s * t) for v, v0, t in zip(y, start.coordinates, tangent, strict=True))
 
     assert 3.5 < predictor_error(0.25) / predictor_error(0.125) < 4.5  # second order in the step

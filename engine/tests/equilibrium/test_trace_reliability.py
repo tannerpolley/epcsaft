@@ -2,26 +2,19 @@
 and the intensive accuracy of trace rows after the amount-weighted optimizer stop; #154/#157 cold
 reacting-liquid starts that recover a manufactured speciation with trace water ions; #159 stability
 decisions that trace curvature below rounding cannot flip."""
-import json
 import math
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 
-from epcsaft import (
-    GAS_CONSTANT_J_PER_MOL_K, IdealCorrelation, IdealInterval, IdealPolynomial, IdealShomate, Mixture, Parameters,
-    PropertyObservable, ThermochemistryRecord,
-)
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters, PropertyObservable
 from epcsaft.equilibrium import (
-    Amounts, Continuation, ContinuationStop, EOS_STANDARD_STATE_ID, Free, NeutralReference, Phase, Problem,
-    Reaction, ReactionLogPolynomial,
-    ReactionReference, ReferenceSourceBasis, SolvedStateActionDirection, SolvedStateActionRequest,
-    SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
+    Amounts, Continuation, ContinuationStop, EOS_STANDARD_STATE_ID, Free, Phase, Problem, Reaction, ReactionLogPolynomial,
+    SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, continue_equilibrium, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
-from tests.native_inputs import ETHANE, parameters, same
+from tests.native_inputs import ETHANE, MEA, MEA_REACTIONS, mea_mapping, nominally_unloaded_mea, parameters, same
 from tests.packets import parameters_json
 
 
@@ -285,25 +278,7 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
          result.multipliers[compiled.rank], atol=1e-12, rtol=0.0, unit="1", inputs=inputs)
 
 
-_MEA = ("carbon-dioxide", "monoethanolamine", "water", "protonated-monoethanolamine", "carbamate-anion",
-        "bicarbonate-anion", "carbonate-anion", "hydronium-cation", "hydroxide-anion")
-_MEA_REACTIONS = (  # R1-R5: water, CO2 and bicarbonate dissociation, carbamate hydrolysis, MEAH+ dissociation
-    {"water": -2.0, "hydronium-cation": 1.0, "hydroxide-anion": 1.0},
-    {"carbon-dioxide": -1.0, "water": -2.0, "bicarbonate-anion": 1.0, "hydronium-cation": 1.0},
-    {"water": -1.0, "bicarbonate-anion": -1.0, "carbonate-anion": 1.0, "hydronium-cation": 1.0},
-    {"monoethanolamine": 1.0, "water": -1.0, "carbamate-anion": -1.0, "bicarbonate-anion": 1.0},
-    {"protonated-monoethanolamine": -1.0, "water": -1.0, "monoethanolamine": 1.0, "hydronium-cation": 1.0})
 _MEA_FEED = [1e-05, 1e-05, 8e-05, 1e-05, 0.00011, 1e-05]  # ion amounts [mol] after CO2, MEA, water
-
-
-def _mea_mapping(path: Path) -> dict[str, Any]:
-    """An MEA document with its historical CO2/MEA omission declared explicitly (#569): no cross edge, not a
-    claim that the physical interaction is absent."""
-    mapping: dict[str, Any] = json.loads(path.read_text())
-    mapping["topology"].setdefault("no_cross_association", []).append({
-        "component_id_a": "carbon-dioxide", "component_id_b": "monoethanolamine",
-        "provenance": {"source_id": mapping["document_id"], "locator": f"{path.relative_to(Path(__file__).resolve().parents[3])}: no CO2/MEA edge"}})
-    return mapping
 
 
 @pytest.mark.parametrize("label, temperature, carbon_dioxide, guess, speciation", [
@@ -325,16 +300,16 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
     The speciation is exact by construction: each density-basis ln K_r = sum_i nu_ri (ln(x_i rho) + mu_i^res/RT)
     at x (packet 3 EOS with the applications' Born runtime defaults), and x carries the feed's balances. The
     684b213a start, which seeded the guess directly, exhausted the 200-iteration budget on both states."""
-    mapping = _mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4))
+    mapping = mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 4))
     for family in mapping["model_families"]:
         if family["kind"] == "electrolyte":
             family.update(c_shell=1.0, c_dielectric=1.0)
-    model = Mixture(Parameters.from_mapping(mapping, components=_MEA))
+    model = Mixture(Parameters.from_mapping(mapping, components=MEA))
     state = model.state(temperature, P=101325.0, x=speciation, phase="liquid")
     ln_k = []
-    for nu in _MEA_REACTIONS:
+    for nu in MEA_REACTIONS:
         terms = []
-        for species, x, mu in zip(_MEA, speciation, state.residual_chemical_potential_over_rt):
+        for species, x, mu in zip(MEA, speciation, state.residual_chemical_potential_over_rt):
             coefficient = nu.get(species, 0.0)
             if coefficient == 0:
                 continue
@@ -342,13 +317,13 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
             terms.append(coefficient * (math.log(x * state.molar_density) + mu))
         ln_k.append(sum(terms))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, temperature, 250.0, 450.0,
-                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
+                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(MEA_REACTIONS, ln_k)]
     problem = Problem(phases=[Phase("L", kind="liquid", composition_guess=guess)], T=temperature, P=101325.0,
-                      feed=Amounts(dict(zip(_MEA, [carbon_dioxide, 0.99998, 7.910947365207347, *_MEA_FEED]))),
+                      feed=Amounts(dict(zip(MEA, [carbon_dioxide, 0.99998, 7.910947365207347, *_MEA_FEED]))),
                       reactions=reactions)
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
-    for species, value, reference in zip(_MEA, result.mole_fractions, speciation):
+    for species, value, reference in zip(MEA, result.mole_fractions, speciation):
         same(evidence, f"cold-start/{label}/{species}", value, reference, atol=0.0, rtol=1e-8, unit="1",
              inputs={"T_K": temperature, "P_Pa": 101325.0, "iterations": result.iterations})
 
@@ -360,10 +335,10 @@ def test_trace_curvature_below_rounding_does_not_decide_stability(pressure: floa
     The raw reduced-Hessian minimum (-2.9e-13 and -1e-16 to -3e-16) lies under its rounding n eps ||S|| = 8e-11, and
     wheels 684b213a, 4105e2a4 and main 99e333cd all rejected both states on its sign. The equilibrated inertia
     (minimum 1.4e-3 against a band below 1e-13, analyses/2026-stability-noise-band) certifies them on every solve."""
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
     ln_k = (-605.348, -587.8, -948.2312, -25.1014, -298.6415)
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
-                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, ln_k)]
+                                                                EOS_STANDARD_STATE_ID)) for nu, a in zip(MEA_REACTIONS, ln_k)]
     problem = Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=pressure, reactions=reactions,
                       feed=Amounts({"carbon-dioxide": loading * 9.7292821, "monoethanolamine": 9.7292821,
                                     "water": 76.9751925}))
@@ -377,9 +352,9 @@ def test_mea_liquid_reaches_carbon_dioxide_root_below_the_cutoff() -> None:
     EQUILIBRIUM_BOX_FLOOR. Every full polish step contracted the raw rows but was rejected by that cutoff; the
     half steps reduced Newton to bisection in ln x and main stalled at raw rows 27.68. #322: the action there was
     refused by that cutoff; the carbon amounts move with the CO2 feed, sum_C dn_i/d ln n_CO2 = n_CO2."""
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0.0, 0.0, 0.0, 318.15, 250.0, 450.0,
-                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
+                 EOS_STANDARD_STATE_ID)) for nu, a in zip(MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
     carbon_dioxide = 1e-6 * 9.7292821
     problem = Problem(phases=[Phase("L", kind="liquid")], T=318.15, P=8877.7929, row_tolerance=1e-10, reactions=reactions,
                       feed=Amounts({"carbon-dioxide": carbon_dioxide, "monoethanolamine": 9.7292821, "water": 76.9751925}))
@@ -414,63 +389,23 @@ def test_symmetric_isomer_curvature_maximum_is_rejected(k_ij: float, temperature
 
 def test_zero_feed_ions_allow_provisional_flash_start() -> None:
     """#265: packet-3 neutral feed at loading 1e-3 reaches an accepted flash that conserves C, H, N, O and charge."""
-    model = Mixture(Parameters.from_mapping(_mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=_MEA))
+    model = Mixture(Parameters.from_mapping(mea_mapping(parameters_json("mea-co2-h2o-nine-species-estimation", 3)), components=MEA))
     reactions = [Reaction(nu, correlation=ReactionLogPolynomial(a, 0., 0., 0., 318.15, 250., 450.,
-                 EOS_STANDARD_STATE_ID)) for nu, a in zip(_MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
+                 EOS_STANDARD_STATE_ID)) for nu, a in zip(MEA_REACTIONS, (-605.348, -587.8, -948.2312, -25.1014, -298.6415))]
     feed = {"carbon-dioxide": 1e-3 * 9.7292821, "monoethanolamine": 9.7292821, "water": 76.9751925}
     problem = Problem(T=318.15, P=5918.5286, row_tolerance=1e-10, reactions=reactions, feed=Amounts(feed),
-                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", support=_MEA[:3])])
+                      phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", support=MEA[:3])])
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
-    count = len(_MEA)
+    count = len(MEA)
     returned = [math.fsum(result.amounts[p] * result.mole_fractions[p * count + i] for p in range(result.phase_count))
                 for i in range(count)]
-    fed = [feed.get(species, 0.0) for species in _MEA]
-    # Species formulas in _MEA order: C, H, N, O and charge number.
+    fed = [feed.get(species, 0.0) for species in MEA]
+    # Species formulas in MEA order: C, H, N, O and charge number.
     for row in ((1, 2, 0, 2, 3, 1, 1, 0, 0), (0, 7, 2, 8, 6, 1, 0, 3, 1), (0, 1, 0, 1, 1, 0, 0, 0, 0),
                 (2, 1, 1, 1, 3, 3, 3, 1, 1), (0, 0, 0, 1, -1, -1, -2, 1, -1)):
         balance = math.fsum(a * (n - f) for a, n, f in zip(row, returned, fed))
         assert abs(balance) <= 1e-12 * sum(feed.values()), (row, balance)
-
-
-def _reference_mea(thermochemistry: bool = True) -> tuple[Any, list[Reaction], NeutralReference, list[float], dict[str, Any]]:
-    """The Engine-owned reference declaration engine/data/reference/mea-nominally-unloaded: model (with ideal
-    calorics unless thermochemistry is False), reactions, the application's neutral reference, the shipped liquid guess
-    and the reaction system."""
-    root = Path(__file__).resolve().parents[2] / "data" / "reference"
-    request = json.loads((root / "mea-nominally-unloaded" / "request.json").read_text())
-    system = request["reaction_system"]
-    mapping = _mea_mapping(root / "mea-nominally-unloaded" / "parameters.json")
-    for family in mapping["model_families"]:
-        if family["kind"] == "electrolyte":
-            family.update(c_shell=1.0, c_dielectric=1.0)
-    calorics = json.loads((root / "mea-zero-inventory" / "ideal-calorics.json").read_text())
-    p0, components = calorics["reference_pressure_pa"], calorics["components"]
-    intervals: list[list[IdealInterval]] = [[] for _ in _MEA]
-    for name in ("carbon-dioxide", "water"):
-        lower, upper = components[name]["range_k"]
-        intervals[_MEA.index(name)] = [IdealInterval(lower, upper, True, True, IdealCorrelation(
-            IdealShomate(tuple(components[name]["coefficients"]), components[name]["formation_enthalpy_j_per_mol"]), p0))]
-    mea = components["monoethanolamine"]  # Cp(T) re-centred on the h = s = 0 anchor
-    centre = mea["enthalpy_entropy_anchor_k"]
-    shifted = [sum(a * math.comb(j, k) * centre ** (j - k) for j, a in enumerate(mea["coefficients"]) if j >= k)
-               for k in range(4)]
-    lower, upper = mea["range_k"]
-    intervals[1] = [IdealInterval(lower, upper, True, True, IdealCorrelation(IdealPolynomial(shifted, centre, 0.0, 0.0), p0))]
-    model = Mixture(Parameters.from_mapping(mapping), thermochemistry=ThermochemistryRecord(p0, intervals) if thermochemistry else None)
-    reactions = []
-    for record in system["engine_reactions"]:
-        law, reference = record["engine_correlation"], record["engine_reference"]
-        reactions.append(Reaction(dict(zip(_MEA, record["stoichiometry"])), name=record["reaction_id"],
-            correlation=ReactionLogPolynomial(*(law[key] for key in (
-                "a", "b", "c", "d", "reference_temperature", "temperature_min", "temperature_max", "standard_state_id"))),
-            reference=ReactionReference(getattr(ReferenceSourceBasis, reference["source_basis"]),
-                                        reference_pressure_pa=reference["reference_pressure_pa"])))
-    # The application's neutral reference: neutral solutes 1, source ion pairs summed, scaled by 1/8.
-    ratios = dict(zip(_MEA[:2] + _MEA[3:], (0.125, 0.125, 0.625, 0.25, 0.125, 0.125, 0.125, 0.125)))
-    guess = request["continuation"]["state"]["phases"][0]["mole_fractions"]
-    reference = NeutralReference(solvent="water", solute_molality_ratios=ratios, standard_molality_mol_per_kg=1.0)
-    return model, reactions, reference, guess, system
 
 
 @pytest.mark.parametrize(("temperature", "pressure", "fold"), [(353.15, 20e3, 40862.5), (358.15, 45e3, 355.6175)])
@@ -479,14 +414,14 @@ def test_mea_liquid_vapor_continuation_stops_at_its_turning_point(temperature: f
     the vapor amount pinned near 5.35 mol and P (or T) free, its lowest pressure at 353.15 K is 40,862.5 Pa and its
     highest temperature at 45 kPa is 355.6175 K, so 20 kPa and 358.15 K have no state on it. Continuation toward
     either names the turning point, ending within one accepted step of the fold."""
-    model, reactions, reference, guess, _ = _reference_mea()
-    feed = Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0, 0, 0, 0, 0, 0))))
+    model, reactions, reference, guess, _ = nominally_unloaded_mea()
+    feed = Amounts(dict(zip(MEA, (0.358, 1.0, 7.929776437398854, 0, 0, 0, 0, 0, 0))))
 
     def problem(T: float, P: float, liquid: list[float], vapor: list[float]) -> Problem:
         return Problem(T=T, P=P, feed=feed, reactions=reactions, neutral_reference=reference, row_tolerance=1e-10,
                        topology_declared=True, phases=[
-                           Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=liquid),
-                           Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=vapor)])
+                           Phase("L", kind="liquid", support=MEA, amount=Free(), composition_guess=liquid),
+                           Phase("V", kind="vapor", support=MEA[:3], amount=Free(), composition_guess=vapor)])
 
     cold = solve_equilibrium(model, problem(353.15, 45e3, guess, [0.01, 0.002, 0.988]))
     liquid, vapor = list(cold.mole_fractions[:9]), list(cold.mole_fractions[9:12])
@@ -506,11 +441,11 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     quadratic contraction with every ionic stationarity row near -1.8e-9 z_i^2 under a 7.6e-12 classified
     residual; continuing while raw rows exceed the criterion reaches rounding at the fourth step. The equilibrium heat-capacity action at the polished state
     matches the centered enthalpy difference of re-solved neighbours."""
-    model, reactions, reference, guess, system = _reference_mea()
+    model, reactions, reference, guess, system = nominally_unloaded_mea()
 
     def solve(temperature: float) -> tuple[Problem, Any]:
-        problem = Problem(phases=[Phase("L", kind="liquid", support=_MEA, composition_guess=guess)], T=temperature,
-                          P=101325.0, feed=Amounts(dict(zip(_MEA, system["feed_amounts_mol"]))), reactions=reactions,
+        problem = Problem(phases=[Phase("L", kind="liquid", support=MEA, composition_guess=guess)], T=temperature,
+                          P=101325.0, feed=Amounts(dict(zip(MEA, system["feed_amounts_mol"]))), reactions=reactions,
                           neutral_reference=reference, topology_declared=True)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
@@ -520,7 +455,7 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
         observables = [SolvedStateObservable(Kind.PhaseProperty, 0, 0, PropertyObservable.TotalEnthalpy),
                        SolvedStateObservable(Kind.PhaseAmount, 0, 0)]
         (batch,) = solved_state_first_actions(compile_problem(model, problem), result, observables,
-                                              [SolvedStateActionDirection(d_t, 0.0, [0.0] * len(_MEA), [])])
+                                              [SolvedStateActionDirection(d_t, 0.0, [0.0] * len(MEA), [])])
         assert all(item.status == SolvedStateActionStatus.Available for item in batch.results)
         return [(item.value, item.action) for item in batch.results]
 
@@ -555,14 +490,14 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
     42 kPa that start lies on the boundary between this branch and a salt-rich point with liquid MEA held at the
     composition box (row residual ~8.5e-6): which one Ipopt reaches changes with its bound relaxation alone, so there
     the cold solve is checked without it."""
-    model, reactions, reference, guess, _ = _reference_mea()
+    model, reactions, reference, guess, _ = nominally_unloaded_mea()
 
     def solve(pressure: float, liquid: list[float], vapor: list[float]) -> Any:
         return solve_equilibrium(model, Problem(
             T=353.15, P=pressure, row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
-            feed=Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
-            phases=[Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=liquid),
-                    Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=vapor)]))
+            feed=Amounts(dict(zip(MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
+            phases=[Phase("L", kind="liquid", support=MEA, amount=Free(), composition_guess=liquid),
+                    Phase("V", kind="vapor", support=MEA[:3], amount=Free(), composition_guess=vapor)]))
 
     shipped = (guess, [0.01, 0.002, 0.988])
     anchor = solve(45e3, *shipped)
@@ -591,12 +526,12 @@ def test_reference_mea_vanished_vapor_is_named_from_the_surviving_liquid(
     +0.2552, no descent and none unresolved (the sign at four decimals, not a stability certificate). Work in
     iterations / evaluations / Hessian calls: the trial search within its ceiling, and the original solve in fewer iterations
     than the relaxed attempt (its count moves with Ipopt's linear solver: 218 with MA57, 240 with MUMPS at 50 kPa)."""
-    model, reactions, reference, guess, _ = _reference_mea()
+    model, reactions, reference, guess, _ = nominally_unloaded_mea()
     result = solve_equilibrium(model, Problem(
         T=353.15, P=pressure, row_tolerance=1e-10, topology_declared=True, reactions=reactions, neutral_reference=reference,
-        feed=Amounts(dict(zip(_MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
-        phases=[Phase("L", kind="liquid", support=_MEA, amount=Free(), composition_guess=guess),
-                Phase("V", kind="vapor", support=_MEA[:3], amount=Free(), composition_guess=[0.01, 0.002, 0.988])]))
+        feed=Amounts(dict(zip(MEA, (0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)))),
+        phases=[Phase("L", kind="liquid", support=MEA, amount=Free(), composition_guess=guess),
+                Phase("V", kind="vapor", support=MEA[:3], amount=Free(), composition_guess=[0.01, 0.002, 0.988])]))
     report = result.vanished_phase_stability
     assert not result.success and str(result.topology_event).endswith("PhaseDisappeared"), result.message
     assert report is not None and report.no_descent_in_trial_set, result.message

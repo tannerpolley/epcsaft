@@ -7,7 +7,6 @@ methane eps/k active: parameter columns equal the direct Engine, match central d
 recovers shifted parameters through Ipopt."""
 from __future__ import annotations
 
-import csv
 import json
 import os
 import shutil
@@ -20,13 +19,16 @@ import numpy as np
 import pytest
 from pyomo.environ import ConcreteModel, Constraint, ExternalFunction, Objective, Var, value  # type: ignore[import-untyped]
 
-from epcsaft import IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
+from epcsaft import ActiveParameter, IdealDIPPR107, IdealNASA7, IdealNASA9, IdealPolynomial, IdealShomate, Mixture, Parameters, Pure
 from epcsaft import _core, regression
 from epcsaft.parameters import document_mapping
 from epcsaft.eos import ParameterActionDirection, ParameterError, PressureActionDirection, PropertyObservable, property_asl_record
-from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equilibrium
-from tests.native_inputs import p3_forms, record
-from tests.packets import PACKETS, parameters_json
+from epcsaft.equilibrium import solve_equilibrium
+from epcsaft.idaes import asl_library
+from tests.native_inputs import (
+    HALITE_PARAMETERS, WATER_MOLAR_MASS, halite_in_water, held, held_parameters, p3_forms, record,
+)
+from tests.packets import parameters_json
 from tests.regression.test_temperature_laws import _document
 
 SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alternatives/inputs/selections"
@@ -46,7 +48,7 @@ def changed(document: _core.ParameterDocument, values: dict[str, float]) -> _cor
 
 
 def assert_callback_equals_native(model: Pure) -> None:
-    library = str(Path(_core.__file__).parent / "libepcsaft_asl.so")
+    library = str(asl_library())
     callback, text = ExternalFunction(library=library, function="epcsaft_pressure_property"), property_asl_record(model)
     observables = [PropertyObservable.TotalEnthalpy, PropertyObservable.LogFugacityCoefficient]
     t, p = PressureActionDirection(1.0, 0.0, [0.0]), PressureActionDirection(0.0, 1.0, [0.0])
@@ -61,28 +63,19 @@ def assert_callback_equals_native(model: Pure) -> None:
 
 
 def test_fitted_propane_exports() -> None:
-    """F1: the P10 fit (Gross 2001 start, NIST SRD 69 propane at 150-360 K) writes back and exports bitwise."""
+    """F1: changed propane segment count, diameter and dispersion energy (a controlled fit result on the Gross 2001
+    document) write back and export bitwise."""
     start = Parameters.from_json(parameters_json("gross-2001-propane", 3), components=["propane"])
-    rows = [r for r in csv.DictReader((PACKETS / "nist-srd69-pure-saturation-properties/1/observations"
-                                       / "propane-reference-saturation.csv").open()) if 150.0 <= float(r["T_K"]) <= 360.0]
-    observations = []
-    for r in rows:
-        saturation = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor", amount=Pinned(0.0))],
-                             T=float(r["T_K"]), P=Free(float(r["p_sat_Pa"])), feed=Amounts({"propane": 1.0}))
-        observations += [regression.observation(start, "pressure", saturation, observed=float(r["p_sat_Pa"]), form="log_ratio"),
-                         regression.observation(start, "phase_density", saturation, observed=float(r["rho_sat_liq_kg_m3"]),
-                                                form="log_ratio", mass_basis=True, phase="L")]
-    coordinates = [regression.coordinate(start, [(name, "propane", 1.0)], origin=0.0, scale=scale, bounds=bounds)
-                   for name, scale, bounds in (("segment_count", 1.0, (1.0, 5.0)), ("segment_diameter", 1.0, (2.5, 5.0)),
-                                               ("dispersion_energy_over_k", 100.0, (100.0, 400.0)))]
-    result = regression.fit(start, coordinates, observations,
-                            controls=regression.FitControls(maximum_iterations=100, maximum_elapsed_time_seconds=600.0))
-    assert result.usable
-    fitted = regression.fitted_parameters(start, result)
+    values = (2.1, 3.65, 210.5)
+    target = changed(cast(_core.ParameterDocument, Parameters.from_json(parameters_json("gross-2001-propane", 3),
+                                                                        components=["propane"])._document),
+                     dict(zip(("component/propane/segment_count", "component/propane/segment_diameter",
+                               "component/propane/dispersion_energy_over_k"), values, strict=True)))
+    fitted = regression.fitted_parameters(start, cast(regression.FitResult, SimpleNamespace(parameters=_core.build_parameters(target))))
     assert isinstance(fitted._document, _core.ParameterDocument) and isinstance(start._document, _core.ParameterDocument)
     fields = ("segment_count", "sigma_constant", "dispersion_energy_over_k")
     written = {e.field: e.magnitude.hex() for e in fitted._document.entries if e.field in fields}
-    assert written == {field: value.hex() for field, value in zip(fields, result.physical, strict=True)}
+    assert written == {field: value.hex() for field, value in zip(fields, values, strict=True)}
     assert [e for e in entries(fitted._document) if e[1] not in fields] == [e for e in entries(start._document) if e[1] not in fields]
     assert_callback_equals_native(Pure(fitted, thermochemistry=record(p3_forms()["nasa9"], upper=450.0)))
 
@@ -165,7 +158,7 @@ def test_external_ampl_caller_exits_normally(tmp_path: Path) -> None:
     problem = ConcreteModel()
     problem.pressure = Var(initialize=1.0e6, bounds=(0.9e6, 1.1e6))
     problem.fixed_pressure = Constraint(expr=problem.pressure == 1.0e6)
-    library = str(Path(_core.__file__).with_name("libepcsaft_asl.so"))
+    library = str(asl_library())
     problem.density = ExternalFunction(library=library,
                                       function="epcsaft_pressure_property")
     problem.objective = Objective(expr=problem.density(300.0, problem.pressure, 1.0,
@@ -318,7 +311,7 @@ THETA_STAR, STATES = (0.01, 151.03), {"liquid": (180.0, 3.0e6), "vapor": (250.0,
 OBSERVABLES = [PropertyObservable.TotalEnthalpy, PropertyObservable.LogFugacityCoefficient]
 
 
-def active(parameters: Parameters) -> list[_core.ActiveParameter]:
+def active(parameters: Parameters) -> list[ActiveParameter]:
     return [regression.active_parameter(parameters, "k_ij", ("methane", "ethane")),
             regression.active_parameter(parameters, "dispersion_energy_over_k", "methane")]
 
@@ -434,9 +427,8 @@ HALITE_STATES = {(298.15, 101325.0): 2.9798907485513784, (308.15, 5.0e6): -4.222
 
 
 def halite() -> tuple[Mixture, str, Any, Any]:
-    from tests.equilibrium import test_pure_solid as hs
-    model = hs.held(active=tuple(item for _, item, _ in hs.PARAMETERS))
-    declared = hs.problem(10.0)
+    model = held(active=tuple(item for _, item, _ in HALITE_PARAMETERS))
+    declared = halite_in_water(10.0)
     solid, reference = declared.solids[0], declared.neutral_reference
     assert reference is not None
     return model, property_asl_record(model, solids=[solid._native(model)], neutral_reference=reference._native(model)), solid, reference
@@ -445,11 +437,10 @@ def halite() -> tuple[Mixture, str, Any, Any]:
 def test_halite_solid_row_values() -> None:
     """F1: the solid row l_s at three (T, P) and the saturation residual sum nu (ln x + ln phi) - l_s at each native
     saturated liquid (10 mol/kg feed)."""
-    from tests.equilibrium import test_pure_solid as hs
     model, text, _, _ = halite()
     theta = model.active_parameter_values
     for (T, P), target in HALITE_STATES.items():
-        result = solve_equilibrium(model, hs.problem(10.0, temperature=T, pressure=P))
+        result = solve_equilibrium(model, halite_in_water(10.0, temperature=T, pressure=P))
         assert result.success, result.message
         x = result.mole_fractions[:3]
         q = [T, P, *x, *theta]
@@ -468,11 +459,10 @@ def test_halite_solid_row_outside_interval(temperature: float) -> None:
 
 
 def test_halite_record_with_thermochemistry() -> None:
-    from tests.equilibrium import test_pure_solid as hs
     model, without, solid, reference = halite()
     form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
-    thermal = Mixture(hs.held_parameters(), thermochemistry=record(form, form, form),
-                      active_parameters=[item for _, item, _ in hs.PARAMETERS])
+    thermal = Mixture(held_parameters(), thermochemistry=record(form, form, form),
+                      active_parameters=[item for _, item, _ in HALITE_PARAMETERS])
     text = property_asl_record(thermal, solids=[solid._native(thermal)], neutral_reference=reference._native(thermal))
     start, end = text.index("1:1,17:standard_pressure,"), text.index("6:solids,")
     assert text[:start] + "1:0," + text[end:] == without
@@ -511,7 +501,6 @@ def test_halite_saturation_ipopt(tmp_path: Path) -> None:
     from idaes.core.solvers import get_solver
     from idaes.core.util.model_statistics import degrees_of_freedom  # type: ignore[import-untyped]
     from epcsaft.idaes import asl_library, solid_saturation, solve_with_diagnostics
-    from tests.equilibrium import test_pure_solid as hs
     solver = get_solver()
     if not solver.available(exception_flag=False):
         pytest.skip("IDAES Ipopt executable unavailable")
@@ -523,7 +512,7 @@ def test_halite_saturation_ipopt(tmp_path: Path) -> None:
     sb = m.fs.sb[0]
     sb.temperature.fix(298.15)
     sb.pressure.fix(101325.0)
-    start = 5.0 * hs.MW  # mol Na+ per mol water
+    start = 5.0 * WATER_MOLAR_MASS  # mol Na+ per mol water
     for j, v in zip(model.component_ids, (1.0, start, start), strict=True):
         sb.mole_frac_comp[j].set_value(v / (1.0 + 2.0 * start))
         sb.mole_frac_phase_comp["liquid", j].set_value(v / (1.0 + 2.0 * start))
@@ -536,7 +525,7 @@ def test_halite_saturation_ipopt(tmp_path: Path) -> None:
     result = solve_with_diagnostics(solver, m, logfile=log)
     assert "epcsaft_property failure" not in log.read_text()
     assert result.solver.error_rc == 0
-    molality = value(sb.mole_frac_comp["sodium-cation"]) / (value(sb.mole_frac_comp["water"]) * hs.MW)
+    molality = value(sb.mole_frac_comp["sodium-cation"]) / (value(sb.mole_frac_comp["water"]) * WATER_MOLAR_MASS)
     assert molality == pytest.approx(6.29890460910619, rel=1e-10, abs=0.0)
 
 
