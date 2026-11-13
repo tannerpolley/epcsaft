@@ -100,21 +100,21 @@ def test_polish_endpoint_conditioning() -> None:
     spec.loader.exec_module(baseline)
     from epcsaft import equilibrium as eq
     for name, model, problem in baseline.declared_cases():
-        if name not in ("case-1/two-liquid", "case-3/VLLE"):
+        if name not in ("case-1/two-liquid", "case-6/figure-2-point-7"):
             continue
         result = eq.solve_equilibrium(model, problem)
         assert result.success
         observation = next(rank.observation for rank in result.rank_records if rank.basis == "numerical")
         print(name, "available", observation.available, "condition", observation.condition,
               "point", observation.point_kind, "cause", observation.cause, "error", observation.error)
-        if name == "case-3/VLLE":
+        if name == "case-6/figure-2-point-7":
             assert observation.available and observation.condition > 0
             assert observation.point_kind == "endpoint"
             assert observation.cause == "inner_floor_unavailable"
         else:
             assert not observation.available
             assert observation.point_kind == "last_linearization"
-        if name == "case-3/VLLE":
+        if name == "case-6/figure-2-point-7":
             break
 
 

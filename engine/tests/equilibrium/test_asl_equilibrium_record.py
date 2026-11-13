@@ -410,8 +410,9 @@ H_ANCHOR = float.fromhex("-0x1.28afb4ecf2405p+21")  # -2430454.6156964325 J, the
 
 def test_reference_enthalpy_equals_direct_engine() -> None:
     """E1: the system enthalpy (J) with its gradient and packed Hessian over q equals solve_equilibrium plus
-    solved_state_actions on the declared problem bitwise at the anchor, where H = -2430454.6156964325 J, and to 1e-12
-    relative at (353.65 K, 45500 Pa) and there with u_CO2 0.36 mol; each order returns the same value."""
+    solved_state_actions on the declared problem bitwise at the anchor, where H = -2430454.6156964325 J to 1e-12
+    relative (the solved endpoint moves with Ipopt's linear solver), and to 1e-12 relative at (353.65 K, 45500 Pa) and
+    there with u_CO2 0.36 mol; each order returns the same value."""
     model, target = reference_mea()
     text = reference_record()
     for q, bitwise in ((R_Q0, True), ((353.65, 45500.0, *R_Q0[2:]), False), ((353.65, 45500.0, 0.36, *R_Q0[3:]), False)):
@@ -419,7 +420,7 @@ def test_reference_enthalpy_equals_direct_engine() -> None:
         got, want = callback_row(text, q, None, C), native(model, q[2:], target(q), enthalpy=True)[0]
         assert values == [got[0]] * 2
         if bitwise:
-            assert got[0] == H_ANCHOR and [x.hex() for x in got] == [float(x).hex() for x in want]
+            assert got[0] == pytest.approx(H_ANCHOR, rel=1e-12, abs=0.0) and [x.hex() for x in got] == [float(x).hex() for x in want]
         else:
             assert got == pytest.approx(want, rel=1e-12, abs=0.0), q
 
@@ -569,10 +570,10 @@ def test_halite_columns_match_central_differences() -> None:
     assert abs(solid[2] + exact[1][0] / (H_Q0[2] * hs.MW) * hs.MW) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
     assert not exact[1][2][3].any() and not exact[3][2][3].any()
     water = exact[0]
-    # The two identities below hold exactly in the equations and to one ulp of their own scale in binary64. Bitwise
-    # equality was rounding luck: Ipopt's unrelaxed bounds alone move each by one ulp (the same Engine reproduces it with
-    # an options file setting only bound_relax_factor 0).
-    assert abs(water[0] - H_Q0[2]) <= eps * H_Q0[2] and np.abs(water[1] - np.eye(7)[2]).max() <= 1e-14 * np.abs(solid).max()
+    # The two identities below hold exactly in the equations. The amount is the solved endpoint, which moves by ulps with
+    # Ipopt's bounds and linear solver (MA57 one ulp, MUMPS two), so it meets the equilibrium-row criterion
+    # EQUILIBRIUM_ROW_RESIDUAL = 1e-10 relative; the gradient row is exact to rounding.
+    assert abs(water[0] - H_Q0[2]) <= 1e-10 * H_Q0[2] and np.abs(water[1] - np.eye(7)[2]).max() <= 1e-14 * np.abs(solid).max()
     assert np.abs(water[2]).max() <= 1e-14 * np.abs(exact[3][2]).max()
     assert np.delete(exact[1][1] + solid, 3) == pytest.approx(0.0, abs=1e-15)
     assert np.delete(exact[1][2] + exact[3][2], 3) == pytest.approx(0.0, abs=eps * np.abs(exact[3][2]).max())
