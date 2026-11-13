@@ -41,16 +41,6 @@ double simpson(Function function, double lower, double upper, int intervals = 20
     return sum * step / 3.0;
 }
 
-template <typename Function>
-bool rejects(Function function) {
-    try {
-        function();
-    } catch (const std::invalid_argument&) {
-        return true;
-    }
-    return false;
-}
-
 // A two-component neutral mixture with no sites: the smallest parameter set the
 // hard-chain and dispersion terms accept.
 Parameters neutral_binary() {
@@ -192,13 +182,8 @@ void hard_sphere_matches_carnahan_starling() {
             recording_support::field("eta", eta),
         });
         const auto point = recording_support::number(molar_density);
-        recording_support::compare(
-            (std::string("eta-") + point).c_str(), "hard_chain", "1",
-            result.hard_chain, expected, inputs, "Relationship", "closed_form",
-            "hard_chain=Carnahan_Starling(eta)", "reference_or_one", 0.0, 1.0e-12,
-            close(result.hard_chain, expected, 1.0e-12), "p1-hard-chain", point.c_str(),
-            "a^{hc}", "T,\\rho,\\mathbf{x}",
-            "a^{hc}=(4\\eta-3\\eta^2)/(1-\\eta)^2", "rho");
+        recording_support::compare(std::string("eta-") + point, "hard_chain", "1", result.hard_chain, expected,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "closed_form", inputs);
     }
 }
 
@@ -214,20 +199,10 @@ void mixture_contributions_match_independent_equations() {
         model_inputs(p, temperature, density, x),
         recording_support::field("independent_reference", "Gross2001 A.8-A.17"),
     });
-    recording_support::compare(
-        "hard-chain", "hard_chain", "1", result.hard_chain, expected_hard_chain,
-        inputs, "Relationship", "independent_closed_form", "finite mixture hard-chain value",
-        "reference_or_one", 0.0, 1.0e-12,
-        close(result.hard_chain, expected_hard_chain, 1.0e-12),
-        "c1-mixture", "finite-state", "a^{hc}", "T,\\rho,\\mathbf{x}",
-        "a^{hc}=a^{hc}_{independent}", "state");
-    recording_support::compare(
-        "dispersion", "dispersion", "1", result.dispersion, expected_dispersion,
-        inputs, "Relationship", "independent_closed_form", "finite mixture dispersion value",
-        "reference_or_one", 0.0, 1.0e-12,
-        close(result.dispersion, expected_dispersion, 1.0e-12),
-        "c1-mixture", "finite-state", "a^{disp}", "T,\\rho,\\mathbf{x}",
-        "a^{disp}=a^{disp}_{independent}", "state");
+    recording_support::compare("hard-chain", "hard_chain", "1", result.hard_chain, expected_hard_chain,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "independent_closed_form", inputs);
+    recording_support::compare("dispersion", "dispersion", "1", result.dispersion, expected_dispersion,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "independent_closed_form", inputs);
 }
 
 // Every residual term is a departure from the ideal gas, so all of them vanish
@@ -242,29 +217,20 @@ void residual_vanishes_at_zero_density() {
         const auto result = evaluate(p, 300.0, molar_density, x);
         const double total = result.hard_chain + result.dispersion;
         const bool decreasing = std::abs(total) < std::abs(previous);
-        recording_support::compare(
-            (std::string("density-monotonic/") + std::to_string(point_index)).c_str(),
-            "abs_residual", "1", decreasing ? 1.0 : 0.0, 1.0,
+        recording_support::compare(std::string("density-monotonic/") + std::to_string(point_index), "abs_residual",
+            "1", decreasing ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0, 0.0, "density-limit-ladder",
             recording_support::fields({
                 model_inputs(p, 300.0, molar_density, x),
                 recording_support::field("previous_density", previous_density),
                 recording_support::field("previous_abs_residual", std::abs(previous)),
                 recording_support::field("current_abs_residual", std::abs(total)),
-            }), "Relationship", "density-limit-ladder",
-            "abs(a_res(rho)) decreases along the density ladder", "absolute", 0.0, 0.0,
-            decreasing, "p2-monotonic", std::to_string(point_index).c_str(), "|a^{res}|",
-            "T,\\rho,\\mathbf{x},a_{previous},a_{current}",
-            "|a^{res}(\\rho_i)|<|a^{res}(\\rho_{i-1})|", "rho");
+            }));
         previous = total;
         previous_density = molar_density;
         ++point_index;
     }
-    recording_support::compare(
-        "zero-density-limit", "residual_helmholtz", "1", previous, 0.0,
-        model_inputs(p, 300.0, 1.0e-2, x),
-        "Relationship", "limit", "a_res->0 as rho->0", "strict_absolute", 1.0e-3, 0.0,
-        std::abs(previous) < 1.0e-3, "p2-limit", "rho-1e-2", "a^{res}",
-        "T,\\rho,\\mathbf{x}", "\\lim_{\\rho\\to0}a^{res}=0", "rho");
+    recording_support::compare("zero-density-limit", "residual_helmholtz", "1", previous, 0.0,
+        recording_support::Rule::StrictAbsolute, 1.0e-3, 0.0, "limit", model_inputs(p, 300.0, 1.0e-2, x));
     auto spheres = p;
     spheres.dispersion_energy_over_k.assign(2, 0.0);
     const std::vector<double> pure = {1.0, 0.0};
@@ -327,20 +293,10 @@ void relabelling_components_changes_nothing() {
         recording_support::field("epsilon_relabelled_over_k_K", swapped.dispersion_energy_over_k),
         recording_support::field("molar_mass_relabelled_kg_per_mol", swapped.molar_mass_kg_per_mol),
     });
-    recording_support::compare(
-        "hard-chain", "hard_chain", "1", direct.hard_chain, relabelled.hard_chain,
-        inputs, "Relationship", "permutation", "component relabelling invariance",
-        "reference_or_one", 0.0, 1.0e-14,
-        close(direct.hard_chain, relabelled.hard_chain, 1.0e-14),
-        "p3-hard-chain", "hard-chain", "a^{hc}", "T,\\rho,\\mathbf{x}",
-        "a^{hc}(x)=a^{hc}(\\pi x)", "x");
-    recording_support::compare(
-        "dispersion", "dispersion", "1", direct.dispersion, relabelled.dispersion,
-        inputs, "Relationship", "permutation", "component relabelling invariance",
-        "reference_or_one", 0.0, 1.0e-14,
-        close(direct.dispersion, relabelled.dispersion, 1.0e-14),
-        "p3-dispersion", "dispersion", "a^{disp}", "T,\\rho,\\mathbf{x}",
-        "a^{disp}(x)=a^{disp}(\\pi x)", "x");
+    recording_support::compare("hard-chain", "hard_chain", "1", direct.hard_chain, relabelled.hard_chain,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "permutation", inputs);
+    recording_support::compare("dispersion", "dispersion", "1", direct.dispersion, relabelled.dispersion,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "permutation", inputs);
 }
 
 // One associating component, two sites, one bonding pair.
@@ -377,19 +333,13 @@ void association_solve_satisfies_mass_action() {
             recording_support::field("ceiling", epcsaft::policy::SITE_FRACTION_CEILING.value),
         });
         const bool above_floor = value > epcsaft::policy::SITE_FRACTION_FLOOR.value;
-        recording_support::compare(
-            (std::string("site-floor-") + std::to_string(site)).c_str(),
-            "site_fraction_above_floor", "bool", above_floor ? 1.0 : 0.0, 1.0,
-            inputs, "Relationship", "association-domain", "site fraction is above floor",
-            "absolute", 0.0, 0.0, above_floor, "p4-site-floor", std::to_string(site).c_str(),
-            "\\chi", "T,\\rho,\\mathbf{x},\\chi_{floor}", "\\chi>\\chi_{floor}", "site");
+        recording_support::compare(std::string("site-floor-") + std::to_string(site), "site_fraction_above_floor",
+            "bool", above_floor ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0, 0.0, "association-domain",
+            inputs);
         const bool below_ceiling = value <= epcsaft::policy::SITE_FRACTION_CEILING.value;
-        recording_support::compare(
-            (std::string("site-ceiling-") + std::to_string(site)).c_str(),
-            "site_fraction_below_ceiling", "bool", below_ceiling ? 1.0 : 0.0, 1.0,
-            inputs, "Relationship", "association-domain", "site fraction is below ceiling",
-            "absolute", 0.0, 0.0, below_ceiling, "p4-site-ceiling", std::to_string(site).c_str(),
-            "\\chi", "T,\\rho,\\mathbf{x},\\chi_{ceiling}", "\\chi\\le\\chi_{ceiling}", "site");
+        recording_support::compare(std::string("site-ceiling-") + std::to_string(site), "site_fraction_below_ceiling",
+            "bool", below_ceiling ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0, 0.0, "association-domain",
+            inputs);
     }
     const auto delta = epcsaft::association_delta(
         temperature, molar_density, x, p, sigma, diameter
@@ -399,28 +349,18 @@ void association_solve_satisfies_mass_action() {
     );
     for (std::size_t site = 0; site < residuals.size(); ++site) {
         const double residual = residuals[site];
-        recording_support::compare(
-            (std::string("mass-action-") + std::to_string(site)).c_str(),
-            "association_residual", "1", residual, 0.0,
-            recording_support::fields({model_inputs(p, temperature, molar_density, x),
+        recording_support::compare(std::string("mass-action-") + std::to_string(site), "association_residual", "1",
+            residual, 0.0, recording_support::Rule::ReferenceOrOne, epcsaft::policy::ASSOCIATION_RESIDUAL.value, 0.0,
+            "mass_action", recording_support::fields({model_inputs(p, temperature, molar_density, x),
                                        recording_support::field("site_fractions", fractions),
-                                       recording_support::field("site", site)}),
-            "Relationship", "mass_action", "association residual is zero",
-            "reference_or_one", epcsaft::policy::ASSOCIATION_RESIDUAL.value, 0.0,
-            std::abs(residual) <= epcsaft::policy::ASSOCIATION_RESIDUAL.value,
-            "p4-mass-action", std::to_string(site).c_str(), "F", "T,\\rho,\\mathbf{x},\\chi",
-            "f(\\chi)=0", "site");
+                                       recording_support::field("site", site)}));
     }
     // Identical sites on one component are indistinguishable.
     const bool identical_sites = close(fractions[0], fractions[1], 1.0e-13);
-    recording_support::compare(
-        "site-symmetry", "site_fraction_symmetry", "bool",
-        identical_sites ? 1.0 : 0.0, 1.0,
+    recording_support::compare("site-symmetry", "site_fraction_symmetry", "bool", identical_sites ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "site-symmetry",
         recording_support::fields({model_inputs(p, temperature, molar_density, x),
-                                   recording_support::field("site_fractions", fractions)}),
-        "Relationship", "site-symmetry", "identical sites have identical fractions",
-        "absolute", 0.0, 0.0, identical_sites, "p4-site-symmetry", "site",
-        "\\chi", "T,\\rho,\\mathbf{x},\\chi", "\\chi_0=\\chi_1", "site");
+                                   recording_support::field("site_fractions", fractions)}));
 }
 
 // A captured rejected trial at 298.15 K; density in mol/m^3, strengths in Angstrom^3.
@@ -493,25 +433,17 @@ void association_equations_match_closed_forms_and_limits() {
             recording_support::field("l_ij", parameters.l_ij), extra});
     };
     const auto record = [&](const char* id, const char* quantity, double model,
-                            double reference, const std::string& values,
-                            const char* claim, double tolerance = 1.0e-12,
+                            double reference, const std::string& values, double tolerance = 1.0e-12,
                             const char* unit = "1") {
-        const bool matches = close(model, reference, tolerance);
-        recording_support::compare(
-            id, quantity, unit, model, reference, values, "Relationship",
-            "independent_closed_form", claim, "reference_or_one", 0.0, tolerance,
-            matches, "c2-association", id, quantity, "T,rho,x,sites", claim, "site"
-        );
+        recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::ReferenceOrOne, 0.0,
+            tolerance, "independent_closed_form", values);
     };
     record("symmetric-x-0", "site_fraction", fractions[0], expected_x,
-           inputs(symmetric, pure, recording_support::field("K", k)),
-           "X=2/(1+sqrt(1+4K))");
+           inputs(symmetric, pure, recording_support::field("K", k)));
     record("symmetric-x-1", "site_fraction", fractions[1], expected_x,
-           inputs(symmetric, pure, recording_support::field("K", k)),
-           "X=2/(1+sqrt(1+4K))");
+           inputs(symmetric, pure, recording_support::field("K", k)));
     record("symmetric-helmholtz", "association_helmholtz", symmetric_result.association,
-           expected_association, inputs(symmetric, pure, recording_support::field("K", k)),
-           "a_assoc=sum nu(log(X)-X/2+1/2)");
+           expected_association, inputs(symmetric, pure, recording_support::field("K", k)));
 
     Parameters unequal = symmetric;
     unequal.site_multiplicity = {2, 3};
@@ -526,19 +458,15 @@ void association_equations_match_closed_forms_and_limits() {
         std::log(expected_a) - expected_a / 2.0 + 0.5
     ) + 3.0 * (std::log(expected_b) - expected_b / 2.0 + 0.5);
     record("unequal-x-a", "site_fraction", unequal_fractions[0], expected_a,
-           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
-           "b=K(mA-b)(mB-b)");
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)));
     record("unequal-x-b", "site_fraction", unequal_fractions[1], expected_b,
-           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
-           "b=K(mA-b)(mB-b)");
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)));
     record("unequal-conservation", "bonded_count", 2.0 * (1.0 - unequal_fractions[0]),
            3.0 * (1.0 - unequal_fractions[1]),
-           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
-           "mA(1-XA)=mB(1-XB)");
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)));
     record("unequal-helmholtz", "association_helmholtz", unequal_result.association,
            expected_unequal_association,
-           inputs(unequal, pure, recording_support::field("bonded_count", bonds)),
-           "a_assoc uses explicit unequal multiplicities");
+           inputs(unequal, pure, recording_support::field("bonded_count", bonds)));
     Parameters relabelled = unequal;
     relabelled.site_multiplicity = {3, 2};
     const auto relabelled_fractions = epcsaft::solve_site_fractions(
@@ -546,10 +474,10 @@ void association_equations_match_closed_forms_and_limits() {
     );
     const auto relabelled_result = evaluate(relabelled, temperature, density, pure);
     record("unequal-relabel-x", "site_fraction", relabelled_fractions[0], unequal_fractions[1],
-           inputs(relabelled, pure, "site_order:BA"), "site relabelling preserves fractions");
+           inputs(relabelled, pure, "site_order:BA"));
     record("unequal-relabel-helmholtz", "association_helmholtz",
            relabelled_result.association, unequal_result.association,
-           inputs(relabelled, pure, "site_order:BA"), "site relabelling preserves a_assoc");
+           inputs(relabelled, pure, "site_order:BA"));
 
     Parameters zero_strength = symmetric;
     zero_strength.association_energy_over_k = {0.0, 0.0, 0.0, 0.0};
@@ -558,10 +486,10 @@ void association_equations_match_closed_forms_and_limits() {
     );
     const auto zero_strength_result = evaluate(zero_strength, temperature, density, pure);
     record("limit-zero-strength-x", "site_fraction", zero_strength_fractions[0], 1.0,
-           inputs(zero_strength, pure, "limit:zero-strength"), "Delta=0 gives X=1");
+           inputs(zero_strength, pure, "limit:zero-strength"));
     record("limit-zero-strength-energy", "association_helmholtz",
            zero_strength_result.association, 0.0,
-           inputs(zero_strength, pure, "limit:zero-strength"), "X=1 gives a_assoc=0");
+           inputs(zero_strength, pure, "limit:zero-strength"));
     // The smallest positive density: zero itself is outside the fluid domain.
     const double zero_density = std::numeric_limits<double>::min();
     const auto zero_density_fractions = epcsaft::solve_site_fractions(
@@ -569,16 +497,14 @@ void association_equations_match_closed_forms_and_limits() {
     );
     record("limit-zero-density-x", "site_fraction", zero_density_fractions[0], 1.0,
            recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
-               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
-           "rho_N -> 0 gives X=1");
+               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}));
     const auto zero_density_terms = epcsaft::residual_helmholtz(
         temperature, zero_density, pure, symmetric, sigma, diameter, zero_density_fractions,
         epcsaft::association_products(zero_density, pure, symmetric, zero_density_fractions, epcsaft::association_delta(temperature, zero_density, pure, symmetric, sigma, diameter)));
     record("limit-zero-density-energy", "association_helmholtz",
            zero_density_terms.association, 0.0,
            recording_support::fields({model_inputs(symmetric, temperature, zero_density, pure),
-               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}),
-           "rho_N -> 0 and X=1 give a_assoc=0");
+               recording_support::field("l_ij", symmetric.l_ij), "limit:zero-density"}));
     Parameters absent = symmetric;
     absent.site_component = {1};
     absent.site_multiplicity = {1};
@@ -593,11 +519,9 @@ void association_equations_match_closed_forms_and_limits() {
     );
     const auto absent_result = evaluate(absent, temperature, density, absent_x);
     record("limit-absent-self-x", "site_fraction", absent_fractions[0], 1.0,
-           inputs(absent, absent_x, "limit:absent-self-associated-component"),
-           "zero-weight self-associated site gives X=1");
+           inputs(absent, absent_x, "limit:absent-self-associated-component"));
     record("limit-absent-energy", "association_helmholtz", absent_result.association, 0.0,
-           inputs(absent, absent_x, "limit:absent-self-associated-component"),
-           "zero-weight site gives a_assoc=0");
+           inputs(absent, absent_x, "limit:absent-self-associated-component"));
 
     Parameters cross = symmetric;
     cross.site_component = {0, 1};
@@ -648,14 +572,12 @@ void association_equations_match_closed_forms_and_limits() {
         recording_support::field("sigma_01", sigma_01),
         recording_support::field("site_fractions", cross_fractions),
     });
-    record("cross-strength-ab", "Delta_AB", cross_delta[1], expected_delta(1), cross_inputs,
-           "unlike-diameter contact and reciprocal AB strength", 1.0e-12, "angstrom^3");
-    record("cross-strength-ba", "Delta_BA", cross_delta[2], expected_delta(2), cross_inputs,
-           "unlike-diameter contact and reciprocal BA strength", 1.0e-12, "angstrom^3");
-    record("cross-residual-a", "association_residual", cross_residual_a, 0.0, cross_inputs,
-           "full asymmetric cross mass-action residual", epcsaft::policy::ASSOCIATION_RESIDUAL.value);
-    record("cross-residual-b", "association_residual", cross_residual_b, 0.0, cross_inputs,
-           "full asymmetric cross mass-action residual", epcsaft::policy::ASSOCIATION_RESIDUAL.value);
+    record("cross-strength-ab", "Delta_AB", cross_delta[1], expected_delta(1), cross_inputs, 1.0e-12,
+           "angstrom^3");
+    record("cross-strength-ba", "Delta_BA", cross_delta[2], expected_delta(2), cross_inputs, 1.0e-12,
+           "angstrom^3");
+    record("cross-residual-a", "association_residual", cross_residual_a, 0.0, cross_inputs, epcsaft::policy::ASSOCIATION_RESIDUAL.value);
+    record("cross-residual-b", "association_residual", cross_residual_b, 0.0, cross_inputs, epcsaft::policy::ASSOCIATION_RESIDUAL.value);
 }
 
 // A term that is switched off contributes nothing, whatever else is in the
@@ -665,27 +587,18 @@ void inactive_terms_contribute_nothing() {
     const std::vector<double> x = {0.4, 0.6};
     const auto result = evaluate(p, 300.0, 1.2e4, x);
     const auto inputs = model_inputs(p, 300.0, 1.2e4, x);
-    recording_support::compare(
-        "association", "association", "1", result.association, 0.0, inputs,
-        "Relationship", "inactive-term", "inactive association term vanishes",
-        "reference_or_one", 0.0, 0.0, result.association == 0.0,
-        "p5-association", "inactive", "a^{assoc}", "T,\\rho,\\mathbf{x}",
-        "a^{assoc}=0", "term");
+    recording_support::compare("association", "association", "1", result.association, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "inactive-term", inputs);
 
     const double born = epcsaft::born_contribution(300.0, x, p, 78.4);
-    recording_support::compare(
-        "born", "born", "1", born, 0.0, inputs, "Relationship", "inactive-term",
-        "inactive Born term vanishes", "reference_or_one", 0.0, 0.0, born == 0.0,
-        "p5-born", "inactive", "a^{Born}", "T,\\mathbf{x}", "a^{Born}=0", "term");
+    recording_support::compare("born", "born", "1", born, 0.0, recording_support::Rule::ReferenceOrOne, 0.0, 0.0,
+        "inactive-term", inputs);
 
     const auto electrolyte = epcsaft::electrolyte_contribution(
         300.0, 1.2e4, x, {0.4, 0.6}, p
     );
-    recording_support::compare(
-        "debye-huckel", "debye_huckel", "1", electrolyte.debye_huckel, 0.0, inputs,
-        "Relationship", "inactive-term", "inactive electrolyte term vanishes",
-        "reference_or_one", 0.0, 0.0, electrolyte.debye_huckel == 0.0,
-        "p5-debye", "inactive", "a^{DH}", "T,\\rho,\\mathbf{x}", "a^{DH}=0", "term");
+    recording_support::compare("debye-huckel", "debye_huckel", "1", electrolyte.debye_huckel, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "inactive-term", inputs);
 }
 
 // Bulow 2019 Eq. (7): a declared water component remains active at zero amount.
@@ -698,11 +611,8 @@ void component_permittivity_zero_solvent() {
     p.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
     const auto record = [](const char* id, double value, double reference,
                            const std::string& inputs, double tolerance) {
-        recording_support::compare(id, id, "1", value, reference, inputs,
-            "Relationship", "exact_derivative_or_difference", "Bulow Eq. (7) continuation",
-            "absolute", tolerance, 0.0,
-            std::isfinite(value) && std::abs(value - reference) <= tolerance,
-            "component-permittivity", id, id, "t,h,x,n", "Bulow Eq. (7)", "composition");
+        recording_support::compare(id, id, "1", value, reference, recording_support::Rule::Absolute, tolerance, 0.0,
+            "exact_derivative_or_difference", inputs);
     };
     const auto value = [&](double t) {
         return epcsaft::bulk_relative_permittivity(298.15, 1000.0,
@@ -768,9 +678,8 @@ void solvent_mole_permittivity() {
     p.born_c_shell = p.born_c_dielectric = 0;
     p.born_diameter_angstrom = p.sigma_constant;
     auto check = [](const char* name, double value, double expected, double tolerance=1e-12) {
-        recording_support::compare(name, name, "1", value, expected, "T:300;x:0.7,0.1,0.1,0.1",
-            "Relationship", "analytic", "solvent mole weighting", "absolute", tolerance, 0,
-            std::abs(value-expected)<=tolerance, "solvent-mole-permittivity");
+        recording_support::compare(name, name, "1", value, expected, recording_support::Rule::Absolute, tolerance, 0,
+            "analytic", "T:300;x:0.7,0.1,0.1,0.1");
     };
     for (bool normalized : {false, true}) {
         p.permittivity_solvent_normalized = normalized;
@@ -828,9 +737,8 @@ void solvent_mole_permittivity() {
         check("pure-water",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{1,0,0,0},p),80);
         check("pure-amine",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,1,0,0},p),20);
         check("salt-dilution",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0.35,0.05,0.3,0.3},p),normalized?72.5:29);
-        bool refused=false;try {check("zero-solvent",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,0,0.5,0.5},p),0);}
-        catch(const std::invalid_argument& e) {refused=std::string(e.what()).find("solvent denominator")!=std::string::npos;}
-        CHECK(refused==normalized);
+        CHECK((recording_support::refusal([&] {check("zero-solvent",epcsaft::bulk_relative_permittivity(300.,1000.,std::vector<double>{0,0,0.5,0.5},p),0);})
+            .find("solvent denominator")!=std::string::npos)==normalized);
     }
 }
 
@@ -871,14 +779,9 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         });
     };
     const auto record = [&](const char* id, const char* quantity, const char* unit,
-                            double model, double reference, const std::string& values,
-                            const char* claim, double tolerance) {
-        const bool matches = close(model, reference, tolerance);
-        recording_support::compare(
-            id, quantity, unit, model, reference, values, "Relationship",
-            "independent_equation_evaluation", claim, "reference_or_one", 0.0, tolerance,
-            matches, "c3-electrolyte", id, quantity, "T,rho,x", claim, "state"
-        );
+                            double model, double reference, const std::string& values, double tolerance) {
+        recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::ReferenceOrOne, 0.0,
+            tolerance, "independent_equation_evaluation", values);
     };
 
     const auto chi_integral = [](double reduced, int intervals) {
@@ -902,15 +805,13 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
                    recording_support::field("series_branch", static_cast<int>(use_series)),
                    recording_support::field("reference_panels", 4000),
                    recording_support::field("cancellation_bound", cancellation_bound),
-               })),
-               "chi=3 integral_0^1 t^2/(1+y t) dt", cancellation_bound);
+               })), cancellation_bound);
         record((std::string("chi-refine-") + point).c_str(), "chi_integral", "1",
                coarse, reference, inputs(p, density, x, recording_support::fields({
                    recording_support::field("reduced_diameter", reduced),
                    recording_support::field("coarse_panels", 1000),
                    recording_support::field("reference_panels", 4000),
-               })),
-               "Simpson chi integral reaches a refinement plateau", 1.0e-11);
+               })), 1.0e-11);
     }
 
     // Taped chi' = -3 int t^3/(1+yt)^2 and chi'' = 6 int t^4/(1+yt)^3 on both sides of the
@@ -932,19 +833,17 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
             recording_support::field("reduced_diameter", reduced),
             recording_support::field("series_branch", static_cast<int>(use_series)),
             recording_support::field("reference_panels", 4000)}));
-        record((std::string("chi-d1-") + point).c_str(), "dchi_dy", "1", first, -3.0 * integral(3, 2), fields,
-               "chi'=-3 integral_0^1 t^3/(1+y t)^2 dt", 1.0e-11);
-        record((std::string("chi-d2-") + point).c_str(), "d2chi_dy2", "1", second, 6.0 * integral(4, 3), fields,
-               "chi''=6 integral_0^1 t^4/(1+y t)^3 dt", 1.0e-9);
+        record((std::string("chi-d1-") + point).c_str(), "dchi_dy", "1", first, -3.0 * integral(3, 2), fields, 1.0e-11);
+        record((std::string("chi-d2-") + point).c_str(), "d2chi_dy2", "1", second, 6.0 * integral(4, 3), fields, 1.0e-9);
     }
 
     const auto component_permittivity = epcsaft::component_relative_permittivities(temperature, p);
     const double epsilon_0 = 70.0 + 0.02 * (temperature - 300.0);
     const double epsilon_1 = 55.0 - 0.01 * std::pow(temperature - 300.0, 2);
     record("dielectric-temperature-0", "epsilon_r", "1", component_permittivity[0], epsilon_0,
-           inputs(p, density, x, "component:0"), "component temperature polynomial", 1.0e-12);
+           inputs(p, density, x, "component:0"), 1.0e-12);
     record("dielectric-temperature-1", "epsilon_r", "1", component_permittivity[1], epsilon_1,
-           inputs(p, density, x, "component:1"), "component temperature polynomial", 1.0e-12);
+           inputs(p, density, x, "component:1"), 1.0e-12);
     const double solvent_mass = x[0] * p.molar_mass_kg_per_mol[0]
         + x[1] * p.molar_mass_kg_per_mol[1];
     const double salt_free = (x[0] * p.molar_mass_kg_per_mol[0] * epsilon_0
@@ -954,40 +853,34 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            + x[3] * p.ion_suppression_coefficient[3]);
     record("dielectric-ion-specific", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, x, p),
-           expected_ion_suppression, inputs(p, density, x, "form:ion-specific"),
-           "asymmetric-mass salt-free permittivity with ion-specific suppression", 1.0e-12);
+           expected_ion_suppression, inputs(p, density, x, "form:ion-specific"), 1.0e-12);
     const std::vector<double> single_solvent_x = {0.7, 0.0, 0.2, 0.1};
     const double expected_single = epsilon_0 / (1.0 + 0.2 * 5.0 + 0.1 * 8.0);
     record("dielectric-single-ion-specific", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, single_solvent_x, p),
-           expected_single, inputs(p, density, single_solvent_x, "form:Zuber-single-solvent"),
-           "single-solvent unequal ion suppression", 1.0e-12);
+           expected_single, inputs(p, density, single_solvent_x, "form:Zuber-single-solvent"), 1.0e-12);
     Parameters equal_suppression = p;
     equal_suppression.ion_suppression_coefficient[2] = 6.0;
     equal_suppression.ion_suppression_coefficient[3] = 6.0;
     record("dielectric-equal-suppression", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, x, equal_suppression),
            salt_free / (1.0 + 6.0 * (x[2] + x[3])),
-           inputs(equal_suppression, density, x, "form:equal-ion-fraction"),
-           "equal coefficients reduce to composition suppression", 1.0e-12);
+           inputs(equal_suppression, density, x, "form:equal-ion-fraction"), 1.0e-12);
     Parameters component_mixing = p;
     component_mixing.permittivity_form = epcsaft::PermittivityForm::ComponentMixing;
     record("dielectric-component-mixing", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, x, component_mixing),
            salt_free * (x[0] + x[1]) + x[2] * 12.0 + x[3] * 18.0,
-           inputs(component_mixing, density, x, "form:component-mixing"),
-           "component mixing retains ion mole fractions", 1.0e-12);
+           inputs(component_mixing, density, x, "form:component-mixing"), 1.0e-12);
     const std::vector<double> salt_free_x = {4.0 / 7.0, 3.0 / 7.0, 0.0, 0.0};
     record("dielectric-ion-salt-free", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, salt_free_x, p), salt_free,
-           inputs(p, density, salt_free_x, "limit:salt-free-ion-suppression"),
-           "ion suppression returns the salt-free solvent value without ions", 1.0e-12);
+           inputs(p, density, salt_free_x, "limit:salt-free-ion-suppression"), 1.0e-12);
     record("dielectric-component-salt-free", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(
                temperature, density, salt_free_x, component_mixing
            ), salt_free, inputs(component_mixing, density, salt_free_x,
-                                "limit:salt-free-component-mixing"),
-           "component mixing returns the salt-free solvent value without ions", 1.0e-12);
+                                "limit:salt-free-component-mixing"), 1.0e-12);
     Parameters density_temperature = p;
     density_temperature.permittivity_form = epcsaft::PermittivityForm::DensityTemperature;
     const double mixed_volume = (x[0] * 1.5e-4 + x[1] * 2.5e-4) / (x[0] + x[1]);
@@ -996,12 +889,10 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         * (mixed_temperature / temperature - 1.0);
     record("dielectric-density-temperature", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, x, density_temperature),
-           expected_density, inputs(density_temperature, density, x, "form:density-temperature"),
-           "density-temperature solvent mixtures", 1.0e-12);
+           expected_density, inputs(density_temperature, density, x, "form:density-temperature"), 1.0e-12);
     record("dielectric-density-dilute", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, 1.0e-6, x, density_temperature), 1.0,
-           inputs(density_temperature, 1.0e-6, x, "limit:dilute"),
-           "density-temperature permittivity tends to one", 1.0e-10);
+           inputs(density_temperature, 1.0e-6, x, "limit:dilute"), 1.0e-10);
     Parameters dipolar = p;
     dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
     const auto dipolar_reference = [&](double rho) {
@@ -1021,19 +912,16 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
     };
     record("dielectric-dipolar", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, density, x, dipolar),
-           dipolar_reference(density), inputs(dipolar, density, x, "form:dipolar"),
-           "dipolar density and correlation integral", 1.0e-12);
+           dipolar_reference(density), inputs(dipolar, density, x, "form:dipolar"), 1.0e-12);
     record("dielectric-dipolar-dilute", "epsilon_bulk", "1",
            epcsaft::bulk_relative_permittivity(temperature, 1.0e-6, x, dipolar), 1.0,
-           inputs(dipolar, 1.0e-6, x, "limit:dilute"),
-           "dipolar permittivity tends to one", 1.0e-10);
+           inputs(dipolar, 1.0e-6, x, "limit:dilute"), 1.0e-10);
 
     const auto electrolyte = epcsaft::electrolyte_contribution(
         temperature, density, x, x, p
     );
     record("dh-bulk", "epsilon_bulk", "1", electrolyte.bulk_relative_permittivity,
-           expected_ion_suppression, inputs(p, density, x, "case:multivalent"),
-           "shared ion-suppressed bulk permittivity", 1.0e-12);
+           expected_ion_suppression, inputs(p, density, x, "case:multivalent"), 1.0e-12);
     const double charge_square_sum = x[2] + 4.0 * x[3];
     const double kappa = std::sqrt(density * epcsaft::AVOGADRO_PER_MOL
         * epcsaft::ELEMENTARY_CHARGE_C * epcsaft::ELEMENTARY_CHARGE_C * charge_square_sum
@@ -1060,8 +948,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
                recording_support::field("chi_anion_argument", chi_anion_argument),
                recording_support::field("chi_reference_panels", 4000),
                recording_support::field("chi_simpson_bound", chi_quadrature_bound),
-           })),
-           "screening and integral chi finite-density Debye-Huckel reference", 1.0e-10);
+           })), 1.0e-10);
     const double dilute_coefficient = -std::sqrt(
         epcsaft::AVOGADRO_PER_MOL * epcsaft::ELEMENTARY_CHARGE_C
         * epcsaft::ELEMENTARY_CHARGE_C * charge_square_sum
@@ -1082,7 +969,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
                    recording_support::field("actual_coefficient", coefficient),
                    recording_support::field("analytic_coefficient", dilute_coefficient),
                    recording_support::field("relative_bound", 5.0e-5),
-               })), "Debye-Huckel dilute coefficient relative error", 5.0e-5);
+               })), 5.0e-5);
     }
 
     const auto born_reference = [&](const Parameters& parameters, double bulk) {
@@ -1122,8 +1009,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
                recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
                recording_support::field("reference_bulk_relative_permittivity", expected_ion_suppression),
                recording_support::field("radial_panels_per_region", 2),
-           })),
-           "independent two-region radial charging integral", 1.0e-12);
+           })), 1.0e-12);
     Parameters direct = p;
     direct.solvation_factor = {1.0, 1.0, 1.0, 1.0};
     const double direct_born = epcsaft::born_contribution(
@@ -1134,8 +1020,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            inputs(direct, density, x, recording_support::fields({
                "limit:outer=inner",
                recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
-           })),
-           "direct Born limit has no shell interval", 1.0e-12);
+           })), 1.0e-12);
     Parameters equal_permittivity = p;
     equal_permittivity.ionic_region_relative_permittivity = electrolyte.bulk_relative_permittivity;
     record("born-equal-permittivity", "born", "1",
@@ -1145,8 +1030,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            inputs(equal_permittivity, density, x, recording_support::fields({
                "limit:epsilon-inner=epsilon-bulk",
                recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
-           })),
-           "equal permittivity cancels shell-radius dependence", 1.0e-12);
+           })), 1.0e-12);
     Parameters zero_contrast = p;
     zero_contrast.ionic_region_relative_permittivity = 1.0;
     record("born-zero-contrast", "born", "1",
@@ -1154,8 +1038,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            inputs(zero_contrast, density, x, recording_support::fields({
                "limit:epsilon-inner=epsilon-bulk=1",
                recording_support::field("born_bulk_relative_permittivity", 1.0),
-           })),
-           "unit permittivities give zero Born contrast", 1.0e-14);
+           })), 1.0e-14);
     Parameters charge_scaled = direct;
     charge_scaled.charge_number = {0, 0, 2, -4};
     record("born-charge-square", "born", "1",
@@ -1164,8 +1047,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
            4.0 * direct_born, inputs(charge_scaled, density, x, recording_support::fields({
                "limit:charges-doubled",
                recording_support::field("born_bulk_relative_permittivity", electrolyte.bulk_relative_permittivity),
-           })),
-           "charge-balanced multivalent Born term scales as z^2", 1.0e-12);
+           })), 1.0e-12);
 }
 
 void same_sign_exclusion_is_a_limit() {
@@ -1182,39 +1064,26 @@ void same_sign_exclusion_is_a_limit() {
         recording_support::field("policy_excluded", "ExcludeSameSign"),
         recording_support::field("policy_all", "AllIonPairs"),
     });
-    recording_support::observe(
-        "excluded-pure-ion", "dispersion", "1", one_excluded.dispersion, 0.0, inputs,
-        "Relationship", "ionic-pair-selection", "same-sign pair is excluded", "p6-excluded-observation");
-    recording_support::observe(
-        "all-pairs-pure-ion", "dispersion", "1", one_all.dispersion, 0.0, inputs,
-        "Relationship", "ionic-pair-selection", "all ion pairs include the pair", "p6-all-observation");
+    recording_support::observe("excluded-pure-ion", "dispersion", "1", one_excluded.dispersion, 0.0,
+        "ionic-pair-selection", inputs);
+    recording_support::observe("all-pairs-pure-ion", "dispersion", "1", one_all.dispersion, 0.0,
+        "ionic-pair-selection", inputs);
     const bool excluded_zero = one_excluded.dispersion == 0.0;
-    recording_support::compare(
-        "excluded-zero", "dispersion_zero", "bool", excluded_zero ? 1.0 : 0.0, 1.0,
-        recording_support::fields({inputs, recording_support::field("dispersion", one_excluded.dispersion)}),
-        "Relationship", "ionic-pair-selection", "same-sign pair contributes zero",
-        "absolute", 0.0, 0.0, excluded_zero, "p6-excluded-verdict", "state", "a^{disp}=0",
-        "T,\\rho,\\mathbf{x},a^{disp}", "a^{disp}=0", "state");
+    recording_support::compare("excluded-zero", "dispersion_zero", "bool", excluded_zero ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "ionic-pair-selection",
+        recording_support::fields({inputs, recording_support::field("dispersion", one_excluded.dispersion)}));
     const bool all_negative = one_all.dispersion < 0.0;
-    recording_support::compare(
-        "all-pairs-negative", "dispersion_negative", "bool", all_negative ? 1.0 : 0.0, 1.0,
-        recording_support::fields({inputs, recording_support::field("dispersion", one_all.dispersion)}),
-        "Relationship", "ionic-pair-selection", "all-ion-pairs contribution is negative",
-        "absolute", 0.0, 0.0, all_negative, "p6-negative-verdict", "state", "a^{disp}<0",
-        "T,\\rho,\\mathbf{x},a^{disp}", "a^{disp}<0", "state");
+    recording_support::compare("all-pairs-negative", "dispersion_negative", "bool", all_negative ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "ionic-pair-selection",
+        recording_support::fields({inputs, recording_support::field("dispersion", one_all.dispersion)}));
     const auto half_excluded = evaluate(excluded, 300.0, 1.2e4, {0.5, 0.5});
     const auto half_all = evaluate(all_pairs, 300.0, 1.2e4, {0.5, 0.5});
     const bool half_different = half_excluded.dispersion != half_all.dispersion;
-    recording_support::compare(
-        "half-mixture-different", "dispersion_policy_difference", "bool",
-        half_different ? 1.0 : 0.0, 1.0,
+    recording_support::compare("half-mixture-different", "dispersion_policy_difference", "bool",
+        half_different ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0, 0.0, "ionic-pair-selection",
         recording_support::fields({model_inputs(excluded, 300.0, 1.2e4, {0.5, 0.5}),
                                    recording_support::field("excluded_dispersion", half_excluded.dispersion),
-                                   recording_support::field("all_pairs_dispersion", half_all.dispersion)}),
-        "Relationship", "ionic-pair-selection", "ionic pair policy changes the half mixture",
-        "absolute", 0.0, 0.0, half_different, "p6-mixture-verdict", "state", "\\Delta a^{disp}",
-        "T,\\rho,\\mathbf{x},a^{disp}_{excluded},a^{disp}_{all}",
-        "a^{disp}_{excluded}\\ne a^{disp}_{all}", "state");
+                                   recording_support::field("all_pairs_dispersion", half_all.dispersion)}));
 }
 
 // The packing fraction is linear in density and cubic in diameter; close packing
@@ -1228,38 +1097,25 @@ void packing_fraction_is_bounded() {
         epcsaft::packing_fraction_from_geometry(1.0e3, x, p, diameter);
     const double high =
         epcsaft::packing_fraction_from_geometry(2.0e3, x, p, diameter);
-    recording_support::compare(
-        "density-scaling", "packing_fraction", "1", high, 2.0 * low,
+    recording_support::compare("density-scaling", "packing_fraction", "1", high, 2.0 * low,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "density-scaling",
         recording_support::fields({model_inputs(p, 300.0, 1.0e3, x),
                                    recording_support::field("rho_high", 2.0e3),
                                    recording_support::field("eta_low", low),
-                                   recording_support::field("eta_high", high)}),
-        "Relationship", "density-scaling", "packing fraction is linear in density",
-        "reference_or_one", 0.0, 1.0e-14, close(high, 2.0 * low, 1.0e-14),
-        "p7-density", "rho", "\\eta", "T,\\rho,\\mathbf{x}",
-        "\\eta(2\\rho)=2\\eta(\\rho)", "rho");
+                                   recording_support::field("eta_high", high)}));
     const bool low_positive = low > 0.0;
-    recording_support::compare(
-        "low-positive", "packing_fraction_positive", "bool", low_positive ? 1.0 : 0.0,
-        1.0, recording_support::fields({model_inputs(p, 300.0, 1.0e3, x),
-                                         recording_support::field("eta", low)}),
-        "Relationship", "geometry", "packing fraction is positive", "absolute", 0.0, 0.0,
-        low_positive, "p7-low-positive", "rho", "\\eta>0", "T,\\rho,\\mathbf{x},\\eta",
-        "\\eta>0", "rho");
+    recording_support::compare("low-positive", "packing_fraction_positive", "bool", low_positive ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "geometry",
+        recording_support::fields({model_inputs(p, 300.0, 1.0e3, x),
+                                         recording_support::field("eta", low)}));
     const bool policy_lower = epcsaft::policy::CLOSE_PACKING_FRACTION.value > 0.74;
-    recording_support::compare(
-        "policy-lower", "close_packing_fraction", "1", policy_lower ? 1.0 : 0.0, 1.0,
-        recording_support::field("policy", epcsaft::policy::CLOSE_PACKING_FRACTION.value),
-        "Relationship", "policy-bound", "close packing policy is above 0.74", "absolute",
-        0.0, 0.0, policy_lower, "p7-policy-lower", "policy", "\\eta_{max}>0.74", "policy",
-        "\\eta_{max}>0.74", "policy");
+    recording_support::compare("policy-lower", "close_packing_fraction", "1", policy_lower ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "policy-bound",
+        recording_support::field("policy", epcsaft::policy::CLOSE_PACKING_FRACTION.value));
     const bool policy_upper = epcsaft::policy::CLOSE_PACKING_FRACTION.value < 0.75;
-    recording_support::compare(
-        "policy-upper", "close_packing_fraction", "1", policy_upper ? 1.0 : 0.0, 1.0,
-        recording_support::field("policy", epcsaft::policy::CLOSE_PACKING_FRACTION.value),
-        "Relationship", "policy-bound", "close packing policy is below 0.75", "absolute",
-        0.0, 0.0, policy_upper, "p7-policy-upper", "policy", "\\eta_{max}<0.75", "policy",
-        "\\eta_{max}<0.75", "policy");
+    recording_support::compare("policy-upper", "close_packing_fraction", "1", policy_upper ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "policy-bound",
+        recording_support::field("policy", epcsaft::policy::CLOSE_PACKING_FRACTION.value));
 }
 
 // The kernels are templated so the same source both evaluates a double and
@@ -1293,27 +1149,19 @@ void kernels_record_a_tape() {
     const double difference =
         ((up.hard_chain + up.dispersion) - (down.hard_chain + down.dispersion))
         / (2.0 * step);
-    recording_support::compare(
-        "density-gradient", "d_a_res_d_rho", "1", gradient[1], difference,
+    recording_support::compare("density-gradient", "d_a_res_d_rho", "1", gradient[1], difference,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-7, "derivative",
         recording_support::fields({model_inputs(p, temperature, molar_density, x),
                                    recording_support::field("step_rho", step),
                                    recording_support::field("rho_plus", molar_density + step),
-                                   recording_support::field("rho_minus", molar_density - step)}),
-        "Relationship", "derivative", "CppAD gradient matches centered difference",
-        "reference_or_one", 0.0, 1.0e-7,
-        close(gradient[1], difference, 1.0e-7), "p8-gradient", "rho", "a_\\rho",
-        "T,\\rho,\\mathbf{x},\\Delta\\rho", "a_\\rho=d a/d\\rho", "rho");
+                                   recording_support::field("rho_minus", molar_density - step)}));
 
     // The tape reproduces the double path exactly at the recording point.
     const auto value = tape.Forward(0, point);
     const auto direct = evaluate(p, temperature, molar_density, x);
-    recording_support::compare(
-        "tape-value", "a_res", "1", value[0], direct.hard_chain + direct.dispersion,
-        model_inputs(p, temperature, molar_density, x),
-        "Relationship", "AD-evaluation", "tape reproduces double path",
-        "reference_or_one", 0.0, 1.0e-14,
-        close(value[0], direct.hard_chain + direct.dispersion, 1.0e-14),
-        "p8-value", "state", "a^{res}", "T,\\rho,\\mathbf{x}", "a_{AD}=a_{double}", "state");
+    recording_support::compare("tape-value", "a_res", "1", value[0], direct.hard_chain + direct.dispersion,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "AD-evaluation",
+        model_inputs(p, temperature, molar_density, x));
 }
 
 struct IdealCase {
@@ -1393,30 +1241,16 @@ void ideal_thermal_forms_match_integrals() {
         });
         const std::string h_id = std::string("dh-") + name;
         const std::string s_id = std::string("ds-") + name;
-        recording_support::compare(
-            h_id.c_str(), "h_increment", "J/mol", finish.h - start.h, expected_h,
-            inputs, "Relationship", "independent_Simpson_integral", "dh/dT=cp",
-            "reference_or_one", 1.0e-8, 1.0e-8,
-            close(finish.h - start.h, expected_h, 1.0e-8), "c1-thermal", name,
-            "\\Delta h", "form,T", "\\Delta h=\\int C_p\\,dT", "T");
-        recording_support::compare(
-            s_id.c_str(), "s_increment", "J/mol/K", finish.s - start.s, expected_s,
-            inputs, "Relationship", "independent_Simpson_integral", "T ds/dT=cp",
-            "reference_or_one", 1.0e-8, 1.0e-8,
-            close(finish.s - start.s, expected_s, 1.0e-8), "c1-thermal", name,
-            "\\Delta s", "form,T", "\\Delta s=\\int C_p/T\\,dT", "T");
-        recording_support::compare(
-            (std::string("refine-dh-") + name).c_str(), "simpson_refinement", "J/mol",
-            expected_h, fine_h, inputs, "Relationship", "independent_Simpson_refinement",
-            "Simpson enthalpy integral reaches a refinement plateau", "reference_or_one",
-            0.0, 1.0e-8, close(expected_h, fine_h, 1.0e-8), "c1-thermal", name,
-            "\\Delta h_{mesh}", "form,T", "|I_{2000}-I_{4000}| small", "T");
-        recording_support::compare(
-            (std::string("refine-ds-") + name).c_str(), "simpson_refinement", "J/mol/K",
-            expected_s, fine_s, inputs, "Relationship", "independent_Simpson_refinement",
-            "Simpson entropy integral reaches a refinement plateau", "reference_or_one",
-            0.0, 1.0e-8, close(expected_s, fine_s, 1.0e-8), "c1-thermal", name,
-            "\\Delta s_{mesh}", "form,T", "|I_{2000}-I_{4000}| small", "T");
+        recording_support::compare(h_id, "h_increment", "J/mol", finish.h - start.h, expected_h,
+            recording_support::Rule::ReferenceOrOne, 1.0e-8, 1.0e-8, "independent_Simpson_integral", inputs);
+        CHECK(close(finish.h - start.h, expected_h, 1.0e-8));
+        recording_support::compare(s_id, "s_increment", "J/mol/K", finish.s - start.s, expected_s,
+            recording_support::Rule::ReferenceOrOne, 1.0e-8, 1.0e-8, "independent_Simpson_integral", inputs);
+        CHECK(close(finish.s - start.s, expected_s, 1.0e-8));
+        recording_support::compare(std::string("refine-dh-") + name, "simpson_refinement", "J/mol", expected_h, fine_h,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-8, "independent_Simpson_refinement", inputs);
+        recording_support::compare(std::string("refine-ds-") + name, "simpson_refinement", "J/mol/K", expected_s,
+            fine_s, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-8, "independent_Simpson_refinement", inputs);
         CHECK(close(coarse_h, expected_h, 1.0e-8));
         CHECK(close(coarse_s, expected_s, 1.0e-8));
     }
@@ -1429,21 +1263,14 @@ void ideal_thermal_absolute_values_and_ad_derivatives() {
         const auto value = epcsaft::evaluate_ideal_correlation(item.correlation, temperature, pressure);
         const std::string inputs = std::string(item.inputs) + ";T:550;P:2e5";
         const auto check = [&](const char* prefix, const char* quantity, const char* unit,
-                               double model, double reference, const char* group,
-                               const char* claim, double rtol) {
+                               double model, double reference, double rtol) {
             const std::string id = std::string(prefix) + item.name;
-            recording_support::compare(
-                id.c_str(), quantity, unit, model, reference, inputs, "Relationship",
-                "independent_equation_evaluation", claim, "reference_or_one", 0.0, rtol,
-                close(model, reference, rtol), group, item.name, quantity, "form,T,P",
-                "quantity=form(T)", "T");
+            recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::ReferenceOrOne,
+                0.0, rtol, "independent_equation_evaluation", inputs);
         };
-        check("cp-", "cp", "J/mol/K", value.cp, item.cp, "c1-absolute",
-              "absolute accepted-form heat capacity", 1.0e-12);
-        check("h-", "h", "J/mol", value.h, item.h, "c1-absolute",
-              "absolute accepted-form enthalpy and constants", 1.0e-12);
-        check("s-", "s", "J/mol/K", value.s, item.s, "c1-absolute",
-              "absolute accepted-form entropy and pressure shift", 1.0e-12);
+        check("cp-", "cp", "J/mol/K", value.cp, item.cp, 1.0e-12);
+        check("h-", "h", "J/mol", value.h, item.h, 1.0e-12);
+        check("s-", "s", "J/mol/K", value.s, item.s, 1.0e-12);
 
         using AD = CppAD::AD<double>;
         std::vector<AD> independent = {AD(temperature)};
@@ -1452,10 +1279,8 @@ void ideal_thermal_absolute_values_and_ad_derivatives() {
             item.correlation, independent[0], pressure);
         CppAD::ADFun<double> tape(independent, {taped.h, taped.s});
         const auto derivative = tape.Jacobian(std::vector<double>{temperature});
-        check("dh-", "dh_dT", "J/mol/K", derivative[0], item.cp, "c1-ad-derivatives",
-              "AD derivative dh/dT=cp", 1.0e-12);
-        check("ds-", "T_ds_dT", "J/mol/K", temperature * derivative[1], item.cp,
-              "c1-ad-derivatives", "AD derivative T ds/dT=cp", 1.0e-12);
+        check("dh-", "dh_dT", "J/mol/K", derivative[0], item.cp, 1.0e-12);
+        check("ds-", "T_ds_dT", "J/mol/K", temperature * derivative[1], item.cp, 1.0e-12);
     }
 }
 
@@ -1466,21 +1291,12 @@ void dippr_limits_and_pressure_shift_are_exact() {
     const auto value = epcsaft::evaluate_ideal_correlation(zero, T, 1.0e5);
     const double dt = T - 250.0;
     const double expected_s = 12.0 * std::log(T / 250.0);
-    recording_support::compare(
-        "zero-cp", "cp", "J/mol/K", value.cp, 12.0,
-        "T:300;C:0;E:0", "Relationship", "analytic_limit", "C=0 gives B and E=0 gives no D",
-        "reference_or_one", 0.0, 1.0e-14, close(value.cp, 12.0, 1.0e-14),
-        "c1-dippr", "zero-cp", "C_p", "T,C,E", "C=0\\Rightarrow C_p=A+B", "T");
-    recording_support::compare(
-        "zero-h", "h", "J/mol", value.h, 11.0 + 12.0 * dt,
-        "T:300;C:0;E:0", "Relationship", "analytic_limit", "C=0 gives B(T-Tref)",
-        "reference_or_one", 0.0, 1.0e-14, close(value.h, 11.0 + 12.0 * dt, 1.0e-14),
-        "c1-dippr", "zero-h", "h", "T,C,E", "C=0\\Rightarrow \\Delta h=B\\Delta T", "T");
-    recording_support::compare(
-        "zero-s", "s", "J/mol/K", value.s, 4.0 + expected_s,
-        "T:300;C:0;E:0", "Relationship", "analytic_limit", "C=0 gives B log(T/Tref)",
-        "reference_or_one", 0.0, 1.0e-14, close(value.s, 4.0 + expected_s, 1.0e-14),
-        "c1-dippr", "zero-s", "s", "T,C,E", "C=0\\Rightarrow \\Delta s=B\\ln(T/T_{ref})", "T");
+    recording_support::compare("zero-cp", "cp", "J/mol/K", value.cp, 12.0, recording_support::Rule::ReferenceOrOne,
+        0.0, 1.0e-14, "analytic_limit", "T:300;C:0;E:0");
+    recording_support::compare("zero-h", "h", "J/mol", value.h, 11.0 + 12.0 * dt,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "analytic_limit", "T:300;C:0;E:0");
+    recording_support::compare("zero-s", "s", "J/mol/K", value.s, 4.0 + expected_s,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "analytic_limit", "T:300;C:0;E:0");
 
     const auto signed_c = epcsaft::IdealCorrelation{
         epcsaft::IdealDIPPR107{{2.0, 10.0, -700.0, 7.0, 500.0}, 250.0, 11.0, 4.0}, 1.0e5};
@@ -1495,39 +1311,23 @@ void dippr_limits_and_pressure_shift_are_exact() {
         epcsaft::IdealDIPPR107{{2.0, 10.0, 1.0e300, 7.0, 1.0e300}, 250.0, 11.0, 4.0}, 1.0e5};
     const auto huge_value = epcsaft::evaluate_ideal_correlation(huge, T, 1.0e5);
     const double huge_s = 4.0 + 2.0 * std::log(T / 250.0);
-    recording_support::compare(
-        "large-cp", "cp", "J/mol/K", huge_value.cp, 2.0, "T:300;C_abs:1e300;E_abs:1e300",
-        "Relationship", "stable_limit", "large DIPPR arguments remain finite", "reference_or_one",
-        0.0, 1.0e-14, close(huge_value.cp, 2.0, 1.0e-14), "c1-dippr", "large-cp",
-        "C_p", "T,C,E", "large arguments have finite limiting value", "T");
-    recording_support::compare(
-        "large-h", "h", "J/mol", huge_value.h, 111.0, "T:300;C_abs:1e300;E_abs:1e300",
-        "Relationship", "stable_limit", "large DIPPR enthalpy tends to A(T-Tref)",
-        "reference_or_one", 0.0, 1.0e-12, close(huge_value.h, 111.0, 1.0e-12),
-        "c1-dippr", "large-h", "h", "T,C,E", "h=href+A\\Delta T", "T");
-    recording_support::compare(
-        "large-s", "s", "J/mol/K", huge_value.s, huge_s,
-        "T:300;C_abs:1e300;E_abs:1e300", "Relationship", "stable_limit",
-        "large DIPPR entropy tends to A log(T/Tref)", "reference_or_one", 0.0, 1.0e-12,
-        close(huge_value.s, huge_s, 1.0e-12), "c1-dippr", "large-s", "s", "T,C,E",
-        "s=sref+A\\ln(T/Tref)", "T");
+    recording_support::compare("large-cp", "cp", "J/mol/K", huge_value.cp, 2.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "stable_limit", "T:300;C_abs:1e300;E_abs:1e300");
+    recording_support::compare("large-h", "h", "J/mol", huge_value.h, 111.0, recording_support::Rule::ReferenceOrOne,
+        0.0, 1.0e-12, "stable_limit", "T:300;C_abs:1e300;E_abs:1e300");
+    recording_support::compare("large-s", "s", "J/mol/K", huge_value.s, huge_s,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "stable_limit", "T:300;C_abs:1e300;E_abs:1e300");
 
     const auto shifted = epcsaft::IdealCorrelation{
         epcsaft::IdealPolynomial{{12.0}, 250.0, 11.0,
                                  4.0 - epcsaft::GAS_CONSTANT_J_PER_MOL_K * std::log(2.0)}, 2.0e5};
     const auto original = epcsaft::evaluate_ideal_correlation(zero, T, 2.0e5);
     const auto shifted_value = epcsaft::evaluate_ideal_correlation(shifted, T, 2.0e5);
-    recording_support::compare(
-        "signed-cp", "cp", "J/mol/K", left.cp, right.cp, "T:300;C:+/-700;E:+/-500",
-        "Relationship", "even_argument", "signed DIPPR arguments are invariant", "reference_or_one",
-        0.0, 1.0e-14, close(left.cp, right.cp, 1.0e-14), "c1-dippr", "signed-cp",
-        "C_p", "T,C,E", "f(C,E)=f(-C,-E)", "T");
-    recording_support::compare(
-        "source-pressure", "s", "J/mol/K", original.s, shifted_value.s,
-        "T:300;P:200000;Psrc:100000->200000;sentropy-anchor-shifted",
-        "Relationship", "standard_state_shift", "consistent source pressure/entropy shift is invariant",
-        "reference_or_one", 0.0, 1.0e-14, close(original.s, shifted_value.s, 1.0e-14),
-        "c1-dippr", "source-pressure", "s", "T,P,P_{src}", "s_{shifted}=s", "pressure");
+    recording_support::compare("signed-cp", "cp", "J/mol/K", left.cp, right.cp,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "even_argument", "T:300;C:+/-700;E:+/-500");
+    recording_support::compare("source-pressure", "s", "J/mol/K", original.s, shifted_value.s,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "standard_state_shift",
+        "T:300;P:200000;Psrc:100000->200000;sentropy-anchor-shifted");
 }
 
 void ideal_intervals_require_owned_endpoints() {
@@ -1551,27 +1351,16 @@ void ideal_intervals_require_owned_endpoints() {
          {epcsaft::IdealPolynomial{{20.0}, 350.0, 0.0, 0.0}, 1.0e5}},
     };
     const auto reverse_boundary = owned(reverse_intervals, 300.0);
-    recording_support::compare(
-        "interval-cp", "cp", "J/mol/K", boundary.cp, 20.0,
-        "T:300;left-upper-open;right-lower-closed", "Relationship", "owned_branch", "owned branch value at join",
-        "reference_or_one", 0.0, 1.0e-14, close(boundary.cp, 20.0, 1.0e-14),
-        "c1-intervals", "interval-cp", "C_p", "T", "T=300 uses right branch", "T");
-    recording_support::compare(
-        "interval-left-cp", "cp", "J/mol/K", left_interior.cp, 10.0,
-        "T:250;left-interval", "Relationship", "owned_branch", "left source branch retained",
-        "reference_or_one", 0.0, 1.0e-14, close(left_interior.cp, 10.0, 1.0e-14),
-        "c1-intervals", "interval-left-cp", "C_p", "T", "T=250 uses left branch", "T");
-    recording_support::compare(
-        "interval-reverse-cp", "cp", "J/mol/K", reverse_boundary.cp, 10.0,
-        "T:300;left-upper-closed;right-lower-open", "Relationship", "owned_branch",
-        "alternate endpoint owner retained", "reference_or_one", 0.0, 1.0e-14,
-        close(reverse_boundary.cp, 10.0, 1.0e-14), "c1-intervals", "interval-reverse-cp",
-        "C_p", "T", "T=300 uses left branch", "T");
-    recording_support::compare(
-        "interval-interior-cp", "cp", "J/mol/K", interior.cp, 20.0,
-        "T:350;right-interval", "Relationship", "owned_branch", "same source branch re-evaluates",
-        "reference_or_one", 0.0, 1.0e-14, close(interior.cp, 20.0, 1.0e-14),
-        "c1-intervals", "interval-interior-cp", "C_p", "T", "T=350 uses right branch", "T");
+    recording_support::compare("interval-cp", "cp", "J/mol/K", boundary.cp, 20.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "owned_branch",
+        "T:300;left-upper-open;right-lower-closed");
+    recording_support::compare("interval-left-cp", "cp", "J/mol/K", left_interior.cp, 10.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "owned_branch", "T:250;left-interval");
+    recording_support::compare("interval-reverse-cp", "cp", "J/mol/K", reverse_boundary.cp, 10.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "owned_branch",
+        "T:300;left-upper-closed;right-lower-open");
+    recording_support::compare("interval-interior-cp", "cp", "J/mol/K", interior.cp, 20.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "owned_branch", "T:350;right-interval");
 
     const auto gap = std::vector<epcsaft::IdealInterval>{
         {200.0, 300.0, true, true, left.correlation},
@@ -1583,9 +1372,9 @@ void ideal_intervals_require_owned_endpoints() {
     const auto open_gap = std::vector<epcsaft::IdealInterval>{
         {200.0, 300.0, true, false, left.correlation},
         {300.0, 400.0, false, true, right.correlation}};
-    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(gap); }));
-    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(overlap); }));
-    CHECK(rejects([&] { epcsaft::validate_ideal_intervals(open_gap); }));
+    CHECK(recording_support::refusal([&] { epcsaft::validate_ideal_intervals(gap); }).find("overlapping or gapped ideal intervals") != std::string::npos);
+    CHECK(recording_support::refusal([&] { epcsaft::validate_ideal_intervals(overlap); }).find("overlapping or gapped ideal intervals") != std::string::npos);
+    CHECK(recording_support::refusal([&] { epcsaft::validate_ideal_intervals(open_gap); }).find("overlapping or gapped ideal intervals") != std::string::npos);
 }
 
 void ideal_polynomial_tape_reuses_smooth_interval() {
@@ -1599,21 +1388,12 @@ void ideal_polynomial_tape_reuses_smooth_interval() {
     const auto first = tape.Forward(0, std::vector<double>{450.0});
     const auto second = tape.Forward(0, std::vector<double>{475.0});
     const auto direct = epcsaft::evaluate_ideal_correlation(correlation, 475.0, 1.0e5);
-    recording_support::compare(
-        "tape-cp", "cp", "J/mol/K", second[0], direct.cp,
-        "T_record:450;T_replay:475", "Relationship", "CppAD_replay", "ideal tape re-evaluates at another T",
-        "reference_or_one", 0.0, 1.0e-14, close(second[0], direct.cp, 1.0e-14),
-        "c1-tape", "tape-cp", "C_p", "T", "f_{AD}(475)=f(475)", "T");
-    recording_support::compare(
-        "tape-h", "h", "J/mol", second[1], direct.h,
-        "T_record:450;T_replay:475", "Relationship", "CppAD_replay", "ideal tape enthalpy re-evaluates",
-        "reference_or_one", 0.0, 1.0e-14, close(second[1], direct.h, 1.0e-14),
-        "c1-tape", "tape-h", "h", "T", "h_{AD}(475)=h(475)", "T");
-    recording_support::compare(
-        "tape-s", "s", "J/mol/K", second[2], direct.s,
-        "T_record:450;T_replay:475", "Relationship", "CppAD_replay", "ideal tape entropy re-evaluates",
-        "reference_or_one", 0.0, 1.0e-14, close(second[2], direct.s, 1.0e-14),
-        "c1-tape", "tape-s", "s", "T", "s_{AD}(475)=s(475)", "T");
+    recording_support::compare("tape-cp", "cp", "J/mol/K", second[0], direct.cp,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "CppAD_replay", "T_record:450;T_replay:475");
+    recording_support::compare("tape-h", "h", "J/mol", second[1], direct.h, recording_support::Rule::ReferenceOrOne,
+        0.0, 1.0e-14, "CppAD_replay", "T_record:450;T_replay:475");
+    recording_support::compare("tape-s", "s", "J/mol/K", second[2], direct.s, recording_support::Rule::ReferenceOrOne,
+        0.0, 1.0e-14, "CppAD_replay", "T_record:450;T_replay:475");
     CHECK(close(first[0], epcsaft::evaluate_ideal_correlation(correlation, 450.0, 1.0e5).cp, 1.0e-14));
 }
 
@@ -1624,18 +1404,14 @@ void ideal_mechanical_owner_preserves_chart() {
     const double expected = amounts[0] * (std::log(amounts[0] / (volume * rho0)) - 1.0)
         + amounts[1] * (std::log(amounts[1] / (volume * rho0)) - 1.0);
     const double actual = epcsaft::ideal_mechanical_helmholtz(amounts, volume, rho0);
-    recording_support::compare(
-        "off-normalized", "a_ideal_mechanical", "1", actual, expected,
+    recording_support::compare("off-normalized", "a_ideal_mechanical", "1", actual, expected,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "closed_form",
         recording_support::fields({recording_support::field("amounts", amounts),
                                    recording_support::field("volume", volume),
-                                   recording_support::field("rho0", rho0)}),
-        "Relationship", "closed_form", "mechanical ideal owner preserves off-normalized chart",
-        "reference_or_one", 0.0, 1.0e-14, close(actual, expected, 1.0e-14),
-        "c1-ideal-mechanical", "off-normalized", "A_{ideal}/RT", "n,V,rho_0",
-        "sum_i n_i[ln(n_i/(V rho_0))-1]", "amounts");
-    CHECK(rejects([&] {
+                                   recording_support::field("rho0", rho0)}));
+    CHECK(recording_support::refusal([&] {
         epcsaft::ideal_mechanical_helmholtz(std::vector<double>{0.2, -0.1}, volume, rho0);
-    }));
+    }).find("invalid ideal amount") != std::string::npos);
 
     using AD = CppAD::AD<double>;
     const double tiny = std::numeric_limits<double>::min() / 1024.0;
@@ -1647,12 +1423,9 @@ void ideal_mechanical_owner_preserves_chart() {
     const double direct = epcsaft::ideal_mechanical_helmholtz(
         std::vector<double>{tiny}, volume, rho0, true);
     const double replay = tape.Forward(0, std::vector<double>{volume})[0];
-    recording_support::compare(
-        "clamp-tiny", "a_ideal_mechanical", "1", replay, direct,
-        "n:DBL_MIN/1024;V:2.3;rho0:1.7;clamp:true", "Relationship", "scalar_policy",
-        "double and AD honor the same subnormal clamp", "reference_scale", 0.0, 1.0e-14,
-        std::abs(replay - direct) <= 1.0e-14 * std::abs(direct), "c1-ideal-mechanical", "clamp-tiny",
-        "A/(RT)", "n,V,rho_0", "AD=double clamp policy", "amount");
+    recording_support::compare("clamp-tiny", "a_ideal_mechanical", "1", replay, direct,
+        recording_support::Rule::ReferenceScale, 0.0, 1.0e-14, "scalar_policy",
+        "n:DBL_MIN/1024;V:2.3;rho0:1.7;clamp:true");
 
     std::vector<AD> zero_independent = {AD(volume)};
     CppAD::Independent(zero_independent);
@@ -1689,16 +1462,12 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
         const auto value = epcsaft::evaluate_ideal_correlation(correlation, temperature, 1.0e5);
         const double expected = independent_integral(u);
         const std::string point = recording_support::number(u);
-        recording_support::compare(
-            (std::string("poly-") + point).c_str(), "entropy_increment", "J/mol/K",
-            value.s, expected,
+        recording_support::compare(std::string("poly-") + point, "entropy_increment", "J/mol/K", value.s, expected,
+            recording_support::Rule::ReferenceOrOne, 1.0e-14, 1.0e-12, "independent_long_double_series",
             recording_support::fields({recording_support::field("degree", degree),
                                        recording_support::field("Tref", reference),
-                                       recording_support::field("u", u)}),
-            "Relationship", "independent_long_double_series", "stable centered entropy integral",
-            "reference_or_one", 1.0e-14, 1.0e-12,
-            close(value.s, expected, 1.0e-12), "c1-poly-stability", point.c_str(),
-            "s", "degree,Tref,u", "I_k(u)=u^{k+1}\\sum_j(-u)^j/(k+j+1)", "u");
+                                       recording_support::field("u", u)}));
+        CHECK(close(value.s, expected, 1.0e-12));
     }
     for (const auto& [stress_degree, stress_u] : std::vector<std::pair<int, double>>{
              {150, 0.999}, {200, 0.999}, {300, 0.999}, {600, 0.51},
@@ -1733,16 +1502,12 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
             * (stress_u > 0.0 ? power * sum : sum));
         const std::string point = std::to_string(stress_degree) + "/"
             + recording_support::number(stress_u);
-        recording_support::compare(
-            (std::string("poly-stress-") + point).c_str(), "entropy_increment", "J/mol/K",
-            value.s, expected,
+        recording_support::compare(std::string("poly-stress-") + point, "entropy_increment", "J/mol/K", value.s,
+            expected, recording_support::Rule::ReferenceOrOne, 1.0e-12, 1.0e-12, "independent_long_double_series",
             recording_support::fields({recording_support::field("degree", stress_degree),
                                        recording_support::field("Tref", 1.0),
-                                       recording_support::field("u", stress_u)}),
-            "Relationship", "independent_long_double_series", "stable stress-point entropy",
-            "reference_or_one", 1.0e-12, 1.0e-12, close(value.s, expected, 1.0e-12),
-            "c1-poly-stability", point.c_str(), "s", "degree,Tref,u",
-            "I_k(u)=u^{k+1}\\sum_j(-u)^j/(k+j+1)", "u");
+                                       recording_support::field("u", stress_u)}));
+        CHECK(close(value.s, expected, 1.0e-12));
     }
     const epcsaft::IdealCorrelation near_anchor{
         epcsaft::IdealPolynomial{{0.0, 0.0, 1.0}, reference, 0.0, 0.0}, 1.0e5};
@@ -1767,12 +1532,8 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
     const double replay = tape.Forward(0, std::vector<double>{reference * 1.51})[0];
     const double direct = epcsaft::evaluate_ideal_correlation(
         correlation, reference * 1.51, 1.0e5).s;
-    recording_support::compare(
-        "poly-tape-switch", "entropy_increment", "J/mol/K", replay, direct,
-        "degree:60;Trecord:596;Treplay:604", "Relationship", "CppAD_replay",
-        "same AD tape crosses entropy representation switch", "reference_or_one", 0.0, 1.0e-12,
-        close(replay, direct, 1.0e-12), "c1-poly-stability", "tape-switch", "s",
-        "T", "s_{AD}(604)=s(604)", "T");
+    recording_support::compare("poly-tape-switch", "entropy_increment", "J/mol/K", replay, direct,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "CppAD_replay", "degree:60;Trecord:596;Treplay:604");
 
     std::vector<AD> boundary_independent = {AD(reference * 1.99)};
     CppAD::Independent(boundary_independent);
@@ -1783,13 +1544,9 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
         0, std::vector<double>{reference * 2.01})[0];
     const double boundary_direct = epcsaft::evaluate_ideal_correlation(
         correlation, reference * 2.01, 1.0e5).s;
-    recording_support::compare(
-        "poly-tape-large-switch", "entropy_increment", "J/mol/K", boundary_replay,
-        boundary_direct, "degree:60;Trecord:796;Treplay:804", "Relationship", "CppAD_replay",
-        "same AD tape crosses the positive entropy representation boundary", "reference_or_one",
-        0.0, 1.0e-12, close(boundary_replay, boundary_direct, 1.0e-12),
-        "c1-poly-stability", "tape-large-switch", "s", "T",
-        "s_{AD}(804)=s(804)", "T");
+    recording_support::compare("poly-tape-large-switch", "entropy_increment", "J/mol/K", boundary_replay,
+        boundary_direct, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "CppAD_replay",
+        "degree:60;Trecord:796;Treplay:804");
 
     std::vector<double> overflow_coefficients(151, 0.0);
     overflow_coefficients[150] = 1.0;
@@ -1813,24 +1570,13 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
              {"T401", overflow_one, 1.0, 1.0 / 151.0, overflow_entropy}}) {
         const std::string inputs = std::string("a150:1;Tref:400;T:")
             + (point == std::string("anchor") ? "400" : "401");
-        recording_support::compare(
-            (std::string("poly-overflow/") + point + "/cp").c_str(), "cp", "J/mol/K",
-            value.cp, expected_cp, inputs, "Relationship", "independent_equation_evaluation",
-            "high-degree anchor remains finite", "reference_or_one", 0.0, 1.0e-14,
-            close(value.cp, expected_cp, 1.0e-14), "c1-poly-stability",
-            (std::string("poly-overflow/") + point + "/cp").c_str(), "cp", "T", "cp=(T-Tref)^150", "T");
-        recording_support::compare(
-            (std::string("poly-overflow/") + point + "/h").c_str(), "h", "J/mol",
-            value.h, expected_h, inputs, "Relationship", "independent_equation_evaluation",
-            "high-degree enthalpy remains finite", "reference_or_one", 0.0, 1.0e-14,
-            close(value.h, expected_h, 1.0e-14), "c1-poly-stability",
-            (std::string("poly-overflow/") + point + "/h").c_str(), "h", "T", "h=integral(cp)dT", "T");
-        recording_support::compare(
-            (std::string("poly-overflow/") + point + "/s").c_str(), "s", "J/mol/K",
-            value.s, expected_s, inputs, "Relationship", "independent_equation_evaluation",
-            "high-degree entropy remains finite", "reference_or_one", 0.0, 1.0e-14,
-            close(value.s, expected_s, 1.0e-14), "c1-poly-stability",
-            (std::string("poly-overflow/") + point + "/s").c_str(), "s", "T", "s=integral(cp/T)dT", "T");
+        recording_support::compare(std::string("poly-overflow/") + point + "/cp", "cp", "J/mol/K", value.cp,
+            expected_cp, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "independent_equation_evaluation",
+            inputs);
+        recording_support::compare(std::string("poly-overflow/") + point + "/h", "h", "J/mol", value.h, expected_h,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "independent_equation_evaluation", inputs);
+        recording_support::compare(std::string("poly-overflow/") + point + "/s", "s", "J/mol/K", value.s, expected_s,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "independent_equation_evaluation", inputs);
     }
 
     // A finite coefficient-weighted power must not form the overflowing raw power.
@@ -1849,12 +1595,9 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
              {"h", scaled.h, static_cast<double>(scaled_cp * 400 / 151)},
              {"s", scaled.s, static_cast<double>(scaled_cp * scaled_sum / 2)}}) {
         const std::string point = std::string("poly-scaled/") + name;
-        recording_support::compare(
-            point.c_str(), name, std::string(name) == "h" ? "J/mol" : "J/mol/K", actual, expected,
-            "a150:1e-300;Tref:400;T:800", "Relationship", "independent_long_double_series",
-            "finite coefficient-weighted moments", "reference_or_one", 0.0, 1.0e-12,
-            close(actual, expected, 1.0e-12), "c1-poly-stability", point.c_str(), name,
-            "T", "cp=a150(T-Tref)^150;h=int(cp);s=int(cp/T)", "T");
+        recording_support::compare(point, name, std::string(name) == "h" ? "J/mol" : "J/mol/K", actual, expected,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "independent_long_double_series",
+            "a150:1e-300;Tref:400;T:800");
     }
 
     // A nonconstant tape traverses both signs, both recurrences and the anchor.
@@ -1880,12 +1623,9 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
                  {"T3d3s", temperature*temperature*temperature*6*third[1],
                   2*temperature*temperature-2*temperature*cp_prime+2*cp}}) {
             const std::string point = "poly-replay/" + recording_support::number(temperature) + "/" + name;
-            recording_support::compare(
-                point.c_str(), name, "J/mol/K", actual, expected,
-                "a2:1;Tref:1;Trecord:1.5;T:" + recording_support::number(temperature),
-                "Relationship", "analytic_integral_and_derivatives", "same-tape nonconstant entropy identities",
-                "reference_or_one", 0.0, 1.0e-12, close(actual, expected, 1.0e-12),
-                "c1-poly-stability", point.c_str(), name, "T", "dh=cp;Tds=cp;cp=(T-1)^2", "T");
+            recording_support::compare(point, name, "J/mol/K", actual, expected,
+                recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "analytic_integral_and_derivatives",
+                "a2:1;Tref:1;Trecord:1.5;T:" + recording_support::number(temperature));
         }
     }
 
@@ -1900,12 +1640,9 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
         const double replay = positive_tape.Forward(0, std::vector<double>{temperature})[0];
         const double expected = 30.0 * std::log(temperature / 400.0);
         const std::string point = "negative-replay/" + std::to_string(temperature);
-        recording_support::compare(
-            point.c_str(), "entropy", "J/mol/K", replay, expected,
-            "cp:30;Tref:400;Trecord:500;Treplay:" + std::to_string(temperature),
-            "Relationship", "CppAD_replay", "positive-to-negative entropy replay",
-            "reference_or_one", 0.0, 1.0e-14, close(replay, expected, 1.0e-14),
-            "c1-poly-stability", point.c_str(), "s", "T", "s=30 ln(T/400)", "T");
+        recording_support::compare(point, "entropy", "J/mol/K", replay, expected,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "CppAD_replay",
+            "cp:30;Tref:400;Trecord:500;Treplay:" + std::to_string(temperature));
     }
     std::vector<AD> negative_record = {AD(300.0)};
     CppAD::Independent(negative_record);
@@ -1916,12 +1653,9 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
         const double replay = negative_tape.Forward(0, std::vector<double>{temperature})[0];
         const double expected = 30.0 * std::log(temperature / 400.0);
         const std::string point = "negative-negative/" + std::to_string(temperature);
-        recording_support::compare(
-            point.c_str(), "entropy", "J/mol/K", replay, expected,
-            "cp:30;Tref:400;Trecord:300;Treplay:" + std::to_string(temperature),
-            "Relationship", "CppAD_replay", "negative-to-negative entropy replay",
-            "reference_or_one", 0.0, 1.0e-14, close(replay, expected, 1.0e-14),
-            "c1-poly-stability", point.c_str(), "s", "T", "s=30 ln(T/400)", "T");
+        recording_support::compare(point, "entropy", "J/mol/K", replay, expected,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "CppAD_replay",
+            "cp:30;Tref:400;Trecord:300;Treplay:" + std::to_string(temperature));
     }
     std::vector<AD> derivative_record = {AD(300.0)};
     CppAD::Independent(derivative_record);
@@ -1930,18 +1664,10 @@ void ideal_polynomial_entropy_is_stable_across_switches() {
     CppAD::ADFun<double> derivative_tape(
         derivative_record, {derivative_taped.h, derivative_taped.s});
     const auto derivative = derivative_tape.Jacobian(std::vector<double>{200.0});
-    recording_support::compare(
-        "negative-derivative/dh", "dh_dT", "J/mol/K", derivative[0], 30.0,
-        "cp:30;Tref:400;T:200", "Relationship", "CppAD_derivative",
-        "negative branch dh/dT=cp", "reference_or_one", 0.0, 1.0e-14,
-        close(derivative[0], 30.0, 1.0e-14), "c1-poly-stability",
-        "negative-derivative/dh", "dh/dT", "T", "dh/dT=cp", "T");
-    recording_support::compare(
-        "negative-derivative/ds", "T_ds_dT", "J/mol/K", 200.0 * derivative[1], 30.0,
-        "cp:30;Tref:400;T:200", "Relationship", "CppAD_derivative",
-        "negative branch T ds/dT=cp", "reference_or_one", 0.0, 1.0e-14,
-        close(200.0 * derivative[1], 30.0, 1.0e-14), "c1-poly-stability",
-        "negative-derivative/ds", "T ds/dT", "T", "T ds/dT=cp", "T");
+    recording_support::compare("negative-derivative/dh", "dh_dT", "J/mol/K", derivative[0], 30.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "CppAD_derivative", "cp:30;Tref:400;T:200");
+    recording_support::compare("negative-derivative/ds", "T_ds_dT", "J/mol/K", 200.0 * derivative[1], 30.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "CppAD_derivative", "cp:30;Tref:400;T:200");
 }
 
 }  // namespace

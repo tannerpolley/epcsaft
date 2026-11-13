@@ -36,14 +36,12 @@ void check_trace_reaction_balance() {
         recording_support::field("P_Pa", 101325.0), recording_support::field("feed_mol", problem.feed.values),
         recording_support::field("iterations", result.iterations), recording_support::field("evaluations", result.evaluations)});
     recording_support::compare_custom("trace-reaction-balance/rows", "classified_residual", "1", residual, 0.0,
-        inputs, "Relationship", "ALG-EQUILIBRIUM", "Fresh classified rows meet the caller criterion",
-        "residual<=1e-10", residual <= 1e-10, "trace-reaction-balance");
+        "residual<=1e-10", residual <= 1e-10, "ALG-EQUILIBRIUM", inputs);
     CHECK(result.success);
     CHECK(compile_problem(model, problem).classified_residual_norm(result.coordinates) <= 1e-10);
     const double inventory = result.amounts[0] * (result.mole_fractions[1] + 2.0 * result.mole_fractions[2]);
     recording_support::compare_custom("trace-reaction-balance/inventory", "conserved_amount", "mol", inventory, 1e-8,
-        inputs, "Relationship", "reaction-equilibrium", "The 2A=B conserved inventory meets 1e-10 relative",
-        "abs(inventory-1e-8)<=1e-18", std::abs(inventory - 1e-8) <= 1e-18, "trace-reaction-balance");
+        "abs(inventory-1e-8)<=1e-18", std::abs(inventory - 1e-8) <= 1e-18, "reaction-equilibrium", inputs);
     for (const double x : result.mole_fractions) CHECK(std::isfinite(x) && x > 0.0);
 }
 
@@ -61,14 +59,9 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
             recording_support::field("coordinates", result.coordinates),
             recording_support::field("row", row), recording_support::field("limit", limit),
         });
-        recording_support::compare(
-            (std::string("residual/") + case_id + "/" + std::to_string(row)).c_str(),
-            "equilibrium_residual", "1", result.residuals[row], 0.0, inputs,
-            "Relationship", "equilibrium-residual", "residual is within convergence limit",
-            "reference_or_one", limit, 0.0, std::abs(result.residuals[row]) <= limit,
-            "s1-residual", (std::string(case_id) + "/" + std::to_string(row)).c_str(),
-            "r", "T,P,\\mathbf{z},row",
-            "|r_i|\\leq\\ell", "row");
+        recording_support::compare(std::string("residual/") + case_id + "/" + std::to_string(row),
+            "equilibrium_residual", "1", result.residuals[row], 0.0, recording_support::Rule::ReferenceOrOne, limit,
+            0.0, "equilibrium-residual", inputs);
     }
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     CHECK(compiled.classified_residual_norm(result.coordinates) <= limit);
@@ -104,55 +97,35 @@ void verify_s1(const epcsaft::HelmholtzModel& model,
             recording_support::field("x", x), recording_support::field("phase", phase),
             recording_support::field("limit", limit),
         });
-        recording_support::compare(
-            (std::string("gibbs-dual/") + case_id + "/" + std::to_string(phase)).c_str(),
-            "gibbs_dual_residual", "1", gibbs, lambda_Bx, phase_inputs,
-            "Relationship", "KKT", "phase Gibbs value equals balance dual",
-            "reference_or_one", limit, 0.0, std::abs(gibbs - lambda_Bx) <= limit,
-            "s1-gibbs-dual", (std::string(case_id) + "/" + std::to_string(phase)).c_str(),
-            "g", "T,P,\\mathbf{x},phase",
-            "g=\\lambda^TBx", "phase");
+        recording_support::compare(std::string("gibbs-dual/") + case_id + "/" + std::to_string(phase),
+            "gibbs_dual_residual", "1", gibbs, lambda_Bx, recording_support::Rule::ReferenceOrOne, limit, 0.0, "KKT",
+            phase_inputs);
         bool ion_phase = false;
         for (const auto species : compiled.problem.phases[phase].support)
             ion_phase = ion_phase || charges[species] != 0;
         if (ion_phase) {
-            recording_support::compare(
-                (std::string("charge/") + case_id + "/" + std::to_string(phase)).c_str(),
-                "phase_charge", "1", charge, 0.0, phase_inputs,
-                "Relationship", "charge-balance", "ionic phase charge is zero",
-                "reference_or_one", limit, 0.0, std::abs(charge) <= limit,
-                "s1-charge", (std::string(case_id) + "/" + std::to_string(phase)).c_str(),
-                "q", "T,P,\\mathbf{x},phase",
-                "q=0", "phase");
+            recording_support::compare(std::string("charge/") + case_id + "/" + std::to_string(phase), "phase_charge",
+                "1", charge, 0.0, recording_support::Rule::ReferenceOrOne, limit, 0.0, "charge-balance", phase_inputs);
         }
         for (const auto& reaction : compiled.problem.reactions) {
             double affinity = 0.0;
             for (std::size_t species = 0; species < components; ++species)
                 affinity += reaction.stoichiometry[species] * chemical[species];
-            recording_support::compare(
-                (std::string("affinity/") + case_id + "/" + std::to_string(phase)
-                 + "/" + reaction.name).c_str(),
-                "reaction_affinity", "J/mol", affinity, 0.0, phase_inputs,
-                "Relationship", "reaction-equilibrium", "reaction affinity is zero",
-                "reference_or_one", limit, 0.0, std::abs(affinity) <= limit,
-                "s1-affinity", (std::string(case_id) + "/" + std::to_string(phase)
-                                 + "/" + reaction.name).c_str(),
-                "A", "T,P,\\mathbf{x},phase",
-                "A=0", "reaction");
+            recording_support::compare(std::string("affinity/") + case_id + "/" + std::to_string(phase)
+                 + "/" + reaction.name,
+                "reaction_affinity", "J/mol", affinity, 0.0, recording_support::Rule::ReferenceOrOne, limit, 0.0,
+                "reaction-equilibrium", phase_inputs);
         }
     }
     double feed_dual = 0.0;
     for (std::size_t row = 0; row < compiled.rank; ++row)
         feed_dual += result.multipliers[row] * compiled.balance[row];
-    recording_support::compare(
-        (std::string("feed-dual/") + case_id).c_str(), "objective", "1", result.objective, feed_dual,
+    recording_support::compare(std::string("feed-dual/") + case_id, "objective", "1", result.objective, feed_dual,
+        recording_support::Rule::ReferenceOrOne, limit, 0.0, "KKT",
         recording_support::fields({recording_support::field("T", *result.temperature),
                                    recording_support::field("P", *result.pressure),
                                    recording_support::field("coordinates", result.coordinates),
-                                   recording_support::field("limit", limit)}),
-        "Relationship", "KKT", "objective equals feed balance dual",
-        "reference_or_one", limit, 0.0, std::abs(result.objective - feed_dual) <= limit,
-        "s1-feed-dual", case_id, "g", "T,P,\\mathbf{z}", "g=\\lambda^Tb", "objective");
+                                   recording_support::field("limit", limit)}));
 }
 
 void check_s1() {
@@ -222,48 +195,34 @@ void check_s2() {
     binary.temperature.value = 180.0;
     binary.pressure.value = 1.0e5;
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, binary);
-    recording_support::compare(
-        "binary-success", "success", "bool", result.success ? 1.0 : 0.0, 1.0,
+    recording_support::compare("binary-success", "success", "bool", result.success ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "stability",
         recording_support::fields({recording_support::field("T", binary.temperature.value),
                                    recording_support::field("P", binary.pressure.value),
-                                   recording_support::field("feed", binary.feed.values)}),
-        "Relationship", "stability", "binary solution succeeds", "reference_or_one", 0.0, 0.0,
-        result.success, "s2-binary-success", "binary", "success", "T,P,feed",
-        "success=1", "case");
+                                   recording_support::field("feed", binary.feed.values)}));
     const bool binary_curvature_positive = std::isfinite(result.reduced_hessian_minimum)
         && result.reduced_hessian_minimum > 0.0;
-    recording_support::compare_custom(
-        "binary-curvature", "reduced_hessian_minimum", "1", result.reduced_hessian_minimum,
-        0.0, recording_support::fields({recording_support::field("T", binary.temperature.value),
+    recording_support::compare_custom("binary-curvature", "reduced_hessian_minimum", "1",
+        result.reduced_hessian_minimum, 0.0, "isfinite(model) && model > reference", binary_curvature_positive,
+        "stability", recording_support::fields({recording_support::field("T", binary.temperature.value),
                                          recording_support::field("P", binary.pressure.value),
-                                         recording_support::field("feed", binary.feed.values)}),
-        "Relationship", "stability", "reduced Hessian minimum is positive",
-        "isfinite(model) && model > reference", binary_curvature_positive,
-        "s2-binary-curvature", "binary", "\\lambda_{min}(H)", "T,P,feed",
-        "\\lambda_{min}(H)>0", "stability");
+                                         recording_support::field("feed", binary.feed.values)}));
     CHECK(result.success && binary_curvature_positive);
     const auto reactive = epcsaft::equilibrium::solve_equilibrium(
         epcsaft::HelmholtzModel(equilibrium_support::synthetic_reactive_ternary()),
         equilibrium_support::synthetic_reactive_problem());
-    recording_support::compare(
-        "reactive-success", "success", "bool", reactive.success ? 1.0 : 0.0, 1.0,
+    recording_support::compare("reactive-success", "success", "bool", reactive.success ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "stability",
         recording_support::fields({recording_support::field("T", 298.15),
                                    recording_support::field("P", 1.0e5),
-                                   recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}),
-        "Relationship", "stability", "reactive solution succeeds", "reference_or_one", 0.0, 0.0,
-        reactive.success, "s2-reactive-success", "reactive", "success", "T,P,feed",
-        "success=1", "case");
+                                   recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}));
     const bool reactive_curvature_positive = std::isfinite(reactive.reduced_hessian_minimum)
         && reactive.reduced_hessian_minimum > 0.0;
-    recording_support::compare_custom(
-        "reactive-curvature", "reduced_hessian_minimum", "1", reactive.reduced_hessian_minimum,
-        0.0, recording_support::fields({recording_support::field("T", 298.15),
+    recording_support::compare_custom("reactive-curvature", "reduced_hessian_minimum", "1",
+        reactive.reduced_hessian_minimum, 0.0, "isfinite(model) && model > reference", reactive_curvature_positive,
+        "stability", recording_support::fields({recording_support::field("T", 298.15),
                                          recording_support::field("P", 1.0e5),
-                                         recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}),
-        "Relationship", "stability", "reactive reduced Hessian minimum is positive",
-        "isfinite(model) && model > reference", reactive_curvature_positive,
-        "s2-reactive-curvature", "reactive", "\\lambda_{min}(H)", "T,P,feed",
-        "\\lambda_{min}(H)>0", "stability");
+                                         recording_support::field("feed", std::vector<double>{0.05, 0.475, 0.475})}));
     CHECK(reactive.success && reactive_curvature_positive);
 
     // #84: the native all-solute path must include the density factor, retain
@@ -287,14 +246,10 @@ void check_s2() {
           && second.status == epcsaft::NeutralReferenceStatus::Available);
     CHECK(first.terminal_contraction.has_value() && second.terminal_contraction.has_value());
     const double path_gap = std::abs(*first.terminal_contraction - *second.terminal_contraction);
-    recording_support::compare_custom(
-        "neutral-reference/path-gap", "terminal_contraction_gap", "1", path_gap, 5.0e-5,
+    recording_support::compare_custom("neutral-reference/path-gap", "terminal_contraction_gap", "1", path_gap, 5.0e-5,
+        "isfinite(model) && model <= reference", path_gap <= 5.0e-5, "independent-neutral-paths",
         recording_support::fields({recording_support::field("T", 300.0),
-            recording_support::field("P", 1.0e5), recording_support::field("nu", nu)}),
-        "Relationship", "independent-neutral-paths",
-        "independent positive neutral solute paths agree at the finite terminal point",
-        "isfinite(model) && model <= reference", path_gap <= 5.0e-5,
-        "s2-neutral-reference", "path-gap", "|C_a-C_b|", "T,P,nu", "|C_a-C_b|<=5e-5", "path");
+            recording_support::field("P", 1.0e5), recording_support::field("nu", nu)}));
     const double molality = 1.0e-14;
     const double solvent_moles = 1.0 / reference_model.parameters().molar_mass_kg_per_mol[0];
     const double total = solvent_moles + 2.0 * molality;
@@ -307,16 +262,11 @@ void check_s2() {
     for (std::size_t i = 0; i < nu.size(); ++i)
         identity += nu[i] * ((*terminal.log_fugacity_coefficient)[i].value()
             + std::log(1.0e5 / (epcsaft::GAS_CONSTANT_J_PER_MOL_K * 300.0)));
-    recording_support::compare(
-        "neutral-reference/lambda-identity", "terminal_contraction", "1",
-        *first.terminal_contraction, identity,
+    recording_support::compare("neutral-reference/lambda-identity", "terminal_contraction", "1",
+        *first.terminal_contraction, identity, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-9,
+        "fugacity-pressure-identity",
         recording_support::fields({recording_support::field("rho", terminal.molar_density),
-            recording_support::field("observed_terminal_change", epcsaft::core::optional_number(first.observed_terminal_change))}),
-        "Relationship", "fugacity-pressure-identity",
-        "Lambda includes log(P/(RT rho0)) in the independent fugacity form",
-        "reference_or_one", 0.0, 1.0e-9,
-        close_with_tolerance(*first.terminal_contraction, identity, 1.0e-9),
-        "s2-neutral-reference", "lambda-identity", "C", "rho,phi,T,P", "C=nu.Lambda", "identity");
+            recording_support::field("observed_terminal_change", epcsaft::core::optional_number(first.observed_terminal_change))}));
     const auto fixed_pressure = epcsaft::reaction_reference(
         reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu,
         epcsaft::ReactionReference{1.0e5, reference.source_basis});
@@ -358,14 +308,10 @@ void check_s2() {
     CHECK(std::abs(*fixed_pressure.terminal_contraction - *first.terminal_contraction) <= 1.0e-12);
     const double pressure_gap = std::abs(
         *system_pressure.terminal_contraction - *fixed_pressure.terminal_contraction);
-    recording_support::compare_custom(
-        "neutral-reference/pressure-path", "pressure_contraction_gap", "1", pressure_gap, 1.0e-6,
+    recording_support::compare_custom("neutral-reference/pressure-path", "pressure_contraction_gap", "1", pressure_gap,
+        1.0e-6, "isfinite(model) && model > reference", pressure_gap > 1.0e-6, "source-pressure-selection",
         recording_support::fields({recording_support::field("system_pressure", 2.0e5),
-            recording_support::field("reference_pressure", 1.0e5)}),
-        "Relationship", "source-pressure-selection",
-        "system and explicit source pressures produce distinct Delta-nu contraction values",
-        "isfinite(model) && model > reference", pressure_gap > 1.0e-6,
-        "s2-neutral-reference", "pressure-path", "|C_P-C_P0|", "T,P,P0", "|gap|>1e-6", "pressure");
+            recording_support::field("reference_pressure", 1.0e5)}));
     CHECK(system_pressure.terminal_contraction_pressure_derivative.has_value()
           && system_pressure.terminal_contraction_pressure_second_derivative.has_value()
           && fixed_pressure.terminal_contraction_pressure_derivative.has_value()
@@ -467,13 +413,8 @@ void check_s2() {
                 recording_support::field("T", temperature), recording_support::field("P", pressure),
                 recording_support::field("P_ref", sources[row].reference_pressure_pa.value_or(pressure)),
                 recording_support::field("step", step)});
-            recording_support::compare(
-                ("neutral-reference/temperature-slope/" + label).c_str(), "dC_dT", "1/K",
-                slope, centered, inputs, "Relationship", "centered-terminal-difference",
-                "dC/dT|_P carries the implicit density and association chains of the reference",
-                "reference_scale", 0.0, 1.0e-6,
-                std::abs(slope - centered) <= 1.0e-6 * std::abs(centered),
-                "s2-neutral-reference", "temperature-slope", "dC/dT", "T,P,nu", "rel<=1e-6", "slope");
+            recording_support::compare("neutral-reference/temperature-slope/" + label, "dC_dT", "1/K", slope, centered,
+                recording_support::Rule::ReferenceScale, 0.0, 1.0e-6, "centered-terminal-difference", inputs);
             // The same manufactured formula-reaction solve as the Python test; its first-order
             // T and T/P actions of x_Na are the rows that the installed wheel must reproduce.
             auto problem = equilibrium_support::flash(3);
@@ -497,11 +438,9 @@ void check_s2() {
                     compiled, solved, {{sodium}, {direction}}).results[0];
                 CHECK(action.status == epcsaft::equilibrium::SolvedStateActionStatus::Available
                       && action.action.has_value());
-                recording_support::observe(
-                    ("reference-temperature/ionic/" + std::string(row == 0 ? "system" : "fixed")
-                     + "/dx_Na/" + name).c_str(), "dx_Na", "1/K", action.action.value_or(0.0),
-                    std::nullopt, inputs, "Relationship", "solved-state-first-action",
-                    "native first-order referenced T/P action for the installed-wheel comparison");
+                recording_support::observe("reference-temperature/ionic/" + std::string(row == 0 ? "system" : "fixed")
+                     + "/dx_Na/" + name,
+                    "dx_Na", "1/K", action.action.value_or(0.0), std::nullopt, "solved-state-first-action", inputs);
             }
             // Order two on the ionic ladder (Born, density and association third-derivative chains;
             // the sqrt(m) limit removes the Debye-Hueckel tail, so it is not tested here) against the
@@ -513,13 +452,9 @@ void check_s2() {
             const double second = center[row].terminal_contraction_temperature_second_derivative.value_or(0.0);
             const double second_centered = (upper[row].terminal_contraction_temperature_derivative.value_or(0.0)
                 - lower[row].terminal_contraction_temperature_derivative.value_or(0.0)) / (2.0 * step);
-            recording_support::compare(
-                ("neutral-reference/temperature-second-slope/" + label).c_str(), "d2C_dT2", "1/K^2",
-                second, second_centered, inputs, "Relationship", "centered-slope-difference",
-                "d2C/dT2|_P carries the Born, density and association chains through E3",
-                "reference_scale", 0.0, 1.0e-6,
-                std::abs(second - second_centered) <= 1.0e-6 * std::abs(second_centered),
-                "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
+            recording_support::compare("neutral-reference/temperature-second-slope/" + label, "d2C_dT2", "1/K^2",
+                second, second_centered, recording_support::Rule::ReferenceScale, 0.0, 1.0e-6,
+                "centered-slope-difference", inputs);
             const auto thermal_solved = epcsaft::equilibrium::solve_equilibrium(ionic_thermal, problem);
             CHECK(thermal_solved.success);
             epcsaft::equilibrium::SolvedStateObservable enthalpy, capacity;
@@ -532,11 +467,10 @@ void check_s2() {
             for (std::size_t i = 0; i < 2; ++i) {
                 CHECK(calorics[i].status == epcsaft::equilibrium::SolvedStateActionStatus::Available
                       && calorics[i].value.has_value());
-                recording_support::observe(
-                    ("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed")
-                     + (i == 0 ? "/h" : "/cp")).c_str(), i == 0 ? "h" : "cp", i == 0 ? "J/mol" : "J/(mol K)",
-                    calorics[i].value.value_or(0.0), std::nullopt, inputs, "Relationship", "reference-species-calorics",
-                    "native total caloric value with reaction-completed ions for the installed-wheel comparison");
+                recording_support::observe("reference-calorics/ionic/" + std::string(row == 0 ? "system" : "fixed")
+                     + (i == 0 ? "/h" : "/cp"),
+                    i == 0 ? "h" : "cp", i == 0 ? "J/mol" : "J/(mol K)", calorics[i].value.value_or(0.0), std::nullopt,
+                    "reference-species-calorics", inputs);
             }
         }
     }
@@ -576,12 +510,8 @@ void check_s2() {
         const auto inputs = recording_support::fields({
             recording_support::field("T", temperature), recording_support::field("P", pressure),
             recording_support::field("step", step)});
-        recording_support::compare(
-            "neutral-reference/temperature-second-slope/associating", "d2C_dT2", "1/K^2",
-            second, centered, inputs, "Relationship", "centered-slope-difference",
-            "d2C/dT2|_P carries the implicit density and association chains through E3",
-            "reference_scale", 0.0, 1.0e-6, std::abs(second - centered) <= 1.0e-6 * std::abs(centered),
-            "s2-neutral-reference", "temperature-second-slope", "d2C/dT2", "T,P,nu", "rel<=1e-6", "slope");
+        recording_support::compare("neutral-reference/temperature-second-slope/associating", "d2C_dT2", "1/K^2",
+            second, centered, recording_support::Rule::ReferenceScale, 0.0, 1.0e-6, "centered-slope-difference", inputs);
 
     }
 
@@ -652,13 +582,8 @@ void check_s2() {
                     epcsaft::core::optional_number(diagnostic.observed_terminal_change))});
             const std::string id = std::string("neutral-reference/temperature-parameter/N/")
                 + (source == 0 ? "system" : "fixed") + "/tied-epsilon/pure-identity";
-            recording_support::compare_custom(
-                id.c_str(), "R_T2_C_Ttheta", "J/(mol K)", scaled_mixed, pure_slope, inputs,
-                "Relationship", "identical-species-gibbs-helmholtz",
-                "the reference enthalpy parameter slope equals the pure-fluid pressure-chart action",
-                "abs(model-reference)<=1e-9*abs(reference)", agrees,
-                "s2-neutral-reference", "f1-N", "R T^2 C_{Ttheta}", "T,P,P_ref,epsilon",
-                "R T^2 C_{Ttheta}=d h_res/d epsilon", "source");
+            recording_support::compare_custom(id, "R_T2_C_Ttheta", "J/(mol K)", scaled_mixed, pure_slope,
+                "abs(model-reference)<=1e-9*abs(reference)", agrees, "identical-species-gibbs-helmholtz", inputs);
         }
     }
 
@@ -764,13 +689,10 @@ void check_s2() {
                         recording_support::field("exact_C_Ttheta", exact),
                         recording_support::field("coarse_error", coarse_error),
                         recording_support::field("fine_error", fine_error)});
-                    recording_support::compare_custom(
-                        route_id.c_str(), "C_Ttheta", coordinate == 0 ? "K^-2" : "K^-1 angstrom^-1",
-                        fine, exact, route_inputs, "Relationship", "centered-independent-difference",
-                        "the exact mixed reference slope agrees with independent theta and T differences",
-                        "abs(fine-exact)<=1e-6*abs(exact) && abs(fine-exact)<=abs(coarse-exact)/2",
-                        agrees, "s2-neutral-reference", "f1-I", "C_{Ttheta}", "T,P,P_ref,theta,h",
-                        "O(h^2) centered difference converges to C_{Ttheta}", route);
+                    recording_support::compare_custom(route_id, "C_Ttheta",
+                        coordinate == 0 ? "K^-2" : "K^-1 angstrom^-1", fine, exact,
+                        "abs(fine-exact)<=1e-6*abs(exact) && abs(fine-exact)<=abs(coarse-exact)/2", agrees,
+                        "centered-independent-difference", route_inputs);
                 }
             }
         }
@@ -862,13 +784,9 @@ void check_s2() {
                 recording_support::field("action", exact), recording_support::field("richardson", richardson),
                 recording_support::field("direct_reference_species_term", direct),
                 recording_support::field("criterion", tolerance)});
-            recording_support::compare_custom(
-                id, "d(nH)/dtheta", "J per native parameter unit", richardson, exact, inputs,
-                "Relationship", "richardson-centered-resolve",
-                "the extensive total enthalpy action equals rebuilt-model re-solves",
-                "abs(Richardson-action)<=1e-6*abs(Richardson) && abs(fine-action)<=abs(coarse-action)/2",
-                agrees, "s2-neutral-reference", id, "d(nH)/dtheta", "T,P,theta,h",
-                "(4 fine-coarse)/3=d(nH)/dtheta", "coordinate");
+            recording_support::compare_custom(id, "d(nH)/dtheta", "J per native parameter unit", richardson, exact,
+                "abs(Richardson-action)<=1e-6*abs(Richardson) && abs(fine-action)<=abs(coarse-action)/2", agrees,
+                "richardson-centered-resolve", inputs);
             return Ladder{exact, coarse, fine, richardson, direct};
         };
         const auto discrimination = [&](const std::string& id, const Ladder& row) {
@@ -883,14 +801,9 @@ void check_s2() {
                 recording_support::field("omission_over_criterion",
                     tolerance > 0.0 ? std::abs(row.direct) / tolerance : std::numeric_limits<double>::quiet_NaN())});
             const std::string comparison = id + "/omission-discrimination";
-            recording_support::compare_custom(
-                comparison.c_str(), "omitted_direct_enthalpy_term", "J per native parameter unit",
-                std::abs(row.direct), threshold,
-                inputs, "Discrimination", "reference-species-parameter-chain",
-                "omitting the direct referenced-species enthalpy slope exceeds ten action tolerances",
-                "abs(omitted_term)>=10*1e-6*abs(Richardson)", separated,
-                "s2-neutral-reference", id.c_str(), "n_sum_x_dh_dtheta", "n,x,theta",
-                "n sum_i x_i dh_i/dtheta", "case");
+            recording_support::compare_custom(comparison, "omitted_direct_enthalpy_term",
+                "J per native parameter unit", std::abs(row.direct), threshold,
+                "abs(omitted_term)>=10*1e-6*abs(Richardson)", separated, "reference-species-parameter-chain", inputs);
         };
 
         // Case N reaction b at the system-pressure reference.
@@ -1082,8 +995,7 @@ void check_s2() {
         CHECK(close_pressure_jet(pressure_series.rows[1][row], centered_first)
               && close_pressure_jet(pressure_series.rows[2][row], centered_second_coefficient));
     }
-    bool pressure_third_rejected = false;
-    try {
+    CHECK(recording_support::refusal([&] {
         (void)free_pressure_compiled.row_series(
             free_pressure_prepared,
             {free_pressure_prepared.point,
@@ -1091,16 +1003,12 @@ void check_s2() {
              std::vector<double>(free_pressure_prepared.point.size(), 0.0),
              std::vector<double>(free_pressure_prepared.point.size(), 0.0)},
             pressure_control, 3);
-    } catch (const std::invalid_argument&) {
-        pressure_third_rejected = true;
-    }
-    CHECK(pressure_third_rejected);
+    }).find("row series pressure/T/parameter order is unsupported") != std::string::npos);
     const auto fixed_pressure_compiled = epcsaft::equilibrium::compile_problem(
         reference_model, referenced);
     const auto fixed_pressure_prepared = fixed_pressure_compiled.prepare(
         fixed_pressure_compiled.generic_point());
-    bool fixed_pressure_third_rejected = false;
-    try {
+    CHECK(recording_support::refusal([&] {
         (void)fixed_pressure_compiled.row_series(
             fixed_pressure_prepared,
             {fixed_pressure_prepared.point,
@@ -1108,10 +1016,7 @@ void check_s2() {
              std::vector<double>(fixed_pressure_prepared.point.size(), 0.0),
              std::vector<double>(fixed_pressure_prepared.point.size(), 0.0)},
             pressure_control, 3);
-    } catch (const std::invalid_argument&) {
-        fixed_pressure_third_rejected = true;
-    }
-    CHECK(fixed_pressure_third_rejected);
+    }).find("row series pressure/T/parameter order is unsupported") != std::string::npos);
     std::fill(pressure_control.begin(), pressure_control.end(), 0.0);
     pressure_control[2] = 1.0;
     const auto fixed_feed_series = fixed_pressure_compiled.row_series(
@@ -1223,13 +1128,11 @@ void check_ideal_mole_fraction() {
     using recording_support::fields;
     const auto record = [](const std::string& name, double value, double reference, double tolerance,
                            const std::string& inputs, const char* unit = "1") {
-        recording_support::compare(name.c_str(), name.c_str(), unit, value, reference, inputs,
-            "declared mol; true species", "independent analytical identity", "numerical verification",
-            "absolute", tolerance, 0.0, std::abs(value - reference) <= tolerance);
+        recording_support::compare(name, name.c_str(), unit, value, reference, recording_support::Rule::Absolute,
+            tolerance, 0.0, "independent analytical identity", inputs);
     };
     const auto refused = [&](const auto& call, const char* cause) {
-        std::string message;
-        try { call(); } catch (const std::invalid_argument& error) { message = error.what(); }
+        const auto message = recording_support::refusal(call);
         record(std::string("refusal-") + cause, message.find(cause) != std::string::npos, 1.0, 0.0, field("cause", message));
     };
     const std::array<std::array<double, 6>, 6> coefficients = {{
@@ -1393,15 +1296,12 @@ void check_ideal_molarity() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
     const auto compare = [](const char* name, double value, double reference, double tolerance) {
-        recording_support::compare(name, name, "1", value, reference, "V_m3=0.001 or 0.002;c0_mol_per_m3=1000",
-            "absolute mol", "analytical ideal concentration identity", "numerical verification",
-            "absolute", tolerance, 0.0, std::abs(value-reference) <= tolerance);
+        recording_support::compare(name, name, "1", value, reference, recording_support::Rule::Absolute, tolerance,
+            0.0, "analytical ideal concentration identity", "V_m3=0.001 or 0.002;c0_mol_per_m3=1000");
         std::printf("molarity,%s,%.17g,%.17g,%.17g\n", name, value, reference, value-reference);
     };
-    const auto refused = [](const auto& call) {
-        bool caught = false;
-        try { call(); } catch (const std::invalid_argument&) { caught = true; }
-        CHECK(caught);
+    const auto refused = [](const std::function<void()>& call, const char* cause) {
+        CHECK(recording_support::refusal(call).find(cause) != std::string::npos);
     };
     auto p = equilibrium_support::flash(3); p.temperature.value = 298.15;
     p.feed.values = {55.5,0,0}; p.solver_options.values[policy::row] = 1e-12;
@@ -1457,7 +1357,7 @@ void check_ideal_molarity() {
             compare("snapshot-lnQ-change",*reaction_activities(model,candidate)[0].log_quotient-*activity.log_quotient,
                 std::log1p(0.05)+std::log1p(extent/(result.amounts[0]*result.mole_fractions[2])),1e-10);
             candidate.mole_fractions={0,0.5,0.5};
-            refused([&]{reaction_activities(model,candidate);});
+            refused([&]{reaction_activities(model,candidate);},"unit-activity solvent absent from physical state");
         }
     }
     auto law=p;
@@ -1467,22 +1367,22 @@ void check_ideal_molarity() {
     for (std::size_t i=0;i<3;++i) compare("scalar-law-amount",scalar.amounts[0]*scalar.mole_fractions[i],
         correlated.amounts[0]*correlated.mole_fractions[i],1e-10);
     law.reactions[0].correlation->standard_state_id=IDEAL_MOLE_FRACTION_STANDARD_STATE_ID;
-    refused([&]{compile_problem(water,law);});
+    refused([&]{compile_problem(water,law);},"reference-basis-mismatch");
     IdealMoleFraction fractions({"water","H+","OH-"}, {0,1,-1});
     law.reactions[0].correlation->standard_state_id=IDEAL_MOLARITY_STANDARD_STATE_ID;
-    refused([&]{compile_problem(fractions,law);});
+    refused([&]{compile_problem(fractions,law);},"reference-basis-mismatch");
     for (auto V : {std::optional<double>{}, std::optional<double>{0}, std::optional<double>{-1},
                    std::optional<double>{INFINITY},std::optional<double>{NAN}})
-        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",V);});
+        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",V);},"molarity requires finite positive solution volume");
     for (const std::string solvent:{"unknown","H+"})
-        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",0.001,solvent);});
-    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",0.001);});
-    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",{},"water");});
-    refused([&]{IdealMoleFraction m({"water"},{0},{},"unknown");});
+        refused([&]{IdealMoleFraction m({"water","H+","OH-"},{0,1,-1},{},"molarity",0.001,solvent);},"unit-activity solvent must be a known neutral species");
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",0.001);},"mole-fraction basis refuses volume and unit-activity solvent");
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"mole_fraction",{},"water");},"mole-fraction basis refuses volume and unit-activity solvent");
+    refused([&]{IdealMoleFraction m({"water"},{0},{},"unknown");},"unknown ideal activity basis");
     auto invalid=p; invalid.feed.kind=FeedKind::MoleFractions; invalid.feed.values={1,0,0};
-    refused([&]{compile_problem(water,invalid);});
+    refused([&]{compile_problem(water,invalid);},"molarity feed requires absolute mol amounts");
     invalid=p; invalid.feed.values={0,1,1}; invalid.reactions.clear();
-    refused([&]{compile_problem(water,invalid);});
+    refused([&]{compile_problem(water,invalid);},"unit-activity solvent absent from positive liquid support");
     IdealMoleFraction all({"water","H+","OH-"},{0,1,-1},{},"molarity",0.001);
     const auto ordinary=solve_equilibrium(all,p);
     CHECK(ordinary.success);

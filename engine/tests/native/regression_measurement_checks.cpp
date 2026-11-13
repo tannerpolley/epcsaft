@@ -58,8 +58,7 @@ void derivative_probe(const std::string& id, const FitRequest& request, const st
             const double allowance = 1e-7 + 5e-6*std::abs(reference);
             const auto name = id + "/" + std::to_string(c) + "/" + std::to_string(row);
             reference_scale_agrees(name, "standardized_residual_action", "1", action, reference, 1e-7, 5e-6,
-                fields({field("h", h), field("refinement_change", std::abs(reference-coarse))}),
-                "exact physical input and mixed columns agree with rebuilt states", "measurement-columns");
+                fields({field("h", h), field("refinement_change", std::abs(reference-coarse))}));
             CHECK(std::abs(reference-coarse) <= allowance/4);
         }
     }
@@ -100,8 +99,7 @@ std::vector<double> row_major(const Eigen::MatrixXd& m) {
     return out;
 }
 bool scaled(const std::string& id, const char* quantity, const char* unit, double model, double reference, double s) {
-    return reference_scale_agrees(id, quantity, unit, model, reference, 1e-10*std::max(s, std::abs(reference)), 0, "",
-        "independent joint covariance reference", "measurement-correlation");
+    return reference_scale_agrees(id, quantity, unit, model, reference, 1e-10*std::max(s, std::abs(reference)), 0, "");
 }
 }  // namespace
 
@@ -150,8 +148,7 @@ void check_measurement_correlation() {
             std::cout << std::setprecision(17) << "JOINT_STEP_BOUND " << id << '/' << name << " raw_error=" << std::abs(model - reference)
                 << " step_component=" << component << " predicted_decrease=" << decrease << '\n';
             reference_scale_agrees(id + "/" + name, quantity, unit, model, reference, 1e-10*std::max(s, std::abs(reference)) + component, 0,
-                fields({field("step_component", component)}), "independent joint reference within the one-step stationarity allowance",
-                "measurement-correlation");
+                fields({field("step_component", component)}));
         };
         within("A", "A", "1", result.physical[0], beta[0], 1, std::abs(step[0]));
         for (std::size_t c = 0; c < 3; ++c) {
@@ -214,8 +211,8 @@ void check_measurement_correlation() {
     // Admission: refused before fitting, never repaired; roundoff-level asymmetry within 64 m eps is admitted.
     const auto refused = [&](const std::string& cause, const std::function<void(FitRequest&)>& edit) {
         auto item = joint(RHO, false); edit(item); const auto result = fit(item);
-        truth("correlation-refusal/" + cause, "invalid measurement matrices retain their cause",
-            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos, fields({field("message", result.message)}), "measurement-correlation");
+        truth("correlation-refusal/" + cause,
+            result.status == "invalid_setup" && result.message.find(cause) != std::string::npos, fields({field("message", result.message)}));
     };
     refused("both", [&](auto& item) { item.uncertainty->covariance = item.uncertainty->correlation; });
     refused("dimension", [&](auto& item) { item.uncertainty->correlation->resize(25); });
@@ -404,9 +401,9 @@ void check_measurement_fit() {
             CHECK(std::abs(corrected_cov-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
         }
         for (std::size_t c = 0; c < expected_q.size(); ++c)
-            reference_scale_agrees(id+"/q/"+std::to_string(c), "temperature", "K", rec.values[c], expected_q[c], 0, 1e-10, "", "analytic eliminated temperature", "measurement-fit");
-        reference_scale_agrees(id, "slope", "1/K", result.physical[0], slope, 1e-10, 0, "", "analytic errors-in-variables slope", "measurement-fit");
-        reference_scale_agrees(id+"/cost", "objective", "1", result.final_cost, cost, 1e-10, 0, "", "complete analytic objective", "measurement-fit");
+            reference_scale_agrees(id+"/q/"+std::to_string(c), "temperature", "K", rec.values[c], expected_q[c], 0, 1e-10, "");
+        reference_scale_agrees(id, "slope", "1/K", result.physical[0], slope, 1e-10, 0, "");
+        reference_scale_agrees(id+"/cost", "objective", "1", result.final_cost, cost, 1e-10, 0, "");
         CHECK(max_j_error <= 1e-10*std::max(1.0,j.cwiseAbs().maxCoeff()));
         CHECK(std::abs(result.covariance.optimizer[0]-covariance) <= 1e-10*std::max(1.0,std::abs(covariance)));
         CHECK(!result.covariance.variance_factor);
@@ -421,18 +418,17 @@ void check_measurement_reuse() {
         for (std::size_t row = 0; row < a.predictions.size(); ++row) {
             const double floor = row%2 ? 1e-12/(2*0.0180153*molality) : 1e-12;
             CHECK(agree(id+"/value/"+std::to_string(row), "prediction", "1", a.predictions[row], b.predictions[row], floor, 1e-10,
-                "", "changed-input reuse agrees with cold evaluation", "measurement-reuse"));
+                ""));
             for (std::size_t k = 0; k < a.state_densities[row].size(); ++k)
                 CHECK(agree(id+"/rho/"+std::to_string(row)+"/"+std::to_string(k), "density", "mol/m3",
-                    a.state_densities[row][k], b.state_densities[row][k], 1e-12, 1e-10, "", "finite and reference densities", "measurement-reuse"));
+                    a.state_densities[row][k], b.state_densities[row][k], 1e-12, 1e-10, ""));
             for (std::size_t k = 0; k < a.reference_values[row].size(); ++k)
                 CHECK(agree(id+"/reference/"+std::to_string(row)+"/"+std::to_string(k), "ln_phi_reference", "1",
-                    a.reference_values[row][k], b.reference_values[row][k], 1e-12, 1e-10, "", "terminal and pure reference values", "measurement-reuse"));
+                    a.reference_values[row][k], b.reference_values[row][k], 1e-12, 1e-10, ""));
         }
         for (std::size_t i = 0; i < a.residual_optimizer_gradient.size(); ++i)
             CHECK(reference_scale_agrees(id+"/column/"+std::to_string(i), "standardized_column", "1",
-                a.residual_optimizer_gradient[i], b.residual_optimizer_gradient[i], 1e-7, 5e-6, "",
-                "same-point promotion retains exact parameter and input columns", "measurement-reuse"));
+                a.residual_optimizer_gradient[i], b.residual_optimizer_gradient[i], 1e-7, 5e-6, ""));
     };
     for (const auto& shift : std::vector<std::vector<double>>{{0,1,0,0}, {0,0,1,0}, {0,0,0,1}, {0,1,1,1}}) {
         FitResult failures; ObservationEvaluator reused(request, failures, {0,1}); ObservationEvaluation initial, value, promoted;
@@ -462,8 +458,7 @@ void check_measurement_reuse() {
                 if (two.uncertainty->groups[g].rows.front()/2 != row/2) continue;
                 CHECK(reference_scale_agrees("sigma-order/"+std::to_string(order)+"/"+std::to_string(row)+"/"+std::to_string(j),
                     "standardized_input_column", "1", shared.residual_optimizer_gradient[row*7+1+c],
-                    cold[row/2].residual_optimizer_gradient[(row%2)*4+1+j], 1e-7, 5e-6, "",
-                    "same physical reference admits each consuming sigma independently", "measurement-reuse"));
+                    cold[row/2].residual_optimizer_gradient[(row%2)*4+1+j], 1e-7, 5e-6, ""));
                 CHECK(shared.input_gradient[row*6+c] == cold[row/2].input_gradient[(row%2)*3+j]);
             }
         }
@@ -485,9 +480,9 @@ void check_measurement_admission() {
     const auto request = linear_measurements();
     const auto reject = [&](FitRequest candidate, const std::string& cause, const std::string& order = "") {
         const auto result = fit(candidate);
-        truth("measurement-refusal/"+cause+order, "invalid measurement declarations retain their cause",
+        truth("measurement-refusal/"+cause+order,
             result.status == "invalid_setup" && result.message.find(cause) != std::string::npos,
-            fields({field("message", result.message)}), "measurement-admission");
+            fields({field("message", result.message)}));
     };
     auto item = request; item.uncertainty->output_sigma.clear(); reject(item, "output sigma");
     item = request; item.uncertainty->groups[0].inputs[0].sigma = -1; reject(item, "nonnegative");

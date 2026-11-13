@@ -8,7 +8,7 @@ void check_saturation_capped_addition() {
                              thermal);
   auto invalid = row;
   invalid.loading_cap = 0;
-  CHECK(rejection([&] { (void)validate_declaration(invalid, model); }) ==
+  CHECK(recording_support::refusal([&] { (void)validate_declaration(invalid, model); }) ==
         "observation positive basis and cap");
 
   const auto initial = compile_problem(model, row.problem);
@@ -24,9 +24,7 @@ void check_saturation_capped_addition() {
   }
   agree("capped-addition/ordinary-loading-node", "pressure", "Pa",
         *low.nodes.back().state.pressure, 6467.867870101388, 1e-6, 0,
-        fields({field("loading_mol_per_mol", low.nodes.back().loading)}),
-        "carried physical states resolve the frozen departure",
-        "capped-addition");
+        fields({field("loading_mol_per_mol", low.nodes.back().loading)}));
   CHECK(low.complete && !low.accepted);
   CHECK(low.causes == std::vector<std::string>{"unresolved_slope_reversal"});
 
@@ -43,13 +41,9 @@ void check_saturation_capped_addition() {
               field("cap_mol_per_mol", row.loading_cap),
               field("search_iterations", center.saturation->iterations)});
   agree("capped-addition/loading", "saturation_loading", "mol_CO2/mol_MEA",
-        *center.saturation_loading, 1.0175305291914531, 1e-8, 0, inputs,
-        "inverse loading reproduces the cold-bubble reference",
-        "capped-addition");
+        *center.saturation_loading, 1.0175305291914531, 1e-8, 0, inputs);
   agree("capped-addition/endpoint", "endpoint_loading", "mol_CO2/mol_MEA",
-        alpha, *center.saturation_loading, 0, 0, inputs,
-        "the saturation-selected endpoint equals saturation loading",
-        "capped-addition");
+        alpha, *center.saturation_loading, 0, 0, inputs);
 
   auto bubble = row.final_problem;
   bubble.feed.values = row.problem.feed.values;
@@ -57,9 +51,7 @@ void check_saturation_capped_addition() {
   const auto cold = solve_equilibrium(model, bubble);
   CHECK(cold.success && cold.pressure && cold.residual_norm() <= 1e-10);
   reference_scale_agrees("capped-addition/cold-pressure", "pressure", "Pa",
-                         *cold.pressure, row.pressure, 0, 1e-9, inputs,
-                         "ordinary cold bubble reproduces physical pressure",
-                         "capped-addition");
+                         *cold.pressure, row.pressure, 0, 1e-9, inputs);
   const auto cold_compiled = compile_problem(model, bubble);
   SolvedStateActionDirection zero;
   zero.feed_amounts_mol.assign(9, 0);
@@ -92,12 +84,8 @@ void check_saturation_capped_addition() {
       fields({field("H_initial_J", initial_h), field("H_endpoint_J", final_h),
               field("h_feed_J_per_mol", feed_h), field("added_mol", added),
               field("cold_residual", cold.residual_norm())});
-  reference_scale_agrees(
-      "capped-addition/heat", "signed_addition_enthalpy", "J/mol_CO2",
-      *center.value, reference, 0, 1e-6, heat_inputs,
-      "two referenced enthalpies and pure feed independently compose the "
-      "signed heat",
-      "capped-addition");
+  reference_scale_agrees("capped-addition/heat", "signed_addition_enthalpy", "J/mol_CO2",
+      *center.value, reference, 0, 1e-6, heat_inputs);
 
   const auto exact =
       differentiate_group(model, {&row}, center, coordinates).front();
@@ -168,10 +156,7 @@ void check_saturation_capped_addition() {
                       std::to_string(quantity);
       agree(id, quantity == 0 ? "dQ_du" : "dloading_du",
             quantity == 0 ? "J/mol/u" : "mol/mol/u", action, difference,
-            allowance, 0, column_inputs,
-            "native exact action agrees with the retained-ladder selected "
-            "central difference",
-            "capped-addition");
+            allowance, 0, column_inputs);
       CHECK(std::abs(action - difference) /
                 std::max({1.0, std::abs(action), std::abs(difference)}) <=
             2e-5);

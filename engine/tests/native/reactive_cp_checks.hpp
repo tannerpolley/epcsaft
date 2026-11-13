@@ -3,12 +3,10 @@
 inline void cp_record(const std::string& id, double exact, double reference, double target,
                       const std::string& inputs, bool resolved=true, const char* unit="J/(mol-feed K)") {
     const bool good=resolved&&std::isfinite(exact)&&std::isfinite(reference)&&std::abs(exact-reference)<=target;
-    recording_support::compare_custom(id.c_str(),"apparent-Cp",unit,exact,reference,
-        recording_support::fields({inputs,recording_support::field("target",target),
+    recording_support::compare_custom(id, "apparent-Cp", unit, exact, reference, "abs(exact-reference)<=target", good,
+        "native-identity", recording_support::fields({inputs,recording_support::field("target",target),
             recording_support::field("error",std::abs(exact-reference)),
-            recording_support::field("error_over_target",std::abs(exact-reference)/target)}),
-        "Relationship","native-identity","Issue 225 apparent Cp numerical verification",
-        "abs(exact-reference)<=target",good,"reactive-cp",id.c_str());
+            recording_support::field("error_over_target",std::abs(exact-reference)/target)}));
 }
 inline double cp_feed(const Case& c) {return std::accumulate(c.problem.feed.values.begin(),c.problem.feed.values.end(),0.0);}
 inline SolvedStateActionBatch cp_batch(const CompiledSystem& compiled,const EquilibriumResult& solved,const Direction& d) {
@@ -82,8 +80,8 @@ void cp_f2() {
         for(std::size_t i=0;i<2;++i) {
             c.problem.temperature.value=i?right:left;const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);CHECK(solved.success);
             const auto sample=values(model,compiled,solved,q);endpoints_h[i]=sample.values[index(q,"H")];endpoints_cp[i]=*cp_batch(compiled,solved,thermal).results[0].value;
-            recording_support::observe(("F2/"+c.name+"/endpoint-"+std::to_string(i)).c_str(),"H","J",endpoints_h[i],endpoints_cp[i],context(c,solved,sample.phase),
-                "Observation","independent-endpoint","H and Cp endpoint","reactive-cp",c.name.c_str());
+            recording_support::observe("F2/"+c.name+"/endpoint-"+std::to_string(i), "H", "J", endpoints_h[i],
+                endpoints_cp[i], "independent-endpoint", context(c,solved,sample.phase));
         }
         // One Gauss-Legendre panel at 8 and 10 nodes (6 fails the gate on E-sys); the quarter-target refinement gate rejects a coarse rule.
         std::array<std::array<double,2>,2> integral{};
@@ -94,11 +92,11 @@ void cp_f2() {
                 integral[level][0]+=(right-left)*weight/2 * *batch.results[0].value*cp_feed(c);
                 integral[level][1]+=(right-left)*weight/2 * *batch.results[0].action;
                 const auto id="F2/"+c.name+"/nodes-"+std::to_string(level?10:8)+"/node-"+std::to_string(node++);
-                recording_support::observe(id.c_str(),"Cp","J/(mol-feed K)",*batch.results[0].value,*batch.results[0].action,
+                recording_support::observe(id, "Cp", "J/(mol-feed K)", *batch.results[0].value,
+                    *batch.results[0].action, "native-Gauss-Legendre",
                     recording_support::fields({recording_support::field("T_K",*solved.temperature),recording_support::field("z",z),recording_support::field("weight",weight),
                         recording_support::field("N_f_mol",cp_feed(c)),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),
-                        recording_support::field("linear_residual",batch.diagnostics.maximum_linear_residual.value_or(0))}),
-                    "Observation","native-Gauss-Legendre","Quadrature node Cp and thermal action","reactive-cp",id.c_str());
+                        recording_support::field("linear_residual",batch.diagnostics.maximum_linear_residual.value_or(0))}));
             }
         }
         for(std::size_t k=0;k<2;++k) {

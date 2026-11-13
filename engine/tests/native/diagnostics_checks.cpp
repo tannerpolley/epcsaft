@@ -42,30 +42,15 @@ void core_constant_identities() {
     const double density_bound =
         source_roundoff_factor * std::numeric_limits<double>::epsilon()
         * std::abs(density_source);
-    recording_support::compare("core-constants/R", "R", "J/mol/K",
-        epcsaft::GAS_CONSTANT_J_PER_MOL_K, r_source, {}, "Relationship", "source-decimal",
-        "R=N_A*k_B", "strict_absolute", r_bound, 0.0,
-        std::abs(epcsaft::GAS_CONSTANT_J_PER_MOL_K - r_source) <= r_bound,
-        "c1-constants", "R-source", "R", "N_A,k_B", "R=8.31446261815324", "constant");
-    recording_support::compare("core-constants/debye", "D*c", "C m^2/s",
-        debye_product, 1.0e-21, {}, "Relationship", "SI-definitions",
-        "D*c=1e-21", "strict_absolute", 1.0e-36, 0.0,
-        std::abs(debye_product - 1.0e-21) <= 1.0e-36,
-        "c1-constants", "Debye", "D*c", "D,c", "D*c=1e-21", "constant");
-    recording_support::compare("core-constants/epsilon", "epsilon_0", "F/m",
-        epcsaft::VACUUM_PERMITTIVITY_F_PER_M, epsilon_source, {},
-        "Relationship", "CODATA-2018", "retained CODATA 2018 central value",
-        "strict_absolute", epsilon_bound, 0.0,
-        std::abs(epcsaft::VACUUM_PERMITTIVITY_F_PER_M - epsilon_source)
-            <= epsilon_bound,
-        "c1-constants", "epsilon_0", "epsilon_0", "CODATA-2018", "epsilon_0=CODATA-2018", "constant");
-    recording_support::compare("core-constants/number-density", "C_rho",
-        "(number/angstrom^3)/(mol/m^3)",
-        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density_source, {},
-        "Relationship", "source-decimal", "C_rho=N_A*10^{-30}",
-        "strict_absolute", density_bound, 0.0,
-        std::abs(epcsaft::NUMBER_DENSITY_PER_ANGSTROM3 - density_source) <= density_bound,
-        "c1-constants", "C_rho", "C_rho", "N_A,10^{-30}", "C_rho=6.02214076e-7", "constant");
+    recording_support::compare("core-constants/R", "R", "J/mol/K", epcsaft::GAS_CONSTANT_J_PER_MOL_K, r_source,
+        recording_support::Rule::StrictAbsolute, r_bound, 0.0, "source-decimal");
+    recording_support::compare("core-constants/debye", "D*c", "C m^2/s", debye_product, 1.0e-21,
+        recording_support::Rule::StrictAbsolute, 1.0e-36, 0.0, "SI-definitions");
+    recording_support::compare("core-constants/epsilon", "epsilon_0", "F/m", epcsaft::VACUUM_PERMITTIVITY_F_PER_M,
+        epsilon_source, recording_support::Rule::StrictAbsolute, epsilon_bound, 0.0, "CODATA-2018");
+    recording_support::compare("core-constants/number-density", "C_rho", "(number/angstrom^3)/(mol/m^3)",
+        epcsaft::NUMBER_DENSITY_PER_ANGSTROM3, density_source, recording_support::Rule::StrictAbsolute, density_bound,
+        0.0, "source-decimal");
 }
 
 using epcsaft::core::Stop;
@@ -83,16 +68,13 @@ void classifier_partition() {
                            Row{"budget-contracting", edge, std::nullopt, 0.5, true, Stop::budget_exhausted},
                            Row{"budget-not-contracting", edge, std::nullopt, 1.0, true, Stop::stalled}}) {
         const Stop stop = epcsaft::core::classify(row.residual, criterion, row.floor, row.contraction, row.budget);
-        recording_support::compare_custom(
-            (std::string("classification/") + row.id).c_str(), "stop", "enum",
-            static_cast<double>(stop), static_cast<double>(row.expected),
-            recording_support::fields({recording_support::field("residual", row.residual),
+        recording_support::compare_custom(std::string("classification/") + row.id, "stop", "enum",
+            static_cast<double>(stop), static_cast<double>(row.expected), "stop == expected", stop == row.expected,
+            "partition", recording_support::fields({recording_support::field("residual", row.residual),
                 recording_support::field("floor", epcsaft::core::optional_number(row.floor)),
                 recording_support::field("contraction", epcsaft::core::optional_number(row.contraction)),
                 recording_support::field("budget", row.budget ? 1U : 0U),
-                recording_support::field("stop", epcsaft::core::stop_name(stop))}),
-            "Relationship", "partition", "classifier returns the literal expected stop", "stop == expected",
-            stop == row.expected, "d1-classification", row.id);
+                recording_support::field("stop", epcsaft::core::stop_name(stop))}));
     }
 }
 
@@ -113,17 +95,11 @@ void contraction_window() {
         }
     }
     const auto contraction = history.contraction();
-    const bool final_contraction = contraction.has_value()
-        && std::abs(*contraction - q) <= 1e-12 * q;
-    recording_support::compare(
-        "contraction-limit", "contraction", "1", contraction.value_or(0.0), q,
+    recording_support::compare("contraction-limit", "contraction", "1", contraction.value_or(0.0), q,
+        recording_support::Rule::ReferenceOrOne, 1.0e-12 * q, 0.0, "convergence-history",
         recording_support::fields({recording_support::field("q", q),
                                    recording_support::field("history_length", 12U),
-                                   recording_support::field("window", epcsaft::policy::STALL_WINDOW.value)}),
-        "Relationship", "convergence-history", "contraction estimate reaches q",
-        "reference_or_one", 1.0e-12 * q, 0.0,
-        final_contraction,
-        "d2-contraction", "final", "q", "q,N,window", "q_{estimated}=q", "history");
+                                   recording_support::field("window", epcsaft::policy::STALL_WINDOW.value)}));
     CHECK(all_contractions);
 }
 
@@ -144,21 +120,12 @@ void declaration_guards() {
 
     epcsaft::core::Declared<epcsaft::ElectrolyteForm> missing;
     CHECK(!missing.declared());
-    threw = false;
-    try { missing.require("x"); }
-    catch (const epcsaft::core::DeclarationError& error) {
-        threw = std::string(error.what()).find("x") != std::string::npos;
-    }
-    CHECK(threw);
+    CHECK(recording_support::refusal([&] { missing.require("x"); }).find("x") != std::string::npos);
 
     auto aqueous = properties_support::aqueous_electrolyte();
     aqueous.electrolyte_form = {};
-    threw = false;
-    try { epcsaft::HelmholtzModel(std::move(aqueous)); }
-    catch (const std::invalid_argument& error) {
-        threw = std::string(error.what()).find("electrolyte_form") != std::string::npos;
-    }
-    CHECK(threw);
+    CHECK(recording_support::refusal([&] { epcsaft::HelmholtzModel(std::move(aqueous)); }).find("electrolyte_form")
+          != std::string::npos);
 }
 
 void check_density_record(
@@ -178,19 +145,13 @@ void check_density_record(
     );
     // The solver's pressure kernel and state() are two exact routes to Z; they agree to the rounding of Z's
     // contributions, which reach about 7 in a dense liquid (#478): a few ulps of them, not of Z.
-    const bool residual_matches = std::abs(record.residual - residual) <= 1e-14;
-    recording_support::compare(
-        (std::string("density-residual/") + point_id).c_str(),
-        "density_residual", "1", record.residual, residual,
+    recording_support::compare(std::string("density-residual/") + point_id, "density_residual", "1", record.residual,
+        residual, recording_support::Rule::Absolute, 1e-14, 0.0, "convergence-record",
         recording_support::fields({recording_support::field("T", temperature),
                                    recording_support::field("P", pressure),
                                    recording_support::field("x", composition),
                                    recording_support::field("rho", result.molar_density),
-                                   recording_support::field("branch", branch == epcsaft::DensityBranch::Liquid ? "liquid" : "vapor")}),
-        "Relationship", "convergence-record", "recorded residual equals recomputed residual",
-        "absolute", 1e-14, 0.0,
-        residual_matches, "d4-density-residual", point_id,
-        "residual", "T,P,\\mathbf{x},\\rho,branch", "r_{record}=r_{state}", "state");
+                                   recording_support::field("branch", branch == epcsaft::DensityBranch::Liquid ? "liquid" : "vapor")}));
     CHECK(record.criterion != nullptr);
     CHECK(std::string(record.criterion->name) == "DENSITY_ROOT_RESIDUAL");
     if (record.stop == Stop::converged) CHECK(record.residual <= record.criterion->value);
@@ -211,11 +172,11 @@ void density_records() {
         const bool strict = tolerance == policy::DENSITY_ROOT_RESIDUAL.value;
         if (strict) default_work = c.evaluations;
         recording_support::compare("density-options", "relative_density_error", "1", error, 0.0,
+            recording_support::Rule::Absolute, 1e-7, 0.0, "pressure-closure",
             recording_support::fields({recording_support::field("criterion", c.criterion->value),
                 recording_support::field("rho", state.molar_density), recording_support::field("residual", r),
-                recording_support::field("evaluations", c.evaluations), recording_support::field("iterations", c.iterations)}),
-            "Relationship", "pressure-closure", "same stable root at the requested reduced residual", "absolute", 1e-7, 0.0,
-            r <= tolerance && error <= 1e-7 && (strict || c.evaluations < default_work), "d4-density-options", strict ? "default" : "loose");
+                recording_support::field("evaluations", c.evaluations), recording_support::field("iterations", c.iterations)}));
+        CHECK(r <= tolerance && (strict || c.evaluations < default_work));
     }
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
@@ -261,18 +222,13 @@ void association_record(
     );
     double norm = 0.0;
     for (double value : residuals) norm = std::max(norm, std::abs(value));
-    recording_support::compare(
-        (std::string("association-residual/") + point_id).c_str(),
-        "association_residual", "1", record.residual, norm,
+    recording_support::compare(std::string("association-residual/") + point_id, "association_residual", "1",
+        record.residual, norm, recording_support::Rule::Absolute, 1e-15, 0.0, "convergence-record",
         recording_support::fields({recording_support::field("T", 300.0),
                                    recording_support::field("rho", density),
                                    recording_support::field("x", composition),
                                    recording_support::field("site_fractions", fractions),
-                                   recording_support::field("residuals", residuals)}),
-        "Relationship", "convergence-record", "association record stores residual norm",
-        "absolute", 1e-15, 0.0, std::abs(record.residual - norm) <= 1e-15,
-        "d5-association-residual", point_id, "r", "T,\\rho,\\mathbf{x},\\chi",
-        "r_{record}=||f(\\chi)||_\\infty", "state");
+                                   recording_support::field("residuals", residuals)}));
 }
 
 void association_records() {
@@ -294,15 +250,14 @@ void association_records() {
         const bool strict = tolerance == policy::ASSOCIATION_RESIDUAL.value;
         if (strict) default_work = record.evaluations;
         const double bound = strict ? 1e-12 : 1e-8;
-        recording_support::compare("association-options", "X", "1", x, reference,
+        recording_support::compare("association-options", "X", "1", x, reference, recording_support::Rule::Absolute,
+            bound, 0.0, "scalar-mass-action",
             recording_support::fields({recording_support::field("criterion", record.criterion->value),
                 recording_support::field("q", q), recording_support::field("start", start),
                 recording_support::field("residual", residual), recording_support::field("error", std::abs(x-reference)),
                 recording_support::field("iterations", record.iterations), recording_support::field("evaluations", record.evaluations),
-                recording_support::field("stop", core::stop_name(record.stop))}),
-            "Relationship", "scalar-mass-action", "positive analytic root", "absolute", bound, 0.0,
-            x > 0.0 && x <= 1.0 && std::abs(x-reference) <= bound && residual <= record.criterion->value
-                && (strict || record.evaluations < default_work), "d5-association-options", strict ? "default" : "loose");
+                recording_support::field("stop", core::stop_name(record.stop))}));
+        CHECK(x > 0.0 && x <= 1.0 && residual <= record.criterion->value && (strict || record.evaluations < default_work));
     }
 
     association_record(properties_support::associating_binary(), 1.0e4, {0.1385, 0.8615}, "associating");
@@ -375,11 +330,12 @@ void trace_state_case(
             hessian_seen = true;
             CHECK(diagnostics);
             CHECK(event.values.size() == full.hessian.size());
-            for (std::size_t i = 0; i < full.hessian.size(); ++i)
-                recording_support::compare("trace-state", "Helmholtz Hessian", "chart", event.values[i], full.hessian[i],
-                    "{}", "Relationship", "explicit-Hessian", "diagnostic versus explicit evaluation",
-                    "reference_or_one", 1e-10, 1e-10, std::abs(event.values[i] - full.hessian[i])
+            for (std::size_t i = 0; i < full.hessian.size(); ++i) {
+                recording_support::compare("trace-state", "Helmholtz Hessian", "chart", event.values[i],
+                    full.hessian[i], recording_support::Rule::ReferenceOrOne, 1e-10, 1e-10, "explicit-Hessian", "{}");
+                CHECK(std::abs(event.values[i] - full.hessian[i])
                         <= 1e-10 * std::max(1.0, std::abs(full.hessian[i])));
+            }
         }
         CHECK(hessian_seen == diagnostics);
     }
@@ -448,14 +404,10 @@ void termination_boundaries() {
     valid = valid && epcsaft::core::classify(2.0, criterion, std::nullopt,
         std::nullopt, false, std::numeric_limits<double>::infinity()) == Stop::nonfinite;
     epcsaft::core::ResidualHistory history;
-    bool history_rejected = false;
-    try { history.push(std::numeric_limits<double>::quiet_NaN()); }
-    catch (const std::invalid_argument&) { history_rejected = true; }
-    valid = valid && history_rejected;
-    recording_support::compare("termination-boundaries", "valid", "1",
-        valid ? 1.0 : 0.0, 1.0, {}, "Relationship", "classifier", "nonfinite boundaries",
-        "absolute", 0.0, 0.0, valid, "native.diagnostics.c3", "C3",
-        "termination", "stop", "residual", "nonfinite inputs rejected");
+    valid = valid && recording_support::refusal([&] { history.push(std::numeric_limits<double>::quiet_NaN()); })
+        .find("nonfinite residual history") != std::string::npos;
+    recording_support::compare("termination-boundaries", "valid", "1", valid ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "classifier");
 }
 
 void producer_boundaries() {
@@ -477,12 +429,9 @@ void producer_boundaries() {
     }
 
     // A negative density never reaches the site solve: the fluid-domain owner refuses it first.
-    bool domain = false;
-    try {
+    const bool domain = recording_support::refusal([&] {
         (void)epcsaft::solve_site_fractions(300.0, -1.0e8, {0.4, 0.6}, parameters, sigma, diameter);
-    } catch (const std::invalid_argument&) {
-        domain = true;
-    }
+    }).find("packing fraction outside the fluid domain") != std::string::npos;
 
     // ALG-ASSOCIATION: a full-rank rejected pivot is distinct from final site convergence.
     auto recovered = properties_support::ethane();
@@ -504,11 +453,10 @@ void producer_boundaries() {
         && first->residual == 9999999999999.5 && final_sites.stop == Stop::converged
         && derivative.first_numerical_failure && derivative.first_numerical_failure->cause == first->cause;
     recording_support::compare("association-recovery", "first-and-final", "1", preserved ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "mass-action",
         recording_support::fields({recording_support::field("first_residual", first ? first->residual : NAN),
             recording_support::field("final_residual", final_sites.residual),
-            recording_support::field("gradient_floor", derivative.gradient_floor)}),
-        "Relationship", "mass-action", "recovered factor refusal retains its operands", "absolute", 0.0, 0.0,
-        preserved, "native.diagnostics.c3", "C3", "association", "site-fractions", "T,rho,parameters", "separate final convergence");
+            recording_support::field("gradient_floor", derivative.gradient_floor)}));
     epcsaft::HelmholtzModel callback_model(properties_support::neutral_binary());
     const auto callback_system = epcsaft::equilibrium::compile_problem(callback_model, equilibrium_support::flash(2));
     const auto initial = epcsaft::equilibrium::boundary_start(callback_system);
@@ -522,34 +470,27 @@ void producer_boundaries() {
     const auto prepared_points = callback.prepared_points();
     const bool rejected = !callback.eval_g(n, refused.data(), true, m, rows.data());
     const bool recovered_callback = callback.eval_g(n, initial.data(), true, m, rows.data());
-    const bool cached = initial_callback && recovered_callback && rows == initial_rows
-        && callback.prepared_points() == prepared_points;
-    recording_support::compare("callback-cache", "prepared-points", "1", callback.prepared_points(), prepared_points, {},
-        "Relationship", "constraint-callback", "a failed trial preserves the preceding point and rows", "absolute", 0.0, 0.0,
-        cached, "native.diagnostics.c3", "C3", "callback", "prepared-point", "good,bad,same-good", "cached rows unchanged");
+    recording_support::compare("callback-cache", "prepared-points", "1", callback.prepared_points(), prepared_points,
+        recording_support::Rule::Absolute, 0.0, 0.0, "constraint-callback");
+    CHECK(initial_callback && recovered_callback && rows == initial_rows);
     epcsaft::equilibrium::EquilibriumResult observed;
     callback.publish_observations(observed);
     const bool unavailable = rejected && recovered_callback && observed.first_numerical_failure
         && std::isnan(observed.first_numerical_failure->residual)
         && observed.first_numerical_failure->cause.find("invalid composition") != std::string::npos;
-    recording_support::compare("callback-refusal", "unmeasured-residual", "1", unavailable ? 1.0 : 0.0, 1.0, {},
-        "Relationship", "constraint-callback", "an unmeasured refusal residual is unavailable", "absolute", 0.0, 0.0,
-        unavailable, "native.diagnostics.c3", "C3", "callback", "residual", "trial-coordinates", "no fabricated zero");
+    recording_support::compare("callback-refusal", "unmeasured-residual", "1", unavailable ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "constraint-callback");
     const bool verdict = nonfinite && domain
         && !std::isfinite(nonfinite_record.residual);
-    recording_support::compare(
-        "producer-boundaries", "typed-stops", "1", verdict ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
+    recording_support::compare("producer-boundaries", "typed-stops", "1", verdict ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "producer-failure", recording_support::fields({
             recording_support::field("nonfinite_stop",
                                      epcsaft::core::stop_name(nonfinite_record.stop)),
             recording_support::field("nonfinite_residual", nonfinite_record.residual),
             recording_support::field("T", 300.0),
             recording_support::field("rho_nonfinite", 1.0e4),
             recording_support::field("rho_domain", -1.0e8),
-        }),
-        "Relationship", "producer-failure", "producers retain typed stop reasons",
-        "absolute", 0.0, 0.0, verdict, "native.diagnostics.c3", "C3",
-        "producer-boundaries", "stop", "T,rho,x,parameters", "typed stop retained");
+        }));
 }
 
 }  // namespace

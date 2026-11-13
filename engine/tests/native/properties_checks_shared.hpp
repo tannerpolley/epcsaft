@@ -157,27 +157,8 @@ inline epcsaft::Parameters p4_shifted_parameters(
 ) {
     auto result = base;
     for (std::size_t coordinate = 0; coordinate < active.size(); ++coordinate) {
-        const auto& item = active[coordinate];
-        auto apply = [&](std::vector<double>& values) {
-            for (const auto index : item.indices) values[index] += shift[coordinate];
-        };
-        switch (item.family) {
-        case epcsaft::ParameterFamily::AssociationEnergyOverK:
-            apply(result.association_energy_over_k); break;
-        case epcsaft::ParameterFamily::AssociationVolume:
-            apply(result.association_volume); break;
-        case epcsaft::ParameterFamily::Kij:
-            apply(result.k_ij); break;
-        case epcsaft::ParameterFamily::BornDiameter:
-            apply(result.born_diameter_angstrom); break;
-        case epcsaft::ParameterFamily::DebyeHuckelDiameter:
-            apply(result.debye_huckel_diameter_angstrom); break;
-        case epcsaft::ParameterFamily::PackingDiameter:
-            apply(result.packing_diameter_angstrom); break;
-        case epcsaft::ParameterFamily::IonSuppressionCoefficient:
-            apply(result.ion_suppression_coefficient); break;
-        default: throw std::invalid_argument("unsupported P4 reference parameter");
-        }
+        const auto values = epcsaft::detail::family_values(result, active[coordinate].family);
+        for (const auto index : active[coordinate].indices) values.first[index] += shift[coordinate];
     }
     return result;
 }

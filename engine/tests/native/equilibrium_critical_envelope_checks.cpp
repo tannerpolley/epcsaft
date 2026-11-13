@@ -19,11 +19,11 @@ inline EquilibriumResult solved(const HelmholtzModel& m,const EquilibriumProblem
     const auto r=solve_equilibrium(m,p);
     if(!r.has_state()||!r.critical) throw std::runtime_error(id+": "+r.message);
     const auto& k=*r.critical;
-    recording_support::observe((id+"/candidate").c_str(),"critical-equation-candidate","K",*r.temperature,std::nullopt,
+    recording_support::observe(id+"/candidate", "critical-equation-candidate", "K", *r.temperature, std::nullopt,
+        "root identity and spectrum of M",
         recording_support::fields({recording_support::field("P_Pa",*r.pressure),recording_support::field("rho_mol_m3",r.molar_densities[0]),
             recording_support::field("eigenvalues",k.eigenvalues),recording_support::field("zero_band",k.zero_band),recording_support::field("cubic",k.cubic),
-            recording_support::field("condition",k.condition_estimate),recording_support::field("backward_error",k.backward_error)}),
-        "Observation","root identity and spectrum of M","candidate only, no stability certificate","critical-envelope");
+            recording_support::field("condition",k.condition_estimate),recording_support::field("backward_error",k.backward_error)}));
     return r;
 }
 inline EquilibriumProblem envelope_cell(const std::vector<double>& z,double t,double pressure,EnvelopeCondition condition) {
@@ -69,9 +69,8 @@ void pure_critical() {
     const auto at=identities(y);for(Eigen::Index i=0;i<n;++i)y[i]+=delta(i);const auto corrected=identities(y);
     for(std::size_t k=0;k<2;++k) {
         const double floor=std::abs(corrected[k]-at[k])+at[2+k];const std::string id=k?"C2/rho_P_rhorho":"C2/P_rho";
-        recording_support::observe((id+"/floor").c_str(),"identity-floor","1",floor,std::nullopt,
-            recording_support::fields({recording_support::field("newton_change",std::abs(corrected[k]-at[k])),recording_support::field("rounding",at[2+k])}),
-            "Observation","propagated floor","Newton correction of the critical system plus term rounding","critical-envelope");
+        recording_support::observe(id+"/floor", "identity-floor", "1", floor, std::nullopt, "propagated floor",
+            recording_support::fields({recording_support::field("newton_change",std::abs(corrected[k]-at[k])),recording_support::field("rounding",at[2+k])}));
         CHECK(floor<1e-9);
         compare(id,at[k],0,1,1e-9);
     }
@@ -175,11 +174,11 @@ void mixture() {
             switches+=k&&(t.conditions[k].kind!=t.conditions[k-1].kind||t.conditions[k].component!=t.conditions[k-1].component);
             if(k&&t.states[k].declaration->phases[0].kind!=t.states[k-1].declaration->phases[0].kind)straddle=t.conditions[k].component;
         }
-        recording_support::observe((id+"/trace").c_str(),"envelope-trace","K",tmax,std::nullopt,
+        recording_support::observe(id+"/trace", "envelope-trace", "K", tmax, std::nullopt,
+            "accepted-state extrema and condition switches",
             recording_support::fields({recording_support::field("max_P_Pa",pmax),recording_support::field("states",t.states.size()),
                 recording_support::field("attempts",t.attempts),recording_support::field("switches",switches),recording_support::field("straddle_component",straddle),
-                recording_support::field("seed",t.critical_seeds[0])}),
-            "Observation","accepted-state extrema and condition switches","declared envelope branch only","critical-envelope");
+                recording_support::field("seed",t.critical_seeds[0])}));
     }
     // E4 (#571, Opus P05): bubble at 180 K through the passage to the dew point at the initial pressure in the
     // predicted-anchor step budget, with one identity swap and the candidate and closing dew state of the dense trace.
@@ -192,9 +191,10 @@ void mixture() {
         if(t.stop!=ContinuationStop::reached_target||t.critical_points.size()!=1)throw std::runtime_error(id+" trace: "+t.message);
         std::size_t swaps=0;
         for(std::size_t k=1;k<t.states.size();++k)swaps+=t.states[k].declaration->phases[0].kind!=t.states[k-1].declaration->phases[0].kind;
-        recording_support::observe((id+"/budget").c_str(),"envelope-budget","1",static_cast<double>(t.accepted_steps),std::nullopt,
+        recording_support::observe(id+"/budget", "envelope-budget", "1", static_cast<double>(t.accepted_steps),
+            std::nullopt, "accepted steps to closure",
             recording_support::fields({recording_support::field("attempts",t.attempts),recording_support::field("retries",t.retries),
-                recording_support::field("swaps",swaps)}),"Observation","accepted steps to closure","declared envelope branch only","critical-envelope");
+                recording_support::field("swaps",swaps)}));
         CHECK(swaps==1&&t.accepted_steps<=budget&&(cap>0.1||t.attempts<=150));
         compare(id+"/critical-T",*t.critical_points[0].temperature,265.9667440343549,1,1e-8);
         compare(id+"/critical-P",*t.critical_points[0].pressure,6842019.677409215,1,0.1);
@@ -267,8 +267,8 @@ void azeotrope() {
             {"A1/methane-ethane-200",azeotrope_cell(FreeValue::fixed(200),FreeValue::variable())},
             {"A1/methane-ethane-critical",azeotrope_cell(FreeValue::fixed(265.96674403),FreeValue::variable(6.84e6))}}) {
         const auto r=solve_equilibrium(me,p);
-        recording_support::observe((id+"/refusal").c_str(),"azeotrope-refusal","1",r.has_state()?1.0:0.0,std::nullopt,
-            recording_support::field("message",r.message),"Observation","typed driver refusal","no certificate that none exists","critical-envelope");
+        recording_support::observe(id+"/refusal", "azeotrope-refusal", "1", r.has_state()?1.0:0.0, std::nullopt,
+            "typed driver refusal", recording_support::field("message",r.message));
         CHECK(!r.success&&!r.has_state());
     }
 }
@@ -277,10 +277,9 @@ void azeotrope() {
 void spinodal() {
     const auto compare = [](const std::string& id, double value, double reference, double scale, double tolerance) {
         const double error=std::abs(value-reference)/scale;
-        recording_support::compare_custom(id.c_str(),"diffusive-spinodal","SI",value,reference,
-            recording_support::fields({recording_support::field("relative_error",error),recording_support::field("criterion",tolerance)}),
-            "Relationship","Clapeyron 0.6.29","neutral fixed-composition spinodal","positive quantity scale",
-            std::isfinite(error)&&error<=tolerance,"diffusive-spinodal",id.c_str());
+        recording_support::compare_custom(id, "diffusive-spinodal", "SI", value, reference, "positive quantity scale",
+            std::isfinite(error)&&error<=tolerance, "Clapeyron 0.6.29",
+            recording_support::fields({recording_support::field("relative_error",error),recording_support::field("criterion",tolerance)}));
     };
     const HelmholtzModel model(properties_support::neutral_binary());
     auto cell = [&](double T, double guess) {
@@ -305,9 +304,9 @@ void spinodal() {
     const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_search
         && interrupted.spinodal_search->evaluations == 0 && interrupted.spinodal_search->finite_limits.empty();
     recording_support::compare("spinodal/exhausted", "budget-cause", "1", budget ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "spinodal-search",
         recording_support::fields({recording_support::field("cause", cause),
-            recording_support::field("budget_exception", budget_exception)}), "Relationship", "spinodal-search",
-        "a spent budget starts no Hessian sample and creates no density gap", "absolute", 0.0, 0.0, budget);
+            recording_support::field("budget_exception", budget_exception)}));
     for (int branch=0;branch<2;++branch) {
         const double guess=branch?13000:4000;
         for (int t=0;t<3;++t) {

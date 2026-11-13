@@ -161,10 +161,10 @@ std::string inputs(const StatePoint& s, const char* model) {
 
 // |model - reference| <= tolerance max(|reference|, scale).
 void identity(const std::string& id, const char* quantity, double model, double reference, double scale,
-              double tolerance, const std::string& context, const char* claim) {
+              double tolerance, const std::string& context) {
     const double allowance = tolerance * std::max(std::abs(reference), scale);
-    recording_support::compare(id.c_str(), quantity, "scaled", model, reference, context, "Identity", "pathway_weight",
-        claim, "absolute", allowance, 0.0, std::abs(model - reference) <= allowance, "pathway-weight", id.c_str());
+    recording_support::compare(id, quantity, "scaled", model, reference, recording_support::Rule::Absolute, allowance,
+        0.0, "pathway_weight", context);
 }
 
 // Named state quantities and their scales (S = 1 reduced, RT for J/mol, R for J/(mol K)).
@@ -185,7 +185,7 @@ std::vector<std::tuple<std::string, double, double>> quantities(const epcsaft::S
 // F1 and F2: a saturated-weight blend equals the matching single-block model at each state, including B and the
 // fixed T, P, x log-fugacity sensitivities of the shared coordinates (scaled by |theta|).
 void limit(const char* name, Form standalone, Form blend, double intercept, std::size_t block,
-           const std::array<std::size_t, 8>& shared, const char* claim) {
+           const std::array<std::size_t, 8>& shared) {
     const epcsaft::HelmholtzModel one(hong(standalone), coordinates(standalone));
     const epcsaft::HelmholtzModel two(hong(blend, {intercept, 0.0, 0.0}), coordinates(blend, false));
     for (const auto& s : STATES) {
@@ -193,17 +193,17 @@ void limit(const char* name, Form standalone, Form blend, double intercept, std:
         const auto qa = quantities(a, s, block), qb = quantities(b, s, 0);
         for (std::size_t q = 0; q < qa.size(); ++q)
             identity(std::string(name) + "/" + s.name + "/" + std::get<0>(qa[q]), std::get<0>(qa[q]).c_str(),
-                std::get<1>(qa[q]), std::get<1>(qb[q]), std::get<2>(qb[q]), IDENTITY, inputs(s, name), claim);
+                std::get<1>(qa[q]), std::get<1>(qb[q]), std::get<2>(qb[q]), IDENTITY, inputs(s, name));
         const double second = two.virial_coefficients(s.temperature, s.x).second;
         const double reference = one.virial_coefficients(s.temperature, s.x).second;
-        identity(std::string(name) + "/" + s.name + "/B", "B", second, reference, 0.0, IDENTITY, inputs(s, name), claim);
+        identity(std::string(name) + "/" + s.name + "/B", "B", second, reference, 0.0, IDENTITY, inputs(s, name));
         for (std::size_t c = 0; c < shared.size(); ++c) {
             const auto coordinate = coordinates(blend, false)[shared[c]];
             const double theta = std::abs(epcsaft::detail::family_values(two.parameters(), coordinate.family).first[coordinate.indices[0]]);
             for (std::size_t i = 0; i < 3; ++i)
                 identity(std::string(name) + "/" + s.name + "/dlnphi" + std::to_string(i) + "/theta" + std::to_string(shared[c]),
                     "theta dlnphi/dtheta", theta * a.log_fugacity_parameter_derivative[i * 13 + shared[c]].value(),
-                    theta * b.log_fugacity_parameter_derivative[i * 8 + c].value(), 1.0, IDENTITY, inputs(s, name), claim);
+                    theta * b.log_fugacity_parameter_derivative[i * 8 + c].value(), 1.0, IDENTITY, inputs(s, name));
         }
     }
 }
@@ -222,11 +222,10 @@ double ladder(const std::string& id, double exact, double scale, const std::arra
     }
     const double best = *std::min_element(errors.begin(), errors.end());
     if (limit > 0.0)
-        recording_support::compare(id.c_str(), "scaled difference error", "1", best, 0.0,
+        recording_support::compare(id, "scaled difference error", "1", best, 0.0, recording_support::Rule::Absolute,
+            limit, 0.0, "three-step differences",
             fields({context, field("exact", exact), field("steps", std::vector<double>(steps.begin(), steps.end())),
-                field("differences", differences), field("errors", errors)}),
-            "Relationship", "three-step differences", "exact derivative equals refined differences (verification only)",
-            "absolute", limit, 0.0, best <= limit, "pathway-weight", id.c_str());
+                field("differences", differences), field("errors", errors)}));
     return best;
 }
 
@@ -299,10 +298,9 @@ void f3_state(const epcsaft::HelmholtzModel& model, const StatePoint& s) {
         errors.push_back(std::abs(check.difference - check.exact) / std::max(std::abs(check.exact), rt / 100.0));
     }
     const double best = *std::min_element(errors.begin(), errors.end());
-    recording_support::compare((id + "/cp_res").c_str(), "scaled difference error", "1", best, 0.0,
-        fields({context, field("errors", errors)}), "Relationship", "pressure_action_difference",
-        "c_p,res equals differences of h_res at fixed P (verification only)", "absolute", DIFFERENCE, 0.0,
-        best <= DIFFERENCE, "pathway-weight", (id + "/cp_res").c_str());
+    recording_support::compare(id + "/cp_res", "scaled difference error", "1", best, 0.0,
+        recording_support::Rule::Absolute, DIFFERENCE, 0.0, "pressure_action_difference",
+        fields({context, field("errors", errors)}));
     // Each coordinate: d ln phi_i/d theta at fixed T, P, x against shifted models solved at the same P.
     const auto active = coordinates(Form::Blend);
     for (std::size_t c = 0; c < active.size(); ++c) {
@@ -331,10 +329,10 @@ void f3_state(const epcsaft::HelmholtzModel& model, const StatePoint& s) {
 
 void pathway_weight() {
     // F1: w = 0 against the single-site model; w = 1 against the standalone corrected symmetric model.
-    limit("F1/w0", Form::Single, Form::Blend, -800.0, 1, SINGLE_SHARED, "the w = 0 blend equals the single-site model");
-    limit("F1/w1", Form::Corrected, Form::Blend, 40.0, 0, SYMMETRIC_SHARED, "the w = 1 blend equals the corrected symmetric model");
+    limit("F1/w0", Form::Single, Form::Blend, -800.0, 1, SINGLE_SHARED);
+    limit("F1/w1", Form::Corrected, Form::Blend, 40.0, 0, SYMMETRIC_SHARED);
     // F2: correction off, w = 1, against ordinary two-site association.
-    limit("F2", Form::Symmetric, Form::Uncorrected, 40.0, 0, SYMMETRIC_SHARED, "the uncorrected w = 1 blend equals ordinary association");
+    limit("F2", Form::Symmetric, Form::Uncorrected, 40.0, 0, SYMMETRIC_SHARED);
 
     const epcsaft::HelmholtzModel blend(hong(Form::Blend), coordinates(Form::Blend));
     const epcsaft::HelmholtzModel uncorrected(hong(Form::Uncorrected));
@@ -349,11 +347,10 @@ void pathway_weight() {
         const auto qa = quantities(a, Z, 0, true), qb = quantities(b, Z, 0, true);
         for (std::size_t q = 0; q < qa.size(); ++q)
             identity("F2b/Z/" + std::get<0>(qa[q]), std::get<0>(qa[q]).c_str(), std::get<1>(qa[q]), std::get<1>(qb[q]),
-                std::get<2>(qb[q]), IDENTITY, inputs(Z, "blend"), "the carbon-free blend equals the standalone model");
+                std::get<2>(qb[q]), IDENTITY, inputs(Z, "blend"));
         const auto off = uncorrected.state(Z.temperature, Z.density, Z.x);
         identity("F2b/Z/correction", "mu_res,CO2/RT on - off", a.residual_chemical_potential_over_rt[2].value()
-            - off.residual_chemical_potential_over_rt[2].value(), 0.1188144166, 1.0, IDENTITY, inputs(Z, "blend"),
-            "the correction shifts the infinite-dilution CO2 potential by -w X nu (ln X - X/2 + 1/2)");
+            - off.residual_chemical_potential_over_rt[2].value(), 0.1188144166, 1.0, IDENTITY, inputs(Z, "blend"));
     }
 
     // F3 at L, V and Z, then the failures it must catch at L.
@@ -376,20 +373,20 @@ void pathway_weight() {
             const double frozen_error = ladder(id, frozen, 1.0, {5e-5, 5e-6, 5e-7}, difference, never, "", 0.0);
             const double omitted_error = ladder(id, omitted, 1.0, {5e-5, 5e-6, 5e-7}, difference, never, "", 0.0);
             const bool caught = frozen_error > 1e3 * DIFFERENCE && (i == 1 || omitted_error > 1e3 * DIFFERENCE);
-            recording_support::compare_custom(id.c_str(), "scaled difference error", "1", std::min(frozen_error, omitted_error), 0.0,
+            recording_support::compare_custom(id, "scaled difference error", "1",
+                std::min(frozen_error, omitted_error), 0.0, "each error > 1e3 x 1e-7 (water has dw/dn = 0)", caught,
+                "three-step differences",
                 fields({inputs(L, "blend"), field("frozen_site_mu", frozen), field("frozen_site_error", frozen_error),
                     field("exact_mu", base.residual_chemical_potential_over_rt[i].value()),
-                    field("omitted_dw_dn_mu", omitted), field("omitted_dw_dn_error", omitted_error)}),
-                "Relationship", "three-step differences", "frozen sites and an omitted dw/dn each fail the F3 amount check",
-                "each error > 1e3 x 1e-7 (water has dw/dn = 0)", caught);
+                    field("omitted_dw_dn_mu", omitted), field("omitted_dw_dn_error", omitted_error)}));
         }
         const double omitted = -held.residual_internal_energy / (R * L.temperature * L.temperature);
         const double error = ladder("F3/L/caught/da_dT", omitted, 0.01, {0.1, 0.01, 0.001},
             [&](double h) { return value(L.temperature + h, L.x); }, never, "", 0.0);
         recording_support::compare_custom("F3/L/caught/da_dT", "scaled difference error", "1", error, 0.0,
+            "error > 1e3 x 1e-7", error > 1e3 * DIFFERENCE, "three-step differences",
             fields({inputs(L, "blend"), field("omitted_dw_dT_u_res", held.residual_internal_energy),
-                field("exact_u_res", base.residual_internal_energy)}), "Relationship", "three-step differences",
-            "an omitted dw/dT fails the F3 temperature check", "error > 1e3 x 1e-7", error > 1e3 * DIFFERENCE);
+                field("exact_u_res", base.residual_internal_energy)}));
 
         // F3c: the logistic and the fixed weight differ only by the weight chains, both Engine outputs.
         const auto gradient = fixed.evaluate(L.temperature, volume, L.x, epcsaft::DerivativeOrder::Gradient).gradient;
@@ -398,10 +395,10 @@ void pathway_weight() {
         for (std::size_t i = 0; i < 3; ++i)
             identity("F3c/L/mu" + std::to_string(i), "mu_b - mu_a", base.residual_chemical_potential_over_rt[i].value()
                 - held.residual_chemical_potential_over_rt[i].value(), db0 * LOGISTIC.loading * dalpha[i], 1.0, IDENTITY,
-                inputs(L, "blend"), "the chemical potentials differ by dA/db0 b_alpha dalpha/dn_i");
+                inputs(L, "blend"));
         identity("F3c/L/u_res", "u_b - u_a", base.residual_internal_energy - held.residual_internal_energy,
             -R * L.temperature * L.temperature * db0 * LOGISTIC.temperature / 40.0, R * L.temperature, IDENTITY,
-            inputs(L, "blend"), "the internal energies differ by -R T^2 dA/db0 b_T / 40 K");
+            inputs(L, "blend"));
 
         // Third order, mixed: d c_p,res / d b_T at fixed T, P, x.
         const std::size_t bt = 15;
@@ -421,7 +418,7 @@ void pathway_weight() {
         const auto state = blend.state(s.temperature, s.density, s.x);
         const auto back = blend.state_at_pressure(s.temperature, state.pressure, s.x, s.branch);
         identity(std::string("F3b/") + s.name + "/round-trip", "rho_back/rho", back.molar_density / s.density, 1.0, 1.0, 1e-12,
-            inputs(s, "blend"), "the density series returns the tape state's density at its pressure");
+            inputs(s, "blend"));
         double floor = 0.0;
         const double volume = 1.0 / s.density;
         const auto series = epcsaft::properties::density_volume_taylor(blend, s.temperature, s.density, s.x, floor);
@@ -434,7 +431,7 @@ void pathway_weight() {
         const std::array<double, 3> computed = {volume * series.c[1], 2.0 * volume * volume * series.c[2], 6.0 * volume * volume * volume * series.c[3]};
         for (std::size_t k = 0; k < 3; ++k)
             identity(std::string("F3b/") + s.name + "/series" + std::to_string(k + 1), "V^k d^kA/dV^k", computed[k], exact[k], 1.0,
-                IDENTITY, fields({inputs(s, "blend"), field("double_floor", floor)}), "volume series coefficients equal the tape's");
+                IDENTITY, fields({inputs(s, "blend"), field("double_floor", floor)}));
         // |p_double - p_wider| <= RT floor + 4 eps |p| + RT e_A with p = RT (rho - A_V) (lead design revision, 2026-11-09).
         // The difference is double rounding of the whole A_V (about 50 ulp at L); the block site floor under exact
         // propagation is at most 4.0e-9 Pa (blend at L). e_A is the arithmetic-noise spread of the double A_V over the six component orders
@@ -475,9 +472,8 @@ void pathway_weight() {
             const auto context = fields({inputs(s, name), field("p_double", p), field("p_wider_minus_p_double", difference),
                 field("A_V", a_v), field("floor", own_floor), field("floor_correction_off", floor_correction_off), field("e_A", e_a),
                 field("bound", bound), field("wider_stop", stop)});
-            recording_support::compare_custom(id.c_str(), "|p_double - p_wider|", "Pa", std::abs(difference), bound, context,
-                "Relationship", "wider replay", "the double pressure agrees with the wider replay within its rounding estimates",
-                "error <= RT floor + 4 eps |p| + RT e_A", std::abs(difference) <= bound);
+            recording_support::compare_custom(id, "|p_double - p_wider|", "Pa", std::abs(difference), bound,
+                "error <= RT floor + 4 eps |p| + RT e_A", std::abs(difference) <= bound, "wider replay", context);
             if (s.name[0] != 'L' || form != Form::Blend) continue;
             // The bound still separates a site defect: a 1e-4 association tolerance moves p by more than it allows.
             epcsaft::policy::SolverOptions options;
@@ -488,9 +484,8 @@ void pathway_weight() {
                 loose_floor).c[1]);
             const double defect = static_cast<double>(std::fabs(p_wider - static_cast<long double>(moved)));
             recording_support::compare_custom("F3b/L/wider/site-defect", "|p_loose - p_wider|", "Pa", defect, bound,
-                fields({context, field("association_tolerance", 1e-4), field("loose_floor", loose_floor)}), "Relationship",
-                "controlled site defect", "a site defect exceeds the tight solve's bound", "defect > RT floor + 4 eps |p| + RT e_A",
-                defect > bound);
+                "defect > RT floor + 4 eps |p| + RT e_A", defect > bound, "controlled site defect",
+                fields({context, field("association_tolerance", 1e-4), field("loose_floor", loose_floor)}));
         }
         if (s.name[0] == 'L') {
             // Rounding allowance on the pressure scale rho RT (p/RT is far smaller than A_V in a liquid). The correction-off
@@ -509,17 +504,16 @@ void pathway_weight() {
                     const auto context = fields({inputs(s, name), field("association_tolerance", tolerance), field("loose_floor", loose_floor),
                         field("tight_floor", tight_floor), field("bound", bound)});
                     if (form == Form::Uncorrected)
-                        recording_support::observe(id.c_str(), "|A_V,loose - A_V,tight|", "mol/m3", std::abs(moved - exact), bound, context,
-                            "Observation", "controlled site defect", "the floor without the correction's h terms, reported");
-                    else recording_support::compare_custom(id.c_str(), "|A_V,loose - A_V,tight|", "mol/m3", std::abs(moved - exact), bound,
-                        context, "Relationship", "controlled site defect", "the double floor bounds the A_V error a site defect leaves",
-                        "error <= floor_loose + floor_tight + 4 eps rho", std::abs(moved - exact) <= bound);
+                        recording_support::observe(id, "|A_V,loose - A_V,tight|", "mol/m3", std::abs(moved - exact),
+                            bound, "controlled site defect", context);
+                    else recording_support::compare_custom(id, "|A_V,loose - A_V,tight|", "mol/m3",
+                        std::abs(moved - exact), bound, "error <= floor_loose + floor_tight + 4 eps rho",
+                        std::abs(moved - exact) <= bound, "controlled site defect", context);
                 }
             const auto virial = blend.virial_coefficients(s.temperature, s.x);
             const double rho = 0.01, z = blend.state(s.temperature, rho, s.x).compressibility_factor;
             identity("F3b/L/B", "B", virial.second, (z - 1.0) / rho - virial.third * rho, 0.0, 1e-6,
-                fields({inputs(s, "blend"), field("B_correction_off", uncorrected.virial_coefficients(s.temperature, s.x).second)}),
-                "B equals the low-density slope (the remainder is O(rho^2))");
+                fields({inputs(s, "blend"), field("B_correction_off", uncorrected.virial_coefficients(s.temperature, s.x).second)}));
         }
         // A site defect against the volume-series floor (A_V), the Hessian gradient floor (T, V, n), and the
         // gradient coefficient error estimate of each column, both formed from the defective sites. Both are local
@@ -534,11 +528,10 @@ void pathway_weight() {
             const epcsaft::HelmholtzModel loose(hong(Form::Blend), {}, std::nullopt, options);
             const double rounding = 4.0 * std::numeric_limits<double>::epsilon() * s.density;
             const auto check = [&](const std::string& id, std::size_t column, double error, double bound) {
-                recording_support::compare_custom(id.c_str(), "|dA/dq_j,loose - dA/dq_j,tight|", "1", error, bound,
+                recording_support::compare_custom(id, "|dA/dq_j,loose - dA/dq_j,tight|", "1", error, bound,
+                    "error <= estimate_loose + estimate_tight + 4 eps rho", error <= bound, "controlled site defect",
                     fields({inputs(s, "blend"), field("association_tolerance", tolerance), field("column", static_cast<double>(column)),
-                        field("bound", bound)}),
-                    "Relationship", "controlled site defect", "the error estimate bounds the gradient error a site defect leaves",
-                    "error <= estimate_loose + estimate_tight + 4 eps rho", error <= bound);
+                        field("bound", bound)}));
             };
             {
                 const auto exact = tight.evaluate(s.temperature, volume, s.x, epcsaft::DerivativeOrder::Hessian);
@@ -550,7 +543,7 @@ void pathway_weight() {
                 const auto tight_series = epcsaft::properties::density_volume_taylor(tight, s.temperature, s.density, s.x, tight_floor);
                 const auto loose_series = epcsaft::properties::density_volume_taylor(loose, s.temperature, s.density, s.x, loose_floor);
                 identity(std::string("F3b/") + s.name + "/gradient-floor/series-tape", "A_V", tight_series.c[1], exact.gradient[1],
-                    1.0, IDENTITY, inputs(s, "blend"), "the tight volume-series derivative agrees with the Hessian-order tape");
+                    1.0, IDENTITY, inputs(s, "blend"));
                 check(std::string("F3b/") + s.name + "/gradient-floor/series/1", 1,
                     std::abs(loose_series.c[1] - tight_series.c[1]), loose_floor + tight_floor + rounding);
             }
@@ -587,7 +580,7 @@ void pathway_weight() {
         const double scale = std::abs(*std::max_element(taylor.begin(), taylor.end(), [](double a, double b) { return std::abs(a) < std::abs(b); }));
         for (std::size_t k = 0; k < read.size() && swept.gradient.size() == read.size(); ++k)
             identity("F3d/L/repeated-gradient/" + std::to_string(k), "D3A[v,v,e_k]", swept.gradient[k], taylor[k], scale, IDENTITY,
-                inputs(L, "blend"), "the reverse sweep of the order-two path equals the repeated-direction Taylor contraction");
+                inputs(L, "blend"));
     }
 
     // F4: one consistent energy. (i) partial molar residual enthalpy at 333.15 K, 2e5 Pa, x_L, liquid; (ii) Euler.
@@ -602,8 +595,7 @@ void pathway_weight() {
             const auto h = blend.pressure_actions(L.temperature, pressure, L.x, L.branch,
                 {PropertyObservable::ResidualEnthalpy}, {{0.0, 0.0, d, {}}}).results.front();
             identity("F4/partial-enthalpy/" + std::to_string(i), "(h_i + R T^2 dlnphi_i/dT)/RT", (h.value.value() + h.action.value())
-                / (R * L.temperature) + L.temperature * lnphi.results[i].action.value(), 0.0, 1.0, IDENTITY, inputs(L, "blend"),
-                "the caloric partial molar residual enthalpy equals -R T^2 (d ln phi_i/dT)_P,x");
+                / (R * L.temperature) + L.temperature * lnphi.results[i].action.value(), 0.0, 1.0, IDENTITY, inputs(L, "blend"));
         }
     }
     for (const auto& s : STATES) {
@@ -611,15 +603,13 @@ void pathway_weight() {
         double sum = 0.0;
         for (std::size_t i = 0; i < 3; ++i) sum += s.x[i] * state.residual_chemical_potential_over_rt[i].value();
         identity(std::string("F4/euler/") + s.name, "a - sum x mu + Z - 1", state.residual_helmholtz - sum
-            + state.compressibility_factor - 1.0, 0.0, std::max(1.0, std::abs(state.residual_helmholtz)), 1e-12, inputs(s, "blend"),
-            "Euler homogeneity at fixed T");
+            + state.compressibility_factor - 1.0, 0.0, std::max(1.0, std::abs(state.residual_helmholtz)), 1e-12, inputs(s, "blend"));
         const auto terms = blend.log_fugacity_terms(s.temperature, s.density, s.x);
         for (std::size_t i = 0; i < 3 && s.x[i] > 0.0; ++i) {
             const double total = terms.hard_chain[i].value() + terms.dispersion[i].value() + terms.association[i].value()
                 - terms.log_compressibility_factor;
             identity(std::string("F4/terms/") + s.name + "/" + std::to_string(i), "sum of ln phi terms", total,
-                state.log_fugacity_coefficient.value()[i].value(), 1.0, IDENTITY, inputs(s, "blend"),
-                "the per-term log-fugacity decomposition sums to ln phi, the implicit site chain included");
+                state.log_fugacity_coefficient.value()[i].value(), 1.0, IDENTITY, inputs(s, "blend"));
         }
     }
 
@@ -628,19 +618,13 @@ void pathway_weight() {
     const epcsaft::HelmholtzModel zero_slope(hong(Form::Blend, {1.7, 0.0, -1.5}));
     CHECK(std::isfinite(zero_slope.evaluate(353.15, 1e-3, amine_free, epcsaft::DerivativeOrder::Hessian).value));
     for (const auto& model : {&blend, &uncorrected}) {
-        bool refused = false;
-        try { (void)model->evaluate(353.15, 1e-3, amine_free, epcsaft::DerivativeOrder::Gradient); }
-        catch (const std::invalid_argument& error) { refused = std::string(error.what()).find("loading undefined") != std::string::npos; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { (void)model->evaluate(353.15, 1e-3, amine_free, epcsaft::DerivativeOrder::Gradient); })
+            .find("loading undefined") != std::string::npos);
     }
-    bool active_zero_refused = false;
-    try {
+    CHECK(recording_support::refusal([&] {
         const epcsaft::HelmholtzModel active(hong(Form::Blend, {1.7, 0.0, -1.5}), {{ParameterFamily::PathwayWeight, {1}}});
         (void)active.evaluate(353.15, 1e-3, amine_free, epcsaft::DerivativeOrder::Gradient);
-    } catch (const std::invalid_argument& error) {
-        active_zero_refused = std::string(error.what()).find("loading undefined") != std::string::npos;
-    }
-    CHECK(active_zero_refused);
+    }).find("loading undefined") != std::string::npos);
 }
 
 }  // namespace properties_checks

@@ -56,10 +56,10 @@ void roundtrips() {
         && diagnostic.ipopt_diagnostics && diagnostic.solver_settings.empty() && diagnostic.linear_solver.empty()
         && diagnostic.message.find("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: " + missing.string()) != std::string::npos;
     recording_support::compare("ipopt-options/missing", "retained-diagnostics", "1", retained ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "driver-diagnostics",
         recording_support::fields({recording_support::field("cause", diagnostic.message),
             recording_support::field("options_file", diagnostic.diagnostic_options_file),
-            recording_support::field("solver_status", diagnostic.solver_status)}),
-        "Relationship", "driver-diagnostics", "a configuration refusal retains the driver observations", "absolute", 0.0, 0.0, retained);
+            recording_support::field("solver_status", diagnostic.solver_status)}));
     for(bool h:{true,false}) for(double n:{1.0,2.5}) {
         auto q=p;q.feed.values={0.5*n,0.5*n};const auto ref=solve_equilibrium(m,q);CHECK(ref.has_state());
         recovered(m,q,ref,h,165,(h?"PH1/":"PS1/")+std::to_string(n));
@@ -134,8 +134,8 @@ void reactions() {
         compare("PH5/"+std::to_string(kind)+"/cp",thermal.heat_capacity,-300*target[2][0],40,1e-8);
         auto& polynomial=std::get<IdealPolynomial>(r.component_intervals[1][0].correlation.form);polynomial.reference_enthalpy+=100;
         const HelmholtzModel wrong(e2::identical_ethane_pair(),{},r);
-        bool rejected=false;try{(void)compile_problem(wrong,condition(p,true,total(m,ref,true),280));}
-        catch(const std::invalid_argument& e){rejected=std::string(e.what()).find("reference inconsistency")!=std::string::npos;}
+        const bool rejected=recording_support::refusal([&]{(void)compile_problem(wrong,condition(p,true,total(m,ref,true),280));})
+            .find("reference inconsistency")!=std::string::npos;
         compare("PH5/"+std::to_string(kind)+"/wrong-anchor",rejected?1:0,1,1,1e-10);
     }
 }
@@ -150,12 +150,13 @@ inline double action(const CompiledSystem& c,const EquilibriumResult& r,const st
     // Numbered within the running case, so a row's id does not depend on which cases ran before it.
     static const char* numbered_case=nullptr;static std::size_t call=0;
     if(numbered_case!=recording_support::active_test_id()) {numbered_case=recording_support::active_test_id();call=0;}
-    recording_support::observe(("PH4/action-call-"+std::to_string(++call)).c_str(),kind==SolvedStateObservableKind::SystemEnthalpy?"system-enthalpy-action":"solved-temperature-action",value.unit.c_str(),*value.action,std::nullopt,
+    recording_support::observe("PH4/action-call-"+std::to_string(++call),
+        kind==SolvedStateObservableKind::SystemEnthalpy?"system-enthalpy-action":"solved-temperature-action",
+        value.unit.c_str(), *value.action, std::nullopt, "implicit-exact-action",
         recording_support::fields({recording_support::field("order",d.size()),recording_support::field("T_K",*r.temperature),
             recording_support::field("P_Pa",*r.pressure),recording_support::field("condition",batch.diagnostics.condition_estimate.value_or(0)),
             recording_support::field("backward_error",batch.diagnostics.maximum_linear_residual.value_or(0)),
-            recording_support::field("energy_order",batch.diagnostics.maximum_energy_order)}),
-        "Observation","implicit-exact-action","conditioning and recurrence diagnostics","caloric-specification");
+            recording_support::field("energy_order",batch.diagnostics.maximum_energy_order)}));
     return *value.action;
 }
 void actions() {
@@ -193,13 +194,16 @@ void actions() {
                 }
                 const double reference=(shifted[1]-shifted[0])/(2*step),scale=std::max(chart_scale,std::abs(reference));
                 const double error=std::abs(exact-reference)/scale;best=std::min(best,error);
-                recording_support::observe(((h?"PH4/":"PS4/")+std::to_string(order)+"/rung-"+std::to_string(rung)).c_str(),"action-ladder","K",exact,reference,
-                    recording_support::fields({recording_support::field("step",step),recording_support::field("error",error),recording_support::field("scale",scale)}),"Observation","lower-exact-action-difference","mixed H/S,P,feed refinement","caloric-specification");
+                recording_support::observe((h?"PH4/":"PS4/")+std::to_string(order)+"/rung-"+std::to_string(rung),
+                    "action-ladder", "K", exact, reference, "lower-exact-action-difference",
+                    recording_support::fields({recording_support::field("step",step),recording_support::field("error",error),recording_support::field("scale",scale)}));
                 if(rung>0) {
                     const double richardson=(4*reference-previous)/3;
                     best=std::min(best,std::abs(exact-richardson)/scale);
                     if(rung>1&&std::abs(richardson-previous_richardson)/scale<2.5e-7)resolved=true;
-                    recording_support::observe(((h?"PH4/":"PS4/")+std::to_string(order)+"/Richardson-"+std::to_string(rung)).c_str(),"refined-action","K",exact,richardson,recording_support::fields({recording_support::field("step",step),recording_support::field("scale",scale),recording_support::field("refinement",std::abs(richardson-previous_richardson)/scale)}),"Observation","centered-second-order-extrapolation","lower exact action refinement","caloric-specification");
+                    recording_support::observe((h?"PH4/":"PS4/")+std::to_string(order)+"/Richardson-"+std::to_string(rung),
+                        "refined-action", "K", exact, richardson, "centered-second-order-extrapolation",
+                        recording_support::fields({recording_support::field("step",step),recording_support::field("scale",scale),recording_support::field("refinement",std::abs(richardson-previous_richardson)/scale)}));
                     previous_richardson=richardson;
                 }
                 previous=reference;
@@ -256,9 +260,9 @@ void admission() {
     const HelmholtzModel m(params,{},records(true));const auto ref=solve_equilibrium(m,p);CHECK(ref.has_state());
     for(int cause=0;cause<2;++cause) {
         const HelmholtzModel broken(params,{},cause?std::optional<ThermochemistryRecord>(records(true)):std::nullopt);
-        auto q=condition(p,true,total(m,ref,true),cause?600:240);bool rejected=false;
-        try{(void)compile_problem(broken,q);}catch(const std::invalid_argument& e){
-            rejected=std::string(e.what()).find(cause?"outside interval":"missing thermochemistry")!=std::string::npos;}
+        const auto q=condition(p,true,total(m,ref,true),cause?600:240);
+        const bool rejected=recording_support::refusal([&]{(void)compile_problem(broken,q);})
+            .find(cause?"outside interval":"missing thermochemistry")!=std::string::npos;
         compare("admission/"+std::to_string(cause),rejected?1:0,1,1,1e-10);
         CHECK(broken.state(250,ref.molar_densities[0],{1}).pressure>0);
         CHECK(solve_equilibrium(broken,p).has_state());
@@ -266,10 +270,7 @@ void admission() {
     // Saturation at 1 MPa (300.053 K, PH3) lies outside [100,300] K while the 300 K seed lies inside.
     auto narrow=records(true);narrow.component_intervals[0][0].upper=300;const HelmholtzModel outside(params,{},narrow);
     auto two=p;two.feed.values={2.5};two.phases.push_back(equilibrium_support::phase("V",PhaseKind::Vapor));
-    bool refused=false;std::string cause;
-    try { solve_equilibrium(outside,condition(two,true,0,300)); }
-    catch(const std::invalid_argument& error) { refused=true;cause=error.what(); }
-    CHECK(refused);
+    const std::string cause=recording_support::refusal([&]{solve_equilibrium(outside,condition(two,true,0,300));});
     compare("admission/saturation-outside",cause.find("outside interval: species 0 at 300.05")!=std::string::npos?1:0,1,1,1e-10,recording_support::field("cause",cause));
     ThermochemistryRecord joined;joined.standard_pressure=100000;
     joined.component_intervals={{{100,250,true,true,{IdealPolynomial{{40},200,0,0},100000}},
@@ -308,7 +309,8 @@ void volume_specification() {
         compare(id+"/V",volume(r),ref[1],ref[1],1e-10);
         for(std::size_t i=0;i<2;++i)compare(id+"/n"+std::to_string(i),r.amounts[0]*r.mole_fractions[i]+r.amounts[1]*r.mole_fractions[2+i],0.5,0.5,1e-10);
         CHECK(r.reduced_hessian_minimum>0);
-        recording_support::observe((id+"/curvature").c_str(),"reduced-Helmholtz-curvature","chart",r.reduced_hessian_minimum,std::nullopt,"","Observation","exact-Lagrangian-Hessian","positive on the total-volume tangent","volume-specification");
+        recording_support::observe(id+"/curvature", "reduced-Helmholtz-curvature", "chart", r.reduced_hessian_minimum,
+            std::nullopt, "exact-Lagrangian-Hessian");
         const auto c=compile_problem(model,p);auto d=direction(c);d.volume_m3=ref[1];
         std::vector<SolvedStateObservable> o={{SolvedStateObservableKind::Pressure},{SolvedStateObservableKind::PhaseAmount,1},
             {SolvedStateObservableKind::PhaseMoleFraction,0,0},{SolvedStateObservableKind::PhaseMoleFraction,1,0},
@@ -354,9 +356,9 @@ void volume_specification() {
             const auto rr=solve_equilibrium(model,near);if(!rr.has_state())throw std::runtime_error("TV boundary: "+rr.message);
             compare("TV/boundary/V",volume(rr),*near.volume_m3,*near.volume_m3,1e-10);
             const double absent=rr.amounts[dew?0:1];CHECK(absent>0&&absent<previous);previous=absent;
-            recording_support::observe(dew?"TV/dew/limit":"TV/bubble/limit","absent-phase-amount","mol",absent,std::nullopt,
-                recording_support::fields({recording_support::field("fractional_volume_distance",f),recording_support::field("P_Pa",*rr.pressure),recording_support::field("V_m3",*near.volume_m3),recording_support::field("mole_fractions",rr.mole_fractions)}),
-                "Observation","volume-limit","positive amount decreases toward the phase boundary","volume-specification");
+            recording_support::observe(dew?"TV/dew/limit":"TV/bubble/limit", "absent-phase-amount", "mol", absent,
+                std::nullopt, "volume-limit",
+                recording_support::fields({recording_support::field("fractional_volume_distance",f),recording_support::field("P_Pa",*rr.pressure),recording_support::field("V_m3",*near.volume_m3),recording_support::field("mole_fractions",rr.mole_fractions)}));
         }
     }
 
@@ -368,7 +370,8 @@ void volume_specification() {
     const auto tv=solve_equilibrium(pure,sat);if(!tv.has_state())throw std::runtime_error("pure TV: "+tv.message);
     compare("TV/pure/P",*tv.pressure,*s.pressure,*s.pressure,1e-8);
     compare("TV/pure/split",tv.amounts[1],0.35,1,1e-8);CHECK(tv.reduced_hessian_minimum>0);
-    recording_support::observe("TV/pure/curvature","reduced-Helmholtz-curvature","chart",tv.reduced_hessian_minimum,std::nullopt,"","Observation","exact-Lagrangian-Hessian","pure coexistence retains volume and both free amounts","volume-specification");
+    recording_support::observe("TV/pure/curvature", "reduced-Helmholtz-curvature", "chart", tv.reduced_hessian_minimum,
+        std::nullopt, "exact-Lagrangian-Hessian");
 }
 void internal_energy_specification() {
     const double R=GAS_CONSTANT_J_PER_MOL_K;
@@ -485,7 +488,7 @@ void internal_energy_specification() {
     auto edge=thermal;edge.component_intervals[0][0].upper=300;edge.component_intervals[0][0].upper_inclusive=true;
     const HelmholtzModel bounded(propane_parameters(),{},edge);
     auto q=sat;q.temperature=FreeValue::variable(300);q.internal_energy_j=energy(pure,sr);q.volume_m3=volume(sr);
-    bool refused=false;try{(void)solve_equilibrium(bounded,q);}catch(const std::invalid_argument& e){refused=std::string(e.what()).find("interval endpoint")!=std::string::npos;}CHECK(refused);
+    CHECK(recording_support::refusal([&]{(void)solve_equilibrium(bounded,q);}).find("interval endpoint")!=std::string::npos);
 }
 // Apparent Cp under PH (free T, fixed P, enthalpy target) on the PH5/2 state, read from solved_state_actions of the
 // PH-compiled problem, against central differences of the driven equilibrium enthalpy along T (F1) and of the driven
@@ -522,9 +525,9 @@ void apparent_heat_capacity() {
         double fd[3];
         for(int i=0;i<3;++i) {
             fd[i]=difference(h0*std::ldexp(1.,-i));
-            recording_support::observe((id+"/step-"+std::to_string(i)).c_str(),"apparent-cp-difference","J/(mol-feed K)",exact,fd[i],
-                recording_support::fields({recording_support::field("step",h0*std::ldexp(1.,-i)),recording_support::field("error",std::abs(exact-fd[i])/std::abs(exact))}),
-                "Observation","centered-difference","fixed-H apparent Cp","caloric-specification");
+            recording_support::observe(id+"/step-"+std::to_string(i), "apparent-cp-difference", "J/(mol-feed K)",
+                exact, fd[i], "centered-difference",
+                recording_support::fields({recording_support::field("step",h0*std::ldexp(1.,-i)),recording_support::field("error",std::abs(exact-fd[i])/std::abs(exact))}));
         }
         for(int i=0;i<2;++i) compare(id+"/ratio-"+std::to_string(i),std::abs(exact-fd[i])/std::abs(exact-fd[i+1]),4,1,0.5);
         compare(id+"/Richardson",exact,(4*fd[2]-fd[1])/3,exact,tolerance);
@@ -538,8 +541,7 @@ void apparent_heat_capacity() {
         }
         return (v[1]-v[0])/(2*d);
     });
-    bool refused=false;try{(void)solved_state_actions(c,x,{{{Cp}},{wq,wq}});}
-    catch(const std::invalid_argument& e){refused=std::string(e.what()).find("fixed-P enthalpy target")!=std::string::npos;}
-    CHECK(refused);
+    CHECK(recording_support::refusal([&]{(void)solved_state_actions(c,x,{{{Cp}},{wq,wq}});}).find("fixed-P enthalpy target")
+          !=std::string::npos);
 }
 } // namespace caloric_specification_checks

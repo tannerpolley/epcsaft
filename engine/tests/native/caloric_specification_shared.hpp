@@ -11,11 +11,10 @@ inline void compare(const std::string& id, double actual, double reference, doub
                     const std::string& inputs = "") {
     const bool volume = id.rfind("TV/", 0) == 0 || id.rfind("UV/", 0) == 0;
     const double error = std::abs(actual-reference)/scale;
-    recording_support::compare_custom(id.c_str(),"caloric-specification","SI",actual,reference,
+    recording_support::compare_custom(id, "caloric-specification", "SI", actual, reference, "positive quantity scale",
+        std::isfinite(error)&&error<=tolerance, volume ? "Paterson2023/Clapeyron0.6.29" : "issue-224",
         recording_support::fields({inputs,recording_support::field("scale",scale),
-            recording_support::field("error",error),recording_support::field("criterion",tolerance)}),
-        "Relationship",volume ? "Paterson2023/Clapeyron0.6.29" : "issue-224",volume ? "volume/energy value, invariant or exact derivative" : "PH/PS value or exact derivative falsifier","positive quantity scale",
-        std::isfinite(error)&&error<=tolerance,"caloric-specification",id.c_str());
+            recording_support::field("error",error),recording_support::field("criterion",tolerance)}));
 }
 inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const std::vector<double>& scale,const std::string& id,
                    const std::vector<double>& objectives={0.,0.5,1.}, double hessian_tolerance=1e-5) {
@@ -23,9 +22,9 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
     std::vector<std::vector<double>> weights(1,std::vector<double>(m));
     for(std::size_t j=0;j<m;++j)weights[0][j]=(j%2?-1:1)*(0.3+0.07*j);
     for(std::size_t r=0;r<m;++r)if(c.rows[r].kind>=RowKind::Enthalpy){weights.emplace_back(m,0.);weights.back()[r]=1;}
-    recording_support::observe((id+"/F5/point").c_str(),"callback-coordinates","chart",y[c.primal_size-1],std::nullopt,
-        recording_support::fields({recording_support::field("point",y),recording_support::field("feed_mol",c.problem.feed.values)}),
-        "Observation","off-solution-chart","declared callback coordinates and independent chemical duals","caloric-specification");
+    recording_support::observe(id+"/F5/point", "callback-coordinates", "chart", y[c.primal_size-1], std::nullopt,
+        "off-solution-chart",
+        recording_support::fields({recording_support::field("point",y),recording_support::field("feed_mol",c.problem.feed.values)}));
     const auto J=c.jacobian(y);std::vector<std::vector<double>> H;
     for(const auto& w:weights)H.push_back(c.hessian(y,w));  // feasibility objective is constant for every factor
     const std::size_t sets=weights.size()*objectives.size();
@@ -68,8 +67,9 @@ inline void ladder(const CompiledSystem& c,const std::vector<double>& y,const st
         for(std::size_t k=0;k<sets;++k) {
             const std::string label=id+"/F5/H/"+std::to_string(k/objectives.size())+"/"+std::to_string(objectives[k%objectives.size()])+"/"+std::to_string(column);
             for(std::size_t row=0;row<n;++row)compare(label+"/"+std::to_string(row),bestH[k][row],0,1,hessian_tolerance,entry(atH[k][row]));
-            recording_support::observe((label+"/refinement").c_str(),"second-order-refinement","chart",largest[k],noise[k],
-                recording_support::fields({recording_support::field("refined",refinement[k]?1:0)}),"Observation","centered-refinement","truncation before the rounding floor","caloric-specification");
+            recording_support::observe(label+"/refinement", "second-order-refinement", "chart", largest[k], noise[k],
+                "centered-refinement",
+                recording_support::fields({recording_support::field("refined",refinement[k]?1:0)}));
             CHECK(refinement[k]||largest[k]<=32*noise[k]);
         }
     }

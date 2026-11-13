@@ -35,12 +35,12 @@ void regular_reaction_state(const HelmholtzModel& model, const Observation& obse
     observable.component = observation.problem.phases[0].support_declared ? observation.problem.phases[0].support.front() : 0;
     const auto batch = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved, {observable}, {direction}).front();
     const auto& result = batch.results.front();
-    truth(id + "/regular", "the central state admits a finite nonzero first reaction action",
+    truth(id + "/regular",
         result.status == equilibrium::SolvedStateActionStatus::Available && result.action && std::abs(*result.action) > 0.0
         && prediction.solved->topology_event == equilibrium::TopologyEvent::None,
         fields({field("central_residual", batch.diagnostics.central_residual.value_or(std::numeric_limits<double>::quiet_NaN())),
                 field("dx_dlnK", result.action.value_or(std::numeric_limits<double>::quiet_NaN())),
-                field("condition", batch.diagnostics.condition_estimate.value_or(std::numeric_limits<double>::quiet_NaN()))}), "reaction-fit");
+                field("condition", batch.diagnostics.condition_estimate.value_or(std::numeric_limits<double>::quiet_NaN()))}));
 }
 
 void reaction_data(FitRequest& request) {
@@ -74,10 +74,9 @@ FitResult reaction_columns(const std::string& id, FitRequest request) {
             const auto key = id + "/" + std::to_string(row) + "/" + std::to_string(c);
             const auto inputs = fields({field("fd_signal", std::abs(rungs.fine)), field("u_step", 0.005),
                                       field("prediction", result.predictions[row])});
-            truth(key + "/signal", "the dimensionless finite-difference column has signal at least 1e-2",
-                  std::abs(rungs.fine) >= 1.0e-2, inputs, "reaction-fit");
-            ladder_agrees(key, "dlny_du", result.optimizer_jacobian[row * columns + c], rungs, inputs,
-                         "the exact log-residual column agrees with independently rebuilt central differences", "reaction-fit");
+            truth(key + "/signal",
+                  std::abs(rungs.fine) >= 1.0e-2, inputs);
+            ladder_agrees(key, "dlny_du", result.optimizer_jacobian[row * columns + c], rungs, inputs);
         }
     }
     return result;
@@ -101,10 +100,10 @@ EquilibriumProblem reacting_bubble(const HelmholtzModel& model) {
     const auto reacting = equilibrium::solve_equilibrium(model, problem);
     CHECK(reacting.success && reacting.topology_event == equilibrium::TopologyEvent::None);
     agree("reaction-a3/pinned_pressure", "P", "Pa", *reacting.pressure, *center.pressure, 0.0, 1.0e-10,
-          "T=180 K", "the reacting manufactured bubble retains the original state", "reaction-fit");
+          "T=180 K");
     for (std::size_t i = 0; i < center.mole_fractions.size(); ++i)
         agree("reaction-a3/pinned_x/" + std::to_string(i), "x", "1", reacting.mole_fractions[i], center.mole_fractions[i],
-              1.0e-10, 0.0, "T=180 K", "the reacting manufactured bubble retains the original compositions", "reaction-fit");
+              1.0e-10, 0.0, "T=180 K");
     return problem;
 }
 
@@ -213,13 +212,13 @@ ObservationFunction analytic_minimax_evaluator(const FitRequest& request) {
 
 void check_minimax_kkt(const std::string& id, const MinimaxResult& m, const std::string& inputs) {
     agree(id + "/primal", "scaled_primal_norm", "1", m.primal, 0.0, 1.0e-8, 0.0,
-        inputs, "scaled primal feasibility is within tolerance", "r2-minimax");
+        inputs);
     agree(id + "/stationarity", "scaled_stationarity_norm", "1", m.stationarity, 0.0, 1.0e-8, 0.0,
-        inputs, "scaled stationarity is within tolerance", "r2-minimax");
+        inputs);
     agree(id + "/dual_sign", "scaled_dual_sign_norm", "1", m.dual_sign, 0.0, 1.0e-8, 0.0,
-        inputs, "scaled dual signs are feasible", "r2-minimax");
+        inputs);
     agree(id + "/complementarity", "scaled_complementarity_norm", "1", m.complementarity, 0.0,
-        1.0e-8, 0.0, inputs, "scaled complementarity is within tolerance", "r2-minimax");
+        1.0e-8, 0.0, inputs);
 }
 
 void check_b1_minimax(const std::string& id, const FitRequest& request, const FitResult& result,
@@ -228,24 +227,24 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
         field("start_x", start[0]), field("start_z", start[1]), field("a_per_decade", 0.01)});
     CHECK(result.minimax.has_value());
     const auto& m = *result.minimax;
-    truth(id + "/available", "the analytic constrained candidate and KKT diagnostics are available",
-  result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax");
+    truth(id + "/available",
+  result.usable && m.availability == "available" && m.feasible && m.stationary, inputs);
     const std::vector<double> coordinates = {0.75, 0.5, 1.5}, errors = {0.0125, 0.0175, 0.0075, 0.005, 0.010};
     for (std::size_t i = 0; i < coordinates.size(); ++i)
         agree(id + "/coordinate/" + std::to_string(i), "physical_coordinate", "1", result.chart.physical[i],
-      coordinates[i], 1.0e-7, 0.0, inputs, "the unique guarded minimax point is recovered", "r2-minimax");
+      coordinates[i], 1.0e-7, 0.0, inputs);
     agree(id + "/H", "H", "1", result.chart.physical[2] - 2.0 * result.chart.physical[0], 0.0,
-  1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax");
+  1.0e-12, 0.0, inputs);
     for (std::size_t i = 0; i < errors.size(); ++i)
         agree(id + "/error/" + std::to_string(i), "log10_prediction_ratio", "decade",
       check_error(CheckMetric::AbsoluteLog10Ratio, request.observations[i], result.predictions[i]).first,
-      errors[i], 1.0e-9, 0.0, inputs, "the analytic observation error is recovered", "r2-minimax");
+      errors[i], 1.0e-9, 0.0, inputs);
     agree(id + "/t", "minimax_t", "decade", m.t, 0.0175, 1.0e-9, 0.0,
-  inputs, "the active target sets the epigraph", "r2-minimax");
+  inputs);
     agree(id + "/target_maximum", "target_maximum", "decade", m.target_maximum, 0.0175, 1.0e-9, 0.0,
-  inputs, "the reported maximum matches the active target", "r2-minimax");
+  inputs);
     agree(id + "/gap", "epigraph_gap", "decade", m.gap, 0.0, 1.0e-9, 0.0,
-  inputs, "the epigraph is tight", "r2-minimax");
+  inputs);
     CHECK(m.rows.size() == m.physical_values.size() && m.rows.size() == m.physical_multipliers.size());
     double mu_e2 = 0.0, mu_max = 0.0, mu_e4 = 0.0, mu_e5 = 0.0;
     for (std::size_t i = 0; i < m.rows.size(); ++i) {
@@ -263,43 +262,41 @@ void check_b1_minimax(const std::string& id, const FitRequest& request, const Fi
                 if (r.row == 3) mu_e4 = m.physical_multipliers[i]; else mu_e5 = m.physical_multipliers[i];
                 CHECK(r.auxiliary.has_value());
                 agree(id + "/slack/" + std::to_string(r.row), "mean_slack", "decade",
-              m.point.at(*r.auxiliary), slack, 1.0e-9, 0.0, inputs,
-              "each mean slack equals its absolute row error", "r2-minimax");
+              m.point.at(*r.auxiliary), slack, 1.0e-9, 0.0, inputs);
             }
         } else { value = 0.0; multiplier = 1.0; }
         agree(id + "/row/" + std::to_string(i), "physical_constraint", "decade", m.physical_values[i],
-      value, 1.0e-9, 0.0, inputs, "the physical target and guard rows match the analytic values", "r2-minimax");
+      value, 1.0e-9, 0.0, inputs);
         agree(id + "/multiplier/" + std::to_string(i), "physical_row_multiplier", "1", m.physical_multipliers[i],
-      multiplier, 1.0e-6, 0.0, inputs, "physical row multipliers match the analytic active set", "r2-minimax");
+      multiplier, 1.0e-6, 0.0, inputs);
         // Only e2 depends on d (de2/dd = -a/2): its scaled root error is (a/2)/scale times the hold uncertainty.
         agree(id + "/root_error/" + std::to_string(i), "scaled_root_error", "1", m.root_errors.at(i),
-      r.members.empty() && r.row == 1 ? 0.005 / r.scale * 1.0e-3 : 0.0, 0.0, 1.0e-12, inputs,
-      "the root error counts the achieved hold uncertainty once", "r2-minimax");
+      r.members.empty() && r.row == 1 ? 0.005 / r.scale * 1.0e-3 : 0.0, 0.0, 1.0e-12, inputs);
     }
     for (const double z : m.physical_z_lower)
         agree(id + "/lower_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
-      inputs, "the interior point has no lower-bound multiplier", "r2-minimax");
+      inputs);
     for (const double z : m.physical_z_upper)
         agree(id + "/upper_multiplier", "physical_bound_multiplier", "1", z, 0.0, 1.0e-6, 0.0,
-      inputs, "the interior point has no upper-bound multiplier", "r2-minimax");
+      inputs);
     agree(id + "/nu", "equality_hold_multiplier", "decade_per_H", m.hold_multipliers.at(0), 0.005,
-  1.0e-6, 0.0, inputs, "the eliminated equality reconstructs nu=a/2", "r2-minimax");
+  1.0e-6, 0.0, inputs);
     CHECK(m.full_stationarity.size() == 3);
     for (std::size_t i = 0; i < m.full_stationarity.size(); ++i)
         agree(id + "/full_stationarity/" + std::to_string(i), "full_space_stationarity", "decade_per_coordinate",
-      m.full_stationarity[i], 0.0, 1.0e-8, 0.0, inputs, "full-space stationarity vanishes", "r2-minimax");
+      m.full_stationarity[i], 0.0, 1.0e-8, 0.0, inputs);
     agree(id + "/stationarity_x", "stationarity_x", "decade_per_x", 0.01 * mu_max - 2.0 * m.hold_multipliers[0],
-  0.0, 1.0e-8, 0.0, inputs, "a*mu_max-2*nu=0", "r2-minimax");
+  0.0, 1.0e-8, 0.0, inputs);
     agree(id + "/stationarity_z", "stationarity_z", "decade_per_z", -0.01 * mu_e2 + 0.01 * (mu_e4 + mu_e5),
-  0.0, 1.0e-8, 0.0, inputs, "-a*mu_e2+a*(mu_e4+mu_e5)=0", "r2-minimax");
+  0.0, 1.0e-8, 0.0, inputs);
     agree(id + "/stationarity_d", "stationarity_d", "decade_per_d", -0.01 * mu_e2 / 2.0 + m.hold_multipliers[0],
-  0.0, 1.0e-8, 0.0, inputs, "-a*mu_e2/2+nu=0", "r2-minimax");
+  0.0, 1.0e-8, 0.0, inputs);
     CHECK(result.chart.map == std::vector<double>({1.0, 0.0, 0.0, 1.0, 2.0, 0.0}));
     CHECK(result.chart.holds[0].parameter_derivative == std::vector<double>({-2.0, 0.0, 1.0}));
     agree(id + "/H_d", "H_d", "1", result.chart.holds[0].derivative, 1.0, 0.0, 0.0,
-  inputs, "the analytic hold has H_d=1", "r2-minimax");
+  inputs);
     agree(id + "/hold_residual", "H", "1", result.chart.holds[0].energy_error, 0.0, 1.0e-12, 0.0,
-  inputs, "the analytic equality has zero residual", "r2-minimax");
+  inputs);
     check_minimax_kkt(id, m, inputs);
 }
 
@@ -350,27 +347,26 @@ void check_d7_minimax() {
         const auto inputs = fields({field("q", problem.request.minimax->q), field("start_x", x), field("a_per_decade", 0.01)});
         CHECK(result.minimax.has_value());
         const auto& m = *result.minimax;
-        truth(id + "/available", "the analytic minimax candidate and KKT diagnostics are available",
-            result.usable && m.availability == "available" && m.feasible && m.stationary, inputs, "r2-minimax");
+        truth(id + "/available",
+            result.usable && m.availability == "available" && m.feasible && m.stationary, inputs);
         agree(id + "/x", "x", "1", result.chart.physical[0], 1.5, 1.0e-7, 0.0,
-            inputs, "the opposing maximum errors balance at x=1.5", "r2-minimax");
+            inputs);
         agree(id + "/d", "d", "1", result.chart.physical[1], 3.0, 1.0e-7, 0.0,
-            inputs, "the eliminated equality gives d=2x", "r2-minimax");
+            inputs);
         agree(id + "/H", "H", "1", result.chart.physical[1] - 2.0 * result.chart.physical[0], 0.0,
-            1.0e-12, 0.0, inputs, "the held equality is eliminated", "r2-minimax");
+            1.0e-12, 0.0, inputs);
         agree(id + "/t", "minimax_t", "decade", m.t, 0.015, 1.0e-9, 0.0,
-            inputs, "the epigraph is the maximum target error", "r2-minimax");
+            inputs);
         agree(id + "/target_maximum", "target_maximum", "decade", m.target_maximum, 0.015, 1.0e-9, 0.0,
-            inputs, "the reported maximum matches the analytic target", "r2-minimax");
+            inputs);
         agree(id + "/gap", "epigraph_gap", "decade", m.gap, 0.0, 1.0e-9, 0.0,
-            inputs, "the epigraph is tight", "r2-minimax");
+            inputs);
         CHECK(m.rows.size() == m.physical_values.size());
         for (std::size_t i = 0; i < m.rows.size(); ++i) {
             const auto& row = m.rows[i];
             const double e = check_error(row.metric, problem.request.observations[row.row], result.predictions[row.row]).first;
             agree(id + "/row/" + std::to_string(i), "physical_constraint", "decade", m.physical_values[i],
-                row.sign * e - m.t, 1.0e-9, 0.0, inputs,
-                "the physical max rows retain their analytic errors", "r2-minimax");
+                row.sign * e - m.t, 1.0e-9, 0.0, inputs);
         }
         check_minimax_kkt(id, m, inputs);
     }
@@ -396,8 +392,7 @@ void check_reaction_derivatives() {
         for (std::size_t c = 0; c < 3; ++c) {
             const std::size_t physical = c == 1 ? 2 : c == 2 ? 1 : 0;
             agree("reaction-a1/order/" + std::to_string(row) + "/" + std::to_string(c), "dlny_du", "1",
-                interleaved.optimizer_jacobian[row * 3 + c], slope * j[row * 3 + physical] * a1.coordinates.coordinates[c].scale, 0.0, 1.0e-12, "",
-                "optimizer declaration order and EOS-first physical-row order carry the same derivatives", "reaction-fit");
+                interleaved.optimizer_jacobian[row * 3 + c], slope * j[row * 3 + physical] * a1.coordinates.coordinates[c].scale, 0.0, 1.0e-12, "");
         }
     }
     for (const auto source_pressure : {std::optional<double>{}, std::optional<double>{2.0e5}}) {
@@ -411,8 +406,7 @@ void check_reaction_derivatives() {
         regular_reaction_state(HelmholtzModel(a2.parameters), a2.observations.front(), source_pressure ? "reaction-a2/fixed" : "reaction-a2/system");
         const auto result = reaction_columns(source_pressure ? "reaction-a2/fixed" : "reaction-a2/system", a2);
         agree(source_pressure ? "reaction-a2/fixed_basis" : "reaction-a2/system_basis", "x_Na", "1",
-              result.predictions[0], *direct.value, 0.0, 1.0e-12, "",
-              "rewriting the native coefficient retains the declared source reference", "reaction-fit");
+              result.predictions[0], *direct.value, 0.0, 1.0e-12, "");
         a2.coordinates.coordinates[0].reaction->coefficient = ReactionCoefficient::EnthalpyShift;
         a2.coordinates.coordinates[0].reaction->pivot_temperature = 313.15;
         a2.coordinates.coordinates[0].scale = 2500.0;
@@ -437,7 +431,7 @@ void check_reaction_derivatives() {
         for (std::size_t c = 1; c < 4; ++c)
             agree("reaction-a3/basis/" + std::to_string(row) + "/" + std::to_string(c), "dy_dtheta", "native",
                   result.physical_jacobian[row * 4 + c], result.physical_jacobian[row * 4] * basis[c], 0.0, 1.0e-12,
-                  "T=180 K; Tref=200 K", "physical columns obey the source ln K basis vector", "reaction-fit");
+                  "T=180 K; Tref=200 K");
     auto free_t = bubble;
     free_t.pressure = FreeValue::fixed(result.predictions.front());
     free_t.temperature = FreeValue::variable(180.0);
@@ -450,15 +444,15 @@ void check_reaction_derivatives() {
     const auto recovered = equilibrium::solve_equilibrium(model, free_t);
     CHECK(recovered.success && recovered.topology_event == equilibrium::TopologyEvent::None);
     agree("reaction-a4/pinned_temperature", "T", "K", *recovered.temperature, 180.0, 0.0, 1.0e-10,
-          "declared J1 compositions and packing fractions", "the free-temperature solve returns the specified J1 state", "reaction-fit");
+          "declared J1 compositions and packing fractions");
     agree("reaction-a4/pinned_pressure", "P", "Pa", *recovered.pressure, *j1.pressure, 0.0, 1.0e-10,
-          "", "the free-temperature solve retains the J1 pressure", "reaction-fit");
+          "");
     for (std::size_t i = 0; i < j1.mole_fractions.size(); ++i)
         agree("reaction-a4/pinned_x/" + std::to_string(i), "x", "1", recovered.mole_fractions[i], j1.mole_fractions[i],
-              1.0e-10, 0.0, "", "the free-temperature solve retains the J1 compositions", "reaction-fit");
+              1.0e-10, 0.0, "");
     for (std::size_t q = 0; q < j1.packing_fractions.size(); ++q)
         agree("reaction-a4/pinned_packing/" + std::to_string(q), "eta", "1", recovered.packing_fractions[q], j1.packing_fractions[q],
-              0.0, 1.0e-10, "", "the free-temperature solve retains the J1 packing fractions", "reaction-fit");
+              0.0, 1.0e-10, "");
     a3.observations = {solved(ObservationKind::EquilibriumTemperature, free_t)};
     a3.coordinates.coordinates = {reaction_coordinate("iso"), reaction_coordinate("iso", ReactionCoefficient::D, 1.0 / 180.0)};
     regular_reaction_state(HelmholtzModel(a3.parameters), a3.observations.front(), "reaction-a4");
@@ -467,18 +461,17 @@ void check_reaction_derivatives() {
 
 void recover_reactions(const std::string& id, const FitRequest& request, const std::vector<double>& expected) {
     const auto result = fit(request);
-    truth(id + "/converged", "the manufactured fit converges without failed trials",
-          result.status == "converged" && result.usable, summary(result), "reaction-fit");
+    truth(id + "/converged",
+          result.status == "converged" && result.usable, summary(result));
     for (std::size_t row = 0; row < expected.size(); ++row) {
         const bool b = request.coordinates.coordinates[request.coordinates.tie()[row]].reaction
             && request.coordinates.coordinates[request.coordinates.tie()[row]].reaction->coefficient == ReactionCoefficient::B;
         agree(id + "/value/" + std::to_string(row), "theta", b ? "K" : "1", result.physical[row], expected[row],
-              b ? 0.0 : 1.0e-6, b ? 1.0e-6 : 0.0, summary(result), "the known physical coefficient is recovered", "reaction-fit");
+              b ? 0.0 : 1.0e-6, b ? 1.0e-6 : 0.0, summary(result));
     }
-    agree(id + "/cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result),
-          "the noise-free final objective vanishes", "reaction-fit");
-    truth(id + "/covariance", "the interior fit has full rank and an available conditional covariance",
-          result.covariance.status == "available" && result.covariance.rank == expected.size(), summary(result), "reaction-fit");
+    agree(id + "/cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result));
+    truth(id + "/covariance",
+          result.covariance.status == "available" && result.covariance.rank == expected.size(), summary(result));
 }
 
 void check_reaction_recovery() {
@@ -553,9 +546,8 @@ void check_reaction_recovery() {
     const auto rebuilt = fit(preparation);
     const auto inputs = fields({field("supplied_lnK", 0.1), field("resolved_lnK", resolved), field("log_prediction_change", signal)});
     agree("reaction-preparation/prediction", "x_C", "1", rebuilt.predictions.front(), preparation.observations[0].observed,
-          0.0, 1.0e-12, inputs, "a changed resolved reaction constant invalidates validation preparation", "reaction-fit");
-    agree("reaction-preparation/initial_cost", "cost", "1", rebuilt.initial_cost, 0.0, 1.0e-14, 0.0, inputs,
-          "initial prediction uses the resolved constant rather than the supplied compiled problem", "reaction-fit");
+          0.0, 1.0e-12, inputs);
+    agree("reaction-preparation/initial_cost", "cost", "1", rebuilt.initial_cost, 0.0, 1.0e-14, 0.0, inputs);
 }
 
 void check_reaction_rejections() {
@@ -569,10 +561,10 @@ void check_reaction_rejections() {
     request.observations = {solved(ObservationKind::PhaseMoleFraction, problem, 0, {0})};
     const auto reject = [&](FitRequest candidate, const std::string& cause) {
         const auto result = fit(candidate);
-        truth("reaction-rejection/" + cause, "an overdetermined or fixed reaction input is refused by name",
+        truth("reaction-rejection/" + cause,
             result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
             && result.message.find("reaction_a") != std::string::npos,
-            fields({field("message", result.message)}), "reaction-fit");
+            fields({field("message", result.message)}));
     };
     auto affinity = request;
     affinity.observations[0].problem.reactions[0].equilibrium_constant.reset();
@@ -619,8 +611,8 @@ void check_reaction_rejections() {
         SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
     reject(reference, "tied species references disagree: component 0 pure liquid vs pure gas");
     reference.observations[1].problem.source_reference->species_reference[0] = SpeciesReference::PureLiquid;
-    truth("reaction-rejection/matching-species-reference", "a tie whose reacting species share one effective convention is admitted", reference.coordinates.start(reference.parameters, reference.observations).size() == 1,
-          fields({field("water_reference", "explicit pure liquid equal to the default")}), "issue-448");
+    truth("reaction-rejection/matching-species-reference", reference.coordinates.start(reference.parameters, reference.observations).size() == 1,
+          fields({field("water_reference", "explicit pure liquid equal to the default")}));
     // #433: rows that differ only in species_reference are different states; each keeps its own solve
     // (fixed ln K and an EOS coordinate, so no tie across conventions).
     FitRequest shared = reference;
@@ -633,7 +625,7 @@ void check_reaction_rejections() {
     CHECK(ObservationEvaluator(shared, failures, {0, 1}).evaluate(shared.coordinates.start(shared.parameters, shared.observations), false, rows));
     agree("reaction-rejections/species-reference", "x_Na", "1", rows.predictions[1],
           *predict(HelmholtzModel(shared.parameters), shared.observations[1]).value, 0.0, 1.0e-10,
-          "T=298.15 K, water pure-gas reference", "a row differing only in species_reference keeps its own solve", "issue-433");
+          "T=298.15 K, water pure-gas reference");
 }
 
 // #211: the source constant is measured directly; no EOS reference transfer enters it.
@@ -668,26 +660,25 @@ void check_log_constant() {
         const auto id = "ln-k/" + std::to_string(T);
         CHECK(prediction.status == ObservationStatus::Available);
         agree(id + "/value", "ln_K_src", "1", *prediction.value, value, 0.0, 0.0,
-              fields({field("T_K", T), field("Tref_K", 300.0)}), "declared source polynomial", "ln-k");
+              fields({field("T_K", T), field("Tref_K", 300.0)}));
         const auto gradient = differentiate_group(model, {&row}, prediction, coordinates).front();
         CHECK(gradient.status == ObservationStatus::Available);
         // Physical rows: EOS, b, a, other reaction a, c, d; optimizer order is interleaved.
         const std::vector<double> expected{0.0, 1.0 / T, 1.0, 0.0, std::log(T / 300.0), T};
         for (std::size_t k = 0; k < expected.size(); ++k)
             agree(id + "/column/" + std::to_string(k), "dln_K_src_dtheta", "native",
-                gradient.value[k], expected[k], 0.0, 0.0, fields({field("T_K", T), field("Tref_K", 300.0)}),
-                "exact coefficient basis; EOS and other reaction columns vanish", "ln-k");
+                gradient.value[k], expected[k], 0.0, 0.0, fields({field("T_K", T), field("Tref_K", 300.0)}));
     }
     // A referenced source value remains the source value even though its density-basis target differs.
     auto reference = log_constant(referenced_formula(std::nullopt), "H2O=Na++Cl-");
     const HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     validate(reference, aqueous);
     agree("ln-k/source", "ln_K_src", "1", *predict(aqueous, reference).value, std::log(1.0e-8),
-          0.0, 0.0, "T=298.15 K; raw mole-fraction source", "no EOS reference transfer in direct data", "ln-k");
+          0.0, 0.0, "T=298.15 K; raw mole-fraction source");
     auto scalar = log_constant(problem, "reaction_b");
     agree("ln-k/scalar", "ln_K_src", "1", *predict(model, scalar).value,
           std::log(*problem.reactions[1].equilibrium_constant), 0.0, 0.0,
-          "T=350 K", "scalar K is observed as ln K", "ln-k");
+          "T=350 K");
 
     FitRequest request;
     request.controls = budgeted_controls();
@@ -716,10 +707,10 @@ void check_log_constant() {
     rejected.observations = {log_constant(problem, "reaction_a")};
     const auto reject = [&](FitRequest candidate, const std::string& cause) {
         const auto result = fit(candidate);
-        truth("ln-k/rejection/" + cause, "the direct source target is refused by reaction name",
+        truth("ln-k/rejection/" + cause,
             result.status == "invalid_setup" && result.message.find(cause) != std::string::npos
             && result.message.find("reaction_a") != std::string::npos,
-            fields({field("message", result.message)}), "ln-k");
+            fields({field("message", result.message)}));
     };
     // At the last reversal reaction_a is first.
     auto affinity = rejected;
@@ -987,24 +978,22 @@ void check_ionic_addition_enthalpy() {
     const double oracle = (H_final - H_initial) / amount - feed_h(model);
     const double allowance = 1.0e-9 * (std::abs(H_initial) + std::abs(H_final)) / amount + 1.0e-6;
     agree("addition-ionic/value", "delta_h_add", "J/mol", *prediction.value, oracle, allowance, 0.0,
-        fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}),
-        "the ionic observation equals independently rebuilt endpoint and feed enthalpies", "addition-ionic");
+        fields({field("H_initial_J", H_initial), field("H_final_J", H_final), field("n_add_mol", amount)}));
     const double centered_oracle = (endpoint(model, final, 0.0, true) - endpoint(model, initial, 0.0, true)) / amount;
     agree("addition-ionic/conserved-basis-value", "delta_h_add", "J/mol", centered_oracle, oracle, allowance, 0.0,
-        field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}),
-        "subtracting the feed on the conserved basis preserves the two-endpoint increment", "addition-ionic");
+        field("conserved_basis", std::vector<double>{1.0, 0.5, 0.5}));
     const double shifted = (endpoint(model, final, 1.0e6) - endpoint(model, initial, 1.0e6)) / amount - feed_h(model);
     agree("addition-ionic/charge-gauge", "delta_h_add", "J/mol", shifted, oracle, allowance, 0.0,
-        field("charge_gauge_J_per_mol", 1.0e6), "a charge-neutral increment is invariant to ion enthalpy gauge", "addition-ionic");
+        field("charge_gauge_J_per_mol", 1.0e6));
     const auto residual_endpoint = [&](const EquilibriumProblem& problem) {
         const auto solved = equilibrium::solve_equilibrium(model, problem);
         CHECK(solved.success);
         return solved.amounts[0] * model.state(T, solved.molar_densities[0], solved.mole_fractions).residual_enthalpy;
     };
     const double reference_share = (H_final - H_initial - residual_endpoint(final) + residual_endpoint(initial)) / amount + 241826.0;
-    truth("addition-ionic/reference-signal", "the ionic reference contribution exceeds the subtraction allowance",
+    truth("addition-ionic/reference-signal",
         std::abs(reference_share) > allowance, fields({field("reference_share_J_per_mol", reference_share),
-            field("allowance_J_per_mol", allowance)}), "addition-ionic");
+            field("allowance_J_per_mol", allowance)}));
     const auto start = coordinates.start(parameters, {row}, record);
 #if defined(__linux__)
     using binary128_support::Wide;
@@ -1040,13 +1029,12 @@ void check_ionic_addition_enthalpy() {
         const double action = exact.value[column];
         const double tolerance = 1.0e-6 * std::abs(reference);
         const double uncertainty = std::abs(reference - R1);
-        truth("addition-ionic/column-refinement/" + std::to_string(column), "the binary128 endpoint/feed derivative is resolved to 1e-7",
+        truth("addition-ionic/column-refinement/" + std::to_string(column),
             uncertainty <= 1.0e-7 * std::abs(reference),
             fields({field("coarse", double(d1) / scale), field("middle", double(d2) / scale), field("fine", double(d4) / scale),
-                field("uncertainty", uncertainty), field("relative_uncertainty", uncertainty / std::abs(reference))}), "addition-ionic");
+                field("uncertainty", uncertainty), field("relative_uncertainty", uncertainty / std::abs(reference))}));
         agree("addition-ionic/column/" + std::to_string(column), "d_delta_h_add_dtheta", "native", action, reference,
-            tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}),
-            "one EOS and one source-law column agree with binary128 composed endpoint/feed differences", "addition-ionic");
+            tolerance, 0.0, fields({field("column", column), field("step", step), field("uncertainty", uncertainty)}));
     }
 #endif
 }
@@ -1086,8 +1074,7 @@ void check_free_temperature_addition() {
         const auto incoming=feed.state_at_pressure(300,1.5e6,{1},DensityBranch::Vapor);
         CHECK(incoming.total_enthalpy);
         const double value=(second-first)/0.01-*incoming.total_enthalpy;
-        agree(id+"/value","delta_h_add","J/mol",*center.value,value,1e-5,1e-6,inputs,
-            "two solved endpoint extensive enthalpies and declared feed enthalpy compose the increment","reactive-caloric");
+        agree(id+"/value","delta_h_add","J/mol",*center.value,value,1e-5,1e-6,inputs);
         for(std::size_t column=0;column<2;++column) {
             const double action=column==0?exact.value[0]+exact.value[1]:exact.value[2];
             const double sigma=column==0?std::abs(exact.value[0])+std::abs(exact.value[1]):std::abs(action);
@@ -1115,11 +1102,11 @@ void check_free_temperature_addition() {
                     field("refinement",refinement),field("sigma",sigma),field("target",target),
                     field("error",std::abs(action-rich)),field("error_over_target",std::abs(action-rich)/target)});
                 const auto comparison=id+"/column-"+std::to_string(column)+"/rung-"+std::to_string(rung);
-                if(!resolved&&rung<5) recording_support::observe(comparison.c_str(),"d_delta_h_add","J/mol",action,rich,row,
-                    "Refinement","native-rebuilt-prediction","Unresolved coarse step; retained and refined","reactive-caloric");
-                else recording_support::compare_custom(comparison.c_str(),"d_delta_h_add","J/mol",action,rich,row,
-                    "Relationship","native-rebuilt-prediction","Free-T endpoints and feed use exact native coefficient motion",
-                    "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",passed,"reactive-caloric");
+                if(!resolved&&rung<5) recording_support::observe(comparison, "d_delta_h_add", "J/mol", action, rich,
+                    "native-rebuilt-prediction", row);
+                else recording_support::compare_custom(comparison, "d_delta_h_add", "J/mol", action, rich,
+                    "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4", passed,
+                    "native-rebuilt-prediction", row);
                 if(resolved) break;coarse=fine;
             }
         }
@@ -1177,8 +1164,7 @@ void check_addition_enthalpy() {
                 field("T_final_K", variant.observation.final_problem.temperature.value), field("step", steps[column]),
                 field("gradient", exact.value)});
             const std::string id = "addition-f3/" + variant.name + "/" + names[column];
-            ladder_agrees(id, "d_delta_h_add_dtheta", action, rungs, inputs,
-                "the exact finite-addition gradient agrees with rebuilt-model prediction re-solves", "addition-f3");
+            ladder_agrees(id, "d_delta_h_add_dtheta", action, rungs, inputs);
             if (column == 1 || column == 3) {
                 const double fine_tolerance = FIRST_ORDER * std::max(1.0, std::abs(rungs.fine));
                 double omitted = 0.0;
@@ -1205,10 +1191,9 @@ void check_addition_enthalpy() {
                         * (total_b_amount(*center.final_solved) - total_b_amount(*center.solved)) / amount;
                 }
                 const std::string direct_name = column == 1 ? "C_Ttheta_borne_term" : "reaction_b_endpoint_term";
-                truth(id + "/omission_discrimination", "the independently calculated omitted endpoint term exceeds 1e3 times the fine criterion",
+                truth(id + "/omission_discrimination",
                     std::isfinite(omitted) && std::abs(omitted) > 1.0e3 * fine_tolerance,
-                    fields({field("direct_term", omitted), field("fine_tolerance", fine_tolerance), field("term", direct_name)}),
-                    "addition-f3");
+                    fields({field("direct_term", omitted), field("fine_tolerance", fine_tolerance), field("term", direct_name)}));
             }
         }
         if (variant.observation.problem.temperature.value == variant.observation.final_problem.temperature.value) {
@@ -1219,20 +1204,17 @@ void check_addition_enthalpy() {
             const double D = temperature * G - temperature * temperature * exact.value[4];
             agree("addition-f3/" + variant.name + "/basis_c", "d_delta_h_add_dc", "J/mol",
                 exact.value[5], G * std::log(temperature / tref) + D / temperature, 0.0, 1.0e-10,
-                fields({field("T_K", temperature), field("Tref_K", tref), field("G", G), field("D", D)}),
-                "the c column follows the source reaction basis identity before coordinate scaling", "addition-f3");
+                fields({field("T_K", temperature), field("Tref_K", tref), field("G", G), field("D", D)}));
             agree("addition-f3/" + variant.name + "/basis_d", "d_delta_h_add_dd", "J/mol",
                 exact.value[6], G * temperature + D, 0.0, 1.0e-10,
-                fields({field("T_K", temperature), field("G", G), field("D", D)}),
-                "the d column follows the source reaction basis identity before coordinate scaling", "addition-f3");
+                fields({field("T_K", temperature), field("G", G), field("D", D)}));
         } else {
             const double initial_b = total_b_amount(*center.solved);
             const double initial_c_term = -GAS_CONSTANT_J_PER_MOL_K * 260.0 * initial_b / amount;
-            truth("addition-f3/unequal_temperature/initial_c_term", "c has a nonzero initial-endpoint caloric term at Tref with no state motion",
+            truth("addition-f3/unequal_temperature/initial_c_term",
                 std::isfinite(initial_c_term) && initial_c_term != 0.0,
                 fields({field("phi_c", 0.0), field("phi_c_prime_per_K", 1.0 / 260.0),
-                    field("initial_caloric_term_J_per_mol", initial_c_term), field("initial_n_B_mol", initial_b)}),
-                "addition-f3");
+                    field("initial_caloric_term_J_per_mol", initial_c_term), field("initial_n_B_mol", initial_b)}));
         }
     }
 
@@ -1247,8 +1229,7 @@ void check_addition_enthalpy() {
     const auto shifted_prediction = predict(shifted_model, reference.observation);
     CHECK(shifted_prediction.status == ObservationStatus::Available && shifted_prediction.value);
     agree("addition-f4/value", "delta_h_add", "J/mol", *shifted_prediction.value, *reference.prediction.value,
-        0.0, 1.0e-9, fields({field("anchor_h_J_per_mol", 1.0e4)}),
-        "a common record enthalpy shift cancels from the finite addition", "addition-f4");
+        0.0, 1.0e-9, fields({field("anchor_h_J_per_mol", 1.0e4)}));
     const auto base_gradient = differentiate_group(model, {&reference.observation}, reference.prediction, coordinates).front();
     const auto shifted_gradient = differentiate_group(shifted_model, {&reference.observation}, shifted_prediction, coordinates).front();
     CHECK(base_gradient.status == ObservationStatus::Available && shifted_gradient.status == ObservationStatus::Available
@@ -1257,16 +1238,14 @@ void check_addition_enthalpy() {
         agree("addition-f4/gradient/" + std::to_string(column), "d_delta_h_add_dtheta", "native",
             addition_coordinate_gradient(shifted_gradient.value, column),
             addition_coordinate_gradient(base_gradient.value, column), 0.0, 1.0e-9,
-            fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}),
-            "a common record enthalpy shift preserves every gradient column", "addition-f4");
+            fields({field("anchor_h_J_per_mol", 1.0e4), field("column", column)}));
     const double condition = (std::abs(first_h) + std::abs(second_h))
         / (amount * std::abs(*reference.prediction.value));
     recording_support::observe("addition-f4/conditioning", "enthalpy_cancellation_condition", "1", condition,
-        std::nullopt, fields({field("H_initial_J", first_h), field("H_final_J", second_h),
-            field("n_add_mol", amount), field("delta_h_add_J_per_mol", *reference.prediction.value)}),
-        "Observation", "endpoint_enthalpy_ratio", "the reference cancellation conditioning ratio", "addition-f4");
-    truth("addition-f4/conditioning_limit", "the endpoint enthalpy cancellation ratio is at most 1e4",
-        std::isfinite(condition) && condition <= 1.0e4, field("condition", condition), "addition-f4");
+        std::nullopt, "endpoint_enthalpy_ratio", fields({field("H_initial_J", first_h), field("H_final_J", second_h),
+            field("n_add_mol", amount), field("delta_h_add_J_per_mol", *reference.prediction.value)}));
+    truth("addition-f4/conditioning_limit",
+        std::isfinite(condition) && condition <= 1.0e4, field("condition", condition));
 
     for (const double increment : {0.2, 2.0e-3}) {
         auto initial = addition_problem(260.0, 3.0e6, {2.0, 0.2});
@@ -1297,8 +1276,7 @@ void check_addition_enthalpy() {
         reference_scale_agrees("addition-f5/" + number(increment), "finite_addition_limit", "J/mol", *prediction.value, q0,
             roundoff, 1.0e-8, fields({field("n_add_mol", increment), field("D_n", *prediction.value),
                 field("q0", q0), field("H_initial_J", h_initial), field("H_final_J", h_final),
-                field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}),
-            "each finite quotient equals the Gibbs-Helmholtz limit for the linear case", "addition-f5");
+                field("dln_activity_dT_per_K", *action.results[0].action), field("h_feed_residual_J_per_mol", h_feed)}));
     }
 
     FitRequest recovery;
@@ -1328,28 +1306,27 @@ void check_addition_enthalpy() {
         recovery.observations.push_back(std::move(row));
     }
     const auto recovered = fit(recovery);
-    truth("addition-f6/converged", "the noise-free known-parameter fit converges",
+    truth("addition-f6/converged",
         recovered.status == "converged" && recovered.usable,
-        fields({summary(recovered), field("trial_failures", recovered.trial_failures)}), "addition-f6");
+        fields({summary(recovered), field("trial_failures", recovered.trial_failures)}));
     for (std::size_t row = 0; row < recovery.observations.size(); ++row)
-        recording_support::observe(("addition-f6/data/" + std::to_string(row)).c_str(), "delta_h_add", "J/mol",
-            recovered.predictions[row], recovery.observations[row].observed,
+        recording_support::observe("addition-f6/data/" + std::to_string(row), "delta_h_add", "J/mol",
+            recovered.predictions[row], recovery.observations[row].observed, "known_parameter_recovery",
             fields({field("T_K", recovery.observations[row].temperature), field("P_Pa", 3.0e6),
-                field("scale_J_per_mol", recovery.observations[row].scale)}),
-            "Observation", "known_parameter_recovery", "synthetic datum and fitted prediction", "addition-f6");
+                field("scale_J_per_mol", recovery.observations[row].scale)}));
     CHECK(recovered.physical.size() == 3);
     agree("addition-f6/epsilon_s0", "epsilon_over_k", "K", recovered.physical[0], 191.42, 0.0, 1.0e-6,
-        summary(recovered), "the tied epsilon coordinate recovers the known value on s0", "addition-f6");
+        summary(recovered));
     agree("addition-f6/epsilon_s1", "epsilon_over_k", "K", recovered.physical[1], 191.42, 0.0, 1.0e-6,
-        summary(recovered), "the tied epsilon coordinate recovers the known value on s1", "addition-f6");
+        summary(recovered));
     agree("addition-f6/reaction_b", "reaction_b", "K", recovered.physical[2], 200.0, 0.0, 1.0e-6,
-        summary(recovered), "the reaction b coordinate recovers the known value", "addition-f6");
+        summary(recovered));
     agree("addition-f6/cost", "cost", "1", recovered.final_cost, 0.0, 1.0e-14, 0.0,
-        summary(recovered), "the noise-free residual cost is at most 1e-14", "addition-f6");
-    truth("addition-f6/covariance", "the fit has an available full-rank covariance",
+        summary(recovered));
+    truth("addition-f6/covariance",
         recovered.covariance.status == "available" && recovered.covariance.rank == 2,
         fields({field("covariance", recovered.covariance.status), field("rank", recovered.covariance.rank),
-            field("singular_values", recovered.covariance.singular_values)}), "addition-f6");
+            field("singular_values", recovered.covariance.singular_values)}));
 
     auto two_phase = std::find_if(variants.begin(), variants.end(), [](const AdditionVariant& item) {
         return item.name == "two_phase";
@@ -1368,8 +1345,7 @@ void check_addition_enthalpy() {
             std::tuple<const char*, double, double>{"initial", oracle_initial, public_initial},
             {"final", oracle_final, public_final}}) {
         reference_scale_agrees(std::string("addition-f8/") + label + "/endpoint_enthalpy", "H", "J", public_value, oracle,
-            1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}),
-            "each endpoint total enthalpy agrees with the independent pure-fluid oracle", "addition-f8");
+            1.0e-6, 1.0e-9, fields({field("oracle_H_J", oracle), field("public_H_J", public_value)}));
     }
     const auto& solved_initial = *two_phase->prediction.solved;
     const auto& solved_final = *two_phase->prediction.final_solved;
@@ -1379,55 +1355,52 @@ void check_addition_enthalpy() {
     const double value_tolerance = 1.0e-9 * (std::abs(oracle_initial) + std::abs(oracle_final)) / amount + 1.0e-6;
     agree("addition-f8/value", "delta_h_add", "J/mol", *two_phase->prediction.value, oracle_delta,
         value_tolerance, 0.0, fields({field("H_initial_J", oracle_initial), field("H_final_J", oracle_final),
-            field("h_feed_J_per_mol", hfeed), field("delta_h_add_J_per_mol", *two_phase->prediction.value)}),
-        "the total-system finite addition agrees with the independent endpoint oracle", "addition-f8");
+            field("h_feed_J_per_mol", hfeed), field("delta_h_add_J_per_mol", *two_phase->prediction.value)}));
     const double h_initial_vapor = addition_oracle_phase_enthalpy(pure, solved_initial,
         *two_phase->observation.problem.reactions[0].correlation, 1);
     const double h_final_vapor = addition_oracle_phase_enthalpy(pure, solved_final,
         *two_phase->observation.final_problem.reactions[0].correlation, 1);
     const double vapor_contribution = std::abs(solved_final.amounts[1] * h_final_vapor
         - solved_initial.amounts[1] * h_initial_vapor) / amount;
-    truth("addition-f8/vapor_discrimination", "the changed vapor contribution exceeds 1e3 times the value tolerance",
+    truth("addition-f8/vapor_discrimination",
         std::isfinite(vapor_contribution) && vapor_contribution > 1.0e3 * value_tolerance,
         fields({field("vapor_contribution_J_per_mol", vapor_contribution), field("delta_h_tolerance_J_per_mol", value_tolerance),
             field("nV_initial_mol", solved_initial.amounts[1]), field("nV_final_mol", solved_final.amounts[1]),
-            field("hV_initial_J_per_mol", h_initial_vapor), field("hV_final_J_per_mol", h_final_vapor)}), "addition-f8");
+            field("hV_initial_J_per_mol", h_initial_vapor), field("hV_final_J_per_mol", h_final_vapor)}));
 
     auto failure = variants.front().observation;
     failure.temperature = 200.0;
     failure.pressure = 1.0e10;
     failure.branch = DensityBranch::Liquid;
     auto failed_feed = predict(model, failure);
-    truth("addition-f7/feed_density", "the declared feed root failure is typed and names feed",
+    truth("addition-f7/feed_density",
         failed_feed.status == ObservationStatus::DensityUnavailable && !failed_feed.value
             && failed_feed.message.find("feed:") != std::string::npos,
-        fields({field("status", observation_status_name(failed_feed.status)), field("message", failed_feed.message)}),
-        "addition-f7");
+        fields({field("status", observation_status_name(failed_feed.status)), field("message", failed_feed.message)}));
     auto missing_feed = variants.front().observation;
     missing_feed.composition = {0.0, 1.0};
     missing_feed.final_problem.feed.values = {2.0, 0.4};
     const auto missing = predict(model, missing_feed);
-    truth("addition-f7/feed_record", "the balanced feed species without an ideal record is typed and names feed",
+    truth("addition-f7/feed_record",
         missing.status == ObservationStatus::ThermochemistryUnavailable && !missing.value
             && missing.message.find("feed:") != std::string::npos,
         fields({field("status", observation_status_name(missing.status)), field("message", missing.message),
-            field("feed_B_mol", 1.0), field("n_add_mol", amount)}), "addition-f7");
+            field("feed_B_mol", 1.0), field("n_add_mol", amount)}));
     ThermochemistryRecord no_records;
     no_records.standard_pressure = 1.0e5;
     no_records.component_intervals = {{}, {}};
     const HelmholtzModel undetermined_model(parameters, coordinates.active_parameters(), no_records);
     const auto undetermined = predict(undetermined_model, variants.front().observation);
-    truth("addition-f7/initial_record", "undetermined endpoint calorics are typed and name initial",
+    truth("addition-f7/initial_record",
         undetermined.status == ObservationStatus::ThermochemistryUnavailable && !undetermined.value
             && undetermined.message.find("initial:") != std::string::npos,
-        fields({field("status", observation_status_name(undetermined.status)), field("message", undetermined.message)}),
-        "addition-f7");
+        fields({field("status", observation_status_name(undetermined.status)), field("message", undetermined.message)}));
     auto mismatch = variants.front().observation;
     mismatch.final_problem.feed.values[0] += 0.01;
-    const auto mismatch_message = rejection([&] { validate(mismatch, model); });
-    truth("addition-f7/material_balance", "a mismatched component balance is rejected by component name",
+    const auto mismatch_message = recording_support::refusal([&] { validate(mismatch, model); });
+    truth("addition-f7/material_balance",
         mismatch_message.find("component") != std::string::npos,
-        fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}), "addition-f7");
+        fields({field("message", mismatch_message), field("delta_A_mol", 0.01)}));
 }
 
 #include "reactive_cp_regression_checks.hpp"
@@ -1475,8 +1448,7 @@ void check_shift_columns(const std::string& id, const FitRequest& request, const
         signal[c] += std::abs(rungs.fine) >= 1.0e-2;
         const double column = at.optimizer_gradient[row * width + c] / (logarithmic ? at.predictions[row] : 1.0);
         ladder_agrees(id + "/" + std::to_string(row) + "/" + std::to_string(c), "dy_du", column, rungs,
-            fields({field("fd_signal", std::abs(rungs.fine)), field("u_step", 0.005)}),
-            "the shift column agrees with independently rebuilt central differences", "issue-1060");
+            fields({field("fd_signal", std::abs(rungs.fine)), field("u_step", 0.005)}));
     }
     for (std::size_t c = 0; c < width; ++c) CHECK(signal[c] > 0);
 }
@@ -1484,8 +1456,8 @@ void check_shift_columns(const std::string& id, const FitRequest& request, const
 // Fixture K (check_reaction_enthalpy_shift's ln K pair, data at truth (1200, -700) J/mol): the sequence and the ordinary fit.
 void check_shift_sequence(const FitRequest& request, const FitRequest& joint) {
     const auto optimizer = [](double a, double b) { return std::vector<double>{(a - 100.0) / 1000.0, (b - 100.0) / 1000.0}; };
-    const auto close = [](const std::string& id, double value, double reference, double atol, double rtol, const char* claim) {
-        agree("reaction-shift-start/" + id, "value", "1", value, reference, atol, rtol, "fixture K, truth (1200, -700) J/mol", claim, "issue-1060");
+    const auto close = [](const std::string& id, double value, double reference, double atol, double rtol) {
+        agree("reaction-shift-start/" + id, "value", "1", value, reference, atol, rtol, "fixture K, truth (1200, -700) J/mol");
     };
     const auto sequence = [&](const FitRequest& r, const std::vector<double>& u) {
         const auto results = fit_sequence(r, {u}, 100, 600.0);
@@ -1496,46 +1468,44 @@ void check_shift_sequence(const FitRequest& request, const FitRequest& joint) {
     const auto start = optimizer(500.0, 300.0);  // h0
     const auto one = sequence(request, start);
     for (std::size_t i = 0; i < 2; ++i) {
-        close("F1/physical/" + std::to_string(i), one.physical[i], truth_h[i], 1e-8, 1e-10, "the sequence reports the total shift from the declared correlation");
-        close("F1/optimizer/" + std::to_string(i), one.optimizer[i], (truth_h[i] - 100.0) / 1000.0, 1e-8, 1e-10, "the sequence endpoint is the chart value");
+        close("F1/physical/" + std::to_string(i), one.physical[i], truth_h[i], 1e-8, 1e-10);
+        close("F1/optimizer/" + std::to_string(i), one.optimizer[i], (truth_h[i] - 100.0) / 1000.0, 1e-8, 1e-10);
     }
-    close("F1/initial_cost", one.initial_cost, 6.471776440961e-03, 0.0, 1e-10, "the sequence starts on the declared problem shifted by h0");
+    close("F1/initial_cost", one.initial_cost, 6.471776440961e-03, 0.0, 1e-10);
     // Same start at shift zero: the sequence entry is the ordinary fit.
     const auto at_zero = sequence(request, optimizer(0.0, 0.0)), ordinary = fit(request);
     CHECK(at_zero.optimizer == ordinary.optimizer && at_zero.physical == ordinary.physical && at_zero.iterations == ordinary.iterations
         && at_zero.initial_cost == ordinary.initial_cost && at_zero.optimizer_jacobian == ordinary.optimizer_jacobian);
-    close("F2a/initial_cost", ordinary.initial_cost, 8.382905054399e-03, 0.0, 1e-10, "the zero-shift start is the declared problem");
+    close("F2a/initial_cost", ordinary.initial_cost, 8.382905054399e-03, 0.0, 1e-10);
     // Start h0: the ordinary fit runs on the request pre-shifted by h0 (ln K is linear in the shift, so the endpoint alone
     // cannot expose a wrong start; the initial cost and the iteration count do).
     auto pre = request;
     request.coordinates.apply(pre.observations, start);
     const auto shifted = fit(pre);
     CHECK(shifted.usable);
-    close("F2b/initial_cost", one.initial_cost, shifted.initial_cost, 0.0, 1e-12, "the sequence and the pre-shifted ordinary fit start at one cost");
+    close("F2b/initial_cost", one.initial_cost, shifted.initial_cost, 0.0, 1e-12);
     CHECK(one.iterations == shifted.iterations);
     for (std::size_t i = 0; i < 2; ++i)
-        close("F2b/total/" + std::to_string(i), (i == 0 ? 500.0 : 300.0) + shifted.physical[i], one.physical[i], 1e-8, 0.0,
-            "h0 plus the pre-shifted shift is the sequence endpoint");
+        close("F2b/total/" + std::to_string(i), (i == 0 ? 500.0 : 300.0) + shifted.physical[i], one.physical[i], 1e-8, 0.0);
     // A box that excludes the truth holds the endpoint on the declared bound, not on a bound moved by h0.
     auto boxed = request;
     boxed.coordinates.coordinates[0].lower = 0.0; boxed.coordinates.coordinates[0].upper = 1000.0;
     const auto capped = sequence(boxed, start), plain = fit(boxed);
-    close("F2c/sequence", capped.optimizer[0], 0.9, 1e-8, 0.0, "the sequence ends on the declared upper bound");
-    close("F2c/ordinary", plain.optimizer[0], 0.9, 1e-8, 0.0, "the ordinary fit ends on the declared upper bound");
-    close("F2c/other", capped.optimizer[1], plain.optimizer[1], 1e-6, 0.0, "the unbounded reaction agrees");
+    close("F2c/sequence", capped.optimizer[0], 0.9, 1e-8, 0.0);
+    close("F2c/ordinary", plain.optimizer[0], 0.9, 1e-8, 0.0);
+    close("F2c/other", capped.optimizer[1], plain.optimizer[1], 1e-6, 0.0);
     // F3: the sequence endpoint columns are the point reader's (the ordinary fit's) columns there.
     const auto reader = evaluated_columns(request, one.optimizer);
     CHECK(reader.residual_optimizer_gradient.size() == one.optimizer_jacobian.size());
     for (std::size_t i = 0; i < one.optimizer_jacobian.size(); ++i)
-        close("F3/sequence_column/" + std::to_string(i), one.optimizer_jacobian[i], reader.residual_optimizer_gradient[i], 1e-10, 1e-10,
-            "the sequence columns equal the ordinary columns at the endpoint");
+        close("F3/sequence_column/" + std::to_string(i), one.optimizer_jacobian[i], reader.residual_optimizer_gradient[i], 1e-10, 1e-10);
     check_shift_columns("reaction-shift-start/F4/K", request, optimizer(700.0, -300.0), false);
     // F6: an EOS coordinate between two shifts (the joint request, truth 1.1, 0.2, -0.8) keeps its start rewrite
     // beside the shift start.
     const std::vector<double> truth_point{1.1, 0.2, -0.8};
     const auto mixed = sequence(joint, {0.4, 0.0, 0.2});
     for (std::size_t i = 0; i < 3; ++i)
-        close("F6/optimizer/" + std::to_string(i), mixed.optimizer[i], truth_point[i], 1e-8, 0.0, "the EOS start rewrite and the shift start coexist");
+        close("F6/optimizer/" + std::to_string(i), mixed.optimizer[i], truth_point[i], 1e-8, 0.0);
 }
 
 // Fixture B through minimax: the point reader's constraint columns, the solve, and the shift start.
@@ -1558,7 +1528,7 @@ void check_shift_minimax() {
         for (std::size_t c = 0; c < 2; ++c)
             agree("reaction-shift-start/F3/minimax/" + std::to_string(r) + "/" + std::to_string(c), "constraint_column", "native",
                 reader.jacobian[r * width + c], row.sign * slope * at.optimizer_gradient[row.row * 2 + c] / row.scale, 0.0, 1e-10,
-                "fixture B, interior point", "the minimax columns are sign*slope*dy/dv/scale of the ordinary columns", "issue-1060");
+                "fixture B, interior point");
     }
     CHECK(targets == 4);
     check_shift_columns("reaction-shift-start/F4/B", request, u, true);
@@ -1567,8 +1537,7 @@ void check_shift_minimax() {
     const auto& m = *solved_point.minimax;
     CHECK(m.feasible && m.stationary && solved_point.chart.reaction_laws.size() == 1);
     const auto five = [&](const std::string& id, double value, double reference) {
-        agree("reaction-shift-start/F5/" + id, "value", "1", value, reference, 0.0, 1e-6, "fixture B, data x 1.01, q 0.01",
-            "public minimax reaches the bypassed-solve optimum with an A and shift pair", "issue-1060");
+        agree("reaction-shift-start/F5/" + id, "value", "1", value, reference, 0.0, 1e-6, "fixture B, data x 1.01, q 0.01");
     };
     five("t", m.t, 1.246877e-4); five("A", solved_point.physical[0], -5.188913); five("shift", solved_point.physical[1], 6.403402);
     // A nonzero shift start reaches fit_minimax through fit_start: the pre-shifted request is the same problem from zero.
@@ -1659,10 +1628,8 @@ void check_reaction_enthalpy_shift() {
         CHECK(rows[0].problem.reactions[0].correlation->temperature_max == 393.15);
         CHECK(rows[1].problem.reactions[0].correlation->temperature_max == 436.85);
         (void)evaluate_reaction_properties(*rows[1].problem.reactions[0].correlation, 415.0);
-        bool outside = false;
-        try { (void)evaluate_reaction_properties(*rows[0].problem.reactions[0].correlation, 415.0); }
-        catch (const std::exception& e) { outside = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
-        CHECK(outside);
+        CHECK(recording_support::refusal([&] { (void)evaluate_reaction_properties(*rows[0].problem.reactions[0].correlation, 415.0); })
+            .find("temperature outside reaction correlation") != std::string::npos);
         auto replay = mixed.observations;
         for (auto& row : replay) {
             auto& target = *row.problem.reactions[0].correlation;
@@ -1699,17 +1666,14 @@ void check_reaction_enthalpy_shift() {
             }
             const HelmholtzModel model(mixed.parameters);
             CHECK(predict(model, wider).status == ObservationStatus::Available);
-            bool refused = false;
-            try { (void)predict(model, narrower); }
-            catch (const std::exception& e) { refused = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
-            CHECK(refused);
+            CHECK(recording_support::refusal([&] { (void)predict(model, narrower); }).find("temperature outside reaction correlation") != std::string::npos);
             auto pair = mixed;
             pair.observations = {wider, narrower};
             FitResult failures;
             ObservationEvaluation evaluation;
-            refused = false;
-            try { (void)ObservationEvaluator(pair, failures, {0, 1}).evaluate({-0.1, 1.0}, true, evaluation); }
-            catch (const std::exception& e) { refused = std::string(e.what()).find("temperature outside reaction correlation") != std::string::npos; }
+            const bool refused = recording_support::refusal([&] {
+                (void)ObservationEvaluator(pair, failures, {0, 1}).evaluate({-0.1, 1.0}, true, evaluation);
+            }).find("temperature outside reaction correlation") != std::string::npos;
             CHECK(refused || (evaluation.first_numerical_failure && evaluation.first_numerical_failure->cause.find("temperature outside reaction correlation") != std::string::npos));
         }
         auto pivot = mixed;
@@ -1732,10 +1696,8 @@ void check_reaction_enthalpy_shift() {
                 case 6: reaction.reference->reference_pressure_pa = 2e5; break;
                 case 7: reaction.reference->source_basis = ReferenceSourceBasis::RawMoleFractionInfiniteDilution; break;
             }
-            bool refused = false;
-            try { (void)different.coordinates.start(different.parameters, different.observations); }
-            catch (const std::exception& e) { refused = std::string(e.what()).find("tied declarations or starts disagree") != std::string::npos; }
-            CHECK(refused);
+            CHECK(recording_support::refusal([&] { (void)different.coordinates.start(different.parameters, different.observations); })
+                .find("tied declarations or starts disagree") != std::string::npos);
         }
     }
     const auto start = request.coordinates.start(request.parameters, request.observations);
@@ -1748,7 +1710,7 @@ void check_reaction_enthalpy_shift() {
             const auto& law = laws.at(reaction.name);
             const auto key = "reaction-enthalpy/" + reaction.name + "/" + std::to_string(h);
             agree(key + "/pivot", "ln_K", "1", reaction_log_value(law, 313.15), reaction_log_value(base, 313.15),
-                2e-12, 0.0, "pivot=313.15 K", "the supplied correlation is preserved at the declared pivot", "issue-484");
+                2e-12, 0.0, "pivot=313.15 K");
             CHECK(law.c == base.c && law.d == base.d && law.reference_temperature == base.reference_temperature
                 && law.temperature_min == base.temperature_min && law.temperature_max == base.temperature_max
                 && law.standard_state_id == base.standard_state_id);
@@ -1763,16 +1725,15 @@ void check_reaction_enthalpy_shift() {
             for (const double t : {293.15, 313.15, 353.15, 393.15}) {
                 agree(key + "/enthalpy/" + std::to_string(t), "d_h_reaction/d_h", "1",
                     GAS_CONSTANT_J_PER_MOL_K * t * t * reaction_log_value(action, t, 1), 1.0,
-                    1e-12, 0.0, "constant source basis", "the analytic mixed thermal action changes reaction enthalpy by h", "issue-484");
+                    1e-12, 0.0, "constant source basis");
                 const double a = t*t*reaction_log_value(law, t, 1), b = t*t*reaction_log_value(base, t, 1);
                 const double tolerance = 32*std::numeric_limits<double>::epsilon()*std::max({std::abs(a),std::abs(b),std::abs(h/GAS_CONSTANT_J_PER_MOL_K)});
                 agree(key + "/slope/" + std::to_string(t), "delta_dlnK_dinverseT", "K", b-a, -h/GAS_CONSTANT_J_PER_MOL_K,
-                    tolerance, 0.0, "propagated subtraction round-off", "the inverse-temperature slope changes by -h/R", "issue-484");
+                    tolerance, 0.0, "propagated subtraction round-off");
                 if (law.c == 0.0) {
                     const auto source = reaction_log10_reciprocal(law);
                     agree(key + "/replay/" + std::to_string(t), "ln_K", "1", -log10*(source[0]/t+source[1]+source[2]*t),
-                        reaction_log_value(law,t), 2e-12, 0.0, "negative base-10 reciprocal polynomial",
-                        "both fitted coefficients replay the supplied correlation", "issue-484");
+                        reaction_log_value(law,t), 2e-12, 0.0, "negative base-10 reciprocal polynomial");
                 }
             }
         }
@@ -1786,7 +1747,7 @@ void check_reaction_enthalpy_shift() {
     CHECK(result.usable && result.covariance.rank == 2);
     for (std::size_t i=0; i<2; ++i)
         agree("reaction-enthalpy/recovery/"+std::to_string(i), "h", "J/mol", result.physical[i], i==0 ? 1200.0 : -700.0,
-            1e-8, 1e-10, "noise-free source observations at four temperatures", "one physical shift is recovered per reaction", "issue-484");
+            1e-8, 1e-10, "noise-free source observations at four temperatures");
     CHECK(result.chart.reaction_laws.size() == 2);
     auto joint = request;
     Coordinate eos{{{ParameterFamily::SegmentCount, {0}}}, request.parameters.segment_count[0], 0.1};
@@ -1803,19 +1764,13 @@ void check_reaction_enthalpy_shift() {
     CHECK(joint_fit.usable && joint_fit.covariance.rank == 3);
     for (std::size_t i=0;i<3;++i)
         agree("reaction-enthalpy/joint/"+std::to_string(i), "optimizer_coordinate", "1", joint_fit.optimizer[i], truth_point[i],
-            1e-8, 1e-10, "interleaved EOS and reaction coordinates", "the affine chain applies each coordinate scale once", "issue-484");
-    bool refused=false;
-    try { (void)reaction_log10_reciprocal(*problem.reactions[0].correlation); }
-    catch (const std::invalid_argument&) { refused=true; }
-    CHECK(refused);
+            1e-8, 1e-10, "interleaved EOS and reaction coordinates");
+    CHECK(recording_support::refusal([&] { (void)reaction_log10_reciprocal(*problem.reactions[0].correlation); }).find("coordinate law is not a finite negative log10 reciprocal polynomial") != std::string::npos);
     for (const auto member : {&ReactionLogPolynomial::e, &ReactionLogPolynomial::f}) {
         auto changed = problem.reactions[1];
         changed.correlation.value().*member = 1.0;
         CHECK(!same_reaction(changed, problem.reactions[1]));
-        refused = false;
-        try { (void)reaction_log10_reciprocal(*changed.correlation); }
-        catch (const std::invalid_argument&) { refused = true; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { (void)reaction_log10_reciprocal(*changed.correlation); }).find("coordinate law is not a finite negative log10 reciprocal polynomial") != std::string::npos);
     }
     check_shift_sequence(request, joint);
     check_shift_minimax();
@@ -1839,11 +1794,11 @@ void check_reaction_enthalpy_shift() {
             auto rows = pair.observations;
             const auto law = pair.coordinates.apply(rows, u).at("reaction_a");
             agree("reaction-pair/pivot", "ln_K", "1", reaction_log_value(law, 313.15), reaction_log_value(base, 313.15),
-                2e-12, 0.0, "same plain value", "the shift preserves the pivot after the plain assignment", "issue-557");
+                2e-12, 0.0, "same plain value");
             for (const double t : {293.15, 313.15, 353.15, 393.15})
                 agree("reaction-pair/enthalpy", "delta_H/h", "1",
                     GAS_CONSTANT_J_PER_MOL_K*t*t*(reaction_log_value(law,t,1)-reaction_log_value(base,t,1))/2500.0,
-                    1.0, 1e-12, 0.0, "applied native laws", "the completed law adds the physical enthalpy increment", "issue-557");
+                    1.0, 1e-12, 0.0, "applied native laws");
             const HelmholtzModel model(pair.parameters);
             for (std::size_t i=0; i<rows.size(); ++i) {
                 const auto prediction = predict(model, rows[i]);
@@ -1854,7 +1809,7 @@ void check_reaction_enthalpy_shift() {
             CHECK(recovered.usable && recovered.covariance.rank == 2);
             for (std::size_t c=0; c<2; ++c)
                 agree("reaction-pair/recovery", "u", "1", recovered.optimizer[c], u[c], 1e-8, 1e-10,
-                    "noise-free log K at four temperatures", "the pair is recovered jointly", "issue-557");
+                    "noise-free log K at four temperatures");
             auto replay = pair.observations;
             for (auto& row : replay) for (auto& reaction : row.problem.reactions)
                 if (reaction.name == "reaction_a") reaction.correlation = recovered.chart.reaction_laws.at(reaction.name);
@@ -1887,8 +1842,7 @@ void check_reaction_enthalpy_shift() {
                 -reaction_log_value(*problem.reactions[c].correlation,313.15,1)), offset[c]+(c==0 ? 250.0 : -200.0),
             1e-8, 0.0, fields({field("pre_applied_J_mol", offset[c]), field("increment_J_mol", c==0 ? 250.0 : -200.0),
                 field("law_a", total_laws.at(problem.reactions[c].name).a), field("law_b_K", total_laws.at(problem.reactions[c].name).b),
-                field("lower_increment_J_mol", preapplied.coordinates.coordinates[c].lower), field("upper_increment_J_mol", preapplied.coordinates.coordinates[c].upper)}),
-            "translated bounds retain the total physical shift", "issue-557");
+                field("lower_increment_J_mol", preapplied.coordinates.coordinates[c].lower), field("upper_increment_J_mol", preapplied.coordinates.coordinates[c].upper)}));
     // #448's effective species-reference refusal reaches point readers and heat final endpoints.
     wrong = request; wrong.parameters = properties_support::aqueous_electrolyte();
     auto source = referenced_formula(std::nullopt);
@@ -1902,10 +1856,8 @@ void check_reaction_enthalpy_shift() {
     wrong.observations[1].final_problem.source_reference->species_reference = {SpeciesReference::PureGas,
         SpeciesReference::InfiniteDilution, SpeciesReference::InfiniteDilution};
     CHECK(fit(wrong).message.find("tied species references disagree") != std::string::npos);
-    refused=false;
-    try { FitResult errors; ObservationEvaluator reader(wrong, errors, {0,1}); }
-    catch (const std::invalid_argument& e) { refused=std::string(e.what()).find("tied species references disagree") != std::string::npos; }
-    CHECK(refused);
+    CHECK(recording_support::refusal([&] { FitResult errors; ObservationEvaluator reader(wrong, errors, {0,1}); })
+        .find("tied species references disagree") != std::string::npos);
     wrong.observations[1].final_problem.source_reference->species_reference[0] = SpeciesReference::PureLiquid;
     CHECK(wrong.coordinates.start(wrong.parameters,wrong.observations).size() == 1);
 }

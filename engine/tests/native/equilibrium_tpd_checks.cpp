@@ -114,10 +114,8 @@ void check_discovery_work() {
         const auto before = request.counts();
         CHECK(before.root_calls == work.at("root_calls") && before.root_evaluations == work.at("root_evaluations")
             && before.energy_evaluations == work.at("energy_evaluations"));
-        bool refused = false;
-        try { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); }
-        catch (const std::invalid_argument&) { refused = true; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); })
+            .find("invalid pressure -1 Pa") != std::string::npos);
         (void)model.evaluate(190.0, 1.0 / result.molar_densities[0], {0.5, 0.5}, DerivativeOrder::Gradient);
         const auto after = request.counts();
         CHECK(after.root_calls == before.root_calls + 1 && after.root_evaluations == before.root_evaluations
@@ -192,10 +190,8 @@ void check_concurrent_first_discovery() {
 // #223 acceptance 8/9: numerical conservation and tangent-plane identities in RT units.
 void tpd_compare(const std::string& id, double value, double reference, double tolerance,
                  const std::string& inputs = {}, const char* unit = "1") {
-    const bool ok = std::isfinite(value) && std::abs(value - reference) <= tolerance;
-    recording_support::compare(id.c_str(), "difference", unit, value, reference, inputs,
-        "Relationship", "native-thermodynamic-identity", "#223 numerical falsifier",
-        "absolute", tolerance, 0.0, ok);
+    recording_support::compare(id, "difference", unit, value, reference, recording_support::Rule::Absolute, tolerance,
+        0.0, "native-thermodynamic-identity", inputs);
 }
 
 // #662: EqID system_gibbs_helmholtz_coordinates retains N*x_i ideal log-curvature at trace support.
@@ -290,10 +286,10 @@ void check_solve_error_curvature() {
         const bool indeterminate = !result.success && result.convergence.stop == core::Stop::singular
             && result.message.find("is indeterminate") != std::string::npos;
         const bool ok = recertified && correction[0] > std::abs(minimum) - band && indeterminate;
-        recording_support::observe((id + "/change").c_str(), "solve-error-change", "1", recertified ? correction[0] : NAN, std::nullopt,
+        recording_support::observe(id + "/change", "solve-error-change", "1", recertified ? correction[0] : NAN,
+            std::nullopt, "reduced_hessian_stability",
             recording_support::fields({recording_support::field("minimum", minimum), recording_support::field("band", band),
-                recording_support::field("estimate", recertified ? correction[1] : NAN), recording_support::field("correction", recertified ? correction[2] : NAN)}),
-            "Relationship", "reduced_hessian_stability", "change exceeds |minimum| - band: indeterminate");
+                recording_support::field("estimate", recertified ? correction[1] : NAN), recording_support::field("correction", recertified ? correction[2] : NAN)}));
         CHECK(ok);
     }
     const auto stable = model(0.128);
@@ -379,9 +375,8 @@ void check_stability_amount_correction() {
             // Positive supported amounts cannot sum to this deliberately impossible target.
             compiled.balance[0] = -1.0;
             auto impossible = parent; impossible.residuals = compiled.evaluate(parent.coordinates).values;
-            bool refused = false;
-            try { (void)stability_test(compiled, impossible, options); }
-            catch (const std::invalid_argument&) { refused = true; }
+            const bool refused = recording_support::refusal([&] { (void)stability_test(compiled, impossible, options); })
+                .find("stability correction destroys positive support") != std::string::npos;
             tpd_compare(id + "/impossible-target", refused ? 1.0 : 0.0, 1.0, 0.0,
                 recording_support::fields({recording_support::field("target_mol", -1.0)}));
         }
@@ -507,10 +502,9 @@ void check_phase_removal_inventory() {
         tpd_compare(id + "/relative-g", (final.objective - reference.objective) / std::max(1.0, std::abs(reference.objective)), 0.0, 1e-10);
         std::vector<double> attempt;
         const auto rejected = solve_equilibrium_from_coordinates(model, two, point, &attempt);
-        recording_support::observe((id + "/driver-event").c_str(), "topology_event", "1",
-            static_cast<double>(rejected.topology_event), std::nullopt, recording_support::fields({
-                recording_support::field("attempt", attempt), recording_support::field("success", rejected.success ? 1U : 0U)}),
-            "Numerical", "native-driver", "actual optimizer topology event", "none", "", "", "");
+        recording_support::observe(id + "/driver-event", "topology_event", "1",
+            static_cast<double>(rejected.topology_event), std::nullopt, "native-driver", recording_support::fields({
+                recording_support::field("attempt", attempt), recording_support::field("success", rejected.success ? 1U : 0U)}));
         if (!disappearing) {
             CHECK(rejected.topology_event == TopologyEvent::PhasesCoalesced && !rejected.has_state());
             CHECK(!attempt.empty());
@@ -539,8 +533,7 @@ void check_phase_removal_inventory() {
     }
     const auto event = check_topology(system, point);
     CHECK(event.event == TopologyEvent::PhaseDisappeared && event.phase == 1 && system.problem.phases[1].name == "V2");
-    std::string cause;
-    try { (void)remove_discovery_phase(system, point); } catch (const std::exception& error) { cause = error.what(); }
+    const auto cause = recording_support::refusal([&] { (void)remove_discovery_phase(system, point); });
     tpd_compare("removal/contradicted-recipient-refused",
         cause.find("liquid branch not admitted by the finite search: the sole stable root 0.04009108") != std::string::npos
             && cause.find("below the negative-slope sample 7087.88") != std::string::npos ? 1.0 : 0.0, 1.0, 0.0,
@@ -784,9 +777,8 @@ void check_tangent_plane_admission() {
             recording_support::field("reevaluated_energy_over_rt", admitted_energy.objective), recording_support::field("volume_m3_per_mol", at.volume[0])}));
     tpd_compare("support/singleton", reconstruct_trial_composition({7.0, 0.0, 0.0}, {0}, parameters.charge_number)[0], 1.0, 0.0);
     for (const auto& support : std::vector<std::vector<std::size_t>>{{}, {0, 1}}) {
-        bool rejected = false;
-        try { (void)reconstruct_trial_composition(raw, support, parameters.charge_number); }
-        catch (const std::invalid_argument&) { rejected = true; }
+        const bool rejected = recording_support::refusal([&] { (void)reconstruct_trial_composition(raw, support, parameters.charge_number); })
+            .find(support.empty() ? "invalid reconstruction support" : "one-sign trial support") != std::string::npos;
         tpd_compare("support/reconstruction-rejected/" + std::to_string(support.size()), rejected ? 1.0 : 0.0, 1.0, 0.0);
     }
     auto problem = equilibrium_support::flash(3); problem.feed.values = {0.98, 0.01, 0.01};
@@ -813,9 +805,7 @@ void check_tangent_plane_admission() {
     }
     tpd_compare("declared-state/relabeled-report", report_difference, 0.0, 0.0);
     auto other_feed = problem; other_feed.feed.values = {0.97, 0.015, 0.015};
-    std::string refusal;
-    try { (void)stability_test(compile_problem(model, other_feed), candidate); }
-    catch (const std::invalid_argument& error) { refusal = error.what(); }
+    const auto refusal = recording_support::refusal([&] { (void)stability_test(compile_problem(model, other_feed), candidate); });
     tpd_compare("declared-state/feed-value", refusal == "stability result/declaration mismatch: feed values differ" ? 1.0 : 0.0, 1.0, 0.0,
         recording_support::fields({recording_support::field("refusal", refusal)}));
     CHECK(!report.trials.empty());
@@ -843,8 +833,8 @@ void check_tangent_plane_admission() {
     for (const auto& support : std::vector<std::vector<std::size_t>>{{}, {0, 1}}) {
         auto invalid = phase; invalid.support = support; invalid.support_declared = true;
         StabilityOptions options; options.trials = std::vector<PhaseSpec>{invalid};
-        bool rejected = false;
-        try { (void)stability_test(compiled, candidate, options); } catch (const std::invalid_argument&) { rejected = true; }
+        const bool rejected = recording_support::refusal([&] { (void)stability_test(compiled, candidate, options); })
+            .find(support.empty() ? "empty support in phase L" : "inadmissible ionic stability support/label") != std::string::npos;
         tpd_compare("support/physics-rejected/" + std::to_string(support.size()), rejected ? 1.0 : 0.0, 1.0, 0.0);
     }
     // #771: supplied charged Vapor points retain their kind and match their own root, never its sibling.
@@ -869,8 +859,8 @@ void check_tangent_plane_admission() {
         const auto inputs = recording_support::fields({recording_support::field("composition", trial.composition),
             recording_support::field("raw_rows", trial.raw_residuals), recording_support::field("cause", trial.message)});
         for (const auto& [name, value] : trial.quantities)
-            recording_support::observe((id + "/" + name).c_str(), name.c_str(), "native-field-units", value, std::nullopt, inputs,
-                "Relationship", "native-supplied-point", "#771 pressure-root admission");
+            recording_support::observe(id + "/" + name, name.c_str(), "native-field-units", value, std::nullopt,
+                "native-supplied-point", inputs);
         if (j == 0) {
             CHECK(trial.evidence == "evaluated" && std::isfinite(trial.quantities.at("tpd_over_rt")));
             tpd_compare(id + "/pressure", trial.quantities.at("pressure_pa"), 1000.0, 1e-4, inputs, "Pa");
@@ -881,10 +871,8 @@ void check_tangent_plane_admission() {
     dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563}; dipolar.correlation_integral_parameter = {.1276, .215, .138};
     const epcsaft::HelmholtzModel dipolar_model(dipolar);
     auto charged = aqueous; charged.phases = {points[0]};
-    epcsaft::core::Capture refusal_capture(true); std::string cause;
-    try { (void)compile_problem(dipolar_model, charged); }
-    catch (const epcsaft::core::DeclarationError& error) { cause = error.what(); }
-    CHECK(cause.find("not numerically qualified") != std::string::npos);
+    epcsaft::core::Capture refusal_capture(true);
+    CHECK(recording_support::refusal([&] { (void)compile_problem(dipolar_model, charged); }).find("not numerically qualified") != std::string::npos);
     for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
     for (bool referenced : {false, true}) {
         auto omitted = charged; omitted.pressure = FreeValue::fixed(1e5); omitted.feed.values = {1.0, 1e-6, 1e-6};
@@ -897,10 +885,8 @@ void check_tangent_plane_admission() {
             reference.solute_molality_ratios = {0, 1, 1}; reference.standard_molality_mol_per_kg = 1;
             omitted.source_reference = reference;
         }
-        epcsaft::core::Capture omitted_capture(true); std::string cause;
-        try { (void)compile_problem(model, omitted); }
-        catch (const std::invalid_argument& error) { cause = error.what(); }
-        CHECK(cause == "charged vapor cannot be the omitted-charge phase");
+        epcsaft::core::Capture omitted_capture(true);
+        CHECK(recording_support::refusal([&] { (void)compile_problem(model, omitted); }) == "charged vapor cannot be the omitted-charge phase");
         std::size_t eos_evaluations = 0, density_solves = 0;
         for (const auto& span : omitted_capture.trace().spans) {
             eos_evaluations += std::string(span.name) == "evaluate";
@@ -1407,11 +1393,10 @@ void check_reaction_relaxed_split() {
     const auto split = solve();
     CHECK(split.has_state());
     CHECK(split.requested_tolerance_met);
-    recording_support::compare("reaction-relaxed-split/raw", "raw row infinity norm", "RT",
-        split.residual_norm(), 0.0, recording_support::fields({recording_support::field("T_K", 313.161),
-            recording_support::field("P_Pa", 19047.028232736302)}),
-        "declared feed mol", "unchanged full-row admission", "positive full-support split",
-        "absolute", 1e-10, 0.0, split.residual_norm() <= 1e-10);
+    recording_support::compare("reaction-relaxed-split/raw", "raw row infinity norm", "RT", split.residual_norm(), 0.0,
+        recording_support::Rule::Absolute, 1e-10, 0.0, "unchanged full-row admission",
+        recording_support::fields({recording_support::field("T_K", 313.161),
+            recording_support::field("P_Pa", 19047.028232736302)}));
     CHECK(split.residual_norm() <= 1e-10);
     CHECK(split.convergence.residual <= 1e-10);
     CHECK(split.amounts.size() == 2);
@@ -1434,11 +1419,11 @@ void check_reaction_relaxed_split() {
         CHECK(std::abs(defect) <= 1e-10 * compiled.feed_total);
     }
     recording_support::observe("reaction-relaxed-split/vapor", "vapor amount", "mol", split.amounts[1], std::nullopt,
+        "full-support split",
         recording_support::fields({recording_support::field("iterations", static_cast<int>(split.iterations)),
             recording_support::field("evaluations", static_cast<int>(split.evaluations)),
             recording_support::field("hessians", static_cast<int>(split.hessian_calls)),
-            recording_support::field("classified", split.convergence.residual)}),
-        "declared feed mol", "full-support split", "numerical verification");
+            recording_support::field("classified", split.convergence.residual)}));
 
 }
 
@@ -1475,13 +1460,12 @@ void check_reaction_relaxed_search() {
         CHECK(measure.available && measure.value && *measure.value == *measure.raw_minimum && t.resolved_descent);
         // Retained endpoint: D = -4.209873518572459e-12 mol, E = 1.266171843225926e-13 mol.
         const double D = q3.at("split_delta_g_over_rt"), E = q3.at("split_error_estimate_over_rt");
-        const bool same = D + E < 0.0 && std::abs(D + 4.209873518572459e-12) <= E + 1.266171843225926e-13;
         recording_support::compare("reaction-relaxed-search/A32", "split Gibbs change over RT", "mol", D,
-            -4.209873518572459e-12, recording_support::fields({recording_support::field("T_K", 313.161),
-                recording_support::field("beta_mol", q3.at("split_beta_mol"))}),
-            "declared feed mol", "Full search, Engine-formed conserved split", "retained supplied endpoint",
-            "absolute", E + 1.266171843225926e-13, 0.0, same);
-        CHECK(same);
+            -4.209873518572459e-12, recording_support::Rule::Absolute, E + 1.266171843225926e-13, 0.0,
+            "Full search, Engine-formed conserved split",
+            recording_support::fields({recording_support::field("T_K", 313.161),
+                recording_support::field("beta_mol", q3.at("split_beta_mol"))}));
+        CHECK(D + E < 0.0);
         // Independent admission of the reported split: conserved moieties, positive support, phase charge.
         std::vector<double> inventory(ns, 0.0);
         std::size_t k = 0;
@@ -1603,9 +1587,8 @@ void check_associating_isomer_gibbs() {
     const double value = d.quantities.at("gibbs_change_over_rt_mol"),
                  error = d.quantities.at("complete_error_over_rt_mol");
     CHECK(error < 1.41e-13);
-    recording_support::compare("associating-isomer-gibbs", "Gibbs change over RT", "mol", value, target, {},
-                               "one mol feed", "identical residual interactions", "analytic ideal mixing decrease",
-                               "absolute", error, 0, std::abs(value - target) <= error);
+    recording_support::compare("associating-isomer-gibbs", "Gibbs change over RT", "mol", value, target,
+        recording_support::Rule::Absolute, error, 0, "identical residual interactions");
     CHECK(std::abs(value - target) <= error);
 }
 }  // namespace equilibrium_checks

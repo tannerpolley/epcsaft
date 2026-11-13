@@ -197,11 +197,11 @@ void electrolyte_parameter_actions() {
             }
             const bool ok = std::abs(*result.action - reference) <= allowance
                 && uncertainty <= allowance && std::abs(reference) > allowance;
-            recording_support::compare_custom(id.c_str(), "enthalpy_parameter_action", "native", *result.action, reference,
+            recording_support::compare_custom(id, "enthalpy_parameter_action", "native", *result.action, reference,
+                "magnitude_scaled_with_resolved_reference", ok,
+                coordinate == 0 ? "Born-charging-identity" : "preceding-action-Richardson-stencil",
                 recording_support::fields({inputs, recording_support::field("T_K", T), recording_support::field("rho_mol_per_m3", rho),
-                    recording_support::field("x", x), recording_support::field("allowance", allowance)}),
-                "Relationship", coordinate == 0 ? "Born-charging-identity" : "preceding-action-Richardson-stencil",
-                "nonzero second and third actions in charged EOS coordinates", "magnitude_scaled_with_resolved_reference", ok);
+                    recording_support::field("x", x), recording_support::field("allowance", allowance)}));
         }
     }
 }
@@ -312,10 +312,10 @@ void properties_p4() {
             const bool action_ok = available && std::abs(*result.action - fine)
                 <= tolerance * reference.scale[index];
             const bool refinement_ok = reference.uncertainty[index] <= tolerance * reference.scale[index];
-            recording_support::compare_custom(
-                (std::string("direct/action/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "action", "native",
-                available ? *result.action : std::numeric_limits<double>::quiet_NaN(), fine,
+            recording_support::compare_custom(std::string("direct/action/") + std::to_string(index) + "/"
+                    + std::to_string(order),
+                "action", "native", available ? *result.action : std::numeric_limits<double>::quiet_NaN(), fine,
+                "tolerance_times_chart_term_scale", action_ok, "central-difference-refinement",
                 recording_support::fields({recording_support::field("observable", index),
                     recording_support::field("order", order),
                     recording_support::field("central", p4_state_value(state, observables[index])),
@@ -326,16 +326,11 @@ void properties_p4() {
                     recording_support::field("tolerance", tolerance),
                     recording_support::field("term_scale", reference.scale[index]),
                     recording_support::field("reference_uncertainty", reference.uncertainty[index]),
-                    recording_support::field("allowance", tolerance * reference.scale[index])}),
-                "Relationship", "central-difference-refinement", "direct action matches independent refinement",
-                "tolerance_times_chart_term_scale", action_ok, "p4-direct",
-                (std::string("action/") + std::to_string(index) + "/" + std::to_string(order)).c_str(),
-                "action", "T,rho,x,theta", "available", "observable,order");
-            recording_support::compare_custom(
-                (std::string("direct/refinement/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "reference_refinement", "native",
-                fine, middle,
-                recording_support::fields({recording_support::field("observable", index),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}));
+            recording_support::compare_custom(std::string("direct/refinement/") + std::to_string(index) + "/"
+                    + std::to_string(order),
+                "reference_refinement", "native", fine, middle, "tolerance_times_chart_term_scale", refinement_ok,
+                "central-difference-ladder", recording_support::fields({recording_support::field("observable", index),
                     recording_support::field("order", order),
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
@@ -343,11 +338,7 @@ void properties_p4() {
                     recording_support::field("tolerance", tolerance),
                     recording_support::field("term_scale", reference.scale[index]),
                     recording_support::field("reference_uncertainty", reference.uncertainty[index]),
-                    recording_support::field("allowance", tolerance * reference.scale[index])}),
-                "Relationship", "central-difference-ladder", "direct reference refines",
-                "tolerance_times_chart_term_scale", refinement_ok, "p4-direct",
-                (std::string("refinement/") + std::to_string(index) + "/" + std::to_string(order)).c_str(),
-                "reference", "T,rho,x,theta,h", "refined", "observable,order");
+                    recording_support::field("allowance", tolerance * reference.scale[index])}));
         }
     }
     // Pressure rows: the 15 calorics, ln(phi_i) per component (#73), then the density action d^k rho.
@@ -376,10 +367,10 @@ void properties_p4() {
                 && (density || component) && action.has_value() && std::abs(*action - fine)
                     <= tolerance * reference.scale[index];
             const bool refinement_ok = reference.uncertainty[index] <= tolerance * reference.scale[index];
-            recording_support::compare_custom(
-                (std::string("pressure/action/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "action", "native",
-                action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+            recording_support::compare_custom(std::string("pressure/action/") + std::to_string(index) + "/"
+                    + std::to_string(order),
+                "action", "native", action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+                "tolerance_times_chart_term_scale", action_ok, "central-difference-refinement",
                 recording_support::fields({recording_support::field("observable", index),
                     recording_support::field("order", order), recording_support::field("central",
                         index < observables.size() ? p4_state_value(pressure_root, observables[index])
@@ -392,17 +383,11 @@ void properties_p4() {
                     recording_support::field("tolerance", tolerance),
                     recording_support::field("term_scale", reference.scale[index]),
                     recording_support::field("reference_uncertainty", reference.uncertainty[index]),
-                    recording_support::field("allowance", tolerance * reference.scale[index])}),
-                "Relationship", "central-difference-refinement",
-                "fixed-pressure action matches independent refinement",
-                "tolerance_times_chart_term_scale", action_ok,
-                "p4-pressure", (std::string("action/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "action", "T,P,x,theta", "available",
-                "observable,order");
-            recording_support::compare_custom(
-                (std::string("pressure/refinement/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "reference_refinement", "native", fine,
-                middle, recording_support::fields({recording_support::field("observable", index),
+                    recording_support::field("allowance", tolerance * reference.scale[index])}));
+            recording_support::compare_custom(std::string("pressure/refinement/") + std::to_string(index) + "/"
+                    + std::to_string(order),
+                "reference_refinement", "native", fine, middle, "tolerance_times_chart_term_scale", refinement_ok,
+                "central-difference-ladder", recording_support::fields({recording_support::field("observable", index),
                     recording_support::field("order", order),
                     recording_support::field("reference_fine", fine),
                     recording_support::field("reference_middle", middle),
@@ -410,12 +395,7 @@ void properties_p4() {
                     recording_support::field("tolerance", tolerance),
                     recording_support::field("term_scale", reference.scale[index]),
                     recording_support::field("reference_uncertainty", reference.uncertainty[index]),
-                    recording_support::field("allowance", tolerance * reference.scale[index])}),
-                "Relationship", "central-difference-ladder", "pressure reference refines",
-                "tolerance_times_chart_term_scale", refinement_ok, "p4-pressure",
-                (std::string("refinement/") + std::to_string(index) + "/"
-                    + std::to_string(order)).c_str(), "reference", "T,P,x,theta,h", "refined",
-                "observable,order");
+                    recording_support::field("allowance", tolerance * reference.scale[index])}));
         }
     }
     const std::array<epcsaft::PropertyObservable, 5> thermal_observables = {
@@ -467,19 +447,14 @@ void properties_p4() {
                     && batch.results[index].action.has_value()
                     && close(*batch.results[index].action, fine, 5.0e-4)
                     && nonconstant_cp;
-                recording_support::compare_custom(
-                    (std::string("supplemental/thermal-form/") + name + "/"
-                        + std::to_string(index) + "/" + std::to_string(order)).c_str(),
-                    "action", "native",
-                    batch.results[index].action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+                recording_support::compare_custom(std::string("supplemental/thermal-form/") + name + "/"
+                        + std::to_string(index) + "/" + std::to_string(order),
+                    "action", "native", batch.results[index].action.value_or(std::numeric_limits<double>::quiet_NaN()),
+                    fine, "relative", ok, "central-difference-refinement",
                     recording_support::fields({recording_support::field("form", name),
                         recording_support::field("observable", index), recording_support::field("order", order),
                         recording_support::field("reference", fine),
-                        recording_support::field("nonconstant_cp", nonconstant_cp ? 1 : 0)}),
-                    "Relationship", "central-difference-refinement", "thermal form action",
-                    "relative", ok, "p4-supplemental", (std::string("thermal-form/") + name
-                        + "/" + std::to_string(index) + "/" + std::to_string(order)).c_str(),
-                    "action", "T,rho,x", "available", "form,observable,order");
+                        recording_support::field("nonconstant_cp", nonconstant_cp ? 1 : 0)}));
             }
         }
     }
@@ -529,9 +504,8 @@ void properties_p4() {
             && close(*batch.results[1].value,
                 *batch.results[0].value + *batch.results[2].value, 2.0e-12)
             && batch.diagnostics.site_rank == conditioning.rank;
-        recording_support::compare_custom(
-            (std::string("supplemental/") + name).c_str(), "status_and_preservation", "bool",
-            ok ? 1.0 : 0.0, 1.0,
+        recording_support::compare_custom(std::string("supplemental/") + name, "status_and_preservation", "bool",
+            ok ? 1.0 : 0.0, 1.0, "absolute", ok, "analytic-association-stress",
             recording_support::fields({recording_support::field("site_count", site_count),
                 recording_support::field("q", q),
                 recording_support::field("site_fraction", sites[0]),
@@ -543,10 +517,7 @@ void properties_p4() {
                     std::numeric_limits<double>::quiet_NaN())),
                 recording_support::field("reference_residual_enthalpy", expected_residual_enthalpy),
                 recording_support::field("central_ideal_enthalpy",
-                    batch.results[2].value.value_or(std::numeric_limits<double>::quiet_NaN()))}),
-            "Availability", "analytic-association-stress",
-            "typed association failure preserves central residual, total and ideal values", "absolute", ok,
-            "p4-supplemental", name, "status", "T,rho,x,q", "typed failure");
+                    batch.results[2].value.value_or(std::numeric_limits<double>::quiet_NaN()))}));
     }
     {
         // Unequal partners retain a real site pivot warning before endpoint factorization refuses.
@@ -581,10 +552,8 @@ void properties_p4() {
         {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}});
     const bool missing_ok = missing_thermochemistry.results[0].status
         == epcsaft::PropertyActionStatus::MissingThermochemistry;
-    recording_support::compare_custom("supplemental/missing-thermochemistry", "status", "bool",
-        missing_ok ? 1.0 : 0.0, 1.0, "ethane without source", "Availability", "thermo",
-        "ideal source absence is typed", "absolute", missing_ok,
-        "p4-supplemental", "missing-thermochemistry", "status", "thermo", "missing_thermochemistry");
+    recording_support::compare_custom("supplemental/missing-thermochemistry", "status", "bool", missing_ok ? 1.0 : 0.0,
+        1.0, "absolute", missing_ok, "thermo", "ethane without source");
     const auto partial = ethane_model.density_actions(
         300.0, 1000.0, {1.0},
         {epcsaft::PropertyObservable::IdealEnthalpy, epcsaft::PropertyObservable::ResidualEnthalpy},
@@ -593,9 +562,7 @@ void properties_p4() {
         && partial.results[1].status == epcsaft::PropertyActionStatus::Available
         && partial.results[1].value.has_value();
     recording_support::compare_custom("supplemental/partial-availability", "sibling_preserved", "bool",
-        partial_ok ? 1.0 : 0.0, 1.0, "ideal+residual without source", "Availability", "partial",
-        "residual sibling remains available", "absolute", partial_ok,
-        "p4-supplemental", "partial-availability", "sibling_preserved", "sibling", "partial");
+        partial_ok ? 1.0 : 0.0, 1.0, "absolute", partial_ok, "partial", "ideal+residual without source");
     const auto negative_slope = ethane_model.density_actions(
         280.0, 4000.0, {1.0},
         {epcsaft::PropertyObservable::ResidualEnthalpy,
@@ -607,10 +574,8 @@ void properties_p4() {
         && negative_slope.results[0].value.has_value()
         && negative_slope.results[2].status == epcsaft::PropertyActionStatus::Available
         && negative_slope.results[2].action.has_value();
-    recording_support::compare_custom("supplemental/negative-slope", "status", "bool",
-        negative_ok ? 1.0 : 0.0, 1.0, "ethane T=280,rho=4000", "Availability", "pressure",
-        "negative pressure slope suppresses residual cp only", "absolute", negative_ok,
-        "p4-supplemental", "negative-slope", "status", "pressure", "pressure_singular");
+    recording_support::compare_custom("supplemental/negative-slope", "status", "bool", negative_ok ? 1.0 : 0.0, 1.0,
+        "absolute", negative_ok, "pressure", "ethane T=280,rho=4000");
     const auto density_unavailable = ethane_model.pressure_actions(
         200.0, properties_support::ethane_two_root_pressure, {1.0}, epcsaft::DensityBranch::Unspecified,
         {epcsaft::PropertyObservable::ResidualEnthalpy},
@@ -618,13 +583,9 @@ void properties_p4() {
     const bool density_unavailable_ok = density_unavailable.results.size() == 1
         && density_unavailable.results[0].status
             == epcsaft::PropertyActionStatus::DensityUnavailable;
-    recording_support::compare_custom(
-        "supplemental/density-unavailable", "status", "bool",
-        density_unavailable_ok ? 1.0 : 0.0, 1.0,
-        "ethane two-root state with unspecified branch", "Availability", "density-selection",
-        "ambiguous fixed-pressure density remains unavailable", "absolute", density_unavailable_ok,
-        "p4-supplemental", "density-unavailable", "status", "T,P,x,branch",
-        "density_unavailable");
+    recording_support::compare_custom("supplemental/density-unavailable", "status", "bool",
+        density_unavailable_ok ? 1.0 : 0.0, 1.0, "absolute", density_unavailable_ok, "density-selection",
+        "ethane two-root state with unspecified branch");
     const std::vector<epcsaft::ActiveParameter> entropy_active = {
         {epcsaft::ParameterFamily::AssociationVolume, {1, 4}}
     };
@@ -663,11 +624,10 @@ void properties_p4() {
         && close(*entropy_batch.results[0].action, entropy_chain, 5.0e-6)
         && close(*entropy_batch.results[0].action, entropy_fine, 5.0e-6)
         && close(entropy_fine, entropy_middle, 1.0e-5);
-    recording_support::compare_custom(
-        "supplemental/parameter-ideal-entropy", "action", "J/(mol K)",
+    recording_support::compare_custom("supplemental/parameter-ideal-entropy", "action", "J/(mol K)",
         entropy_batch.results.empty() ? std::numeric_limits<double>::quiet_NaN()
             : entropy_batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()),
-        entropy_fine,
+        entropy_fine, "relative", entropy_ok, "implicit-pressure-chain",
         recording_support::fields({recording_support::field("T", 313.15),
             recording_support::field("P", state.pressure),
             recording_support::field("rho", state.molar_density),
@@ -675,10 +635,7 @@ void properties_p4() {
             recording_support::field("chain", entropy_chain),
             recording_support::field("reference_fine", entropy_fine),
             recording_support::field("reference_middle", entropy_middle),
-            recording_support::field("reference_coarse", entropy_coarse)}),
-        "Relationship", "implicit-pressure-chain", "parameter Ideal entropy retains P_theta/(rho P_rho)",
-        "relative", entropy_ok, "p4-supplemental", "parameter-ideal-entropy", "action",
-        "T,P,x,theta", "available", "reference_fine,reference_middle,reference_coarse");
+            recording_support::field("reference_coarse", entropy_coarse)}));
     for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
         const auto root = ethane_model.state_at_pressure(
             200.0, properties_support::ethane_two_root_pressure, {1.0}, branch);
@@ -706,19 +663,13 @@ void properties_p4() {
                 const bool refinement_ok = close(fine, coarse, 2.0 * tolerance);
                 const std::string point = std::string(branch == epcsaft::DensityBranch::Vapor ? "vapor" : "liquid")
                     + "/" + std::to_string(index) + "/" + std::to_string(order);
-                recording_support::compare_custom(("supplemental/multiroot/action/" + point).c_str(),
-                    "action", "native",
+                recording_support::compare_custom("supplemental/multiroot/action/" + point, "action", "native",
                     branch_batch.results[index].action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
-                    recording_support::fields({recording_support::field("branch", point), recording_support::field("order", order)}),
-                    "Relationship", "central-difference-refinement", "multiroot pressure action",
-                    "relative", action_ok, "p4-supplemental", ("multiroot/action/" + point).c_str(),
-                    "action", "T,P,x", "available", "branch,observable,order");
-                recording_support::compare_custom(("supplemental/multiroot/refinement/" + point).c_str(),
-                    "reference_refinement", "native", fine, coarse,
-                    recording_support::fields({recording_support::field("branch", point), recording_support::field("order", order)}),
-                    "Relationship", "central-difference-ladder", "multiroot reference refines",
-                    "relative", refinement_ok, "p4-supplemental", ("multiroot/refinement/" + point).c_str(),
-                    "reference", "T,P,x,h", "refined", "branch,observable,order");
+                    "relative", action_ok, "central-difference-refinement",
+                    recording_support::fields({recording_support::field("branch", point), recording_support::field("order", order)}));
+                recording_support::compare_custom("supplemental/multiroot/refinement/" + point, "reference_refinement",
+                    "native", fine, coarse, "relative", refinement_ok, "central-difference-ladder",
+                    recording_support::fields({recording_support::field("branch", point), recording_support::field("order", order)}));
             }
         }
         CHECK(root.density_branch == branch);
@@ -747,13 +698,10 @@ void properties_p4() {
                 && close(*batch.results[index].action, fine,
                     std::array<double, 3>{5.0e-6, 5.0e-5, 5.0e-4}[order - 1]);
             const std::string point = std::to_string(index) + "/" + std::to_string(order);
-            recording_support::compare_custom(("supplemental/electrolyte/" + point).c_str(),
-                "action", "native",
-                batch.results[index].action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
-                recording_support::fields({recording_support::field("observable", index), recording_support::field("order", order)}),
-                "Relationship", "central-difference-refinement", "charge-balanced electrolyte action",
-                "relative", ok, "p4-supplemental", ("electrolyte/" + point).c_str(),
-                "action", "T,rho,x", "available", "observable,order");
+            recording_support::compare_custom("supplemental/electrolyte/" + point, "action", "native",
+                batch.results[index].action.value_or(std::numeric_limits<double>::quiet_NaN()), fine, "relative", ok,
+                "central-difference-refinement",
+                recording_support::fields({recording_support::field("observable", index), recording_support::field("order", order)}));
         }
     }
     epcsaft::ThermochemistryRecord electrolyte_record;
@@ -790,18 +738,16 @@ void properties_p4() {
         && electrolyte_total.results[0].action.has_value()
         && close(*electrolyte_total.results[0].action, electrolyte_total_fine, 5.0e-6)
         && close(electrolyte_total_fine, electrolyte_total_middle, 1.0e-5);
-    recording_support::compare_custom(
-        "supplemental/electrolyte-total", "action", "J/mol", electrolyte_total.results.empty()
+    recording_support::compare_custom("supplemental/electrolyte-total", "action", "J/mol",
+        electrolyte_total.results.empty()
             ? std::numeric_limits<double>::quiet_NaN()
-            : electrolyte_total.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()), electrolyte_total_fine,
+            : electrolyte_total.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()),
+        electrolyte_total_fine, "relative", electrolyte_total_ok, "central-difference-refinement",
         recording_support::fields({recording_support::field("T", 300.0),
             recording_support::field("rho", 1000.0), recording_support::field("x", electrolyte_composition),
             recording_support::field("reference_fine", electrolyte_total_fine),
             recording_support::field("reference_middle", electrolyte_total_middle),
-            recording_support::field("reference_coarse", electrolyte_total_coarse)}),
-        "Relationship", "central-difference-refinement", "sourced Ideal plus residual total action",
-        "relative", electrolyte_total_ok, "p4-supplemental", "electrolyte-total", "action",
-        "T,rho,x", "available", "reference_fine,reference_middle,reference_coarse");
+            recording_support::field("reference_coarse", electrolyte_total_coarse)}));
     const auto full_one = model.density_actions(
         313.15, properties_support::associating_binary_density, composition, observables, {directions[0]});
     const auto selected = model.density_actions(
@@ -820,24 +766,18 @@ void properties_p4() {
         && result_matches(selected.results[0], full_one.results[5]);
     const bool selected_cp = selected.results.size() == 2 && full_one.results.size() == observables.size()
         && result_matches(selected.results[1], full_one.results[13]);
-    recording_support::compare_custom("supplemental/selected-h", "selected_full", "bool", selected_h ? 1.0 : 0.0,
-        1.0, "residual_h", "Identity", "selected/full", "selected equals full", "absolute", selected_h,
-        "p4-supplemental", "selected-h", "selected_full", "subset", "selected/full");
-    recording_support::compare_custom("supplemental/selected-total-cp", "selected_full", "bool", selected_cp ? 1.0 : 0.0,
-        1.0, "total_cp", "Identity", "selected/full", "selected equals full", "absolute", selected_cp,
-        "p4-supplemental", "selected-total-cp", "selected_full", "subset", "selected/full");
+    recording_support::compare_custom("supplemental/selected-h", "selected_full", "bool", selected_h ? 1.0 : 0.0, 1.0,
+        "absolute", selected_h, "selected/full", "residual_h");
+    recording_support::compare_custom("supplemental/selected-total-cp", "selected_full", "bool",
+        selected_cp ? 1.0 : 0.0, 1.0, "absolute", selected_cp, "selected/full", "total_cp");
     const auto full_missing = ethane_model.density_actions(
         300.0, 1000.0, {1.0}, observables,
         {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}});
     const bool failure_match = partial.results.size() == 2 && full_missing.results.size() == observables.size()
         && result_matches(partial.results[0], full_missing.results[0])
         && result_matches(partial.results[1], full_missing.results[5]);
-    recording_support::compare_custom(
-        "supplemental/selected-failure", "selected_full", "bool",
-        failure_match ? 1.0 : 0.0, 1.0, "ideal+residual without source",
-        "Identity", "selected/full", "selected preserves typed failure and valid sibling",
-        "absolute", failure_match, "p4-supplemental", "selected-failure", "selected_full",
-        "subset", "selected/full");
+    recording_support::compare_custom("supplemental/selected-failure", "selected_full", "bool",
+        failure_match ? 1.0 : 0.0, 1.0, "absolute", failure_match, "selected/full", "ideal+residual without source");
     const auto single_h = model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[5]}, {directions[0]});
     const auto single_cp = model.density_actions(
@@ -846,13 +786,9 @@ void properties_p4() {
         && single_cp.results.size() == 1
         && result_matches(single_h.results[0], full_one.results[5])
         && result_matches(single_cp.results[0], full_one.results[13]);
-    recording_support::compare_custom(
-        "supplemental/output-selection-return", "selected_full", "bool",
-        output_selection_return ? 1.0 : 0.0, 1.0,
-        "residual-only then ideal+residual selection at the same state",
-        "Identity", "selected/full", "returning to ideal output selection preserves values and actions",
-        "absolute", output_selection_return, "p4-supplemental", "output-selection-return",
-        "selected_full", "subset", "selected/full");
+    recording_support::compare_custom("supplemental/output-selection-return", "selected_full", "bool",
+        output_selection_return ? 1.0 : 0.0, 1.0, "absolute", output_selection_return, "selected/full",
+        "residual-only then ideal+residual selection at the same state");
     epcsaft::HelmholtzModel cold_model(
         model.parameters(), active, p3_binary_record());
     const auto cold_batch = cold_model.density_actions(
@@ -864,11 +800,8 @@ void properties_p4() {
     const bool work_reuse = cold_batch.results.size() == 1 && warm_batch.results.size() == 1
         && cold_batch.results[0].status == epcsaft::PropertyActionStatus::Available
         && result_matches(warm_batch.results[0], cold_batch.results[0]);
-    recording_support::compare_custom(
-        "supplemental/work-reuse", "warm_equals_cold", "bool", work_reuse ? 1.0 : 0.0, 1.0,
-        "q3 residual cp, repeated request", "Identity", "shared-batch-work",
-        "a repeated request on the recorded tape reproduces the cold batch",
-        "absolute", work_reuse, "p4-supplemental", "work-reuse", "warm_equals_cold", "case", "warm=cold");
+    recording_support::compare_custom("supplemental/work-reuse", "warm_equals_cold", "bool", work_reuse ? 1.0 : 0.0,
+        1.0, "absolute", work_reuse, "shared-batch-work", "q3 residual cp, repeated request");
     const auto state_values_match = [](
         const epcsaft::State& left, const epcsaft::State& right,
         const std::vector<epcsaft::PropertyObservable>& rows, double tolerance) {
@@ -910,16 +843,14 @@ void properties_p4() {
                     && close(*actual.action, *expected.action, 2.0e-12);
                 const auto id = "supplemental/action-freshness/" + std::to_string(order)
                     + "/" + std::to_string(point) + "/" + std::to_string(row);
-                recording_support::compare_custom(id.c_str(), "action", "native",
+                recording_support::compare_custom(id, "action", "native",
                     actual.action.value_or(std::numeric_limits<double>::quiet_NaN()),
-                    expected.action.value_or(std::numeric_limits<double>::quiet_NaN()),
-                    recording_support::fields({recording_support::field("T", t),
+                    expected.action.value_or(std::numeric_limits<double>::quiet_NaN()), "relative", agrees,
+                    "fresh-model-action", recording_support::fields({recording_support::field("T", t),
                         recording_support::field("rho", rho), recording_support::field("x", x),
                         recording_support::field("order", order), recording_support::field("row", row),
                         recording_support::field("value", actual.value.value_or(std::numeric_limits<double>::quiet_NaN())),
-                        recording_support::field("fresh_value", expected.value.value_or(std::numeric_limits<double>::quiet_NaN()))}),
-                    "Identity", "fresh-model-action", "retained action refreshes all state dependencies",
-                    "relative", agrees, "p4-supplemental", id.c_str(), "action", "T,rho,x", "fresh-model");
+                        recording_support::field("fresh_value", expected.value.value_or(std::numeric_limits<double>::quiet_NaN()))}));
             }
         }
     }
@@ -939,9 +870,9 @@ void properties_p4() {
         && state_values_match(retained_pure_again, fresh_pure_again, observables, 2.0e-12)
         && close(p4_state_value(retained_pure, epcsaft::PropertyObservable::IdealEntropy),
                  p4_state_value(retained_pure_again, epcsaft::PropertyObservable::IdealEntropy), 2.0e-12);
-    recording_support::compare_custom(
-        "supplemental/retained-freshness", "state", "bool", retained_freshness ? 1.0 : 0.0,
-        1.0, recording_support::fields({recording_support::field("pure_x", pure_first),
+    recording_support::compare_custom("supplemental/retained-freshness", "state", "bool",
+        retained_freshness ? 1.0 : 0.0, 1.0, "absolute", retained_freshness, "retained-state-replay",
+        recording_support::fields({recording_support::field("pure_x", pure_first),
             recording_support::field("mixed_x", composition), recording_support::field("T_pure", 313.15),
             recording_support::field("T_mixed", 320.0),
             recording_support::field("rho_pure", 5000.0),
@@ -951,10 +882,7 @@ void properties_p4() {
             recording_support::field("mixed_entropy", p4_state_value(retained_mixed,
                 epcsaft::PropertyObservable::IdealEntropy)),
             recording_support::field("repeat_entropy", p4_state_value(retained_pure_again,
-                epcsaft::PropertyObservable::IdealEntropy))}),
-        "Identity", "retained-state-replay", "changing T and x refreshes ideal support and state values",
-        "absolute", retained_freshness, "p4-supplemental", "retained-freshness", "state",
-        "T,rho,x", "fresh-state", "ideal_entropy,all_properties");
+                epcsaft::PropertyObservable::IdealEntropy))}));
     const std::vector<epcsaft::PropertyObservable> residual_rows = {
         epcsaft::PropertyObservable::ResidualEnthalpy,
         epcsaft::PropertyObservable::ResidualInternalEnergy,
@@ -980,79 +908,65 @@ void properties_p4() {
             && state_values_match(pressure_state, fresh_state, residual_rows, 2.0e-12)
             && state_values_match(pressure_state, direct_state, residual_rows, 1.0e-9);
     }
-    recording_support::compare_custom(
-        "supplemental/branch-route", "state", "bool", branch_route_ok ? 1.0 : 0.0, 1.0,
+    recording_support::compare_custom("supplemental/branch-route", "state", "bool", branch_route_ok ? 1.0 : 0.0, 1.0,
+        "absolute", branch_route_ok, "resolved-state-route",
         recording_support::fields({recording_support::field("T", 200.0),
             recording_support::field("P", properties_support::ethane_two_root_pressure),
             recording_support::field("rho", branch_densities),
-            recording_support::field("achieved_P", branch_pressures)}),
-        "Identity", "resolved-state-route", "same branch pressure and density routes agree",
-        "absolute", branch_route_ok, "p4-supplemental", "branch-route", "state",
-        "T,P,x,branch", "residual_properties,branch,root_count");
+            recording_support::field("achieved_P", branch_pressures)}));
     const auto fixed = model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[5]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
             {{epcsaft::ParameterFamily::AssociationVolume, {0}, 1.0}}}});
     const bool fixed_zero = fixed.results[0].status == epcsaft::PropertyActionStatus::Available
         && fixed.results[0].action.has_value() && std::abs(*fixed.results[0].action) <= 1.0e-12;
-    recording_support::compare_custom("supplemental/fixed-slot", "fixed_slot_zero", "bool",
-        fixed_zero ? 1.0 : 0.0, 1.0, "association_volume[0]", "Availability", "fixed-slot",
-        "known fixed slot is available structural zero", "absolute", fixed_zero,
-        "p4-supplemental", "fixed-slot", "fixed_slot_zero", "slot", "fixed/zero");
-    bool unknown_rejected = false;
-    try {
+    recording_support::compare_custom("supplemental/fixed-slot", "fixed_slot_zero", "bool", fixed_zero ? 1.0 : 0.0,
+        1.0, "absolute", fixed_zero, "fixed-slot", "association_volume[0]");
+    const bool unknown_rejected = recording_support::refusal([&] {
         (void)model.density_actions(313.15, properties_support::associating_binary_density, composition, {observables[5]},
             {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
                 {{epcsaft::ParameterFamily::AssociationVolume, {999}, 1.0}}}});
-    } catch (const std::invalid_argument&) { unknown_rejected = true; }
+    }).find("invalid parameter index") != std::string::npos;
     recording_support::compare_custom("supplemental/unknown-slot", "unknown_rejected", "bool",
-        unknown_rejected ? 1.0 : 0.0, 1.0, "association_volume[999]", "Availability", "unknown-slot",
-        "unknown native slot rejects", "absolute", unknown_rejected,
-        "p4-supplemental", "unknown-slot", "unknown_rejected", "slot", "invalid_argument");
-    const auto rejects = [](auto&& call) {
-        try { call(); }
-        catch (const std::invalid_argument&) { return true; }
-        return false;
+        unknown_rejected ? 1.0 : 0.0, 1.0, "absolute", unknown_rejected, "unknown-slot", "association_volume[999]");
+    const auto rejects = [](const std::function<void()>& call, const char* cause) {
+        return recording_support::refusal(call).find(cause) != std::string::npos;
     };
     const auto& valid_direction = directions[0];
     std::size_t malformed_rejections = 0;
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, properties_support::associating_binary_density, composition, {}, {valid_direction}); });
+        313.15, properties_support::associating_binary_density, composition, {}, {valid_direction}); }, "invalid observables");
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0], observables[0]},
-        {valid_direction}); });
+        {valid_direction}); }, "invalid observables");
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, properties_support::associating_binary_density, composition, {observables[0]}, {}); });
-    malformed_rejections += rejects([&] { model.density_actions(
-        313.15, properties_support::associating_binary_density, composition, {observables[0]},
-        std::vector<epcsaft::DensityActionDirection>(4, valid_direction)); });
+        313.15, properties_support::associating_binary_density, composition, {observables[0]}, {}); }, "invalid action order");
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0]},
-        {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}}); });
+        std::vector<epcsaft::DensityActionDirection>(4, valid_direction)); }, "invalid action order");
+    malformed_rejections += rejects([&] { model.density_actions(
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
+        {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}}); }, "invalid direction composition");
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{std::numeric_limits<double>::infinity(),
-            0.0, {0.0, 0.0}, {}}}); });
+            0.0, {0.0, 0.0}, {}}}); }, "invalid direction");
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0]},
-        {epcsaft::DensityActionDirection{0.0, 0.0, {0.1, 0.0}, {}}}); });
+        {epcsaft::DensityActionDirection{0.0, 0.0, {0.1, 0.0}, {}}}); }, "invalid direction composition balance");
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
-            {{epcsaft::ParameterFamily::Kij, {2, 1}, 1.0}}}}); });
+            {{epcsaft::ParameterFamily::Kij, {2, 1}, 1.0}}}}); }, "invalid reciprocal parameter coordinate");
     epcsaft::HelmholtzModel ionic_validation(properties_support::aqueous_electrolyte());
     malformed_rejections += rejects([&] { ionic_validation.density_actions(
         300.0, 1000.0, {0.98, 0.01, 0.01},
         {epcsaft::PropertyObservable::ResidualEnthalpy},
-        {epcsaft::DensityActionDirection{0.0, 0.0, {-0.01, 0.01, 0.0}, {}}}); });
+        {epcsaft::DensityActionDirection{0.0, 0.0, {-0.01, 0.01, 0.0}, {}}}); }, "invalid direction charge balance");
     const bool malformed_ok = malformed_rejections == 9;
-    recording_support::compare_custom(
-        "supplemental/malformed-requests", "invalid_argument", "count",
-        static_cast<double>(malformed_rejections), 9.0,
-        "empty,duplicate,order,dimension,nonfinite,balance,slot,charge",
-        "Availability", "request-validation", "malformed requests fail at the trust boundary",
-        "absolute", malformed_ok, "p4-supplemental", "malformed-requests",
-        "invalid_argument", "request", "nine rejected cases");
+    recording_support::compare_custom("supplemental/malformed-requests", "invalid_argument", "count",
+        static_cast<double>(malformed_rejections), 9.0, "absolute", malformed_ok, "request-validation",
+        "empty,duplicate,order,dimension,nonfinite,balance,slot,charge");
     // A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
     epcsaft::HelmholtzModel neutral(properties_support::neutral_binary());
     const auto inserted = [&](double eps) {
@@ -1064,28 +978,22 @@ void properties_p4() {
     const bool support_change = support.status == epcsaft::PropertyActionStatus::Available && support.action
         && std::abs(*support.action - support_limit) <= std::max(1.0e-12, 1.0e-9 * std::abs(support_limit));
     recording_support::compare_custom("supplemental/support-change", "action", "J/mol",
-        support.action.value_or(std::numeric_limits<double>::quiet_NaN()), support_limit,
-        "neutral x=(1,0), dx=(-.01,.01), eps=1e-7", "Relationship", "infinite-dilution-extrapolation",
-        "a neutral insertion action is its infinite-dilution limit", "symmetric_close_1e-9_1e-12", support_change,
-        "p4-supplemental", "support-change", "action", "support", "support_limit");
+        support.action.value_or(std::numeric_limits<double>::quiet_NaN()), support_limit, "symmetric_close_1e-9_1e-12",
+        support_change, "infinite-dilution-extrapolation", "neutral x=(1,0), dx=(-.01,.01), eps=1e-7");
     epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     const auto ionic = aqueous.density_actions(300.0, 1000.0, {1.0, 0.0, 0.0}, {observables[5]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {-0.02, 0.01, 0.01}, {}}});
     const bool ionic_insertion = ionic.results[0].status == epcsaft::PropertyActionStatus::IonicInsertion;
-    recording_support::compare_custom("supplemental/ionic-insertion", "status", "bool",
-        ionic_insertion ? 1.0 : 0.0, 1.0, "aqueous x=(1,0,0), dx=(-.02,.01,.01)", "Availability", "ionic",
-        "ionic insertion unavailable", "absolute", ionic_insertion,
-        "p4-supplemental", "ionic-insertion", "status", "ionic", "ionic_insertion");
+    recording_support::compare_custom("supplemental/ionic-insertion", "status", "bool", ionic_insertion ? 1.0 : 0.0,
+        1.0, "absolute", ionic_insertion, "ionic", "aqueous x=(1,0,0), dx=(-.02,.01,.01)");
     epcsaft::HelmholtzModel endpoint_model(
         properties_support::ethane(), {}, p3_record(p3_forms()[0].second));
     const auto endpoint_action = endpoint_model.density_actions(250.0, 1000.0, {1.0},
         {epcsaft::PropertyObservable::IdealEnthalpy},
         {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}});
     const bool thermal_boundary = endpoint_action.results[0].status == epcsaft::PropertyActionStatus::ThermalBoundary;
-    recording_support::compare_custom("supplemental/thermal-boundary", "status", "bool",
-        thermal_boundary ? 1.0 : 0.0, 1.0, "T=250 endpoint, dT=.1", "Availability", "thermal",
-        "thermal boundary action unavailable", "absolute", thermal_boundary,
-        "p4-supplemental", "thermal-boundary", "status", "thermal", "thermal_boundary");
+    recording_support::compare_custom("supplemental/thermal-boundary", "status", "bool", thermal_boundary ? 1.0 : 0.0,
+        1.0, "absolute", thermal_boundary, "thermal", "T=250 endpoint, dT=.1");
     const auto counter_batch = model.density_actions(313.15, properties_support::associating_binary_density, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity},
         {directions[0], directions[1], directions[2]});
@@ -1100,10 +1008,8 @@ void properties_p4() {
         && pressure_counter_batch.diagnostics.pressure_density_derivative > 0.0
         && pressure_counter_batch.diagnostics.stable_root_count == pressure_root.stable_root_count
         && pressure_counter_batch.diagnostics.branch == pressure_root.density_branch;
-    recording_support::compare_custom("supplemental/counters", "counter_contract", "bool",
-        counter_ok ? 1.0 : 0.0, 1.0, "q3 residual cp", "Structure", "counters",
-        "pressure-chart actions carry the state's root branch, root count and positive slope", "absolute", counter_ok,
-        "p4-supplemental", "counters", "counter_contract", "counters", "E5/no-Hessian");
+    recording_support::compare_custom("supplemental/counters", "counter_contract", "bool", counter_ok ? 1.0 : 0.0, 1.0,
+        "absolute", counter_ok, "counters", "q3 residual cp");
 }
 
 void neutral_property_pressure_hessian() {
@@ -1125,22 +1031,10 @@ void neutral_property_pressure_hessian() {
         epcsaft::DerivativeOrder::Value
     );
     const auto state = model.state(temperature, density, {1.0});
-    recording_support::compare(
-        "issue10-pressure/value", "pressure", "Pa", actual.value, state.pressure, inputs,
-        "Relationship", "state", "neutral pressure equals state pressure",
-        "reference_or_one", 0.0, 1.0e-12,
-        close(actual.value, state.pressure, 1.0e-12), "issue10-pressure", "value",
-        "P", "T,rho", "P_neutral=P_state", "T,rho"
-    );
-    recording_support::compare(
-        "issue10-pressure/value-after-hessian", "pressure", "Pa",
-        value_after_hessian.value, actual.value, inputs,
-        "Relationship", "order-transition", "value remains valid after Hessian",
-        "reference_or_one", 0.0, 1.0e-12,
-        close(value_after_hessian.value, actual.value, 1.0e-12),
-        "issue10-pressure", "value-after-hessian", "P", "T,rho",
-        "P_value=P_hessian", "T,rho"
-    );
+    recording_support::compare("issue10-pressure/value", "pressure", "Pa", actual.value, state.pressure,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "state", inputs);
+    recording_support::compare("issue10-pressure/value-after-hessian", "pressure", "Pa", value_after_hessian.value,
+        actual.value, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-12, "order-transition", inputs);
     const double delta = 1.0e-4;
     const auto plus = model.neutral_property(
         temperature + 400.0 * delta, density + 100.0 * delta,
@@ -1155,16 +1049,10 @@ void neutral_property_pressure_hessian() {
         const double centered = (plus.gradient[row] - minus.gradient[row]) / (2.0 * delta);
         const double expected = actual.hessian[row] * 400.0
             + actual.hessian[row * 2 + 1] * 100.0;
-        recording_support::compare(
-            (std::string("issue10-hessian/") + std::to_string(row)).c_str(),
-            "pressure_hessian_action", units[row], centered, expected,
+        recording_support::compare(std::string("issue10-hessian/") + std::to_string(row), "pressure_hessian_action",
+            units[row], centered, expected, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "centered_gradient",
             recording_support::fields({inputs, recording_support::field("delta", delta),
-                                       recording_support::field("direction", row)}),
-            "Relationship", "centered_gradient", "pressure Hessian action",
-            "reference_or_one", 0.0, 1.0e-6,
-            close(centered, expected, 1.0e-6), "issue10-hessian",
-            std::to_string(row).c_str(), "H*d", "T,rho", "H*d=finite_difference", "T,rho"
-        );
+                                       recording_support::field("direction", row)}));
     }
 }
 
@@ -1194,10 +1082,8 @@ void joule_thomson_identities() {
             recording_support::field("P_Pa", P), recording_support::field("x", x),
             recording_support::field("rho", state.molar_density)});
         for (const auto& [route, reference] : routes)
-            recording_support::compare(("joule-thomson/" + std::string(name) + "/" + route).c_str(),
-                "joule_thomson_coefficient", "K/Pa", mu, reference, inputs, "Relationship", "exact-identity",
-                "State mu_JT equals the isenthalpic pressure-action identity", "symmetric_close", 0.0, 1.0e-12,
-                recording_support::scalar_verdict(mu, reference, "symmetric_close", 0.0, 1.0e-12), "joule-thomson");
+            recording_support::compare("joule-thomson/" + std::string(name) + "/" + route, "joule_thomson_coefficient",
+                "K/Pa", mu, reference, recording_support::Rule::SymmetricClose, 0.0, 1.0e-12, "exact-identity", inputs);
     }
 }
 

@@ -56,31 +56,20 @@ void check_s3() {
         recording_support::field("P_dew", *dew_result.pressure),
         recording_support::field("limit", limit),
     });
-    recording_support::compare(
-        "pressure-roundtrip", "pressure_ratio", "1",
-        *dew_result.pressure / *bubble_result.pressure, 1.0, inputs,
-        "Relationship", "bubble-dew-roundtrip",
-        "dew pressure reproduces bubble pressure", "reference_or_one", limit, 0.0,
-        std::abs(*dew_result.pressure / *bubble_result.pressure - 1.0) <= limit,
-        "s3-pressure", "bubble-dew", "P", "T,\\mathbf{x},branch", "P_{dew}=P_{bubble}", "branch");
+    recording_support::compare("pressure-roundtrip", "pressure_ratio", "1",
+        *dew_result.pressure / *bubble_result.pressure, 1.0, recording_support::Rule::ReferenceOrOne, limit, 0.0,
+        "bubble-dew-roundtrip", inputs);
     for (std::size_t component = 0; component < 2; ++component) {
         const auto point = std::to_string(component);
-        const bool equal = std::abs(
-            dew_result.mole_fractions[component] - bubble_result.mole_fractions[component]
-        ) <= limit;
-        recording_support::compare(
-            (std::string("composition-roundtrip/") + point).c_str(), "mole_fraction", "1",
+        recording_support::compare(std::string("composition-roundtrip/") + point, "mole_fraction", "1",
             dew_result.mole_fractions[component], bubble_result.mole_fractions[component],
+            recording_support::Rule::ReferenceOrOne, limit, 0.0, "bubble-dew-roundtrip",
             recording_support::fields({recording_support::field("T", bubble.temperature.value),
                                        recording_support::field("P_bubble", *bubble_result.pressure),
                                        recording_support::field("P_dew", *dew_result.pressure),
                                        recording_support::field("feed", bubble.feed.values),
                                        recording_support::field("component", component),
-                                       recording_support::field("limit", limit)}),
-            "Relationship", "bubble-dew-roundtrip", "dew composition reproduces bubble composition",
-            "reference_or_one", limit, 0.0, equal,
-            "s3-composition", point.c_str(), "x_i", "T,P_{bubble},P_{dew},feed,component",
-            "x_{dew,i}=x_{bubble,i}", "component");
+                                       recording_support::field("limit", limit)}));
     }
 }
 
@@ -114,21 +103,16 @@ void check_s4() {
             && std::isfinite(gaps[step - 1])
             && gaps[step] <= gaps[step - 1] / 10.0;
         const auto point = std::to_string(step);
-        recording_support::compare_custom(
-            (std::string("temperature-ladder/") + point).c_str(),
-            "temperature_gap", "K", gaps[step], gaps[step - 1],
-            recording_support::fields({
+        recording_support::compare_custom(std::string("temperature-ladder/") + point, "temperature_gap", "K",
+            gaps[step], gaps[step - 1], "isfinite(model) && isfinite(reference) && model <= reference / 10",
+            contracted, "boundary-limit", recording_support::fields({
                 recording_support::field("T", *bubble_result.temperature),
                 recording_support::field("P", *bubble_result.pressure),
                 recording_support::field("beta", std::vector<double>{1.0e-2, 1.0e-4, 1.0e-6}),
                 recording_support::field("gaps", std::vector<double>{gaps[0], gaps[1], gaps[2]}),
                 recording_support::field("step", step),
                 recording_support::field("previous_gap", gaps[step - 1]),
-            }),
-            "Relationship", "boundary-limit", "temperature gap contracts by at least one decade",
-            "isfinite(model) && isfinite(reference) && model <= reference / 10", contracted,
-            "s4-temperature-ladder", point.c_str(), "\\Delta T", "T,P,\\beta,step,\\Delta T_{previous}",
-            "\\Delta T_{k+1}\\leq0.1\\Delta T_k", "step");
+            }));
     }
 }
 
@@ -171,19 +155,12 @@ void check_s5() {
     const auto temperature_result = epcsaft::equilibrium::solve_equilibrium(
         model, problem, pressure_result);
     CHECK(temperature_result.success);
-    const bool temperature_matches = std::abs(
-        *temperature_result.temperature - *pressure_result.temperature
-    ) <= 1.0e-6;
-    recording_support::compare(
-        "temperature-roundtrip", "temperature", "K", *temperature_result.temperature,
-        *pressure_result.temperature,
+    recording_support::compare("temperature-roundtrip", "temperature", "K", *temperature_result.temperature,
+        *pressure_result.temperature, recording_support::Rule::ReferenceOrOne, 1.0e-6, 0.0,
+        "pressure-temperature-roundtrip",
         recording_support::fields({recording_support::field("T", *pressure_result.temperature),
                                    recording_support::field("P", *pressure_result.pressure),
-                                   recording_support::field("x", problem.feed.values)}),
-        "Relationship", "pressure-temperature-roundtrip", "temperature solve reproduces pressure solve",
-        "reference_or_one", 1.0e-6, 0.0,
-        temperature_matches,
-        "s5-temperature", "roundtrip", "T", "T,P,\\mathbf{x}", "T_{roundtrip}=T", "state");
+                                   recording_support::field("x", problem.feed.values)}));
 }
 
 void check_s9() {
@@ -213,21 +190,16 @@ void check_s9() {
         if (!up.success || !down.success) continue;
         for (std::size_t column = 0; column < point.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column]) / (2.0 * delta);
-            recording_support::compare(
-                (std::string("sensitivity/") + std::to_string(lever_index) + "/"
-                 + std::to_string(column)).c_str(),
+            recording_support::compare(std::string("sensitivity/") + std::to_string(lever_index) + "/"
+                 + std::to_string(column),
                 "equilibrium_sensitivity", "coordinate", derivative[column], centered,
+                recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
                 recording_support::fields({recording_support::field("T", problem.temperature.value),
                                            recording_support::field("P", problem.pressure.value),
                                            recording_support::field("x", problem.feed.values),
                                            recording_support::field("lever", lever),
                                            recording_support::field("delta", delta),
-                                           recording_support::field("coordinate", column)}),
-                "Relationship", "finite-difference", "analytic sensitivity matches centered solve",
-                "reference_or_one", 0.0, 1.0e-6,
-                std::abs(derivative[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-                "s9-sensitivity", (std::to_string(lever_index) + "-" + std::to_string(column)).c_str(),
-                "\\partial z/\\partial q", "T,P,\\mathbf{x},\\Delta q", "z_q=\\Delta z/\\Delta q", "lever,coordinate");
+                                           recording_support::field("coordinate", column)}));
         }
     }
 
@@ -265,21 +237,16 @@ void check_s9() {
         for (std::size_t column = 0; column < analytic.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column])
                 / (2.0 * delta);
-            recording_support::compare(
-                (std::string("pinned-sensitivity/") + std::to_string(species) + "/"
-                 + std::to_string(column)).c_str(),
+            recording_support::compare(std::string("pinned-sensitivity/") + std::to_string(species) + "/"
+                 + std::to_string(column),
                 "equilibrium_sensitivity", "coordinate", analytic[column], centered,
+                recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
                 recording_support::fields({recording_support::field("T", pinned.temperature.value),
                                            recording_support::field("P", pinned.pressure.value),
                                            recording_support::field("x", pinned.feed.values),
                                            recording_support::field("species", species),
                                            recording_support::field("delta", delta),
-                                           recording_support::field("coordinate", column)}),
-                "Relationship", "finite-difference", "pinned sensitivity matches centered solve",
-                "reference_or_one", 0.0, 1.0e-6,
-                std::abs(analytic[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-                "s9-pinned-sensitivity", (std::to_string(species) + "-" + std::to_string(column)).c_str(),
-                "\\partial z/\\partial x_i", "T,P,\\mathbf{x},\\Delta x_i", "z_{x_i}=\\Delta z/\\Delta x_i", "species,coordinate");
+                                           recording_support::field("coordinate", column)}));
         }
     }
 
@@ -301,20 +268,14 @@ void check_s9() {
     const auto cold_rows = reactive_free.evaluate(colder).values;
     for (std::size_t row = 0; row < reactive_free.rows.size(); ++row) {
         const double centered = (warm_rows[row] - cold_rows[row]) / (2.0 * temperature_step);
-        recording_support::compare(
-            (std::string("reactive-jacobian/") + std::to_string(row)).c_str(),
-            "equilibrium_jacobian", "1", reactive_jacobian[row * reactive_start.size() + temperature_column], centered,
+        recording_support::compare(std::string("reactive-jacobian/") + std::to_string(row), "equilibrium_jacobian",
+            "1", reactive_jacobian[row * reactive_start.size() + temperature_column], centered,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
             recording_support::fields({recording_support::field("T", 298.15),
                                        recording_support::field("P", 1.0e5),
                                        recording_support::field("x", reactive.feed.values),
                                        recording_support::field("delta_T", temperature_step),
-                                       recording_support::field("row", row)}),
-            "Relationship", "finite-difference", "reactive Jacobian temperature column matches centered rows",
-            "reference_or_one", 0.0, 1.0e-6,
-            std::abs(reactive_jacobian[row * reactive_start.size() + temperature_column] - centered)
-                <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-            "s9-reactive-jacobian", std::to_string(row).c_str(), "J_{r,T}", "T,P,\\mathbf{x},\\Delta T",
-            "J_{r,T}=\\Delta r/\\Delta T", "row");
+                                       recording_support::field("row", row)}));
     }
     reactive.temperature = epcsaft::equilibrium::FreeValue::fixed(298.15);
     reactive.pressure = epcsaft::equilibrium::FreeValue::variable();
@@ -333,20 +294,13 @@ void check_s9() {
     for (std::size_t row = 0; row < reactive_fixed.rows.size(); ++row) {
         const double centered = (fixed_warm_rows[row] - fixed_cold_rows[row])
             / (2.0 * temperature_step);
-        recording_support::compare(
-            (std::string("reactive-lever/") + std::to_string(row)).c_str(), "lever_jacobian", "1",
-            reactive_levers[row * lever_width], centered,
-            recording_support::fields({recording_support::field("T", 298.15),
+        recording_support::compare(std::string("reactive-lever/") + std::to_string(row), "lever_jacobian", "1",
+            reactive_levers[row * lever_width], centered, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6,
+            "finite-difference", recording_support::fields({recording_support::field("T", 298.15),
                                        recording_support::field("P", 1.0e5),
                                        recording_support::field("x", reactive.feed.values),
                                        recording_support::field("delta_T", temperature_step),
-                                       recording_support::field("row", row)}),
-            "Relationship", "finite-difference", "lever Jacobian temperature column matches centered rows",
-            "reference_or_one", 0.0, 1.0e-6,
-            std::abs(reactive_levers[row * lever_width] - centered)
-                <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-            "s9-reactive-lever", std::to_string(row).c_str(), "J_{r,T}", "T,P,\\mathbf{x},\\Delta T",
-            "J_{r,T}=\\Delta r/\\Delta T", "row");
+                                       recording_support::field("row", row)}));
     }
 
     auto active_parameters = properties_support::neutral_ternary();
@@ -393,23 +347,17 @@ void check_s9() {
         for (std::size_t column = 0; up.success && down.success && column < analytic.size(); ++column) {
             const double centered = (up.coordinates[column] - down.coordinates[column])
                 / (2.0 * delta);
-            recording_support::compare(
-                (std::string("parameter-sensitivity/") + std::to_string(parameter) + "/"
-                 + std::to_string(column)).c_str(), "equilibrium_sensitivity", "coordinate",
-                analytic[column], centered,
+            recording_support::compare(std::string("parameter-sensitivity/") + std::to_string(parameter) + "/"
+                 + std::to_string(column),
+                "equilibrium_sensitivity", "coordinate", analytic[column], centered,
+                recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
                 recording_support::fields({recording_support::field("T", active_problem.temperature.value),
                                            recording_support::field("P", active_problem.pressure.value),
                                            recording_support::field("x", active_problem.feed.values),
                                            recording_support::field("parameter", parameter),
                                            recording_support::field("theta", theta),
                                            recording_support::field("delta", delta),
-                                           recording_support::field("coordinate", column)}),
-                "Relationship", "finite-difference", "active parameter sensitivity matches centered solve",
-                "reference_or_one", 0.0, 1.0e-6,
-                std::abs(analytic[column] - centered) <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-                "s9-parameter-sensitivity", (std::to_string(parameter) + "-" + std::to_string(column)).c_str(),
-                "\\partial z/\\partial\\theta", "T,P,\\mathbf{x},\\theta,\\Delta\\theta",
-                "z_\\theta=\\Delta z/\\Delta\\theta", "parameter,coordinate");
+                                           recording_support::field("coordinate", column)}));
         }
         for (std::size_t row = 0; row < active_compiled.rows.size(); ++row)
             if (active_compiled.rows[row].kind == epcsaft::equilibrium::RowKind::Moiety)
@@ -442,13 +390,12 @@ void check_ionic_packing_derivative() {
             if (kind != epcsaft::equilibrium::RowKind::Chemical && kind != epcsaft::equilibrium::RowKind::Pressure) continue;
             const double exact = columns[row * width + width - 1];
             const double centered = (up[row] - down[row]) / (2.0 * step);
-            const bool agrees = std::abs(exact - centered) <= tolerance;
             const auto id = "ionic-packing-derivative/" + recording_support::number(step) + "/" + std::to_string(row);
-            recording_support::compare(id.c_str(), "lever_jacobian", "1/angstrom", exact, centered,
+            recording_support::compare(id, "lever_jacobian", "1/angstrom", exact, centered,
+                recording_support::Rule::Absolute, tolerance, 0.0, "centered-parameter-stencil",
                 recording_support::fields({recording_support::field("T", 300.0), recording_support::field("P", 1.0e5),
                     recording_support::field("feed", problem.feed.values), recording_support::field("step", step),
-                    recording_support::field("row", row)}), "Relationship", "centered-parameter-stencil",
-                "ionic packing-diameter column includes the volume chain", "absolute", tolerance, 0.0, agrees);
+                    recording_support::field("row", row)}));
         }
     }
 }
@@ -470,21 +417,14 @@ void check_s10() {
         for (std::size_t row = 0; row < values.size(); ++row) {
             const double centered = (up[row] - down[row]) / (2.0 * delta);
             const auto point_id = std::to_string(row) + "-" + std::to_string(column);
-            recording_support::compare(
-                (std::string("jacobian/") + point_id).c_str(), "equilibrium_jacobian", "1",
-                jacobian[row * point.size() + column], centered,
-                recording_support::fields({recording_support::field("T", 300.0),
+            recording_support::compare(std::string("jacobian/") + point_id, "equilibrium_jacobian", "1",
+                jacobian[row * point.size() + column], centered, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6,
+                "finite-difference", recording_support::fields({recording_support::field("T", 300.0),
                                            recording_support::field("P", 1.0e5),
                                            recording_support::field("x", std::vector<double>{0.5, 0.5}),
                                            recording_support::field("row", row),
                                            recording_support::field("column", column),
-                                           recording_support::field("delta", delta)}),
-                "Relationship", "finite-difference", "equilibrium Jacobian matches centered residual derivative",
-                "reference_or_one", 0.0, 1.0e-6,
-                std::abs(jacobian[row * point.size() + column] - centered)
-                    <= 1.0e-6 * std::max(1.0, std::abs(centered)),
-                "s10-jacobian", point_id.c_str(), "J", "T,P,\\mathbf{x},\\Delta z",
-                "J_{ij}=\\Delta r_i/\\Delta z_j", "row,col");
+                                           recording_support::field("delta", delta)}));
         }
     }
 }
@@ -510,18 +450,12 @@ void check_s14() {
     CHECK(liquid_pinned.success);
     const double limit = std::max(convergence_limit(vapor_pinned.convergence),
                                   convergence_limit(liquid_pinned.convergence));
-    recording_support::compare(
-        "pinned-pressure", "pressure_ratio", "1",
-        *vapor_pinned.pressure / *liquid_pinned.pressure, 1.0,
-        recording_support::fields({recording_support::field("T", 250.0),
+    recording_support::compare("pinned-pressure", "pressure_ratio", "1",
+        *vapor_pinned.pressure / *liquid_pinned.pressure, 1.0, recording_support::Rule::ReferenceOrOne, limit, 0.0,
+        "pinned-phase-switch", recording_support::fields({recording_support::field("T", 250.0),
                                    recording_support::field("P", 1.3e6),
                                    recording_support::field("limit", limit),
-                                   recording_support::field("x", std::vector<double>{1.0})}),
-        "Relationship", "pinned-phase-switch", "switching pinned phase preserves pressure",
-        "reference_or_one", limit, 0.0,
-        std::abs(*vapor_pinned.pressure / *liquid_pinned.pressure - 1.0) <= limit,
-        "s14-pressure", "phase-switch", "P_{vapor}/P_{liquid}", "T,P,\\mathbf{x},branch",
-        "P_{vapor}=P_{liquid}", "branch");
+                                   recording_support::field("x", std::vector<double>{1.0})}));
 }
 
 // Bell and Deiters (2023) source coefficients against the Engine coexistence equations, m = 1..64.
@@ -591,15 +525,12 @@ void check_s15c() {
     problem.feed.values = {0.5, 0.5};
     problem.temperature.value = 280.0;
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, problem);
-    recording_support::compare(
-        "coincident-failure", "success", "bool", result.success ? 1.0 : 0.0, 0.0,
+    recording_support::compare("coincident-failure", "success", "bool", result.success ? 1.0 : 0.0, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "boundary-admission",
         recording_support::fields({recording_support::field("T", 280.0),
                                    recording_support::field("P", 1.0e5),
                                    recording_support::field("x", problem.feed.values),
-                                   recording_support::field("topology", "boundary")}),
-        "Relationship", "boundary-admission", "coincident phases are rejected",
-        "reference_or_one", 0.0, 0.0, !result.success, "s15c-failure", "boundary",
-        "success", "T,P,\\mathbf{x},topology", "success=0 for coincident phases", "topology");
+                                   recording_support::field("topology", "boundary")}));
     CHECK(!result.has_state());
     CHECK(result.message.find("phases_coincide") != std::string::npos);
     CHECK(result.message.find("distance") != std::string::npos);
@@ -647,9 +578,9 @@ std::string summary(const ContinuationResult& result) {
         recording_support::field("message", result.message)});
 }
 
-bool record_bool(const char* id, const char* group, const char* claim, bool verdict, const std::string& inputs) {
-    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, inputs, "Relationship",
-        "continuation", claim, "absolute", 0.0, 0.0, verdict, group, id, "verdict", "inputs", claim, "case");
+bool record_bool(const char* id, bool verdict, const std::string& inputs) {
+    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0,
+        0.0, "continuation", inputs);
     return verdict;
 }
 
@@ -686,8 +617,10 @@ void branch_rows(const char* group, const char* label, const epcsaft::HelmholtzM
                 && selected_displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
                 && pressure_row <= problem.solver_options.value(epcsaft::policy::row) && state.requested_tolerance_met.value_or(false);
             const auto id = std::string(group) + "/branch/" + label + "/" + std::to_string(k) + "/" + std::to_string(phase);
-            recording_support::compare_custom(id.c_str(), "corrected_displacement", "1", displacement,
+            recording_support::compare_custom(id, "corrected_displacement", "1", displacement,
                 epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value,
+                "model <= reference && selected_displacement <= reference && slope > 0 && pressure_row <= row_tolerance",
+                verdict, "anchored-branch",
                 recording_support::fields({recording_support::field("q", result.path_values[k]),
                     recording_support::field("phase", phase), recording_support::field("selected_density", root.molar_density),
                     recording_support::field("corrected_density", corrected), recording_support::field("anchor", anchor),
@@ -697,9 +630,7 @@ void branch_rows(const char* group, const char* label, const epcsaft::HelmholtzM
                     recording_support::field("stable_root_count", root.stable_root_count.has_value() ? std::to_string(*root.stable_root_count) : "absent"),
                     recording_support::field("density_residual", root.convergence.residual),
                     recording_support::field("pressure_row", pressure_row),
-                    recording_support::field("row_residual", state.convergence.residual)}),
-                "Relationship", "anchored-branch", "corrected and selected densities share the anchored locally unique window",
-                "model <= reference && selected_displacement <= reference && slope > 0 && pressure_row <= row_tolerance", verdict, group, id.c_str(), "|\\\\ln(\\\\rho/\\\\rho_a)|", "q,phase", "|\\\\ln(\\\\rho/\\\\rho_a)|\\\\leq w", "q,phase");
+                    recording_support::field("row_residual", state.convergence.residual)}));
         }
         anchors = state.molar_densities;
     }
@@ -718,7 +649,7 @@ void check_e4_a() {
     const std::vector<double> expected = {0.0, 0.25, 0.5, 0.75, 1.0};
     bool path_ok = result.success && result.path_values.size() == 5 && result.states.size() == 5;
     for (std::size_t k = 0; path_ok && k < 5; ++k) path_ok = std::abs(result.path_values[k] - expected[k]) <= 1.0e-15;
-    record_bool("e4-a/path", "e4-a", "declared bubble branch reaches 181 K at the declared path values",
+    record_bool("e4-a/path",
         path_ok && !result.event_phase.has_value() && !result.event_pair.has_value(), summary(result));
     for (std::size_t k = 0; k < 5; ++k) {
         const auto cold = epcsaft::equilibrium::solve_equilibrium(model, equilibrium_support::bubble_at(180.0 + expected[k]));
@@ -727,14 +658,13 @@ void check_e4_a() {
         double composition_error = 0.0;
         for (std::size_t i = 0; i < state.mole_fractions.size(); ++i)
             composition_error = std::max(composition_error, std::abs(state.mole_fractions[i] - cold.mole_fractions[i]));
-        const bool verdict = cold.success && pressure_error <= 1.0e-8 && composition_error <= 1.0e-8;
         const auto id = std::string("e4-a/cold/") + std::to_string(k);
-        recording_support::compare(id.c_str(), "pressure_relative_error", "1", pressure_error, 0.0,
+        recording_support::compare(id, "pressure_relative_error", "1", pressure_error, 0.0,
+            recording_support::Rule::StrictAbsolute, 1.0e-8, 0.0, "branch-identity",
             recording_support::fields({recording_support::field("q", expected[k]), recording_support::field("T", 180.0 + expected[k]),
                 recording_support::field("P_path", *state.pressure), recording_support::field("P_cold", *cold.pressure),
-                recording_support::field("composition_error", composition_error), recording_support::field("x_path", state.mole_fractions)}),
-            "Relationship", "branch-identity", "continuation state equals the independent cold solve",
-            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-a", id.c_str(), "\\\\Delta P/P", "q,T", "\\\\Delta P/P\\\\leq10^{-8}", "q");
+                recording_support::field("composition_error", composition_error), recording_support::field("x_path", state.mole_fractions)}));
+        CHECK(cold.success && composition_error <= 1.0e-8);
     }
     branch_rows("e4-a", "bubble", model, request.start_problem, result);
 }
@@ -753,7 +683,7 @@ void check_e4_b() {
     request.start_result = start.start;
     request.options = options(0.25, 0.25, 4, 2);
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
-    record_bool("e4-b/path", "e4-b", "interior tie line follows the feed lever to the target", result.success, summary(result));
+    record_bool("e4-b/path", result.success, summary(result));
     for (std::size_t k = 0; k < result.states.size(); ++k) {
         const double q = result.path_values[k];
         const auto& state = result.states[k];
@@ -773,15 +703,14 @@ void check_e4_b() {
         const double total_error = std::abs(amount_total - feed_total) / std::max(1.0, feed_total);
         amount_error = std::max(std::abs(state.amounts[0] - ((1.0 - q) * start.start.amounts[0] + 0.4 * q)),
                                 std::abs(state.amounts[1] - ((1.0 - q) * start.start.amounts[1] + 0.6 * q)));
-        const bool verdict = lever_error <= 1.0e-8 && total_error <= 1.0e-10 && composition_error <= 1.0e-8 && amount_error <= 1.0e-8;
         const auto id = std::string("e4-b/lever/") + std::to_string(k);
-        recording_support::compare(id.c_str(), "lever_rule_error", "1", lever_error, 0.0,
+        recording_support::compare(id, "lever_rule_error", "1", lever_error, 0.0,
+            recording_support::Rule::StrictAbsolute, 1.0e-8, 0.0, "lever-rule",
             recording_support::fields({recording_support::field("q", q), recording_support::field("z_input", z_input),
                 recording_support::field("amounts", state.amounts), recording_support::field("x", state.mole_fractions),
                 recording_support::field("total_error", total_error), recording_support::field("composition_error", composition_error),
-                recording_support::field("amount_error", amount_error)}),
-            "Relationship", "lever-rule", "returned amounts and compositions reconstruct the input feed",
-            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-b", id.c_str(), "\\\\Delta z", "q", "\\\\Delta z\\\\leq10^{-8}", "q");
+                recording_support::field("amount_error", amount_error)}));
+        CHECK(total_error <= 1.0e-10 && composition_error <= 1.0e-8 && amount_error <= 1.0e-8);
     }
     branch_rows("e4-b", "tie-line", model, start.problem, result);
 }
@@ -800,7 +729,7 @@ void check_e4_c() {
     bool distinct = true;
     for (std::size_t k = 1; k < result.states.size(); ++k)
         distinct = distinct && result.states[k].amounts != result.states[k - 1].amounts;
-    record_bool("e4-c/event", "e4-c", "the vapor phase disappears before twice the bubble pressure",
+    record_bool("e4-c/event",
         !result.success && result.stop == ContinuationStop::phase_disappeared && result.event_phase == std::optional<std::size_t>(1)
             && result.attempted_path > result.reached_path && distinct && result.states.size() == result.path_values.size(),
         recording_support::fields({summary(result), recording_support::field("P_bubble", start.bubble_pressure),
@@ -816,7 +745,7 @@ void check_e4_c() {
     auto below = start.problem;
     below.pressure = FreeValue::fixed(0.8 * *dew_point.pressure);
     const auto vanished = epcsaft::equilibrium::solve_equilibrium(model, below);
-    record_bool("e4-c/liquid", "e4-c", "the liquid vanishes at 0.8 times the dew pressure",
+    record_bool("e4-c/liquid",
         dew_point.success && !vanished.success && vanished.message.rfind("phase L vanished", 0) == 0,
         recording_support::fields({recording_support::field("message", vanished.message),
             recording_support::field("iterations", vanished.iterations),
@@ -851,8 +780,7 @@ void check_e4_d() {
         recovered.success ? recovered.molar_densities[0] : NAN, recovered.success ? recovered.molar_densities[1] : NAN};
     double deviation = 0.0;
     for (std::size_t i = 0; i < feos.size(); ++i) deviation = std::max(deviation, std::abs(engine[i] / feos[i] - 1.0));
-    record_bool("e4-d/trivial", "e4-d", "the trivial state from a 2.02606 MPa guess at 260 K is refused as locally unstable; "
-        "the public solve's one recovery reaches the FeOs bubble point within 1e-8 with both causes and all work",
+    record_bool("e4-d/trivial",
         !refused.success && !refused.has_state() && refused.message.rfind("local phase instability", 0) == 0
             && recovered.success && deviation <= 1.0e-8 && std::abs(recovered.mole_fractions[0] - 0.5) <= 1.0e-8
             && recovered.message.find("; recovered after: " + refused.message) != std::string::npos
@@ -868,7 +796,7 @@ void check_e4_d() {
     // between consecutive accepted states, which the controller reports as the pair's coalescence
     // (owner decision 2026-09-16). A step or window limit is a failed event row here.
     const bool coalesced = result.stop == ContinuationStop::phases_coalesced && result.event_pair == std::make_pair(std::size_t{0}, std::size_t{1});
-    record_bool("e4-d/event", "e4-d", "the bubble branch ends at the named coalescence of L and V, never at the target",
+    record_bool("e4-d/event",
         !result.success && coalesced && !result.states.empty() && result.reached_path < 1.0 && result.last_result.has_value(),
         recording_support::fields({summary(result), recording_support::field("last_T", 260.0 + 20.0 * result.reached_path),
             recording_support::field("states", result.states.size())}));
@@ -886,15 +814,14 @@ void check_e4_d() {
         }
         double worst = -std::numeric_limits<double>::infinity();
         for (std::size_t i = 0; i < before_delta.size(); ++i) worst = std::max(worst, before_delta[i] * after_delta[i]);
-        recording_support::compare_custom("e4-d/swap", "sign_product_max", "1", worst, 0.0,
+        recording_support::compare_custom("e4-d/swap", "sign_product_max", "1", worst, 0.0, "model < reference",
+            worst < 0.0, "phase-swap",
             recording_support::fields({recording_support::field("T_before", *before.temperature),
                 recording_support::field("T_after", *after.temperature),
                 recording_support::field("before_delta", before_delta), recording_support::field("after_delta", after_delta),
                 recording_support::field("rho_before", before.molar_densities), recording_support::field("rho_after", after.molar_densities),
                 recording_support::field("x_before", before.mole_fractions), recording_support::field("x_after", after.mole_fractions),
-                recording_support::field("row_residual_after", after.convergence.residual)}),
-            "Relationship", "phase-swap", "every nonzero inter-phase difference component changes sign across the critical point",
-            "model < reference", worst < 0.0, "e4-d", "swap", "\\max_i \\Delta_i^- \\Delta_i^+", "component", "\\Delta_i^- \\Delta_i^+ < 0", "component");
+                recording_support::field("row_residual_after", after.convergence.residual)}));
     }
 }
 
@@ -904,13 +831,13 @@ void check_e4_e() {
     auto problem = equilibrium_support::synthetic_reactive_problem();
     const auto first = epcsaft::equilibrium::solve_equilibrium(model, problem);
     recording_support::observe("e4-e/start", "row_residual", "1", first.convergence.residual, std::nullopt,
+        "reactive-continuation",
         recording_support::fields({recording_support::field("solver_status", first.solver_status),
             recording_support::field("stop", epcsaft::core::stop_name(first.convergence.stop)),
             recording_support::field("floor", epcsaft::core::optional_number(first.convergence.floor)),
             recording_support::field("row_tolerance", problem.solver_options.value(epcsaft::policy::row)),
             recording_support::field("requested_tolerance_met", first.requested_tolerance_met.has_value() ? (*first.requested_tolerance_met ? "true" : "false") : "absent"),
-            recording_support::field("message", first.message)}),
-        "Relationship", "reactive-continuation", "accepted reactive two-liquid start at the caller criterion", "e4-e", "start");
+            recording_support::field("message", first.message)}));
     CHECK(first.success && first.requested_tolerance_met.value_or(false));
     std::vector<double> x1(first.mole_fractions.begin(), first.mole_fractions.begin() + 3);
     std::vector<double> x2(first.mole_fractions.begin() + 3, first.mole_fractions.end());
@@ -921,7 +848,7 @@ void check_e4_e() {
     request.start_result = first;
     request.options = options(0.25, 0.25, 4, 2);
     const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
-    record_bool("e4-e/path", "e4-e", "reactive two-liquid branch follows the feed path to the target", result.success, summary(result));
+    record_bool("e4-e/path", result.success, summary(result));
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
     for (std::size_t k = 0; k < result.states.size(); ++k) {
         const double q = result.path_values[k];
@@ -944,15 +871,14 @@ void check_e4_e() {
                 phase_affinity[state.rows[row].phase] += problem.reactions[0].stoichiometry[state.rows[row].index] * state.residuals[row];
         affinity = std::max(std::abs(phase_affinity[0]), std::abs(phase_affinity[1]));
         const double limit = std::max(state.convergence.criterion->value, state.convergence.floor.value_or(0.0));
-        const bool verdict = composition_error <= 1.0e-8 && amount_error <= 1.0e-8 && balance_error <= 1.0e-12 && affinity <= limit;
         const auto id = std::string("e4-e/state/") + std::to_string(k);
-        recording_support::compare(id.c_str(), "amount_error", "mol", amount_error, 0.0,
+        recording_support::compare(id, "amount_error", "mol", amount_error, 0.0,
+            recording_support::Rule::StrictAbsolute, 1.0e-8, 0.0, "reactive-continuation",
             recording_support::fields({recording_support::field("q", q), recording_support::field("amounts", state.amounts),
                 recording_support::field("x", state.mole_fractions), recording_support::field("composition_error", composition_error),
                 recording_support::field("balance_error", balance_error), recording_support::field("affinity", affinity),
-                recording_support::field("limit", limit)}),
-            "Relationship", "reactive-continuation", "reactive two-liquid amounts interpolate with unchanged compositions and zero affinity",
-            "strict_absolute", 1.0e-8, 0.0, verdict, "e4-e", id.c_str(), "\\\\Delta N", "q", "\\\\Delta N\\\\leq10^{-8}", "q");
+                recording_support::field("limit", limit)}));
+        CHECK(composition_error <= 1.0e-8 && balance_error <= 1.0e-12 && affinity <= limit);
     }
     branch_rows("e4-e", "reactive", model, problem, result);
 }
@@ -964,7 +890,7 @@ void check_e4_paths() {
     const auto expect_invalid = [&](const char* id, ContinuationRequest request, const char* phrase) {
         request.options = opts;
         const auto result = epcsaft::equilibrium::continue_equilibrium(model, request);
-        record_bool(id, "e4-paths", phrase, !result.success && result.stop == ContinuationStop::invalid_path
+        record_bool(id, !result.success && result.stop == ContinuationStop::invalid_path
             && result.states.empty() && result.attempts == 0 && result.message.find(phrase) != std::string::npos, summary(result));
     };
     ContinuationRequest base;
@@ -1021,13 +947,11 @@ void check_e4_paths() {
         && relabelled_displacement <= epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value
         && std::abs(std::log(vapor_root.molar_density / relabelled.molar_density)) > epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value;
     recording_support::compare_custom("e4-paths/two-root-admission", "log_displacement", "1", displacement,
-        epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value,
+        epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value, "model > reference", rejected, "anchored-branch",
         recording_support::fields({recording_support::field("T", T), recording_support::field("P", P),
             recording_support::field("rho_liquid", liquid_root.molar_density), recording_support::field("rho_vapor", vapor_root.molar_density),
             recording_support::field("rho_anchored_with_vapor_label", relabelled.molar_density),
-            recording_support::field("relabelled_displacement", relabelled_displacement)}),
-        "Relationship", "anchored-branch", "a corrected vapor density is outside the selected liquid root window even with a swapped label",
-        "model > reference", rejected, "e4-paths", "two-root", "|\\\\ln(\\\\rho_V/\\\\rho_L)|", "T,P", "|\\\\ln(\\\\rho_V/\\\\rho_L)|>w", "case");
+            recording_support::field("relabelled_displacement", relabelled_displacement)}));
 }
 
 // #565 neutral recovery, one table of default-start declarations and references at identical parameters:
@@ -1086,8 +1010,7 @@ void check_recovery() {
         passed += ok;
         if (!ok) failures += std::string(row.id) + " " + std::to_string(row.T) + " " + std::to_string(row.seed) + ": " + r.message + "; ";
     }
-    record_bool("e4-r/references", "e4-r", "every default-start methane/ethane bubble and dew below the mixture critical point and every p02b "
-        "route reaches its reference pressure within 1e-8; ordinary successes are unchanged and recoveries keep their cause within the caps",
+    record_bool("e4-r/references",
         passed == rows.size() && recovered > 0, recording_support::fields({recording_support::field("rows", rows.size()),
             recording_support::field("passed", passed), recording_support::field("recovered", recovered), recording_support::field("failures", failures)}));
     // p02b through cooling_onset: the free-T dew seeded at 250 K is refused ordinarily; the recovered dew (chart
@@ -1103,8 +1026,7 @@ void check_recovery() {
     const double onset_deviation = onset.success ? *onset.temperature / 239.370069623738 - 1.0 : INFINITY;
     const bool descent = std::any_of(reports.begin(), reports.end(), [](const auto& report) {
         return std::any_of(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; }); });
-    record_bool("e4-r/cooling-onset", "e4-r", "the refused free-T p02b dew recovers through cooling_onset to 239.370069623738 K "
-        "within 1e-8 with no competing liquid descent, its cause kept and its added work within the caps",
+    record_bool("e4-r/cooling-onset",
         !onset_ordinary.success && std::abs(onset_deviation) <= 1.0e-8 && !reports.empty() && !descent
             && onset.message.find("; recovered after: " + onset_ordinary.message) != std::string::npos && within_caps(onset, onset_ordinary),
         recording_support::fields({recording_support::field("deviation", onset_deviation), recording_support::field("reports", reports.size()),
@@ -1143,7 +1065,7 @@ void check_recovery() {
     auto late = limits(RECOVERY_CAPS.iterations, RECOVERY_CAPS.evaluation_cap, RECOVERY_CAPS.hessian_cap, std::chrono::steady_clock::now());
     exhausted = exhausted && !epcsaft::equilibrium::recover_from_source(target, late).success
         && late.consumed == 0 && late.evaluations == 0 && late.hessian_calls == 0;
-    record_bool("e4-r/exhausted", "e4-r", "recovery work is reported exactly and an exhausted cap or deadline ends it within the cap",
+    record_bool("e4-r/exhausted",
         exhausted, recording_support::fields({recording_support::field("full", std::vector<double>{double(full.consumed),
             double(full.evaluations), double(full.hessian_calls)}), recording_support::field("cut", spent)}));
     // Hydrogen/toluene (hda-pc-saft packet): both amounts free at fixed T/P, no guesses. 450 K / 1 MPa lies below the
@@ -1169,9 +1091,7 @@ void check_recovery() {
             std::abs(r.mole_fractions[2] - f.y), std::abs(r.molar_densities[0] / f.rho_l - 1.0), std::abs(r.molar_densities[1] / f.rho_v - 1.0)});
         const bool refusal = std::isnan(f.beta);
         // #987: below the dew pressure the trial search finds no descent and recovery is not run.
-        record_bool(refusal ? "e4-r/hydrogen-refused" : f.T == 420.0 ? "e4-r/hydrogen-420" : "e4-r/hydrogen-450", "e4-r",
-            refusal ? "hydrogen/toluene at 450 K / 1 MPa stays refused: no descent in the finite trial set, recovery not run, no state"
-                    : "hydrogen/toluene without guesses reaches the continuation state within 1e-8 after a resolved descent",
+        record_bool(refusal ? "e4-r/hydrogen-refused" : f.T == 420.0 ? "e4-r/hydrogen-420" : "e4-r/hydrogen-450",
             !ordinary.success && within_caps(r, ordinary) && r.recovery_stability && (refusal
                 ? !r.success && !r.has_state() && r.recovery_stability->no_descent_in_trial_set
                     && r.message.rfind(ordinary.message + "; tangent-plane search before recovery", 0) == 0
@@ -1219,8 +1139,7 @@ void check_recovery() {
             && e.message.find("V1: ") != std::string::npos && ends(e.message);
         counts = {double(first_consumed), double(parents), double(trial), double(nb), double(b.iterations), double(ne), double(e.iterations)};
     }
-    record_bool("e4-r/stability-budget", "e4-r", "a caller budget ends the trial search where it is spent, keeps the work done and "
-        "runs no recovery on the spent remainder", budgets, recording_support::fields({recording_support::field("counts", counts)}));
+    record_bool("e4-r/stability-budget", budgets, recording_support::fields({recording_support::field("counts", counts)}));
 }
 
 void check_product_residual() {
@@ -1291,9 +1210,9 @@ void check_saturation_refusals() {
     CHECK(repeated.groups.size() == 1 && !repeated.accepted);
     CHECK(std::find(repeated.causes.begin(), repeated.causes.end(), "multiple_roots") != repeated.causes.end());
     recording_support::compare("two-root-groups", "root_count", "1", search.groups.size(), 2,
-        recording_support::fields({recording_support::field("candidates", search.candidates.size())}),
-        "Analytic", "quadratic-pressure", "two roots refuse publication and repeated root merges", "absolute", 0, 0,
-        search.groups.size() == 2 && !search.accepted, "saturation-refusal", "quadratic", "N", "alpha", "N=2", "synthetic");
+        recording_support::Rule::Absolute, 0, 0, "quadratic-pressure",
+        recording_support::fields({recording_support::field("candidates", search.candidates.size())}));
+    CHECK(!search.accepted);
 }
 
 void check_saturation_loading() {
@@ -1333,7 +1252,7 @@ void check_saturation_loading() {
         && refused.evaluations == 0 && refused.hessian_calls == 0);
     const auto budget_cause = std::find(refused.causes.begin(), refused.causes.end(), "budget_exhausted");
     const auto gap_cause = std::find(refused.causes.begin(), refused.causes.end(), "unexamined_gap");
-    e4::record_bool("saturation-loading/exhausted", "saturation-loading", "a spent limit retains the budget and first failure causes",
+    e4::record_bool("saturation-loading/exhausted",
         budget_cause != refused.causes.end() && gap_cause != refused.causes.end() && refused.first_numerical_failure
             && refused.first_numerical_failure->cause == "saturation search: elapsed work budget exhausted",
         recording_support::fields({recording_support::field("budget_cause", budget_cause == refused.causes.end() ? "" : *budget_cause),
@@ -1367,9 +1286,8 @@ void check_saturation_loading() {
     }
     CHECK(error <= 1e-5);
     recording_support::compare("affine-loading", "loading", "mol/mol", alpha, 0.37,
-        recording_support::fields({recording_support::field("curvature_error", error)}),
-        "Relationship", "fixed-feed-bubble", "inverse reproduces declared loading", "reference_or_one", 1e-8, 0,
-        std::abs(alpha - 0.37) <= 1e-8, "saturation-loading", "bubble", "alpha", "T,P", "alpha=0.37", "branch");
+        recording_support::Rule::ReferenceOrOne, 1e-8, 0, "fixed-feed-bubble",
+        recording_support::fields({recording_support::field("curvature_error", error)}));
 }
 
 void check_kuranov_row_11() {

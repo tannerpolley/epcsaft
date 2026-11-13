@@ -43,8 +43,8 @@ void check_stability_requirement() {
         ReferenceCache references; references.pressures.emplace_back(reference, pressure);
         auto shared = tied; shared.pressure_reference = reference.problem; shared.phase = 1;
         CHECK(validate_declaration(shared, model));
-        CHECK(rejection([&] { validate(shared, model); }) == "observation phase index");
-        CHECK(rejection([&] { (void)predict(model, shared, {}, {}, &references, nullptr, nullptr, false,
+        CHECK(recording_support::refusal([&] { validate(shared, model); }) == "observation phase index");
+        CHECK(recording_support::refusal([&] { (void)predict(model, shared, {}, {}, &references, nullptr, nullptr, false,
             std::chrono::steady_clock::time_point::max(), {&shared}); }) == "observation phase index");
     }
     auto uncertain = row; uncertain.stability_options.standard_uncertainty_over_rt = {1., 1.};

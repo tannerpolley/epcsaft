@@ -294,11 +294,10 @@ inline bool compare(const std::string& id,const Quantity& q,double exact,double 
                     const std::string& inputs,double rtol,const char* method="native-identity") {
     const double target=q.atol+rtol*std::abs(reference);
     const bool good=std::isfinite(exact)&&std::isfinite(reference)&&std::abs(exact-reference)<=target;
-    recording_support::compare_custom(id.c_str(),q.name.c_str(),q.unit.c_str(),exact,reference,
+    recording_support::compare_custom(id, q.name.c_str(), q.unit.c_str(), exact, reference,
+        "abs(exact-reference)<=atol+rtol*abs(reference)", good, method,
         recording_support::fields({inputs,recording_support::field("target",target),recording_support::field("error",std::abs(exact-reference)),
-            recording_support::field("error_over_target",std::abs(exact-reference)/target)}),
-        "Relationship",method,"Issue 225 manufactured branch numerical verification",
-        "abs(exact-reference)<=atol+rtol*abs(reference)",good,"reactive-caloric",id.c_str());
+            recording_support::field("error_over_target",std::abs(exact-reference)/target)}));
     return good;
 }
 
@@ -470,10 +469,10 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
                     recording_support::field("central_residual",diagnostics.central_residual.value_or(0))});
                 references[order][i]={rich,refinement,target,rung,resolved,row};
                 const std::string id=id_for(i,rung)+(orders.size()==2?(order?"/reversed":"/original"):"");
-                if(orders.size()==2) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),rich,std::nullopt,row,
-                    "Refinement",method,"Reference uncertainty before production agreement","reactive-caloric",id.c_str());
-                else if(!resolved&&rung<5) recording_support::observe(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],rich,row,
-                    "Refinement",method,"Unresolved coarse step; retained and refined","reactive-caloric",id.c_str());
+                if(orders.size()==2) recording_support::observe(id, q[i].name.c_str(), q[i].unit.c_str(), rich,
+                    std::nullopt, method, row);
+                else if(!resolved&&rung<5) recording_support::observe(id, q[i].name.c_str(), q[i].unit.c_str(),
+                    exact[i], rich, method, row);
             }
             if(std::all_of(references[order].begin(),references[order].end(),[](const auto& r){return r.resolved;})) break;
             coarse=fine;
@@ -495,9 +494,8 @@ inline void ladder(const Case& c,Actions& actions,const std::vector<NamedDirecti
             recording_support::field("reference_selection",r.resolved?"minimum first-resolved refinement with original-order tie break":"no resolved reference"),
             recording_support::field("error",std::abs(exact[i]-r.rich)),recording_support::field("error_over_target",std::abs(exact[i]-r.rich)/r.target)});
         const auto id=id_for(i,r.rung);
-        recording_support::compare_custom(id.c_str(),q[i].name.c_str(),q[i].unit.c_str(),exact[i],r.rich,row,
-            "Relationship",method,first_actions&&ds.size()==2?"Issue 225 A2 compared with centered exact A1 differences":"Issue 225 rebuilt values independent of action recorder",
-            "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric",id.c_str());
+        recording_support::compare_custom(id, q[i].name.c_str(), q[i].unit.c_str(), exact[i], r.rich,
+            "abs(exact-R)<=atol+1e-6*max(abs(R),sigma) && refinement<=target/4", good, method, row);
     }
 }
 
@@ -610,11 +608,11 @@ inline void identities(const Case& c,const HelmholtzModel& model,const CompiledS
         const double shift=wrong-n*center.phase.v;
         const double target=1e-12+1e-9*std::abs(n*center.phase.v);
         const bool discriminates=std::abs(shift)>10*target;
-        recording_support::compare_custom(("reference-calorics/F4/gauge-discrimination/"+c.name).c_str(),"V_row_minus_V_anchored","m^3",shift,0,
+        recording_support::compare_custom("reference-calorics/F4/gauge-discrimination/"+c.name,
+            "V_row_minus_V_anchored", "m^3", shift, 0, "abs(V_row-V_anchored)>10*target", discriminates,
+            "conserved-moiety-gauge",
             recording_support::fields({inputs,recording_support::field("V_row",wrong),recording_support::field("V_anchored",n*center.phase.v),
-                recording_support::field("anchored_coefficients","0,-1"),recording_support::field("row_coefficients","0.4,-0.2"),recording_support::field("target",target)}),
-            "Discrimination","conserved-moiety-gauge","Row representative cannot replace the anchored volume",
-            "abs(V_row-V_anchored)>10*target",discriminates,"reactive-caloric");
+                recording_support::field("anchored_coefficients","0,-1"),recording_support::field("row_coefficients","0.4,-0.2"),recording_support::field("target",target)}));
     }
     Frozen frozen(c,compiled,center);
     std::vector<std::vector<Direction>> requests={{},{dt},{dp}};
@@ -672,8 +670,8 @@ inline bool inversion(const Case& c,const HelmholtzModel& model,const CompiledSy
             recording_support::field("v_G_at_inversion",value.v),recording_support::field("pressure_residual",value.diagnostics.pressure_residual),
             recording_support::field("site_residual",value.diagnostics.association_residual)});
         const std::string id="F5/"+c.name+"/inversion/"+recording_support::number(delta);
-        recording_support::compare_custom(id.c_str(),"fixed_v_G_residual","m^3/mol",residual,0,row,"Closure","native-Newton-vG",
-            "Frozen x local volume inversion uses exact raw v_G,P","abs(volume_residual)<=32*epsilon*abs(v_G_center)",closed,"reactive-caloric");return value.total[1];
+        recording_support::compare_custom(id, "fixed_v_G_residual", "m^3/mol", residual, 0,
+            "abs(volume_residual)<=32*epsilon*abs(v_G_center)", closed, "native-Newton-vG", row);return value.total[1];
     };
     good=scalar_ladder("F5/"+c.name+"/fixed-vG-cv",q[index(q,"total-cv_G")],exact_cv,0.2,inputs,1e-6,
         [&](double h){return (u_at(h)-u_at(-h))/(2*h);})&&good;
@@ -763,7 +761,7 @@ inline void parameter_pair(bool ionic) {
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     if(!solved.has_state()) throw std::runtime_error(c.name+" pair center: "+solved.message);
     const auto q=quantities(c.parameters.component_count());const auto center=values(model,compiled,solved,q);
-    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto inputs=context(c,solved,center.phase);
     Actions actions(compiled,solved,q);
     const auto basis=directions(c);const auto& tied=basis[ionic?4:3];
     std::vector<NamedDirection> e;
@@ -775,20 +773,20 @@ inline void parameter_pair(bool ionic) {
         const auto action=actions.get({tied.value,tied.value});const auto sigma=scale(actions,{tied,tied},q.size());
         for(const auto* name:{"x-0","x-1"}) {
             const auto i=index(q,name);const double target=q[i].atol+64*std::numeric_limits<double>::epsilon()*sigma[i];
-            recording_support::compare_custom(("F1/"+c.name+"/analytic-zero/epsilon+epsilon/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),
-                action[i],0,recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
-                "Relationship","identical-ethane-analytic-zero","Tied EOS directions leave identical species without a composition response",
-                "abs(action)<=atol+64*epsilon*sigma",std::abs(action[i])<=target,"reactive-caloric");
+            recording_support::compare_custom("F1/"+c.name+"/analytic-zero/epsilon+epsilon/"+q[i].name,
+                q[i].name.c_str(), q[i].unit.c_str(), action[i], 0, "abs(action)<=atol+64*epsilon*sigma",
+                std::abs(action[i])<=target, "identical-ethane-analytic-zero",
+                recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}));
         }
     }
     const auto ab=actions.get({e[0].value,e[1].value}),ba=actions.get({e[1].value,e[0].value});
     const auto sigma=scale(actions,e,q.size());
     for(std::size_t i=0;i<q.size();++i) {
         const double target=q[i].atol+64*std::numeric_limits<double>::epsilon()*sigma[i];
-        recording_support::compare_custom(("F1/"+c.name+"/symmetry/epsilon-0+epsilon-1/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),
-            ab[i],ba[i],recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
-            "Relationship","swapped-directions","A2 is symmetric in its two parameter directions",
-            "abs(A_ab-A_ba)<=atol+64*epsilon*sigma",std::abs(ab[i]-ba[i])<=target,"reactive-caloric");
+        recording_support::compare_custom("F1/"+c.name+"/symmetry/epsilon-0+epsilon-1/"+q[i].name, q[i].name.c_str(),
+            q[i].unit.c_str(), ab[i], ba[i], "abs(A_ab-A_ba)<=atol+64*epsilon*sigma", std::abs(ab[i]-ba[i])<=target,
+            "swapped-directions",
+            recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}));
     }
 }
 
@@ -797,7 +795,7 @@ void run(bool ionic,bool fixed) {
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     if(!solved.has_state()) throw std::runtime_error(c.name+" center: "+solved.message);
     const auto q=quantities(c.parameters.component_count());const auto basis=directions(c);
-    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto center=values(model,compiled,solved,q);const auto inputs=context(c,solved,center.phase);
     Actions actions(compiled,solved,q);
     {   // #449: standalone first H actions request standard Gibbs degree two; a batch with Cp keeps degree three.
         // Neither demand may move H or Cp: each must equal its standalone request bit for bit.
@@ -810,9 +808,8 @@ void run(bool ionic,bool fixed) {
             const auto& x=action?a.action:a.value;const auto& y=action?b.action:b.value;
             const bool same=a.status==SolvedStateActionStatus::Available&&b.status==a.status&&x&&y&&std::memcmp(&*x,&*y,sizeof(double))==0;
             const std::string id="449/"+c.name+"/H+cp-batch/"+basis[k].name+"/"+(i?"total-cp":"H")+(action?"/action":"/value");
-            recording_support::compare_custom(id.c_str(),i?"total-cp":"H",i?"J/(mol K)":"J",y.value_or(NAN),x.value_or(NAN),inputs,
-                "Relationship","standalone-request","Issue 449: the reference-column demand leaves H and Cp unchanged",
-                "batch bits == standalone bits",same,"reactive-caloric");
+            recording_support::compare_custom(id, i?"total-cp":"H", i?"J/(mol K)":"J", y.value_or(NAN),
+                x.value_or(NAN), "batch bits == standalone bits", same, "standalone-request", inputs);
         }
     }
     const auto exact=actions.get({});
@@ -835,10 +832,10 @@ void run(bool ionic,bool fixed) {
                 for(std::size_t i=0;i<q.size();++i) if(q[i].observable.kind==SolvedStateObservableKind::PhaseAmount
                     ||q[i].observable.kind==SolvedStateObservableKind::PhaseMoleFraction) {
                     const double target=q[i].atol+64*std::numeric_limits<double>::epsilon()*sigma[i];const bool zero_ok=std::abs(action[i])<=target;
-                    recording_support::compare_custom(("F1/"+c.name+"/analytic-zero/"+request[0].name+"/"+q[i].name).c_str(),q[i].name.c_str(),q[i].unit.c_str(),action[i],0,
-                        recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}),
-                        "Relationship","identical-ethane-analytic-zero","Identical system-reference chemistry has no P or tied EOS composition response",
-                        "abs(action)<=atol+64*epsilon*sigma",zero_ok,"reactive-caloric");
+                    recording_support::compare_custom("F1/"+c.name+"/analytic-zero/"+request[0].name+"/"+q[i].name,
+                        q[i].name.c_str(), q[i].unit.c_str(), action[i], 0, "abs(action)<=atol+64*epsilon*sigma",
+                        zero_ok, "identical-ethane-analytic-zero",
+                        recording_support::fields({inputs,recording_support::field("sigma",sigma[i]),recording_support::field("target",target)}));
                 }
             }
         }
@@ -865,7 +862,7 @@ void unreactive() {
     const auto c=input(false,false,true);HelmholtzModel model(c.parameters,c.active,c.records);
     const auto compiled=compile_problem(model,c.problem);const auto solved=solve_compiled(compiled);
     CHECK(solved.has_state());const auto q=quantities(2);const auto center=values(model,compiled,solved,q);
-    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto inputs=context(c,solved,center.phase);
     Actions actions(compiled,solved,q);auto basis=directions(c);WideNeutral wide(c);
     auto checks=requests(c,basis);checks.insert(checks.begin(),{});
     const std::vector<PropertyObservable> os={PropertyObservable::IdealEnthalpy,PropertyObservable::IdealInternalEnergy,PropertyObservable::IdealEntropy,
@@ -934,8 +931,7 @@ inline void partial_ion_records() {
         auto ph = problem;
         ph.temperature = FreeValue::variable(298.15);
         ph.enthalpy_j = 0.0;
-        std::string cause;
-        try { const auto c = compile_problem(model, ph); (void)c.prepare(c.generic_point()); } catch (const std::exception& e) { cause = e.what(); }
+        const auto cause = recording_support::refusal([&] { const auto c = compile_problem(model, ph); (void)c.prepare(c.generic_point()); });
         std::printf("partial-ion-records PH complete=%d cause=%s\n", complete, cause.c_str());
         CHECK(complete ? cause.empty() : cause.find("undetermined neutral calorics") != std::string::npos);
         std::printf("partial-ion-records complete=%d status=%d reason=%s\n", complete, int(ref.status), ref.message.c_str());
@@ -984,9 +980,8 @@ inline void mixed_record_conflict() {
         records.component_intervals[1] = {{200, 400, true, true, {IdealPolynomial{{30, slope}, 298.15, 100, 10}, 1e5}}};
         ReferenceJets jets; jets.temperature_order = 2;
         const auto ref = reference_calorics(compile_problem(HelmholtzModel(parameters, {}, records), problem), 318.15, 1e5, jets);
-        std::string cause;
         double g_cation = 0.0;
-        try { g_cation = column(ref, 0, 0, 2); } catch (const std::exception& e) { cause = e.what(); }
+        const auto cause = recording_support::refusal([&] { g_cation = column(ref, 0, 0, 2); });
         std::printf("mixed-record-conflict cp_slope_J_per_mol_K2=%g g_P_J_per_mol=%.17g cause=%s\n", slope, g_cation, cause.c_str());
         CHECK(slope ? cause.find("supplied records inconsistent with reaction C=D") != std::string::npos
                     : cause.empty() && std::abs(g_cation) > 9e7);
@@ -1109,7 +1104,7 @@ inline void isothermal_row_columns() {
         [](const auto& d){return d.temperature_order==1 && d.pressure_order==0 && d.parameter==0;});
     CHECK(lower_entry!=diagnostics[0].lower_derivatives.end());
     const auto& lower=*lower_entry;
-    const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),
+    const auto inputs=recording_support::fields({equilibrium_support::state_inputs(compiled),
         recording_support::field("dielectric_T_slope_per_K",1e10),
         recording_support::field("C_theta",*diagnostics[0].terminal_contraction_parameter_derivative[0]),
         recording_support::field("C_Ttheta",*lower.value),
@@ -1195,9 +1190,8 @@ inline void pure_boundary(const Case& c,Actions& actions,const Sample& center,co
         const auto sigma=scale(actions,{basis[1]},q.size());
         const auto k=index(q,"T");const double tangent=actions.get({basis[1].value})[k];
         const bool good=std::abs(tangent)<=q[k].atol+64*std::numeric_limits<double>::epsilon()*sigma[k];
-        recording_support::compare_custom(("F6/"+c.name+"/pure-feed-zero").c_str(),"DT_feed","K",tangent,0,
-            inputs,"Relationship","identical-species","identical ethane saturation is independent of feed",
-            "abs(DT)<=atol+64*epsilon*sigma",good,"reactive-caloric");
+        recording_support::compare_custom("F6/"+c.name+"/pure-feed-zero", "DT_feed", "K", tangent, 0,
+            "abs(DT)<=atol+64*epsilon*sigma", good, "identical-species", inputs);
     } else {
         const double clapeyron=(s[1].residual_enthalpy-s[0].residual_enthalpy)
             /(T*(1/s[1].molar_density-1/s[0].molar_density));
@@ -1216,15 +1210,14 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
         const double seconds=std::chrono::duration<double>(std::chrono::steady_clock::now()-start).count();
         const auto references=std::count_if(capture.trace().spans.begin(),capture.trace().spans.end(),
             [](const auto& span){return std::string(span.name)=="reaction_references";});
-        recording_support::observe(("F6/"+c.name+"/"+label+"-work").c_str(),"wall_time","s",seconds,std::nullopt,
-            recording_support::fields({recording_support::field("iterations",solved.iterations),
+        recording_support::observe("F6/"+c.name+"/"+label+"-work", "wall_time", "s", seconds, std::nullopt,
+            "native-one-driver", recording_support::fields({recording_support::field("iterations",solved.iterations),
                 recording_support::field("evaluations",solved.evaluations),recording_support::field("reference_evaluations",references),
                 recording_support::field("solver_status",solved.solver_status),recording_support::field("solver_message",solved.message),
                 recording_support::field("residual",solved.residual_norm()),recording_support::field("T",solved.temperature.value_or(NAN)),
                 recording_support::field("P",solved.pressure.value_or(NAN)),recording_support::field("roots",solved.molar_densities),
                 recording_support::field("seed_T",problem.temperature.value),
-                recording_support::field("seed_P",problem.pressure.value)}),
-            "Observation","native-one-driver","Equivalent work; no performance ceiling","reactive-caloric");
+                recording_support::field("seed_P",problem.pressure.value)}));
         if(!solved.success||!solved.has_state()) throw std::runtime_error(c.name+" "+label+": "+solved.message);
         return solved;
     };
@@ -1236,12 +1229,11 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
     vapor.erase(vapor.begin(),vapor.begin()+2); // T/P are common controls/outputs.
     for(auto& quantity:vapor) {quantity.name+="-V";quantity.observable.phase=1;}
     q.insert(q.end()-4,vapor.begin(),vapor.end());
-    const auto center=values(model,compiled,solved,q);const auto inputs=recording_support::fields({equilibrium_support::weighted_hessian_context(compiled),context(c,solved,center.phase)});
+    const auto center=values(model,compiled,solved,q);const auto inputs=context(c,solved,center.phase);
     for(std::size_t phase=0;phase<center.phases.size();++phase) {
         const auto& local=center.phases[phase];const auto id="F6/"+c.name+"/volume-chart/"+std::to_string(phase);
-        recording_support::observe(id.c_str(),"v_G","m^3/mol",local.v,std::nullopt,
-            recording_support::fields({context(c,solved,local),recording_support::field("phase",phase)}),
-            "Observation","native-local-chart","Regular volume chart; stable signs and quotient sensitivities recorded","reactive-caloric");
+        recording_support::observe(id, "v_G", "m^3/mol", local.v, std::nullopt, "native-local-chart",
+            recording_support::fields({context(c,solved,local),recording_support::field("phase",phase)}));
     }
     Actions actions(compiled,solved,q);
     auto basis=directions(c);
@@ -1266,11 +1258,10 @@ void boundary(bool nonidentical,bool free_temperature,bool fixed) {
         for(const auto& ds:std::vector<std::vector<Direction>>{{basis[1].value},{basis[1].value,basis[2].value},
                                                               {basis[0].value,basis[2].value}}) {
             const auto response=actions.get(ds)[intensive];
-            recording_support::compare_custom(("F6/"+c.name+"/nonzero-intensive-"+std::to_string(ds.size())
-                +(ds.front().feed_amounts_mol[0]!=0?"-feed":"-control")).c_str(),"solved-intensive-response",
-                free_temperature?"K":"Pa",response,0,inputs,"Relationship","nonidentical-witness",
-                "N exposes actual feed and mixed parameter motion","finite(response) && response!=0",
-                std::isfinite(response)&&response!=0,"reactive-caloric");
+            recording_support::compare_custom("F6/"+c.name+"/nonzero-intensive-"+std::to_string(ds.size())
+                +(ds.front().feed_amounts_mol[0]!=0?"-feed":"-control"),
+                "solved-intensive-response", free_temperature?"K":"Pa", response, 0, "finite(response) && response!=0",
+                std::isfinite(response)&&response!=0, "nonidentical-witness", inputs);
         }
     } else pure_boundary(c,actions,center,q,basis,inputs);
     auto driven=c.problem;driven.temperature=FreeValue::fixed(*solved.temperature);
@@ -1379,16 +1370,12 @@ inline void second(const std::string& id, double exact, double step, const std::
         const double scale = std::max(std::abs(exact), std::abs(reference));
         best = std::min(best, std::abs(exact - reference) / scale);
         if (rung) best = std::min(best, std::abs(exact - (4.0 * reference - previous) / 3.0) / scale);
-        recording_support::observe(("charged-PH-PS/" + id + "/rung-" + std::to_string(rung)).c_str(), "second-action", "K",
-            exact, reference, recording_support::fields({recording_support::field("step", h)}), "Observation",
-            "lower-exact-action-difference", "re-solved first action", "caloric-specification");
+        recording_support::observe("charged-PH-PS/" + id + "/rung-" + std::to_string(rung), "second-action", "K",
+            exact, reference, "lower-exact-action-difference",
+            recording_support::fields({recording_support::field("step", h)}));
         previous = reference;
     }
     near(id, best, 0.0, 1.0, 1e-6);
-}
-inline std::string refusal(const std::function<void()>& call) {
-    try { call(); } catch (const std::exception& e) { return e.what(); }
-    return "";
 }
 inline Case scaled(bool fixed, double T) {
     auto c = input(true, fixed);
@@ -1477,7 +1464,7 @@ void run() {
             auto v = c; v.parameters.dispersion_energy_over_k[0] += s; return at(v, q); });
         second(tag + "/A2/H-P", exact({dH, dP}), 0.02, [&](double s) { auto v = q; v.pressure.value += s * dP.pressure_pa; return at(c, v); });
         for (const auto& ds : std::vector<std::vector<Direction>>{{dH, source}, {dtheta, dtheta}}) {
-            const auto cause = refusal([&] { (void)exact(ds); });
+            const auto cause = recording_support::refusal([&] { (void)exact(ds); });
             near(tag + "/refused-" + std::string(ds[0].reaction_coefficients.empty() && ds[1].reaction_coefficients.empty() ? "parameter-pair" : "source"),
                  cause.find("anchored PH/PS admits at most one EOS-parameter direction and no reaction-law direction") != std::string::npos, 1, 1, 0);
         }
@@ -1488,7 +1475,7 @@ void run() {
     conflicting.component_intervals[1] = conflicting.component_intervals[2] = conflicting.component_intervals[0];
     const HelmholtzModel conflict(c.parameters, c.active, conflicting);
     const auto prepared = [](const HelmholtzModel& model, const EquilibriumProblem& problem) {
-        return refusal([&] { const auto compiled = compile_problem(model, problem); (void)compiled.prepare(compiled.generic_point()); });
+        return recording_support::refusal([&] { const auto compiled = compile_problem(model, problem); (void)compiled.prepare(compiled.generic_point()); });
     };
     near("refused-conflicting-records", prepared(conflict, caloric(c.problem, true, -6e5, 303.15))
         .find("supplied records inconsistent with reaction") != std::string::npos, 1, 1, 0);

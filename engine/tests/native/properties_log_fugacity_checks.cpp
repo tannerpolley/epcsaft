@@ -12,10 +12,9 @@ constexpr auto LOG_PHI = PropertyObservable::LogFugacityCoefficient;
 constexpr double NOT_AVAILABLE = std::numeric_limits<double>::quiet_NaN();
 
 void verdict_row(const std::string& id, const std::string& quantity, const char* unit, double model, double reference,
-                 double atol, double rtol, const std::string& inputs, const char* method, const char* claim) {
-    recording_support::compare(("log-fugacity/" + id).c_str(), quantity.c_str(), unit, model, reference, inputs,
-        "Relationship", method, claim, "symmetric_close", atol, rtol,
-        recording_support::scalar_verdict(model, reference, "symmetric_close", atol, rtol), "log-fugacity");
+                 double atol, double rtol, const std::string& inputs, const char* method) {
+    recording_support::compare("log-fugacity/" + id, quantity.c_str(), unit, model, reference,
+        recording_support::Rule::SymmetricClose, atol, rtol, method, inputs);
 }
 
 // Sum_i x_i D ln(phi_i) and its term scale, from the rows after `first`.
@@ -57,8 +56,7 @@ void exact_identities() {
             const auto& item = first_t.results[1 + i];
             verdict_row(std::string(name) + "/value/" + std::to_string(i), "ln_phi_" + std::to_string(i), "1",
                 item.component == i ? item.value.value_or(NOT_AVAILABLE) : NOT_AVAILABLE,
-                (*state.log_fugacity_coefficient)[i].value(), 1.0e-12, 1.0e-10, inputs, "state-at-pressure",
-                "the component-tagged action value is the fixed-pressure ln(phi_i)");
+                (*state.log_fugacity_coefficient)[i].value(), 1.0e-12, 1.0e-10, inputs, "state-at-pressure");
         }
         const double rho_p = first_p.density_action.at(0), rho_pp = second_p.density_mixed_action.value_or(NOT_AVAILABLE);
         const double h_t = first_t.results[0].value.value_or(NOT_AVAILABLE);
@@ -75,16 +73,14 @@ void exact_identities() {
             {"TPP", batch({t, p, p}), -h_pp / (R * T * T), 1.0e-9, "1/(K Pa^2)"}}};
         for (const auto& [id, actions, reference, rtol, unit] : sums)
             verdict_row(std::string(name) + "/sum/" + id, std::string("sum_x_D") + id + "_ln_phi", unit,
-                weighted(actions, x, 1).first, reference, 0.0, rtol, inputs, "exact-identity",
-                "sum_i x_i D ln(phi_i) equals the D action of g_res/RT");
+                weighted(actions, x, 1).first, reference, 0.0, rtol, inputs, "exact-identity");
         using Directions = std::vector<PressureActionDirection>;
         for (const auto& [id, directions, unit] : std::array<std::tuple<const char*, Directions, const char*>, 4>{{
                  {"c", {c}, "1"}, {"Tc", {t, c}, "1/K"}, {"Pc", {p, c}, "1/Pa"}, {"TPc", {t, p, c}, "1/(K Pa)"}}}) {
             const auto [sum, scale] = weighted(batch(directions), x, 1);
             verdict_row(std::string(name) + "/gibbs-duhem/" + id, std::string("sum_x_D") + id + "_ln_phi", unit,
                 sum, 0.0, 1.0e-10 * scale, 0.0,
-                recording_support::fields({inputs, recording_support::field("term_scale", scale)}), "Gibbs-Duhem",
-                "at fixed T and P, sum_i x_i D ln(phi_i) vanishes to the rounding of its terms");
+                recording_support::fields({inputs, recording_support::field("term_scale", scale)}), "Gibbs-Duhem");
         }
     }
 }
@@ -121,7 +117,7 @@ void neutral_infinite_dilution_limit() {
                 labels.at(k).second.c_str(), exact[k], 2.0 * one[k] - two[k], 1.0e-12, 1.0e-9,
                 recording_support::fields({recording_support::field("T_K", T), recording_support::field("P_Pa", P),
                     recording_support::field("eps", eps), recording_support::field("output", k)}),
-                "infinite-dilution-extrapolation", "x_CH4 = 0 outputs equal their trace-methane limit");
+                "infinite-dilution-extrapolation");
     }
 }
 
@@ -149,9 +145,8 @@ void insertion_statuses() {
                           : item.status == PropertyActionStatus::Available && item.action && std::isfinite(*item.action));
         }
     recording_support::compare_custom("log-fugacity/insertion/neutral", "status", "bool", neutral_ok ? 1.0 : 0.0, 1.0,
-        "methane/ethane x=(1,0), dx=(-.01,.01), T=300 K, rho=1000 mol/m3 and its pressure", "Availability",
-        "insertion-status", "only the ideal and total entropy are singular at a neutral insertion", "absolute",
-        neutral_ok, "log-fugacity", "insertion/neutral", "status", "T,rho|P,x", "support_change");
+        "absolute", neutral_ok, "insertion-status",
+        "methane/ethane x=(1,0), dx=(-.01,.01), T=300 K, rho=1000 mol/m3 and its pressure");
     // MEA system: water/MEA with CO2 (neutral) and the MEAH+/MEACOO- pair entering together; the
     // entropy rows carry the precedence (ionic before neutral).
     ThermochemistryRecord record;
@@ -173,9 +168,8 @@ void insertion_statuses() {
         for (const auto& item : batch->results)
             ionic_ok = ionic_ok && item.status == PropertyActionStatus::IonicInsertion && !item.action;
     recording_support::compare_custom("log-fugacity/insertion/neutral-and-ionic", "status", "bool",
-        ionic_ok ? 1.0 : 0.0, 1.0, "nine-species x=(0.9,0.1,0...), dx=(-.03,0,.01,.01,.01,0...), 313.15 K, 0.1 MPa",
-        "Availability", "insertion-status", "a charge-balanced ionic insertion stays singular beside a neutral one",
-        "absolute", ionic_ok, "log-fugacity", "insertion/neutral-and-ionic", "status", "T,rho|P,x", "ionic_insertion");
+        ionic_ok ? 1.0 : 0.0, 1.0, "absolute", ionic_ok, "insertion-status",
+        "nine-species x=(0.9,0.1,0...), dx=(-.03,0,.01,.01,.01,0...), 313.15 K, 0.1 MPa");
     // Without charged species the state has no ion ln(phi_i); the neutral rows keep the state's values.
     const auto neutral_state = mea.pressure_actions(313.15, 1.0e5, x, DensityBranch::Liquid, {LOG_PHI},
         {{1.0, 0.0, std::vector<double>(x.size(), 0.0), {}}});
@@ -188,10 +182,8 @@ void insertion_statuses() {
                 && std::abs(*item.value - *reference) <= 1.0e-10 * std::max(1.0, std::abs(*reference))
             : item.status == PropertyActionStatus::IonicInsertion && !item.value && !item.action);
     }
-    recording_support::compare_custom("log-fugacity/insertion/absent-ions", "status", "bool",
-        absent_ions ? 1.0 : 0.0, 1.0, "nine-species x=(0.9,0.1,0...), dT=1, 313.15 K, 0.1 MPa", "Availability",
-        "state-at-pressure", "ion rows without charged species are ionic_insertion with no value, as in the state",
-        "absolute", absent_ions, "log-fugacity", "insertion/absent-ions", "status", "T,P,x", "ionic_insertion");
+    recording_support::compare_custom("log-fugacity/insertion/absent-ions", "status", "bool", absent_ions ? 1.0 : 0.0,
+        1.0, "absolute", absent_ions, "state-at-pressure", "nine-species x=(0.9,0.1,0...), dT=1, 313.15 K, 0.1 MPa");
     // Gross-Vrabec dipolar term: with every dipole absent its A2-only branch omits A3 beyond second
     // composition order, so a neutral insertion in a model with the term stays a support change.
     auto dipolar = properties_support::neutral_binary();
@@ -205,9 +197,8 @@ void insertion_statuses() {
     for (const auto& item : polar_insert.results)
         dipolar_ok = dipolar_ok && item.status == PropertyActionStatus::SupportChange && item.value && !item.action;
     recording_support::compare_custom("log-fugacity/insertion/absent-dipolar-family", "status", "bool",
-        dipolar_ok ? 1.0 : 0.0, 1.0, "methane(1.5 D)/ethane x=(0,1), dx=(.01,-.01), 180 K, 3 MPa", "Availability",
-        "insertion-status", "a neutral insertion in a model with the dipolar term stays a support change", "absolute",
-        dipolar_ok, "log-fugacity", "insertion/absent-dipolar-family", "status", "T,P,x", "support_change");
+        dipolar_ok ? 1.0 : 0.0, 1.0, "absolute", dipolar_ok, "insertion-status",
+        "methane(1.5 D)/ethane x=(0,1), dx=(.01,-.01), 180 K, 3 MPa");
 }
 
 // Per-term ln(phi_i): the terms (without ln Z) sum to the state's residual chemical potential mu_i/RT, ln Z matches
@@ -258,10 +249,9 @@ void term_by_term() {
             state.compressibility_factor, volume_scale, terms.log_compressibility_factor, ln_z,
             terms.log_compressibility_factor - ln_z, ln_z_allowance,
             std::abs(terms.log_compressibility_factor - ln_z) / (EPS * volume_scale / state.compressibility_factor));
-        recording_support::compare_custom((std::string("log-fugacity-terms/ln-z/") + name).c_str(), "log_compressibility_factor",
-            "1", terms.log_compressibility_factor, ln_z, inputs, "Relationship", "state-at-density",
-            "ln Z equals the state's, within LN_Z_C eps sum_k |V d(n a_k)/dV| / Z", "absolute",
-            std::abs(terms.log_compressibility_factor - ln_z) <= ln_z_allowance, "log-fugacity-terms", "ln-z");
+        recording_support::compare_custom(std::string("log-fugacity-terms/ln-z/") + name, "log_compressibility_factor",
+            "1", terms.log_compressibility_factor, ln_z, "absolute",
+            std::abs(terms.log_compressibility_factor - ln_z) <= ln_z_allowance, "state-at-density", inputs);
         for (std::size_t i = 0; i < x.size(); ++i) {
             double sum = 0.0, scale = 0.0;
             for (const auto field : fields) {
@@ -272,10 +262,8 @@ void term_by_term() {
             const bool ok = std::abs(sum - reference) <= SUM_C * EPS * scale;
             std::printf("sum %s i=%zu sum=%.17g mu=%.17g diff=%.3e term_scale=%.6e ratio=%.3f\n", name, i, sum, reference,
                 sum - reference, scale, std::abs(sum - reference) / (EPS * scale));
-            recording_support::compare_custom((std::string("log-fugacity-terms/sum/") + name + "/" + std::to_string(i)).c_str(),
-                "sum_terms", "1", sum, reference, inputs, "Relationship",
-                "state-at-density", "the per-term values sum to the residual chemical potential over RT within SUM_C eps sum_k |term_k|",
-                "absolute", ok, "log-fugacity-terms", "sum");
+            recording_support::compare_custom(std::string("log-fugacity-terms/sum/") + name + "/" + std::to_string(i),
+                "sum_terms", "1", sum, reference, "absolute", ok, "state-at-density", inputs);
             for (std::size_t k = 0; k < 7; ++k) {
                 // Central difference of n a_k in n_i at n = x (N = 1), V = 1/rho, steps 2e-3, 1e-3, 5e-4 of x_i. The
                 // error must fall as h^2 and the Richardson value of the two finest steps must match to FD_TOLERANCE.
@@ -299,10 +287,10 @@ void term_by_term() {
                              e2 = std::abs(difference[2] - value) / scale, er = std::abs(richardson - value) / scale;
                 std::printf("fd %s i=%zu %s value=%.12e relerr=%.3e %.3e %.3e richardson=%.3e\n", name, i, names[k], value,
                     e0, e1, e2, er);
-                recording_support::compare_custom((std::string("log-fugacity-terms/fd/") + name + "/" + std::to_string(i)
-                        + "/" + names[k]).c_str(), "term_vs_central_difference", "1", richardson, value, inputs,
-                    "Relationship", "central-difference", "the term equals the Richardson-extrapolated central difference of n a_k in n_i",
-                    "absolute", er <= FD_TOLERANCE && e2 <= e1 + FD_SLACK && e1 <= e0 + FD_SLACK, "log-fugacity-terms", "fd");
+                recording_support::compare_custom(std::string("log-fugacity-terms/fd/") + name + "/" + std::to_string(i)
+                        + "/" + names[k],
+                    "term_vs_central_difference", "1", richardson, value, "absolute",
+                    er <= FD_TOLERANCE && e2 <= e1 + FD_SLACK && e1 <= e0 + FD_SLACK, "central-difference", inputs);
             }
         }
     }

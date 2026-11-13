@@ -28,31 +28,18 @@ void hessian_reference() {
     CHECK(associating_result.gradient.size() == associating_reference.gradient.size());
     for (std::size_t coordinate = 0;
          coordinate < associating_reference.gradient.size(); ++coordinate) {
-        recording_support::compare(
-            (std::string("associating-gradient/") + std::to_string(coordinate)).c_str(),
-            "gradient", "1", associating_result.gradient[coordinate],
-            associating_reference.gradient[coordinate],
-            associating_inputs,
-            "Relationship", "AD-reference", "implicit-site gradient matches reference tensor",
-            "reference_or_one", 0.0, 1.0e-10,
-            close(associating_result.gradient[coordinate], associating_reference.gradient[coordinate], 1e-10),
-            "m4-associating-gradient", std::to_string(coordinate).c_str(), "\\nabla a", "T,V,\\mathbf{n},\\chi",
-            "\\nabla a_{implicit}=\\nabla a_{reference}", "coordinate");
+        recording_support::compare(std::string("associating-gradient/") + std::to_string(coordinate), "gradient", "1",
+            associating_result.gradient[coordinate], associating_reference.gradient[coordinate],
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference", associating_inputs);
     }
     for (std::size_t entry = 0; entry < associating_reference.hessian.size(); ++entry) {
         const std::size_t width = associating_reference.gradient.size();
         const std::size_t row = entry / width;
         const std::size_t column = entry % width;
         const auto point = std::to_string(row) + "-" + std::to_string(column);
-        recording_support::compare(
-            (std::string("associating-hessian/") + point).c_str(), "hessian", "1",
+        recording_support::compare(std::string("associating-hessian/") + point, "hessian", "1",
             associating_result.hessian[entry], associating_reference.hessian[entry],
-            associating_inputs,
-            "Relationship", "AD-reference", "implicit-site Hessian matches reference tensor",
-            "reference_or_one", 0.0, 1.0e-10,
-            close(associating_result.hessian[entry], associating_reference.hessian[entry], 1e-10),
-            "m4-associating-hessian", point.c_str(), "H^{res}", "T,V,\\mathbf{n},\\chi",
-            "H_{ij}^{implicit}=H_{ij}^{reference}", "row,col");
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference", associating_inputs);
     }
 
     const auto nine_parameters = properties_support::nine_species();
@@ -81,30 +68,18 @@ void hessian_reference() {
     });
     for (std::size_t coordinate = 0;
          coordinate < nine_reference.gradient.size(); ++coordinate) {
-        recording_support::compare(
-            (std::string("nine-gradient/") + std::to_string(coordinate)).c_str(),
-            "gradient", "1", nine_result.gradient[coordinate], nine_reference.gradient[coordinate],
-            nine_inputs,
-            "Relationship", "AD-reference", "active-parameter gradient matches reference tensor",
-            "reference_or_one", 0.0, 1.0e-10,
-            close(nine_result.gradient[coordinate], nine_reference.gradient[coordinate], 1e-10),
-            "m4-nine-gradient", std::to_string(coordinate).c_str(), "\\nabla a", "T,V,\\mathbf{n},k_{ij}",
-            "\\nabla a_{active}=\\nabla a_{reference}", "coordinate");
+        recording_support::compare(std::string("nine-gradient/") + std::to_string(coordinate), "gradient", "1",
+            nine_result.gradient[coordinate], nine_reference.gradient[coordinate],
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference", nine_inputs);
     }
     for (std::size_t entry = 0; entry < nine_reference.hessian.size(); ++entry) {
         const std::size_t width = nine_reference.gradient.size();
         const std::size_t row = entry / width;
         const std::size_t column = entry % width;
         const auto point = std::to_string(row) + "-" + std::to_string(column);
-        recording_support::compare(
-            (std::string("nine-hessian/") + point).c_str(), "hessian", "1",
-            nine_result.hessian[entry], nine_reference.hessian[entry],
-            nine_inputs,
-            "Relationship", "AD-reference", "active-parameter Hessian matches reference tensor",
-            "reference_or_one", 0.0, 1.0e-10,
-            close(nine_result.hessian[entry], nine_reference.hessian[entry], 1e-10),
-            "m4-nine-hessian", point.c_str(), "H^{res}", "T,V,\\mathbf{n},k_{ij}",
-            "H_{ij}^{active}=H_{ij}^{reference}", "row,col");
+        recording_support::compare(std::string("nine-hessian/") + point, "hessian", "1", nine_result.hessian[entry],
+            nine_reference.hessian[entry], recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference",
+            nine_inputs);
     }
 }
 
@@ -149,11 +124,8 @@ void hessian_fd_and_pressure_slope() {
             }
             const auto compare = [&](double value, double expected, const std::string& entry) {
                 const auto point = std::to_string(index) + "/" + std::to_string(mode) + "/" + entry;
-                recording_support::compare(("projected/" + point).c_str(), "Helmholtz_derivative", "1",
-                    value, expected, inputs, "Relationship", "raw-implicit-reference",
-                    "selected derivatives and full controls preserve implicit mass-action chains",
-                    "reference_or_one", 0.0, 1e-10, close(value, expected, 1e-10),
-                    "m5-projected", point.c_str());
+                recording_support::compare("projected/" + point, "Helmholtz_derivative", "1", value, expected,
+                    recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "raw-implicit-reference", inputs);
             };
             for (const auto row : selected) {
                 compare(actual.gradient[row], reference.gradient[row], "g" + std::to_string(row));
@@ -213,9 +185,9 @@ void hessian_fd_and_pressure_slope() {
                     (plus_gradient[row] - minus_gradient[row]) / (2.0 * step);
                 const auto point = std::to_string(case_index) + "/"
                     + std::to_string(row) + "-" + std::to_string(coordinate);
-                recording_support::compare(
-                    (std::string("hessian/") + point).c_str(), "hessian", "1",
+                recording_support::compare(std::string("hessian/") + point, "hessian", "1",
                     actual.hessian[row * width + coordinate], finite_difference,
+                    recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
                     recording_support::fields({inputs, recording_support::field("row", row),
                                                recording_support::field("column", coordinate),
                                                recording_support::field("step", step),
@@ -224,12 +196,7 @@ void hessian_fd_and_pressure_slope() {
                                                recording_support::field("V_plus", plus_volume),
                                                recording_support::field("V_minus", minus_volume),
                                                recording_support::field("n_plus", plus),
-                                               recording_support::field("n_minus", minus)}),
-                    "Relationship", "finite-difference", "Hessian=derivative of gradient",
-                    "reference_or_one", 0.0, 1.0e-6,
-                    close(actual.hessian[row * width + coordinate], finite_difference, 1e-6),
-                    "m5-hessian", point.c_str(), "H^{res}", "T,V,\\mathbf{n},\\Delta z",
-                    "H_{ij}=\\Delta a_i/\\Delta z_j", "row,col");
+                                               recording_support::field("n_minus", minus)}));
             }
         }
         const auto slope_state = model.state(temperature, 1.2e4, item.second);
@@ -237,29 +204,20 @@ void hessian_fd_and_pressure_slope() {
         const auto minus_state = model.state(temperature, 1.2e4 * (1.0 - 1e-5), item.second);
         const double pressure_density_fd =
             (plus_state.pressure - minus_state.pressure) / (2.0 * 1.2e4 * 1e-5);
-        recording_support::compare(
-            (std::string("pressure-density-slope/") + std::to_string(case_index)).c_str(),
-            "dP_drho", "Pa m^3/mol", slope_state.pressure_density_derivative,
-            pressure_density_fd,
+        recording_support::compare(std::string("pressure-density-slope/") + std::to_string(case_index), "dP_drho",
+            "Pa m^3/mol", slope_state.pressure_density_derivative, pressure_density_fd,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
             recording_support::fields({inputs,
                                        recording_support::field("rho_plus", 1.2e4 * (1.0 + 1e-5)),
-                                       recording_support::field("rho_minus", 1.2e4 * (1.0 - 1e-5))}),
-            "Relationship", "finite-difference",
-            "pressure density slope matches finite difference", "reference_or_one", 0.0, 1.0e-6,
-            close(slope_state.pressure_density_derivative, pressure_density_fd, 1e-6),
-            "m5-pressure-slope", std::to_string(case_index).c_str(), "P_\\rho", "T,V,\\mathbf{n}",
-            "P_\\rho=\\Delta P/\\Delta\\rho", "rho");
+                                       recording_support::field("rho_minus", 1.2e4 * (1.0 - 1e-5))}));
         const auto pressure_slope = model.evaluate(
             temperature, volume, item.second, epcsaft::DerivativeOrder::Hessian
         );
         double gradient_floor = 0.0;
         const auto series = epcsaft::properties::density_volume_taylor(model, temperature, 1.0 / volume, item.second, gradient_floor);
-        recording_support::compare(
-            (std::string("volume-series-curvature/") + std::to_string(case_index)).c_str(),
-            "a_VV", "1", 2.0 * series.c[2], pressure_slope.hessian[pressure_slope.gradient.size() + 1], inputs,
-            "Identity", "independent-tape", "volume series curvature agrees with Hessian-order tape",
-            "reference_or_one", 0.0, 1e-6,
-            close(2.0 * series.c[2], pressure_slope.hessian[pressure_slope.gradient.size() + 1], 1e-6));
+        recording_support::compare(std::string("volume-series-curvature/") + std::to_string(case_index), "a_VV", "1",
+            2.0 * series.c[2], pressure_slope.hessian[pressure_slope.gradient.size() + 1],
+            recording_support::Rule::ReferenceOrOne, 0.0, 1e-6, "independent-tape", inputs);
         const double volume_step = volume * 1e-5;
         const auto plus_volume_gradient = model.evaluate(
             temperature, volume + volume_step, item.second,
@@ -272,18 +230,12 @@ void hessian_fd_and_pressure_slope() {
         const double volume_second_fd =
             (plus_volume_gradient.gradient[1] - minus_volume_gradient.gradient[1])
                 / (2.0 * volume_step);
-        recording_support::compare(
-            (std::string("volume-second-derivative/") + std::to_string(case_index)).c_str(),
-            "a_VV", "1", pressure_slope.hessian[pressure_slope.gradient.size() + 1],
-            volume_second_fd,
+        recording_support::compare(std::string("volume-second-derivative/") + std::to_string(case_index), "a_VV", "1",
+            pressure_slope.hessian[pressure_slope.gradient.size() + 1], volume_second_fd,
+            recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
             recording_support::fields({inputs, recording_support::field("step_V", volume_step),
                                        recording_support::field("V_plus", volume + volume_step),
-                                       recording_support::field("V_minus", volume - volume_step)}),
-            "Relationship", "finite-difference", "a_VV=derivative of a_V",
-            "reference_or_one", 0.0, 1.0e-6,
-            close(pressure_slope.hessian[pressure_slope.gradient.size() + 1], volume_second_fd, 1e-6),
-            "m5-volume-curvature", std::to_string(case_index).c_str(), "a_{VV}", "T,V,\\mathbf{n},\\Delta V",
-            "a_{VV}=\\Delta a_V/\\Delta V", "volume");
+                                       recording_support::field("V_minus", volume - volume_step)}));
     }
 }
 
@@ -305,13 +257,8 @@ void same_sign_pair_is_inert() {
         recording_support::field("pair", "3,7"),
         recording_support::field("kij_changed", 0.5),
     });
-    recording_support::compare(
-        "excluded-inert", "dispersion", "1", base_state.dispersion, changed_state.dispersion,
-        inputs, "Relationship", "ionic-pair-selection", "same-sign excluded pair is inert",
-        "reference_or_one", 0.0, 1.0e-14,
-        close(base_state.dispersion, changed_state.dispersion, 1e-14),
-        "m6-excluded", "same-sign", "a^{disp}", "T,\\rho,\\mathbf{n},k_{ij}",
-        "\\Delta a^{disp}_{same-sign}=0", "pair");
+    recording_support::compare("excluded-inert", "dispersion", "1", base_state.dispersion, changed_state.dispersion,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-14, "ionic-pair-selection", inputs);
 
     auto all_pairs = excluded;
     all_pairs.ionic_dispersion = epcsaft::IonicDispersion::AllIonPairs;
@@ -324,12 +271,8 @@ void same_sign_pair_is_inert() {
         300.0, 1.2e4, amounts
     );
     const bool all_pairs_active = all_base_state.dispersion != all_changed_state.dispersion;
-    recording_support::compare_custom(
-        "all-pairs-active", "dispersion", "1", all_changed_state.dispersion,
-        all_base_state.dispersion, inputs, "Relationship", "ionic-pair-selection",
-        "all ion pairs respond to the changed interaction", "model != reference",
-        all_pairs_active, "m6-all-pairs", "all-signs", "a^{disp}",
-        "T,\\rho,\\mathbf{n},k_{ij}", "\\Delta a^{disp}_{all-pairs}\\ne0", "pair");
+    recording_support::compare_custom("all-pairs-active", "dispersion", "1", all_changed_state.dispersion,
+        all_base_state.dispersion, "model != reference", all_pairs_active, "ionic-pair-selection", inputs);
 }
 
 void parameter_derivative_and_helpers() {
@@ -357,42 +300,21 @@ void parameter_derivative_and_helpers() {
         recording_support::field("kij_minus", minus.k_ij),
     });
     const double parameter_fd = (up - down) / (2.0 * step);
-    recording_support::compare(
-        "parameter-gradient", "gradient_kij", "1", derivative.gradient.back(), parameter_fd,
-        parameter_inputs, "Relationship", "finite-difference", "parameter derivative=central difference",
-        "reference_or_one", 0.0, 1.0e-6,
-        close(derivative.gradient.back(), parameter_fd, 1e-6), "m7-parameter-gradient",
-        "kij[1,2]", "\\partial a/\\partial k_{ij}", "T,\\rho,\\mathbf{x},\\Delta k",
-        "a_k=\\Delta a/\\Delta k", "parameter");
-    bool threw = false;
-    try { auto bad = parameters; bad.k_ij.pop_back(); (void)epcsaft::HelmholtzModel(std::move(bad)); }
-    catch (const std::invalid_argument&) { threw = true; }
-    CHECK(threw);
-    threw = false;
-    try {
-        auto bad = properties_support::aqueous_electrolyte();
-        bad.ionic_dispersion = {};
-        (void)epcsaft::HelmholtzModel(std::move(bad));
-    } catch (const std::invalid_argument&) { threw = true; }
-    CHECK(threw);
-    threw = false;
-    try {
-        auto bad = properties_support::neutral_binary();
-        bad.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
-        (void)epcsaft::HelmholtzModel(std::move(bad));
-    } catch (const std::invalid_argument&) { threw = true; }
-    CHECK(threw);
-    threw = false;
-    try { auto bad = parameters; bad.k_ij[1] = 1.0; (void)epcsaft::HelmholtzModel(std::move(bad)); }
-    catch (const std::invalid_argument&) { threw = true; }
-    CHECK(threw);
-    threw = false;
-    try {
-        auto bad = properties_support::associating_binary();
-        bad.site_component[0] = 2;
-        (void)epcsaft::HelmholtzModel(std::move(bad));
-    } catch (const std::invalid_argument&) { threw = true; }
-    CHECK(threw);
+    recording_support::compare("parameter-gradient", "gradient_kij", "1", derivative.gradient.back(), parameter_fd,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference", parameter_inputs);
+    const auto construction = [](epcsaft::Parameters bad) {
+        return recording_support::refusal([&] { (void)epcsaft::HelmholtzModel(std::move(bad)); });
+    };
+    auto bad = parameters; bad.k_ij.pop_back();
+    CHECK(construction(bad).find("invalid k_ij") != std::string::npos);
+    bad = properties_support::aqueous_electrolyte(); bad.ionic_dispersion = {};
+    CHECK(construction(bad).find("invalid ionic_dispersion") != std::string::npos);
+    bad = properties_support::neutral_binary(); bad.ionic_dispersion = epcsaft::IonicDispersion::ExcludeSameSign;
+    CHECK(construction(bad).find("invalid ionic_dispersion") != std::string::npos);
+    bad = parameters; bad.k_ij[1] = 1.0;
+    CHECK(construction(bad).find("invalid k_ij symmetry") != std::string::npos);
+    bad = properties_support::associating_binary(); bad.site_component[0] = 2;
+    CHECK(construction(bad).find("invalid site_component") != std::string::npos);
 }
 
 void solvent_activity_properties() {
@@ -499,51 +421,22 @@ void density_and_reference() {
             recording_support::field("vapor_reference_m3_per_mol", std::get<2>(row)),
             recording_support::field("liquid_reference_m3_per_mol", std::get<3>(row)),
         });
-        recording_support::compare(
-            (std::string("vapor-pressure/") + std::to_string(case_index)).c_str(),
-            "pressure", "Pa", vapor.pressure, pressure, inputs,
-            "Relationship", "density-root", "vapor state reproduces requested pressure",
-            "reference_or_one", 0.0, 1e-9, close(vapor.pressure, pressure, 1e-9),
-            "m8-vapor-pressure", std::to_string(case_index).c_str(), "P", "T,P,\\mathbf{x}", "P_{vapor}=P", "branch");
-        recording_support::compare(
-            (std::string("liquid-pressure/") + std::to_string(case_index)).c_str(),
-            "pressure", "Pa", liquid.pressure, pressure, inputs,
-            "Relationship", "density-root", "liquid state reproduces requested pressure",
-            "reference_or_one", 0.0, 1e-9, close(liquid.pressure, pressure, 1e-9),
-            "m8-liquid-pressure", std::to_string(case_index).c_str(), "P", "T,P,\\mathbf{x}", "P_{liquid}=P", "branch");
-        recording_support::compare(
-            (std::string("density-order/") + std::to_string(case_index)).c_str(),
-            "vapor_density_below_liquid", "bool",
-            vapor.molar_density < liquid.molar_density ? 1.0 : 0.0, 1.0, inputs,
-            "Relationship", "density-branches", "vapor density is less than liquid density",
-            "absolute", 0.0, 0.0, vapor.molar_density < liquid.molar_density,
-            "m8-vapor-order", std::to_string(case_index).c_str(), "\\rho_v<\\rho_l",
-            "T,P,\\mathbf{x},\\rho_v,\\rho_l", "\\rho_v<\\rho_l", "case");
-        recording_support::compare(
-            (std::string("vapor-volume/") + std::to_string(case_index)).c_str(),
-            "specific_volume", "m3/mol", 1.0 / vapor.molar_density, std::get<2>(row),
-            inputs, "Relationship", "historical-reference", "historical vapor volume agrees within 5%",
-            "reference_scale", 0.0, 0.05,
-            std::abs(1.0 / vapor.molar_density - std::get<2>(row)) <= 0.05 * std::abs(std::get<2>(row)),
-            "m8-vapor-volume", std::to_string(case_index).c_str(), "v_v", "T,P,\\mathbf{x}",
-            "v_v", "case");
-        recording_support::compare(
-            (std::string("liquid-volume/") + std::to_string(case_index)).c_str(),
-            "specific_volume", "m3/mol", 1.0 / liquid.molar_density, std::get<3>(row),
-            inputs, "Relationship", "historical-reference", "historical liquid volume agrees within 5%",
-            "reference_scale", 0.0, 0.05,
-            std::abs(1.0 / liquid.molar_density - std::get<3>(row)) <= 0.05 * std::abs(std::get<3>(row)),
-            "m8-liquid-volume", std::to_string(case_index).c_str(), "v_l", "T,P,\\mathbf{x}",
-            "v_l", "case");
-        bool ambiguous = false;
-        try {
-            ethane.state_at_pressure(
-                temperature, pressure, {1.0}, epcsaft::DensityBranch::Unspecified
-            );
-        } catch (const std::runtime_error&) {
-            ambiguous = true;
-        }
-        CHECK(ambiguous);
+        recording_support::compare(std::string("vapor-pressure/") + std::to_string(case_index), "pressure", "Pa",
+            vapor.pressure, pressure, recording_support::Rule::ReferenceOrOne, 0.0, 1e-9, "density-root", inputs);
+        recording_support::compare(std::string("liquid-pressure/") + std::to_string(case_index), "pressure", "Pa",
+            liquid.pressure, pressure, recording_support::Rule::ReferenceOrOne, 0.0, 1e-9, "density-root", inputs);
+        recording_support::compare(std::string("density-order/") + std::to_string(case_index),
+            "vapor_density_below_liquid", "bool", vapor.molar_density < liquid.molar_density ? 1.0 : 0.0, 1.0,
+            recording_support::Rule::Absolute, 0.0, 0.0, "density-branches", inputs);
+        recording_support::compare(std::string("vapor-volume/") + std::to_string(case_index), "specific_volume",
+            "m3/mol", 1.0 / vapor.molar_density, std::get<2>(row), recording_support::Rule::ReferenceScale, 0.0, 0.05,
+            "historical-reference", inputs);
+        recording_support::compare(std::string("liquid-volume/") + std::to_string(case_index), "specific_volume",
+            "m3/mol", 1.0 / liquid.molar_density, std::get<3>(row), recording_support::Rule::ReferenceScale, 0.0, 0.05,
+            "historical-reference", inputs);
+        CHECK(recording_support::refusal([&] {
+            ethane.state_at_pressure(temperature, pressure, {1.0}, epcsaft::DensityBranch::Unspecified);
+        }).find("density root is ambiguous") != std::string::npos);
     }
     const auto vapor = ethane.state_at_pressure(320.0, 1e6, {1.0},
                                                 epcsaft::DensityBranch::Vapor);
@@ -555,31 +448,21 @@ void density_and_reference() {
         recording_support::field("vapor_density", vapor.molar_density),
         recording_support::field("liquid_density", liquid.molar_density),
     });
-    recording_support::compare(
-        "supercritical-pressure", "pressure", "Pa", vapor.pressure, 1e6,
-        supercritical_inputs, "Relationship", "density-root",
-        "supercritical vapor state reproduces requested pressure", "reference_or_one",
-        0.0, 1e-9, close(vapor.pressure, 1e6, 1e-9), "m8-supercritical-pressure", "state",
-        "P", "T,P,\\mathbf{x}", "P=P_{requested}", "state");
-    recording_support::compare(
-        "supercritical-density", "molar_density", "mol/m3", liquid.molar_density,
-        vapor.molar_density, supercritical_inputs, "Relationship", "density-branches",
-        "supercritical branches agree", "reference_or_one", 0.0, 1e-10,
-        close(liquid.molar_density, vapor.molar_density, 1e-10), "m8-supercritical-density", "state",
-        "\\rho", "T,P,\\mathbf{x}", "\\rho_l=\\rho_v", "state");
+    recording_support::compare("supercritical-pressure", "pressure", "Pa", vapor.pressure, 1e6,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1e-9, "density-root", supercritical_inputs);
+    recording_support::compare("supercritical-density", "molar_density", "mol/m3", liquid.molar_density,
+        vapor.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "density-branches",
+        supercritical_inputs);
     const auto associating = epcsaft::HelmholtzModel(properties_support::associating_binary());
     const auto associating_liquid = associating.state_at_pressure(
         313.15, 1e5, {0.1385, 0.8615}, epcsaft::DensityBranch::Liquid
     );
-    recording_support::compare(
-        "associating-pressure", "pressure", "Pa", associating_liquid.pressure, 1e5,
-        recording_support::fields({
+    recording_support::compare("associating-pressure", "pressure", "Pa", associating_liquid.pressure, 1e5,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1e-9, "density-root", recording_support::fields({
             model_inputs(associating.parameters(), 313.15,
                          1.0 / associating_liquid.molar_density, {0.1385, 0.8615}),
             recording_support::field("P", 1e5), recording_support::field("branch", "liquid"),
-        }), "Relationship", "density-root", "associating liquid reproduces requested pressure",
-        "reference_or_one", 0.0, 1e-9, close(associating_liquid.pressure, 1e5, 1e-9),
-        "m8-associating", "state", "P", "T,P,\\mathbf{x}", "P_{liquid}=P", "state");
+        }));
     const auto nine = epcsaft::HelmholtzModel(properties_support::nine_species());
     const auto nine_state = nine.state_at_pressure(
         313.15, 1e5,
@@ -594,16 +477,13 @@ void density_and_reference() {
             313.15, nine.parameters(), epcsaft::segment_sigma(313.15, nine.parameters())));
     const bool nine_packing_ok =
         nine_packing < epcsaft::policy::CLOSE_PACKING_FRACTION.value;
-    recording_support::compare(
-        "nine-packing", "packing_below_limit", "bool", nine_packing_ok ? 1.0 : 0.0,
-        1.0, recording_support::fields({
+    recording_support::compare("nine-packing", "packing_below_limit", "bool", nine_packing_ok ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "packing-bound", recording_support::fields({
             model_inputs(nine.parameters(), 313.15, 1.0 / nine_state.molar_density,
                          nine_composition),
             recording_support::field("packing_fraction", nine_packing),
             recording_support::field("packing_limit", epcsaft::policy::CLOSE_PACKING_FRACTION.value),
-        }), "Relationship", "packing-bound", "phase packing fraction is below close packing",
-        "absolute", 0.0, 0.0, nine_packing_ok, "m8-nine", "state", "\\eta<\\eta_{max}",
-        "T,P,\\mathbf{x},\\rho", "\\eta<\\eta_{max}", "state");
+        }));
     const auto aqueous = properties_support::aqueous_electrolyte();
     epcsaft::HelmholtzModel model(aqueous);
     const auto reference = epcsaft::infinite_dilution_reference(
@@ -624,11 +504,8 @@ void density_and_reference() {
         recording_support::field("activity_tolerance", 1e-8),
         recording_support::field("reference_molality", reference.molality),
     });
-    recording_support::observe(
-        "activity-finite", "mean_ionic_log_molality_scale", "1",
-        activity.mean_ionic_log_molality_scale, std::nullopt, reference_inputs, "Relationship", "finite-value",
-        "electrolyte activity scale is finite", "m8-activity-finite", "state", "\\log\\gamma",
-        "T,P,\\mathbf{x}", "\\log\\gamma", "state");
+    recording_support::observe("activity-finite", "mean_ionic_log_molality_scale", "1",
+        activity.mean_ionic_log_molality_scale, std::nullopt, "finite-value", reference_inputs);
     CHECK(!reference.convergence_error);
     CHECK(std::isfinite(activity.mean_ionic_log_molality_scale));
     for (double m : {0.001, 0.2, 1.0, 3.0, 7.0}) {
@@ -676,23 +553,22 @@ void density_and_reference() {
             acid, background, mean, multi.mean_ionic_log_molality_scale, *read.log_activities[0], standard_gap);
         m[1] = 0;
         const auto rejects = [&](const std::vector<double>& declaration, const auto& ref) {
-            try {
+            return recording_support::refusal([&] {
                 epcsaft::electrolyte_activity(nine, 298.15, 1e5, water, {3, 4}, {1, 1}, acid, ref, std::nullopt, declaration);
-            } catch (const std::invalid_argument&) { return true; }
-            return false;
+            });
         };
         m[4] = acid;
-        CHECK(rejects(m, mixed_reference));
+        CHECK(rejects(m, mixed_reference).find("must be neutral and match the selected formula cation molality") != std::string::npos);
         m[4] = acid + background; m[3] = -acid;
-        CHECK(rejects(m, mixed_reference));
+        CHECK(rejects(m, mixed_reference).find("must be finite and nonnegative") != std::string::npos);
         m[3] = acid; m[0] = 1.0;
-        CHECK(rejects(m, mixed_reference));
+        CHECK(rejects(m, mixed_reference).find("require an uncharged solvent with zero solute molality") != std::string::npos);
         m[0] = 0.0;
         auto wrong = mixed_reference;
         wrong.pressure = 101325.0;
-        CHECK(rejects(m, wrong));
+        CHECK(rejects(m, wrong).find("electrolyte reference model, temperature, pressure or solvent mismatch") != std::string::npos);
         m.pop_back();
-        CHECK(rejects(m, mixed_reference));
+        CHECK(rejects(m, mixed_reference).find("require one pure solvent and one entry per component") != std::string::npos);
     }
     const double gamma_coefficient = epcsaft::ELEMENTARY_CHARGE_C
         * epcsaft::ELEMENTARY_CHARGE_C
@@ -709,15 +585,9 @@ void density_and_reference() {
     const auto activity_scale_inputs = recording_support::fields({
         reference_inputs, recording_support::field("ionic_strength", 1e-8)
     });
-    recording_support::compare(
-        "activity-scale", "mean_ionic_log_molality_scale", "1",
+    recording_support::compare("activity-scale", "mean_ionic_log_molality_scale", "1",
         activity.mean_ionic_log_molality_scale, -gamma_coefficient * std::sqrt(1e-8),
-        activity_scale_inputs,
-        "Relationship", "infinite-dilution", "activity scale matches Debye limit",
-        "reference_or_one", 0.0, 1e-3,
-        close(activity.mean_ionic_log_molality_scale, -gamma_coefficient * std::sqrt(1e-8), 1e-3),
-        "m8-activity-scale", "ionic-strength", "\\log\\gamma", "T,P,\\mathbf{x},I",
-        "\\log\\gamma= -\\Gamma\\sqrt I", "I");
+        recording_support::Rule::ReferenceOrOne, 0.0, 1e-3, "infinite-dilution", activity_scale_inputs);
 }
 
 void cache_invariance() {
@@ -749,23 +619,14 @@ void cache_invariance() {
     for (std::size_t case_index = 0; case_index < retained.size(); ++case_index) {
         const auto& actual = *retained[case_index];
         const auto& reference = *fresh[case_index];
-        const bool value_ok = close(actual.value, reference.value, 1e-14);
-        recording_support::compare(
-            (std::string("value/") + labels[case_index]).c_str(), "residual_helmholtz", "1",
-            actual.value, reference.value, inputs[case_index], "Relationship", "cache-invariance",
-            "retained/evicted signature matches a fresh model", "reference_or_one", 0.0, 1e-14,
-            value_ok, "m9-value", labels[case_index], "a^{res}", "T,V,\\mathbf{n}",
-            "a_{retained}=a_{fresh}", "state");
+        recording_support::compare(std::string("value/") + labels[case_index], "residual_helmholtz", "1", actual.value,
+            reference.value, recording_support::Rule::ReferenceOrOne, 0.0, 1e-14, "cache-invariance",
+            inputs[case_index]);
         CHECK(actual.gradient.size() == reference.gradient.size());
         for (std::size_t i = 0; i < actual.gradient.size(); ++i) {
-            const bool gradient_ok = close(actual.gradient[i], reference.gradient[i], 1e-14);
-            recording_support::compare(
-                (std::string("gradient/") + labels[case_index] + "/" + std::to_string(i)).c_str(),
-                "gradient", "1", actual.gradient[i], reference.gradient[i], inputs[case_index],
-                "Relationship", "cache-invariance", "retained/evicted signature matches a fresh model",
-                "reference_or_one", 0.0, 1e-14, gradient_ok, "m9-gradient", labels[case_index],
-                "\\nabla a", "T,V,\\mathbf{n}", "\\nabla a_{retained}=\\nabla a_{fresh}",
-                "coordinate");
+            recording_support::compare(std::string("gradient/") + labels[case_index] + "/" + std::to_string(i),
+                "gradient", "1", actual.gradient[i], reference.gradient[i], recording_support::Rule::ReferenceOrOne,
+                0.0, 1e-14, "cache-invariance", inputs[case_index]);
         }
         CHECK(actual.hessian.size() == reference.hessian.size());
         CHECK(!actual.gradient.empty());
@@ -773,13 +634,9 @@ void cache_invariance() {
         for (std::size_t i = 0; i < actual.hessian.size(); ++i) {
             const auto point = std::string(labels[case_index]) + "/"
                 + std::to_string(i / width) + "-" + std::to_string(i % width);
-            const bool hessian_ok = close(actual.hessian[i], reference.hessian[i], 1e-14);
-            recording_support::compare(
-                (std::string("hessian/") + point).c_str(), "hessian", "1", actual.hessian[i],
-                reference.hessian[i], inputs[case_index], "Relationship", "cache-invariance",
-                "retained/evicted signature matches a fresh model", "reference_or_one", 0.0, 1e-14,
-                hessian_ok, "m9-hessian", point.c_str(), "H^{res}", "T,V,\\mathbf{n}",
-                "H_{retained}=H_{fresh}", "row,col");
+            recording_support::compare(std::string("hessian/") + point, "hessian", "1", actual.hessian[i],
+                reference.hessian[i], recording_support::Rule::ReferenceOrOne, 0.0, 1e-14, "cache-invariance",
+                inputs[case_index]);
         }
     }
     // One tape serves both sides of SCREENING_SERIES_SWITCH: recorded at kappa*d = 0.087,
@@ -799,21 +656,15 @@ void cache_invariance() {
 }
 
 void core_c2_parameter_coordinates() {
-    auto rejects = [](epcsaft::Parameters parameters,
-                      epcsaft::ActiveParameter active) {
-        try {
-            (void)epcsaft::HelmholtzModel(std::move(parameters), {active});
-        } catch (const std::invalid_argument&) {
-            return true;
-        }
-        return false;
+    const auto rejects = [](epcsaft::Parameters parameters, epcsaft::ActiveParameter active) {
+        return recording_support::refusal([&] { (void)epcsaft::HelmholtzModel(std::move(parameters), {active}); });
     };
     auto binary = properties_support::neutral_binary();
     const auto kij = epcsaft::ParameterFamily::Kij;
     const auto lij = epcsaft::ParameterFamily::Lij;
-    CHECK(rejects(binary, {epcsaft::ParameterFamily::SegmentCount, {0, 1}}));
-    CHECK(rejects(binary, {epcsaft::ParameterFamily::SigmaConstant, {0, 1}}));
-    CHECK(rejects(binary, {epcsaft::ParameterFamily::DispersionEnergyOverK, {0, 1}}));
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::SegmentCount, {0, 1}}).find("invalid scalar parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::SigmaConstant, {0, 1}}).find("invalid scalar parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {epcsaft::ParameterFamily::DispersionEnergyOverK, {0, 1}}).find("invalid scalar parameter coordinate") != std::string::npos);
     constexpr double scalar_temperature = 300.0;
     constexpr double scalar_volume = 1.0 / 1.2e4;
     const std::vector<double> scalar_amounts = {0.4, 0.6};
@@ -834,54 +685,37 @@ void core_c2_parameter_coordinates() {
                 scalar_temperature, scalar_volume, scalar_amounts,
                 epcsaft::DerivativeOrder::Value).value;
         auto overwritten = binary;
-        switch (family) {
-        case epcsaft::ParameterFamily::SegmentCount:
-            overwritten.segment_count[1] = overwritten.segment_count[0];
-            break;
-        case epcsaft::ParameterFamily::SigmaConstant:
-            overwritten.sigma_constant[1] = overwritten.sigma_constant[0];
-            break;
-        case epcsaft::ParameterFamily::DispersionEnergyOverK:
-            overwritten.dispersion_energy_over_k[1] =
-                overwritten.dispersion_energy_over_k[0];
-            break;
-        default:
-            break;
-        }
+        const auto values = epcsaft::detail::family_values(overwritten, family).first;
+        values[1] = values[0];
         const auto overwritten_value = epcsaft::HelmholtzModel(overwritten).evaluate(
             scalar_temperature, scalar_volume, scalar_amounts,
             epcsaft::DerivativeOrder::Value).value;
         CHECK(!close(overwritten_value, fixed_scalar.value, 1e-12));
-        recording_support::compare(
-            (std::string("c2-scalar-value/") + scalar_names[i]).c_str(),
-            "residual_helmholtz", "1", active_value, fixed_scalar.value,
-            recording_support::fields({
+        recording_support::compare(std::string("c2-scalar-value/") + scalar_names[i], "residual_helmholtz", "1",
+            active_value, fixed_scalar.value, recording_support::Rule::ReferenceOrOne, 0.0, 1e-12,
+            "single-slot-coordinate", recording_support::fields({
                 model_inputs(binary, scalar_temperature, scalar_volume, scalar_amounts),
                 recording_support::field("family", scalar_names[i]),
                 recording_support::field("active_index", std::size_t{0})
-            }), "Identity", "single-slot-coordinate", "fixed value is preserved",
-            "reference_or_one", 0.0, 1e-12,
-            close(active_value, fixed_scalar.value, 1e-12),
-            "c2-scalar-values", scalar_names[i], "a^{res}", "T,V,\\mathbf{n}",
-            "a_{active}=a_{fixed}", "scalar");
+            }));
     }
-    CHECK(rejects(binary, {kij, {1}}));
-    CHECK(rejects(binary, {kij, {0}}));
-    CHECK(rejects(binary, {kij, {1, 1}}));
-    CHECK(rejects(binary, {kij, {1, 3}}));
-    CHECK(rejects(binary, {lij, {1}}));
-    CHECK(rejects(binary, {lij, {0}}));
+    CHECK(rejects(binary, {kij, {1}}).find("invalid reciprocal parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {kij, {0}}).find("invalid diagonal parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {kij, {1, 1}}).find("invalid reciprocal parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {kij, {1, 3}}).find("invalid reciprocal parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {lij, {1}}).find("invalid reciprocal parameter coordinate") != std::string::npos);
+    CHECK(rejects(binary, {lij, {0}}).find("invalid diagonal parameter coordinate") != std::string::npos);
     (void)epcsaft::HelmholtzModel(binary, {{kij, {1, 2}}, {lij, {1, 2}}});
 
     auto associating = properties_support::associating_binary();
-    CHECK(!rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}}));
-    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1}}));
-    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}));
+    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}}).empty());
+    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {1}}).find("invalid reciprocal parameter coordinate") != std::string::npos);
+    CHECK(rejects(associating, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}).find("invalid inactive association coordinate") != std::string::npos);
     auto self = associating;
     self.association_active[0] = 1;
     self.association_energy_over_k[0] = 1200.0;
     self.association_volume[0] = 0.1;
-    CHECK(!rejects(self, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}));
+    CHECK(rejects(self, {epcsaft::ParameterFamily::AssociationEnergyOverK, {0}}).empty());
 
     const auto association_active = std::vector<epcsaft::ActiveParameter>{
         {epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}}
@@ -979,26 +813,19 @@ void core_c2_parameter_coordinates() {
         }
     }
     recording_support::compare("c2-falsifier", "relative_error", "1", error, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 5e-6, "centered-difference",
         recording_support::fields({model_inputs(binary, temperature, volume, amounts),
                                    recording_support::field("h", h),
-                                   recording_support::field("v", std::vector<double>{0.7, -0.4})}), "Relationship",
-        "centered-difference", "C2 Hessian action", "reference_or_one", 0.0, 5e-6,
-        error <= 5e-6, "c2-falsifier", "H*v", "relative_error", "H*v", "T,V,n",
-        "H*v=finite_difference");
-    recording_support::compare("c2-association-gradient", "relative_error", "1",
-        association_error, 0.0,
+                                   recording_support::field("v", std::vector<double>{0.7, -0.4})}));
+    recording_support::compare("c2-association-gradient", "relative_error", "1", association_error, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 5e-6, "centered-difference",
         recording_support::fields({model_inputs(associating, 376.88, 1.0e-4, {0.4, 0.6}),
                                    recording_support::field("h", association_h),
-                                   recording_support::field("pair", "1,4")}),
-        "Relationship", "centered-difference", "association gradient", "reference_or_one",
-        0.0, 5e-6, association_error <= 5e-6, "c2-association-gradient", "distinct-site-pair",
-        "relative_error", "dA/dtheta", "T,V,n", "dA/dtheta=finite_difference");
+                                   recording_support::field("pair", "1,4")}));
     recording_support::compare("c2-scaling", "relative_error", "1", scaling_error, 0.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 5e-6, "scaled-coordinate",
         recording_support::fields({recording_support::field("h", h),
-                                   recording_support::field("S", std::vector<double>{2.0, 3.0})}),
-        "Relationship", "scaled-coordinate", "source gradient/Hessian scaling",
-        "reference_or_one", 0.0, 5e-6, scaling_error <= 5e-6, "c2-scaling", "S=diag(2,3)",
-        "relative_error", "Sg,S H S", "T,V,n", "source=S*native");
+                                   recording_support::field("S", std::vector<double>{2.0, 3.0})}));
 }
 
 // #423: a sole cold root below the stored negative-slope sample is vapor-side and is no liquid reference.
@@ -1043,13 +870,9 @@ void liquid_reference_branch_evidence() {
         CHECK(std::abs(-2 * *read.log_activities[0] + *read.log_activities[1] - expected) <= 1e-10);
     }
     const epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
-    const auto message = [](const auto& call) {
-        try { call(); } catch (const std::runtime_error& error) { return std::string(error.what()); }
-        return std::string();
-    };
     // 650 K, 100 Pa: sole root 0.018503460 mol/m3 below sample 17653.65 mol/m3 gave gamma = 1.000000196209869.
-    CHECK(refused(message([&] { epcsaft::infinite_dilution_reference(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}); })));
-    CHECK(refused(message([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, [] { epcsaft::InfiniteDilutionReference r; r.ion_indices = {1,2}; return r; }()); })));
+    CHECK(refused(recording_support::refusal([&] { epcsaft::infinite_dilution_reference(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}); })));
+    CHECK(refused(recording_support::refusal([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, [] { epcsaft::InfiniteDilutionReference r; r.ion_indices = {1,2}; return r; }()); })));
     // 630 K keeps its two-root liquid reference (main values).
     const auto reference = epcsaft::infinite_dilution_reference(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1});
     const auto activity = epcsaft::electrolyte_activity(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, reference);

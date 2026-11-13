@@ -137,10 +137,9 @@ void p2_density_series() {
             recording_support::field("site_fractions",tape.site_fractions), recording_support::field("series_gradient_floor",floor),
             recording_support::field("tape_gradient_floor",tape.gradient_floor)});
         for (std::size_t k=0;k<3;++k) {
-            recording_support::compare((std::string("volume-series/")+item.name+"/"+std::to_string(k+1)).c_str(),
-                "scaled_volume_derivative","1",calculated[k],exact[k],inputs,"Identity","independent-tape",
-                "normalized Taylor coefficients agree with implicit tape differentiation", "reference_or_one",0.0,1e-10,
-                close(calculated[k],exact[k],1e-10),"p2-volume-series",item.name,"V^k Phi_V...V","T,V,n","series=tape","order");
+            recording_support::compare(std::string("volume-series/")+item.name+"/"+std::to_string(k+1),
+                "scaled_volume_derivative", "1", calculated[k], exact[k], recording_support::Rule::ReferenceOrOne, 0.0,
+                1e-10, "independent-tape", inputs);
             double best = std::numeric_limits<double>::infinity(), best_step = 0.0, previous = best;
             bool decreasing = false;
             std::vector<double> steps, errors;
@@ -156,11 +155,12 @@ void p2_density_series() {
                 if(error<best) { best=error; best_step=h; }
             }
             const double limit=k==2 ? 1e-5 : 1e-6;
-            recording_support::compare((std::string("volume-stencil/")+item.name+"/"+std::to_string(k+1)).c_str(),
-                "scaled_error","1",best,0.0,recording_support::fields({inputs,recording_support::field("log_volume_step",best_step),
-                    recording_support::field("log_volume_steps",steps), recording_support::field("scaled_errors",errors)}),
-                "Relationship","symmetric-log-volume-stencil","successive lower-derivative differences verify the exact volume derivative",
-                "absolute",limit,0.0,decreasing&&best<=limit,"p2-volume-stencil",item.name,"scaled error","T,V,n","d/dlnV=V d/dV","order");
+            recording_support::compare(std::string("volume-stencil/")+item.name+"/"+std::to_string(k+1),
+                "scaled_error", "1", best, 0.0, recording_support::Rule::Absolute, limit, 0.0,
+                "symmetric-log-volume-stencil",
+                recording_support::fields({inputs,recording_support::field("log_volume_step",best_step),
+                    recording_support::field("log_volume_steps",steps), recording_support::field("scaled_errors",errors)}));
+            CHECK(decreasing);
         }
         const std::array<double,3> series_pressure={1-calculated[0],1+calculated[1],-calculated[2]-2*calculated[1]};
         const std::array<double,2> tape_pressure={1-volume*tape.gradient[1],1+volume*volume*tape.hessian[tape.gradient.size()+1]};
@@ -168,16 +168,13 @@ void p2_density_series() {
             const auto pressure=model.neutral_property(item.temperature,item.density,epcsaft::NeutralProperty::Pressure,epcsaft::DerivativeOrder::Hessian);
             const double curvature=item.density*pressure.hessian[3]/(epcsaft::GAS_CONSTANT_J_PER_MOL_K*item.temperature);
             recording_support::compare("pressure-hessian/pure-neutral", "scaled_pressure_curvature", "1",
-                series_pressure[2], curvature, inputs, "Identity", "neutral-pressure-Hessian",
-                "the exact pressure Hessian agrees with the volume-series curvature", "reference_or_one", 0.0, 1e-10,
-                close(series_pressure[2],curvature,1e-10), "p2-pressure-hessian", item.name,
-                "rho P_rhorho/(RT)", "T,rho", "series=pressure Hessian", "case");
+                series_pressure[2], curvature, recording_support::Rule::ReferenceOrOne, 0.0, 1e-10,
+                "neutral-pressure-Hessian", inputs);
         }
         for(std::size_t k=0;k<2;++k)
-            recording_support::compare((std::string("pressure-series/")+item.name+"/"+std::to_string(k)).c_str(),
-                "scaled_pressure_derivative","1",series_pressure[k],tape_pressure[k],inputs,"Identity","pressure-chain",
-                "pressure, slope and curvature follow the volume derivative chain", "reference_or_one",0.0,1e-10,
-                close(series_pressure[k],tape_pressure[k],1e-10),"p2-pressure-series",item.name,"scaled P derivative","T,V,n","pressure-chain","order");
+            recording_support::compare(std::string("pressure-series/")+item.name+"/"+std::to_string(k),
+                "scaled_pressure_derivative", "1", series_pressure[k], tape_pressure[k],
+                recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "pressure-chain", inputs);
     }
 }
 
@@ -207,17 +204,17 @@ void p2_decane_fallback() {
             recording_support::compare(branch==epcsaft::DensityBranch::Vapor
                     ? (request_sibling ? "decane/vapor-sibling" : "decane/vapor")
                     : (request_sibling ? "decane/liquid-sibling" : "decane/liquid"),
-                "molar_density","mol/m3",root.molar_density,expected,recording_support::fields({
+                "molar_density", "mol/m3", root.molar_density, expected, recording_support::Rule::ReferenceOrOne, 0.0,
+                1e-10, "current-main-scan", recording_support::fields({
                     model_inputs(parameters,135.0,1.0/root.molar_density,composition),recording_support::field("P_star",1000.0),
                     recording_support::field("dense_diagnostic_root",dense_reference),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
-                    recording_support::field("fallback",fallback), recording_support::field("request_sibling",request_sibling)}),"Relationship","current-main-scan",
-                "both branches and the actual sibling recover the diagnostic roots", "reference_or_one",0.0,1e-10,ok,
-                "p2-decane",branch==epcsaft::DensityBranch::Vapor ? "vapor" : "liquid","rho","T,P,x,branch","resolved positive-slope roots","case");
+                    recording_support::field("fallback",fallback), recording_support::field("request_sibling",request_sibling)}));
+            CHECK(ok);
         }
     }
-    std::string cause;
-    try { epcsaft::solve_density(model,135.0,1000.0,composition,epcsaft::DensityBranch::Unspecified,std::nullopt); }
-    catch (const epcsaft::DensityStructureError& error) { cause = error.what(); }
+    const auto cause = recording_support::refusal([&] {
+        epcsaft::solve_density(model,135.0,1000.0,composition,epcsaft::DensityBranch::Unspecified,std::nullopt);
+    });
     CHECK(cause.find("ambiguous") != std::string::npos);
     const auto batch = model.pressure_actions(135.0,1000.0,composition,epcsaft::DensityBranch::Unspecified, {},
         {epcsaft::PressureActionDirection{0.0,1.0,{0.0},{}}});
@@ -229,14 +226,11 @@ void p2_decane_fallback() {
     for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
         const auto root = epcsaft::solve_density(model, 135.0, endpoint_pressure, composition, branch, std::nullopt);
         recording_support::compare(branch == epcsaft::DensityBranch::Vapor ? "decane/endpoint-vapor" : "decane/endpoint-liquid",
-            "molar_density", "mol/m3", root.molar_density, endpoint_reference,
+            "molar_density", "mol/m3", root.molar_density, endpoint_reference, recording_support::Rule::ReferenceOrOne,
+            0.0, 1e-10, "native-4096-and-16384-cell-diagnostics",
             recording_support::fields({model_inputs(parameters, 135.0, 1.0 / root.molar_density, composition),
-                recording_support::field("P_star", endpoint_pressure), recording_support::field("stable_root_count", root.stable_root_count.value_or(0))}),
-            "Relationship", "native-4096-and-16384-cell-diagnostics", "the resolved crossing survives the local and ordinary root merge",
-            "reference_or_one", 0.0, 1e-10, close(root.molar_density, endpoint_reference, 1e-10)
-                && root.stable_root_count == 1 && root.branch == epcsaft::DensityBranch::Unspecified
-                && root.pressure_density_derivative > 0.0,
-            "p2-decane", "endpoint", "rho", "T,P,x,branch", "one positive-slope root", "case");
+                recording_support::field("P_star", endpoint_pressure), recording_support::field("stable_root_count", root.stable_root_count.value_or(0))}));
+        CHECK(root.stable_root_count == 1 && root.branch == epcsaft::DensityBranch::Unspecified && root.pressure_density_derivative > 0.0);
     }
 }
 
@@ -253,22 +247,17 @@ void properties_p2() {
         const auto errors = associating.residual_coefficient_errors(
             {{temperature, volume, 0.3, 0.7}, {0.0, 1.0, 0.0, 0.0}}, at.site_fractions);
         const bool covered = errors[1] >= at.gradient_floor;
-        recording_support::compare_custom("coefficient-volume-floor", "volume_derivative_error", "mol/m^3",
-            errors[1], at.gradient_floor,
-            recording_support::fields({model_inputs(associating_parameters, temperature, volume, composition)}),
-            "Relationship", "achieved-site-residual", "coefficient errors retain the achieved site-residual contribution",
-            "absolute", covered, "coefficient-volume-floor", "volume", "error", "T,V,n",
-            "error>=achieved-site-residual-floor", "case");
+        recording_support::compare_custom("coefficient-volume-floor", "volume_derivative_error", "mol/m^3", errors[1],
+            at.gradient_floor, "absolute", covered, "achieved-site-residual",
+            recording_support::fields({model_inputs(associating_parameters, temperature, volume, composition)}));
         // #1000: the row's active segment count (10 x 4.5354) puts half the stored cap above that geometry's cap.
         const epcsaft::HelmholtzModel active(associating_parameters, {{epcsaft::ParameterFamily::SegmentCount, {0}}});
         const double rho = 0.5 * active.molar_density_upper_bound(temperature, composition);
         const auto center = active.evaluate(temperature, 1.0 / rho, composition, epcsaft::DerivativeOrder::Value);
-        bool refused = false;
-        try {
+        CHECK(recording_support::refusal([&] {
             (void)active.residual_coefficient_errors({{temperature, 1.0 / rho, 0.3, 0.7,
                 10.0 * associating_parameters.segment_count[0]}}, center.site_fractions);
-        } catch (const std::invalid_argument&) { refused = true; }
-        CHECK(refused);
+        }).find("packing fraction outside the fluid domain") != std::string::npos);
     }
     const auto record_zero_support = [&](const char* point,
                                          const epcsaft::HelmholtzModel& model,
@@ -283,17 +272,12 @@ void properties_p2() {
         bool finite = finite_state_without_cp(state);
         for (const double value : state.site_fractions) finite = finite && std::isfinite(value);
         for (const double value : residuals) residual = std::max(residual, std::abs(value));
-        recording_support::compare_custom(
-            (std::string("support-residual/") + point).c_str(),
-            "association_residual_infinity", "1", residual, 0.0,
-            recording_support::fields({
+        recording_support::compare_custom(std::string("support-residual/") + point, "association_residual_infinity",
+            "1", residual, 0.0, "absolute", residual <= 2e-13 && finite, "mass-action", recording_support::fields({
                 model_inputs(model.parameters(), temperature_value, 1.0 / density_value, composition),
                 recording_support::field("support", point),
                 recording_support::field("site_fractions", state.site_fractions),
-            }), "Relationship", "mass-action",
-            "exact neutral/zero-ion support remains finite and converged", "absolute",
-            residual <= 2e-13 && finite, "p2-support-residual", point,
-            "||F_a||_inf", "T,rho,x", "||F_a||_inf<=2e-13", "support");
+            }));
     };
     const std::array<std::vector<double>, 2> supports = {{{1.0, 0.0}, {0.0, 1.0}}};
     for (std::size_t support = 0; support < supports.size(); ++support) {
@@ -327,27 +311,16 @@ void properties_p2() {
         const std::array<double, 2> calculated{series.c[1], 2.0 * series.c[2]};
         const std::array<double, 2> reference{tape.gradient[1], tape.hessian[tape.gradient.size() + 1]};
         for (std::size_t k = 0; k < calculated.size(); ++k)
-            recording_support::compare(
-                ("support-series/" + point + "/" + std::to_string(k + 1)).c_str(),
-                "volume_derivative", "1", calculated[k], reference[k], inputs,
-                "Identity", "independent-tape", "volume series agrees with Hessian-order tape at pure support",
-                "reference_or_one", 0.0, 1e-12, close(calculated[k], reference[k], 1e-12));
-        recording_support::compare_custom(
-            (std::string("support-residual/") + point).c_str(),
-            "association_residual_infinity", "1", residual, 0.0, inputs,
-            "Relationship", "mass-action", "exact support remains finite and converged",
-            "absolute", residual <= 2e-13 && finite,
-            "p2-support-residual", point.c_str(), "||F_a||_inf", "T,rho,x",
-            "||F_a||_inf<=2e-13", "support");
+            recording_support::compare("support-series/" + point + "/" + std::to_string(k + 1), "volume_derivative",
+                "1", calculated[k], reference[k], recording_support::Rule::ReferenceOrOne, 0.0, 1e-12,
+                "independent-tape", inputs);
+        recording_support::compare_custom(std::string("support-residual/") + point, "association_residual_infinity",
+            "1", residual, 0.0, "absolute", residual <= 2e-13 && finite, "mass-action", inputs);
         const double floor_scale = std::max(expected_floor, 1.0e-300);
         const double floor_error = std::abs(gradient_floor - expected_floor);
         const bool floor_ok = floor_error <= 1.0e-6 * floor_scale;
-        recording_support::compare_custom(
-            (std::string("support-floor/") + point).c_str(), "gradient_floor", "1",
-            gradient_floor, expected_floor, inputs, "Relationship",
-            "mass-action-residual-bound", "PressureSlope floor uses U^{-1} one",
-            "relative", floor_ok, "p2-support-floor", point.c_str(), "floor",
-            "T,rho,x", "floor=bound(U^{-1}1)", "support");
+        recording_support::compare_custom(std::string("support-floor/") + point, "gradient_floor", "1", gradient_floor,
+            expected_floor, "relative", floor_ok, "mass-action-residual-bound", inputs);
     }
     record_zero_support(
         "aqueous-zero-ion", epcsaft::HelmholtzModel(properties_support::aqueous_electrolyte()),
@@ -392,37 +365,28 @@ void properties_p2() {
         }
         trace_to_zero_errors[trace_index] = trace_to_zero_error;
         const auto point = std::to_string(trace);
-        recording_support::compare(
-            (std::string("support-hessian/") + point).c_str(), "relative_hessian_error", "1",
-            hessian_error, 0.0,
+        recording_support::compare(std::string("support-hessian/") + point, "relative_hessian_error", "1",
+            hessian_error, 0.0, recording_support::Rule::Absolute, 1e-12, 0.0, "AD-reference",
             recording_support::fields({
                 model_inputs(associating.parameters(), 300.0, 1.0 / 5000.0, composition),
                 recording_support::field("trace_amount", trace),
                 recording_support::field("trace_to_zero_error", trace_to_zero_error),
                 recording_support::field("scaled_trace_to_zero_error",
                     trace == 0.0 ? 0.0 : trace_to_zero_error / trace),
-            }), "Relationship", "AD-reference",
-            "association implicit Hessian remains support-reduced", "absolute", 1e-12, 0.0,
-            hessian_error <= 1e-12, "p2-support-hessian", point.c_str(), "Hres",
-            "T,rho,x", "Himplicit=Hreference", "trace");
+            }));
     }
     const bool trace_refines = trace_to_zero_errors[0] >= trace_to_zero_errors[1]
         && trace_to_zero_errors[1] >= trace_to_zero_errors[2]
         && trace_to_zero_errors[2] >= trace_to_zero_errors[3]
         && trace_to_zero_errors[3] >= trace_to_zero_errors[4];
-    recording_support::compare_custom(
-        "support-hessian/trace-to-zero", "refinement", "bool",
-        trace_refines ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
+    recording_support::compare_custom("support-hessian/trace-to-zero", "refinement", "bool", trace_refines ? 1.0 : 0.0,
+        1.0, "absolute", trace_refines, "scaled-trace-ladder", recording_support::fields({
             recording_support::field("trace_errors", std::vector<double>(
                 trace_to_zero_errors.begin(), trace_to_zero_errors.end())),
             recording_support::field("terminal_error", trace_to_zero_errors.back()),
             recording_support::field("scaled_terminal_error",
                 trace_to_zero_errors[3] / association_trace[3]),
-        }), "Relationship", "scaled-trace-ladder",
-        "trace-to-zero Hessian error refines to the exact-zero row", "absolute", trace_refines,
-        "p2-support-hessian", "trace-to-zero", "refinement", "trace",
-        "error(trace)<=error(previous);error(0)=0", "trace");
+        }));
 
     const std::vector<double> action_composition = {0.4, 0.6};
     const std::array<P2AssociationDirection, 3> directions = {
@@ -476,27 +440,21 @@ void properties_p2() {
             recording_support::field("rank", action.rank),
             recording_support::field("pivot_ratio", action.pivot_ratio),
         });
-        recording_support::compare_custom(
-            (std::string("association-action/") + direction_names[index]).c_str(),
-            "production_action_error", "1", production_error, 0.0, inputs, "Relationship",
-            "production-vs-raw-residual", "production Hessian matches the independent reference Hessian",
-            "absolute", action_ok, "p2-association-action", direction_names[index],
-            "H_q", "T,rho,V,theta", "H_production=H_reference", "direction");
+        recording_support::compare_custom(std::string("association-action/") + direction_names[index],
+            "production_action_error", "1", production_error, 0.0, "absolute", action_ok, "production-vs-raw-residual",
+            inputs);
     }
 
     const auto dense_state = associating.state_at_pressure(
         353.15, 1e5, {0.25, 0.75}, epcsaft::DensityBranch::Liquid);
     const double dense_pressure_closure = std::abs(dense_state.pressure - 1e5) / 1e5;
-    recording_support::compare(
-        "root-residual/associating-dense", "relative_pressure_residual", "1",
-        dense_pressure_closure, 0.0, recording_support::fields({
+    recording_support::compare("root-residual/associating-dense", "relative_pressure_residual", "1",
+        dense_pressure_closure, 0.0, recording_support::Rule::Absolute, 1e-10, 0.0, "density-publication",
+        recording_support::fields({
             model_inputs(associating.parameters(), 353.15, 1.0 / dense_state.molar_density, {0.25, 0.75}),
             recording_support::field("P_star", 1e5),
             recording_support::field("P_published", dense_state.pressure),
-        }), "Relationship", "density-publication",
-        "dense-liquid publication closes the imposed pressure", "absolute", 1e-10, 0.0,
-        dense_pressure_closure <= 1e-10, "p2-root-residual", "associating-dense",
-        "|P(rho)-P_star|/P_star", "T,P,x,liquid", "|P(rho)-P_star|/P_star<=1e-10", "branch");
+        }));
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     constexpr double temperature = 200.0;
@@ -520,13 +478,12 @@ void properties_p2() {
         && sibling.branch == epcsaft::DensityBranch::Liquid && sibling.stable_root_count == 2
         && paired_vapor.branch == epcsaft::DensityBranch::Vapor && paired_vapor.stable_root_count == 2
         && sibling_state.pressure_density_derivative > 0.0 && sibling_residual <= 1e-12;
-    recording_support::compare("root-sibling/liquid", "molar_density", "mol/m3",
-        sibling.molar_density, liquid_root.molar_density, recording_support::fields({
+    recording_support::compare("root-sibling/liquid", "molar_density", "mol/m3", sibling.molar_density,
+        liquid_root.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "pressure-closure",
+        recording_support::fields({
             model_inputs(ethane.parameters(), temperature, 1.0 / sibling.molar_density, composition),
-            recording_support::field("P_star", pressure), recording_support::field("reduced_residual", sibling_residual)}),
-        "Relationship", "pressure-closure", "an actual sibling is the refined opposite stable root",
-        "reference_or_one", 0.0, 1e-10, sibling_refined, "p2-root-sibling", "liquid", "rho", "T,P,x,branch",
-        "rho_sibling=rho_liquid", "case");
+            recording_support::field("P_star", pressure), recording_support::field("reduced_residual", sibling_residual)}));
+    CHECK(sibling_refined);
     const auto vapor_state = ethane.state_at_pressure(
         temperature, pressure, composition, epcsaft::DensityBranch::Vapor
     );
@@ -544,7 +501,6 @@ void properties_p2() {
         const auto& state = *states[index];
         const auto root_state = ethane.state(temperature, root.molar_density, composition);
         const double root_pressure = root_state.pressure - pressure;
-        const double pressure_error = std::abs(root.pressure_residual - root_pressure);
         const auto inputs = recording_support::fields({
             model_inputs(ethane.parameters(), temperature, 1.0 / root.molar_density, composition),
             recording_support::field("P_star", pressure),
@@ -561,18 +517,10 @@ void properties_p2() {
             recording_support::field("association_rank", std::size_t{0}),
             recording_support::field("association_pivot_ratio", 1.0),
         });
-        recording_support::compare(
-            (std::string("root-residual/") + names[index]).c_str(), "pressure_residual", "Pa",
-            root.pressure_residual, root_pressure, inputs, "Identity", "state-replay",
-            "DensityRoot pressure residual is P(root)-P", "absolute", 1e-7, 0.0,
-            pressure_error <= 1e-7, "p2-root-residual", names[index], "P_{root}-P",
-            "T,P,x,branch", "rP=P(root)-P", "branch");
-        recording_support::compare(
-            (std::string("root-convergence/") + names[index]).c_str(), "reduced_residual", "1",
-            root.convergence.residual, 0.0, inputs, "Availability", "density-policy",
-            "density convergence uses the reduced pressure residual", "absolute", 1e-12, 0.0,
-            root.convergence.residual <= 1e-12, "p2-root-convergence", names[index],
-            "r_reduced", "T,P,x,branch", "r_reduced<=1e-12", "branch");
+        recording_support::compare(std::string("root-residual/") + names[index], "pressure_residual", "Pa",
+            root.pressure_residual, root_pressure, recording_support::Rule::Absolute, 1e-7, 0.0, "state-replay", inputs);
+        recording_support::compare(std::string("root-convergence/") + names[index], "reduced_residual", "1",
+            root.convergence.residual, 0.0, recording_support::Rule::Absolute, 1e-12, 0.0, "density-policy", inputs);
         const double reuse_error = std::abs(state.molar_density - root.molar_density);
         const bool metadata = root.branch == branches[index]
             && root.stable_root_count == std::optional<std::size_t>{2}
@@ -586,34 +534,24 @@ void properties_p2() {
             recording_support::field("state_density", state.molar_density),
             recording_support::field("density_reuse_error", reuse_error),
         });
-        recording_support::compare(
-            (std::string("root-metadata/") + names[index]).c_str(), "molar_density", "mol/m3",
-            state.molar_density, root.molar_density, metadata_inputs, "Identity",
-            "state-propagation", "selected root and State retain density, branch and count",
-            "reference_or_one", 0.0, 1e-12, metadata, "p2-root-metadata", names[index],
-            "rho", "T,P,x,branch", "rho_state=rho_root;branch=count", "branch");
+        recording_support::compare(std::string("root-metadata/") + names[index], "molar_density", "mol/m3",
+            state.molar_density, root.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-12,
+            "state-propagation", metadata_inputs);
+        CHECK(metadata);
     }
 
-    bool ambiguous = false;
-    try {
-        (void)epcsaft::solve_density(
-            ethane, temperature, pressure, composition, epcsaft::DensityBranch::Unspecified,
-            std::nullopt
-        );
-    } catch (const std::runtime_error& error) {
-        ambiguous = std::string(error.what()).find("ambiguous") != std::string::npos;
-    }
-    recording_support::compare_custom(
-        "density-selection/ambiguous", "selected", "bool", ambiguous ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
+    const bool ambiguous = recording_support::refusal([&] {
+        (void)epcsaft::solve_density(ethane, temperature, pressure, composition, epcsaft::DensityBranch::Unspecified,
+            std::nullopt);
+    }).find("ambiguous") != std::string::npos;
+    recording_support::compare_custom("density-selection/ambiguous", "selected", "bool", ambiguous ? 1.0 : 0.0, 1.0,
+        "absolute", ambiguous, "bounded-scan", recording_support::fields({
             recording_support::field("T", temperature),
             recording_support::field("P_star", pressure),
             recording_support::field("requested_branch", "unspecified"),
             recording_support::field("stable_root_count", 2U),
             recording_support::field("outcome", "ambiguous"),
-        }), "Availability", "bounded-scan", "unspecified multi-root request fails closed",
-        "absolute", ambiguous, "p2-density-selection", "ambiguous", "selected",
-        "T,P,x,branch,count", "no selected density", "case");
+        }));
 
     constexpr double coalescing_temperature = 320.0;
     const double coalescing_upper = ethane.molar_density_upper_bound(
@@ -645,9 +583,8 @@ void properties_p2() {
     const bool coalesced = close(
         coalescing_root.molar_density, coalescing_density, 1e-12
     ) && coalescing_root.stable_root_count == std::optional<std::size_t>{1};
-    recording_support::compare_custom(
-        "root-coalescing/grid", "grid_alignment", "1", coalescing_alignment, 0.0,
-        recording_support::fields({
+    recording_support::compare_custom("root-coalescing/grid", "grid_alignment", "1", coalescing_alignment, 0.0,
+        "absolute", coalesced, "bounded-scan", recording_support::fields({
             recording_support::field("T", coalescing_temperature),
             recording_support::field("P_star", coalescing_pressure),
             recording_support::field("grid_index", std::size_t{20}),
@@ -655,9 +592,7 @@ void properties_p2() {
             recording_support::field("root_density", coalescing_root.molar_density),
             recording_support::field("stable_root_count",
                 coalescing_root.stable_root_count.value_or(0)),
-        }), "Relationship", "bounded-scan", "grid-point root is coalesced once",
-        "absolute", coalesced, "p2-root-coalescing", "grid", "rho",
-        "T,P,x,grid_index", "rho_root=rho_grid", "case");
+        }));
 
     const auto supercritical_vapor = ethane.state_at_pressure(
         320.0, 1e6, composition, epcsaft::DensityBranch::Vapor
@@ -679,24 +614,10 @@ void properties_p2() {
         recording_support::field("state_branch", "unspecified"),
         recording_support::field("state_count", supercritical_vapor.stable_root_count.value_or(0)),
     });
-    recording_support::compare(
-        "single-metadata/root", "molar_density", "mol/m3", supercritical_root.molar_density,
-        supercritical_vapor.molar_density, supercritical_inputs, "Relationship", "single-root",
-        "one stable root is shared by DensityRoot and both State requests", "reference_or_one", 0.0, 1e-12,
-        supercritical_root.branch == epcsaft::DensityBranch::Unspecified
-            && supercritical_root.stable_root_count == std::optional<std::size_t>{1}
-            && supercritical_vapor.density_branch == epcsaft::DensityBranch::Unspecified
-            && supercritical_vapor.stable_root_count == std::optional<std::size_t>{1}
-            && supercritical_liquid.density_branch == epcsaft::DensityBranch::Unspecified
-            && supercritical_liquid.stable_root_count == std::optional<std::size_t>{1}
-            && supercritical_vapor.requested_density_branch == epcsaft::DensityBranch::Vapor
-            && supercritical_liquid.requested_density_branch == epcsaft::DensityBranch::Liquid
-            && supercritical_vapor.returned_density_branch() == epcsaft::DensityBranch::Unspecified
-            && supercritical_liquid.returned_density_branch() == epcsaft::DensityBranch::Unspecified
-            && !supercritical_vapor.density_branch_mismatch()
-            && !supercritical_liquid.density_branch_mismatch()
-            && close(supercritical_root.molar_density, supercritical_vapor.molar_density, 1e-12),
-        "p2-single-metadata", "root", "rho", "T,P,x", "rho_root=rho_state;branch=count", "state");
+    recording_support::compare("single-metadata/root", "molar_density", "mol/m3", supercritical_root.molar_density,
+        supercritical_vapor.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-12, "single-root",
+        supercritical_inputs);
+    CHECK(supercritical_root.branch == epcsaft::DensityBranch::Unspecified && supercritical_root.stable_root_count == std::optional<std::size_t>{1} && supercritical_vapor.density_branch == epcsaft::DensityBranch::Unspecified && supercritical_vapor.stable_root_count == std::optional<std::size_t>{1} && supercritical_liquid.density_branch == epcsaft::DensityBranch::Unspecified && supercritical_liquid.stable_root_count == std::optional<std::size_t>{1} && supercritical_vapor.requested_density_branch == epcsaft::DensityBranch::Vapor && supercritical_liquid.requested_density_branch == epcsaft::DensityBranch::Liquid && supercritical_vapor.returned_density_branch() == epcsaft::DensityBranch::Unspecified && supercritical_liquid.returned_density_branch() == epcsaft::DensityBranch::Unspecified && !supercritical_vapor.density_branch_mismatch() && !supercritical_liquid.density_branch_mismatch());
 
     const auto cold_vapor = ethane.state_at_pressure(
         280.0, 1e6, composition, epcsaft::DensityBranch::Vapor
@@ -732,20 +653,12 @@ void properties_p2() {
         recording_support::field("association_rank", std::size_t{0}),
         recording_support::field("association_pivot_ratio", 1.0),
     });
-    recording_support::compare(
-        "anchor/vapor", "molar_density", "mol/m3", anchored_vapor.molar_density,
-        cold_vapor.molar_density, anchor_inputs, "Relationship", "local-continuation",
-        "vapor anchor replays the local vapor root", "reference_or_one", 0.0, 1e-12,
-        close(anchored_vapor.molar_density, cold_vapor.molar_density, 1e-12),
-        "p2-anchor", "vapor", "rho_v", "T,P,x",
-        "rho_anchor_v=rho_v", "case");
-    recording_support::compare(
-        "anchor/liquid", "molar_density", "mol/m3", anchored_liquid.molar_density,
-        cold_liquid.molar_density, anchor_inputs, "Relationship", "local-continuation",
-        "liquid anchor replays the local liquid root", "reference_or_one", 0.0, 1e-12,
-        close(anchored_liquid.molar_density, cold_liquid.molar_density, 1e-12),
-        "p2-anchor", "liquid", "rho_l", "T,P,x",
-        "rho_anchor_l=rho_l", "case");
+    recording_support::compare("anchor/vapor", "molar_density", "mol/m3", anchored_vapor.molar_density,
+        cold_vapor.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-12, "local-continuation",
+        anchor_inputs);
+    recording_support::compare("anchor/liquid", "molar_density", "mol/m3", anchored_liquid.molar_density,
+        cold_liquid.molar_density, recording_support::Rule::ReferenceOrOne, 0.0, 1e-12, "local-continuation",
+        anchor_inputs);
 
     // The certificate covers only the offered local window, including its final bracket.
     for (const double offset : {-1e-11, 1e-13}) {
@@ -765,14 +678,13 @@ void properties_p2() {
                 }
         } catch(const std::runtime_error&) {}
         const bool inside=offset>0.0, ok=inside ? returned&&confined : !returned;
-        recording_support::compare_custom((std::string("anchor/window-edge/")+(offset>0.0?"inside":"outside")).c_str(),
-            "admitted","bool",returned?1.0:0.0,inside?1.0:0.0,recording_support::fields({anchor_inputs,
+        recording_support::compare_custom(std::string("anchor/window-edge/")+(offset>0.0?"inside":"outside"),
+            "admitted", "bool", returned?1.0:0.0, inside?1.0:0.0, "absolute", ok, "local-window",
+            recording_support::fields({anchor_inputs,
                 recording_support::field("offered_density",offered),recording_support::field("upper_edge",edge),
                 recording_support::field("offset",offset),recording_support::field("returned_density",density),
                 recording_support::field("bracket_lower",bracket_lower),recording_support::field("bracket_upper",bracket_upper),
-                recording_support::field("residual",residual)}),
-            "Availability","local-window","the selected crossing and its refine bracket stay inside the local window",
-            "absolute",ok,"p2-anchor-window",inside?"inside":"outside","admitted","T,P,x,anchor","root in window","case");
+                recording_support::field("residual",residual)}));
     }
 
     // An above-critical isotherm cannot use positive slope tangents to certify no hidden loop.
@@ -793,13 +705,14 @@ void properties_p2() {
                 fallback=fallback||(std::string(event.name)=="structured_broken"&&event.reason=="loop absence unresolved");
             const bool ok=fallback&&root.branch==epcsaft::DensityBranch::Unspecified&&root.stable_root_count==1
                 &&root.pressure_density_derivative>0.0&&close(root.molar_density,reference,1e-10);
-            recording_support::compare((std::string("sole-root/fallback/")+std::to_string(target)+
-                (branch==epcsaft::DensityBranch::Vapor?"/vapor":"/liquid")).c_str(),"molar_density","mol/m3",root.molar_density,
-                reference,recording_support::fields({recording_support::field("T",320.0),recording_support::field("P_star",target),
+            recording_support::compare(std::string("sole-root/fallback/")+std::to_string(target)+
+                (branch==epcsaft::DensityBranch::Vapor?"/vapor":"/liquid"),
+                "molar_density", "mol/m3", root.molar_density, reference, recording_support::Rule::ReferenceOrOne, 0.0,
+                1e-10, "fixed-density-bisection",
+                recording_support::fields({recording_support::field("T",320.0),recording_support::field("P_star",target),
                     recording_support::field("fallback",fallback),recording_support::field("stable_root_count",root.stable_root_count.value_or(0)),
-                    recording_support::field("slope",root.pressure_density_derivative)}),"Relationship","fixed-density-bisection",
-                "unresolved loop absence scans and preserves the sole unlabelled root", "reference_or_one",0.0,1e-10,ok,
-                "p2-sole-root-fallback",branch==epcsaft::DensityBranch::Vapor?"vapor":"liquid","rho","T,P,x,branch","rho=rho_ref","case");
+                    recording_support::field("slope",root.pressure_density_derivative)}));
+            CHECK(ok);
         }
     }
 
@@ -832,31 +745,19 @@ void properties_p2() {
         recording_support::field("envelope_log_half_width", epcsaft::policy::DENSITY_ANCHOR_LOG_WINDOW.value),
         recording_support::field("scan_intervals", static_cast<std::size_t>(epcsaft::policy::DENSITY_ANCHOR_SCAN_INTERVALS.value)),
     });
-    recording_support::compare_custom(
-        "anchor/unreachable", "branch_reachable", "bool", branch_unreachable ? 1.0 : 0.0, 1.0,
-        unreachable_inputs, "Availability", "local-continuation", "unreachable anchored branch fails closed",
-        "absolute", branch_unreachable && typed_failure,
-        "p2-anchor", "unreachable", "reachable",
-        "T,P,x_anchor,x_target", "no cold fallback", "case");
+    recording_support::compare_custom("anchor/unreachable", "branch_reachable", "bool", branch_unreachable ? 1.0 : 0.0,
+        1.0, "absolute", branch_unreachable && typed_failure, "local-continuation", unreachable_inputs);
 
-    bool invalid_anchor = false;
-    try {
-        (void)epcsaft::solve_density(
-            ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, -1.0
-        );
-    } catch (const std::invalid_argument&) {
-        invalid_anchor = true;
-    }
-    recording_support::compare_custom(
-        "anchor-invalid/negative", "accepted", "bool", invalid_anchor ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
+    const bool invalid_anchor = recording_support::refusal([&] {
+        (void)epcsaft::solve_density(ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, -1.0);
+    }).find("invalid density anchor") != std::string::npos;
+    recording_support::compare_custom("anchor-invalid/negative", "accepted", "bool", invalid_anchor ? 1.0 : 0.0, 1.0,
+        "absolute", invalid_anchor, "trust-boundary", recording_support::fields({
             recording_support::field("T", temperature),
             recording_support::field("P_star", pressure),
             recording_support::field("anchor_density", -1.0),
             recording_support::field("outcome", "invalid-anchor"),
-        }), "Availability", "trust-boundary", "nonpositive anchor is rejected",
-        "absolute", invalid_anchor, "p2-anchor-invalid", "negative", "accepted",
-        "T,P,x,anchor", "anchor rejected", "case");
+        }));
 
     struct P2ChainCase final {
         const epcsaft::HelmholtzModel* model;
@@ -888,9 +789,8 @@ void properties_p2() {
         const bool ok = close(chain.measured, chain.predicted, 5e-6)
             && chain.pressure_density_derivative > 0.0
             && std::isfinite(chain.reduced_residual);
-        recording_support::compare(
-            (std::string("fixed-pressure/") + point).c_str(), quantity, unit,
-            chain.measured, chain.predicted,
+        recording_support::compare(std::string("fixed-pressure/") + point, quantity, unit, chain.measured,
+            chain.predicted, recording_support::Rule::ReferenceOrOne, 0.0, 5e-6, "implicit-chain",
             recording_support::fields({
                 recording_support::field("T", temperature_value),
                 recording_support::field("P_star", pressure_value),
@@ -907,10 +807,8 @@ void properties_p2() {
                 recording_support::field("association_pivot_ratio",
                     chain.association_pivot_ratio),
                 recording_support::field("delta_T", delta_temperature),
-            }), "Relationship", "implicit-chain",
-            "fixed-pressure property chain includes density response",
-            "reference_or_one", 0.0, 5e-6, ok, "p2-fixed-pressure", point,
-            quantity, "T,P,x,branch,delta_T", "Q_P=Q_T+Q_rho rho_P", "case");
+            }));
+        CHECK(ok);
     };
     for (const auto& item : chain_cases) {
         for (const double delta_temperature : delta_temperatures) {
@@ -1001,27 +899,21 @@ void properties_p2() {
             const bool ok = std::abs(root.molar_density - reference) <= accuracy && root.branch == branches[side].first
                 && root.stable_root_count == std::optional<std::size_t>{2} && root.pressure_density_derivative > 0.0
                 && root.convergence.stop == epcsaft::core::Stop::converged;
-            recording_support::compare((branches[side].second + label).c_str(), "molar_density", "mol/m3",
-                root.molar_density, reference, recording_support::fields({loop_inputs,
+            recording_support::compare(branches[side].second + label, "molar_density", "mol/m3", root.molar_density,
+                reference, recording_support::Rule::Absolute, accuracy, 0.0, "independent-bisection",
+                recording_support::fields({loop_inputs,
                     recording_support::field("stable_root_count", root.stable_root_count.value_or(0)),
                     recording_support::field("pressure_density_derivative", root.pressure_density_derivative),
                     recording_support::field("first_order_accuracy", epcsaft::policy::DENSITY_ROOT_RESIDUAL.value
-                        * root.convergence.amplification.value_or(0.0))}),
-                "Relationship", "independent-bisection", "declared branch selects the extreme stable root",
-                "absolute", accuracy, 0.0, ok, side == 0 ? "p2-loop-vapor" : "p2-loop-liquid",
-                label.c_str(), "rho", "T,P,x,branch", "rho_branch=rho_ref", "case");
+                        * root.convergence.amplification.value_or(0.0))}));
+            CHECK(ok);
         }
-        bool loop_ambiguous = false;
-        try {
+        const bool loop_ambiguous = recording_support::refusal([&] {
             (void)epcsaft::solve_density(ethane, item.temperature, item.pressure, composition,
                                          epcsaft::DensityBranch::Unspecified, std::nullopt);
-        } catch (const std::runtime_error& error) {
-            loop_ambiguous = std::string(error.what()).find("ambiguous") != std::string::npos;
-        }
-        recording_support::compare_custom(("loop-ambiguous/" + label).c_str(), "selected", "bool",
-            loop_ambiguous ? 1.0 : 0.0, 1.0, loop_inputs, "Availability", "bounded-scan",
-            "unspecified request on two stable roots fails closed", "absolute", loop_ambiguous,
-            "p2-loop-ambiguous", label.c_str(), "selected", "T,P,x", "no selected density", "case");
+        }).find("ambiguous") != std::string::npos;
+        recording_support::compare_custom("loop-ambiguous/" + label, "selected", "bool", loop_ambiguous ? 1.0 : 0.0,
+            1.0, "absolute", loop_ambiguous, "bounded-scan", loop_inputs);
         if (item.temperature != 308.8) continue;
         for (std::size_t side = 0; side < 2; ++side) {
             const auto batch = ethane.pressure_actions(item.temperature, item.pressure, composition,
@@ -1029,12 +921,10 @@ void properties_p2() {
             const double reference = 1.0 / references[side == 0 ? 0 : 2].second;
             const bool ok = batch.density_status == epcsaft::PropertyActionStatus::Available
                 && batch.density_action.size() == 1 && close(batch.density_action[0], reference, 1e-6);
-            recording_support::compare((std::string("loop-action/") + (side == 0 ? "vapor" : "liquid")).c_str(),
+            recording_support::compare(std::string("loop-action/") + (side == 0 ? "vapor" : "liquid"),
                 "density_action", "mol/(m3 Pa)", batch.density_action.empty() ? 0.0 : batch.density_action[0],
-                reference, loop_inputs, "Identity", "reciprocal-slope",
-                "d rho/dP on the selected branch is 1/P_rho at the independent root",
-                "reference_or_one", 0.0, 1e-6, ok, "p2-loop-action", side == 0 ? "vapor" : "liquid",
-                "d rho/dP", "T,P,x,branch", "rho_P=1/P_rho", "branch");
+                reference, recording_support::Rule::ReferenceOrOne, 0.0, 1e-6, "reciprocal-slope", loop_inputs);
+            CHECK(ok);
         }
     }
     // Independently locate the vapor-side fold at 308 K from its analytic fixed-density slope.
@@ -1050,22 +940,17 @@ void properties_p2() {
     }
     const auto fold = ethane.state(308.0, 0.5 * (fold_lower + fold_upper), composition);
     CHECK(std::abs(fold.pressure_density_derivative) < 1e-8);
-    bool unresolved = false;
-    try {
+    const bool unresolved = recording_support::refusal([&] {
         (void)epcsaft::solve_density(ethane, 308.0, fold.pressure, composition,
                                     epcsaft::DensityBranch::Vapor, std::nullopt);
-    } catch (const std::runtime_error& error) {
-        unresolved = std::string(error.what()).find("unresolved at spinodal") != std::string::npos;
-    }
-    recording_support::compare_custom("fold-resolution/vapor", "unresolved", "bool",
-        unresolved ? 1.0 : 0.0, 1.0, recording_support::fields({
+    }).find("unresolved at spinodal") != std::string::npos;
+    recording_support::compare_custom("fold-resolution/vapor", "unresolved", "bool", unresolved ? 1.0 : 0.0, 1.0,
+        "absolute", unresolved, "independent-slope-bisection", recording_support::fields({
             recording_support::field("T", 308.0), recording_support::field("P_star", fold.pressure),
             recording_support::field("fold_density", fold.molar_density),
             recording_support::field("fold_bracket_lower", fold_lower),
             recording_support::field("fold_bracket_upper", fold_upper),
-            recording_support::field("pressure_density_derivative", fold.pressure_density_derivative)}),
-        "Availability", "independent-slope-bisection", "a mechanical fold is not a resolved stable branch",
-        "absolute", unresolved, "p2-fold-resolution", "vapor", "unresolved", "T,P,x", "P_rho=0", "case");
+            recording_support::field("pressure_density_derivative", fold.pressure_density_derivative)}));
 
     // #391: Gross & Sadowski (2001) propylene at its coexistence pressure. The last cold-scan cell,
     // 9394-27094 mol/m3, has negative slopes at both ends (spinodals 14133 and 24347 mol/m3) but its
@@ -1103,21 +988,17 @@ void properties_p2() {
                 && (anchor || root.stable_root_count == std::optional<std::size_t>{2});
             if (!anchor) density = root.molar_density;
         }
-        recording_support::compare((std::string("hidden-crossing/") + (side ? "liquid" : "vapor")).c_str(),
-            "molar_density", "mol/m3", density, reference, cold_inputs, "Relationship", "independent-bisection",
-            "cold and anchored branch requests return the extreme stable root", "absolute", 1e-7 * reference, 0.0, ok,
-            "p2-hidden-crossing", side ? "liquid" : "vapor", "rho", "T,P,x,branch", "rho_branch=rho_ref", "case");
+        recording_support::compare(std::string("hidden-crossing/") + (side ? "liquid" : "vapor"), "molar_density",
+            "mol/m3", density, reference, recording_support::Rule::Absolute, 1e-7 * reference, 0.0,
+            "independent-bisection", cold_inputs);
+        CHECK(ok);
     }
-    bool cold_ambiguous = false;
-    try {
+    const bool cold_ambiguous = recording_support::refusal([&] {
         (void)epcsaft::solve_density(propylene, cold_temperature, cold_pressure, composition,
                                      epcsaft::DensityBranch::Unspecified, std::nullopt);
-    } catch (const std::runtime_error& error) {
-        cold_ambiguous = std::string(error.what()).find("ambiguous") != std::string::npos;
-    }
-    recording_support::compare_custom("hidden-crossing/ambiguous", "selected", "bool", cold_ambiguous ? 1.0 : 0.0,
-        1.0, cold_inputs, "Availability", "bounded-scan", "unspecified request on two stable roots fails closed",
-        "absolute", cold_ambiguous, "p2-hidden-crossing", "ambiguous", "selected", "T,P,x", "no selected density", "case");
+    }).find("ambiguous") != std::string::npos;
+    recording_support::compare_custom("hidden-crossing/ambiguous", "selected", "bool", cold_ambiguous ? 1.0 : 0.0, 1.0,
+        "absolute", cold_ambiguous, "bounded-scan", cold_inputs);
 }
 
 }  // namespace properties_checks

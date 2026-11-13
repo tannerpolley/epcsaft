@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <initializer_list>
 #include <optional>
 #include <stdexcept>
@@ -98,7 +99,7 @@ inline std::string fields(std::initializer_list<std::string> values) {
 
 // The key/value line is kept for the small native runner and for readable
 // logs.  JSON records carry the same information without relying on a token
-// delimiter, so claims, LaTeX labels and serialized inputs remain lossless.
+// delimiter, so serialized inputs remain lossless.
 inline std::string json_escape(const std::string& value) {
     std::string result;
     result.reserve(value.size() + 8);
@@ -199,14 +200,43 @@ inline const char*& active_test_id() {
     return value;
 }
 
+// The comparison rule a recorded criterion applies; its name is written into the record.
+enum class Rule { SymmetricClose, ReferenceScale, Absolute, StrictAbsolute, ReferenceOrOne };
+
+inline const char* rule_name(Rule rule) {
+    switch (rule) {
+    case Rule::SymmetricClose: return "symmetric_close";
+    case Rule::ReferenceScale: return "reference_scale";
+    case Rule::Absolute: return "absolute";
+    case Rule::StrictAbsolute: return "strict_absolute";
+    case Rule::ReferenceOrOne: return "reference_or_one";
+    }
+    return "";
+}
+
+// Nonfinite operands or tolerances fail every rule.
+inline bool verdict(double model, double reference, Rule rule, double atol, double rtol) {
+    if (!std::isfinite(model) || !std::isfinite(reference) || !std::isfinite(atol) || !std::isfinite(rtol)
+        || atol < 0.0 || rtol < 0.0)
+        return false;
+    const double error = std::abs(model - reference);
+    switch (rule) {
+    case Rule::SymmetricClose:
+        return error <= std::max(atol, rtol * std::max(std::abs(model), std::abs(reference)));
+    case Rule::ReferenceScale: return error <= atol + rtol * std::abs(reference);
+    case Rule::Absolute: return error <= atol;
+    case Rule::StrictAbsolute: return error < atol;
+    case Rule::ReferenceOrOne: return error <= atol + rtol * std::max(1.0, std::abs(reference));
+    }
+    return false;
+}
+
+// One EPCSAFT_COMPARE_JSON record. `criterion` is null for an observation; a custom criterion
+// records its rule text and no tolerances.
 inline void print_json_compare(
-    const char* comparison_id, const char* quantity, const char* unit,
-    double model, std::optional<double> reference, const std::string& inputs, const char* basis,
-    const char* method, const char* claim, const char* criterion,
-    double atol, double rtol, bool asserted_verdict, const char* judgment,
-    const char* comparison_group_id, const char* point_id, const char* quantity_latex,
-    const char* inputs_latex, const char* relationship_latex, const char* coordinates,
-    const char* criterion_rule = nullptr
+    const std::string& comparison_id, const char* quantity, const char* unit, double model,
+    std::optional<double> reference, const std::string& inputs, const char* method,
+    const char* criterion, const char* rule, double atol, double rtol, bool verdict
 ) {
     std::string payload = "{\"schema_version\":1";
     payload += ",\"comparison_id\":" + json_string(comparison_id);
@@ -216,84 +246,22 @@ inline void print_json_compare(
     if (reference.has_value())
         payload += ",\"reference\":" + json_number_or_null(*reference);
     payload += ",\"inputs\":" + json_fields_object(inputs);
-    payload += ",\"basis\":" + json_string(basis);
     payload += ",\"method\":" + json_string(method);
-    payload += ",\"claim\":" + json_string(claim);
-    payload += ",\"judgment\":" + json_string(judgment);
-    const bool finite_operands = std::isfinite(model)
-        && (!reference.has_value() || std::isfinite(*reference));
-    payload += ",\"evidence_state\":"
-        + json_string(finite_operands ? "Complete" : "Unavailable");
-    if (!finite_operands)
-        payload += ",\"unavailable_reason\":\"nonfinite comparison operand\"";
+    payload += ",\"judgment\":" + json_string(
+        criterion == nullptr ? "Observation only" : verdict ? "Criterion satisfied" : "Criterion failed");
     if (criterion != nullptr) {
         payload += ",\"criterion\":" + json_string(criterion);
-        payload += ",\"rule\":"
-            + json_string(criterion_rule == nullptr ? criterion : criterion_rule);
+        payload += ",\"rule\":" + json_string(rule);
         if (std::string(criterion) != "custom") {
             payload += ",\"atol\":" + json_number_or_null(atol);
             payload += ",\"rtol\":" + json_number_or_null(rtol);
         }
         payload += ",\"verdict\":";
-        payload += asserted_verdict ? "true" : "false";
+        payload += verdict ? "true" : "false";
     }
-    if (comparison_group_id != nullptr)
-        payload += ",\"comparison_group_id\":" + json_string(comparison_group_id);
-    if (point_id != nullptr)
-        payload += ",\"point_id\":" + json_string(point_id);
-    if (quantity_latex != nullptr)
-        payload += ",\"quantity_latex\":" + json_string(quantity_latex);
-    if (relationship_latex != nullptr)
-        payload += ",\"relationship_latex\":" + json_string(relationship_latex);
-    if (inputs_latex != nullptr)
-        payload += ",\"inputs_latex\":" + json_string(inputs_latex);
-    if (coordinates != nullptr)
-        payload += ",\"coordinates\":" + json_fields_object(coordinates);
     payload += '}';
     std::printf("EPCSAFT_COMPARE_JSON %s\n", payload.c_str());
     std::fflush(stdout);
-}
-
-inline bool scalar_verdict(double model, double reference, const char* criterion,
-                           double atol, double rtol) {
-    const std::string rule = criterion == nullptr ? std::string() : std::string(criterion);
-    const bool known = rule == "symmetric_close"
-        || rule == "reference_scale"
-        || rule == "strict_absolute"
-        || rule == "absolute"
-        || rule == "strict_symmetric_close"
-        || rule == "strict_reference_scale"
-        || rule == "strict_reference_or_one"
-        || rule == "reference_or_one";
-    if (!known) throw std::invalid_argument("unknown scalar criterion: " + rule);
-    if (!std::isfinite(model) || !std::isfinite(reference)
-        || !std::isfinite(atol) || !std::isfinite(rtol)
-        || atol < 0.0 || rtol < 0.0) {
-        return false;
-    }
-    const double error = std::abs(model - reference);
-    if (rule == "symmetric_close") {
-        return error <= std::max(atol, rtol * std::max(std::abs(model), std::abs(reference)));
-    }
-    if (rule == "reference_scale") {
-        return error <= atol + rtol * std::abs(reference);
-    }
-    if (rule == "strict_absolute") {
-        return error < atol;
-    }
-    if (rule == "absolute") {
-        return error <= atol;
-    }
-    if (rule == "strict_symmetric_close") {
-        return error < std::max(atol, rtol * std::max(std::abs(model), std::abs(reference)));
-    }
-    if (rule == "strict_reference_scale") {
-        return error < atol + rtol * std::abs(reference);
-    }
-    if (rule == "strict_reference_or_one") {
-        return error < atol + rtol * std::max(1.0, std::abs(reference));
-    }
-    return error <= atol + rtol * std::max(1.0, std::abs(reference));
 }
 
 inline void print(const Declaration& declaration, const char* alias) {
@@ -305,61 +273,47 @@ inline void print(const Declaration& declaration, const char* alias) {
     std::fflush(stdout);
 }
 
+// Records the comparison and fails the case when the rule does not hold.
 inline bool compare(
-    const char* comparison_id, const char* quantity, const char* unit,
-    double model, double reference, const std::string& inputs, const char* basis,
-    const char* method, const char* claim, const char* criterion,
-    double atol, double rtol, bool asserted_verdict, const char* comparison_group_id = nullptr,
-    const char* point_id = nullptr, const char* quantity_latex = nullptr,
-    const char* inputs_latex = nullptr, const char* relationship_latex = nullptr,
-    const char* coordinates = nullptr
+    const std::string& comparison_id, const char* quantity, const char* unit, double model, double reference,
+    Rule rule, double atol, double rtol, const char* method, const std::string& inputs = {}
 ) {
-    const bool verdict = scalar_verdict(model, reference, criterion, atol, rtol);
-    print_json_compare(
-        comparison_id, quantity, unit, model, reference, inputs, basis, method, claim,
-        criterion, atol, rtol, verdict, verdict ? "Criterion satisfied" : "Criterion failed",
-        comparison_group_id, point_id, quantity_latex, inputs_latex, relationship_latex,
-        coordinates
-    );
-    if (verdict != asserted_verdict)
-        throw std::logic_error(
-            std::string("recorded criterion disagrees with assertion: ") + comparison_id);
-    if (!verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
+    const bool ok = verdict(model, reference, rule, atol, rtol);
+    print_json_compare(comparison_id, quantity, unit, model, reference, inputs, method, rule_name(rule),
+                       rule_name(rule), atol, rtol, ok);
+    if (!ok) throw Failure("criterion failed: " + comparison_id);
+    return ok;
+}
+
+// A criterion no Rule expresses: the caller states the rule text and its verdict.
+inline bool compare_custom(
+    const std::string& comparison_id, const char* quantity, const char* unit, double model, double reference,
+    const char* rule, bool verdict, const char* method, const std::string& inputs = {}
+) {
+    print_json_compare(comparison_id, quantity, unit, model, reference, inputs, method, "custom", rule,
+                       0.0, 0.0, verdict);
+    if (!verdict) throw Failure("criterion failed: " + comparison_id);
     return verdict;
 }
 
-inline bool compare_custom(
-    const char* comparison_id, const char* quantity, const char* unit,
-    double model, double reference, const std::string& inputs, const char* basis,
-    const char* method, const char* claim, const char* rule, bool asserted_verdict,
-    const char* comparison_group_id = nullptr, const char* point_id = nullptr,
-    const char* quantity_latex = nullptr, const char* inputs_latex = nullptr,
-    const char* relationship_latex = nullptr, const char* coordinates = nullptr
+inline void observe(
+    const std::string& comparison_id, const char* quantity, const char* unit, double model,
+    std::optional<double> reference, const char* method, const std::string& inputs = {}
 ) {
-    print_json_compare(
-        comparison_id, quantity, unit, model, reference, inputs, basis, method, claim,
-        "custom", 0.0, 0.0, asserted_verdict,
-        asserted_verdict ? "Criterion satisfied" : "Criterion failed",
-        comparison_group_id, point_id, quantity_latex, inputs_latex, relationship_latex,
-        coordinates, rule
-    );
-    if (!asserted_verdict) throw Failure(std::string("criterion failed: ") + comparison_id);
-    return asserted_verdict;
+    print_json_compare(comparison_id, quantity, unit, model, reference, inputs, method, nullptr, nullptr,
+                       0.0, 0.0, false);
 }
 
-inline void observe(
-    const char* comparison_id, const char* quantity, const char* unit,
-    double model, std::optional<double> reference, const std::string& inputs, const char* basis,
-    const char* method, const char* claim, const char* comparison_group_id = nullptr,
-    const char* point_id = nullptr, const char* quantity_latex = nullptr,
-    const char* inputs_latex = nullptr, const char* relationship_latex = nullptr,
-    const char* coordinates = nullptr
-) {
-    print_json_compare(
-        comparison_id, quantity, unit, model, reference, inputs, basis, method, claim,
-        nullptr, 0.0, 0.0, false, "Observation only", comparison_group_id, point_id,
-        quantity_latex, inputs_latex, relationship_latex, coordinates
-    );
+// The message of what `call` throws, empty when it returns; a failed CHECK inside still fails.
+inline std::string refusal(const std::function<void()>& call) {
+    try {
+        call();
+    } catch (const Failure&) {
+        throw;
+    } catch (const std::exception& error) {
+        return error.what();
+    }
+    return {};
 }
 
 inline bool listing(int argc, char** argv) {

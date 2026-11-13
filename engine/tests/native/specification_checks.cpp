@@ -8,6 +8,7 @@
 #include "surface/parameter_builder.hpp"
 #include <Eigen/Dense>
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdio>
 #include <limits>
@@ -15,6 +16,48 @@
 #include <stdexcept>
 #include <string>
 namespace {
+using equilibrium_support::AmountPattern;
+using equilibrium_support::Chemistry;
+using equilibrium_support::IntensivePattern;
+using equilibrium_support::PhaseSet;
+
+constexpr std::array<PhaseSet, 6> PHASE_SETS{PhaseSet::OneLiquid, PhaseSet::OneVapor, PhaseSet::Two,
+    PhaseSet::TwoVaporLiquid, PhaseSet::Three, PhaseSet::ThreeVaporLiquid};
+constexpr std::array<AmountPattern, 5> AMOUNT_PATTERNS{AmountPattern::AllFree, AmountPattern::FirstPinned,
+    AmountPattern::LastPinned, AmountPattern::SplitPinned, AmountPattern::AllPinned};
+constexpr std::array<IntensivePattern, 4> INTENSIVE_PATTERNS{IntensivePattern::BothFixed,
+    IntensivePattern::TemperatureFree, IntensivePattern::PressureFree, IntensivePattern::BothFree};
+constexpr std::array<Chemistry, 4> CHEMISTRIES{Chemistry::Neutral, Chemistry::Isomerisation, Chemistry::Electrolyte,
+    Chemistry::TwoReactions};
+
+int free_intensives(IntensivePattern pattern) {
+    return pattern == IntensivePattern::BothFree ? 2 : pattern == IntensivePattern::BothFixed ? 0 : 1;
+}
+
+int pinned_phases(PhaseSet phase_set, AmountPattern pattern) {
+    const int count = phase_set == PhaseSet::OneLiquid
+        || phase_set == PhaseSet::OneVapor ? 1
+        : phase_set == PhaseSet::Two || phase_set == PhaseSet::TwoVaporLiquid ? 2 : 3;
+    if (pattern == AmountPattern::AllFree) return 0;
+    if (pattern == AmountPattern::AllPinned) return count;
+    if (pattern == AmountPattern::SplitPinned) return count > 1 ? count - 1 : 0;
+    return 1;
+}
+
+epcsaft::Parameters relabel_neutral_binary() {
+    auto result = properties_support::neutral_binary();
+    std::swap(result.segment_count[0], result.segment_count[1]);
+    std::swap(result.sigma_constant[0], result.sigma_constant[1]);
+    std::swap(result.dispersion_energy_over_k[0], result.dispersion_energy_over_k[1]);
+    std::swap(result.molar_mass_kg_per_mol[0], result.molar_mass_kg_per_mol[1]);
+    std::swap(result.k_ij[1], result.k_ij[2]);
+    return result;
+}
+
+std::string rejection(const epcsaft::HelmholtzModel& model,
+                      const epcsaft::equilibrium::EquilibriumProblem& problem) {
+    return recording_support::refusal([&] { (void)epcsaft::equilibrium::compile_problem(model, problem); });
+}
 // Two balance bases span the same row space when stacking them adds no rank (any basis, not only orthonormal).
 bool same_subspace(const std::vector<std::vector<double>>& left, const std::vector<std::vector<double>>& right, double tolerance) {
     if (left.empty() || right.empty()) return left.empty() && right.empty();
@@ -75,16 +118,16 @@ const char* chemistry_name(equilibrium_support::Chemistry value) {
 }
 
 void check_c1() {
-    for (const auto phase_set : equilibrium_support::phase_sets()) {
-        for (const auto amount_pattern : equilibrium_support::amount_patterns()) {
-            for (const auto intensive_pattern : equilibrium_support::intensive_patterns()) {
-                for (const auto chemistry : equilibrium_support::chemistry_values()) {
+    for (const auto phase_set : PHASE_SETS) {
+        for (const auto amount_pattern : AMOUNT_PATTERNS) {
+            for (const auto intensive_pattern : INTENSIVE_PATTERNS) {
+                for (const auto chemistry : CHEMISTRIES) {
                     auto problem = equilibrium_support::lattice_problem(
                         phase_set, amount_pattern, intensive_pattern, chemistry);
                     const auto parameters = chemistry == equilibrium_support::Chemistry::Neutral ? properties_support::neutral_binary() : chemistry == equilibrium_support::Chemistry::Electrolyte ? properties_support::aqueous_electrolyte() : equilibrium_support::synthetic_reactive_ternary();
                     epcsaft::HelmholtzModel model(parameters);
-                    const int k = equilibrium_support::pinned_phases(phase_set, amount_pattern);
-                    const int f = equilibrium_support::free_intensives(intensive_pattern);
+                    const int k = pinned_phases(phase_set, amount_pattern);
+                    const int f = free_intensives(intensive_pattern);
                     const int reaction_count = static_cast<int>(epcsaft::equilibrium::reaction_rank(problem.feed.values.size(), problem.reactions));
                     const int rank = static_cast<int>(problem.feed.values.size()) - reaction_count;
                     bool accepted = false;
@@ -115,7 +158,7 @@ void check_c1() {
                         accepted = false;
                         solver_status = error.what();
                     }
-                    const int phases = equilibrium_support::pinned_phases(phase_set, equilibrium_support::AmountPattern::AllFree) == 0 ? (phase_set == equilibrium_support::PhaseSet::OneLiquid || phase_set == equilibrium_support::PhaseSet::OneVapor ? 1 : phase_set == equilibrium_support::PhaseSet::Two || phase_set == equilibrium_support::PhaseSet::TwoVaporLiquid ? 2 : 3) : 1;
+                    const int phases = pinned_phases(phase_set, equilibrium_support::AmountPattern::AllFree) == 0 ? (phase_set == equilibrium_support::PhaseSet::OneLiquid || phase_set == equilibrium_support::PhaseSet::OneVapor ? 1 : phase_set == equilibrium_support::PhaseSet::Two || phase_set == equilibrium_support::PhaseSet::TwoVaporLiquid ? 2 : 3) : 1;
                     // A vapor holds only zero-charge components (ALG-EQUILIBRIUM): ions in a lone vapor have no
                     // support, and beside a zero-pinned liquid a free vapor leaves the ion balances nullity 2.
                     const bool electrolyte = chemistry == equilibrium_support::Chemistry::Electrolyte;
@@ -127,11 +170,9 @@ void check_c1() {
                         + amount_pattern_name(amount_pattern) + "/"
                         + intensive_pattern_name(intensive_pattern) + "/"
                         + chemistry_name(chemistry);
-                    recording_support::compare(
-                        (std::string("structural/") + case_id).c_str(),
-                        "structurally_square", "bool", accepted ? 1.0 : 0.0,
-                        structurally_square ? 1.0 : 0.0,
-                        recording_support::fields({
+                    recording_support::compare(std::string("structural/") + case_id, "structurally_square", "bool",
+                        accepted ? 1.0 : 0.0, structurally_square ? 1.0 : 0.0, recording_support::Rule::Absolute, 0.0,
+                        0.0, "rank-count", recording_support::fields({
                             recording_support::field("phase_set", phase_set_name(phase_set)),
                             recording_support::field("amount_pattern", amount_pattern_name(amount_pattern)),
                             recording_support::field("intensive_pattern", intensive_pattern_name(intensive_pattern)),
@@ -148,11 +189,7 @@ void check_c1() {
                             recording_support::field("jacobian_rank", jacobian_rank),
                             recording_support::field("generic_nullity", generic_nullity),
                             recording_support::field("solve_outcome", solver_status),
-                        }), "Relationship", "rank-count",
-                        "accepted iff structural rows are square and ions have a phase", "absolute", 0.0, 0.0,
-                        accepted == structurally_square, "c1-structural", case_id.c_str(),
-                        "accepted", "phase_set,amount,intensive,chemistry", "accepted=structural",
-                        "case");
+                        }));
                     CHECK((f - k) == 0 || !accepted);
                     CHECK(accepted == structurally_square);
                     CHECK(!(accepted && k == phases) || generic_nullity > 0);
@@ -176,12 +213,7 @@ void check_c4() {
                         0.5 * model.parameters().molar_mass_kg_per_mol[1]};
     // That mass-proportional vector is not a fraction feed (D1): it is rejected, and the same
     // equimolar mixture is stated as true mass fractions.
-    bool unnormalized_rejected = false;
-    try { (void)epcsaft::equilibrium::compile_problem(model, mass); }
-    catch (const std::invalid_argument& error) {
-        unnormalized_rejected = std::string(error.what()).find("mass fractions must sum to one") != std::string::npos;
-    }
-    CHECK(unnormalized_rejected);
+    CHECK(rejection(model, mass).find("mass fractions must sum to one") != std::string::npos);
     const double feed_mass = mass.feed.values[0] + mass.feed.values[1];
     for (double& value : mass.feed.values) value /= feed_mass;
     auto molality = amounts;
@@ -194,14 +226,10 @@ void check_c4() {
         const auto compiled = epcsaft::equilibrium::compile_problem(model, item);
         CHECK(compiled.feed_composition.size() == reference.feed_composition.size());
         for (std::size_t i = 0; i < reference.feed_composition.size(); ++i) {
-            const double difference = compiled.feed_composition[i]
-                - reference.feed_composition[i];
             const auto point = std::to_string(basis_index) + "/" + std::to_string(i);
-            recording_support::compare(
-                (std::string("feed-composition/") + point).c_str(),
-                "feed_composition", "1", compiled.feed_composition[i],
-                reference.feed_composition[i],
-                recording_support::fields({
+            recording_support::compare(std::string("feed-composition/") + point, "feed_composition", "1",
+                compiled.feed_composition[i], reference.feed_composition[i], recording_support::Rule::StrictAbsolute,
+                1e-12, 0.0, "feed-normalization", recording_support::fields({
                     recording_support::field("T", item.temperature.value),
                     recording_support::field("P", item.pressure.value),
                     recording_support::field("feed", item.feed.values),
@@ -209,11 +237,7 @@ void check_c4() {
                     recording_support::field("reference_feed", reference.feed_composition),
                     recording_support::field("feed_basis", basis_index),
                     recording_support::field("component", i),
-                }), "Relationship", "feed-normalization",
-                "compiled feed composition matches amount basis", "strict_absolute",
-                1e-12, 0.0, std::abs(difference) < 1e-12,
-                "c4-feed", point.c_str(), "x_i", "T,P,feed,basis,index",
-                "x_i^{compiled}=x_i^{reference}", "basis,index");
+                }));
             CHECK(std::abs(compiled.feed_composition[i] - reference.feed_composition[i]) < 1e-12);
         }
         CHECK(compiled.rows.size() == reference.rows.size());
@@ -238,15 +262,12 @@ void check_c5() {
     const double temperature = 300.0;
     const std::size_t components = problem.feed.values.size();
     const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
-    recording_support::compare(
-        "rank", "reaction_rank", "count", static_cast<double>(compiled.rank), 2.0,
+    recording_support::compare("rank", "reaction_rank", "count", static_cast<double>(compiled.rank), 2.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "stoichiometric-rank",
         recording_support::fields({recording_support::field("T", temperature),
                                    recording_support::field("components", components),
                                    recording_support::field("reactions", problem.reactions.size()),
-                                   recording_support::field("feed", problem.feed.values)}),
-        "Relationship", "stoichiometric-rank", "independent reaction basis has rank two",
-        "reference_or_one", 0.0, 0.0, compiled.rank == 2,
-        "c5-rank", "basis", "rank", "T,components,reactions,feed", "rank(B)=2", "rank");
+                                   recording_support::field("feed", problem.feed.values)}));
     const std::vector<epcsaft::equilibrium::ReactionSpec> basis = {
         {"r1", {1.0, -1.0, 0.0}, 1.0, std::nullopt},
         {"r2", {0.0, 1.0, -1.0}, 1.0, std::nullopt},
@@ -259,30 +280,21 @@ void check_c5() {
     const auto mixed_coordinates = epcsaft::equilibrium::balance_basis(components, mixed);
     const bool equal_subspace = same_subspace(
         basis_coordinates, mixed_coordinates, 1.0e-12);
-    recording_support::compare(
-        "basis-subspace", "same_subspace", "bool", equal_subspace ? 1.0 : 0.0, 1.0,
-        recording_support::fields({
+    recording_support::compare("basis-subspace", "same_subspace", "bool", equal_subspace ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::Absolute, 0.0, 0.0, "basis-invariance", recording_support::fields({
             recording_support::field("T", temperature),
             recording_support::field("basis", "independent"),
             recording_support::field("mixed_basis", "mixed"),
             recording_support::field("tolerance", 1.0e-12),
-        }), "Relationship", "basis-invariance", "reaction bases span the same balance subspace",
-        "absolute", 0.0, 0.0, equal_subspace,
-        "c5-basis", "subspace", "same_subspace", "T,basis,mixed_basis", "B_{basis}=B_{mixed}", "basis");
+        }));
     CHECK(compiled.generic_nullity == 0);
     auto dependent = problem;
     dependent.reactions.push_back({"dependent", {2.0, -2.0, 0.0}, 1.0, std::nullopt});
-    bool rejected = false;
-    try { (void)epcsaft::equilibrium::compile_problem(model, dependent); }
-    catch (const std::invalid_argument& error) { rejected = std::string(error.what()).find("dependent") != std::string::npos; }
-    CHECK(rejected);
+    CHECK(rejection(model, dependent).find("dependent") != std::string::npos);
     auto three_phase = equilibrium_support::flash(2);
     three_phase.phases = {equilibrium_support::phase("L1", epcsaft::equilibrium::PhaseKind::Liquid), equilibrium_support::phase("L2", epcsaft::equilibrium::PhaseKind::Liquid), equilibrium_support::phase("L3", epcsaft::equilibrium::PhaseKind::Liquid)};
-    rejected = false;
     epcsaft::HelmholtzModel binary(properties_support::neutral_binary());
-    try { (void)epcsaft::equilibrium::compile_problem(binary, three_phase); }
-    catch (const std::invalid_argument& error) { rejected = std::string(error.what()).find("phase count") != std::string::npos; }
-    CHECK(rejected);
+    CHECK(rejection(binary, three_phase).find("phase count") != std::string::npos);
 }
 void check_c8() {
     epcsaft::HelmholtzModel model(properties_support::aqueous_electrolyte());
@@ -296,28 +308,22 @@ void check_c8() {
         epcsaft::equilibrium::AmountSpec::pinned(0.0)));
     second.pressure = epcsaft::equilibrium::FreeValue::variable(1.0e5);
     const auto boundary = epcsaft::equilibrium::compile_problem(model, second);
-    recording_support::compare(
-        "charge-rows", "charge_row_count", "count", static_cast<double>(compiled.charge_row_count), 0.0,
-        recording_support::fields({recording_support::field("T", problem.temperature.value),
+    recording_support::compare("charge-rows", "charge_row_count", "count",
+        static_cast<double>(compiled.charge_row_count), 0.0, recording_support::Rule::ReferenceOrOne, 0.0, 0.0,
+        "charge-balance", recording_support::fields({recording_support::field("T", problem.temperature.value),
                                    recording_support::field("P", problem.pressure.value),
                                    recording_support::field("x", problem.feed.values),
-                                   recording_support::field("boundary_charge_rows", boundary.charge_row_count)}),
-        "Relationship", "charge-balance", "single electrolyte phase has no charge row",
-        "reference_or_one", 0.0, 0.0, compiled.charge_row_count == 0,
-        "c8-charge", "single", "N_q", "T,P,\\mathbf{x},topology", "N_q=0", "topology");
+                                   recording_support::field("boundary_charge_rows", boundary.charge_row_count)}));
     // The omitted vapor support is water alone, so the free liquid carries every ion without a charge row.
-    recording_support::compare(
-        "boundary-charge-row", "charge_row_count", "count", static_cast<double>(boundary.charge_row_count), 0.0,
-        recording_support::fields({recording_support::field("T", second.temperature.value),
+    recording_support::compare("boundary-charge-row", "charge_row_count", "count",
+        static_cast<double>(boundary.charge_row_count), 0.0, recording_support::Rule::ReferenceOrOne, 0.0, 0.0,
+        "charge-balance", recording_support::fields({recording_support::field("T", second.temperature.value),
                                    recording_support::field("P", second.pressure.value),
                                    recording_support::field("x", second.feed.values),
                                    recording_support::field("phase_count", second.phases.size()),
                                    recording_support::field("vapor_amount", second.phases[1].amount.fraction),
                                    recording_support::field("primal_size", boundary.primal_size),
-                                   recording_support::field("unknowns", boundary.unknown_count())}),
-        "Relationship", "charge-balance", "boundary electrolyte topology with a water vapor adds no charge row",
-        "reference_or_one", 0.0, 0.0, boundary.charge_row_count == 0,
-        "c8-boundary-charge", "boundary", "N_q", "T,P,\\mathbf{x},topology", "N_q=0", "topology");
+                                   recording_support::field("unknowns", boundary.unknown_count())}));
     CHECK(compiled.charge_row_count == 0);
     CHECK(boundary.charge_row_count == 0);
     CHECK(boundary.problem.phases[1].support == std::vector<std::size_t>{0});
@@ -329,38 +335,24 @@ void check_c2() {
     under.temperature = epcsaft::equilibrium::FreeValue::fixed(300.0);
     under.pressure = epcsaft::equilibrium::FreeValue::fixed(1.0e5);
     under.phases[1].name = "vapour-offender";
-    bool named = false;
-    try { (void)epcsaft::equilibrium::compile_problem(model, under); }
-    catch (const std::invalid_argument& error) {
-        const std::string message = error.what();
-        named = message.find("vapour-offender") != std::string::npos
-            && message.find("pinned") != std::string::npos;
-    }
-    recording_support::compare(
-        "named-rejection", "rejection", "bool", named ? 1.0 : 0.0, 1.0,
+    const auto message = rejection(model, under);
+    const bool named = message.find("vapour-offender") != std::string::npos
+        && message.find("pinned") != std::string::npos;
+    recording_support::compare("named-rejection", "rejection", "bool", named ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "admission",
         recording_support::fields({recording_support::field("T", under.temperature.value),
                                    recording_support::field("P", under.pressure.value),
                                    recording_support::field("phase", under.phases[1].name),
-                                   recording_support::field("amount", under.phases[1].amount.fraction)}),
-        "Relationship", "admission", "pinned phase error names the phase",
-        "reference_or_one", 0.0, 0.0, named, "c2-named-rejection", "phase",
-        "accepted", "T,P,phase,amount", "error names phase and pinned amount", "phase");
+                                   recording_support::field("amount", under.phases[1].amount.fraction)}));
     auto omitted = equilibrium_support::flash(2);
     omitted.topology_declared = false;
-    bool phase_count = false;
-    try { (void)epcsaft::equilibrium::compile_problem(model, omitted); }
-    catch (const std::invalid_argument& error) {
-        phase_count = std::string(error.what()).find("phase count") != std::string::npos;
-    }
-    recording_support::compare(
-        "topology-rejection", "rejection", "bool", phase_count ? 1.0 : 0.0, 1.0,
+    const bool phase_count = rejection(model, omitted).find("phase count") != std::string::npos;
+    recording_support::compare("topology-rejection", "rejection", "bool", phase_count ? 1.0 : 0.0, 1.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "admission",
         recording_support::fields({recording_support::field("T", omitted.temperature.value),
                                    recording_support::field("P", omitted.pressure.value),
                                    recording_support::field("topology_declared", omitted.topology_declared ? 1U : 0U),
-                                   recording_support::field("phase_count", omitted.phases.size())}),
-        "Relationship", "admission", "undeclared topology is rejected",
-        "reference_or_one", 0.0, 0.0, phase_count, "c2-topology-rejection", "topology",
-        "accepted", "T,P,topology,phase_count", "undeclared topology raises phase-count error", "topology");
+                                   recording_support::field("phase_count", omitted.phases.size())}));
 }
 void check_c3() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
@@ -369,29 +361,19 @@ void check_c3() {
     const auto point = compiled.generic_point();
     const auto values = compiled.evaluate(point).values;
     const auto jacobian = compiled.jacobian(point);
-    recording_support::compare(
-        "jacobian-shape", "jacobian_entries", "count", static_cast<double>(jacobian.size()),
-        static_cast<double>(values.size() * point.size()),
-        recording_support::fields({recording_support::field("T", problem.temperature.value),
+    recording_support::compare("jacobian-shape", "jacobian_entries", "count", static_cast<double>(jacobian.size()),
+        static_cast<double>(values.size() * point.size()), recording_support::Rule::ReferenceOrOne, 0.0, 0.0,
+        "jacobian-shape", recording_support::fields({recording_support::field("T", problem.temperature.value),
                                    recording_support::field("P", problem.pressure.value),
                                    recording_support::field("x", problem.feed.values),
                                    recording_support::field("rows", values.size()),
-                                   recording_support::field("variables", point.size())}),
-        "Relationship", "jacobian-shape", "Jacobian has one entry per row and coordinate",
-        "reference_or_one", 0.0, 0.0,
-        jacobian.size() == values.size() * point.size(), "c3-jacobian", "shape",
-        "J", "T,P,\\mathbf{x},shape", "|J|=N_{rows}N_{vars}", "shape");
+                                   recording_support::field("variables", point.size())}));
     CHECK(values.size() == compiled.rows.size() && jacobian.size() == values.size() * point.size());
     CHECK(compiled.generic_nullity == 0);
     auto singular = equilibrium_support::flash(2);
     singular.phases.push_back(equilibrium_support::phase("third", epcsaft::equilibrium::PhaseKind::Liquid));
     singular.phases.push_back(equilibrium_support::phase("fourth", epcsaft::equilibrium::PhaseKind::Liquid));
-    bool named = false;
-    try { (void)epcsaft::equilibrium::compile_problem(model, singular); }
-    catch (const std::invalid_argument& error) {
-        named = std::string(error.what()).find("phase count") != std::string::npos;
-    }
-    CHECK(named);
+    CHECK(rejection(model, singular).find("phase count") != std::string::npos);
 }
 void check_c6() {
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
@@ -424,18 +406,12 @@ void check_c6() {
         const bool has_reference = row < boundary_values.size();
         const double reference = has_reference
             ? boundary_values[row] : std::numeric_limits<double>::quiet_NaN();
-        const bool equal = has_reference
-            && std::abs(flash_values[row] - reference) < 1.0e-12;
         const auto point = std::to_string(row);
-        recording_support::compare(
-            (std::string("flash-boundary/") + point).c_str(), "residual", "1",
-            flash_values[row], reference,
+        recording_support::compare(std::string("flash-boundary/") + point, "residual", "1", flash_values[row],
+            reference, recording_support::Rule::StrictAbsolute, 1.0e-12, 0.0, "topology-limit",
             recording_support::fields({comparison_inputs,
-                                       recording_support::field("row", row)}),
-            "Relationship", "topology-limit", "flash and boundary residuals agree at zero vapor amount",
-            "strict_absolute", 1.0e-12, 0.0, equal,
-            "c6-boundary-limit", point.c_str(), "r", "T,P,\\mathbf{x},topology,row",
-            "\\Delta r=0", "row");
+                                       recording_support::field("row", row)}));
+        CHECK(has_reference);
     }
     CHECK(flash_values.size() == boundary_values.size());
 }
@@ -462,29 +438,19 @@ void check_c7() {
     });
     const double phase_residual_difference = std::abs(
         epcsaft::equilibrium::maximum_abs(left.evaluate(point).values) - epcsaft::equilibrium::maximum_abs(right.evaluate(permuted).values));
-    recording_support::compare(
-        "phase-residual", "residual_norm_difference", "1", phase_residual_difference, 0.0,
-        phase_inputs, "Relationship", "permutation", "phase permutation preserves residual norm",
-        "absolute", 1.0e-14, 0.0, phase_residual_difference <= 1.0e-14,
-        "c7-phase-residual", "phase_set", "\\Delta ||r||", "T,P,\\mathbf{x},phase_set",
-        "\\Delta||r||=0", "phase_set");
+    recording_support::compare("phase-residual", "residual_norm_difference", "1", phase_residual_difference, 0.0,
+        recording_support::Rule::Absolute, 1.0e-14, 0.0, "permutation", phase_inputs);
     CHECK(left.generic_nullity == right.generic_nullity && a.size() == b.size());
     std::sort(a.begin(), a.end()); std::sort(b.begin(), b.end());
     for (std::size_t i = 0; i < a.size(); ++i) {
-        const bool equal = i < b.size() && std::abs(std::abs(a[i]) - std::abs(b[i])) <= 1.0e-14;
         const double reference = i < b.size()
             ? std::abs(b[i]) : std::numeric_limits<double>::quiet_NaN();
         const auto row = std::to_string(i);
-        recording_support::compare(
-            (std::string("phase-coordinate/") + row).c_str(), "residual_coordinate", "1",
-            std::abs(a[i]), reference,
-            recording_support::fields({phase_inputs, recording_support::field("row", i)}),
-            "Relationship", "permutation", "phase permutation preserves residual coordinates",
-            "absolute", 1.0e-14, 0.0, equal,
-            "c7-phase-coordinate", row.c_str(), "r_i", "T,P,\\mathbf{x},phase_set,row",
-            "|r_i|_{left}=|r_i|_{right}", "row");
+        recording_support::compare(std::string("phase-coordinate/") + row, "residual_coordinate", "1", std::abs(a[i]),
+            reference, recording_support::Rule::Absolute, 1.0e-14, 0.0, "permutation",
+            recording_support::fields({phase_inputs, recording_support::field("row", i)}));
     }
-    epcsaft::HelmholtzModel relabelled(equilibrium_support::relabel_neutral_binary());
+    epcsaft::HelmholtzModel relabelled(relabel_neutral_binary());
     auto relabelled_problem = first;
     relabelled_problem.feed.values = {first.feed.values[1], first.feed.values[0]};
     const auto relabelled_system = epcsaft::equilibrium::compile_problem(relabelled, relabelled_problem);
@@ -498,17 +464,13 @@ void check_c7() {
     const bool relabelled_ok = std::isfinite(relabelled_error)
         && std::isfinite(reference_norm)
         && relabelled_error <= 1.0e-14 * reference_norm;
-    recording_support::compare_custom(
-        "phase-permutation", "residual_norm_difference", "1", relabelled_error, reference_norm,
-        recording_support::fields({recording_support::field("T", first.temperature.value),
+    recording_support::compare_custom("phase-permutation", "residual_norm_difference", "1", relabelled_error,
+        reference_norm, "isfinite(model) && isfinite(reference) && model <= reference * 1e-14", relabelled_ok,
+        "permutation", recording_support::fields({recording_support::field("T", first.temperature.value),
                                    recording_support::field("P", first.pressure.value),
                                    recording_support::field("x", first.feed.values),
                                    recording_support::field("permutation", "L,V->V,L"),
-                                   recording_support::field("reference_norm", reference_norm)}),
-        "Relationship", "permutation", "phase permutation preserves residual norm",
-        "isfinite(model) && isfinite(reference) && model <= reference * 1e-14", relabelled_ok,
-        "c7-phase-permutation", "phase", "\\Delta ||r||", "T,P,\\mathbf{x},phase",
-        "\\Delta||r||\\leq10^{-14}||r||", "phase");
+                                   recording_support::field("reference_norm", reference_norm)}));
     CHECK(relabelled_values.size() == a.size());
     CHECK(relabelled_ok);
 }
@@ -523,19 +485,14 @@ void check_c9() {
             equilibrium_support::Chemistry::Neutral
         );
         const auto compiled = epcsaft::equilibrium::compile_problem(model, problem);
-        recording_support::compare(
-            (std::string("square/") + std::to_string(case_index)).c_str(),
-            "rows_minus_unknowns", "count",
+        recording_support::compare(std::string("square/") + std::to_string(case_index), "rows_minus_unknowns", "count",
             static_cast<double>(compiled.rows.size()) - static_cast<double>(compiled.unknown_count()), 0.0,
+            recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "rank-count",
             recording_support::fields({recording_support::field("phase_set", phase_set_name(phase_set)),
                                        recording_support::field("T", problem.temperature.value),
                                        recording_support::field("P", problem.pressure.value),
                                        recording_support::field("x", problem.feed.values),
-                                       recording_support::field("phase_count", problem.phases.size())}),
-            "Relationship", "rank-count", "single-phase specification is square",
-            "reference_or_one", 0.0, 0.0, compiled.rows.size() == compiled.unknown_count(),
-            "c9-square", std::to_string(case_index).c_str(), "N_{rows}-N_{unknowns}", "phase,T,P,\\mathbf{x}",
-            "N_{rows}=N_{unknowns}", "phase");
+                                       recording_support::field("phase_count", problem.phases.size())}));
         ++case_index;
         CHECK(compiled.generic_nullity == 0);
     }
@@ -549,27 +506,20 @@ using epcsaft::equilibrium::AmountSpec;
 using epcsaft::equilibrium::FreeValue;
 using epcsaft::equilibrium::PhaseKind;
 
-std::string rejection(const epcsaft::HelmholtzModel& model,
-                      const epcsaft::equilibrium::EquilibriumProblem& problem) {
-    try { (void)epcsaft::equilibrium::compile_problem(model, problem); }
-    catch (const std::invalid_argument& error) { return error.what(); }
-    return "";
-}
 
-bool record_bool(const char* id, const char* group, const char* claim, bool verdict,
+bool record_bool(const char* id, bool verdict,
                  const std::string& inputs) {
-    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, inputs,
-        "Relationship", "admission", claim, "absolute", 0.0, 0.0, verdict, group, id,
-        "verdict", "inputs", claim, "case");
+    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0,
+        0.0, "admission", inputs);
     return verdict;
 }
 
-bool record_rejection(const char* id, const char* group, const epcsaft::HelmholtzModel& model,
+bool record_rejection(const char* id, const epcsaft::HelmholtzModel& model,
                       const epcsaft::equilibrium::EquilibriumProblem& problem,
                       const char* phrase, const std::string& inputs) {
     const std::string message = rejection(model, problem);
     const bool verdict = message.find(phrase) != std::string::npos;
-    return record_bool(id, group, phrase,
+    return record_bool(id,
                        verdict, recording_support::fields({inputs, recording_support::field("message", message)}));
 }
 
@@ -605,29 +555,27 @@ void check_e2_pins() {
     auto over = two_phase({1.0, 1.0}, 0.6, 0.5);
     {
         epcsaft::core::Capture capture;
-        record_rejection("e2-0/over-sum", "e2-0-pins", model, over,
+        record_rejection("e2-0/over-sum", model, over,
             "pinned phase fractions exceed one", pin_inputs(over));
         bool generic = false;
         for (const auto& span : capture.trace().spans)
             generic = generic || std::string(span.name) == "equilibrium_generic_point"
                 || std::string(span.name) == "boundary_start";
-        record_bool("e2-0/over-sum-before-rank", "e2-0-pins",
-            "rejection precedes generic-point and start work", !generic, pin_inputs(over));
+        e2::record_bool("e2-0/over-sum-before-rank", !generic, pin_inputs(over));
     }
     auto under = two_phase({1.0, 1.0}, 0.4, 0.5);
-    record_rejection("e2-0/all-pinned-under-sum", "e2-0-pins", model, under,
+    record_rejection("e2-0/all-pinned-under-sum", model, under,
         "all-pinned phase fractions must sum to one", pin_inputs(under));
     auto bad = two_phase({1.0, 1.0}, 1.2, 0.0);
     bad.phases[1].amount = AmountSpec::free();
     bad.pressure = FreeValue::fixed(1.0e5);
-    record_rejection("e2-0/above-one", "e2-0-pins", model, bad,
+    record_rejection("e2-0/above-one", model, bad,
         "invalid pinned phase fraction in phase L", pin_inputs(bad));
     // Sum-consistent but rank-deficient: pin admission passes and the pre-solve record is returned.
     auto exact = two_phase({1.0, 1.0}, 0.5, 0.5);
     const auto compiled = epcsaft::equilibrium::compile_problem(model, exact);
     const auto result = epcsaft::equilibrium::solve_equilibrium(model, exact);
-    record_bool("e2-0/exact-sum-not-run", "e2-0-pins",
-        "exact all-pinned sum passes admission and returns the pre-solve infeasible record",
+    e2::record_bool("e2-0/exact-sum-not-run",
         !compiled.feasible && result.convergence.stop == epcsaft::core::Stop::infeasible
             && result.message.find("invalid pinned") == std::string::npos,
         recording_support::fields({pin_inputs(exact),
@@ -639,14 +587,14 @@ void check_e2_pins() {
         reactive_over.phases[0].support = {0, 1};
         reactive_over.phases[1].support = {0, 1};
         const auto id = std::string("e2-0/isomerisation-over-sum/") + (sign > 0.0 ? "forward" : "reversed");
-        record_rejection(id.c_str(), "e2-0-pins", model, reactive_over,
+        record_rejection(id.c_str(), model, reactive_over,
             "pinned phase fractions exceed one", pin_inputs(reactive_over));
         auto reactive_under = two_phase({1.0, 0.0}, 0.4, 0.5);
         reactive_under.reactions = reactive_over.reactions;
         reactive_under.phases[0].support = {0, 1};
         reactive_under.phases[1].support = {0, 1};
         const auto under_id = std::string("e2-0/isomerisation-under-sum/") + (sign > 0.0 ? "forward" : "reversed");
-        record_rejection(under_id.c_str(), "e2-0-pins", model, reactive_under,
+        record_rejection(under_id.c_str(), model, reactive_under,
             "all-pinned phase fractions must sum to one", pin_inputs(reactive_under));
     }
     // A <-> 2B: amounts (0.75, 0.5) satisfy B n = B feed and sum to 1.25; no sum rejection.
@@ -664,8 +612,7 @@ void check_e2_pins() {
         return result;
     };
     const double doubling_balance = balance_gap(doubling_basis, {0.75, 0.5}, doubling.feed.values);
-    record_bool("e2-0/doubling-no-sum-rejection", "e2-0-pins",
-        "nonconserving A=2B pins are not rejected by a total-mole sum rule",
+    e2::record_bool("e2-0/doubling-no-sum-rejection",
         doubling_message.find("pinned phase fractions") == std::string::npos
             && doubling_message.find("all-pinned") == std::string::npos && doubling_balance <= 1.0e-12,
         recording_support::fields({pin_inputs(doubling), recording_support::field("balance_residual", doubling_balance),
@@ -681,8 +628,7 @@ void check_e2_pins() {
     const auto halving_message = rejection(model, halving);
     const auto halving_basis = epcsaft::equilibrium::balance_basis(2, halving.reactions);
     const double halving_balance = balance_gap(halving_basis, {0.5, 0.25}, halving.feed.values);
-    record_bool("e2-0/halving-no-sum-rejection", "e2-0-pins",
-        "nonconserving 2A=B pin passes the sum stage",
+    e2::record_bool("e2-0/halving-no-sum-rejection",
         halving_message.find("pinned phase fractions") == std::string::npos
             && halving_message.find("all-pinned") == std::string::npos && halving_balance <= 1.0e-12,
         recording_support::fields({pin_inputs(halving), recording_support::field("balance_residual", halving_balance),
@@ -699,30 +645,29 @@ void check_e2_support() {
     auto full = base;
     full.phases[0].support = {0, 1};
     const auto explicit_full = epcsaft::equilibrium::compile_problem(model, full);
-    record_bool("e2-3/omitted-and-full", "e2-3-support", "omitted and explicit full support agree",
+    e2::record_bool("e2-3/omitted-and-full",
         omitted.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && explicit_full.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && omitted.removed_species.empty() && explicit_full.removed_species.empty(), inputs);
     auto empty = base;
     empty.phases[0].support_declared = true;
-    record_rejection("e2-3/explicit-empty", "e2-3-support", model, empty, "empty support in phase L", inputs);
+    record_rejection("e2-3/explicit-empty", model, empty, "empty support in phase L", inputs);
     auto partial = base;
     partial.phases[0].support = {0};
-    record_rejection("e2-3/missing-species", "e2-3-support", model, partial, "infeasible_inventory", inputs);
+    record_rejection("e2-3/missing-species", model, partial, "infeasible_inventory", inputs);
     auto duplicate = base;
     duplicate.phases[0].support = {0, 0};
-    record_rejection("e2-3/duplicate", "e2-3-support", model, duplicate, "duplicate support index", inputs);
+    record_rejection("e2-3/duplicate", model, duplicate, "duplicate support index", inputs);
     auto range = base;
     range.phases[0].support = {0, 5};
-    record_rejection("e2-3/out-of-range", "e2-3-support", model, range, "support index out of range", inputs);
+    record_rejection("e2-3/out-of-range", model, range, "support index out of range", inputs);
     auto pruned = full;
     pruned.feed.values = {0.5, 0.0};
     const auto pruned_compiled = epcsaft::equilibrium::compile_problem(model, pruned);
     auto pruned_omitted = base;
     pruned_omitted.feed.values = {0.5, 0.0};
     const auto pruned_omitted_compiled = epcsaft::equilibrium::compile_problem(model, pruned_omitted);
-    record_bool("e2-3/zero-feed-pruning", "e2-3-support",
-        "zero-feed nonparticipant is removed exactly once from explicit and omitted support",
+    e2::record_bool("e2-3/zero-feed-pruning",
         pruned_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
             && pruned_compiled.removed_species == std::vector<std::size_t>{1}
             && pruned_omitted_compiled.problem.phases[0].support == std::vector<std::size_t>{0}
@@ -746,8 +691,7 @@ void check_e2_reaction() {
             && left.rows[row].index == right.rows[row].index;
     const auto inputs = recording_support::fields({recording_support::field("feed", forward.feed.values),
         recording_support::field("nu", forward.reactions[0].stoichiometry), recording_support::field("K", 2.0)});
-    record_bool("e2-2/orientation", "e2-2-reaction",
-        "support, rank, balance subspace and rows are independent of reaction orientation",
+    e2::record_bool("e2-2/orientation",
         left.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && right.problem.phases[0].support == std::vector<std::size_t>{0, 1}
             && left.removed_species == std::vector<std::size_t>{2} && right.removed_species == std::vector<std::size_t>{2}
@@ -755,7 +699,7 @@ void check_e2_reaction() {
             && same_rows, inputs);
     auto dependent = forward;
     dependent.reactions.push_back({"twice", {-2.0, 2.0, 0.0}, 4.0, std::nullopt});
-    record_rejection("e2-2/dependent", "e2-2-reaction", model, dependent, "dependent reaction twice", inputs);
+    record_rejection("e2-2/dependent", model, dependent, "dependent reaction twice", inputs);
     // Standard-state falsifier at T = 300 K, nu = (-1, +1, 0), K = 2.
     const double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
     const double g_b = -R * 300.0 * std::log(2.0);
@@ -779,30 +723,28 @@ void check_e2_reaction() {
     }
     const double gauge_limit = 1.0e-9;
     recording_support::compare("e2-2/gauge-shift", "state_difference", "1", gauge_difference, 0.0,
+        recording_support::Rule::StrictAbsolute, gauge_limit, 0.0, "gauge-invariance",
         recording_support::fields({recording_support::field("T", 300.0), recording_support::field("g_supplied", supplied.standard_gibbs_j_per_mol),
             recording_support::field("g_gauge", gauge.standard_gibbs_j_per_mol),
             recording_support::field("x_supplied", supplied_result.mole_fractions),
-            recording_support::field("x_gauge", gauge_result.mole_fractions)}),
-        "Relationship", "gauge-invariance", "a conserved constant Gibbs shift leaves the solved state unchanged",
-        "strict_absolute", gauge_limit, 0.0, supplied_result.success && gauge_result.success && gauge_difference <= gauge_limit,
-        "e2-2-reaction", "gauge", "\\Delta x", "T,g", "\\Delta x=0", "case");
+            recording_support::field("x_gauge", gauge_result.mole_fractions)}));
+    CHECK(supplied_result.success && gauge_result.success);
     CHECK(supplied_compiled.rank == gauge_compiled.rank && supplied_compiled.rows.size() == gauge_compiled.rows.size());
     auto zero = supplied;
     zero.standard_gibbs_j_per_mol = {0.0, 0.0, 0.0};
-    record_rejection("e2-2/zero-vector-with-K", "e2-2-reaction", model, zero, "inconsistent standard state", inputs);
+    record_rejection("e2-2/zero-vector-with-K", model, zero, "inconsistent standard state", inputs);
     auto both = supplied;
     both.reactions[0].affinity_j_per_mol = 12.0;
-    record_rejection("e2-2/two-targets", "e2-2-reaction", model, both, "at most one target", inputs);
+    record_rejection("e2-2/two-targets", model, both, "at most one target", inputs);
     auto free_t = supplied;
     free_t.temperature = FreeValue::variable(300.0);
     free_t.pressure = FreeValue::fixed(1.0e5);
     free_t.phases[0].amount = AmountSpec::pinned(1.0);
-    record_rejection("e2-2/free-T-point-consistent", "e2-2-reaction", model, free_t,
+    record_rejection("e2-2/free-T-point-consistent", model, free_t,
         "temperature-dependent standard state required", inputs);
     auto affinity_free_t = free_t;
     affinity_free_t.reactions = {{"A=B", {-1.0, 1.0, 0.0}, std::nullopt, g_b}};
-    record_bool("e2-2/free-T-affinity-admitted", "e2-2-reaction",
-        "a constant affinity target admits a free temperature with a consistent supplied vector",
+    e2::record_bool("e2-2/free-T-affinity-admitted",
         rejection(model, affinity_free_t).empty(), inputs);
     // Charged compiler/permutation algebra: (water, Na+, Cl-), feed (0,1,1), nu = (2,-1,-1), K = 4.
     epcsaft::HelmholtzModel salt(properties_support::aqueous_electrolyte());
@@ -832,8 +774,7 @@ void check_e2_reaction() {
     charge_feed.feed.values = {0.98, 0.02, 0.0};
     auto charge_reaction = charged;
     charge_reaction.reactions = {{"bad", {0.0, 1.0, 0.0}, 1.0, std::nullopt}};
-    record_bool("e2-2/charged-permutation", "e2-2-reaction",
-        "charged reaction rank, balance subspace, participant support and rows follow species identity",
+    e2::record_bool("e2-2/charged-permutation",
         charged_compiled.rank == 2 && permuted_compiled.rank == 2
             && charged_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
             && permuted_compiled.problem.phases[0].support == std::vector<std::size_t>{0, 1, 2}
@@ -850,8 +791,7 @@ void check_e2_reaction() {
     const double defect = 3.0 * std::sqrt(std::numeric_limits<double>::epsilon());
     auto near_neutral = charged;
     near_neutral.reactions[0].stoichiometry = {2.0, -1.0, -1.0 - defect};
-    record_bool("e2-2/charge-scale-l1", "e2-2-reaction",
-        "a reaction charge defect within sqrt(eps) of the L1 stoichiometric scale is admitted",
+    e2::record_bool("e2-2/charge-scale-l1",
         rejection(salt, near_neutral).find("violates z") == std::string::npos,
         recording_support::fields({recording_support::field("nu", near_neutral.reactions[0].stoichiometry),
             recording_support::field("z_dot_nu", defect)}));
@@ -878,13 +818,11 @@ void check_e2_charge() {
             finite = finite && std::isfinite(generic[row]);
         }
         std::vector<double> expected(expected_phases.begin(), expected_phases.end());
-        const bool verdict = compiled.charge_row_count == expected_count && phases == expected && finite;
         recording_support::compare(id, "charge_row_count", "count", static_cast<double>(compiled.charge_row_count),
-            static_cast<double>(expected_count),
+            static_cast<double>(expected_count), recording_support::Rule::Absolute, 0.0, 0.0, "charge-balance",
             recording_support::fields({inputs, recording_support::field("charge_row_phases", phases),
-                recording_support::field("generic_row_values", values)}),
-            "Relationship", "charge-balance", "retained charge rows follow the first-eligible carrier rule",
-            "absolute", 0.0, 0.0, verdict, "e2-4-charge", id, "N_q", "topology", "N_q=expected", "case");
+                recording_support::field("generic_row_values", values)}));
+        CHECK(phases == expected && finite);
     };
     record_rows("e2-4/one-free", epcsaft::equilibrium::compile_problem(model, base), 0, {});
     auto free_plus_zero = base;
@@ -908,23 +846,20 @@ void check_e2_charge() {
     record_rows("e2-4/two-incipient-ionic", two_zero_compiled, 2, {0, 1});
     const auto two_zero_result = epcsaft::equilibrium::solve_equilibrium(model, two_zero);
     recording_support::observe("e2-4/two-incipient-ionic-solve", "success", "bool",
-        two_zero_result.success ? 1.0 : 0.0, std::nullopt,
+        two_zero_result.success ? 1.0 : 0.0, std::nullopt, "charge-balance",
         recording_support::fields({inputs, recording_support::field("solver_status", two_zero_result.solver_status),
-            recording_support::field("stop", epcsaft::core::stop_name(two_zero_result.convergence.stop))}),
-        "Relationship", "charge-balance", "no free phase can carry the ionic feed; inspectable rows, expected infeasible",
-        "e2-4-charge", "two-incipient-ionic");
+            recording_support::field("stop", epcsaft::core::stop_name(two_zero_result.convergence.stop))}));
     CHECK(!two_zero_result.success);
     auto one_sign = base;
     one_sign.phases[0].support = {0, 1};
-    record_rejection("e2-4/one-sign", "e2-4-charge", model, one_sign, "infeasible_inventory", inputs);
+    record_rejection("e2-4/one-sign", model, one_sign, "infeasible_inventory", inputs);
     const auto solved = epcsaft::equilibrium::solve_equilibrium(model, base);
     double charge = 0.0;
     if (solved.success) for (std::size_t i = 0; i < 3; ++i) charge += model.parameters().charge_number[i] * solved.mole_fractions[i];
-    recording_support::compare("e2-4/solved-neutrality", "phase_charge", "1", charge, 0.0, inputs,
-        "Relationship", "charge-balance", "solved rowless ionic phase is electroneutral", "strict_absolute",
-        epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
-        solved.success && std::abs(charge) <= epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value,
-        "e2-4-charge", "solved", "q", "T,P,feed", "q=0", "case");
+    recording_support::compare("e2-4/solved-neutrality", "phase_charge", "1", charge, 0.0,
+        recording_support::Rule::StrictAbsolute, epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value, 0.0,
+        "charge-balance", inputs);
+    CHECK(solved.success);
 }
 
 // S1 (#51): physical inputs through the shared admission owner. Manufactured verification only.
@@ -993,25 +928,23 @@ epcsaft::ParameterDocument document(const Order& order, const std::array<double,
 
 // The accepted relabelling criterion for associating and ionic mixtures (tests/eos/test_state.py).
 bool agrees(const std::string& id, const char* quantity, const char* unit, double value,
-           double reference, const char* claim, const std::string& inputs) {
-    const bool verdict = recording_support::scalar_verdict(value, reference, "symmetric_close", 1.0e-12, 1.0e-12);
-    recording_support::compare(id.c_str(), quantity, unit, value, reference, inputs,
-        "Relationship", "input-mapping", claim, "symmetric_close", 1.0e-12, 1.0e-12, verdict, "s1");
-    return verdict;
+           double reference, const std::string& inputs) {
+    return recording_support::compare(id, quantity, unit, value, reference, recording_support::Rule::SymmetricClose,
+        1.0e-12, 1.0e-12, "input-mapping", inputs);
 }
 
 // Position i of `state` holds the species at position order[i] of `reference`.
 void same_state(const std::string& id, const epcsaft::State& state, const epcsaft::State& reference,
-                const Order& order, const char* claim) {
+                const Order& order) {
     const auto inputs = recording_support::fields({recording_support::field("T", 298.15),
         recording_support::field("rho", state.molar_density), recording_support::field("reference_x", X)});
-    agrees(id + "/P", "pressure", "Pa", state.pressure, reference.pressure, claim, inputs);
-    agrees(id + "/a_res", "residual_helmholtz", "1", state.residual_helmholtz, reference.residual_helmholtz, claim, inputs);
-    agrees(id + "/Z", "compressibility_factor", "1", state.compressibility_factor, reference.compressibility_factor, claim, inputs);
+    agrees(id + "/P", "pressure", "Pa", state.pressure, reference.pressure, inputs);
+    agrees(id + "/a_res", "residual_helmholtz", "1", state.residual_helmholtz, reference.residual_helmholtz, inputs);
+    agrees(id + "/Z", "compressibility_factor", "1", state.compressibility_factor, reference.compressibility_factor, inputs);
     for (std::size_t i = 0; i < 3; ++i) {
         agrees(id + "/mu_res/" + std::to_string(i), "residual_chemical_potential_over_rt", "1",
               state.residual_chemical_potential_over_rt[i].value(),
-              reference.residual_chemical_potential_over_rt[order[i]].value(), claim, inputs);
+              reference.residual_chemical_potential_over_rt[order[i]].value(), inputs);
     }
 }
 
@@ -1027,7 +960,7 @@ epcsaft::equilibrium::EquilibriumProblem two_liquids(const std::vector<double>& 
 
 void same_rows(const std::string& id, const epcsaft::equilibrium::CompiledSystem& system,
                const std::vector<double>& point, const epcsaft::equilibrium::CompiledSystem& reference,
-               const std::vector<double>& reference_point, const Order& order, const char* claim) {
+               const std::vector<double>& reference_point, const Order& order) {
     using epcsaft::equilibrium::RowKind;
     const auto values = system.evaluate(point).values, expected = reference.evaluate(reference_point).values;
     CHECK(system.charge_row_count == 1 && reference.charge_row_count == 1 && values.size() == expected.size());
@@ -1041,7 +974,7 @@ void same_rows(const std::string& id, const epcsaft::equilibrium::CompiledSystem
                && reference.rows[match].phase == item.phase && reference.rows[match].index == index)) ++match;
         CHECK(match < reference.rows.size());
         agrees(id + "/" + std::to_string(row), epcsaft::equilibrium::row_kind_name(item.kind), "1",
-              values[row], expected[match], claim, inputs);
+              values[row], expected[match], inputs);
     }
 }
 
@@ -1052,11 +985,9 @@ void check_document() {
     auto qualified = properties_support::aqueous_electrolyte();
     qualified.charge_number = {0, 2, -1};
     const auto state = model.state(298.15, rho, X);
-    same_state("s1-f1", state, epcsaft::HelmholtzModel(qualified).state(298.15, rho, X), IDENTITY,
-               "document input equals the qualified raw parameters");
+    same_state("s1-f1", state, epcsaft::HelmholtzModel(qualified).state(298.15, rho, X), IDENTITY);
     const auto x_permuted = equilibrium_support::permute_vector(X, PERMUTED);
-    same_state("s1-f2/state", permuted.state(298.15, rho, x_permuted), state, PERMUTED,
-               "species order does not change the physical state");
+    same_state("s1-f2/state", permuted.state(298.15, rho, x_permuted), state, PERMUTED);
 
     const auto reference = compile_problem(model, two_liquids(FEED));
     const auto system = compile_problem(permuted, two_liquids(equilibrium_support::permute_vector(FEED, PERMUTED)));
@@ -1070,8 +1001,7 @@ void check_document() {
         for (std::size_t j = 0; j < 3; ++j) point[target[phase].x[j]] = reference_point[shape[phase].x[PERMUTED[j]]];
     }
     for (std::size_t j = 0; j < 3; ++j) point[system.primal_size + j] = reference_point[reference.primal_size + PERMUTED[j]];
-    same_rows("s1-f2/row", system, point, reference, reference_point, PERMUTED,
-              "species order does not change the equilibrium rows");
+    same_rows("s1-f2/row", system, point, reference, reference_point, PERMUTED);
 
     // Only the phase amounts are extensive; ln x, ln eta and the multipliers are not.
     for (const double scale : {1024.0, 1.0e-3}) {
@@ -1080,21 +1010,21 @@ void check_document() {
         auto scaled_point = reference_point;
         for (const auto& layout : shape) scaled_point[*layout.amount] *= scale;
         same_rows("s1-f3/" + recording_support::number(scale), compile_problem(model, two_liquids(feed)),
-                  scaled_point, reference, reference_point, IDENTITY, "feed scale leaves the rows unchanged");
+                  scaled_point, reference, reference_point, IDENTITY);
     }
 
     // Negative controls: each wrong mapping must move a value far beyond the criterion.
-    const auto moved = [&](const char* id, const char* claim, double value, double reference) {
+    const auto moved = [&](const char* id, double value, double reference) {
         const double change = std::abs(value - reference) / std::abs(reference);
-        return e2::record_bool(id, "s1", claim, change > 1.0e-6,
+        return e2::record_bool(id, change > 1.0e-6,
             recording_support::fields({recording_support::field("x", X), recording_support::field("relative_change", change)}));
     };
-    CHECK(moved("s1-f2n/misplaced-x", "composition permuted without its document moves P",
+    CHECK(moved("s1-f2n/misplaced-x",
                 model.state(298.15, rho, x_permuted).pressure, state.pressure));
     epcsaft::HelmholtzModel exchanged(epcsaft::build_parameters(document(IDENTITY, {0.0, -1.0, 2.0})));
-    CHECK(moved("s1-f2n/exchanged-charge-state", "exchanged ionic charges move a_res",
+    CHECK(moved("s1-f2n/exchanged-charge-state",
                 exchanged.state(298.15, rho, X).residual_helmholtz, state.residual_helmholtz));
-    CHECK(e2::record_rejection("s1-f2n/exchanged-charge-feed", "s1", exchanged, two_liquids(FEED),
+    CHECK(e2::record_rejection("s1-f2n/exchanged-charge-feed", exchanged, two_liquids(FEED),
                                "feed carries net z", recording_support::fields({recording_support::field("feed", FEED)})));
 }
 
@@ -1111,7 +1041,7 @@ void check_feed() {
     fractions.feed.values[0] += 1.0e-13;
     CHECK(compile_problem(model, fractions).n_feed == fractions.feed.values);
     fractions.feed.values[0] = X[0] + 1.0e-9;
-    CHECK(e2::record_rejection("s1-f5/mole-sum", "s1", model, fractions, "mole fractions must sum to one", inputs(fractions)));
+    CHECK(e2::record_rejection("s1-f5/mole-sum", model, fractions, "mole fractions must sum to one", inputs(fractions)));
 
     // n_i = w_i / M_i against literal kg/mol constants: the document states water in gram / mole.
     const double molar_mass[3] = {0.0180153, 0.02298977, 0.0354527};
@@ -1123,10 +1053,10 @@ void check_feed() {
     const auto resolved = compile_problem(model, mass).n_feed;
     for (std::size_t i = 0; i < 3; ++i) {
         agrees("s1-f5/mass/" + std::to_string(i), "feed_amount", "mol/kg", resolved[i],
-              FEED[i] / feed_mass, "mass fractions resolve to w_i / M_i", inputs(mass));
+              FEED[i] / feed_mass, inputs(mass));
     }
     mass.feed.values[0] += 1.0e-9;
-    CHECK(e2::record_rejection("s1-f5/mass-sum", "s1", model, mass, "mass fractions must sum to one", inputs(mass)));
+    CHECK(e2::record_rejection("s1-f5/mass-sum", model, mass, "mass fractions must sum to one", inputs(mass)));
 
     // D2: relative solvent amounts are required for several solvents and keep their meaning.
     epcsaft::HelmholtzModel neutral(properties_support::neutral_ternary());
@@ -1135,29 +1065,24 @@ void check_feed() {
     molality.feed.kind = FeedKind::Molalities;
     molality.feed.solvent = {0, 1};
     molality.feed.values = {0.0, 0.0, 0.5};
-    CHECK(e2::record_rejection("s1-f5/solvent-amounts", "s1", neutral, molality,
+    CHECK(e2::record_rejection("s1-f5/solvent-amounts", neutral, molality,
                                "molality feed omits the relative solvent amounts", inputs(molality)));
     molality.feed.values = {2.0, 0.0, 0.5};
     const auto one_supplied = compile_problem(neutral, molality).n_feed;
-    agrees("s1-f5/molality/one-supplied", "feed_amount", "mol", one_supplied[0], 1.0 / m0,
-          "a supplied solvent carries the solvent mass", inputs(molality));
+    agrees("s1-f5/molality/one-supplied", "feed_amount", "mol", one_supplied[0], 1.0 / m0, inputs(molality));
     CHECK(one_supplied[1] == 0.0 && one_supplied[2] == 0.5);
     molality.feed.values = {1.0, 3.0, 0.5};
     const auto both_supplied = compile_problem(neutral, molality).n_feed;
-    agrees("s1-f5/molality/ratio-0", "feed_amount", "mol", both_supplied[0], 1.0 / (m0 + 3.0 * m1),
-          "supplied solvent ratios are rescaled to the solvent mass", inputs(molality));
-    agrees("s1-f5/molality/ratio-1", "feed_amount", "mol", both_supplied[1], 3.0 / (m0 + 3.0 * m1),
-          "supplied solvent ratios are rescaled to the solvent mass", inputs(molality));
+    agrees("s1-f5/molality/ratio-0", "feed_amount", "mol", both_supplied[0], 1.0 / (m0 + 3.0 * m1), inputs(molality));
+    agrees("s1-f5/molality/ratio-1", "feed_amount", "mol", both_supplied[1], 3.0 / (m0 + 3.0 * m1), inputs(molality));
 
     auto missing = document(IDENTITY), duplicate = missing, unconsumed = missing;
     missing.entries.erase(missing.entries.begin() + 2);
     duplicate.entries.push_back(duplicate.entries[2]);
     unconsumed.permittivity_choice = "solvent-only";
     const auto rejects = [&](const char* id, const epcsaft::ParameterDocument& doc, const char* phrase) {
-        std::string message;
-        try { (void)epcsaft::build_parameters(doc); }
-        catch (const std::invalid_argument& error) { message = error.what(); }
-        return e2::record_bool(id, "s1", phrase, message.find(phrase) != std::string::npos,
+        const auto message = recording_support::refusal([&] { (void)epcsaft::build_parameters(doc); });
+        return e2::record_bool(id, message.find(phrase) != std::string::npos,
             recording_support::fields({recording_support::field("message", message)}));
     };
     CHECK(rejects("s1-f5/builder-missing", missing, "missing component/water/segment_count"));
@@ -1201,29 +1126,24 @@ void check_reference_mapping() {
         double power = 1.0 / (R * t);  // t_k T^(k-1) / R is dimensionless
         for (std::size_t k = 0; k < 4; ++k, power *= t) {
             const std::string point = recording_support::number(t) + "/" + std::to_string(k);
-            CHECK(s1::agrees("s2-g3/correlated/" + point, "target_series", "1", series[k][0] * power, analytic[k],
-                             "a correlated target carries its temperature series", inputs));
-            CHECK(s1::agrees("s2-g3/constant/" + point, "target_series", "1", flat[k][0] * power, constant[k],
-                             "a scalar K is a temperature-independent target", inputs));
+            CHECK(s1::agrees("s2-g3/correlated/" + point, "target_series", "1", series[k][0] * power, analytic[k], inputs));
+            CHECK(s1::agrees("s2-g3/constant/" + point, "target_series", "1", flat[k][0] * power, constant[k], inputs));
         }
         const double omitted = std::abs(series[1][0] - flat[1][0]);  // = |Dh / T|, J/(mol K)
         const double criterion = std::max(1.0e-12, 1.0e-12 * std::abs(series[1][0]));
-        CHECK(e2::record_bool(("s2-g3n/" + recording_support::number(t)).c_str(), "s2",
-            "a constant K omits the reaction enthalpy Dh/T from the first temperature order", omitted / criterion >= 1.0e6,
+        CHECK(e2::record_bool(("s2-g3n/" + recording_support::number(t)).c_str(), omitted / criterion >= 1.0e6,
             recording_support::fields({inputs, recording_support::field("abs_dh_over_T", omitted),
                 recording_support::field("ratio_to_criterion", omitted / criterion)})));
         CHECK(s1::agrees("s2-g3n/dh/" + recording_support::number(t), "omitted_first_order", "J/(mol K)",
-                         flat[1][0] - series[1][0], R * t * l1, "the omitted term is the van 't Hoff Dh/T", inputs));
+                         flat[1][0] - series[1][0], R * t * l1, inputs));
     }
 
     // G4: the unit vocabulary is closed; a unit is rejected, never reinterpreted.
     const auto rejected = [](std::size_t entry, const char* unit, const char* phrase) {
         auto document = s1::document(s1::IDENTITY);
         document.entries[entry].unit = unit;
-        std::string message;
-        try { (void)epcsaft::build_parameters(document); }
-        catch (const std::invalid_argument& error) { message = error.what(); }
-        return e2::record_bool((std::string("s2-g4/") + unit).c_str(), "s2", phrase, message.find(phrase) != std::string::npos,
+        const auto message = recording_support::refusal([&] { (void)epcsaft::build_parameters(document); });
+        return e2::record_bool((std::string("s2-g4/") + unit).c_str(), message.find(phrase) != std::string::npos,
             recording_support::fields({recording_support::field("field", document.entries[entry].field),
                 recording_support::field("message", message)}));
     };
@@ -1249,9 +1169,7 @@ void check_polish_solve_admission() {
     const double singular = bound({1.0, 0.0, 0.0, 0.0}, {0.0, 0.0}, {0.0, 0.0}, {1.0, 1.0});
     const double admitted = bound({1.0, 0.0, 0.0, 1.0}, {-1e-14, 0.0}, {1e-14, 0.0}, {1.0, 1.0});
     recording_support::compare("polish-solve/forward", "forward_correction_bound", "1", ill_conditioned, 1e-6,
-        "J22:1e-14;r2:1e-20;computed_delta:0", "Identity", "diagonal-system",
-        "a tiny backward residual does not bound the forward correction", "reference_scale", 0.0, 1e-14,
-        std::abs(ill_conditioned / 1e-6 - 1.0) <= 1e-14, "polish-solve", "diagonal", "forward", "J,r,delta", "J^-1 r", "solve");
+        recording_support::Rule::ReferenceScale, 0.0, 1e-14, "diagonal-system", "J22:1e-14;r2:1e-20;computed_delta:0");
     CHECK(ill_conditioned > epcsaft::policy::EQUILIBRIUM_POLISH_CORRECTION.value);
     CHECK(std::isinf(singular));
     CHECK(admitted <= epcsaft::policy::EQUILIBRIUM_POLISH_CORRECTION.value);
@@ -1275,10 +1193,9 @@ void check_inventory_support() {
     for (const bool fraction : {false, true}) {
         const auto r = epcsaft::equilibrium::inventory_bounds(c, {2}, fraction, 0.0)[0];
         CHECK(r.status == "structural_zero" && r.maximum && *r.maximum == 0.0 && !r.log_fraction);
-        recording_support::compare(("inventory/structural/" + std::to_string(fraction)).c_str(),
-            "maximum", fraction ? "1" : "mol", *r.maximum, 0.0, "{}", "Identity", "structural-zero",
-            "a species absent from every support has zero attainable inventory", "absolute", 0.0, 0.0, true,
-            "inventory", "structural", "maximum", "support", "n_2=0", "zero");
+        recording_support::compare("inventory/structural/" + std::to_string(fraction), "maximum",
+            fraction ? "1" : "mol", *r.maximum, 0.0, recording_support::Rule::Absolute, 0.0, 0.0, "structural-zero",
+            "{}");
     }
 }
 
@@ -1313,11 +1230,9 @@ void check_trace_inventory_witness() {
         const auto& li = *std::find_if(bounds.begin(), bounds.end(), [](const auto& r) { return r.species == 1; });
         CHECK(li.status == "optimal" && li.maximum);
         const double value = li.maximum.value_or(NAN), expected = problem.feed.values[1];
-        recording_support::compare_custom(("inventory/trace/" + std::to_string(order.front())).c_str(),
-            "maximum_Li", "mol", value, expected,
-            recording_support::field("feed_mol", problem.feed.values), "Relationship", "conserved-inventory",
-            "inert lithium cannot exceed its feed inventory", "relative<=1e-10",
-            std::abs(value / expected - 1.0) <= 1e-10, "inventory");
+        recording_support::compare_custom("inventory/trace/" + std::to_string(order.front()), "maximum_Li", "mol",
+            value, expected, "relative<=1e-10", std::abs(value / expected - 1.0) <= 1e-10, "conserved-inventory",
+            recording_support::field("feed_mol", problem.feed.values));
         CHECK(std::max({li.balance_residual, li.normalization_residual, li.lower_bound_residual}) <= 1e-10);
         CHECK(li.witness.size() == problem.feed.values.size());
     }

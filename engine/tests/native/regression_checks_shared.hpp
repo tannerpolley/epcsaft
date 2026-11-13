@@ -72,35 +72,22 @@ inline FitRequest intercept_request(const std::vector<double>& temperatures, con
 }
 constexpr double FIRST_ORDER = 5.0e-6;  // P4's frozen first-order action criterion
 
-// |model - reference| <= max(atol, rtol max(|model|, |reference|)); records and returns the verdict.
+// |model - reference| <= max(atol, rtol max(|model|, |reference|)); records the comparison.
 inline bool agree(const std::string& id, const char* quantity, const char* unit, double model, double reference,
-           double atol, double rtol, const std::string& inputs, const char* claim, const char* group) {
-    const bool verdict = std::isfinite(model) && std::isfinite(reference)
-        && std::abs(model - reference) <= std::max(atol, rtol * std::max(std::abs(model), std::abs(reference)));
-    recording_support::compare(id.c_str(), quantity, unit, model, reference, inputs, "Relationship", "regression",
-                               claim, "symmetric_close", atol, rtol, verdict, group, id.c_str());
-    return verdict;
+           double atol, double rtol, const std::string& inputs) {
+    return recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::SymmetricClose,
+        atol, rtol, "regression", inputs);
 }
 
 inline bool reference_scale_agrees(const std::string& id, const char* quantity, const char* unit, double model,
-                            double reference, double atol, double rtol, const std::string& inputs,
-                            const char* claim, const char* group) {
-    const bool verdict = std::isfinite(model) && std::isfinite(reference)
-        && std::abs(model - reference) <= atol + rtol * std::abs(reference);
-    recording_support::compare(id.c_str(), quantity, unit, model, reference, inputs, "Identity", "direct_reference",
-        claim, "reference_scale", atol, rtol, verdict, group, id.c_str());
-    return verdict;
+                            double reference, double atol, double rtol, const std::string& inputs) {
+    return recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::ReferenceScale,
+        atol, rtol, "direct_reference", inputs);
 }
 
-inline bool truth(const std::string& id, const char* claim, bool ok, const std::string& inputs, const char* group) {
-    recording_support::compare(id.c_str(), "verdict", "bool", ok ? 1.0 : 0.0, 1.0, inputs, "Relationship",
-                               "regression", claim, "absolute", 0.0, 0.0, ok, group, id.c_str());
-    return ok;
-}
-
-inline std::string rejection(const std::function<void()>& call) {
-    try { call(); } catch (const std::invalid_argument& error) { return error.what(); }
-    return "";
+inline bool truth(const std::string& id, bool ok, const std::string& inputs) {
+    return recording_support::compare(id, "verdict", "bool", ok ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute,
+        0.0, 0.0, "regression", inputs);
 }
 
 // ---- declared specifications
@@ -170,13 +157,12 @@ Ladder ladder(const Value& value, double step) {
     return result;
 }
 
-inline bool ladder_agrees(const std::string& id, const char* quantity, double action, const Ladder& rungs, const std::string& inputs,
-                   const char* claim, const char* group, bool magnitude_scaled = false) {
+inline bool ladder_agrees(const std::string& id, const char* quantity, double action, const Ladder& rungs, const std::string& inputs, bool magnitude_scaled = false) {
     // The refined rung meets the criterion; the coarse rung may carry up to the fourfold
     // truncation of a second-order central difference.
     const double scale = magnitude_scaled ? std::abs(rungs.fine) : std::max(1.0, std::abs(rungs.fine));
-    const bool fine = agree(id + "/fine", quantity, "native", action, rungs.fine, FIRST_ORDER * scale, 0.0, inputs, claim, group);
-    const bool coarse = agree(id + "/coarse", quantity, "native", action, rungs.coarse, 4.0 * FIRST_ORDER * scale, 0.0, inputs, claim, group);
+    const bool fine = agree(id + "/fine", quantity, "native", action, rungs.fine, FIRST_ORDER * scale, 0.0, inputs);
+    const bool coarse = agree(id + "/coarse", quantity, "native", action, rungs.coarse, 4.0 * FIRST_ORDER * scale, 0.0, inputs);
     return fine && coarse;
 }
 

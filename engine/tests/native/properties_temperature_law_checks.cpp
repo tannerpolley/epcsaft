@@ -19,10 +19,10 @@ const std::vector<double> X = {0.4, 0.6};
 
 // |model - reference| <= tolerance max(scale, |reference|), recorded with its inputs.
 void normalized(const std::string& id, const char* quantity, const char* unit, double model, double reference,
-                double scale, double tolerance, const std::string& inputs, const char* claim) {
+                double scale, double tolerance, const std::string& inputs) {
     const double allowance = tolerance * std::max(scale, std::abs(reference));
-    recording_support::compare(id.c_str(), quantity, unit, model, reference, inputs, "Identity", "temperature_law",
-        claim, "absolute", allowance, 0.0, std::abs(model - reference) <= allowance, "temperature-laws", id.c_str());
+    recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::Absolute, allowance, 0.0,
+        "temperature_law", inputs);
 }
 
 ParameterEntry entry(std::string identity, std::string field, std::vector<std::size_t> index, double magnitude,
@@ -171,8 +171,7 @@ void ladder(const std::string& id, const char* unit, double exact, const std::ve
     CHECK(second_order);
     normalized(id, "derivative", unit, differences[best], exact, 1.0, 1.0e-6,
         recording_support::fields({inputs, recording_support::field("steps", steps),
-            recording_support::field("differences", differences), recording_support::field("normalized_errors", errors)}),
-        "exact action equals step-refined central differences (verification only)");
+            recording_support::field("differences", differences), recording_support::field("normalized_errors", errors)}));
 }
 
 epcsaft::Parameters shifted(epcsaft::Parameters parameters, std::size_t slot, double u) {
@@ -206,9 +205,8 @@ void temperature_laws() {
         add_law(document.entries, source.id, "k_ij", 0, 0, 1, source.reference, source.law);
         const auto parameters = epcsaft::build_parameters(document);
         const double k = epcsaft::temperature_law_values(source.T, parameters).at(0);
-        recording_support::compare(source.id, "k_ij", "1", k, source.expected, field("T_K", source.T), "Identity",
-            "temperature_law", "a published k_ij(T) law gives its tabulated or derived value", "absolute",
-            source.tolerance, 0.0, std::abs(k - source.expected) <= source.tolerance, "temperature-laws", source.id);
+        recording_support::compare(source.id, "k_ij", "1", k, source.expected, recording_support::Rule::Absolute,
+            source.tolerance, 0.0, "temperature_law", field("T_K", source.T));
     }
     // Uyan 2015 Table 5: constant water/MDEA volume correction c = 0.015 on a Wolbach--Sandler edge.
     {
@@ -223,9 +221,8 @@ void temperature_laws() {
         e.push_back(entry("wolbach-sandler", "association_combining_rule", {0, 3, 0, 1, 2, 3}, 0.0, "dimensionless"));
         const auto parameters = epcsaft::build_parameters(document);
         const double c = epcsaft::temperature_law_values(298.0, parameters).at(0);
-        recording_support::compare("uyan2015/water-mdea/c", "c", "1", c, 0.015, field("T_K", 298.0), "Identity",
-            "temperature_law", "a constant source volume correction is admitted unchanged", "absolute", 1e-14, 0.0,
-            std::abs(c - 0.015) <= 1e-14, "temperature-laws", "uyan2015/water-mdea/c");
+        recording_support::compare("uyan2015/water-mdea/c", "c", "1", c, 0.015, recording_support::Rule::Absolute,
+            1e-14, 0.0, "temperature_law", field("T_K", 298.0));
     }
 
     // 2. Pinned four-site case at 320 K: law values, absolute Delta_03 and the corrected/legacy ratio.
@@ -236,7 +233,7 @@ void temperature_laws() {
                                           2399.7294, 1467523.0 / 12000000.0, 1796.2335, 0.168655};
     for (std::size_t law = 0; law < 6; ++law)
         normalized(std::string("four-site/law/") + LAW_NAMES[law], LAW_NAMES[law], law == 2 || law == 4 ? "K" : "1",
-                   laws[law], at_320[law], 1.0, 1e-12, field("T_K", T), "the law equals its exact decimal value");
+                   laws[law], at_320[law], 1.0, 1e-12, field("T_K", T));
     const auto sigma = epcsaft::segment_sigma(T, parameters), diameter = epcsaft::segment_diameter(T, parameters, sigma);
     const double delta_03 = epcsaft::association_delta(T, RHO, X, parameters, sigma, diameter)[3];
     const double d0 = 2.6019 * (1.0 - 0.12 * std::exp(-3.0 * 204.0438 / 320.0));
@@ -250,13 +247,12 @@ void temperature_laws() {
     const double reference = g01 * (std::exp(2097.98145 / 320.0) - 1.0) * size * size * size
         * std::sqrt(1467523.0 / 12000000.0 * 0.2039) * 0.831345;
     normalized("four-site/delta03/absolute", "Delta_03", "angstrom^3", delta_03, reference, 1.0, 1e-12,
-        fields({field("T_K", T), field("rho_mol_m3", RHO), field("reference_angstrom3", reference)}),
-        "Delta_03 equals the closed Uyan Eq. 9 expression with one size factor and (1 - c) outside the root");
+        fields({field("T_K", T), field("rho_mol_m3", RHO), field("reference_angstrom3", reference)}));
     const std::array<double, 6> legacy = {-0.052, 30671.0 / 3000000.0, 2399.7294, 1467523.0 / 12000000.0, 1796.2335};
     const auto legacy_parameters = four_site(C01, &legacy);
     const double legacy_delta = epcsaft::association_delta(T, RHO, X, legacy_parameters, sigma, diameter)[3];
     normalized("four-site/delta03/ratio", "ratio", "1", delta_03 / legacy_delta, 0.831345, 1.0, 1e-12,
-        field("legacy_delta_angstrom3", legacy_delta), "the corrected strength is (1 - c) times the legacy rule");
+        field("legacy_delta_angstrom3", legacy_delta));
 
     // Scalar law derivatives on the tape against q^(n) = sum_{p>=n} p!/(p-n)! a_p d^(p-n) + (-1)^n n! s/T^(n+1),
     // dq/da_p = d^p, dq/ds = 1/T - 1/T_r and their T derivatives, d = T - T_r.
@@ -290,7 +286,7 @@ void temperature_laws() {
                     analytic += falling * (*a)[static_cast<std::size_t>(q)] * std::pow(d, q - n);
                 }
                 normalized(tag + "/dT" + std::to_string(n), "d^n q/dT^n", unit, factorial * taylor[n - 1][law], analytic, 1.0,
-                           1e-12, field("T_K", temperature), "tape thermal derivative equals the analytic law");
+                           1e-12, field("T_K", temperature));
             }
             for (std::size_t p = 0; p < 5; ++p) {
                 const std::size_t column = 1 + 5 * law + p;
@@ -299,9 +295,9 @@ void temperature_laws() {
                                              : -1.0 / (temperature * temperature);
                 const auto name = tag + "/" + (p < 4 ? "a" + std::to_string(p) : std::string("s"));
                 normalized(name + "/dq", "dq/dc", "1", jacobian[law * point.size() + column], basis, 1.0, 1e-12,
-                           field("T_K", temperature), "tape coefficient derivative equals its basis function");
+                           field("T_K", temperature));
                 normalized(name + "/dTdq", "d2q/dTdc", "1/K", hessian[column], thermal, 1.0, 1e-12,
-                           field("T_K", temperature), "tape mixed derivative equals the basis derivative");
+                           field("T_K", temperature));
             }
         }
     }
@@ -328,9 +324,9 @@ void temperature_laws() {
             epcsaft::association_delta(temperature, RHO, X, parameters, s, dd));
         double worst = 0.0;
         for (const double r : residuals) worst = std::max(worst, std::abs(r));
-        recording_support::compare((tag + "/site-residual").c_str(), "max|F_a|", "1", worst, 0.0,
-            field("site_fractions", state.site_fractions), "Identity", "temperature_law", "solved sites satisfy mass action",
-            "absolute", 1e-12, 0.0, worst <= 1e-12, "temperature-laws");
+        recording_support::compare(tag + "/site-residual", "max|F_a|", "1", worst, 0.0,
+            recording_support::Rule::Absolute, 1e-12, 0.0, "temperature_law",
+            field("site_fractions", state.site_fractions));
         for (const double fraction : state.site_fractions) CHECK(fraction > 0.0 && fraction <= 1.0);
         const auto inputs = fields({field("T_K", temperature), field("rho_mol_m3", RHO), field("site_fractions", state.site_fractions)});
 
@@ -348,10 +344,9 @@ void temperature_laws() {
                 const double first = exact.coefficient[1][slot], mixed = temperature * exact.mixed[1][slot];
                 const bool ok = std::abs(first) > floor && std::abs(mixed) > floor;
                 const auto id = tag + "/witness/" + LAW_NAMES[slot / 5] + "/a0";
-                recording_support::compare(id.c_str(), "verdict", "bool", ok ? 1.0 : 0.0, 1.0,
-                    fields({inputs, field("dP_du_Pa", first), field("T_dTdu_P_Pa", mixed), field("floor_Pa", floor)}),
-                    "Relationship", "temperature_law", "|dP/du| and |T d_T d_u P| exceed 1e-6 max(1 Pa, |P|)",
-                    "absolute", 0.0, 0.0, ok, "temperature-laws");
+                recording_support::compare(id, "verdict", "bool", ok ? 1.0 : 0.0, 1.0,
+                    recording_support::Rule::Absolute, 0.0, 0.0, "temperature_law",
+                    fields({inputs, field("dP_du_Pa", first), field("T_dTdu_P_Pa", mixed), field("floor_Pa", floor)}));
             }
         }
         for (std::size_t o = 0; o < 3; ++o) {
@@ -413,9 +408,8 @@ void temperature_laws() {
         const auto tag = "density-column/T=" + number(temperature);
         const auto inputs = fields({field("P_star_Pa", observation.pressure), field("rho_mol_m3", *prediction.value),
                                     field("dP_drho", prediction.state->pressure_density_derivative)});
-        recording_support::compare((tag + "/residual").c_str(), "r", "1", *prediction.residual, -0.01, inputs, "Identity",
-            "temperature_law", "the pressure closure reselects the vapor root at 100 mol/m3", "absolute", 1e-10, 0.0,
-            std::abs(*prediction.residual + 0.01) <= 1e-10, "temperature-laws");
+        recording_support::compare(tag + "/residual", "r", "1", *prediction.residual, -0.01,
+            recording_support::Rule::Absolute, 1e-10, 0.0, "temperature_law", inputs);
         const auto gradient = differentiate(model, observation, prediction);
         CHECK(gradient.status == ObservationStatus::Available && gradient.value.size() == 30);
         for (std::size_t slot = 0; slot < 30; ++slot)
@@ -429,11 +423,10 @@ void temperature_laws() {
 
     // 4. A law crossing to negative volume on a replayed model is refused with its target and temperature.
     const auto refused = [&](const std::string& id, const std::function<void()>& call, const std::string& cause) {
-        std::string message;
-        try { call(); } catch (const std::invalid_argument& error) { message = error.what(); }
+        const auto message = recording_support::refusal(call);
         const bool ok = message.find(cause) != std::string::npos;
-        recording_support::compare(id.c_str(), "verdict", "bool", ok ? 1.0 : 0.0, 1.0, field("message", message),
-            "Relationship", "temperature_law", "the named refusal is preserved", "absolute", 0.0, 0.0, ok, "temperature-laws");
+        recording_support::compare(id, "verdict", "bool", ok ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0,
+            0.0, "temperature_law", field("message", message));
     };
     {
         const epcsaft::HelmholtzModel crossing(four_site({0.9, 0.01, NAN_TERM, NAN_TERM, NAN_TERM}));
@@ -465,8 +458,7 @@ void temperature_laws() {
         const double defect = large[0] + large[1], criterion = 1e-12 * (std::abs(large[0]) + std::abs(large[1]));
         CHECK(defect > 1e-12 && defect <= criterion);
         normalized("direction/roundoff-balanced", "residual enthalpy action", "J/mol", h(large), 5e6 * h({1.0, -1.0}), 0.0,
-            1e-9, fields({field("direction", large), field("balance_defect", defect), field("relative_criterion", criterion)}),
-            "a roundoff-balanced large direction is admitted and acts linearly");
+            1e-9, fields({field("direction", large), field("balance_defect", defect), field("relative_criterion", criterion)}));
         refused("direction/unit-defect", [&] { (void)h({5e6, 1.0 - 5e6}); }, "direction composition balance");
     }
     // Identical ethane components: constants and power-zero laws have the same positive-diameter domain.
@@ -484,7 +476,7 @@ void temperature_laws() {
             refused("domain/law/" + number(l), [&] { (void)law_state(); }, "invalid evaluated l_ij");
         } else {
             normalized("domain/valid/" + number(l), "pressure", "Pa", constant_state().pressure,
-                law_state().pressure, 0.0, 1e-10, field("l_ij", l), "constant and law preserve the same state");
+                law_state().pressure, 0.0, 1e-10, field("l_ij", l));
         }
     }
     // Reuse the fitting evaluator across a valid center, invalid active trials, and a valid return.

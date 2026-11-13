@@ -408,9 +408,8 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3) 
             const double action = item.action.value_or(std::numeric_limits<double>::quiet_NaN());
             const double nan = std::numeric_limits<double>::quiet_NaN();
             for (std::size_t step = 0; step + 1 < ladder.size(); ++step) {
-                recording_support::observe((id + "/step" + std::to_string(step)).c_str(), "action", item.unit.c_str(), action,
-                    ladder[step].value[i], inputs, "Relationship", "centered-solve-ladder",
-                    "coarser reference step retained for the rate record", group, id.c_str());
+                recording_support::observe(id + "/step" + std::to_string(step), "action", item.unit.c_str(), action,
+                    ladder[step].value[i], "centered-solve-ladder", inputs);
             }
             // Richardson reference with rate certification (owner decision 2026-09-16): the
             // centered references scale as h^2, so the last two steps extrapolate to the
@@ -476,30 +475,24 @@ bool qualify(const Fixture& fixture, const char* group, std::size_t orders = 3) 
                 recording_support::field("allowance", criterion),
                 recording_support::field("reference_uncertainty", reference_uncertainty),
                 recording_support::field("signal_over_allowance", std::abs(extrapolated.value_or(0.0)) / criterion)});
-            recording_support::compare_custom(id.c_str(), "action", item.unit.c_str(), action, extrapolated.value_or(nan),
-                ladder_inputs, "Relationship", affine ? "affine-constraint-identity" : "centered-solve-ladder",
-                affine ? "the defining affine relation has zero higher action" : "solved-state action agrees with the h^2-extrapolated fresh-solve reference",
-                "|action-reference|<=allowance && reference_uncertainty<=allowance && resolved_signal",
-                verdict, group, id.c_str(), "D^k g", "case,observable,order", "|D^k g-R|\\leq c", "observable,order");
+            recording_support::compare_custom(id, "action", item.unit.c_str(), action, extrapolated.value_or(nan),
+                "|action-reference|<=allowance && reference_uncertainty<=allowance && resolved_signal", verdict,
+                affine ? "affine-constraint-identity" : "centered-solve-ladder", ladder_inputs);
             // A ladder certified by step agreement records that agreement, not an uncomputed rate.
             const bool by_rate = std::isfinite(rate);
             const double spread = complete ? std::abs(noise_bounded ? *coarse - *mid : *fine - *mid) : nan;
-            recording_support::compare_custom((id + "/rate").c_str(), by_rate ? "difference_ratio" : "step_agreement",
-                by_rate ? "1" : item.unit.c_str(),
-                by_rate ? rate : spread, by_rate ? expected_rate : 2.0 * criterion, ladder_inputs,
-                "Relationship", "centered-solve-ladder",
-                "the reference ladder certifies second-order convergence, or its last two informative steps agree within twice the criterion",
-                "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected || (noise_bounded && |coarse-mid| <= 2c)", refined,
-                group, id.c_str(), by_rate ? "(\\Delta_1-\\Delta_2)/(\\Delta_2-\\Delta_3)" : "|R_i-R_{i+1}|", "case,observable,order",
-                by_rate ? "\\approx(h_1^2-h_2^2)/(h_2^2-h_3^2)" : "\\leq 2c", "observable,order");
+            recording_support::compare_custom(id + "/rate", by_rate ? "difference_ratio" : "step_agreement",
+                by_rate ? "1" : item.unit.c_str(), by_rate ? rate : spread, by_rate ? expected_rate : 2.0 * criterion,
+                "|fine-mid| <= 2c || expected/2 <= rate <= 2 expected || (noise_bounded && |coarse-mid| <= 2c)",
+                refined, "centered-solve-ladder", ladder_inputs);
         }
     }
     return true;  // every verdict above throws when false; the surface-equilibrium replay reads this
 }
 
-bool record_bool(const char* id, const char* group, const char* claim, bool verdict, const std::string& inputs) {
-    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, inputs, "Relationship", "solved-state-action",
-        claim, "absolute", 0.0, 0.0, verdict, group, id, "verdict", "inputs", claim, "case");
+bool record_bool(const char* id, bool verdict, const std::string& inputs) {
+    recording_support::compare(id, "verdict", "bool", verdict ? 1.0 : 0.0, 1.0, recording_support::Rule::Absolute, 0.0,
+        0.0, "solved-state-action", inputs);
     return verdict;
 }
 
@@ -576,7 +569,7 @@ void check_e5_neutral() {
                 worst_a1 = std::max(worst_a1, std::abs(*actual.action - *expected.action) / std::max(1.0, std::abs(*expected.action)));
         }
     }
-    record_bool("e5-1/independent-A1", "e5-1", "four independent A1 responses, including zero, equal separate actions with one center factorization",
+    record_bool("e5-1/independent-A1",
         same_a1 && worst_a1 <= 2.0e-12 && factorizations == 1,
         recording_support::fields({recording_support::field("maximum_scaled_change", worst_a1),
             recording_support::field("shared_factorizations", factorizations),
@@ -614,10 +607,10 @@ void check_e5_neutral() {
                                                               std::abs(*a.value - *b.value) / std::max(1.0, std::abs(*a.value))));
         }
         const std::string label = pair == &swapped_batch ? "phase-swap" : "component-permutation";
-        recording_support::compare(("e5-9/" + label).c_str(), "identity_difference", "1", worst, 0.0,
-            recording_support::fields({recording_support::field("case", label), recording_support::field("results", reference_batch.results.size())}),
-            "Relationship", "permutation", "A2 values and actions follow phase/component/active identity under permutation",
-            "reference_or_one", 1.0e-8, 0.0, statuses && worst <= 1.0e-8, "e5-9", label.c_str(), "\\Delta", "identity", "\\Delta\\leq10^{-8}", "case");
+        recording_support::compare("e5-9/" + label, "identity_difference", "1", worst, 0.0,
+            recording_support::Rule::ReferenceOrOne, 1.0e-8, 0.0, "permutation",
+            recording_support::fields({recording_support::field("case", label), recording_support::field("results", reference_batch.results.size())}));
+        CHECK(statuses);
     }
     // Warm reuse: a repeated identical request on the recorded tape reproduces the batch exactly.
     const auto again = actions(fixture, model, central, fixture.observables, 2);
@@ -626,7 +619,7 @@ void check_e5_neutral() {
         reproduced = again.results[i].status == reference_batch.results[i].status
             && again.results[i].value == reference_batch.results[i].value
             && again.results[i].action == reference_batch.results[i].action;
-    record_bool("e5-9/warm-reuse", "e5-9", "a repeated request reproduces every status, value and action of the batch exactly",
+    record_bool("e5-9/warm-reuse",
         reproduced, recording_support::fields({recording_support::field("results", again.results.size())}));
 }
 
@@ -644,11 +637,12 @@ void check_e5_pins() {
     const bool amount_ok = std::abs(batches[0].results[0].action.value_or(1.0) - expected) <= STRUCTURAL_ZERO
         && std::abs(batches[1].results[0].action.value_or(1.0)) <= STRUCTURAL_ZERO
         && std::abs(batches[2].results[0].action.value_or(1.0)) <= STRUCTURAL_ZERO;
-    recording_support::compare("e5-2/positive-pin/pinned-amount-A1", "action", "mol", batches[0].results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()),
-        expected, recording_support::fields({recording_support::field("A2", epcsaft::core::optional_number(batches[1].results[0].action)),
-            recording_support::field("A3", epcsaft::core::optional_number(batches[2].results[0].action))}),
-        "Relationship", "pinned-amount", "pinned amount A1 is the fraction times the feed direction sum; A2 and A3 vanish",
-        "strict_absolute", STRUCTURAL_ZERO, 0.0, amount_ok, "e5-2", "pinned-amount", "D N_V", "dfeed", "D N_V=0.01\\sum dn", "case");
+    recording_support::compare("e5-2/positive-pin/pinned-amount-A1", "action", "mol",
+        batches[0].results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()), expected,
+        recording_support::Rule::StrictAbsolute, STRUCTURAL_ZERO, 0.0, "pinned-amount",
+        recording_support::fields({recording_support::field("A2", epcsaft::core::optional_number(batches[1].results[0].action)),
+            recording_support::field("A3", epcsaft::core::optional_number(batches[2].results[0].action))}));
+    CHECK(amount_ok);
     // Extensive volume follows the product rule V = N / rho from the returned N and rho actions.
     const auto& a1 = batches[0].results;
     const auto& a2 = batches[1].results;
@@ -663,9 +657,9 @@ void check_e5_pins() {
     const bool volume_ok = std::abs(*a1[1].action - v1) <= 1.0e-10 * std::max(1.0, std::abs(v1))
         && std::abs(*a2[1].action - v2) <= 1.0e-10 * std::max(1.0, std::abs(v2));
     recording_support::compare("e5-2/positive-pin/volume-product-rule", "action", "m^3", *a2[1].action, v2,
-        recording_support::fields({recording_support::field("A1_returned", *a1[1].action), recording_support::field("A1_product_rule", v1)}),
-        "Relationship", "product-rule", "extensive volume actions equal the product rule of the returned amount and density actions",
-        "reference_or_one", 0.0, 1.0e-10, volume_ok, "e5-2", "volume-product-rule", "D^2 V", "N,\\rho", "V=N/\\rho", "case");
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "product-rule",
+        recording_support::fields({recording_support::field("A1_returned", *a1[1].action), recording_support::field("A1_product_rule", v1)}));
+    CHECK(volume_ok);
     // Exactly zero pin: extensive rows are structural zero, intensive rows follow the ladders.
     auto zero = pinned_case(0.0);
     std::vector<SolvedStateObservable> intensive;
@@ -682,7 +676,7 @@ void check_e5_pins() {
             structural = structural && item.status == SolvedStateActionStatus::Available && std::abs(item.value.value_or(1.0)) <= STRUCTURAL_ZERO
                 && std::abs(item.action.value_or(1.0)) <= STRUCTURAL_ZERO;
     }
-    record_bool("e5-2/zero-pin/structural-zero", "e5-2", "a zero pinned amount, its component amounts and its extensive volume are structural zeros through A3",
+    record_bool("e5-2/zero-pin/structural-zero",
         structural, recording_support::fields({recording_support::field("success", zero_central.success ? 1U : 0U)}));
     zero.observables = intensive;
     qualify(zero, "e5-2");
@@ -734,7 +728,7 @@ void check_e5_reactive() {
         for (std::size_t row = 0; row < central.rows.size(); ++row)
             if (central.rows[row].kind == epcsaft::equilibrium::RowKind::Chemical)
                 affinity[central.rows[row].phase] += fixture.problem.reactions[0].stoichiometry[central.rows[row].index] * central.residuals[row];
-        record_bool("e5-3/reactive-two-liquid/mixed-nonzero", "e5-3", "the reactive two-liquid state carries a nonzero A2 mixed action with zero reaction affinity in both phases",
+        record_bool("e5-3/reactive-two-liquid/mixed-nonzero",
             largest > 1.0e-6 && std::abs(affinity[0]) <= 1.0e-9 && std::abs(affinity[1]) <= 1.0e-9,
             recording_support::fields({recording_support::field("largest_mixed_action", largest), recording_support::field("affinity", affinity)}));
     }
@@ -769,12 +763,13 @@ void check_e5_reactive() {
                     && std::abs(analytic[order - 1] - expected[order - 1]) <= bar;
                 const bool amount_ok = batch.results[1].action.has_value() && std::abs(*batch.results[1].action - total * analytic[order - 1]) <= total * bar;
                 const auto id = std::string("e5-3/") + fixture_t.label + (rescaled ? "/rescaled" : "") + "/A" + std::to_string(order);
-                recording_support::compare(id.c_str(), "action", "1/K^k", batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()), analytic[order - 1],
+                recording_support::compare(id, "action", "1/K^k",
+                    batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()), analytic[order - 1],
+                    recording_support::Rule::StrictAbsolute, bar, 0.0, "analytic-correlation",
                     recording_support::fields({recording_support::field("total", total), recording_support::field("order", order), recording_support::field("rescaled", rescaled ? 1U : 0U),
                         recording_support::field("amount_action", epcsaft::core::optional_number(batch.results[1].action)), recording_support::field("bar", bar),
-                        recording_support::field("status", status_field(batch, 0))}),
-                    "Relationship", "analytic-correlation", "x_B thermal actions equal the analytic logistic derivatives of ln K(T); the B amount scales with the total",
-                    "strict_absolute", bar, 0.0, fraction_ok && amount_ok, "e5-3", id.c_str(), "d^k x_B/dT^k", "T,K(T)", "p^{(k)}=p(1-p)[\\ldots]", "case");
+                        recording_support::field("status", status_field(batch, 0))}));
+                CHECK(fraction_ok && amount_ok);
             }
         }
         if (total == 2.0) {
@@ -784,10 +779,12 @@ void check_e5_reactive() {
             const auto batch = actions(mixed, model, central, fixture_t.observables, 2);
             const bool ok = batch.results[0].action.has_value() && std::abs(*batch.results[0].action) <= 1.0e-12
                 && batch.results[1].action.has_value() && std::abs(*batch.results[1].action - 0.1 * analytic[0]) <= 2.0e-10 * std::abs(analytic[0]) + 1.0e-14;
-            recording_support::compare("e5-3/isomerisation-two-mol/amount-temperature", "action", "mol/K", batch.results[1].action.value_or(std::numeric_limits<double>::quiet_NaN()), 0.1 * analytic[0],
-                recording_support::fields({recording_support::field("fraction_mixed", epcsaft::core::optional_number(batch.results[0].action))}),
-                "Relationship", "analytic-correlation", "the amount/temperature mixed action is sum(dfeed) p'(T) while the composition mixed action vanishes",
-                "strict_absolute", 2.0e-10 * std::abs(analytic[0]) + 1.0e-14, 0.0, ok, "e5-3", "amount-temperature", "D^2 n_B", "dn,dT", "D^2 n_B=\\sum dn\\,p'", "case");
+            recording_support::compare("e5-3/isomerisation-two-mol/amount-temperature", "action", "mol/K",
+                batch.results[1].action.value_or(std::numeric_limits<double>::quiet_NaN()), 0.1 * analytic[0],
+                recording_support::Rule::StrictAbsolute, 2.0e-10 * std::abs(analytic[0]) + 1.0e-14, 0.0,
+                "analytic-correlation",
+                recording_support::fields({recording_support::field("fraction_mixed", epcsaft::core::optional_number(batch.results[0].action))}));
+            CHECK(ok);
         }
     }
     {
@@ -797,7 +794,7 @@ void check_e5_reactive() {
         const auto model = zero.model();
         const auto central = epcsaft::equilibrium::solve_equilibrium(model, zero.problem);
         const auto batch = actions(zero, model, central, zero.observables, 3);
-        record_bool("e5-3/isomerisation/zero-direction", "e5-3", "a zero direction yields an available exact zero action with the central value retained",
+        record_bool("e5-3/isomerisation/zero-direction",
             batch.results[0].status == SolvedStateActionStatus::Available && batch.results[0].action == 0.0 && batch.results[0].value.has_value(),
             recording_support::fields({recording_support::field("status", status_field(batch, 0)), recording_support::field("value", epcsaft::core::optional_number(batch.results[0].value))}));
     }
@@ -827,9 +824,9 @@ void check_e5_reactive() {
             if (available) worst = std::max(worst, std::abs(*x.action - *y.action) / std::max(1.0, std::abs(*x.action)));
         }
         recording_support::compare("e5-3/scalar-k/gauge", "action_difference", "1", worst, 0.0,
-            recording_support::fields({recording_support::field("results", batch.results.size())}),
-            "Relationship", "gauge", "a conserved constant standard-state shift leaves fixed-T A2 actions unchanged",
-            "reference_or_one", 1.0e-8, 0.0, available && worst <= 1.0e-8, "e5-3", "gauge", "\\Delta", "g", "\\Delta\\leq10^{-8}", "case");
+            recording_support::Rule::ReferenceOrOne, 1.0e-8, 0.0, "gauge",
+            recording_support::fields({recording_support::field("results", batch.results.size())}));
+        CHECK(available);
         auto thermal = shifted;
         thermal.directions = {direction(1.0, 0.0, {0.0, 0.0})};
         const auto thermal_batch = actions(thermal, model, shifted_central, thermal.observables, 1);
@@ -840,7 +837,7 @@ void check_e5_reactive() {
                 && (fixed_input ? item.status == SolvedStateActionStatus::Available && item.action.has_value()
                                 : item.status == SolvedStateActionStatus::MissingThermochemistry && !item.action.has_value());
         }
-        record_bool("e5-3/scalar-k/point-only-thermal", "e5-3", "a point-only supplied Gibbs vector returns missing_thermochemistry for thermal state actions and keeps fixed-input identities",
+        record_bool("e5-3/scalar-k/point-only-thermal",
             typed, recording_support::fields({recording_support::field("status", status_field(thermal_batch, 2))}));
         const auto compiled = epcsaft::equilibrium::compile_problem(model, shifted.problem);
         const auto nonthermal = epcsaft::equilibrium::solved_state_actions(
@@ -861,7 +858,7 @@ void check_e5_reactive() {
                     worst_a1 = std::max(worst_a1, std::abs(*actual.action - *single.action) / std::max(1.0, std::abs(*single.action)));
             }
         }
-        record_bool("e5-3/scalar-k/independent-thermal", "e5-3", "a refused thermal A1 does not suppress a following available feed A1 at the same center",
+        record_bool("e5-3/scalar-k/independent-thermal",
             isolated && worst_a1 <= 2.0e-12 && independent[0].results[2].status == SolvedStateActionStatus::MissingThermochemistry
                 && independent[1].results[2].status == SolvedStateActionStatus::Available,
             recording_support::fields({recording_support::field("maximum_scaled_change", worst_a1)}));
@@ -915,9 +912,9 @@ void check_e5_reactive() {
                 b, c, d, 300.0, 250.0, 450.0, epcsaft::equilibrium::EOS_STANDARD_STATE_ID};
             return problem;
         };
-        const auto row = [&](const std::string& id, double model_value, double reference, const char* claim, const std::string& inputs) {
-            recording_support::compare(id.c_str(), "value", "1", model_value, reference, inputs, "Relationship",
-                "analytic-correlation", claim, "reference_scale", 0.0, 1.0e-9, std::abs(model_value - reference) <= 1.0e-9 * std::abs(reference), "e5-3", id.c_str());
+        const auto row = [&](const std::string& id, double model_value, double reference, const std::string& inputs) {
+            recording_support::compare(id, "value", "1", model_value, reference,
+                recording_support::Rule::ReferenceScale, 0.0, 1.0e-9, "analytic-correlation", inputs);
         };
         const double k = 1.0e-24;
         auto trace = isomerisation_case(1.0, a);
@@ -927,7 +924,7 @@ void check_e5_reactive() {
         for (std::size_t order = 1; order <= 3; ++order) {
             const auto batch = actions(trace, model, central, trace.observables, order);
             row("e5-3/sub-cutoff/A" + std::to_string(order), batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()),
-                reference[order - 1], "x_B thermal actions below the cutoff equal the analytic logistic derivatives",
+                reference[order - 1],
                 recording_support::fields({recording_support::field("status", status_field(batch, 0))}));
         }
         for (const char* form : {"previous", "coordinates", "composition"}) {
@@ -937,7 +934,7 @@ void check_e5_reactive() {
             else start.compositions = {{1.0 - k, k}};
             const auto seeded = epcsaft::equilibrium::solve_equilibrium_starts(model, trace.problem, {start}, {});
             row(std::string("e5-3/sub-cutoff/seed/") + form, seeded.selected ? seeded.results[0]->mole_fractions[1] : std::numeric_limits<double>::quiet_NaN(),
-                k / (1.0 + k), "a declared seed below the cutoff converges to the analytic root", recording_support::fields({recording_support::field("cause", seeded.causes[0])}));
+                k / (1.0 + k), recording_support::fields({recording_support::field("cause", seeded.causes[0])}));
         }
         // ln K = ln(1e-16) - 40000 (1/T - 1/450 K): the path 450 -> 350 K crosses the cutoff near 408 K.
         epcsaft::equilibrium::ContinuationRequest path;
@@ -951,7 +948,7 @@ void check_e5_reactive() {
             const double kt = 1.0e-16 * std::exp(-40000.0 * (1.0 / *state.temperature - 1.0 / 450.0));
             worst = std::max(worst, std::abs(state.mole_fractions[1] / (kt / (1.0 + kt)) - 1.0));
         }
-        row("e5-3/sub-cutoff/continuation", 1.0 + worst, 1.0, "every continuation state through the cutoff is the analytic root",
+        row("e5-3/sub-cutoff/continuation", 1.0 + worst, 1.0,
             recording_support::fields({recording_support::field("stop", epcsaft::equilibrium::continuation_stop_name(traced.stop)),
                 recording_support::field("accepted", traced.accepted_steps), recording_support::field("states", traced.states.size())}));
         // Square bubble cell at 260 K: the trace limit is linear in K, so K = 1e-24 is 1e-12 times K = 1e-12.
@@ -971,8 +968,8 @@ void check_e5_reactive() {
             y[i] = solved.mole_fractions[3];
             slope[i] = batch.results[0].action.value_or(std::numeric_limits<double>::quiet_NaN()) / y[i];
         }
-        row("e5-3/sub-cutoff/bubble/y_B", y[1], 1.0e-12 * y[0], "the square bubble cell reaches the trace root below the cutoff", recording_support::fields({}));
-        row("e5-3/sub-cutoff/bubble/dlny_B/dT", slope[1], slope[0], "d ln y_B/dT below the cutoff equals its K = 1e-12 value", recording_support::fields({}));
+        row("e5-3/sub-cutoff/bubble/y_B", y[1], 1.0e-12 * y[0], recording_support::fields({}));
+        row("e5-3/sub-cutoff/bubble/dlny_B/dT", slope[1], slope[0], recording_support::fields({}));
     }
 }
 
@@ -1015,10 +1012,10 @@ void check_e5_associating() {
         if (ok) worst = std::max(worst, std::abs(*selected.results[0].action - *full.results[i].action) / std::max(1.0, std::abs(*full.results[i].action)));
     }
     recording_support::compare("e5-4/associating/selected-vs-full", "action_difference", "1", worst, 0.0,
+        recording_support::Rule::ReferenceOrOne, 2.0e-12, 0.0, "selection",
         recording_support::fields({recording_support::field("site_rank", full.results[0].property_diagnostics.has_value() ? full.results[0].property_diagnostics->site_rank : 0),
-            recording_support::field("energy_order", full.diagnostics.maximum_energy_order)}),
-        "Relationship", "selection", "selected A3 property results equal their full-batch values", "reference_or_one", 2.0e-12, 0.0,
-        ok && worst <= 2.0e-12, "e5-4", "selected-vs-full", "\\Delta", "selection", "\\Delta\\leq2\\times10^{-12}", "case");
+            recording_support::field("energy_order", full.diagnostics.maximum_energy_order)}));
+    CHECK(ok);
     // Mixed-action symmetry: the direction order changes neither A2 nor A3.
     auto rotated = fixture;
     rotated.directions = {fixture.directions[1], fixture.directions[2], fixture.directions[0]};
@@ -1037,9 +1034,9 @@ void check_e5_associating() {
             std::abs(*rotated_three.results[i].action - *full.results[i].action) / std::max(1.0, std::abs(*full.results[i].action))});
     }
     recording_support::compare("e5-4/associating/mixed-symmetry", "action_difference", "1", asymmetry, 0.0,
-        recording_support::fields({recording_support::field("results", fixture.observables.size())}),
-        "Relationship", "symmetry", "A2 and A3 mixed actions are invariant under direction-order permutation", "reference_or_one", 1.0e-10, 0.0,
-        symmetric && asymmetry <= 1.0e-10, "e5-4", "mixed-symmetry", "\\Delta", "order", "\\Delta\\leq10^{-10}", "case");
+        recording_support::Rule::ReferenceOrOne, 1.0e-10, 0.0, "symmetry",
+        recording_support::fields({recording_support::field("results", fixture.observables.size())}));
+    CHECK(symmetric);
     // Radial identities: molar h has Dh[r] = 0 and D2h[v, r] = -Dh[v]; extensive H = N h has DH[r] = H, D2H[v, r] = 0.
     auto radial = fixture;
     radial.directions = {direction(0.0, 0.0, {0.02, -0.01}, {0.0, 0.0}), direction(0.0, 0.0, {0.25, 0.75}, {0.0, 0.0})};
@@ -1057,10 +1054,10 @@ void check_e5_associating() {
     const double H_r = Nr * h + N * hr, H_vr = Nvr * h + Nv * hr + Nr * hv + N * hvr;
     const bool extensive_ok = std::abs(H_r - N * h) <= 1.0e-8 * std::max(1.0, std::abs(N * h)) && std::abs(H_vr) <= 1.0e-8 * std::max(1.0, std::abs(N * hv));
     recording_support::compare("e5-4/associating/radial-molar", "action", "J/mol", hvr, -hv,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-8, "homogeneity",
         recording_support::fields({recording_support::field("Dh_r", hr), recording_support::field("Dh_v", hv), recording_support::field("H_r", H_r),
-            recording_support::field("H", N * h), recording_support::field("H_vr", H_vr)}),
-        "Relationship", "homogeneity", "molar enthalpy obeys Dh[r]=0 and D2h[v,r]=-Dh[v]; the extensive product H=N h obeys DH[r]=H and D2H[v,r]=0",
-        "reference_or_one", 0.0, 1.0e-8, molar_ok && extensive_ok, "e5-4", "radial", "D^2 h[v,r]", "v,r", "D^2h[v,r]=-Dh[v]", "case");
+            recording_support::field("H", N * h), recording_support::field("H_vr", H_vr)}));
+    CHECK(molar_ok && extensive_ok);
 }
 
 namespace e5 {
@@ -1137,7 +1134,7 @@ void check_e5_electrolyte() {
         && batch.results[1].status == SolvedStateActionStatus::Available && batch.results[1].action.has_value()
         && batch.results[2].status == SolvedStateActionStatus::MissingThermochemistry && !batch.results[2].action.has_value()
         && !batch.results[2].value.has_value() && batch.results[2].diagnostic_message.has_value();
-    record_bool("e5-5/electrolyte-residual-only/sibling", "e5-5", "a missing thermal record types the total enthalpy row while residual siblings stay available",
+    record_bool("e5-5/electrolyte-residual-only/sibling",
         ok, recording_support::fields({recording_support::field("status_total", status_field(batch, 2)), recording_support::field("status_residual", status_field(batch, 0)),
             recording_support::field("message", batch.results[2].diagnostic_message.value_or("absent"))}));
     residual_only.observables.pop_back();
@@ -1154,8 +1151,7 @@ void check_e5_roots() {
             kind == PhaseKind::Vapor ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid, std::nullopt);
         const bool branch_ok = central.success && std::abs(std::log(central.molar_densities[0] / root.molar_density)) <= 1.0e-8
             && root.stable_root_count.value_or(0) == 2;
-        record_bool((std::string("e5-6/") + fixture.label + "/central-root").c_str(), "e5-6",
-            "the declared branch selects its own root of the two stable ethane roots", branch_ok,
+        record_bool((std::string("e5-6/") + fixture.label + "/central-root").c_str(), branch_ok,
             recording_support::fields({recording_support::field("rho", central.success ? central.molar_densities[0] : 0.0),
                 recording_support::field("rho_branch", root.molar_density), recording_support::field("stable_roots", root.stable_root_count.value_or(0))}));
         qualify(fixture, "e5-6");
@@ -1172,7 +1168,7 @@ void check_e5_thermal() {
     bool boundary = central.success;
     for (const auto& item : batch.results)
         boundary = boundary && item.value.has_value() && item.status == SolvedStateActionStatus::ThermalBoundary && !item.action.has_value();
-    record_bool("e5-7/thermal-250/boundary", "e5-7", "at the closed interval endpoint central values are retained and thermal actions are typed thermal_boundary",
+    record_bool("e5-7/thermal-250/boundary",
         boundary, recording_support::fields({recording_support::field("status", status_field(batch, 0)), recording_support::field("value", epcsaft::core::optional_number(batch.results[0].value))}));
     const auto outside = thermal_case(249.0, true);
     const auto outside_model = outside.model();
@@ -1180,7 +1176,7 @@ void check_e5_thermal() {
     const auto outside_batch = actions(outside, outside_model, outside_central, outside.observables, 1);
     bool interval = outside_central.success;
     for (const auto& item : outside_batch.results) interval = interval && item.status == SolvedStateActionStatus::OutsideInterval && !item.action.has_value();
-    record_bool("e5-7/thermal-249/outside-interval", "e5-7", "below the closed interval dependent ideal and total rows are typed outside_interval",
+    record_bool("e5-7/thermal-249/outside-interval",
         interval, recording_support::fields({recording_support::field("status", status_field(outside_batch, 0))}));
     const auto missing = thermal_case(320.0, false);
     const auto missing_model = missing.model();
@@ -1188,7 +1184,7 @@ void check_e5_thermal() {
     const auto missing_batch = actions(missing, missing_model, missing_central, missing.observables, 1);
     bool typed = missing_central.success;
     for (const auto& item : missing_batch.results) typed = typed && item.status == SolvedStateActionStatus::MissingThermochemistry;
-    record_bool("e5-7/thermal-no-record/missing", "e5-7", "without a thermal record dependent rows are typed missing_thermochemistry",
+    record_bool("e5-7/thermal-no-record/missing",
         typed, recording_support::fields({recording_support::field("status", status_field(missing_batch, 0))}));
 }
 
@@ -1200,10 +1196,8 @@ void check_e5_refusals() {
     const auto central = epcsaft::equilibrium::solve_equilibrium(model, fixture.problem);
     CHECK(central.success);
     const auto invalid = [&](const char* id, const char* phrase, const SolvedStateActionRequest& request, const CompiledSystem& system, const EquilibriumResult& result) {
-        std::string message;
-        try { (void)epcsaft::equilibrium::solved_state_actions(system, result, request); }
-        catch (const std::invalid_argument& error) { message = error.what(); }
-        record_bool((std::string("e5-8/invalid/") + id).c_str(), "e5-8", phrase, message.find(phrase) != std::string::npos,
+        const auto message = recording_support::refusal([&] { (void)epcsaft::equilibrium::solved_state_actions(system, result, request); });
+        record_bool((std::string("e5-8/invalid/") + id).c_str(), message.find(phrase) != std::string::npos,
             recording_support::fields({recording_support::field("message", message)}));
     };
     SolvedStateActionRequest base;
@@ -1240,7 +1234,7 @@ void check_e5_refusals() {
     const auto other_compiled = epcsaft::equilibrium::compile_problem(model, other);
     const auto other_batch = epcsaft::equilibrium::solved_state_actions(other_compiled, central, base);
     const double other_rows = epcsaft::equilibrium::maximum_abs(other_compiled.evaluate(central.coordinates).values);
-    record_bool("e5-8/typed/defining-equations", "e5-8", "an accepted result of another same-layout problem is typed defining_equations_not_satisfied with its mapped value retained",
+    record_bool("e5-8/typed/defining-equations",
         other_rows > 1.0e-10 && other_batch.results[0].status == SolvedStateActionStatus::DefiningEquationsNotSatisfied
             && other_batch.results[0].value.has_value() && !other_batch.results[0].action.has_value(),
         recording_support::fields({recording_support::field("central_rows", other_rows), recording_support::field("status", status_field(other_batch, 0))}));
@@ -1254,7 +1248,7 @@ void check_e5_refusals() {
     exact_request.observables = {obs(Kind::PhaseAmount, 0)};
     exact_request.directions = {direction(0.0, 0.0, {0.01, 0.0})};
     const auto not_run = epcsaft::equilibrium::solved_state_actions(exact_compiled, exact_central, exact_request);
-    record_bool("e5-8/typed/central-unavailable", "e5-8", "the pre-solve NOT_RUN record is typed central_solve_unavailable",
+    record_bool("e5-8/typed/central-unavailable",
         !exact_central.success && not_run.results[0].status == SolvedStateActionStatus::CentralSolveUnavailable && !not_run.results[0].value.has_value(),
         recording_support::fields({recording_support::field("solver_status", exact_central.solver_status)}));
     // Exact inventory faces admit central states; insertion directions change that support,
@@ -1266,7 +1260,7 @@ void check_e5_refusals() {
     insertion.observables = {obs(Kind::PhaseAmount, 0), obs(Kind::Temperature)};
     insertion.directions = {direction(0.0, 0.0, {0.0, 0.0, 0.01}, {0.0, 0.0})};
     const auto inserted = epcsaft::equilibrium::solved_state_actions(sparse_compiled, sparse_central, insertion);
-    record_bool("e5-8/typed/removed-species", "e5-8", "the admitted neutral face preserves the amount value while refusing insertion as support_change; fixed temperature remains available with zero action",
+    record_bool("e5-8/typed/removed-species",
         sparse_central.success && !sparse_compiled.removed_species.empty() && sparse_central.mole_fractions[2] == 0
             && inserted.results[0].status == SolvedStateActionStatus::SupportChange
             && inserted.results[0].value.has_value() && !inserted.results[0].action.has_value()
@@ -1287,7 +1281,7 @@ void check_e5_refusals() {
     ionic_request.observables = {obs(Kind::PhaseMolarDensity, 0)};
     ionic_request.directions = {direction(0.0, 0.0, {-0.02, 0.01, 0.01})};
     const auto ionic_batch = epcsaft::equilibrium::solved_state_actions(water_compiled, water_central, ionic_request);
-    record_bool("e5-8/typed/removed-ions", "e5-8", "the admitted water face preserves the density value while refusing a charged insertion action as ionic_insertion",
+    record_bool("e5-8/typed/removed-ions",
         water_central.success && water_central.mole_fractions[1] == 0 && water_central.mole_fractions[2] == 0
             && ionic_batch.results[0].status == SolvedStateActionStatus::IonicInsertion
             && ionic_batch.results[0].value.has_value() && !ionic_batch.results[0].action.has_value(),
@@ -1298,7 +1292,7 @@ void check_e5_refusals() {
     // The matrix owner on a rank-deficient Jacobian: the exact all-pinned system loses one
     // rank at its generic point; nonfinite and excessive-residual paths remain unexecuted.
     const auto inspected = epcsaft::equilibrium::inspect_sensitivity(exact_compiled, exact_compiled.generic_point());
-    record_bool("e5-8/matrix/rank-deficient", "e5-8", "the shared matrix owner reports the rank-deficient all-pinned Jacobian as singular with its rank below the dimension",
+    record_bool("e5-8/matrix/rank-deficient",
         !inspected.nonsingular && inspected.rank + 1 == exact_compiled.generic_point().size() && inspected.rank == exact_compiled.jacobian_rank,
         recording_support::fields({recording_support::field("rank", inspected.rank), recording_support::field("dimension", exact_compiled.generic_point().size()),
             recording_support::field("condition", inspected.condition_estimate)}));
@@ -1308,7 +1302,7 @@ void check_e5_refusals() {
     const auto partial_model = partial.model();
     const auto partial_central = epcsaft::equilibrium::solve_equilibrium(partial_model, partial.problem);
     const auto partial_batch = actions(partial, partial_model, partial_central, partial.observables, 1);
-    record_bool("e5-8/typed/sibling-preservation", "e5-8", "an unavailable ideal dependency leaves the density and residual siblings available with finite values",
+    record_bool("e5-8/typed/sibling-preservation",
         partial_batch.results[0].status == SolvedStateActionStatus::MissingThermochemistry && partial_batch.results[1].status == SolvedStateActionStatus::Available
             && partial_batch.results[1].action.has_value() && partial_batch.results[2].status == SolvedStateActionStatus::Available && partial_batch.results[2].action.has_value(),
         recording_support::fields({recording_support::field("statuses", status_field(partial_batch, 0) + "," + status_field(partial_batch, 1) + "," + status_field(partial_batch, 2))}));
@@ -1386,19 +1380,18 @@ void check_e5_refusals() {
         const double allowed = bound + 2.0 * diagnostics.condition_estimate.value_or(0.0) * eta_jacobian;
         const bool verdict = typed && error <= (allowed + floor) * norm;
         const auto id = "e5-8/forward-bound/rung" + std::to_string(rung);
-        recording_support::compare_custom(id.c_str(), "forward_error", "1", error / norm, allowed,
+        recording_support::compare_custom(id, "forward_error", "1", error / norm, allowed,
+            "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa (eta + eta_J) + eps", verdict,
+            "analytic-bubble",
             recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("temperature", 0.7 * energy),
                 recording_support::field("pressure", epcsaft::core::optional_number(batch.results[0].value)), recording_support::field("status", status_field(batch, 0)),
                 recording_support::field("raw_condition", raw_condition),
                 recording_support::field("condition", epcsaft::core::optional_number(diagnostics.condition_estimate)),
                 recording_support::field("backward_error", epcsaft::core::optional_number(diagnostics.maximum_linear_residual)),
                 recording_support::field("jacobian_backward_error", eta_jacobian),
-                recording_support::field("bound", allowed), recording_support::field("limit", limit), recording_support::field("reference_norm", norm)}),
-            "Relationship", "analytic-bubble", "a badly scaled but regular state is admitted and its action agrees with the exact bubble response within 2 cond (eta + eta_J) in the equilibrated norm",
-            "available, 2 kappa eta <= limit, |C^-1 dy|/|C^-1 y| <= 2 kappa (eta + eta_J) + eps", verdict, "e5-8", id.c_str(), "|C^{-1}dy|/|C^{-1}y|", "E",
-            "|C^{-1}dy|/|C^{-1}y|\\leq2\\kappa_\\infty(\\eta+\\eta_J)+\\epsilon", "case");
+                recording_support::field("bound", allowed), recording_support::field("limit", limit), recording_support::field("reference_norm", norm)}));
         const auto host_id = "e5-8/asl-host/rung" + std::to_string(rung);
-        record_bool(host_id.c_str(), "e5-8", "the action under the ASL x87 control word 0x27f is the clean-process action exactly",
+        record_bool(host_id.c_str(),
             identical, recording_support::fields({recording_support::field("energy_over_k", energy), recording_support::field("control_word", 0x27f),
                 recording_support::field("shift", shift / norm), recording_support::field("clean_error", error / norm)}));
     }
@@ -1408,14 +1401,13 @@ void check_e5_refusals() {
 // use the retained CRITERION, zeros the retained STRUCTURAL_ZERO; no stencil and no new threshold.
 void check_e5_identities() {
     using namespace e5;
-    const auto within = [&](const std::string& id, const char* claim, double value, double reference, double tolerance,
+    const auto within = [&](const std::string& id, double value, double reference, double tolerance,
                             const SolvedStateActionBatch& batch, const std::string& stated) {
-        const bool verdict = std::isfinite(value) && std::abs(value - reference) <= tolerance;
-        recording_support::compare(id.c_str(), "action_identity", "1", value, reference,
+        recording_support::compare(id, "action_identity", "1", value, reference, recording_support::Rule::Absolute,
+            tolerance, 0.0, "exact-identity",
             recording_support::fields({stated, recording_support::field("tolerance", tolerance),
                 recording_support::field("condition_estimate", batch.diagnostics.condition_estimate.value_or(0.0)),
-                recording_support::field("linear_residual", batch.diagnostics.maximum_linear_residual.value_or(0.0))}),
-            "Relationship", "exact-identity", claim, "absolute", tolerance, 0.0, verdict, "e5-10");
+                recording_support::field("linear_residual", batch.diagnostics.maximum_linear_residual.value_or(0.0))}));
     };
     const auto action = [](const SolvedStateActionBatch& batch, std::size_t i) { return batch.results[i].action.value_or(std::nan("")); };
 
@@ -1446,15 +1438,15 @@ void check_e5_identities() {
         const std::string id = "e5-10/euler/" + epcsaft::equilibrium::solved_state_observable_id(list[i]);
         const double value = radial.results[i].value.value_or(std::nan("")), first = action(skew, i);
         if (extensive[i]) {
-            within(id + "/radial", "degree one: D y[n] = y", action(radial, i), value, CRITERION[0] * std::abs(value), radial, euler);
-            within(id + "/mixed", "degree one: D2 y[n, v] = 0", action(mixed, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(first)), mixed, euler);
+            within(id + "/radial", action(radial, i), value, CRITERION[0] * std::abs(value), radial, euler);
+            within(id + "/mixed", action(mixed, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(first)), mixed, euler);
         } else {
-            within(id + "/radial", "degree zero: D y[n] = 0", action(radial, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(value)), radial, euler);
-            within(id + "/mixed", "degree zero: D2 y[n, v] = -D y[v]", action(mixed, i), -first, CRITERION[1] * std::abs(first), mixed, euler);
+            within(id + "/radial", action(radial, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(value)), radial, euler);
+            within(id + "/mixed", action(mixed, i), -first, CRITERION[1] * std::abs(first), mixed, euler);
             wrong_sign = std::max(wrong_sign, std::abs(action(mixed, i) - first) / std::abs(first));
         }
     }
-    record_bool("e5-10/euler/wrong-sign", "e5-10", "the mixed identity with the wrong sign misses by a relative two",
+    record_bool("e5-10/euler/wrong-sign",
         wrong_sign > 1.0, recording_support::fields({recording_support::field("relative_defect", wrong_sign)}));
 
     // H4: in each liquid of A + B = C, sum_i nu_i ln a_i = ln K(T) along every admitted control path.
@@ -1487,8 +1479,8 @@ void check_e5_identities() {
             const std::string id = std::string("e5-10/manifold/") + label + "/phase" + std::to_string(phase);
             // The central identity holds to the retained affinity bound of e5-3; actions to the retained criterion.
             const double tolerance = values ? 1.0e-9 : CRITERION[order - 1] * scale;
-            within(id, "sum_i nu_i ln a_i follows ln K(T) in each phase", sum, reference, tolerance, batch, stated);
-            record_bool((id + "/perturbed-nu").c_str(), "e5-10", "a wrong stoichiometric coefficient fails the identity's own criterion",
+            within(id, sum, reference, tolerance, batch, stated);
+            record_bool((id + "/perturbed-nu").c_str(),
                 std::abs(perturbed - reference) > tolerance, recording_support::fields({stated, recording_support::field("defect", perturbed - reference),
                     recording_support::field("tolerance", tolerance), recording_support::field("defect_over_tolerance", std::abs(perturbed - reference) / tolerance),
                     recording_support::field("term_scale", scale)}));
@@ -1508,7 +1500,7 @@ void check_e5_identities() {
     manifold("temperature-temperature-temperature", {dT, dT, dT}, -6.0 * b / (t0 * t0 * t0 * t0), false);
     manifold("pressure-temperature-temperature", {dP, dT, dT}, 0.0, false);
     for (std::size_t i = 0; i < list.size(); ++i) {
-        within("e5-10/phase-rule/" + epcsaft::equilibrium::solved_state_observable_id(list[i]), "a feed direction leaves the invariant intensive state unchanged",
+        within("e5-10/phase-rule/" + epcsaft::equilibrium::solved_state_observable_id(list[i]),
                action(invariant, i), 0.0, STRUCTURAL_ZERO * std::max(1.0, std::abs(invariant.results[i].value.value_or(std::nan("")))), invariant,
                recording_support::fields({recording_support::field("feed_direction", v.feed_amounts_mol)}));
     }

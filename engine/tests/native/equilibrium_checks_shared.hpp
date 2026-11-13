@@ -93,7 +93,7 @@ inline void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& 
                              const std::vector<double>& point) {
     const auto analytic = compiled.jacobian(point);
     const auto base = compiled.evaluate(point).values;
-    const auto context = equilibrium_support::weighted_hessian_context(compiled);
+    const auto context = equilibrium_support::state_inputs(compiled);
     CHECK(analytic.size() == base.size() * point.size());
     for (std::size_t column = 0; column < point.size(); ++column) {
         auto plus = point;
@@ -108,22 +108,16 @@ inline void check_finite_difference(const epcsaft::equilibrium::CompiledSystem& 
         for (std::size_t row = 0; row < base.size(); ++row) {
             const double centered = (up[row] - down[row]) / (2.0 * delta);
             const double model_value = analytic[row * point.size() + column];
-            const bool verdict = close(model_value, centered);
             const auto point_id = std::to_string(row) + "-" + std::to_string(column);
-            recording_support::compare(
-                (std::string("jacobian/") + point_id).c_str(),
-                "equilibrium_jacobian", "1", model_value, centered,
+            recording_support::compare(std::string("jacobian/") + point_id, "equilibrium_jacobian", "1", model_value,
+                centered, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-6, "finite-difference",
                 recording_support::fields({
                     context,
                     recording_support::field("point", point),
                     recording_support::field("row", row),
                     recording_support::field("column", column),
                     recording_support::field("delta", delta),
-                }),
-                "Relationship", "finite-difference", "equilibrium Jacobian matches centered residual derivative",
-                "reference_or_one", 0.0, 1.0e-6, verdict,
-                "f5-jacobian", point_id.c_str(), "J", "T,P,\\mathbf{x},\\Delta z",
-                "J_{ij}=\\Delta r_i/\\Delta z_j", "row,column");
+                }));
         }
     }
 }
@@ -211,7 +205,7 @@ inline void check_weighted_hessian_gradient_ladder(
 
     const auto objective_factors = {0.0, 0.5, 1.0};
     const auto step_factors = {10.0, 3.0, 1.0};
-    const auto context = equilibrium_support::weighted_hessian_context(compiled);
+    const auto context = equilibrium_support::state_inputs(compiled);
 
     std::vector<Ipopt::Index> hessian_rows(static_cast<std::size_t>(hessian_entries));
     std::vector<Ipopt::Index> hessian_columns(static_cast<std::size_t>(hessian_entries));
@@ -276,18 +270,10 @@ inline void check_weighted_hessian_gradient_ladder(
                         && (row == compiled.primal_size - 1 || column == compiled.primal_size - 1);
                     const double coordinate_scale = pressure_entry ? compiled.problem.pressure.value : 1.0;
                     const double absolute = pressure_entry ? 1.0e-12 / coordinate_scale : 0.0;
-                    const double allowance = pressure_entry ? absolute + tolerance * std::abs(centered)
-                        : tolerance * std::max(1.0, std::abs(centered));
-                    const bool verdict = std::abs(restored - centered) <= allowance;
-                    recording_support::compare(
-                        comparison_id.c_str(), "weighted_lagrangian_hessian", "coordinate",
-                        restored, centered, inputs, "Relationship",
-                        "weighted_hessian_gradient_finite_difference",
-                        "nabla2_L=d(weighted_gradient)/d(coordinate)", pressure_entry ? "reference_scale" : "reference_or_one",
-                        absolute, tolerance, verdict, "f5-hessian-ladder", point_id.c_str(),
-                        "\\nabla^2\\mathcal L", "\\mathbf{z},\\lambda,\\Delta z",
-                        "\\nabla^2\\mathcal L_{ij}=\\Delta(\\nabla\\mathcal L)_i/\\Delta z_j",
-                        coordinates.c_str());
+                    recording_support::compare(comparison_id, "weighted_lagrangian_hessian", "coordinate", restored,
+                        centered,
+                        pressure_entry ? recording_support::Rule::ReferenceScale : recording_support::Rule::ReferenceOrOne,
+                        absolute, tolerance, "weighted_hessian_gradient_finite_difference", inputs);
                 }
             }
         }

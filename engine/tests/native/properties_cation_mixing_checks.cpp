@@ -89,13 +89,9 @@ void cation_mixing() {
         for (const bool zero_coefficients : {false, true}) {
             auto rejected = neutral;
             if (zero_coefficients) rejected.cation_pair_mixing[0] = rejected.cation_triple_mixing[0] = 0;
-            bool refused = false;
-            try { (void)cation_mixing_helmholtz(x, rejected); } catch (const std::invalid_argument&) { refused = true; }
-            CHECK(refused);
+            CHECK(recording_support::refusal([&] { (void)cation_mixing_helmholtz(x, rejected); }).find("cation mixing requires positive solvent mass") != std::string::npos);
         }
-        bool refused = false;
-        try { (void)dry_model.state(T, 1000, x); } catch (const std::invalid_argument&) { refused = true; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { (void)dry_model.state(T, 1000, x); }).find("cation mixing requires positive solvent mass") != std::string::npos);
     }
     // Wet faces retain their analytic insertion and mixed derivative even at very small positive solvent.
     for (const double solvent : {1.0, 1e-20}) for (const std::size_t missing : {1U, 2U}) {

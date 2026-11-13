@@ -24,10 +24,10 @@ inline bool scalar_ladder(const std::string& id,const Quantity& q,double exact,d
         try { return centered(h); }
         catch(const OracleOutsideChart& error) {
             const auto key=id+"/outside-chart/"+recording_support::number(h);
-            recording_support::observe(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,std::nullopt,
+            recording_support::observe(key, q.name.c_str(), q.unit.c_str(), exact, std::nullopt,
+                "native-independent-value-difference",
                 recording_support::fields({inputs,recording_support::field("requested_step",h),
-                    recording_support::field("resolved",0),recording_support::field("cause",error.what())}),
-                "Refinement","native-independent-value-difference","No derivative reference outside the positive-pressure chart; halve the prescribed step","reactive-caloric");
+                    recording_support::field("resolved",0),recording_support::field("cause",error.what())}));
             return std::nullopt;
         }
     };
@@ -44,11 +44,11 @@ inline bool scalar_ladder(const std::string& id,const Quantity& q,double exact,d
             recording_support::field("error",std::abs(exact-rich)),recording_support::field("error_over_target",std::abs(exact-rich)/target),
             recording_support::field("resolved",resolved)});
         const auto key=id+"/rung-"+std::to_string(rung);
-        if(!resolved&&rung<5) recording_support::observe(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,rich,row,
-            "Refinement","native-independent-value-difference","Coarse unresolved step retained and refined","reactive-caloric");
-        else recording_support::compare_custom(key.c_str(),q.name.c_str(),q.unit.c_str(),exact,rich,row,
-            "Relationship","native-independent-value-difference","Independent Gibbs or fixed-volume verification",
-            "abs(exact-R)<=atol+relative*max(abs(R),sigma) && refinement<=target/4",good,"reactive-caloric");
+        if(!resolved&&rung<5) recording_support::observe(key, q.name.c_str(), q.unit.c_str(), exact, rich,
+            "native-independent-value-difference", row);
+        else recording_support::compare_custom(key, q.name.c_str(), q.unit.c_str(), exact, rich,
+            "abs(exact-R)<=atol+relative*max(abs(R),sigma) && refinement<=target/4", good,
+            "native-independent-value-difference", row);
         if(resolved) break;coarse_value=fine_value;
     }
     return good;

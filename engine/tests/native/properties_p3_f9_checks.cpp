@@ -14,14 +14,9 @@ std::string p3_inputs(const char* form, double temperature = 320.0) {
 }
 
 void p3_compare(const std::string& id, const char* quantity, const char* unit,
-                double model, double reference, const std::string& inputs,
-                const char* group, const char* point, double tolerance = 2.0e-12) {
-    const bool ok = close(model, reference, tolerance);
-    recording_support::compare(
-        id.c_str(), quantity, unit, model, reference, inputs, "Relationship",
-        "independent-reference", "P3 property/reference relation", "reference_or_one",
-        0.0, tolerance, ok, group, point, quantity, "T,rho,P0", "model=reference", "state"
-    );
+                double model, double reference, const std::string& inputs, double tolerance = 2.0e-12) {
+    recording_support::compare(id, quantity, unit, model, reference, recording_support::Rule::ReferenceOrOne, 0.0,
+        tolerance, "independent-reference", inputs);
 }
 
 void properties_thermochemistry_p3() {
@@ -46,7 +41,7 @@ void properties_thermochemistry_p3() {
                         recording_support::field("rho_mol_m3", rho), recording_support::field("thermal_sigma", thermal_sigma)});
                     const auto same = [&](const char* quantity, const char* unit, double value, double reference) {
                         p3_compare("pure-T-V/" + point + "/" + quantity, quantity, unit, value, reference,
-                            inputs, "pure-T-V", point.c_str(), 1.0e-10);
+                            inputs, 1.0e-10);
                     };
                     same("residual_helmholtz", "1", a.residual_helmholtz, b.residual_helmholtz);
                     same("compressibility_factor", "1", a.compressibility_factor, b.compressibility_factor);
@@ -108,15 +103,15 @@ void properties_thermochemistry_p3() {
         CHECK(ideal.value.has_value() && ideal.status == epcsaft::ThermochemistryStatus::Available);
         const auto inputs = p3_inputs(name);
         p3_compare(std::string("p3-form-value/") + name + "/h", "ideal_enthalpy", "J/mol",
-                   ideal.value->enthalpy, expected_h, inputs, "p3-form-values", name);
+                   ideal.value->enthalpy, expected_h, inputs);
         p3_compare(std::string("p3-form-value/") + name + "/u", "ideal_internal_energy", "J/mol",
-                   ideal.value->internal_energy, expected_u, inputs, "p3-form-values", name);
+                   ideal.value->internal_energy, expected_u, inputs);
         p3_compare(std::string("p3-form-value/") + name + "/s", "ideal_entropy", "J/(mol K)",
-                   ideal.value->entropy, expected_s, inputs, "p3-form-values", name);
+                   ideal.value->entropy, expected_s, inputs);
         p3_compare(std::string("p3-form-value/") + name + "/cp", "ideal_heat_capacity_cp", "J/(mol K)",
-                   ideal.value->isobaric_heat_capacity, 30.0, inputs, "p3-form-values", name);
+                   ideal.value->isobaric_heat_capacity, 30.0, inputs);
         p3_compare(std::string("p3-form-value/") + name + "/cv", "ideal_heat_capacity_cv", "J/(mol K)",
-                   ideal.value->isochoric_heat_capacity, 30.0 - R, inputs, "p3-form-values", name);
+                   ideal.value->isochoric_heat_capacity, 30.0 - R, inputs);
 
 
         epcsaft::HelmholtzModel model(properties_support::ethane(), {}, record);
@@ -132,9 +127,8 @@ void properties_thermochemistry_p3() {
                  {"h", "J/mol", *state.total_enthalpy}, {"u", "J/mol", *state.total_internal_energy},
                  {"s", "J/(mol K)", *state.total_entropy}, {"cp", "J/(mol K)", *state.total_isobaric_heat_capacity},
                  {"cv", "J/(mol K)", *state.total_isochoric_heat_capacity}}})
-            recording_support::observe((std::string("p3-total/") + name + "/" + key).c_str(), key, unit, value,
-                                       std::nullopt, inputs, "Relationship", "state-total", "P3 total property",
-                                       "p3-total", name);
+            recording_support::observe(std::string("p3-total/") + name + "/" + key, key, unit, value, std::nullopt,
+                "state-total", inputs);
     }
 
     for (const auto& [name, correlation] : forms) {
@@ -150,15 +144,15 @@ void properties_thermochemistry_p3() {
             const auto point = std::string(name) + "/" + recording_support::number(endpoint_temperature);
             const auto endpoint_inputs = p3_inputs(name, endpoint_temperature);
             p3_compare(std::string("p3-endpoint/") + point + "/h", "ideal_enthalpy", "J/mol",
-                       endpoint_state.value->enthalpy, h, endpoint_inputs, "p3-endpoints", point.c_str());
+                       endpoint_state.value->enthalpy, h, endpoint_inputs);
             p3_compare(std::string("p3-endpoint/") + point + "/u", "ideal_internal_energy", "J/mol",
-                       endpoint_state.value->internal_energy, u, endpoint_inputs, "p3-endpoints", point.c_str());
+                       endpoint_state.value->internal_energy, u, endpoint_inputs);
             p3_compare(std::string("p3-endpoint/") + point + "/s", "ideal_entropy", "J/(mol K)",
-                       endpoint_state.value->entropy, s, endpoint_inputs, "p3-endpoints", point.c_str());
+                       endpoint_state.value->entropy, s, endpoint_inputs);
             p3_compare(std::string("p3-endpoint/") + point + "/cp", "ideal_heat_capacity_cp", "J/(mol K)",
-                       endpoint_state.value->isobaric_heat_capacity, 30.0, endpoint_inputs, "p3-endpoints", point.c_str());
+                       endpoint_state.value->isobaric_heat_capacity, 30.0, endpoint_inputs);
             p3_compare(std::string("p3-endpoint/") + point + "/cv", "ideal_heat_capacity_cv", "J/(mol K)",
-                       endpoint_state.value->isochoric_heat_capacity, 30.0 - R, endpoint_inputs, "p3-endpoints", point.c_str());
+                       endpoint_state.value->isochoric_heat_capacity, 30.0 - R, endpoint_inputs);
         }
     }
 
@@ -174,15 +168,15 @@ void properties_thermochemistry_p3() {
         + 0.75 * (70.0 + 40.0 * std::log(temperature / 300.0) - R * std::log(
             0.75 * density * R * temperature / 1.0e5));
     p3_compare("p3-mixing/h", "ideal_enthalpy", "J/mol", binary.value->enthalpy, binary_h,
-               "x=0.25,0.75,T=320", "p3-mixing", "h");
+               "x=0.25,0.75,T=320");
     p3_compare("p3-mixing/u", "ideal_internal_energy", "J/mol", binary.value->internal_energy, binary_u,
-               "x=0.25,0.75,T=320", "p3-mixing", "u");
+               "x=0.25,0.75,T=320");
     p3_compare("p3-mixing/s", "ideal_entropy", "J/(mol K)", binary.value->entropy, binary_s,
-               "x=0.25,0.75,T=320", "p3-mixing", "s");
+               "x=0.25,0.75,T=320");
     p3_compare("p3-mixing/cp", "ideal_heat_capacity_cp", "J/(mol K)", binary.value->isobaric_heat_capacity,
-               binary_cp, "x=0.25,0.75,T=320", "p3-mixing", "cp");
+               binary_cp, "x=0.25,0.75,T=320");
     p3_compare("p3-mixing/cv", "ideal_heat_capacity_cv", "J/(mol K)", binary.value->isochoric_heat_capacity,
-               binary_cp - R, "x=0.25,0.75,T=320", "p3-mixing", "cv");
+               binary_cp - R, "x=0.25,0.75,T=320");
 
     const auto endpoint_record = p3_record(forms.front().second);
     const auto outside = epcsaft::HelmholtzModel(
@@ -190,63 +184,46 @@ void properties_thermochemistry_p3() {
     ).state(400.0, density, {1.0});
     const bool outside_partial = !outside.ideal_enthalpy.has_value()
         && std::isfinite(outside.residual_enthalpy);
-    recording_support::compare_custom("p3-boundary/outside", "residual_only", "bool",
-        outside_partial ? 1.0 : 0.0, 1.0, "T=400", "Availability", "interval-owner",
-        "outside interval preserves residual-only state", "absolute", outside_partial,
-        "p3-boundaries", "outside");
-    bool gap_failed = false, overlap_failed = false, pressure_failed = false;
-    try {
-        auto gap = endpoint_record;
-        gap.component_intervals.front().push_back(
-            epcsaft::IdealInterval{351.0, 360.0, true, true, forms.front().second}
-        );
-        epcsaft::validate_thermochemistry(gap, 1);
-    } catch (const std::invalid_argument&) { gap_failed = true; }
-    try {
-        auto overlap = endpoint_record;
-        overlap.component_intervals.front().push_back(
-            epcsaft::IdealInterval{250.0, 350.0, true, true, forms.front().second}
-        );
-        epcsaft::validate_thermochemistry(overlap, 1);
-    } catch (const std::invalid_argument&) { overlap_failed = true; }
-    try {
-        auto invalid = endpoint_record;
-        invalid.component_intervals.front().front().correlation.source_pressure = 0.0;
-        epcsaft::validate_thermochemistry(invalid, 1);
-    } catch (const std::invalid_argument&) { pressure_failed = true; }
-    recording_support::compare_custom("p3-boundary/gap", "gap_rejected", "bool",
-        gap_failed ? 1.0 : 0.0, 1.0, "351-360 after 250-350", "Availability", "interval-owner",
-        "gapped intervals are rejected", "absolute", gap_failed, "p3-boundaries", "gap");
-    recording_support::compare_custom("p3-boundary/overlap", "overlap_rejected", "bool",
-        overlap_failed ? 1.0 : 0.0, 1.0, "250-350 plus 250-350", "Availability", "interval-owner",
-        "overlapping intervals are rejected", "absolute", overlap_failed, "p3-boundaries", "overlap");
+    recording_support::compare_custom("p3-boundary/outside", "residual_only", "bool", outside_partial ? 1.0 : 0.0, 1.0,
+        "absolute", outside_partial, "interval-owner", "T=400");
+    const auto refused = [](const epcsaft::ThermochemistryRecord& record, const char* cause) {
+        return recording_support::refusal([&] { epcsaft::validate_thermochemistry(record, 1); }).find(cause)
+            != std::string::npos;
+    };
+    auto gap = endpoint_record;
+    gap.component_intervals.front().push_back(epcsaft::IdealInterval{351.0, 360.0, true, true, forms.front().second});
+    const bool gap_failed = refused(gap, "ideal anchor outside its correlation interval");
+    auto overlap = endpoint_record;
+    overlap.component_intervals.front().push_back(
+        epcsaft::IdealInterval{250.0, 350.0, true, true, forms.front().second});
+    const bool overlap_failed = refused(overlap, "overlapping or gapped ideal intervals");
+    auto invalid = endpoint_record;
+    invalid.component_intervals.front().front().correlation.source_pressure = 0.0;
+    const bool pressure_failed = refused(invalid, "invalid ideal source pressure");
+    recording_support::compare_custom("p3-boundary/gap", "gap_rejected", "bool", gap_failed ? 1.0 : 0.0, 1.0,
+        "absolute", gap_failed, "interval-owner", "351-360 after 250-350");
+    recording_support::compare_custom("p3-boundary/overlap", "overlap_rejected", "bool", overlap_failed ? 1.0 : 0.0,
+        1.0, "absolute", overlap_failed, "interval-owner", "250-350 plus 250-350");
     recording_support::compare_custom("p3-boundary/pressure", "invalid_pressure_rejected", "bool",
-        pressure_failed ? 1.0 : 0.0, 1.0, "Psrc=0", "Availability", "input-validation",
-        "invalid source pressure is rejected", "absolute", pressure_failed, "p3-boundaries", "pressure");
-    bool missing_component_failed = false;
-    try {
-        auto missing = endpoint_record;
-        missing.component_intervals.clear();
-        epcsaft::validate_thermochemistry(missing, 1);
-    } catch (const std::invalid_argument&) { missing_component_failed = true; }
+        pressure_failed ? 1.0 : 0.0, 1.0, "absolute", pressure_failed, "input-validation", "Psrc=0");
+    auto missing = endpoint_record;
+    missing.component_intervals.clear();
+    const bool missing_component_failed = refused(missing, "thermochemistry component order");
     recording_support::compare_custom("p3-boundary/missing-component", "missing_component_rejected", "bool",
-        missing_component_failed ? 1.0 : 0.0, 1.0, "component thermal record absent", "Availability",
-        "input-validation", "missing component thermochemistry is unavailable", "absolute",
-        missing_component_failed, "p3-boundaries", "missing-component");
+        missing_component_failed ? 1.0 : 0.0, 1.0, "absolute", missing_component_failed, "input-validation",
+        "component thermal record absent");
 
     const auto missing_record_state = epcsaft::HelmholtzModel(properties_support::ethane()).state(
         temperature, density, {1.0}
     );
     recording_support::compare_custom("p3-availability/missing-record", "thermochemistry_status", "enum",
-        static_cast<double>(missing_record_state.thermochemistry_status), 0.0, "no record",
-        "Availability", "status-owner", "missing record has a typed cause", "absolute",
-        missing_record_state.thermochemistry_status == epcsaft::ThermochemistryStatus::MissingRecord,
-        "p3-availability", "missing-record");
+        static_cast<double>(missing_record_state.thermochemistry_status), 0.0, "absolute",
+        missing_record_state.thermochemistry_status == epcsaft::ThermochemistryStatus::MissingRecord, "status-owner",
+        "no record");
     recording_support::compare_custom("p3-availability/outside", "thermochemistry_status", "enum",
-        static_cast<double>(outside.thermochemistry_status), 2.0, "T=400 outside [250,350]",
-        "Availability", "status-owner", "outside interval has a typed cause", "absolute",
-        outside.thermochemistry_status == epcsaft::ThermochemistryStatus::OutsideInterval,
-        "p3-availability", "outside");
+        static_cast<double>(outside.thermochemistry_status), 2.0, "absolute",
+        outside.thermochemistry_status == epcsaft::ThermochemistryStatus::OutsideInterval, "status-owner",
+        "T=400 outside [250,350]");
     auto nonfinite_record = endpoint_record;
     std::get<epcsaft::IdealPolynomial>(
         nonfinite_record.component_intervals.front().front().correlation.form
@@ -255,10 +232,9 @@ void properties_thermochemistry_p3() {
         properties_support::ethane(), {}, nonfinite_record
     ).state(temperature, density, {1.0});
     recording_support::compare_custom("p3-availability/nonfinite", "thermochemistry_status", "enum",
-        static_cast<double>(nonfinite.thermochemistry_status), 3.0, "finite record with nonfinite evaluation",
-        "Availability", "status-owner", "nonfinite evaluation has a typed cause", "absolute",
-        nonfinite.thermochemistry_status == epcsaft::ThermochemistryStatus::Nonfinite,
-        "p3-availability", "nonfinite");
+        static_cast<double>(nonfinite.thermochemistry_status), 3.0, "absolute",
+        nonfinite.thermochemistry_status == epcsaft::ThermochemistryStatus::Nonfinite, "status-owner",
+        "finite record with nonfinite evaluation");
     const auto negative_d = epcsaft::HelmholtzModel(
         properties_support::ethane(), {}, endpoint_record
     ).state(280.0, 4000.0, {1.0});
@@ -266,17 +242,14 @@ void properties_thermochemistry_p3() {
         && !negative_d.total_isobaric_heat_capacity.has_value()
         && std::isfinite(negative_d.residual_enthalpy);
     recording_support::compare_custom("p3-availability/negative-D", "partial_state", "bool",
-        negative_d_partial ? 1.0 : 0.0, 1.0, "T=280,rho=4000,D<0",
-        "Availability", "partial-state", "negative-D preserves other fields and total cp unavailability",
-        "absolute", negative_d_partial, "p3-availability", "negative-D");
+        negative_d_partial ? 1.0 : 0.0, 1.0, "absolute", negative_d_partial, "partial-state", "T=280,rho=4000,D<0");
     const auto available_state = epcsaft::HelmholtzModel(
         properties_support::ethane(), {}, endpoint_record
     ).state(temperature, density, {1.0});
     recording_support::compare_custom("p3-availability/available", "thermochemistry_status", "enum",
-        static_cast<double>(available_state.thermochemistry_status), 1.0, "T=320 inside [250,350]",
-        "Availability", "status-owner", "available record has a typed cause", "absolute",
-        available_state.thermochemistry_status == epcsaft::ThermochemistryStatus::Available,
-        "p3-availability", "available");
+        static_cast<double>(available_state.thermochemistry_status), 1.0, "absolute",
+        available_state.thermochemistry_status == epcsaft::ThermochemistryStatus::Available, "status-owner",
+        "T=320 inside [250,350]");
 
     auto high_pressure = endpoint_record;
     high_pressure.standard_pressure = 2.0e5;
@@ -284,20 +257,17 @@ void properties_thermochemistry_p3() {
     const auto high_ideal = epcsaft::evaluate_ideal_properties(high_pressure, temperature, density, {1.0});
     CHECK(low_state.value.has_value() && high_ideal.value.has_value());
     p3_compare("p3-reference/h", "h_pressure_invariance", "J/mol",
-               high_ideal.value->enthalpy, low_state.value->enthalpy, "P0=1e5 to 2e5",
-               "p3-reference", "h");
+               high_ideal.value->enthalpy, low_state.value->enthalpy, "P0=1e5 to 2e5");
     p3_compare("p3-reference/u", "u_pressure_invariance", "J/mol",
-               high_ideal.value->internal_energy, low_state.value->internal_energy, "P0=1e5 to 2e5",
-               "p3-reference", "u");
+               high_ideal.value->internal_energy, low_state.value->internal_energy, "P0=1e5 to 2e5");
     p3_compare("p3-reference/s", "s_pressure_invariance", "J/(mol K)",
-               high_ideal.value->entropy, low_state.value->entropy, "P0=1e5 to 2e5",
-               "p3-reference", "s");
+               high_ideal.value->entropy, low_state.value->entropy, "P0=1e5 to 2e5");
     p3_compare("p3-reference/cp", "cp_pressure_invariance", "J/(mol K)",
                high_ideal.value->isobaric_heat_capacity, low_state.value->isobaric_heat_capacity,
-               "P0=1e5 to 2e5", "p3-reference", "cp");
+               "P0=1e5 to 2e5");
     p3_compare("p3-reference/cv", "cv_pressure_invariance", "J/(mol K)",
                high_ideal.value->isochoric_heat_capacity, low_state.value->isochoric_heat_capacity,
-               "P0=1e5 to 2e5", "p3-reference", "cv");
+               "P0=1e5 to 2e5");
     const auto low_total = epcsaft::HelmholtzModel(
         properties_support::ethane(), {}, endpoint_record
     ).state(temperature, density, {1.0});
@@ -314,7 +284,7 @@ void properties_thermochemistry_p3() {
         const auto [quantity, low, high, unit] = item;
         const auto point = std::string("total-") + quantity;
         p3_compare(std::string("p3-reference/") + point, "total_pressure_invariance", unit,
-                   high, low, "State P0=1e5 to 2e5", "p3-reference", point.c_str());
+                   high, low, "State P0=1e5 to 2e5");
     }
 
     const epcsaft::ReactionLogPolynomial correlation{
@@ -331,10 +301,8 @@ void properties_thermochemistry_p3() {
     for (std::size_t i = 0; i < phreeqc.size(); ++i) {
         const double t = 298.15 + 25.0 * i;
         const double value = epcsaft::evaluate_reaction_properties(bicarbonate, t).ln_k / ln10;
-        recording_support::compare(("p3-reaction/bicarbonate/" + std::to_string(i)).c_str(), "log10_K", "1",
-            value, phreeqc[i], "T=" + std::to_string(t), "Reference", "PHREEQC-LK_SPECIES",
-            "pinned WATEQ4F bicarbonate source law", "absolute", 1e-10, 0.0,
-            std::abs(value - phreeqc[i]) <= 1e-10, "p3-reaction", "bicarbonate");
+        recording_support::compare("p3-reaction/bicarbonate/" + std::to_string(i), "log10_K", "1", value, phreeqc[i],
+            recording_support::Rule::Absolute, 1e-10, 0.0, "PHREEQC-LK_SPECIES", "T=" + std::to_string(t));
     }
     for (const auto terms : {std::pair{90000.0, 0.0}, std::pair{0.0, 1e-6}, std::pair{90000.0, 1e-6}}) {
         const epcsaft::ReactionLogPolynomial law{0, 0, 0, 0, 350, 300, 400, "basis-verification", terms.first, terms.second};
@@ -343,23 +311,19 @@ void properties_thermochemistry_p3() {
                 const double exact = epcsaft::reaction_log_value(law, 350.0, order);
                 const double fd = (epcsaft::reaction_log_value(law, 350.0 + h, order - 1)
                     - epcsaft::reaction_log_value(law, 350.0 - h, order - 1)) / (2.0 * h);
-                const bool ok = std::abs(exact - fd) <= 1e-7 * std::abs(fd) + 1e-12;
-                recording_support::compare(("p3-reaction/terms/" + std::to_string(terms.first) + "/"
-                    + std::to_string(terms.second) + "/" + std::to_string(order) + "/" + std::to_string(h)).c_str(),
+                recording_support::compare("p3-reaction/terms/" + std::to_string(terms.first) + "/"
+                    + std::to_string(terms.second) + "/" + std::to_string(order) + "/" + std::to_string(h),
                     "dlnK_dT_order", ("K^-" + std::to_string(order)).c_str(), exact, fd,
-                    "T=350;h=" + std::to_string(h), "Derivative", "central-difference",
-                    "difference of preceding native derivative", "reference_scale", 1e-12, 1e-7, ok,
-                    "p3-reaction", "basis-terms");
+                    recording_support::Rule::ReferenceScale, 1e-12, 1e-7, "central-difference",
+                    "T=350;h=" + std::to_string(h));
             }
         }
     }
     for (const auto member : {&epcsaft::ReactionLogPolynomial::e, &epcsaft::ReactionLogPolynomial::f}) {
         auto invalid = correlation;
         invalid.*member = std::numeric_limits<double>::infinity();
-        bool refused = false;
-        try { (void)epcsaft::evaluate_reaction_properties(invalid, 350.0); }
-        catch (const std::invalid_argument&) { refused = true; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { (void)epcsaft::evaluate_reaction_properties(invalid, 350.0); })
+            .find("invalid reaction correlation") != std::string::npos);
     }
 
     const auto reaction = epcsaft::evaluate_reaction_properties(correlation, 350.0);
@@ -367,28 +331,24 @@ void properties_thermochemistry_p3() {
         + 0.4 * std::log(350.0 / 300.0) - 0.003 * 350.0;
     const double expected_derivative = 1200.0 / (350.0 * 350.0) + 0.4 / 350.0 - 0.003;
     p3_compare("p3-reaction/ln-k", "ln_k", "1", reaction.ln_k, expected_ln_k,
-               "T=350", "p3-reaction", "ln-k");
+               "T=350");
     CHECK(reaction.k.has_value());
     p3_compare("p3-reaction/dk", "dln_k_dT", "1/K", reaction.derivative, expected_derivative,
-               "T=350", "p3-reaction", "dk");
+               "T=350");
     p3_compare("p3-reaction/h", "reaction_enthalpy", "J/mol", reaction.enthalpy,
-               R * 350.0 * 350.0 * expected_derivative, "T=350", "p3-reaction", "h");
+               R * 350.0 * 350.0 * expected_derivative, "T=350");
 
     const auto lower = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_min);
     const auto upper = epcsaft::evaluate_reaction_properties(correlation, correlation.temperature_max);
     const bool endpoints = lower.k.has_value() && upper.k.has_value();
     const bool finite_k = lower.k.has_value() && upper.k.has_value()
         && std::isfinite(*lower.k) && std::isfinite(*upper.k);
-    bool outside_k = false;
-    try {
-        epcsaft::evaluate_reaction_properties(correlation, 280.0);
-    } catch (const std::invalid_argument&) { outside_k = true; }
-    recording_support::compare_custom("p3-reaction/endpoints", "K_endpoint_available", "bool",
-        endpoints ? 1.0 : 0.0, 1.0, "Tmin/Tmax inclusive", "Availability", "correlation-interval",
-        "correlation endpoints are owned and available", "absolute", endpoints, "p3-reaction", "endpoints");
-    recording_support::compare_custom("p3-reaction/finite-k", "K_finite", "bool",
-        finite_k ? 1.0 : 0.0, 1.0, "Tmin/Tmax", "Availability", "finite-K",
-        "finite ln K produces finite K", "absolute", finite_k, "p3-reaction", "finite-k");
+    const bool outside_k = recording_support::refusal([&] { epcsaft::evaluate_reaction_properties(correlation, 280.0); })
+        .find("temperature outside reaction correlation") != std::string::npos;
+    recording_support::compare_custom("p3-reaction/endpoints", "K_endpoint_available", "bool", endpoints ? 1.0 : 0.0,
+        1.0, "absolute", endpoints, "correlation-interval", "Tmin/Tmax inclusive");
+    recording_support::compare_custom("p3-reaction/finite-k", "K_finite", "bool", finite_k ? 1.0 : 0.0, 1.0,
+        "absolute", finite_k, "finite-K", "Tmin/Tmax");
     const auto overflow = epcsaft::evaluate_reaction_properties(
         {1000.0, 0.0, 0.0, 0.0, 300.0, 293.15, 393.15, "P0"}, 300.0
     );
@@ -399,13 +359,9 @@ void properties_thermochemistry_p3() {
         && std::isfinite(overflow.ln_k) && std::isfinite(underflow.ln_k)
         && std::isfinite(overflow.derivative) && std::isfinite(underflow.enthalpy);
     recording_support::compare_custom("p3-reaction/k-unavailable", "K_availability_separate", "bool",
-        k_separate ? 1.0 : 0.0, 1.0, "ln K=+/-1000", "Availability", "finite-K",
-        "finite ln K, derivative and enthalpy survive K overflow/underflow",
-        "absolute", k_separate, "p3-reaction", "k-unavailable");
-    recording_support::compare_custom("p3-reaction/outside", "K_outside_rejected", "bool",
-        outside_k ? 1.0 : 0.0, 1.0, "T=280 outside [293.15,393.15]", "Availability",
-        "correlation-interval", "out-of-domain K is unavailable", "absolute", outside_k,
-        "p3-reaction", "outside");
+        k_separate ? 1.0 : 0.0, 1.0, "absolute", k_separate, "finite-K", "ln K=+/-1000");
+    recording_support::compare_custom("p3-reaction/outside", "K_outside_rejected", "bool", outside_k ? 1.0 : 0.0, 1.0,
+        "absolute", outside_k, "correlation-interval", "T=280 outside [293.15,393.15]");
 
 
     const double tref = correlation.reference_temperature;
@@ -414,8 +370,7 @@ void properties_thermochemistry_p3() {
         return species_h_ref + R * (correlation.c * (t - tref) + correlation.d * (t * t - tref * tref));
     };
     p3_compare("p3-reaction/species-vanthoff", "species_delta_h", "J/mol",
-               species_h(350.0), reaction.enthalpy, "supplied h_i(Tref),cp_i(T)",
-               "p3-reaction", "species-vanthoff");
+               species_h(350.0), reaction.enthalpy, "supplied h_i(Tref),cp_i(T)");
     constexpr int integration_steps = 1000;
     const double integration_step = (350.0 - tref) / integration_steps;
     double species_integral = species_h(tref) / (R * tref * tref) + species_h(350.0) / (R * 350.0 * 350.0);
@@ -427,17 +382,15 @@ void properties_thermochemistry_p3() {
     p3_compare("p3-reaction/species-integral", "ln_k_species_integral", "1",
                species_integral, reaction.ln_k
                    - epcsaft::evaluate_reaction_properties(correlation, tref).ln_k,
-               "supplied h_i(Tref),cp_i(T),Simpson-1000", "p3-reaction", "species-integral", 1.0e-8);
-    bool missing_standard_state = false;
-    try {
-        auto missing = correlation;
-        missing.standard_state_id.clear();
-        epcsaft::evaluate_reaction_properties(missing, 350.0);
-    } catch (const std::invalid_argument&) { missing_standard_state = true; }
+               "supplied h_i(Tref),cp_i(T),Simpson-1000", 1.0e-8);
+    auto without_state = correlation;
+    without_state.standard_state_id.clear();
+    const bool missing_standard_state = recording_support::refusal([&] {
+        epcsaft::evaluate_reaction_properties(without_state, 350.0);
+    }).find("missing standard-state identity") != std::string::npos;
     recording_support::compare_custom("p3-reaction/missing-standard-state", "standard_state_required", "bool",
-        missing_standard_state ? 1.0 : 0.0, 1.0, "correlation identity absent and no gauge substitute",
-        "Availability", "input-validation", "missing source standard state remains unavailable",
-        "absolute", missing_standard_state, "p3-reaction", "missing-standard-state");
+        missing_standard_state ? 1.0 : 0.0, 1.0, "absolute", missing_standard_state, "input-validation",
+        "correlation identity absent and no gauge substitute");
 }
 
 
@@ -505,16 +458,12 @@ void modular_permittivity_actions() {
         const double identity_reference = 1.0 + rho * slope;
         const bool identity_ok = std::abs(root.compressibility_factor - identity_reference)
             <= 1.0e-8 * std::abs(identity_reference - 1.0);
-        recording_support::compare_custom(
-            (std::string("issue26/pressure/") + name).c_str(), "compressibility_factor", "1",
-            root.compressibility_factor, identity_reference,
+        recording_support::compare_custom(std::string("issue26/pressure/") + name, "compressibility_factor", "1",
+            root.compressibility_factor, identity_reference, "relative", identity_ok, "central-difference",
             recording_support::fields({recording_support::field("form", name),
                 recording_support::field("rho", rho),
                 recording_support::field("epsilon_r", root.bulk_relative_permittivity),
-                recording_support::field("relative_step", 1.0e-5)}),
-            "Relationship", "central-difference", "pressure carries every density chain",
-            "relative", identity_ok, "issue26-pressure-identity", name, "Z",
-            "T,\\rho,\\mathbf{x}", "Z=1+\\rho\\,\\partial a^{res}/\\partial\\rho", "form");
+                recording_support::field("relative_step", 1.0e-5)}));
         for (const bool pressure_chart : {false, true}) {
             for (std::size_t order = 1; order <= 3; ++order) {
                 std::vector<epcsaft::DensityActionDirection> density_request;
@@ -545,9 +494,9 @@ void modular_permittivity_actions() {
                         && action_reference.uncertainty[index] <= allowance;
                     const std::string point = std::string(name) + (pressure_chart ? "/P/" : "/rho/")
                         + std::to_string(order) + "/" + std::to_string(index);
-                    recording_support::compare_custom(("issue26/action/" + point).c_str(),
-                        "action", "native",
+                    recording_support::compare_custom("issue26/action/" + point, "action", "native",
                         result.action.value_or(std::numeric_limits<double>::quiet_NaN()), fine,
+                        "tolerance_times_chart_term_scale", ok, "central-difference-refinement",
                         recording_support::fields({recording_support::field("form", name),
                             recording_support::field("chart", pressure_chart ? "T,P,x,theta" : "T,rho,x,theta"),
                             recording_support::field("order", order),
@@ -558,11 +507,7 @@ void modular_permittivity_actions() {
                             recording_support::field("tolerance", tolerances[order - 1]),
                             recording_support::field("term_scale", action_reference.scale[index]),
                             recording_support::field("reference_uncertainty", action_reference.uncertainty[index]),
-                            recording_support::field("allowance", allowance)}),
-                        "Relationship", "central-difference-refinement",
-                        "liquid electrolyte action retains every permittivity chain",
-                        "tolerance_times_chart_term_scale", ok, "issue26-actions", point.c_str(), "action",
-                        "T,\\rho|P,\\mathbf{x},\\theta", "available", "form,chart,order,observable");
+                            recording_support::field("allowance", allowance)}));
                 }
             }
         }
@@ -603,17 +548,14 @@ void modular_permittivity_actions() {
             ++scan_index;
             previous_liquid = liquid.molar_density;
             const std::string point = std::string(name) + "/" + recording_support::number(scan_pressure);
-            recording_support::compare_custom(("issue26/branch/" + point).c_str(),
-                "liquid_molar_density", "mol/m3", liquid.molar_density, vapor.molar_density,
+            recording_support::compare_custom("issue26/branch/" + point, "liquid_molar_density", "mol/m3",
+                liquid.molar_density, vapor.molar_density, "custom", ok, "declared-branch-scan",
                 recording_support::fields({recording_support::field("form", name),
                     recording_support::field("P", scan_pressure),
                     recording_support::field("stable_roots", roots),
                     recording_support::field("epsilon_r_liquid", liquid.bulk_relative_permittivity),
                     recording_support::field("epsilon_r_vapor", vapor.bulk_relative_permittivity),
-                    recording_support::field("liquid_pressure_residual", liquid.pressure - scan_pressure)}),
-                "Relationship", "declared-branch-scan", "liquid root persists; sole roots are unlabelled",
-                "custom", ok, "issue26-branch", point.c_str(), "\\rho_L", "T,P,\\mathbf{x}",
-                "branch", "form,P");
+                    recording_support::field("liquid_pressure_residual", liquid.pressure - scan_pressure)}));
         }
         actions_match(name, parameters, active, theta, x, composition_direction, pressure);
     }
@@ -642,18 +584,14 @@ void modular_permittivity_actions() {
         {{{-1e-3, -1e-3, 1e-3, 1e-3}, {5e-4, 5e-4, -5e-4, -5e-4}, {-2e-4, -2e-4, 2e-4, 2e-4}}}, 1.0e5);
     const double expected = 13.2 * (1 - salt) + 8.0 * salt;
     recording_support::compare_custom("issue409/epsilon", "bulk_relative_permittivity", "1", epsilon, expected,
-        recording_support::fields({recording_support::field("x_salt", salt)}), "Reference", "source-equation",
-        "Bulow 2019 Eq. 7 on ions alone", "relative", std::abs(epsilon - expected) <= 1e-12 * expected,
-        "issue409-epsilon", "C4mimTfO-NaCl", "\\epsilon_r", "\\mathbf{x}", "13.2(1-x_s)+8x_s", "x_salt");
+        "relative", std::abs(epsilon - expected) <= 1e-12 * expected, "source-equation",
+        recording_support::fields({recording_support::field("x_salt", salt)}));
     // The forms that average over neutral solvents, or whose ion records are aqueous, still refuse.
     il.ion_suppression_coefficient = {7.01, 7.01, 7.01, 7.01};
     for (const auto form : {epcsaft::PermittivityForm::IonSuppression, epcsaft::PermittivityForm::DensityTemperature,
                             epcsaft::PermittivityForm::DipolarPerturbation}) {
         il.permittivity_form = form;
-        bool refused = false;
-        try { const epcsaft::HelmholtzModel model(il); }
-        catch (const std::invalid_argument& error) { refused = std::string(error.what()) == "invalid dielectric solvent"; }
-        CHECK(refused);
+        CHECK(recording_support::refusal([&] { const epcsaft::HelmholtzModel model(il); }) == "invalid dielectric solvent");
     }
 }
 
@@ -744,20 +682,17 @@ void energy_action_ladders() {
                 && action.action.has_value() && resolved
                 && std::abs(*action.action - reference) <= 1.0e-6 * scale;
             const std::string point = std::string(item.name) + "/" + label;
-            recording_support::compare_custom(("issue26/energy/" + point).c_str(), "energy_action",
-                "extensive residual scalar", action.action.value_or(std::numeric_limits<double>::quiet_NaN()),
-                reference, recording_support::fields({recording_support::field("case", item.name),
+            recording_support::compare_custom("issue26/energy/" + point, "energy_action", "extensive residual scalar",
+                action.action.value_or(std::numeric_limits<double>::quiet_NaN()), reference, "relative", ok,
+                "centered-difference-richardson",
+                recording_support::fields({recording_support::field("case", item.name),
                     recording_support::field("action", label),
                     recording_support::field("status", static_cast<int>(action.status)),
                     recording_support::field("difference_h", d1),
                     recording_support::field("difference_h_over_2", d2),
                     recording_support::field("difference_h_over_4", d3),
                     recording_support::field("reference_uncertainty", uncertainty),
-                    recording_support::field("association_residual", action.diagnostics.association_residual)}),
-                "Relationship", "centered-difference-richardson",
-                "implicit association and permittivity chains complete through fourth order",
-                "relative", ok, "issue26-energy", point.c_str(), label, "T,V,\\mathbf{n},\\theta",
-                "D^kA=\\partial_t D^{k-1}A", "case,action");
+                    recording_support::field("association_residual", action.diagnostics.association_residual)}));
         }
     }
 }
@@ -795,11 +730,10 @@ void energy_e5_ladder() {
                 errors.push_back(std::abs(*exact.action - (E({w, w, w, a}, h, b).action.value() - E({w, w, w, a}, -h, b).action.value()) / (2 * h)) / scale);
             const double best = *std::min_element(errors.begin(), errors.end());
             const std::string id = std::string("C4/") + item.name + "/" + std::to_string(k);
-            recording_support::compare_custom(id.c_str(), "e5_energy_action", "extensive residual scalar", *exact.action, scale,
+            recording_support::compare_custom(id, "e5_energy_action", "extensive residual scalar", *exact.action,
+                scale, "action or sub-direction magnitude", best <= 1e-5, "issue-224",
                 recording_support::fields({recording_support::field("errors_over_scale", errors), recording_support::field("error", best),
-                    recording_support::field("criterion", 1e-5), recording_support::field("site_residual", exact.diagnostics.association_residual)}),
-                "Relationship", "issue-224", "E5 equals the centered difference of exact E4", "action or sub-direction magnitude",
-                best <= 1e-5, "critical-envelope", id.c_str());
+                    recording_support::field("criterion", 1e-5), recording_support::field("site_residual", exact.diagnostics.association_residual)}));
         }
     }
 }
@@ -840,11 +774,10 @@ void born_parameter_columns() {
         for (std::size_t column = 0; column < actual.size(); ++column) {
             const auto id = std::to_string(case_index + 1) + "/" + std::to_string(c) + "/" + std::to_string(epsilon) + "/" + std::to_string(column);
             const double atol = reference[column] == 0.0 ? 1e-12 : 0.0;
-            const bool ok = std::abs(actual[column] - reference[column]) <= atol + 1e-12 * std::abs(reference[column]);
-            recording_support::compare(("born-parameter/" + id).c_str(), "Born radial work and first columns", "dimensionless",
-                actual[column], reference[column], recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}),
-                "Relationship", "born_radial_charging_work", "frozen-state Born value, c coefficient and dq/depsilon chain", "reference_scale",
-                atol, 1e-12, ok, "born-parameter", id.c_str(), "a_Born", "c,epsilon", "radial work", "case,c,epsilon,column");
+            recording_support::compare("born-parameter/" + id, "Born radial work and first columns", "dimensionless",
+                actual[column], reference[column], recording_support::Rule::ReferenceScale, atol, 1e-12,
+                "born_radial_charging_work",
+                recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}));
         }
     }
 }
@@ -936,13 +869,13 @@ void reference_f8() {
                 const double target=1e-7+1e-9*std::abs(y);
                 const bool ok=exact.status==epcsaft::PropertyActionStatus::Available && std::abs(x-y)<=target;
                 const std::string id="F8/"+std::to_string(int(P))+"/"+std::to_string(a)+std::to_string(b)+std::to_string(c);
-                recording_support::compare_custom(id.c_str(),"scaled reference partial","J/mol/K",x,y,
+                recording_support::compare_custom(id, "scaled reference partial", "J/mol/K", x, y, "absolute+relative",
+                    ok, "pure-P4-identities",
                     recording_support::fields({recording_support::field("T",T),recording_support::field("P_source",P),
                     recording_support::field("a",double(a)),recording_support::field("b",double(b)),recording_support::field("theta",double(c)),
                     recording_support::field("target",target),recording_support::field("error",std::abs(x-y)),recording_support::field("error_over_target",std::abs(x-y)/target),
                     recording_support::field("site_residual",exact.diagnostics.association_residual),
-                    recording_support::field("pressure_series_residual",exact.diagnostics.pressure_residual)}),
-                    "Relationship","pure-P4-identities","finite source-pressure reference derivatives","absolute+relative",ok,"F8");
+                    recording_support::field("pressure_series_residual",exact.diagnostics.pressure_residual)}));
             }
     }
     const auto parameters=properties_support::identical_ethane_pair();
@@ -967,15 +900,14 @@ void reference_f8() {
             const bool ok=exact.action && std::abs(value-expected)<=target;
             const std::string id="F8/lower-terminal/"+std::to_string(int(P))+"/"+std::to_string(int(-std::log10(molality)))
                 +"/"+std::to_string(a)+std::to_string(b)+std::to_string(c);
-            recording_support::compare_custom(id.c_str(),"scaled reference partial","J/mol/K",value,expected,
+            recording_support::compare_custom(id, "scaled reference partial", "J/mol/K", value, expected,
+                "absolute+relative", ok, "pure-P4-identities",
                 recording_support::fields({recording_support::field("T",T),recording_support::field("P_source",P),
                     recording_support::field("molality",molality),recording_support::field("a",a),recording_support::field("b",b),
                     recording_support::field("theta",c),recording_support::field("target",target),
                     recording_support::field("error_over_target",std::abs(value-expected)/target),
                     recording_support::field("density",state.molar_density),recording_support::field("pressure_root_residual",state.pressure-P),
-                    recording_support::field("site_residual",exact.diagnostics.association_residual)}),
-                "Relationship","pure-P4-identities","lower slopes at fixed E terminal compositions; tied EOS direction",
-                "absolute+relative",ok,"F8-lower");
+                    recording_support::field("site_residual",exact.diagnostics.association_residual)}));
         }
     }
 
@@ -1112,10 +1044,10 @@ void reference_f9() {
                         recording_support::field("rounding_over_step",64*std::numeric_limits<double>::epsilon()*scale*(std::abs(plus)+std::abs(minus))/h),
                         recording_support::field("pressure_series_residual",exact.diagnostics.pressure_residual)});
                     if (!resolved && halving < 6)
-                        recording_support::observe(("F9/refinement/"+id.substr(11)+"/"+std::to_string(halving)).c_str(),"scaled reference partial","J/mol/K",
-                            value,rich,inputs,"Numerical","fixed-composition-Richardson","coarse step requires refinement");
-                    else recording_support::compare_custom(id.c_str(),"scaled reference partial","J/mol/K",value,rich,inputs,
-                        "Relationship","fixed-composition-Richardson","finite terminal ionic derivatives","absolute+relative",accepted,"F9");
+                        recording_support::observe("F9/refinement/"+id.substr(11)+"/"+std::to_string(halving),
+                            "scaled reference partial", "J/mol/K", value, rich, "fixed-composition-Richardson", inputs);
+                    else recording_support::compare_custom(id, "scaled reference partial", "J/mol/K", value, rich,
+                        "absolute+relative", accepted, "fixed-composition-Richardson", inputs);
                     if(resolved)break;
                     h/=2;coarse=fine;
                 }
@@ -1201,10 +1133,10 @@ void reference_limits() {
                 const double change=scale*std::abs(values[k+1]-values[k]);
                 const std::string id="F9/lower-limit/"+std::to_string(fixed)+"/"+std::to_string(a)+std::to_string(b)+std::to_string(c)+"/"+std::to_string(k);
                 const bool ok=change<=tolerance;
-                recording_support::compare_custom(id.c_str(),"scaled lower reference change",a==2?"J/mol/K":"dimensionless",change,0,
+                recording_support::compare_custom(id, "scaled lower reference change", a==2?"J/mol/K":"dimensionless",
+                    change, 0, "absolute", ok, "terminal-ladder",
                     recording_support::fields({recording_support::field("target",tolerance),recording_support::field("source_pressure",src),
-                        recording_support::field("lower_molality",k?1e-12:1e-10),recording_support::field("upper_molality",k?1e-14:1e-12)}),
-                    "Relationship","terminal-ladder","unchanged lower-column admission scales","absolute",ok,"F9-lower-limit");
+                        recording_support::field("lower_molality",k?1e-12:1e-10),recording_support::field("upper_molality",k?1e-14:1e-12)}));
             }
             const double limit=(10*values[2]-values[1])/9;  // sqrt(m) Richardson limit of the terminal pair (#353)
             CHECK(scale*std::abs(*admitted-(fixed && b?0:limit))<=tolerance);
@@ -1219,13 +1151,13 @@ void reference_limits() {
                 *(column.parameter?353.95:1);
             const double change=scale*std::abs(*column.value-*second.value);
             const std::string id="F9/doubled/"+std::to_string(fixed)+"/"+std::to_string(i);
-            recording_support::compare_custom(id.c_str(),"doubled terminal concentration change","J/mol/K",change,0,
-                recording_support::fields({recording_support::field("target",0.01)}),"Relationship","same-neutral-curve",
-                "doubled terminal concentration, no different ionic-ratio claim","absolute",change<=0.01,"F9-limit");
+            recording_support::compare_custom(id, "doubled terminal concentration change", "J/mol/K", change, 0,
+                "absolute", change<=0.01, "same-neutral-curve",
+                recording_support::fields({recording_support::field("target",0.01)}));
             if(fixed && column.pressure_order) {
                 const std::string zero="F8/system-P-zero/"+std::to_string(i);
-                recording_support::compare_custom(zero.c_str(),"fixed-source system-pressure derivative","raw SI",*column.value,0,
-                    "{}","Relationship","analytic-zero","fixed-source system-P terms vanish exactly","absolute",*column.value==0,"F8");
+                recording_support::compare_custom(zero, "fixed-source system-pressure derivative", "raw SI",
+                    *column.value, 0, "absolute", *column.value==0, "analytic-zero", "{}");
             }
         }
 
@@ -1246,9 +1178,9 @@ void reference_limits() {
             const double gap=scale*(*column.value-limit);
             const std::string id="F9/limit/"+std::to_string(fixed)+"/"+std::to_string(column.temperature_order)
                 +std::to_string(column.pressure_order)+std::to_string(column.parameter.has_value());
-            recording_support::compare_custom(id.c_str(),"scaled analytic-minus-ladder reference","J/mol/K",gap,0,
-                recording_support::fields({recording_support::field("target",0.01)}),"Relationship","terminal-ladder",
-                "analytic limit compared with retained finite calculation","absolute",std::abs(gap)<=0.01,"F9-limit");
+            recording_support::compare_custom(id, "scaled analytic-minus-ladder reference", "J/mol/K", gap, 0,
+                "absolute", std::abs(gap)<=0.01, "terminal-ladder",
+                recording_support::fields({recording_support::field("target",0.01)}));
         }
         // Existing equilibrium driver supplies only the case-center composition.
         // This independent verification completion never supplies runtime calorics.
@@ -1281,23 +1213,23 @@ void reference_limits() {
             cp[k]=anchor_weight*(33.59-R)+y*R*(2*T*ct+T*T*ctt)+R+*center.residual_isobaric_heat_capacity;
             cv[k]=cp[k]+T*vgt*vgt/vgp;u[k]=h-P*vg;
             const std::string id="F9/completion/"+std::to_string(fixed)+"/"+std::to_string(k);
-            recording_support::observe(id.c_str(),"completed frozen cv","J/mol/K",cv[k],std::nullopt,
+            recording_support::observe(id, "completed frozen cv", "J/mol/K", cv[k], std::nullopt,
+                "independent-anchored-completion",
                 recording_support::fields({recording_support::field("cp",cp[k]),recording_support::field("u_G",u[k]),
                 recording_support::field("v_G",vg),recording_support::field("v_G_T",vgt),recording_support::field("v_G_P",vgp),
                 recording_support::field("quotient_magnitude",std::abs(T*vgt*vgt/vgp)),
                 recording_support::field("x_water",x[0]),recording_support::field("x_Na",x[1]),recording_support::field("x_Cl",x[2]),
                 recording_support::field("equilibrium_residual",solved.residual_norm()),
-                recording_support::field("molality",molality),recording_support::field("source_pressure",src)}),
-                "Numerical","independent-anchored-completion","case-center quotient conditioning");
+                recording_support::field("molality",molality),recording_support::field("source_pressure",src)}));
             CHECK(vg>0 && vgp<0 && std::isfinite(cv[k]));
         }
         for(unsigned k=0;k<2;++k)for(bool is_cv:{false,true}) {
             const double change=std::abs((is_cv?cv:cp)[k+1]-(is_cv?cv:cp)[k]);
             const std::string id="F9/completed-change/"+std::to_string(fixed)+"/"+std::to_string(is_cv)+"/"+std::to_string(k);
             const bool ok=change<=0.01;
-            recording_support::compare_custom(id.c_str(),is_cv?"completed cv change":"completed cp change","J/mol/K",change,0,
-                recording_support::fields({recording_support::field("u_G_change",std::abs(u[k+1]-u[k])),recording_support::field("target",0.01)}),
-                "Relationship","completed-ladder","completed heat-capacity convergence","absolute",ok,"F9-limit");
+            recording_support::compare_custom(id, is_cv?"completed cv change":"completed cp change", "J/mol/K", change,
+                0, "absolute", ok, "completed-ladder",
+                recording_support::fields({recording_support::field("u_G_change",std::abs(u[k+1]-u[k])),recording_support::field("target",0.01)}));
         }
     }
     // Parameter jets at temperature order zero request dC/dtheta and no temperature column: the lookup names the column
@@ -1334,16 +1266,14 @@ void residual_cv_temperature_extraction() {
         {PropertyObservable::ResidualIsochoricHeatCapacity}, {direction});
     CHECK(batch.results.front().action);
     const double action = *batch.results.front().action / T; // restore the 1 K action
-    recording_support::compare("residual-cv/temperature-extraction/A1", "residual cv A1", "J/(mol K)",
-        action, 0.04758556315383267,
+    recording_support::compare("residual-cv/temperature-extraction/A1", "residual cv A1", "J/(mol K)", action,
+        0.04758556315383267, recording_support::Rule::Absolute, 1e-12, 0.0, "binary128 nested exact T derivatives",
         recording_support::fields({recording_support::field("T_K", T),
             recording_support::field("V_m3_per_mol", V), recording_support::field("x", x),
             recording_support::field("normalized_delta_T_K", direction.temperature),
             recording_support::field("normalized_delta_rho_mol_per_m3", direction.molar_density),
             recording_support::field("normalized_delta_x", direction.composition),
-            recording_support::field("physical_delta_T_K", 1.0)}),
-        "Numerical", "binary128 nested exact T derivatives", "Frozen residual cv first action",
-        "absolute", 1e-12, 0.0, std::abs(action - 0.04758556315383267) <= 1e-12);
+            recording_support::field("physical_delta_T_K", 1.0)}));
 }
 
 }  // namespace properties_checks

@@ -292,17 +292,8 @@ inline ReferenceTensor reference_tensor(
     point.push_back(temperature);
     point.push_back(volume);
     point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const auto& item : active) {
-        const auto& values = item.family == epcsaft::ParameterFamily::Kij
-            ? parameters.k_ij
-            : item.family == epcsaft::ParameterFamily::Lij ? parameters.l_ij
-            : item.family == epcsaft::ParameterFamily::DispersionEnergyOverK
-            ? parameters.dispersion_energy_over_k
-            : item.family == epcsaft::ParameterFamily::AssociationEnergyOverK
-            ? parameters.association_energy_over_k
-            : parameters.association_volume;
-        point.push_back(values[item.indices.front()]);
-    }
+    for (const auto& item : active)
+        point.push_back(epcsaft::detail::family_values(parameters, item.family).first[item.indices.front()]);
     point.insert(point.end(), site_fractions.begin(), site_fractions.end());
     std::vector<AD> independent(point.begin(), point.end());
     CppAD::Independent(independent);
