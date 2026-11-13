@@ -20,5 +20,5 @@ platform = "linux"
 [[actions]]
 name = "Check all"
 icon = "test"
-command = "bash tools/check-all.sh"
+command = "bash tools/check-affected.sh --all"
 platform = "linux"

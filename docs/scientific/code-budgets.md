@@ -3,9 +3,7 @@
 A hard line ceiling per runtime layer, and one for the total, constrains
 duplication and unnecessary machinery. The single numeric table is
 `ARCHITECTURE.yaml:code_budgets`. Run `python3 tools/diffstat.py --budgets` to
-display each count, ceiling and band. Both normal local check commands enforce
-it. `check-affected.sh` provides the documentation-only route without a wheel
-build; `check-all.sh` always builds and installs, before readiness checks.
+display each count, ceiling and band. `check-affected.sh` enforces it after setup.
 Numerical evidence is a separate acceptance condition.
 
 ## Counting and scope

@@ -29,7 +29,7 @@ tools/report.py (read-only projection, standard library only)
 build/report.html (one static page, opened from disk)
 ```
 
-`tools/check-all.sh` writes the page at its end, pass or fail, without changing
+`tools/check-affected.sh` writes the page at its end, pass or fail, without changing
 its exit status; `tools/report` rewrites it on demand. Writing it never builds
 or imports the Engine, runs a test or solve, or renders a notebook. Each
 `analyses/**/notebook.qmd` stays its analysis's record and renders on its own.

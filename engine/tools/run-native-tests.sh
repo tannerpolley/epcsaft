@@ -22,7 +22,7 @@ if missing := [p for p in sys.argv[1:] if not fnmatch.filter([t["name"] for t in
     sys.exit("no Meson test matches: " + " ".join(missing))
 print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmatch(t["name"], p) for p in sys.argv[1:])}), sep="\n")' "${tests[@]}")
 ((${#programs[@]})) || exit 2
-.venv/bin/meson compile -C "$build_dir" -j "$(cat build/environment-wheel/build-jobs 2>/dev/null || echo 2)" "${programs[@]}"
+.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"
 .venv/bin/meson test -C "$build_dir" "${tests[@]}" --timeout-multiplier 4 --print-errorlogs --no-rebuild --logbase "$logbase"

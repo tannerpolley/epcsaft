@@ -341,7 +341,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
 | Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
 | Runtime source-size budgets | `ARCHITECTURE.yaml:code_budgets`; [meaning and review](code-budgets.md) |
-| Execution and check selection | root `AGENTS.md`, `tools/check-affected.sh`, `tools/check-all.sh` |
+| Execution and check selection | root `AGENTS.md`, `tools/check-affected.sh` |
 
 Mathematics defines required behavior. Code records actual behavior. Evidence
 supports bounded claims about their agreement and physical adequacy. Neither

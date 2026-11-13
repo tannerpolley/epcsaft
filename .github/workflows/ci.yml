@@ -57,4 +57,4 @@ jobs:
       - name: Smoke case
         run: .venv/bin/python packaging/conda-forge/run_test.py
       - name: Ruff
-        run: env -C engine ../.venv/bin/ruff check --select E4,E7,E9,F src tests
+        run: env -C engine ../.venv/bin/ruff check src tests

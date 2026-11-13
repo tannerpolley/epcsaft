@@ -1798,7 +1798,7 @@ unchanged and sets `capture.trace.incomplete` with `ipopt_log_error`.
 Trace-only containers and strings are constructed inside `Scope::observe`
 or Core's initializer-list `probe` overload. The source rule in
 `tools/check-engine-architecture.py` guards known eager-temporary and
-named-local payload patterns during `check-all`.
+named-local payload patterns during `check-affected`.
 Nested native work captures forward detailed records once with remapped
 parents. Python declares capture and reads/serializes completed records only.
 

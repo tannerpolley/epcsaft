@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Rebuild one native program in this checkout's Meson build directory and run it,
-# whole or for one case (#317). Python is not involved; check-all.sh still gates review.
+# whole or for one case (#317). Python is not involved; check-affected.sh still gates review.
 # Run as: tools/native-run equilibrium_checks caloric-admission
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

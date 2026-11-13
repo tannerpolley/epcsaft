@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
+# The fast gate: setup, readiness, the Python suite and the default native suites on every change, plus the
+# checks the changed paths select; then the remaining gates of docs/agents/workflow.md "Gates" those paths need.
+#   check-affected.sh [base]   paths changed since base (default: the merge base with origin/main) plus uncommitted
+#   check-affected.sh --all    no Git history and no path selection (source archives, the container check)
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
+# The report reads whatever records exist, pass or fail; it never changes this gate's status.
+trap 'python3 tools/report.py || true' EXIT
 
-# Select from every change since the base: by default the merge base with origin/main.
-base_ref="${1:-$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null || true)}"
-if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
-    [[ -z "${1:-}" ]] || { echo "check-affected: base '$1' does not resolve to a commit" >&2; exit 2; }
-    base_ref="HEAD"
-fi
-base="$base_ref ($(git rev-parse --short "$base_ref"))"
 # Runs one step and prints its elapsed time, keeping the step's exit status.
 timed() {
     local name="$1" start="$EPOCHREALTIME" status=0
@@ -19,19 +18,33 @@ timed() {
     awk -v n="$name" -v s="$start" -v e="$EPOCHREALTIME" 'BEGIN { printf "[%s: %.1f s]\n", n, e - s }'
     return "$status"
 }
-echo "check-affected base: $base"
-mapfile -t changed < <(
-    {
-        git diff --name-only "$base_ref" HEAD
-        git diff --name-only
-        git diff --cached --name-only
-        git ls-files --others --exclude-standard
-    } | sort -u
-)
-if ((${#changed[@]} == 0)); then
-    echo "affected checks passed: no changed paths since base $base"
-    exit 0
+
+changed=() owners=""
+if [[ "${1:-}" == --all ]]; then
+    echo "check-affected: all fast checks, no path selection"
+else
+    base_ref="${1:-$(git merge-base origin/main HEAD 2>/dev/null || git merge-base main HEAD 2>/dev/null || true)}"
+    if ! git rev-parse --verify "$base_ref" >/dev/null 2>&1; then
+        [[ -z "${1:-}" ]] || { echo "check-affected: base '$1' does not resolve to a commit" >&2; exit 2; }
+        base_ref="HEAD"
+    fi
+    echo "check-affected base: $base_ref ($(git rev-parse --short "$base_ref"))"
+    mapfile -t changed < <(
+        {
+            git diff --name-only "$base_ref" HEAD
+            git diff --name-only
+            git diff --cached --name-only
+            git ls-files --others --exclude-standard
+        } | sort -u
+    )
+    # Layer owners from ARCHITECTURE.yaml.
+    owners="$(printf '%s\n' "${changed[@]}" | PYTHONPATH=tools python3 -c '
+import importlib, sys
+m = importlib.import_module("project-map")
+rules = m.declaration()["rules"]
+print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines() if p})')"
 fi
+paths="$(printf '%s\n' "${changed[@]}")"
 
 notebooks=()
 for path in "${changed[@]}"; do
@@ -39,12 +52,15 @@ for path in "${changed[@]}"; do
 done
 ((${#notebooks[@]} == 0)) || timed notebook-numbers python3 tools/check-notebook-numbers.py --base "$base_ref" "${notebooks[@]}"
 
-paths="$(printf '%s\n' "${changed[@]}")"
-timed project-map python3 tools/project-map.py
-if grep -Eq '^(docs/|engine/docs/|AGENTS.md|README.md|ARCHITECTURE\.yaml)' <<<"$paths"; then
-    timed equation-registry python3 engine/scripts/docs/sync_equation_registry.py --check
-fi
-if grep -Eq '^(analyses/|docs/|engine/|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
+# Setup first: the budget count formats Python with the locked .venv Ruff.
+timed setup bash tools/setup.sh
+timed readiness bash -e -c '
+python3 engine/scripts/docs/sync_equation_registry.py --check
+python3 tools/diffstat.py --budgets
+python3 tools/project-map.py
+python3 tools/tests/test-time-key-solves-gate.py
+.venv/bin/python data/tools/validate_packets.py'
+if grep -Eq '^(analyses/|docs/|engine/docs/|engine/src/|engine/tests/.*\.py$|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
     timed analysis-layout python3 tools/check-analysis-layout.py
 fi
 
@@ -68,45 +84,25 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
-    if grep -Eq '^tools/(time-key-solves|tests/test-time-key-solves-gate\.py)$' <<<"$paths"; then
-        python3 tools/tests/test-time-key-solves-gate.py
-    fi
 }
 
-docs_only=true
-while IFS= read -r path; do
-    case "$path" in
-        docs/*|engine/docs/*|AGENTS.md|README.md|engine/README.md|.gitattributes) ;;
-        *) docs_only=false ;;
-    esac
-done <<<"$paths"
-if [[ "$docs_only" == true ]]; then
-    for script in tools/check-affected.sh tools/check-all.sh; do bash -n "$script"; done
-    echo "affected checks passed: documentation readiness only, no Engine build or numerical tests, base $base"
-    exit 0
-fi
+check_declarations
+check_tools
+while read -r script; do [[ ! -f "$script" ]] || bash -n "$script"; done < <(grep -E '^analyses/.*\.sh$' <<<"$paths")
 
 slow_tests=()
 if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
-    # The slow solved-state programs run when their layer or any layer below it changes
-    # (owners from ARCHITECTURE.yaml): a property or EOS change moves every solved state.
-    owners="$(printf '%s\n' "${changed[@]}" | PYTHONPATH=tools python3 -c '
-import importlib, sys
-m = importlib.import_module("project-map")
-rules = m.declaration()["rules"]
-print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
+    # The slow solved-state programs run when their layer or any layer below it changes:
+    # a property or EOS change moves every solved state.
     # A program's *_checks_shared.hpp reaches only that program, so the header rules skip the others'.
     if [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] \
         || grep -Eq '^engine/tests/native/((equilibrium|boundary)_|.*\.hpp$)' <<<"$(grep -Ev '/(properties|regression)_checks_shared\.hpp$' <<<"$paths")"; then
         slow_tests+=('equilibrium/Automatic*' boundary)
     fi
-    # The 16 binary128 reactive-caloric and reactive-cp cases, the charged PH/PS case and the reacting Cp fit (Explicit)
-    # run only when the code they verify changes, or on request:
-    # run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'.
+    # The Explicit cases run here only when the code they verify changes.
     if grep -Eq '^engine/(native/equilibrium/(implicit_sensitivity\.cpp|request_compile\.cpp|row_evaluation\.hpp|problem\.hpp)|native/properties/(thermochemistry\.|infinite_dilution_reference\.cpp)|native/regression/observations\.(cpp|hpp)|tests/native/((equilibrium_)?reactive_|quad_base\.hpp|binary128_support\.hpp))' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/reactive-*' 'regression/Explicit/reactive-cp')
     fi
-    # The envelope traces (about 100 s, Explicit) run when the tracer or its checks change.
     if grep -Eq '^engine/(native/equilibrium/(phase_boundary|implicit_sensitivity)\.cpp|tests/native/(equilibrium_critical_envelope_checks\.cpp|caloric_specification_shared\.hpp))' <<<"$paths"; then
         slow_tests+=('equilibrium/Explicit/envelope-*')
     fi
@@ -119,58 +115,41 @@ print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines()})')"
     fi
 fi
 
-if grep -Eq '^(pyproject\.toml|uv\.lock|\.codex/|tools/(check-all|setup)\.sh)' <<<"$paths"; then
-    timed check-all bash tools/check-all.sh
-    check_declarations
-    check_tools
-    if ((${#slow_tests[@]})); then
-        timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
-    fi
-    echo "affected checks passed (base $base)"
+# The native suites share one Meson build directory, so they run in sequence, alongside the Python checks.
+(
+    timed native-default bash engine/tools/run-native-tests.sh
+    ((${#slow_tests[@]} == 0)) || timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+) &
+native_pid=$!
+
+failed=0
+mkdir -p build/test-results
+# JUnit goes to a temporary file first, so a reader never sees a partial report.
+xml=build/test-results/pytest.xml
+timed pytest env -C engine ../.venv/bin/python -m pytest -q --junitxml="../$xml.tmp" || failed=1
+mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
+timed ruff env -C engine ../.venv/bin/ruff check src tests || failed=1
+timed mypy env -C engine ../.venv/bin/mypy || failed=1
+timed engine-architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)" || failed=1
+wait "$native_pid" || failed=1
+((failed == 0)) || exit 1
+
+if [[ "${1:-}" == --all ]]; then
+    echo "fast gate passed; other gates and when they run: docs/agents/workflow.md \"Gates\""
     exit 0
 fi
-
-if [[ "$declarations_affected" == true ]] || grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|LICENSE|pyproject\.toml|native/|src/|data/|tests/)|docs/scientific/|pyproject\.toml$|uv\.lock$|\.codex/|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
-    timed setup bash tools/setup.sh
+echo "fast gate passed (base $base_ref)"
+# One reader of docs/agents/workflow.md "Gates": the remaining rows these paths select.
+gates=()
+[[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] \
+    && gates+=("tools/check-equilibrium-corpora <main environment> <slice environment> --out build/<dir>")
+[[ " $owners " =~ \ engine\.(equilibrium|regression)\  ]] \
+    && gates+=("bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'")
+if grep -Eq '^engine/(native|src)/' <<<"$paths"; then
+    gates+=("tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>, and an A=A control"
+        "if fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work or density algorithms changed: add --fit --control <main-A=A-summary.json>")
 fi
-timed budgets python3 tools/diffstat.py --budgets
-
-check_declarations
-if grep -Eq '^(ARCHITECTURE\.yaml|engine/(meson\.build|build/subprojects/|native/|src/|tests/native/)|tools/(check-engine-architecture\.py|build-engine\.sh))' <<<"$paths"; then
-    timed engine-architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)"
-fi
-
-if grep -q '^engine/' <<<"$paths"; then
-    test_paths=()
-    grep -Eq '^engine/(native/|src/|tests/|data/|build/subprojects/|meson\.build|pyproject\.toml)' <<<"$paths" && test_paths=(tests)
-    if ((${#test_paths[@]})); then
-        mkdir -p build/test-results
-        xml=build/test-results/pytest.xml s=0
-        timed pytest env -C engine ../.venv/bin/python -m pytest -q "${test_paths[@]}" --junitxml="../$xml.tmp" || s=$?
-        mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
-        ((s == 0)) || exit "$s"
-    fi
-    if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<<"$paths"; then
-        # run-native-tests.sh compiles the programs it runs; slow cases run two at a time by default.
-        timed native-default bash engine/tools/run-native-tests.sh
-        if ((${#slow_tests[@]})); then
-            timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
-        fi
-    fi
-    if grep -Eq '^engine/(src/|tests/)' <<<"$paths"; then
-        timed ruff env -C engine ../.venv/bin/ruff check --select E4,E7,E9,F src tests
-    fi
-    if grep -Eq '^engine/(src/|tests/.*\.py$|pyproject\.toml$)' <<<"$paths"; then
-        timed mypy env -C engine ../.venv/bin/mypy
-    fi
-fi
-
-check_tools
-
-grep -q '^analyses/' <<<"$paths" && bash -n analyses/2026-khudaida-idaes-settler/scripts/run.sh
-
-if grep -q '^data/' <<<"$paths"; then
-    timed packets .venv/bin/python data/tools/validate_packets.py
-fi
-
-echo "affected checks passed (base $base)"
+grep -Eq '^engine/.*\.(cpp|hpp|h)$' <<<"$paths" \
+    && gates+=("final delivery state: nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>")
+echo "remaining gates (docs/agents/workflow.md \"Gates\"):"
+((${#gates[@]})) && printf '  %s\n' "${gates[@]}" || echo "  none"

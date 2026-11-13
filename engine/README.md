@@ -65,30 +65,13 @@ The native owner checks additionally require `clang-18`, `clang++-18`,
 Checks that compare revisions require a Git checkout and its history.
 Setup and status also work from an extracted source tree.
 
-Run the affected-area checks during normal development:
+The fast gate checks every change; [`docs/agents/workflow.md` "Gates"](../docs/agents/workflow.md#gates)
+owns which further gates a delivery runs, and the script prints those its changed paths select:
 
 ```bash
-bash tools/check-affected.sh [base]
+bash tools/check-affected.sh [base]   # paths changed since base (default: merge base with origin/main)
+bash tools/check-affected.sh --all    # no Git history: source archives
 ```
-
-Run the fast full gate with:
-
-```bash
-bash tools/check-all.sh
-```
-
-`check-affected.sh` selects checks from the paths changed since `base` (default: the
-merge base with `origin/main`, printed first) plus uncommitted files. Data, analysis, or
-documentation-only changes can stop at readiness checks without building the
-Engine; selected Engine checks run setup first.
-`check-all.sh` is the full fast gate: it runs setup, which rebuilds what changed, then covers the default EOS, equilibrium, static,
-and readiness checks. It excludes analysis reproductions and slow or expensive
-numerical evidence. Both gates run strict mypy over `engine/src` and `engine/tests`, so
-pytest alone misses type errors in a test edit.
-`check-affected.sh` runs the 20 Explicit cases (16 binary128 reactive-caloric
-and reactive-cp cases, the charged PH/PS case, 2 envelope traces and the reacting Cp fit) only when their code
-changes; request them with
-`bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'`.
 
 Pull requests and pushes to `main` run only `.github/workflows/ci.yml`: build,
 import, the conda-forge smoke case and Ruff. Every other check, including the
@@ -99,8 +82,7 @@ lists which.
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
 Python. New studies can be small C++ drivers that write
-CSV rows; plots read the CSV. `check-all.sh` and `check-affected.sh` cover the
-Python interface too.
+CSV rows; plots read the CSV. `check-affected.sh` covers the Python interface too.
 
 ```bash
 tools/native-run equilibrium_checks --list
@@ -123,39 +105,8 @@ tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only 
 tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
 ```
 
-Freeze a candidate commit, then run
-`nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>`.
-It shares one locked Clang debug ASan/UBSan Meson tree and environment under the
-main checkout's `build/pr-gates/pr-N/<head>/`, including GCC's binary128 headers.
-`engine/tools/check-native.sh --prepared <root> --changed <base>` owns lint selection;
-`engine/tools/check-native-sanitizers.sh --prepared <root>` owns instrumented checks.
-Both consume the prepared tree. Identical inputs reuse passing evidence without
-compiling; toolchain/header/environment changes replace stale objects, while a
-changed base or check selection reruns the checks. Logs and test records stay
-beside that frozen source.
-
-Each checkout has its own `.venv` from setup with an editable Engine install.
-`tools/check-equilibrium-corpora <A> <B>` and `tools/time-key-solves <A> <B>` select
-prepared Python interpreters or build/environment directories, verify loaded
-Engine identities before calculations, and retain the existing corpus rows,
-work counts, states and paired wall times. Use the same prepared environment for
-both sides of an A=A control. The TPD baseline/replay, IDAES-ASL, density benchmark
-and shared-derivative qualification readers use the same prepared-image identity.
-Historical study readers remain wheel-only: the Khudaida `run_fixed_settler.py`
-campaign and TPD `feos_compare.py` and `asl_native_trace.py`. These are outside the
-current corpus command's case selection.
-The [key-solve command](../tools/time-key-solves.md) includes the frozen 149-row MEA
-F1 residual-plus-Jacobian evaluation: no increased reference computations,
-reference columns, density solves or equilibrium iterations, and serial CPU
-at most 1.25 times its frozen value. Add `--fit` for the 120 s full-fit wall
-ceiling and slowest-worker critical-path CPU; an A/B full fit needs the same-host
-A=A `--fit` summary via `--control <summary.json>`. Full fits use native default
-workers (32 on the reference host); the default command runs one serial F1
-evaluation per environment.
-The documentation workflow builds the site and its examples; it does not run
-the scientific delivery gates. `bash tools/check-all-container.sh` runs
-`check-all.sh` on HEAD from a cold build in a digest-pinned `ubuntu:24.04`
-container, the system a hosted runner would use, at no GitHub minutes.
+`bash tools/check-all-container.sh` runs `check-affected.sh --all` on HEAD from a cold
+build in a digest-pinned `ubuntu:24.04` container, the system a hosted runner would use.
 
 Build the documentation with its optional documentation dependencies and the
 checkout's editable Engine:
@@ -676,7 +627,7 @@ cleared: in Python, `success` (equivalently non-empty state vectors) is the avai
 predicate, the native `has_state()`.
 
 Root setup installs this package editable; `tools/build-engine.sh` owns every
-Engine build, including the wheels for application pins and A/B timing.
+Engine build, including the wheels for application pins; A/B comparisons use prepared environments.
 
 ## Native dependency graph
 

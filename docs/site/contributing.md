@@ -17,7 +17,6 @@ describe the commands and what each covers.
 
 ```bash
 nice -n 10 bash tools/check-affected.sh origin/main
-nice -n 10 bash tools/check-all.sh
 nice -n 10 bash tools/build-docs.sh
 ```
 
