@@ -184,6 +184,9 @@ struct PropertyActionBatch final {
 struct ResidualEnergyAction final {
     std::optional<double> action; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
 };
+struct ResidualEnergyGradient final {  // D3F[v, v, e_k] for each requested coordinate k, empty unless Available
+    std::vector<double> gradient; PropertyActionStatus status = PropertyActionStatus::Nonfinite; PropertyActionDiagnostics diagnostics;
+};
 class HelmholtzModel;
 struct ReferenceTaylorPreparation;
 struct ReferenceTaylorBatch final {
@@ -460,10 +463,9 @@ public:
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
-    // One residual_energy_action per direction set at one point, in order; each result equals its single call's but the work
-    // counters, which are lower for later sets.
-    EPC_API std::vector<ResidualEnergyAction> residual_energy_actions(double, double, const std::vector<double>&,
-        const std::vector<std::vector<std::vector<double>>>&) const;
+    // D3F[v, v, e_k] for the coordinates k of [T, V, n, active parameters], one direction v of that width.
+    EPC_API ResidualEnergyGradient repeated_direction_energy_gradient(double, double, const std::vector<double>&,
+        const std::vector<double>&, const std::vector<std::size_t>&) const;
     EPC_API ReferenceTaylor reference_taylor(double temperature, double volume,
         const std::vector<double>& composition, const std::vector<double>& stoichiometry,
         const PressureActionDirection&, std::size_t, bool infinite_dilution = false, ReferenceTaylorError* error = nullptr, ReferenceTaylorBatch* batch = nullptr) const;
@@ -567,8 +569,8 @@ private:
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
     HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
-    ResidualEnergyAction residual_energy_action_locked(double, double, const std::vector<double>&,
-        const std::vector<std::vector<double>>&, std::vector<double>& held) const;
+    ResidualEnergyAction energy_action_locked(double, double, const std::vector<double>&,
+        const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,
         double volume,

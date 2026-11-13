@@ -2610,9 +2610,11 @@ zero, where the row owner composes the analytic geometry, ideal, balance, charge
 and standard-state terms (Taylor in the driven or free temperature through order
 three) with the model's residual gradient coefficients G_1 = H z_1,
 G_2 = H z_2 + D3A[z_1, z_1, .]/2 and G_3 = H z_3 + D3A[z_1, z_2, .]
-+ D4A[z_1, z_1, z_1, .]/6, the contractions coming from `residual_energy_action`
-(E3 and E4 of the extensive residual Helmholtz energy, the sole higher energy
-owner; it also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
++ D4A[z_1, z_1, z_1, .]/6. The vector D3A[z_1, z_1, .] over every coordinate the
+rows read comes from one second-order forward pass and the reverse sweeps of
+EqID: `repeated_direction_energy_gradient`; the other contractions come from
+`residual_energy_action` (E3 and E4 of the extensive residual Helmholtz energy,
+which also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised.
 The first-sensitivity solve and rank inspection use this same equilibration and
 relative pivot threshold. First sensitivities solve $A z = -R F_\theta v$ and

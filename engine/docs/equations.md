@@ -2183,6 +2183,23 @@ $$
 D^3F[u,v,v]=[t^5]\{F(p+vt+ut^3)-F(p+vt-ut^3)\}.
 $$
 
+## `repeated_direction_energy_gradient`
+
+- Section: Helmholtz derivatives / Directional actions
+- Status: Exact derivation
+- Source: Reverse propagation of Taylor coefficients (CppAD `Reverse(q, w)`, vendored documentation `xrst/reverse/reverse_any.xrst`) applied to the order-two coefficient of the energy along a path, with the implicit site fractions eliminated by Lagrange multipliers
+- Description: Every coordinate of the twice-repeated third directional energy action, D^3F[v,v,.], at one point from one second-order forward pass along v and third-order reverse sweeps of the existing Helmholtz tape. The tape's inputs are p = (T, V, n, active parameters) and the site fractions X; its outputs are the energy and the site equations g. X(t) = X_0 + X_1 t + X_2 t^2 follows [t^k]g = 0 for k = 1, 2.
+- Change note: A model without sites needs one reverse sweep; with sites one per multiplier as well, each multiplier admitted by the residual of its own transposed site equation against the association-action residual limit. Normalize v and restore its norm squared afterwards. No coefficient above order two is formed and no third derivative along a single coordinate is subtracted. `repeated_direction_energy_third` remains the route of a single repeated-direction action.
+
+$$
+a_2=[t^2]F(p+vt,X(t)),\qquad g_k=[t^k]g(p+vt,X(t)),\qquad
+L=a_2-\lambda_2\cdot g_2-\lambda_1\cdot g_1-\lambda_0\cdot g_0,\\
+G_0^{\mathsf T}\lambda_2=\frac{\partial a_2}{\partial X_2},\qquad
+G_0^{\mathsf T}\lambda_1=\frac{\partial(a_2-\lambda_2\cdot g_2)}{\partial X_1},\qquad
+G_0^{\mathsf T}\lambda_0=\frac{\partial(a_2-\lambda_2\cdot g_2-\lambda_1\cdot g_1)}{\partial X_0},\\
+D^3F[v,v,\cdot]=2\,\frac{\partial L}{\partial p},\qquad G_0=\frac{\partial g}{\partial X}\Big|_{t=0}.
+$$
+
 ## `reference_single_insertion_taylor`
 
 - Section: Helmholtz derivatives / Reference derivatives

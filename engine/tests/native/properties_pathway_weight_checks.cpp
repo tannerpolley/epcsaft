@@ -22,7 +22,7 @@ using recording_support::fields;
 
 constexpr double R = epcsaft::GAS_CONSTANT_J_PER_MOL_K;
 constexpr double T_R = 298.15;
-constexpr double IDENTITY = 1e-10;    // F1, F2, F2b, F3c, F4(i): scaled identity tolerance
+constexpr double IDENTITY = 1e-10;    // F1, F2, F2b, F3c, F3d, F4(i): scaled identity tolerance
 constexpr double DIFFERENCE = 1e-7;   // F3: best of three scaled difference errors
 
 // Single, Symmetric (nu = 2, ordinary association) and Corrected (nu = 2 with omega_2) are one block each;
@@ -576,6 +576,28 @@ void pathway_weight() {
                 check(std::string("F3b/") + s.name + "/coefficient-error/" + std::to_string(j), j, std::abs(moved.gradient[j] - exact.gradient[j]), bound);
             }
         }
+    }
+
+    // F3d: one reverse sweep with its site multipliers gives the Taylor route's D3A[v, v, e_k] at L, for a direction moving
+    // T, V, every species and one active parameter; scaled by the vector's largest entry, which one sweep produces.
+    {
+        const double volume = 1.0 / L.density;
+        std::vector<double> v(5 + 16, 0.0);
+        v[0] = 0.013 * L.temperature, v[1] = -0.021 * volume, v[7] = 0.07;
+        for (std::size_t i = 0; i < 3; ++i) v[2 + i] = std::array{0.3, -0.17, 0.41}[i] * L.x[i];
+        const std::vector<std::size_t> read = {0, 1, 2, 3, 4};
+        const auto swept = blend.repeated_direction_energy_gradient(L.temperature, volume, L.x, v, read);
+        CHECK(swept.status == epcsaft::PropertyActionStatus::Available);
+        std::vector<double> taylor;
+        for (const std::size_t k : read) {
+            std::vector<double> unit(v.size(), 0.0);
+            unit[k] = 1.0;
+            taylor.push_back(blend.residual_energy_action(L.temperature, volume, L.x, {v, v, unit}).action.value());
+        }
+        const double scale = std::abs(*std::max_element(taylor.begin(), taylor.end(), [](double a, double b) { return std::abs(a) < std::abs(b); }));
+        for (std::size_t k = 0; k < read.size() && swept.gradient.size() == read.size(); ++k)
+            identity("F3d/L/repeated-gradient/" + std::to_string(k), "D3A[v,v,e_k]", swept.gradient[k], taylor[k], scale, IDENTITY,
+                inputs(L, "blend"), "the reverse sweep of the order-two path equals the repeated-direction Taylor contraction");
     }
 
     // F4: one consistent energy. (i) partial molar residual enthalpy at 333.15 K, 2e5 Pa, x_L, liquid; (ii) Euler.

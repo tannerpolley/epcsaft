@@ -15,7 +15,6 @@
 #include <bitset>
 #include <cmath>
 #include <chrono>
-#include <cstring>
 #include <future>
 #include <limits>
 #include <iomanip>
@@ -1491,27 +1490,29 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
 
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
     const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
-    return residual_energy_actions(temperature, volume, amounts, {directions}).front();
-}
-
-std::vector<ResidualEnergyAction> HelmholtzModel::residual_energy_actions(double temperature, double volume,
-    const std::vector<double>& amounts, const std::vector<std::vector<std::vector<double>>>& sets) const {
     std::lock_guard<std::mutex> lock(mutex_);
-    std::vector<ResidualEnergyAction> results;
-    std::vector<double> held;
-    for (const auto& directions : sets)
-        results.push_back(residual_energy_action_locked(temperature, volume, amounts, directions, held));
-    return results;
+    return energy_action_locked(temperature, volume, amounts, directions);
 }
 
-// `held` is the first-order coefficient of the repeated-direction path whose orders one and two the tape of this point
-// holds within one locked sequence of calls, or empty.
-ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temperature, double volume,
-    const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions, std::vector<double>& held) const {
+ResidualEnergyGradient HelmholtzModel::repeated_direction_energy_gradient(double temperature, double volume,
+    const std::vector<double>& amounts, const std::vector<double>& direction, const std::vector<std::size_t>& coordinates) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ResidualEnergyGradient result;
+    auto action = energy_action_locked(temperature, volume, amounts, {direction, direction}, &coordinates, &result.gradient);
+    result.status = action.status;
+    result.diagnostics = std::move(action.diagnostics);
+    if (result.status != PropertyActionStatus::Available) result.gradient.clear();
+    return result;
+}
+
+// The contraction of three to five directions, or with `coordinates` the vector D3F[v, v, e_k] of the two equal
+// directions {v, v} into `gradient`.
+ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, double volume, const std::vector<double>& amounts,
+    const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>* coordinates, std::vector<double>* gradient) const {
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
-    require(order >= 3 && order <= 5, "energy action order");
+    require(coordinates ? order == 2 : order >= 3 && order <= 5, "energy action order");
     for (const auto& direction : directions)
         require(direction.size() == width && all_finite(direction), "direction");
     double total = 0.0; for (double amount : amounts) total += amount;
@@ -1520,6 +1521,11 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temper
     std::vector<ActionDirection> inserted;
     for (const auto& direction : directions)
         inserted.push_back({0.0, 0.0, {direction.begin() + 2, direction.begin() + 2 + static_cast<std::ptrdiff_t>(components)}, {}});
+    if (coordinates) inserted.push_back({0.0, 0.0, std::vector<double>(components, 0.0), {}});
+    for (const std::size_t k : coordinates ? *coordinates : std::vector<std::size_t>{}) {
+        require(k < width, "coordinate");
+        if (k >= 2 && k < 2 + components) inserted.back().composition[k - 2] = 1.0;
+    }
     if ((result.status = support_status(*this, amounts, inserted)[0]) != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     const auto point = action_point(*this, temperature, volume, amounts);
     std::vector<double> norms(order);
@@ -1544,7 +1550,8 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temper
         central_strength(parameters_, temperature, density, composition),
         composition, result.status, result.diagnostics, solver_options_);
     if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
-    if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0; return association_result(std::move(result), observations); }
+    if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0;
+        if (gradient) gradient->assign(coordinates->size(), 0.0); return association_result(std::move(result), observations); }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;
     if (order == 3) {
         for (std::size_t i = 0; i < 3; ++i)
@@ -1553,7 +1560,37 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temper
                     repeated = {{3 - i - j, i}};
     }
     double coefficient = 0.0;
-    if (repeated.has_value()) {
+    if (coordinates) {
+        // EqID: repeated_direction_energy_gradient
+        // D3F[v,v,.] = 2 dL/dp on the order-two path along v, L = a2 - l2.g2 - l1.g1 - l0.g0, each multiplier making L
+        // stationary in the site coefficient of its order in turn (G0' l_k = dL/dX_k so far); one reverse sweep each.
+        tape_->implicit_taylor({point, normalized[0], std::vector<double>(width, 0.0)}, 2, factorization.get(),
+            &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps, &result.diagnostics.association_residual);
+        const std::size_t sites = tape_->site_count;
+        std::vector<double> weight(3 * tape_->function.Range(), 0.0), adjoint(3 * (width + sites), 0.0);
+        weight[2] = 1.0;
+        double scale = 1.0;
+        for (std::size_t sweep = 0;; ++sweep) {
+            const auto partial = tape_->function.Reverse(3, weight);
+            ++counters_.reverse;
+            for (std::size_t i = 0; i < adjoint.size(); ++i) adjoint[i] += partial[i];
+            for (std::size_t a = 0; sweep > 0 && a < sites; ++a) {  // the last multiplier's own equation
+                const double residual = adjoint[3 * (width + a) + 3 - sweep];
+                result.diagnostics.association_residual = std::max(result.diagnostics.association_residual,
+                    std::isfinite(residual) ? std::abs(residual) / scale : std::numeric_limits<double>::infinity());
+            }
+            if (sweep == 3 || factorization == nullptr) break;
+            Eigen::VectorXd right(sites);
+            scale = 1.0;
+            for (std::size_t a = 0; a < sites; ++a) scale = std::max(scale, std::abs(right[a] = adjoint[3 * (width + a) + 2 - sweep]));
+            const Eigen::VectorXd multiplier = factorization->transpose().solve(right);
+            ++result.diagnostics.site_solves;
+            std::fill(weight.begin(), weight.end(), 0.0);
+            for (std::size_t a = 0; a < sites; ++a) weight[3 * (1 + a) + 2 - sweep] = -multiplier[a];
+        }
+        for (const std::size_t k : *coordinates) gradient->push_back(2.0 * adjoint[3 * k] * norms[0] * norms[1]);
+        ++result.diagnostics.directional_paths;
+    } else if (repeated.has_value()) {
         // EqID: repeated_direction_energy_third
         // [t^5](F(p+v*t+u*t^3)-F(p+v*t-u*t^3)) = D3F[u,v,v].
         // The sparse paths avoid subtracting the singular pure-u third derivative
@@ -1572,15 +1609,12 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temper
             for (std::size_t i = 0; i < width; ++i) series[1][i] = s * normalized[repeated->second][i];
             for (std::size_t i = 0; i < width; ++i)
                 series[3][i] = sign * normalized[repeated->first][i];
-            const bool same = held.size() == width && std::memcmp(held.data(), series[1].data(), width * sizeof(double)) == 0;
             coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual, nullptr, nullptr, nullptr, same ? 2 : 0).front() / (s * s);
-            held = series[1];
+                &result.diagnostics.association_residual).front() / (s * s);
             ++result.diagnostics.directional_paths;
         }
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
-        held.clear();
         // Half of the 2^q linear sign paths, weighted by their sign products.
         std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));
         series.front() = point;
@@ -1595,12 +1629,12 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temper
         ++result.diagnostics.directional_paths;
     }
     counters_.directional_paths += result.diagnostics.directional_paths; counters_.forward += result.diagnostics.forward_sweeps;
-    counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order);
+    counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, coordinates ? 3 : order);
     double action = repeated.has_value() ? coefficient
         : coefficient / static_cast<double>(std::size_t(1) << (order - 1));
     for (const double norm : norms) action *= norm;
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) result.status = PropertyActionStatus::AssociationResidual;
-    else if (!std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;
+    else if (gradient ? !all_finite(*gradient) : !std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;
     else result.action = action;
     return association_result(std::move(result), observations);
 }

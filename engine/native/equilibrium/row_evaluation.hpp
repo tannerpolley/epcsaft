@@ -1031,14 +1031,13 @@ RowSeries CompiledSystem::row_series(
             if (component) directions.emplace_back(width, 0.0).at(*component) = 1.0;
             return directions;
         };
-        // The actions `directions` needs with each unit, absent from the prepared state, in one model batch.
-        const auto contract_together = [&](const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>& units) {
-            std::vector<std::vector<std::vector<double>>> sets;
-            for (const std::size_t unit : units)
-                if (!prepared.energy_actions.count(action_key(with_unit(directions, unit)))) sets.push_back(with_unit(directions, unit));
-            if (sets.empty()) return;
-            auto actions = model->residual_energy_actions(prepared.temperature, prepared.volume[phase], prepared.composition[phase], sets);
-            for (std::size_t i = 0; i < sets.size(); ++i) prepared.energy_actions.emplace(action_key(sets[i]), std::move(actions[i]));
+        // D3F[v, v, e_j] for every needed j from one model call, kept with the prepared state as the contraction of each j.
+        const auto contract_together = [&](const std::vector<double>& v) {
+            if (prepared.energy_actions.count(action_key(with_unit({v, v}, needed.front())))) return;
+            const auto energy = model->repeated_direction_energy_gradient(prepared.temperature, prepared.volume[phase],
+                prepared.composition[phase], v, needed);
+            for (std::size_t i = 0; i < needed.size(); ++i) prepared.energy_actions.emplace(action_key(with_unit({v, v}, needed[i])),
+                ResidualEnergyAction{energy.gradient.empty() ? std::nullopt : std::optional(energy.gradient[i]), energy.status, energy.diagnostics});
         };
         const auto contraction = [&](std::vector<std::vector<double>> directions, std::optional<std::size_t> component) {
             directions = with_unit(std::move(directions), component);
@@ -1058,7 +1057,7 @@ RowSeries CompiledSystem::row_series(
                 for (std::size_t j = 0; j < width; ++j)
                     series.gradient[k][i] += derivative.hessian[i * width + j] * series.point[k][j];
             if (k == 2) {
-                contract_together({series.point[1], series.point[1]}, needed);
+                contract_together(series.point[1]);
                 for (const std::size_t j : needed)
                     series.gradient[2][j] += 0.5 * contraction({series.point[1], series.point[1]}, j);
             } else if (k == 3) {
