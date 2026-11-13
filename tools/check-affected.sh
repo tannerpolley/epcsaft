@@ -45,6 +45,9 @@ rules = m.declaration()["rules"]
 print(*{m.resolve(p, rules)[0] for p in sys.stdin.read().splitlines() if p})')"
 fi
 paths="$(printf '%s\n' "${changed[@]}")"
+# A tools/ change runs every tools/tests/* script once, in check_tools; the steps that also cover one skip it.
+tools_changed=false
+grep -q '^tools/' <<<"$paths" && tools_changed=true
 
 notebooks=()
 for path in "${changed[@]}"; do
@@ -58,8 +61,8 @@ timed readiness bash -e -c '
 python3 engine/scripts/docs/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
-python3 tools/tests/test-time-key-solves-gate.py
-.venv/bin/python data/tools/validate_packets.py'
+[[ "$1" == true ]] || python3 tools/tests/test-time-key-solves-gate.py
+.venv/bin/python data/tools/validate_packets.py' readiness "$tools_changed"
 if grep -Eq '^(analyses/|docs/|engine/docs/|engine/src/|engine/tests/.*\.py$|tools/|ARCHITECTURE\.yaml)' <<<"$paths"; then
     timed analysis-layout python3 tools/check-analysis-layout.py
 fi
@@ -70,13 +73,9 @@ if grep -Eq "^(analyses/|data/|engine/|pyproject\.toml$|uv\.lock$|\.codex/)|$ana
     declarations_affected=true
 fi
 check_declarations() {
-    if [[ "$declarations_affected" == true ]]; then
-        if grep -Eq "$analysis_checkers" <<<"$paths"; then
-            # Runs the full declaration check, then the checkers' known-failure examples.
-            timed declarations .venv/bin/python tools/tests/test-analysis-checks.py
-        else
-            timed declarations .venv/bin/python tools/check-analysis-declarations.py
-        fi
+    # With tools changed, tools/tests/test-analysis-checks.py in check_tools runs the full check.
+    if [[ "$declarations_affected" == true && "$tools_changed" == false ]]; then
+        timed declarations .venv/bin/python tools/check-analysis-declarations.py
     fi
 }
 
@@ -84,6 +83,10 @@ check_tools() {
     grep -Eq '^(engine/)?tools/' <<<"$paths" || return 0
     for script in $(grep -ls '^#!/usr/bin/env bash' tools/* engine/tools/*); do bash -n "$script"; done
     if grep -q '^tools/project-map\.py' <<<"$paths"; then python3 tools/project-map.py --self-test; fi
+    [[ "$tools_changed" == true ]] || return 0
+    for test in tools/tests/*; do
+        if [[ "$test" == *.sh ]]; then timed "$test" bash "$test"; else timed "$test" .venv/bin/python "$test"; fi
+    done
 }
 
 check_declarations

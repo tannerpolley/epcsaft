@@ -52,10 +52,8 @@ def test_species_reference_switch_preserves_density_target(evidence: Any, refere
         c_left, c_right = (r.neutral_reference_diagnostics[0].terminal_contraction for r in results)
         assert c_left is not None and c_right is not None
         name = f"species-reference/switch/{reference_pressure}/{shift}"
-        same(evidence, name + "/density-target", c_right - delta, c_left, rtol=0.0, atol=1e-10,
-             method="native-fugacity-convention-switch", claim="ln K + C is invariant after a reference switch")
-        same(evidence, name + "/x_B", right.mole_fractions[1], left.mole_fractions[1], rtol=0.0, atol=1e-10,
-             method="native-fugacity-convention-switch", claim="transformed references preserve solved composition")
+        same(evidence, name + "/density-target", c_right - delta, c_left, rtol=0.0, atol=1e-10)
+        same(evidence, name + "/x_B", right.mole_fractions[1], left.mole_fractions[1], rtol=0.0, atol=1e-10)
 
 
 def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) -> None:
@@ -85,8 +83,7 @@ def test_pure_gas_reference_selects_vapor_at_ethane_saturation(evidence: Any) ->
     gas_slope = slope + 2.0 / (liquid.molar_density * R * temperature)
     expected = 1.0 / (vapor.molar_density * R * temperature)
     same(evidence, "species-reference/ethane-vapor-pressure-slope", gas_slope, expected,
-         rtol=1e-9, atol=0.0, method="native-saturation-branch-volume",
-         claim="the pure-gas source-pressure slope is v_vapor/(RT)")
+         rtol=1e-9, atol=0.0)
     assert abs(gas_slope - 1.0 / (liquid.molar_density * R * temperature)) > expected / 2.0
 
 
@@ -139,8 +136,7 @@ def test_neutral_reference_recovers_mole_fraction_law(
     inputs = {"T_K": temperature, "P_Pa": pressure, "K_x": constant, "common_molality": common}
     name = f"neutral-reference/{temperature:g}/{common}"
     same(evidence, name + "/x_B", result.mole_fractions[1], expected, rtol=1e-8, atol=0.0,
-         inputs=inputs, basis="Identity", method="2A-to-B-analytic",
-         claim="density-reference and source molality conversion recover the mole-fraction law")
+         inputs=inputs)
     # Independent pressure/fugacity identity, not the reference owner's density expression.
     state = model.state(temperature, P=pressure, x=(0.5, 0.5), phase="liquid")
     assert state.log_fugacity_coefficient is not None
@@ -148,16 +144,14 @@ def test_neutral_reference_recovers_mole_fraction_law(
     assert solvent_fugacity is not None
     contraction = -solvent_fugacity - math.log(pressure / (R * temperature))
     same(evidence, name + "/contraction", result.neutral_reference_diagnostics[0].terminal_contraction,
-         contraction, rtol=1e-9, atol=1e-10, inputs=inputs, basis="Identity",
-         method="fugacity-pressure-identity", claim="Lambda includes the standard-density factor")
+         contraction, rtol=1e-9, atol=1e-10, inputs=inputs)
     direction = SolvedStateActionDirection(0.0, 0.0, [2.0, 0.2], [])
     item = solved_state_actions(
         compile_problem(model, problem), result,
         SolvedStateActionRequest([SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)], [direction]),
     ).results[0]
     same(evidence, name + "/feed_homogeneity", item.action, 0.0, rtol=0.0, atol=1e-10,
-         inputs=inputs, basis="Identity", method="extensive-feed-scaling",
-         claim="referenced equilibrium composition remains invariant under total-feed scaling")
+         inputs=inputs)
 
 
 @pytest.mark.parametrize("constant", [0.3, 1e-10])
@@ -192,22 +186,19 @@ def test_reactive_bubble_recovers_pure_saturation(evidence: Any, constant: float
     result = solve_equilibrium(model, problem)
     assert result.success, result.message
     assert max(abs(value) for value in result.residuals) < 1e-10
-    same(evidence, name + "/pressure", result.pressure, saturation, rtol=1e-7,
-         method="native-pure-saturation", claim="identical-species reactive bubble has pure-EOS pressure")
+    same(evidence, name + "/pressure", result.pressure, saturation, rtol=1e-7)
     same(evidence, name + "/liquid-composition", result.mole_fractions[1], expected,
-         rtol=1e-8, atol=0.0, method="2A-to-B-analytic", claim="source mole-fraction law at solved pressure")
+         rtol=1e-8, atol=0.0)
     reference = result.neutral_reference_diagnostics[0]
     liquid = pure.state(temperature, P=saturation, phase="liquid")
     same(evidence, name + "/reference-pressure", reference.reference_pressure_pa, saturation,
-         rtol=1e-7, method="native-pure-saturation", claim="diagnostics use final pressure, not the seed")
+         rtol=1e-7)
     same(evidence, name + "/pressure-first", reference.terminal_contraction_pressure_derivative,
-         -1.0 / (liquid.molar_density * R * temperature), rtol=1e-8, atol=0.0,
-         method="identical-species-chemical-potential", claim="nonideal reference C_P=-V/(RT)")
+         -1.0 / (liquid.molar_density * R * temperature), rtol=1e-8, atol=0.0)
     same(evidence, name + "/pressure-second",
          reference.terminal_contraction_pressure_second_derivative,
          1.0 / (liquid.molar_density**2 * R * temperature * liquid.pressure_density_derivative),
-         rtol=1e-6, atol=0.0, method="identical-species-chemical-potential",
-         claim="reference curvature follows the density response")
+         rtol=1e-6, atol=0.0)
 
 
 def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any) -> None:
@@ -253,15 +244,12 @@ def test_free_pressure_mixes_system_and_fixed_pressure_references(evidence: Any)
     inputs = {"T_K": temperature, "P0_Pa": reference_pressure, "K": constants}
     for row, species in enumerate((1, 2)):
         same(evidence, f"reference-mixed-pressure/x{species}", result.mole_fractions[species],
-             effective[row] * solvent**2, rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
-             method="identical-species-two-reaction-analytic",
-             claim="free-pressure solve keeps system-pressure and fixed-P0 reference rows distinct")
+             effective[row] * solvent**2, rtol=1e-8, atol=0.0, inputs=inputs)
     diagnostics = result.neutral_reference_diagnostics
     same(evidence, "reference-mixed-pressure/system-pressure", diagnostics[0].reference_pressure_pa,
-         saturation, rtol=1e-12, method="solved-pressure", claim="system reference follows solved pressure")
+         saturation, rtol=1e-12)
     same(evidence, "reference-mixed-pressure/fixed-pressure", diagnostics[1].terminal_contraction,
-         contraction(reference_pressure), rtol=1e-9, atol=1e-10, method="pure-fugacity-identity",
-         claim="fixed-P0 reference is independent of the solved pressure")
+         contraction(reference_pressure), rtol=1e-9, atol=1e-10)
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 5.0e6])
@@ -310,15 +298,12 @@ def test_temperature_reference_chain_recovers_identical_species_law(
     observable = [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
     name = f"reference-temperature/{'system' if reference_pressure is None else 'fixed'}"
     inputs = {"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure}
-    same(evidence, name + "/x_B", result.mole_fractions[1], x, rtol=1e-8, atol=0.0, inputs=inputs,
-         basis="Identity", method="2A-to-B-analytic", claim="reference value at the declared pressure")
+    same(evidence, name + "/x_B", result.mole_fractions[1], x, rtol=1e-8, atol=0.0, inputs=inputs)
     for label, d_t, d_p in (("T", 1.0, 0.0), ("T+P", 1.0, 2.0e5)):
         direction = SolvedStateActionDirection(d_t, d_p, [0.0, 0.0], [])
         item = solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [direction])).results[0]
         same(evidence, f"{name}/dx_B/{label}", item.action, dx_dlnk * (slope_t * d_t + slope_p * d_p),
-             rtol=1e-8, atol=0.0, inputs=inputs, basis="Identity",
-             method="identical-species-residual-enthalpy",
-             claim="first-order T/P action carries dC/dT|_P and C_P of the reference")
+             rtol=1e-8, atol=0.0, inputs=inputs)
     # Driven feed A3 has native numerical witnesses; moving-T A3 is outside #225.
 
 
@@ -365,9 +350,7 @@ def test_ionic_temperature_action_matches_resolved_difference(
         assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
         same(evidence, f"{name}/dx_Na/{label}", item.action)  # the native row of the same solve
         same(evidence, f"{name}/dx_Na/{label}/resolve", item.action, fine, rtol=1e-6, atol=0.0,
-             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "step": step},
-             basis="Identity", method="centered-resolve-difference",
-             claim="first-order referenced T/P action equals the re-solved composition slope")
+             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "step": step})
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
@@ -406,9 +389,7 @@ def test_ionic_mixed_temperature_actions_match_differenced_first_actions(
         # (-3.03e-13) scatters by up to 3.2e-19 for row tolerances 1e-10 to 1e-13, its floating-point floor (#314)
         assert abs(fine - exact) <= abs(coarse - exact) / 2 + 1e-6 * abs(exact)
         same(evidence, f"{name}/d2n_Na/T,{label}/resolve", exact, (4 * fine - coarse) / 3, rtol=1e-6, atol=1e-18,
-             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "steps": [0.2, 0.1]},
-             basis="Identity", method="richardson-differenced-first-action",
-             claim="referenced mixed temperature second action equals the T derivative of the first action")
+             inputs={"T_K": temperature, "P_Pa": pressure, "P_ref_Pa": reference_pressure, "steps": [0.2, 0.1]})
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 2.0e5])
@@ -475,9 +456,7 @@ def test_steep_permittivity_temperature_action_matches_resolved_difference(evide
     assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
     same(evidence, f"reference-temperature/ionic/steep-permittivity/{'pure-gas' if pure_solvent else 'default'}/resolve",
          item.action, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
-         inputs={"T_K": temperature, "P_Pa": 1.0e5, "dlneps_dT_per_K": -20.0 / 78.09, "steps": [2 * step, step]},
-         basis="Identity", method="richardson-centered-resolve-difference",
-         claim="steep-permittivity T action from the sqrt(m) Richardson reference equals the re-solved slope")
+         inputs={"T_K": temperature, "P_Pa": 1.0e5, "dlneps_dT_per_K": -20.0 / 78.09, "steps": [2 * step, step]})
 
 
 def _kij_problem(mode: str, shift: float = 0.0) -> Problem:
@@ -535,8 +514,7 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
     assert abs(fine - item.action) <= abs(coarse - item.action) / 2  # O(step^2) toward the action
     inputs = {"T_K": 180.0, "mode": mode, family: center, "step": step}
     same(evidence, f"reference-parameter/{mode}/dx_B/d{family}/resolve", item.action, (4 * fine - coarse) / 3,
-         rtol=1e-6, atol=0.0, inputs=inputs, basis="Identity", method="richardson-centered-resolve-difference",
-         claim=f"first-order referenced {family} action equals the re-solved composition slope")
+         rtol=1e-6, atol=0.0, inputs=inputs)
     if family == "k_ij":
         contraction = [solved.neutral_reference_diagnostics[0].terminal_contraction for solved in near]
         dc_dk = (contraction[0] - contraction[1]) / (2 * step)

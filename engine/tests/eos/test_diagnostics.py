@@ -6,19 +6,6 @@ from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Convergence, Mixture, Parameters, 
 from tests.native_inputs import packet_metadata
 from tests.packets import parameters_json
 
-def _stopping_criterion(*, threshold: float, verdict: bool, name: str) -> dict[str, object]:
-    return {
-        "type": "custom",
-        "helper": "engine.tests.eos.test_diagnostics._stopping_criterion",
-        "rule": "residual(model) <= stopping criterion(reference)",
-        "verdict": verdict,
-        "threshold": threshold,
-        "scale": "absolute residual",
-        "rationale": "Use the existing density-root solver stopping criterion.",
-        "criterion_name": name,
-    }
-
-
 def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     components = ("methane", "ethane")
     temperature = 300.0
@@ -45,28 +32,12 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
         "phase": phase,
         "_parameters": packet_metadata(parameter_path, components),
     }
-    exact = {
-        "type": "scalar",
-        "rule": "symmetric_close",
-        "atol": 0.0,
-        "rtol": 0.0,
-        "scale": "max(abs(model), abs(reference))",
-        "combining_rule": "max(atol, rtol*scale)",
-    }
     evidence.compare(
         "trace_identity/residual",
-        quantity="density root residual",
         model=float(root.convergence.residual),
         reference=float(convergence.residual),
         unit="1",
         inputs=inputs,
-        criterion=exact,
-        basis="Relationship",
-        method="trace convergence round trip",
-        claim="The root span exposes the same residual as the returned state convergence record.",
-        relationship_latex=r"r_{trace} = r_{state}",
-        quantity_latex="r",
-        inputs_latex=r"T,P,\mathbf{x},\mathrm{phase}",
     )
     assert convergence.stop == Stop.converged and root.convergence.stop == convergence.stop
     stop_criterion = convergence.criterion
@@ -78,22 +49,10 @@ def test_trace_and_convergence_round_trip(evidence: Any) -> None:
     assert pressure_residual <= stop_criterion.value
     evidence.compare(
         "trace_identity/residual_criterion",
-        quantity="density root residual against stopping criterion",
         model=float(convergence.residual),
         reference=float(stop_criterion.value),
         unit="1",
         inputs={**inputs, "criterion_name": stop_criterion.name},
-        criterion=_stopping_criterion(
-            threshold=float(stop_criterion.value),
-            verdict=convergence.residual <= stop_criterion.value,
-            name=stop_criterion.name,
-        ),
-        basis="Relationship",
-        method="density root stopping criterion",
-        claim="A converged density root satisfies its recorded stopping criterion.",
-        relationship_latex=r"r \leq r_{criterion}",
-        quantity_latex="r",
-        inputs_latex=r"T,P,\mathbf{x},\mathrm{phase},r_{criterion}",
     )
     assert root.convergence.residual == convergence.residual
     assert convergence.residual <= stop_criterion.value

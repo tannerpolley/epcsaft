@@ -1007,7 +1007,7 @@ void check_e4_paths() {
     expect_invalid("e4-paths/positive-to-zero", positive_to_zero, "admitted support of phase L differs");
     // Real two-root admission falsifier: a selected liquid root cannot certify a vapor density.
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
-    const double T = 200.0, P = 217800.69494692178;
+    const double T = 200.0, P = properties_support::ethane_two_root_pressure;
     const auto liquid_root = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Liquid, std::nullopt);
     const auto vapor_root = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Vapor, std::nullopt);
     const auto relabelled = epcsaft::solve_density(ethane, T, P, {1.0}, epcsaft::DensityBranch::Vapor, liquid_root.molar_density);

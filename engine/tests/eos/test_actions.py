@@ -40,14 +40,6 @@ def test_public_residual_actions_match_independent_stencils(evidence: Any) -> No
     density_directions = tuple(DensityActionDirection(*item) for item in raw_density_directions)
     pressure_directions = tuple(PressureActionDirection(*item) for item in raw_pressure_directions)
     metadata = packet_metadata(path, components)
-    criterion = {
-        "type": "scalar",
-        "rule": "symmetric_close",
-        "atol": 2e-8,
-        "rtol": 2e-5,
-        "scale": "max(abs(model), abs(reference))",
-        "combining_rule": "max(atol, rtol*scale)",
-    }
 
     for chart, coordinate, raw, directions in (
         ("density", density, raw_density_directions, density_directions),
@@ -97,19 +89,13 @@ def test_public_residual_actions_match_independent_stencils(evidence: Any) -> No
                     evaluate, temperature, coordinate, composition, raw[:order], step,
                 )
                 evidence.compare(
-                    f"public_actions/{chart}/order_{order}/step_{step}",
-                    quantity="residual enthalpy directional action", model=result.action,
-                    reference=reference, unit="J/mol", criterion=criterion,
+                    f"public_actions/{chart}/order_{order}/step_{step}", model=result.action,
+                    reference=reference, unit="J/mol",
                     inputs={
                         "T_K": temperature, "chart_coordinate": coordinate,
                         "composition": list(composition), "directions": raw[:order],
                         "dimensionless_step": step, "_parameters": metadata,
                     },
-                    basis="Relationship", method="independent centered mixed stencil",
-                    claim="The public action equals the native-owned directional contraction.",
-                    coordinates={"chart": chart, "order": order},
-                    quantity_latex=r"D_1\cdots D_k h^{res}",
-                    inputs_latex=r"T,(\rho\;\mathrm{or}\;P),\mathbf{x}",
                 )
                 assert math.isclose(result.action, reference, rel_tol=2e-5, abs_tol=2e-8)
 

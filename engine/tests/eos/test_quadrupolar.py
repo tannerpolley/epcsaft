@@ -16,12 +16,13 @@ import math
 from pathlib import Path
 from typing import Any
 
-from epcsaft import DensityActionDirection, Mixture, Parameters, PropertyActionStatus, PropertyObservable, Pure
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, DensityActionDirection, Mixture, Parameters, PropertyActionStatus, PropertyObservable, Pure
 from epcsaft.equilibrium import Amounts, Free, Phase, Pinned, Problem, solve_equilibrium
 from tests.native_inputs import mixed_difference
 from tests.packets import parameters_json
 
 RESULTS = Path(__file__).resolve().parents[3] / "analyses/2026-polar-quadrupole/results"
+# Typed CODATA 2018 constants: the polar terms are checked against an independent closed form.
 AVOGADRO, BOLTZMANN, EPS0, DEBYE = 6.02214076e23, 1.380649e-23, 8.8541878128e-12, 1.0e-21 / 299792458.0
 
 
@@ -184,7 +185,7 @@ def test_quadrupolar_derivative_actions_and_identities() -> None:
     a_rho = slope(lambda r: model.state(temperature, rho=r, x=x).residual_helmholtz, density, 1e-3 * density)
     assert abs(state.compressibility_factor - 1.0 - density * a_rho) < 1e-9
     a_t = slope(lambda t: model.state(t, rho=density, x=x).residual_helmholtz, temperature, 1e-3 * temperature)
-    u = -8.31446261815324 * temperature**2 * a_t
+    u = -GAS_CONSTANT_J_PER_MOL_K * temperature**2 * a_t
     assert abs(state.residual_internal_energy - u) < 1e-8 * abs(u)
 
 

@@ -63,11 +63,9 @@ def test_reference_calorics_recover_pure_fluid_chain(evidence: Any, reference_pr
     name = f"reference-calorics/{'system' if reference_pressure is None else 'fixed'}"
     inputs = {"T_K": t, "P_Pa": P0, "P_ref_Pa": reference_pressure}
     same(evidence, name + "/h", items[0].value, x_a * h_a + x_b * h_b + system.residual_enthalpy,
-         rtol=1e-9, atol=1e-6, inputs=inputs, basis="Identity", method="pure-fluid-residual-enthalpy",
-         claim="total h carries the EOS-basis reaction enthalpy RT^2 (l1 + C')")
+         rtol=1e-9, atol=1e-6, inputs=inputs)
     same(evidence, name + "/cp", items[1].value, x_a * cp_a + x_b * cp_b + system.residual_isobaric_heat_capacity,
-         rtol=1e-9, atol=1e-8, inputs=inputs, basis="Identity", method="pure-fluid-residual-heat-capacity",
-         claim="frozen cp carries 2RT(l1 + C') + RT^2 (l2 + C'')")
+         rtol=1e-9, atol=1e-8, inputs=inputs)
 
 
 def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence: Any) -> None:
@@ -89,9 +87,7 @@ def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence:
     h_a = CP_A[0] * dt + CP_A[1] * dt * dt / 2
     inputs = {"T_K": T0, "P_Pa": P0}
     same(evidence, "reference-calorics/gibbs-helmholtz", h_a - partial,
-         R * T0 * T0 * t_ln_a + R * T0, rtol=1e-8, atol=0.0, inputs=inputs,
-         basis="Identity", method="gibbs-helmholtz-log-activity",
-         claim="caloric apparent partial enthalpy equals the equilibrium's T-derivative of ln f")
+         R * T0 * T0 * t_ln_a + R * T0, rtol=1e-8, atol=0.0, inputs=inputs)
 
     def extensive(temperature: float, extra: float) -> float:
         values = _values(model, dimer_problem(temperature, None, {"s0": 2.0 + extra, "s1": 0.2}), [H, AMOUNT],
@@ -105,8 +101,7 @@ def test_reference_enthalpy_actions_match_resolves_and_gibbs_helmholtz(evidence:
         # nH is linear here to rounding, so its truncation is below this floor at every step on both starts)
         assert abs(fine - action) <= max(abs(coarse - action) / 2, 16 * math.ulp(n * h) / step)
         same(evidence, f"reference-calorics/d(nH)/{label}/resolve", action, fine, rtol=1e-6, atol=0.0,
-             inputs={**inputs, "step": step}, basis="Identity", method="centered-resolve-difference",
-             claim="extensive enthalpy action equals the re-solved slope")
+             inputs={**inputs, "step": step})
 
 
 @pytest.mark.parametrize("reference_pressure", [None, 5.0e6])
@@ -131,8 +126,7 @@ def test_reference_enthalpy_pressure_action_matches_resolves(evidence: Any, refe
     assert abs(fine - action) <= abs(coarse - action) / 2  # O(step^2) toward the action
     same(evidence, f"reference-calorics/{'system' if reference_pressure is None else 'fixed'}/d(nH)/P/resolve",
          action, (4 * fine - coarse) / 3, rtol=1e-6, atol=0.0,
-         inputs={"T_K": T0, "P_Pa": P0, "P_ref_Pa": reference_pressure, "steps": [4.0e5, 2.0e5]},
-         basis="Identity", method="richardson-centered-resolve", claim="referenced enthalpy pressure action equals re-solves")
+         inputs={"T_K": T0, "P_Pa": P0, "P_ref_Pa": reference_pressure, "steps": [4.0e5, 2.0e5]})
 
 
 def test_reference_calorics_preserve_residuals_without_consistent_anchors() -> None:
@@ -192,17 +186,13 @@ def test_reference_parameter_enthalpy_actions_match_resolves(evidence: Any) -> N
         assert abs(fine - action) <= abs(coarse - action) / 2.0
         same(evidence, f"reference-calorics/enthalpy-parameter/system/{label}/d(nH)/dtheta", action, richardson,
              rtol=1e-6, atol=0.0,
-             inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step], "coarse": coarse, "fine": fine},
-             basis="Identity", method="richardson-centered-resolve",
-             claim="referenced total enthalpy parameter action equals rebuilt-model re-solves")
+             inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step], "coarse": coarse, "fine": fine})
 
         if label == "kij":
             assert composition.action is not None
             same(evidence, f"reference-calorics/composition-parameter/system/{label}/dx/dtheta", composition.action,
                  (4.0 * slopes[1][1] - slopes[0][1]) / 3.0, rtol=1e-6, atol=0.0,
-                 inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step]},
-                 basis="Identity", method="richardson-centered-resolve",
-                 claim="composition parameter action equals rebuilt-model re-solves")
+                 inputs={"T_K": T0, "P_Pa": P0, "steps": [2.0 * step, step]})
 
 
 def _ionic(temperature: float, reference_pressure: float | None) -> Problem:
@@ -245,6 +235,4 @@ def test_ionic_reference_calorics_reproduce_native_rows_and_resolves(
     coarse, fine = ((extensive(298.15 + s) - extensive(298.15 - s)) / (2 * s) for s in (0.1, 0.05))
     assert abs(fine - action) <= abs(coarse - action) / 2  # O(step^2) toward the action
     same(evidence, name + "/d(nH)/T/resolve", action, fine, rtol=1e-6, atol=0.0,
-         inputs={"T_K": 298.15, "P_Pa": 1.0e5, "P_ref_Pa": reference_pressure, "step": 0.05},
-         basis="Identity", method="centered-resolve-difference",
-         claim="electrolyte equilibrium heat capacity equals the re-solved enthalpy slope")
+         inputs={"T_K": 298.15, "P_Pa": 1.0e5, "P_ref_Pa": reference_pressure, "step": 0.05})

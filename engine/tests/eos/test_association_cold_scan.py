@@ -20,7 +20,7 @@ def test_ethanol_butane_cold_scan_resolves_pinned_node(evidence: Any) -> None:
     temperature, density, x = 45.0, 2709.4906792105835, (0.5, 0.5)
     segments, sigma, energy = (2.3827, 2.3316), (3.1771, 3.7086), (198.24, 222.88)
     d = [s * (1 - 0.12 * math.exp(-3 * e / temperature)) for s, e in zip(sigma, energy)]
-    number_density = density * 6.02214076e23 * 1e-30  # per cubic angstrom
+    number_density = density * 6.02214076e23 * 1e-30  # per cubic angstrom; typed for the independent closed form
     zeta2, zeta3 = (math.pi / 6 * number_density * sum(xi * mi * di**n for xi, mi, di in zip(x, segments, d))
                     for n in (2, 3))
     contact = (1 / (1 - zeta3) + d[0] / 2 * 3 * zeta2 / (1 - zeta3) ** 2

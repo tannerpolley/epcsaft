@@ -219,7 +219,7 @@ void density_records() {
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     for (const auto& row : std::array<std::tuple<double, double>, 2>{
-             std::tuple{200.0, 217800.69494692178},
+             std::tuple{200.0, properties_support::ethane_two_root_pressure},
              std::tuple{240.0, 969152.4807171321}}) {
         check_density_record(ethane, std::get<0>(row), std::get<1>(row), {1.0},
                              epcsaft::DensityBranch::Vapor,
@@ -410,7 +410,7 @@ void trace_activity_case() {
 void trace_invariance() {
     trace_case(properties_support::neutral_binary(), 300.0, 1.0e5, {0.4, 0.6},
                epcsaft::DensityBranch::Vapor);
-    trace_case(properties_support::ethane(), 200.0, 217800.69494692178, {1.0},
+    trace_case(properties_support::ethane(), 200.0, properties_support::ethane_two_root_pressure, {1.0},
                epcsaft::DensityBranch::Liquid);
     trace_case(properties_support::ethane(), 320.0, 1.0e6, {1.0},
                epcsaft::DensityBranch::Vapor);

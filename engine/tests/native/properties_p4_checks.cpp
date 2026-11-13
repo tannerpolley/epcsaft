@@ -286,7 +286,7 @@ void properties_p4() {
             {epcsaft::ParameterFamily::AssociationVolume, {1, 4}, 0.0002},
         }},
     }};
-    const auto state = model.state(313.15, 42441.09427799721, composition);
+    const auto state = model.state(313.15, properties_support::associating_binary_density, composition);
     const auto pressure_root = model.state_at_pressure(
         313.15, state.pressure, composition, epcsaft::DensityBranch::Unspecified);
     const std::array<epcsaft::PressureActionDirection, 3> pressure_directions_all = {{
@@ -298,10 +298,10 @@ void properties_p4() {
         const std::vector<epcsaft::DensityActionDirection> request(
             directions.begin(), directions.begin() + static_cast<std::ptrdiff_t>(order));
         const auto batch = model.density_actions(
-            313.15, 42441.09427799721, composition, observables, request);
+            313.15, properties_support::associating_binary_density, composition, observables, request);
         CHECK(batch.results.size() == observables.size());
         const auto reference = property_action_reference(model.parameters(), active, p3_binary_record(),
-            313.15, 42441.09427799721, composition, observables, request);
+            313.15, properties_support::associating_binary_density, composition, observables, request);
         for (std::size_t index = 0; index < observables.size(); ++index) {
             const auto& result = batch.results[index];
             const bool available = result.status == epcsaft::PropertyActionStatus::Available
@@ -612,7 +612,7 @@ void properties_p4() {
         "negative pressure slope suppresses residual cp only", "absolute", negative_ok,
         "p4-supplemental", "negative-slope", "status", "pressure", "pressure_singular");
     const auto density_unavailable = ethane_model.pressure_actions(
-        200.0, 217800.69494692178, {1.0}, epcsaft::DensityBranch::Unspecified,
+        200.0, properties_support::ethane_two_root_pressure, {1.0}, epcsaft::DensityBranch::Unspecified,
         {epcsaft::PropertyObservable::ResidualEnthalpy},
         {epcsaft::PressureActionDirection{0.1, 0.0, {0.0}, {}}});
     const bool density_unavailable_ok = density_unavailable.results.size() == 1
@@ -681,7 +681,7 @@ void properties_p4() {
         "T,P,x,theta", "available", "reference_fine,reference_middle,reference_coarse");
     for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
         const auto root = ethane_model.state_at_pressure(
-            200.0, 217800.69494692178, {1.0}, branch);
+            200.0, properties_support::ethane_two_root_pressure, {1.0}, branch);
         const std::vector<epcsaft::PropertyObservable> rows = {
             epcsaft::PropertyObservable::ResidualEnthalpy,
             epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity};
@@ -689,15 +689,15 @@ void properties_p4() {
             const std::vector<epcsaft::PressureActionDirection> request(
                 multiroot_directions.begin(), multiroot_directions.begin() + static_cast<std::ptrdiff_t>(order));
             const auto branch_batch = ethane_model.pressure_actions(
-                200.0, 217800.69494692178, {1.0}, branch, rows, request);
+                200.0, properties_support::ethane_two_root_pressure, {1.0}, branch, rows, request);
             for (std::size_t index = 0; index < rows.size(); ++index) {
                 const double fine = p4_pressure_reference(
                     properties_support::ethane(), {}, std::nullopt, 200.0,
-                    217800.69494692178, {1.0}, request, branch, rows[index],
+                    properties_support::ethane_two_root_pressure, {1.0}, request, branch, rows[index],
                     std::array<double, 2>{3.0e-3, 1.0e-2}[order - 1]);
                 const double coarse = p4_pressure_reference(
                     properties_support::ethane(), {}, std::nullopt, 200.0,
-                    217800.69494692178, {1.0}, request, branch, rows[index],
+                    properties_support::ethane_two_root_pressure, {1.0}, request, branch, rows[index],
                     std::array<double, 2>{1.0e-2, 3.0e-2}[order - 1]);
                 const double tolerance = std::array<double, 2>{5.0e-6, 5.0e-5}[order - 1];
                 const bool action_ok = branch_batch.results[index].status == epcsaft::PropertyActionStatus::Available
@@ -803,9 +803,9 @@ void properties_p4() {
         "relative", electrolyte_total_ok, "p4-supplemental", "electrolyte-total", "action",
         "T,rho,x", "available", "reference_fine,reference_middle,reference_coarse");
     const auto full_one = model.density_actions(
-        313.15, 42441.09427799721, composition, observables, {directions[0]});
+        313.15, properties_support::associating_binary_density, composition, observables, {directions[0]});
     const auto selected = model.density_actions(
-        313.15, 42441.09427799721, composition,
+        313.15, properties_support::associating_binary_density, composition,
         {observables[5], observables[13]}, {directions[0]});
     const auto result_matches = [](const epcsaft::PropertyActionResult& left,
                                    const epcsaft::PropertyActionResult& right) {
@@ -839,9 +839,9 @@ void properties_p4() {
         "absolute", failure_match, "p4-supplemental", "selected-failure", "selected_full",
         "subset", "selected/full");
     const auto single_h = model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[5]}, {directions[0]});
+        313.15, properties_support::associating_binary_density, composition, {observables[5]}, {directions[0]});
     const auto single_cp = model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[13]}, {directions[0]});
+        313.15, properties_support::associating_binary_density, composition, {observables[13]}, {directions[0]});
     const bool output_selection_return = single_h.results.size() == 1
         && single_cp.results.size() == 1
         && result_matches(single_h.results[0], full_one.results[5])
@@ -856,10 +856,10 @@ void properties_p4() {
     epcsaft::HelmholtzModel cold_model(
         model.parameters(), active, p3_binary_record());
     const auto cold_batch = cold_model.density_actions(
-        313.15, 42441.09427799721, composition,
+        313.15, properties_support::associating_binary_density, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity}, {directions[0]});
     const auto warm_batch = cold_model.density_actions(
-        313.15, 42441.09427799721, composition,
+        313.15, properties_support::associating_binary_density, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity}, {directions[0]});
     const bool work_reuse = cold_batch.results.size() == 1 && warm_batch.results.size() == 1
         && cold_batch.results[0].status == epcsaft::PropertyActionStatus::Available
@@ -966,11 +966,11 @@ void properties_p4() {
     std::vector<double> branch_pressures;
     for (const auto branch : {epcsaft::DensityBranch::Vapor, epcsaft::DensityBranch::Liquid}) {
         const auto pressure_state = ethane_model.state_at_pressure(
-            200.0, 217800.69494692178, {1.0}, branch);
+            200.0, properties_support::ethane_two_root_pressure, {1.0}, branch);
         const auto direct_state = ethane_model.state(
             200.0, pressure_state.molar_density, {1.0});
         const auto fresh_state = epcsaft::HelmholtzModel(properties_support::ethane()).state_at_pressure(
-            200.0, 217800.69494692178, {1.0}, branch);
+            200.0, properties_support::ethane_two_root_pressure, {1.0}, branch);
         branch_densities.push_back(pressure_state.molar_density);
         branch_pressures.push_back(pressure_state.pressure);
         branch_route_ok = branch_route_ok
@@ -983,14 +983,14 @@ void properties_p4() {
     recording_support::compare_custom(
         "supplemental/branch-route", "state", "bool", branch_route_ok ? 1.0 : 0.0, 1.0,
         recording_support::fields({recording_support::field("T", 200.0),
-            recording_support::field("P", 217800.69494692178),
+            recording_support::field("P", properties_support::ethane_two_root_pressure),
             recording_support::field("rho", branch_densities),
             recording_support::field("achieved_P", branch_pressures)}),
         "Identity", "resolved-state-route", "same branch pressure and density routes agree",
         "absolute", branch_route_ok, "p4-supplemental", "branch-route", "state",
         "T,P,x,branch", "residual_properties,branch,root_count");
     const auto fixed = model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[5]},
+        313.15, properties_support::associating_binary_density, composition, {observables[5]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
             {{epcsaft::ParameterFamily::AssociationVolume, {0}, 1.0}}}});
     const bool fixed_zero = fixed.results[0].status == epcsaft::PropertyActionStatus::Available
@@ -1001,7 +1001,7 @@ void properties_p4() {
         "p4-supplemental", "fixed-slot", "fixed_slot_zero", "slot", "fixed/zero");
     bool unknown_rejected = false;
     try {
-        (void)model.density_actions(313.15, 42441.09427799721, composition, {observables[5]},
+        (void)model.density_actions(313.15, properties_support::associating_binary_density, composition, {observables[5]},
             {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
                 {{epcsaft::ParameterFamily::AssociationVolume, {999}, 1.0}}}});
     } catch (const std::invalid_argument&) { unknown_rejected = true; }
@@ -1017,27 +1017,27 @@ void properties_p4() {
     const auto& valid_direction = directions[0];
     std::size_t malformed_rejections = 0;
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {}, {valid_direction}); });
+        313.15, properties_support::associating_binary_density, composition, {}, {valid_direction}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0], observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0], observables[0]},
         {valid_direction}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]}, {}); });
+        313.15, properties_support::associating_binary_density, composition, {observables[0]}, {}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
         std::vector<epcsaft::DensityActionDirection>(4, valid_direction)); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{0.1, 0.0, {0.0}, {}}}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{std::numeric_limits<double>::infinity(),
             0.0, {0.0, 0.0}, {}}}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {0.1, 0.0}, {}}}); });
     malformed_rejections += rejects([&] { model.density_actions(
-        313.15, 42441.09427799721, composition, {observables[0]},
+        313.15, properties_support::associating_binary_density, composition, {observables[0]},
         {epcsaft::DensityActionDirection{0.0, 0.0, {0.0, 0.0},
             {{epcsaft::ParameterFamily::Kij, {2, 1}, 1.0}}}}); });
     epcsaft::HelmholtzModel ionic_validation(properties_support::aqueous_electrolyte());
@@ -1086,7 +1086,7 @@ void properties_p4() {
         thermal_boundary ? 1.0 : 0.0, 1.0, "T=250 endpoint, dT=.1", "Availability", "thermal",
         "thermal boundary action unavailable", "absolute", thermal_boundary,
         "p4-supplemental", "thermal-boundary", "status", "thermal", "thermal_boundary");
-    const auto counter_batch = model.density_actions(313.15, 42441.09427799721, composition,
+    const auto counter_batch = model.density_actions(313.15, properties_support::associating_binary_density, composition,
         {epcsaft::PropertyObservable::ResidualIsobaricHeatCapacity},
         {directions[0], directions[1], directions[2]});
     const auto pressure_counter_batch = model.pressure_actions(

@@ -49,15 +49,13 @@ def test_declared_starts_close_analytic_exchange_and_bound_work(evidence: Any) -
                              for i, x in zip(support, exact[phase], strict=True))
         assert amount_error <= 1e-9 and fraction_error <= 1e-9
         for quantity, value, unit in (("amount", amount_error, "mol"), ("composition", fraction_error, "1")):
-            evidence.compare(f"declared-starts/exchange/{phase}/{quantity}", model=value, reference=0., unit=unit,
-                             criterion={"rule": "symmetric_close", "atol": 1e-9})
+            evidence.compare(f"declared-starts/exchange/{phase}/{quantity}", model=value, reference=0., unit=unit)
     raw = max(abs(r) for r in result.residuals)
     assert raw <= 1e-10
     for a, b, target in ((2, 3, 2.), (4, 5, .5)):
         ratio = result.amounts[1]*result.mole_fractions[6+b] / (result.amounts[0]*result.mole_fractions[a])
         assert abs(ratio-target) <= 1e-8
-        evidence.compare(f"declared-starts/ratio/{a}", model=ratio, reference=target, unit="1",
-                         criterion={"rule": "symmetric_close", "atol": 1e-8})
+        evidence.compare(f"declared-starts/ratio/{a}", model=ratio, reference=target, unit="1")
     for replay in (eq.EquilibriumStart(coordinates=result.coordinates), eq.EquilibriumStart(previous=result)):
         restored = eq.solve_equilibrium_starts(model, problem, [replay], eq.EquilibriumWorkLimits())
         assert restored.selected == 0 and restored.results[0] is not None
@@ -153,7 +151,7 @@ def test_declared_compositions_on_zero_exchange_inventory(evidence: Any) -> None
         assert amount_error <= 1e-9 and fraction_error <= 1e-9
         assert all(result.mole_fractions[6*phase+i] == 0. for i in (2, 3, 4, 5))
         evidence.compare(f"declared-starts/zero-exchange/{phase}/amount", model=amount_error,
-                         reference=0., unit="mol", criterion={"rule": "symmetric_close", "atol": 1e-9})
+                         reference=0., unit="mol")
     raw = max(map(abs, result.residuals))
     assert raw <= 1e-10
     evidence.observe("declared-starts/zero-exchange", amounts=result.amounts,

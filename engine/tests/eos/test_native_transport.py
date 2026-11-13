@@ -1,4 +1,4 @@
-"""B1-B3 (#56-#59): public State values, actions and diagnostics against fresh C++ rows."""
+"""B1-B3 (#56-#59): public State values, actions and diagnostics against stored C++ rows."""
 import math
 from typing import Any, cast
 

@@ -470,9 +470,7 @@ void temperature_laws() {
         refused("direction/unit-defect", [&] { (void)h({5e6, 1.0 - 5e6}); }, "direction composition balance");
     }
     // Identical ethane components: constants and power-zero laws have the same positive-diameter domain.
-    auto pair = properties_support::parameters(2);
-    pair.segment_count = {1.6069, 1.6069}; pair.sigma_constant = {3.5206, 3.5206};
-    pair.dispersion_energy_over_k = {191.42, 191.42}; pair.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    auto pair = properties_support::identical_ethane_pair();
     for (double l : {0.0, 0.99, 1.0, 2.0}) {
         pair.l_ij[1] = pair.l_ij[2] = l;
         auto law = pair;

@@ -702,7 +702,7 @@ void energy_action_ladders() {
         {0.2, 0.3e-2 * aqueous_volume, 0.004, -0.002, -0.002, 0.002, 4.0},
         {-0.1, 0.2e-2 * aqueous_volume, -0.006, 0.003, 0.003, -0.003, -3.0}};
     const std::vector<double> aqueous_x = {0.96, 0.02, 0.02};
-    const double binary_volume = 1.0 / 42441.09427799721;
+    const double binary_volume = 1.0 / properties_support::associating_binary_density;
     const std::vector<EnergyCase> cases = {
         {"ion-suppression", properties_support::aqueous_electrolyte(), aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
         {"component-mixing", component_mixing, aqueous_active, 298.15, 56000.0, aqueous_x, aqueous_directions},
@@ -711,7 +711,7 @@ void energy_action_ladders() {
         {"cross-associating-binary", properties_support::associating_binary(),
          {{epcsaft::ParameterFamily::AssociationEnergyOverK, {1, 4}},
           {epcsaft::ParameterFamily::AssociationVolume, {1, 4}}},
-         313.15, 42441.09427799721, {0.25, 0.75}, {
+         313.15, properties_support::associating_binary_density, {0.25, 0.75}, {
             {0.5, 1.0e-2 * binary_volume, -0.01, 0.01, 10.0, 1.0e-3},
             {-0.3, -0.5e-2 * binary_volume, 0.005, -0.004, -6.0, -5.0e-4},
             {0.2, 0.3e-2 * binary_volume, 0.003, -0.002, 4.0, 3.0e-4},
@@ -945,9 +945,7 @@ void reference_f8() {
                     "Relationship","pure-P4-identities","finite source-pressure reference derivatives","absolute+relative",ok,"F8");
             }
     }
-    auto parameters=properties_support::parameters(2);
-    parameters.segment_count={1.6069,1.6069};parameters.sigma_constant={3.5206,3.5206};
-    parameters.dispersion_energy_over_k={191.42,191.42};parameters.molar_mass_kg_per_mol={0.03007,0.03007};
+    const auto parameters=properties_support::identical_ethane_pair();
     epcsaft::HelmholtzModel pair(parameters,{{PF::DispersionEnergyOverK,{0}},{PF::DispersionEnergyOverK,{1}}});
     for (double P:{3e6,5e6}) for(double molality:{1e-10,1e-12,1e-14}) {
         const double solute=molality*0.03007;

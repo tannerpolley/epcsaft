@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-from epcsaft import (DensityBranch, IdealCorrelation, IdealInterval, IdealPolynomial, Mixture, ParameterError, Parameters,
-                     Pure, ThermochemistryRecord)
+from epcsaft import (GAS_CONSTANT_J_PER_MOL_K as _R, DensityBranch, IdealCorrelation, IdealInterval, IdealPolynomial,
+                     Mixture, ParameterError, Parameters, Pure, ThermochemistryRecord)
 from tests.equilibrium.test_trace_reliability import _mea_mapping
 from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
@@ -71,7 +71,7 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     }
 
     def identity(name: str, left: float | None, right: float | None, atol: float, rtol: float, **more: Any) -> None:
-        same(evidence, f"state_identity/{name}", left, right, atol, rtol, inputs={**inputs, **more}, basis="Relationship")
+        same(evidence, f"state_identity/{name}", left, right, atol, rtol, inputs={**inputs, **more})
 
     # Relabelling invariance of the scalar state and reversal of the component vectors.
     for key in ("pressure", "residual_helmholtz", "compressibility_factor", "bulk_relative_permittivity"):
@@ -92,7 +92,7 @@ def test_relabelling_and_state_identities(evidence: Any) -> None:
     identity("euler_identity", sum(euler_terms), first.residual_helmholtz + first.compressibility_factor - 1.0,
              1e-12, 1e-12, identity="sum(x_i * mu_i^res/RT) = a^res + Z - 1")
     identity("codata_pressure", first.pressure,
-             first.compressibility_factor * first.molar_density * 8.31446261815324 * temperature, 0.0, 1e-12)
+             first.compressibility_factor * first.molar_density * _R * temperature, 0.0, 1e-12)
     identity("pressure_anchor", state.pressure, pressure_target, 1e-9, 1e-9)
     identity("anchored_density", anchored.molar_density, state.molar_density, 1e-10, 1e-10)
 
@@ -113,19 +113,12 @@ def test_pure_is_one_component_mixture(evidence: Any) -> None:
     )
     parameter_metadata = packet_metadata(packet, mixture_components)
     evidence.compare(
-        "pure_mixture_identity", quantity="pressure", model=float(pure.pressure),
+        "pure_mixture_identity", model=float(pure.pressure),
         reference=float(mixture.pressure), unit="Pa",
         inputs={"T_K": temperature, "rho_mol_m3": density, "composition": list(composition),
                 "pure_components": list(pure_components), "pure_composition": list(pure_composition),
                 "mixture_components": list(mixture_components),
                 "_parameters": parameter_metadata},
-        criterion={"type": "scalar", "rule": "symmetric_close", "atol": 0.0, "rtol": 1e-12,
-                   "scale": "max(abs(model), abs(reference))",
-                   "combining_rule": "max(atol, rtol*scale)"},
-        basis="Relationship", method="pure/mixture identity",
-        claim="Pure pressure equals one-component mixture pressure.",
-        relationship_latex=r"P_{pure}(T,\rho) = P_{mixture}(T,\rho,x_{ethane}=1)", quantity_latex="P",
-        inputs_latex=r"T,\rho,\mathbf{x}",
     )
     close(pure.pressure, mixture.pressure, 1e-12)
 
@@ -177,20 +170,13 @@ def test_pressure_branch_selects_sub_cell_loop_root(
     model = Pure(Parameters.from_json(packet, components=("ethane",)))
     state = model.state(temperature, P=pressure, phase=phase)
     evidence.compare(
-        f"loop_branch_{phase}", quantity="molar_density", model=float(state.molar_density),
+        f"loop_branch_{phase}", model=float(state.molar_density),
         reference=reference_density, unit="mol/m3",
         inputs={"T_K": temperature, "P_Pa": pressure, "phase": phase,
                 "stable_root_count": state.stable_root_count,
                 "density_branch": str(state.density_branch),
                 "pressure_density_derivative": float(state.pressure_density_derivative),
                 "_parameters": packet_metadata(packet, ("ethane",))},
-        criterion={"type": "scalar", "rule": "symmetric_close", "atol": 0.0, "rtol": 1e-8,
-                   "scale": "max(abs(model), abs(reference))",
-                   "combining_rule": "max(atol, rtol*scale)"},
-        basis="Relationship", method="independent fixed-density bisection",
-        claim="A declared branch returns its extreme stable root when the loop is narrower than a scan cell.",
-        relationship_latex=r"\rho_{branch}(T,P^\star)=\rho_{ref}", quantity_latex=r"\rho",
-        inputs_latex=r"T,P^\star,\text{branch}",
     )
     close(state.molar_density, reference_density, 1e-8)
     assert state.density_branch == getattr(DensityBranch, phase.capitalize()) and state.stable_root_count == 2
@@ -268,14 +254,11 @@ def test_declared_model_preserves_association_equations(evidence: Any) -> None:
     assert state.site_fractions == pytest.approx((fraction, fraction), rel=1e-11, abs=1e-12)
     assert state.association == pytest.approx(association, rel=1e-11, abs=1e-12)
     evidence.compare(
-        "declared_model/association", quantity="reduced association Helmholtz energy",
+        "declared_model/association",
         model=state.association, reference=association, unit="1",
         inputs={"T_K": 298.15, "rho_mol_m3": 56000.0, "x": [0.98, 0.01, 0.01],
                 "components": components, "bond_density": bond_density,
                 "parameter_sha256": hashlib.sha256(path.read_bytes()).hexdigest()},
-        criterion={"rule": "symmetric_close", "atol": 1e-12, "rtol": 1e-11},
-        basis="Relationship", method="independent symmetric 2B scalar root",
-        claim="The declared general-site choice preserves the association equations.",
     )
 
     relabelled = copy.deepcopy(document)
@@ -392,7 +375,7 @@ def test_wolbach_sandler_rule_matches_source_cross_volumes() -> None:
             assert left is not None and right is not None
             close(left, right, 1e-12)
         step = 1e-3
-        helmholtz = [8.314462618 * t * model.state(t, rho=1.5e4, x=composition).residual_helmholtz
+        helmholtz = [_R * t * model.state(t, rho=1.5e4, x=composition).residual_helmholtz
                      for t in (temperature - step, temperature + step)]
         close(state.residual_entropy, -(helmholtz[1] - helmholtz[0]) / (2 * step), 1e-7)
 
@@ -461,7 +444,6 @@ def test_density_anchor_outside_domain_keeps_native_convergence_failure() -> Non
 
 
 # #566 derived State properties. Clapeyron BasicIdeal as one constant polynomial: Cp = 5R/2, anchors at 300 K, 1 bar.
-_R = 8.31446261815324
 _BASIC_IDEAL = IdealPolynomial([2.5 * _R], 300.0, 2.5 * _R * 300.0, _R * (2.5 + 2.5 * math.log(300.0) + math.log(_R / 1e5)))
 _DERIVED = ("isothermal_compressibility", "isobaric_expansivity", "heat_capacity_ratio", "isentropic_compressibility",
             "speed_of_sound", "joule_thomson_coefficient")

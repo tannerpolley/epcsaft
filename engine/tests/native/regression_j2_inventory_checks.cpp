@@ -506,7 +506,7 @@ void check_minimax_consistency() {
     };
     auto ethane = properties_support::ethane();
     Observation density; density.kind = ObservationKind::Density;
-    density.temperature = 200; density.pressure = 217800.69494692178;
+    density.temperature = 200; density.pressure = properties_support::ethane_two_root_pressure;
     density.composition = {1}; density.branch = DensityBranch::Liquid;
     FitRequest density_request; density_request.parameters = ethane; density_request.observations = {density};
     density_request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 0, 1, 100, 250}};

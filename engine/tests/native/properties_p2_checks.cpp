@@ -500,7 +500,7 @@ void properties_p2() {
 
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     constexpr double temperature = 200.0;
-    constexpr double pressure = 217800.69494692178;
+    constexpr double pressure = properties_support::ethane_two_root_pressure;
     const std::vector<double> composition = {1.0};
     const auto vapor_root = epcsaft::solve_density(
         ethane, temperature, pressure, composition, epcsaft::DensityBranch::Vapor, std::nullopt

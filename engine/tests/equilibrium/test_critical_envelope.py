@@ -1,7 +1,7 @@
 """Installed-wheel transport of critical and envelope declarations, against independent teqp and FeOs values."""
 import math
 import pytest
-from epcsaft import Mixture, Parameters, Pure
+from epcsaft import Mixture, Parameters, Pure, tolerances
 from epcsaft.equilibrium import (Amounts, critical_point, CriticalDeclaration, EnvelopeCondition, EnvelopeCoordinate, Free, Phase, Pinned,
                                  Problem, compile_problem, solve_equilibrium)
 from tests.packets import parameters_json
@@ -38,7 +38,9 @@ def test_associating_critical_candidate_after_failed_declared_start() -> None:
     assert max(map(abs, result.classified_residuals)) <= 1e-10
     search = result.critical_search
     assert search is not None and search.selected is not None
-    assert all(i <= 512 and e <= 2048 and h <= 1024 for i, e, h in search.added_work)
+    cap = next(t.value for t in tolerances() if t.name == "EQUILIBRIUM_RECOVERY_WORK")
+    # The native recovery allowance caps evaluations at 4x and Hessian callbacks at 2x this work.
+    assert all(i <= cap and e <= 4 * cap and h <= 2 * cap for i, e, h in search.added_work)
     assert all(r.numerical_estimates is not None and r.numerical_estimates.cause == ""
                for r in search.results if r.success)
 

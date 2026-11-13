@@ -15,7 +15,9 @@ These owners do not depend on the report. Tests and checks never import
 report code or change their verdicts for presentation. Python and native
 numerical checks may emit `EPCSAFT_COMPARE_JSON` lines to their ordinary
 captured output; those lines are useful on their own and retain
-model/reference operands, units, inputs, criteria, and limitations.
+model/reference operands, units and inputs. A native line also retains its
+criterion and limitations; for a Python line the adjacent assertion owns the
+criterion.
 
 ## One-way flow
 

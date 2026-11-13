@@ -11,13 +11,13 @@ def test_total_volume_and_pressure_action() -> None:
     problem = Problem(T=220.0, P=Free(), volume_m3=0.002, feed=Amounts({"methane": 0.5, "ethane": 0.5}),
                       phases=[Phase("V", kind="vapor")], row_tolerance=1e-11)
     result = solve_equilibrium(model, problem)
-    # Clapeyron 0.6.29, matched Gross (2001) parameters, one mole and rho=500 mol/m3.
-    assert result.pressure == pytest.approx(830502.7179639882, rel=1e-8), result.message
+    # One mole in 0.002 m3 is the state at rho = 500 mol/m3; the native check owns the reference pressure.
+    state = model.state(220.0, rho=500.0, x=[0.5, 0.5])
+    assert result.pressure == pytest.approx(state.pressure, rel=1e-8), result.message
     compiled = compile_problem(model, problem)
     volume_row = next(row for row in compiled.rows if row.eqid == "extensive_volume_specification")
     assert volume_row.kind == _core.RowKind.Volume
     direction = SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], [], volume_m3=0.002)
     batch = solved_state_actions(compiled, result,
         SolvedStateActionRequest([SolvedStateObservable(SolvedStateObservableKind.Pressure)], [direction]))
-    state = model.state(220.0, rho=500.0, x=[0.5, 0.5])
     assert batch.results[0].action == pytest.approx(-500 * state.pressure_density_derivative, rel=1e-10)

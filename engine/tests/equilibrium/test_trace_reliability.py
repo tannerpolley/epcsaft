@@ -37,8 +37,7 @@ def test_trace_ethanol_retains_two_liquids(evidence: Any) -> None:
     assert result.success and result.requested_tolerance_met, result.message
     assert result.amounts[0] > 0. and result.amounts[1] > 0.
     same(evidence, "trace-ethanol/two-liquids/classified-residual", result.convergence.residual, 0.,
-         atol=1e-10, rtol=0., unit="1", basis="Identity", method="shared-equilibrium-rows",
-         claim="the original trace-ethanol declaration retains two liquids and meets its classified rows")
+         atol=1e-10, rtol=0., unit="1")
 
 
 @pytest.mark.parametrize("total", [1.0, 10.0])
@@ -70,8 +69,7 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
               "unscaled_residual_max": max(abs(value) for value in central.residuals),
               "solver_status": central.solver_status, "iterations": central.iterations}
     same(evidence, f"{label}/x_B", central.mole_fractions[1], references[0], atol=0.0, rtol=1e-6, unit="1",
-         inputs=inputs, basis="Identity", method="logistic-analytic",
-         claim="trace mole fraction equals K/(1+K) without a composition box")
+         inputs=inputs)
     if equilibrium_constant <= 1e-8:
         assert central.mole_fractions[1] < 1e-8  # the analytic solution sits below the former box
     compiled = compile_problem(model, problem)
@@ -81,8 +79,7 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
         item = solved_state_actions(compiled, central, SolvedStateActionRequest([observable], [direction] * order)).results[0]
         assert item.status == SolvedStateActionStatus.Available, item.status
         same(evidence, f"{label}/A{order}", item.action, references[order], atol=0.0, rtol=tolerance, unit=f"K^-{order}",
-             inputs=inputs, basis="Identity", method="logistic-analytic",
-             claim=f"order-{order} temperature action of the trace mole fraction matches the logistic chain")
+             inputs=inputs)
     # First-order optimality of the extensive objective with the returned constraint multipliers, from the
     # compiled objective gradient and row Jacobian rather than the driver's own reconstruction: a wrong
     # feed scaling of the material multiplier or a nonzero normalization multiplier leaves a residual of
@@ -97,9 +94,7 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
     # equivalence standard, CODING_STANDARDS.md, PR #311: scale by the extensive objective gradient.
     objective_scale = max(abs(value) for value in gradient)
     same(evidence, f"{label}/kkt_residual", kkt, 0.0, atol=max(1e-12, 1e-10 * objective_scale), rtol=0.0, unit="1",
-         inputs={**inputs, "objective_gradient_max": objective_scale}, basis="Identity",
-         method="objective-gradient-plus-jacobian",
-         claim="the returned constraint multipliers make the extensive objective stationary on the constraint rows")
+         inputs={**inputs, "objective_gradient_max": objective_scale})
     # Stationarity and curvature at the returned point, with the standard-state gauge made explicit so
     # the identity is independent of the driver's internal gauge: g0 = (0, -RT ln K) with the consistent
     # scalar K reproduces the same state. The balance multipliers act through the compiled
@@ -122,9 +117,7 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
         assert residual_potential is not None
         potential = math.log(gauged.mole_fractions[species] * state.molar_density) + residual_potential + standard
         same(evidence, f"{label}/stationarity/{species}", sum(m * b for m, b in zip(gauged.multipliers, basis)), potential,
-             atol=1e-12, rtol=1e-12, unit="1", inputs={**inputs, "balance_basis": basis}, basis="Identity",
-             method="public-state-chemical-potential",
-             claim="the returned balance multipliers reproduce the species chemical potential over RT at the returned point")
+             atol=1e-12, rtol=1e-12, unit="1", inputs={**inputs, "balance_basis": basis})
     # Curvature certificate at the returned point: positive, reproduced by a fresh solve started there to 1e-9
     # (the pre-correction certificate with optimizer duals differed by 5.9e-8 at K = 1e-16), and on the
     # physical scale of the trace amount N x_B, the log-chart curvature of the trace coordinate. The
@@ -133,11 +126,9 @@ def test_trace_isomerisation_meets_intensive_screens(evidence: Any, equilibrium_
     warm = solve_equilibrium(model, explicit, start=gauged)
     assert gauged.reduced_hessian_minimum > 0.0 and warm.success
     same(evidence, f"{label}/curvature", warm.reduced_hessian_minimum, gauged.reduced_hessian_minimum, atol=0.0, rtol=1e-9,
-         unit="1", inputs=inputs, basis="Relationship", method="warm-resolve",
-         claim="the reduced-Hessian minimum certified at the returned point is reproduced from that point")
+         unit="1", inputs=inputs)
     same(evidence, f"{label}/curvature_scale", gauged.reduced_hessian_minimum, total * gauged.mole_fractions[1], atol=0.0,
-         rtol=2.0 * equilibrium_constant + 1e-9, unit="1", inputs=inputs, basis="Relationship", method="trace-amount-scale",
-         claim="the minimum reduced curvature of the isomerisation is the trace amount to first order in K")
+         rtol=2.0 * equilibrium_constant + 1e-9, unit="1", inputs=inputs)
 
 
 def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
@@ -153,8 +144,7 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
     assert result.success and result.requested_tolerance_met, result.message
     inputs = {"feed_mol": total, "K": k, "T_K": temperature, "P_Pa": 2e5}
     same(evidence, "large-feed-trace/x_B", result.mole_fractions[1], k / (1 + k),
-         atol=0.0, rtol=1e-6, unit="1", inputs=inputs, basis="Identity",
-         method="logistic-analytic", claim="trace equilibrium is independent of total feed")
+         atol=0.0, rtol=1e-6, unit="1", inputs=inputs)
     compiled = compile_problem(model, problem)
     point = list(result.coordinates[:compiled.primal_size])
     gradient, jacobian = compiled.objective_gradient(point), compiled.jacobian(point)
@@ -164,13 +154,10 @@ def test_large_feed_trace_recovers_the_analytic_state(evidence: Any) -> None:
               for mu, i in zip(result.constraint_multipliers, rows)))
               for j in range(compiled.primal_size)) / total
     same(evidence, "large-feed-trace/kkt_per_feed", kkt, 0.0, atol=1e-10, rtol=0.0,
-         unit="1", inputs=inputs, basis="Identity", method="objective-gradient-plus-jacobian",
-         claim="per-feed stationarity meets the existing intensive criterion")
+         unit="1", inputs=inputs)
     assert result.reduced_hessian_minimum > 0.0
     same(evidence, "large-feed-trace/curvature", result.reduced_hessian_minimum,
-         total * k / (1 + k), atol=0.0, rtol=2 * k + 1e-9, unit="1", inputs=inputs,
-         basis="Relationship", method="trace-amount-scale",
-         claim="large-feed reduced curvature has the analytic trace-amount scale")
+         total * k / (1 + k), atol=0.0, rtol=2 * k + 1e-9, unit="1", inputs=inputs)
 
 
 def test_trace_isomerisation_below_the_composition_cutoff(evidence: Any) -> None:
@@ -186,8 +173,7 @@ def test_trace_isomerisation_below_the_composition_cutoff(evidence: Any) -> None
                                               reactions=[Reaction({"s0": -1.0, "s1": 1.0}, correlation=law)]))
     assert result.mole_fractions, result.message
     same(evidence, "trace/1e-24/x_B", result.mole_fractions[1], k / (1 + k), atol=0.0, rtol=1e-9, unit="1",
-         inputs={"K": k, "feed_mol": 1.0, "T_K": temperature, "P_Pa": 2e5, "message": result.message},
-         basis="Identity", method="logistic-analytic", claim="the polish reaches a positive root below the cutoff")
+         inputs={"K": k, "feed_mol": 1.0, "T_K": temperature, "P_Pa": 2e5, "message": result.message})
 
 
 @pytest.mark.parametrize("inventory", [1e-9, 1e-12, 1e-13])
@@ -212,15 +198,13 @@ def test_trace_inventory_below_the_composition_box(evidence: Any, inventory: flo
     inputs = {"inventory_mol": inventory, "K": k, "T_K": temperature, "P_Pa": 2e5,
               "classified_residual": result.convergence.residual, "iterations": result.iterations}
     same(evidence, f"trace-inventory/{inventory:g}/x_s2", result.mole_fractions[2], x_s2, atol=0.0, rtol=1e-12,
-         unit="1", inputs=inputs, basis="Identity", method="logistic-analytic",
-         claim="a species whose whole inventory lies below the box times the phase amount reaches its analytic state")
+         unit="1", inputs=inputs)
     item = solved_state_actions(compile_problem(model, problem), result, SolvedStateActionRequest(
         [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 2)], [SolvedStateActionDirection(1.0, 0.0, [0.0] * 3, [])])).results[0]
     assert item.status == SolvedStateActionStatus.Available, item.status
     l1 = -1200 / temperature**2 + 0.4 / temperature + 0.002
     same(evidence, f"trace-inventory/{inventory:g}/A1", item.action, x_s2 * (1 - p) * l1, atol=0.0, rtol=5e-6,
-         unit="K^-1", inputs=inputs, basis="Identity", method="logistic-analytic",
-         claim="the temperature action of the trace-inventory species matches the logistic chain")
+         unit="K^-1", inputs=inputs)
 
 
 def test_moiety_basis_of_an_oligomerization_network(evidence: Any) -> None:
@@ -236,8 +220,7 @@ def test_moiety_basis_of_an_oligomerization_network(evidence: Any) -> None:
     assert result.success and result.requested_tolerance_met, result.message
     n = [result.amounts[0] * x for x in result.mole_fractions]
     same(evidence, "oligomerization/mass-moiety", sum(m * v for m, v in zip((1, 0, 3, 7, 17), n)), 1.0, atol=0.0, rtol=1e-12,
-         unit="mol", inputs={"K": 2.0, "T_K": 300.0, "P_Pa": 1e5}, basis="Identity", method="moiety-balance",
-         claim="the echelon balance basis conserves the network's mass moiety")
+         unit="mol", inputs={"K": 2.0, "T_K": 300.0, "P_Pa": 1e5})
 
 
 @pytest.mark.parametrize("total", [1.0, 10.0])
@@ -278,8 +261,7 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
                    for mu, (i, _) in zip(multipliers, rows))) for j in range(compiled.primal_size))
 
     same(evidence, f"{label}/kkt", stationarity(list(result.constraint_multipliers)), 0.0,
-         atol=1e-12, rtol=0.0, unit="1", inputs=inputs, basis="Identity",
-         method="objective-gradient-plus-jacobian", claim="ionic constraint duals make the extensive objective stationary")
+         atol=1e-12, rtol=0.0, unit="1", inputs=inputs)
     wrong = list(result.constraint_multipliers)
     wrong[electro] = -(result.amounts[phase] / total) * result.multipliers[compiled.rank]
     if total == 10.0:
@@ -295,16 +277,12 @@ def test_ionic_constraint_multipliers_are_extensive(evidence: Any, total: float)
             phase_potentials.append(math.log(x[i] * state.molar_density) + residual_potential)
         potentials.append(phase_potentials)
         same(evidence, f"{label}/charge/{p}", x[3] - x[4], 0.0, atol=1e-12, rtol=0.0,
-             unit="1", inputs=inputs, basis="Identity", method="public-composition",
-             claim="each declared liquid phase is electroneutral")
+             unit="1", inputs=inputs)
     delta = [potentials[phase][i] - potentials[1 - phase][i] for i in range(5)]
     same(evidence, f"{label}/salt-transfer", delta[3] + delta[4], 0.0, atol=1e-12, rtol=0.0,
-         unit="1", inputs=inputs, basis="Identity", method="public-state-chemical-potential",
-         claim="neutral salt chemical potential is equal across the two liquids")
+         unit="1", inputs=inputs)
     same(evidence, f"{label}/electrochemical-offset", (delta[3] - delta[4]) / 2,
-         result.multipliers[compiled.rank], atol=1e-12, rtol=0.0, unit="1", inputs=inputs,
-         basis="Identity", method="public-state-chemical-potential",
-         claim="the row electrochemical offset matches the charged species chemical potentials")
+         result.multipliers[compiled.rank], atol=1e-12, rtol=0.0, unit="1", inputs=inputs)
 
 
 _MEA = ("carbon-dioxide", "monoethanolamine", "water", "protonated-monoethanolamine", "carbamate-anion",
@@ -372,8 +350,7 @@ def test_reacting_liquid_cold_start_recovers_manufactured_speciation(
     assert result.success, result.message
     for species, value, reference in zip(_MEA, result.mole_fractions, speciation):
         same(evidence, f"cold-start/{label}/{species}", value, reference, atol=0.0, rtol=1e-8, unit="1",
-             inputs={"T_K": temperature, "P_Pa": 101325.0, "iterations": result.iterations}, basis="Identity",
-             method="manufactured-speciation", claim="a cold reacting-liquid solve recovers the manufactured speciation")
+             inputs={"T_K": temperature, "P_Pa": 101325.0, "iterations": result.iterations})
 
 
 @pytest.mark.parametrize("pressure, loading", [(105159.47802968061, 0.25557798094241313),
@@ -551,8 +528,7 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     raw = max(abs(value) for value in result.residuals)
     inputs = {"T_K": 353.15, "P_Pa": 101325.0, "classified_residual": result.convergence.residual,
               "unscaled_residual_max": raw, "residuals": list(result.residuals)}
-    same(evidence, "mea-unloaded/unscaled-rows", raw, 0.0, atol=1e-9, rtol=0.0, unit="1", inputs=inputs,
-         basis="Identity", method="newton-polish", claim="trace ionic stationarity meets the unscaled 1e-9 gate")
+    same(evidence, "mea-unloaded/unscaled-rows", raw, 0.0, atol=1e-9, rtol=0.0, unit="1", inputs=inputs)
     mass = math.fsum(n * m for n, m in zip(system["feed_amounts_mol"], system["molar_masses_kg_per_mol"]))
     (h, dh), (n, dn) = actions(problem, result, 1.0)
     heat_capacity = (n * dh + h * dn) / mass / 1000.0
@@ -562,8 +538,7 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
         (h, _), (n, _) = actions(neighbour, solved, 0.0)
         enthalpy.append(h * n)
     same(evidence, "mea-unloaded/equilibrium-cp", heat_capacity, (enthalpy[1] - enthalpy[0]) / 0.1 / mass / 1000.0,
-         atol=0.0, rtol=1e-6, unit="kJ/(kg K)", inputs=inputs, basis="Identity", method="centered-enthalpy-difference",
-         claim="the equilibrium heat-capacity action equals the re-solved enthalpy slope")
+         atol=0.0, rtol=1e-6, unit="kJ/(kg K)", inputs=inputs)
     # #563: at 298.15 K the trace-ion phase of this neutral feed carries sum z x = -3.7e-16 (3.6e-12 of
     # sum |z| x); the absolute charge rule admits it back into the public state.
     _, cold = solve(298.15)

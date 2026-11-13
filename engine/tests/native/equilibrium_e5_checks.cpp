@@ -987,7 +987,7 @@ Fixture associating_case() {
     f.problem = equilibrium_support::flash(2);
     f.problem.feed.values = {0.25, 0.75};
     f.problem.temperature = FreeValue::fixed(313.15);
-    f.problem.pressure = FreeValue::fixed(epcsaft::HelmholtzModel(f.parameters).state(313.15, 42441.09427799721, {0.25, 0.75}).pressure);
+    f.problem.pressure = FreeValue::fixed(epcsaft::HelmholtzModel(f.parameters).state(313.15, properties_support::associating_binary_density, {0.25, 0.75}).pressure);
     f.directions = {direction(0.2, 15000.0, {-0.01, 0.01}, {0.03, 0.001}), direction(-0.1, -10000.0, {0.005, -0.005}, {-0.02, -0.0005}),
                     direction(0.05, 6000.0, {0.002, -0.002}, {0.01, 0.0002})};
     f.observables = {obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualEnthalpy), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::TotalEnthalpy),
@@ -1096,7 +1096,7 @@ Fixture two_root_case(PhaseKind kind) {
     f.problem = equilibrium_support::flash(1);
     f.problem.phases = {equilibrium_support::phase("P", kind)};
     f.problem.temperature = FreeValue::fixed(200.0);
-    f.problem.pressure = FreeValue::fixed(217800.69494692178);
+    f.problem.pressure = FreeValue::fixed(properties_support::ethane_two_root_pressure);
     f.directions = {direction(0.1, 2000.0, {0.0}), direction(-0.05, -1000.0, {0.0}), direction(0.03, 500.0, {0.0})};
     f.observables = {obs(Kind::PhasePressure, 0), obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualEnthalpy),
                      obs(Kind::PhaseProperty, 0, 0, PropertyObservable::ResidualIsobaricHeatCapacity), obs(Kind::PhaseMolarDensity, 0)};
@@ -1150,7 +1150,7 @@ void check_e5_roots() {
         const auto fixture = two_root_case(kind);
         const auto model = fixture.model();
         const auto central = epcsaft::equilibrium::solve_equilibrium(model, fixture.problem);
-        const auto root = epcsaft::solve_density(model, 200.0, 217800.69494692178, {1.0},
+        const auto root = epcsaft::solve_density(model, 200.0, properties_support::ethane_two_root_pressure, {1.0},
             kind == PhaseKind::Vapor ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid, std::nullopt);
         const bool branch_ok = central.success && std::abs(std::log(central.molar_densities[0] / root.molar_density)) <= 1.0e-8
             && root.stable_root_count.value_or(0) == 2;

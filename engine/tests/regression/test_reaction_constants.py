@@ -45,7 +45,7 @@ def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) ->
             inputs={"T_K": 200.0, "P_Pa": 5e6, "engine_cost": fitted.final_cost,
                     "engine_residuals": fitted.residuals, "ratios": [2.0, 0.5],
                     "rank": fitted.covariance.rank},
-            criterion={"rule": "symmetric_close", "atol": 1e-6, "rtol": 0.0})
+            criterion={"atol": 1e-6, "rtol": 0.0})
         assert abs(value - known[i]) <= 1e-6
 
     # Check the fitted equilibrium against independent amounts and fractions.
@@ -54,13 +54,13 @@ def test_two_exchange_constants_recover_analytic_amount_ratios(evidence: Any) ->
     for phase, fractions in enumerate(((10/13, 1/13, 2/13), (10/13, 2/13, 1/13))):
         assert abs(state.amounts[phase] - 1.3) <= 1e-9
         evidence.compare(f"reaction-c/phase-amount/{phase}", model=state.amounts[phase],
-            reference=1.3, unit="mol", criterion={"rule": "symmetric_close", "atol": 1e-9, "rtol": 0.0})
+            reference=1.3, unit="mol", criterion={"atol": 1e-9, "rtol": 0.0})
         for species, fraction in zip(((0, 2, 4), (1, 3, 5))[phase], fractions):
             actual = state.mole_fractions[6 * phase + species]
             assert abs(actual - fraction) <= 1e-9
             assert abs(state.amounts[phase] * actual - 1.3 * fraction) <= 1e-9
             evidence.compare(f"reaction-c/fraction/{phase}/{species}", model=actual,
-                reference=fraction, unit="1", criterion={"rule": "symmetric_close", "atol": 1e-9, "rtol": 0.0})
+                reference=fraction, unit="1", criterion={"atol": 1e-9, "rtol": 0.0})
     for i, (aqueous, organic, ratio) in enumerate(((2, 3, 2.0), (4, 5, 0.5))):
         aqueous_amount = state.amounts[0] * state.mole_fractions[aqueous]
         organic_amount = state.amounts[1] * state.mole_fractions[6 + organic]
@@ -98,11 +98,11 @@ def test_direct_log_constants_recover_coefficients_with_absolute_weights(evidenc
     for k, known in enumerate((-1.5, 150.0)):
         assert abs(fitted.physical[k] - known) <= 1e-6
         evidence.compare(f"ln-k/python/recovery/{k}", model=fitted.physical[k], reference=known,
-                         unit="native", criterion={"rule": "symmetric_close", "atol": 1e-6, "rtol": 0.0})
+                         unit="native")
     for i, (T, weight) in enumerate(zip(temperatures, weights)):
         for k, basis in enumerate((1.0, 250.0 / T)):
             expected = math.sqrt(weight) * basis
             actual = fitted.optimizer_jacobian[i * 2 + k]
             assert abs(actual - expected) <= 1e-12
             evidence.compare(f"ln-k/python/weighted-column/{i}/{k}", model=actual, reference=expected,
-                             unit="1", criterion={"rule": "symmetric_close", "atol": 1e-12, "rtol": 0.0})
+                             unit="1")

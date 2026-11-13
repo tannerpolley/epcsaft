@@ -1,9 +1,11 @@
 """Explicit inputs of the retained native fixtures, restated through the public package (#59).
 
-`ROWS` holds the C++ values recorded by oracle/record_native_rows.py for these same inputs.
+`ROWS` holds the C++ values stored by oracle/record_native_rows.py for these same inputs.
 """
+import gzip
 import hashlib
 import itertools
+import json
 import math
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -36,13 +38,14 @@ def same(evidence: Any, name: str, model: float | None, reference: float | None 
          atol: float = 1e-12, rtol: float = 1e-12, **inputs: Any) -> None:
     """Record and assert |model - reference| <= max(atol, rtol max(|model|, |reference|)).
 
-    The default is the retained same-owner transport rule against the recorded C++ row `name`,
-    without the absolute floor when that row lies below 1e-9.
+    Without `reference`, the stored C++ row `name` is the reference at the 1e-10 equivalence
+    tolerance of CODING_STANDARDS.md: a transport fault (unit, order, field) is far larger, and
+    bit identity belongs to the corpora gate. A row below 1e-9 compares relatively only.
     """
-    if reference is None:  # a recorded row below the absolute floor must still match relatively
-        reference, atol = ROWS[name], 0.0 if abs(ROWS[name]) < 1e-9 else atol
-    evidence.compare(name, model=model, reference=reference, **inputs,
-                     criterion={"type": "scalar", "rule": "symmetric_close", "atol": atol, "rtol": rtol})
+    if reference is None:
+        reference = ROWS[name]
+        atol, rtol = (0.0 if abs(reference) < 1e-9 else 1e-10), 1e-10
+    evidence.compare(name, model=model, reference=reference, **inputs, criterion={"atol": atol, "rtol": rtol})
     assert model is not None and math.isclose(model, reference, rel_tol=rtol, abs_tol=atol), name
 
 
@@ -90,6 +93,30 @@ def parameters(
     document.entries = entries
     site_ids = tuple((document.component_ids[c], f"site{k}") for k, c in enumerate(sites[0]))
     return Parameters(_core.build_parameters(document), tuple(document.component_ids), site_ids)
+
+
+def mea_cp() -> Any:
+    """A fresh copy of the frozen manufactured MEA packet, tools/fixtures/mea-cp.json.gz."""
+    return json.loads(gzip.decompress((Path(__file__).resolve().parents[2] / "tools/fixtures/mea-cp.json.gz").read_bytes()))
+
+
+def decode(v: Any) -> Any:
+    """Rebuild the _core objects of a frozen fixture's {"type", "fields"} and {"enum", "name"} entries."""
+    if isinstance(v, list):
+        return [decode(x) for x in v]
+    if not isinstance(v, dict):
+        return v
+    if "enum" in v:
+        return getattr(getattr(_core, v["enum"]), v["name"])
+    cls = getattr(_core, v["type"])
+    fields = {k: decode(x) for k, x in v["fields"].items()}
+    try:
+        obj = cls()
+    except TypeError:
+        return cls(**fields)
+    for k, x in fields.items():
+        setattr(obj, k, x)
+    return obj
 
 
 ETHANE = (30.07, 1.6069, 3.5206, 191.42)

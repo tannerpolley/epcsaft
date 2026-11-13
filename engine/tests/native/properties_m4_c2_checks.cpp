@@ -473,7 +473,7 @@ void density_and_reference() {
     solvent_activity_properties();
     epcsaft::HelmholtzModel ethane(properties_support::ethane());
     const auto reference_rows = std::array<std::tuple<double, double, double, double>, 2>{
-        std::tuple{200.0, 217800.69494692178, 0.007241100995,
+        std::tuple{200.0, properties_support::ethane_two_root_pressure, 0.007241100995,
                    0.03007 / 523.97698},
         std::tuple{240.0, 969152.4807171321, 0.001745731329,
                    0.03007 / 465.30887}};
@@ -1011,11 +1011,7 @@ void liquid_reference_branch_evidence() {
     CHECK(pure.status == epcsaft::NeutralReferenceStatus::DensityUnavailable
           && pure.message.find("pure reference species 1: liquid branch not established by the finite search") != std::string::npos);
     // Delivered-review case: 2A <=> B, identical ethane EOS species, both referenced to pure gas.
-    auto identical_ethane = properties_support::parameters(2);
-    identical_ethane.segment_count = {1.6069, 1.6069};
-    identical_ethane.sigma_constant = {3.5206, 3.5206};
-    identical_ethane.dispersion_energy_over_k = {191.42, 191.42};
-    identical_ethane.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    const auto identical_ethane = properties_support::identical_ethane_pair();
     const auto pure_gas = epcsaft::reaction_reference(epcsaft::HelmholtzModel(identical_ethane), 300.0, 100.0,
         {0, {0.0, 1.0}, 1.0, {epcsaft::SpeciesReference::PureGas, epcsaft::SpeciesReference::PureGas}}, {-2.0, 1.0},
         {std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution});

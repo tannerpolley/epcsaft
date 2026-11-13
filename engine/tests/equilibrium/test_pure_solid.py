@@ -89,18 +89,15 @@ def test_halite_solubility_and_complementarity(evidence: Any) -> None:
     """F1 physical check of the Held 2014 set, F2 activity identity and F3 complementarity."""
     saturated = solve(6.5)
     m_s = liquid_molality(saturated)
-    same(evidence, "halite/F1/solubility", m_s, MEASURED, rtol=0.030, atol=0.0,
-         method="native solid-liquid solve", claim="Held 2014 set within the 0.02-decade target at saturation")
-    same(evidence, "halite/F2/ln-ion-product", reference_log_ip(m_s), 0.0, rtol=0.0, atol=1e-9,
-         method="Reference.activity at the solved molality", claim="the saturation row imposes 2 ln(m g) = ln K")
+    same(evidence, "halite/F1/solubility", m_s, MEASURED, rtol=0.030, atol=0.0)
+    same(evidence, "halite/F2/ln-ion-product", reference_log_ip(m_s), 0.0, rtol=0.0, atol=1e-9)
     assert saturated.solid_affinity_decades[0] == pytest.approx(0.0, abs=1e-10)
     assert solid_activities(saturated) == [1.0]
     excess = solve(7.5)
-    same(evidence, "halite/F3/feed-invariant-molality", liquid_molality(excess), m_s, rtol=1e-8, atol=0.0,
-         method="native solves at 6.5 and 7.5 mol/kg", claim="the saturated liquid is feed invariant")
+    same(evidence, "halite/F3/feed-invariant-molality", liquid_molality(excess), m_s, rtol=1e-8, atol=0.0)
     for feed, result in ((6.5, saturated), (7.5, excess)):
         same(evidence, f"halite/F3/excess/{feed}", result.solid_amounts[0] + liquid_molality(result), feed,
-             rtol=0.0, atol=1e-10 * feed, method="element balance", claim="n_s is the feed excess")
+             rtol=0.0, atol=1e-10 * feed)
     dilute = solve(5.0)
     assert dilute.solid_amounts == [0.0]
     assert solid_activities(dilute) == [None]
@@ -112,10 +109,8 @@ def test_pinned_halite_saturation_index(evidence: Any, molality: float, phreeqc:
     """F4a exact Pinned(0) identity; F4b Held ePC-SAFT against PHREEQC pitzer.dat (model against model)."""
     result = solve(molality, Pinned(0.0))
     index = result.solid_affinity_decades[0]
-    same(evidence, f"halite/F4a/{molality}", index, reference_log_ip(molality) / math.log(10.0), rtol=0.0, atol=1e-9,
-         method="Reference.activity", claim="SI = [2 ln(m g) - ln K]/ln 10")
-    same(evidence, f"halite/F4b/{molality}", index, phreeqc, rtol=0.0, atol=0.04,
-         method="PHREEQC 3 pitzer.dat via phreeqpython 1.6.2", claim="2 x the 0.02-decade activity target")
+    same(evidence, f"halite/F4a/{molality}", index, reference_log_ip(molality) / math.log(10.0), rtol=0.0, atol=1e-9)
+    same(evidence, f"halite/F4b/{molality}", index, phreeqc, rtol=0.0, atol=0.04)
 
 
 @pytest.mark.parametrize("molality", [6.5, 7.5])
@@ -128,13 +123,11 @@ def test_halite_polymorph(evidence: Any, molality: float) -> None:
     result = solve_equilibrium(model(), dataclasses.replace(problem(molality), solids=[halite, copy]))
     assert result.success, result.message
     single = solve(molality)
-    same(evidence, f"halite/R4/{molality}/m_s", liquid_molality(result), liquid_molality(single), rtol=1e-8, atol=0.0,
-         method="native solve with two free solids", claim="the lower-g_s solid takes the amount")
-    same(evidence, f"halite/R4/{molality}/n_s", result.solid_amounts[0], single.solid_amounts[0], rtol=1e-8, atol=0.0,
-         method="native solve with two free solids", claim="the lower-g_s solid takes the amount")
+    same(evidence, f"halite/R4/{molality}/m_s", liquid_molality(result), liquid_molality(single), rtol=1e-8, atol=0.0)
+    same(evidence, f"halite/R4/{molality}/n_s", result.solid_amounts[0], single.solid_amounts[0], rtol=1e-8, atol=0.0)
     assert result.solid_amounts[1] == 0.0
     same(evidence, f"halite/R4/{molality}/SI", result.solid_affinity_decades[1], -0.01 / math.log(10.0),
-         rtol=0.0, atol=1e-9, method="exact ln K shift", claim="the absent polymorph keeps a negative affinity")
+         rtol=0.0, atol=1e-9)
 
 
 def actions(result: _core.EquilibriumResult, molality: float, observables: list[_core.SolvedStateObservable],
@@ -160,20 +153,16 @@ def test_present_branch_actions(evidence: Any) -> None:
     dm_dt, = actions(center, 6.5, [sodium], [(1.0, 0.0, [0.0, 0.0, 0.0])])
     h = 0.1
     fd = (liquid_molality(solve(6.5, temperature=T + h)) - liquid_molality(solve(6.5, temperature=T - h))) / (2 * h)
-    same(evidence, "halite/F5/dm_dT", dm_dt, fd, rtol=1e-6, atol=0.0, method="central difference, 0.1 K",
-         claim="exact implicit actions on the present branch")
+    same(evidence, "halite/F5/dm_dT", dm_dt, fd, rtol=1e-6, atol=0.0)
     water = [1.0, 0.0, 0.0]
     first = actions(center, 6.5, [sodium, solid], [(0.0, 0.0, water)])
     second = actions(center, 6.5, [sodium, solid], [(0.0, 0.0, water), (0.0, 0.0, water)])
     # Adding water w kg dissolves m_s w mol: the liquid molality and the solid's chemical potential stay fixed.
     mw = 1.0 / center.amounts[0] / center.mole_fractions[0]  # kg/mol from the feed's 1 kg of water
-    same(evidence, "halite/F5/dn_Na_dn_w", first[0], liquid_molality(center) * mw, rtol=1e-6, atol=0.0,
-         method="saturated-liquid balance", claim="the liquid dissolves m_s M_w per mol of water")
-    same(evidence, "halite/F5/dn_s_dn_w", first[1], -first[0], rtol=1e-12, atol=1e-14,
-         method="sodium balance", claim="the solid supplies what the liquid takes")
+    same(evidence, "halite/F5/dn_Na_dn_w", first[0], liquid_molality(center) * mw, rtol=1e-6, atol=0.0)
+    same(evidence, "halite/F5/dn_s_dn_w", first[1], -first[0], rtol=1e-12, atol=1e-14)
     for name, value in zip(("Na", "s"), second):
-        same(evidence, f"halite/F5/second/{name}", value, 0.0, rtol=0.0, atol=1e-10,
-             method="saturated amounts are linear in the water feed", claim="second feed action")
+        same(evidence, f"halite/F5/second/{name}", value, 0.0, rtol=0.0, atol=1e-10)
 
 
 # Document identity, active parameter (k_ij by flat pair indices) and its Held 2014 value.
@@ -197,9 +186,7 @@ def test_present_branch_parameter_actions(evidence: Any) -> None:
             h = step * max(1.0, abs(value))
             fd = (liquid_molality(solve_equilibrium(held((identity, h)), problem(6.5)))
                   - liquid_molality(solve_equilibrium(held((identity, -h)), problem(6.5)))) / (2 * h)
-            same(evidence, f"halite/F5/dm_dtheta/{identity}/{step}", exact, fd, rtol=rtol, atol=0.0,
-                 method=f"central difference of native solves, h = {h:.3g}",
-                 claim="ln K^rho_s carries dC_s/dtheta of the source-basis conversion")
+            same(evidence, f"halite/F5/dm_dtheta/{identity}/{step}", exact, fd, rtol=rtol, atol=0.0)
 
 
 def test_halite_pressure_reference(evidence: Any) -> None:
@@ -210,12 +197,11 @@ def test_halite_pressure_reference(evidence: Any) -> None:
     d_index, d_sodium, d_chloride = actions(center, 6.0, observables, [(0.0, 1.0, [0.0, 0.0, 0.0])], Pinned(0.0))
     # ln 10 SI = sum_i nu_i ln a_i - ln K^rho(T, P0) - V_s (P - P0)/RT on a nonreacting liquid.
     same(evidence, "halite/F6/dg_dP", R * T * (d_sodium + d_chloride - math.log(10.0) * d_index), V_SOLID,
-         rtol=1e-9, atol=0.0, method="exact pressure actions", claim="dg_s/dP = V_s")
+         rtol=1e-9, atol=0.0)
     h = 5.0e4
     fd = (solve(6.0, Pinned(0.0), pressure=P + h).solid_affinity_decades[0]
           - solve(6.0, Pinned(0.0), pressure=P - h).solid_affinity_decades[0]) / (2 * h)
-    same(evidence, "halite/F6/dSI_dP", d_index, fd, rtol=1e-6, atol=0.0, method="central difference, 0.5 bar",
-         claim="the reference transfer stays at P0 when the system pressure moves")
+    same(evidence, "halite/F6/dSI_dP", d_index, fd, rtol=1e-6, atol=0.0)
 
 
 def test_solid_refusals() -> None:
@@ -252,10 +238,8 @@ def test_solubility_observation(evidence: Any) -> None:
     prediction = reg.predict(model(), solubility(10.0))
     assert prediction.status == _core.ObservationStatus.Available, prediction.message
     assert prediction.value is not None
-    same(evidence, "halite/solubility/observation", prediction.value, ratio(solve(10.0)), rtol=1e-12, atol=0.0,
-         method="direct native solid-liquid solve", claim="the amount-ratio observation reads the solved liquid")
-    same(evidence, "halite/solubility/molality", prediction.value / MW, 6.29890460910619, rtol=1e-12, atol=0.0,
-         method="design measurement", claim="m_s = (n_Na/n_w)/M_w")
+    same(evidence, "halite/solubility/observation", prediction.value, ratio(solve(10.0)), rtol=1e-12, atol=0.0)
+    same(evidence, "halite/solubility/molality", prediction.value / MW, 6.29890460910619, rtol=1e-12, atol=0.0)
 
 
 def test_solubility_jacobian(evidence: Any) -> None:
@@ -271,8 +255,7 @@ def test_solubility_jacobian(evidence: Any) -> None:
     def check(name: str, exact: float, move: Any, steps: tuple[tuple[float, float], ...]) -> None:
         for h, rtol in steps:
             fd = (ratio(move(h)) - ratio(move(-h))) / (2 * h)
-            same(evidence, f"halite/solubility/jacobian/{name}/{h:.3g}", exact / MW, fd / MW, rtol=rtol, atol=0.0,
-                 method=f"central difference of native solves, h = {h:.3g}", claim="exact solved-state column, mol/kg per unit")
+            same(evidence, f"halite/solubility/jacobian/{name}/{h:.3g}", exact / MW, fd / MW, rtol=rtol, atol=0.0)
 
     for k, (identity, _, value) in enumerate(PARAMETERS):
         check(identity, evaluation.gradient[k], lambda h, identity=identity: solve_equilibrium(held((identity, h)), problem(10.0)),
@@ -296,8 +279,7 @@ def test_solubility_product_fit(evidence: Any, workers: int) -> None:
     """A manufactured three-temperature solubility fit recovers the law's a from a + 0.05, in process and in workers."""
     result = solubility_fit(10.0, workers)
     assert result.usable, result.message
-    same(evidence, f"halite/solubility/fit/{workers}", result.physical[0], LAW.a, rtol=0.0, atol=1e-8,
-         method=f"native least squares, {workers} process(es)", claim="the solubility product is identifiable from solubility")
+    same(evidence, f"halite/solubility/fit/{workers}", result.physical[0], LAW.a, rtol=0.0, atol=1e-8)
 
 
 def test_undersaturated_solubility_refused() -> None:

@@ -478,8 +478,7 @@ def test_density_options_reach_fit_worker(evidence: Any) -> None:
     for field in ("predictions", "residuals", "weighted_residuals", "physical_jacobian", "optimizer_jacobian"):
         for i, (a, b) in enumerate(zip(getattr(single, field), getattr(parallel, field), strict=True)):
             assert math.isclose(a, b, rel_tol=1e-10, abs_tol=1e-12), (field, i, a, b)
-            evidence.compare(f"worker/{field}/{i}", model=b, reference=a, unit="field units",
-                criterion={"rule": "symmetric_close", "rtol": 1e-10, "atol": 1e-12})
+            evidence.compare(f"worker/{field}/{i}", model=b, reference=a, unit="field units")
     for a, b in zip(single.checks, parallel.checks, strict=True):
         assert a.status == b.status == "pass" and a.errors == b.errors
         assert a.baseline_maximum == b.baseline_maximum and a.failed_rows == b.failed_rows

@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from epcsaft import Mixture, Parameters, Stop
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters, Stop
 from tests.native_inputs import packet_metadata, same
 from tests.packets import parameters_json
 
@@ -131,20 +131,6 @@ def _figiel_model_reference() -> dict[str, Any]:
     }
 
 
-def _aard_criterion(
-    *, threshold: float, verdict: bool, rule: str, rationale: str
-) -> dict[str, Any]:
-    return {
-        "type": "custom",
-        "helper": "engine.tests.eos.test_activity._aard_criterion",
-        "rule": rule,
-        "verdict": verdict,
-        "threshold": threshold,
-        "scale": "AARD",
-        "rationale": rationale,
-    }
-
-
 def _csv_rows(path: Path) -> list[dict[str, Any]]:
     with path.open(newline="") as stream:
         return [
@@ -194,7 +180,6 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
             measured = row["gamma_pm_m"]
             evidence.observe(
                 f"activity_row/{salt}/{len(deviations)}",
-                quantity="mean ionic activity coefficient",
                 model=float(calculated),
                 reference=measured,
                 unit="1",
@@ -205,14 +190,8 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
                     "_parameters": parameter_metadata,
                     "_reference": _hamer_wu_reference(salt),
                 },
-                basis="Experimental",
-                method="retained source row observation",
-                claim="Retain the model and evaluated reference operands; the aggregate row carries the test-owned adequacy criterion.",
                 comparison_group_id=f"activity/{salt}/gamma",
                 point_id=f"molality-{len(deviations)}",
-                quantity_latex=r"\gamma_{\pm}",
-                relationship_latex=r"\gamma_{\pm}^{model} \text{ observed against } \gamma_{\pm}^{reference}",
-                inputs_latex=r"T,\ p,\ m",
             )
             assert math.isfinite(calculated) and calculated > 0.0
             deviations.append(abs(calculated / measured - 1.0))
@@ -220,7 +199,6 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
         aard = sum(deviations) / len(deviations)
         evidence.compare(
             f"activity_aard/{salt}",
-            quantity="mean ionic activity coefficient AARD",
             model=aard,
             reference=SOURCE_ADEQUACY_AARD,
             unit="1",
@@ -232,20 +210,8 @@ def test_aqueous_activity_reproduces_source_rows(evidence: Any) -> None:
                 "_parameters": parameter_metadata,
                 "_reference": _hamer_wu_reference(salt),
             },
-            criterion=_aard_criterion(
-                threshold=SOURCE_ADEQUACY_AARD,
-                verdict=aard <= SOURCE_ADEQUACY_AARD,
-                rule="AARD(model) <= test-owned source adequacy bar(reference)",
-                rationale="Existing 10% source adequacy bar retained from this test.",
-            ),
-            basis="Experimental",
-            method="AARD",
-            claim="Retained evaluated reference rows satisfy the test-owned 10% AARD adequacy bar.",
             comparison_group_id=f"activity/{salt}/aard",
             point_id="aggregate",
-            quantity_latex=r"\operatorname{AARD}(\gamma_{\pm})",
-            relationship_latex=r"\operatorname{AARD}(\gamma_{\pm}) \leq \tau_{source}",
-            inputs_latex=r"T,\ p,\ \{m_i\}",
         )
         assert aard <= SOURCE_ADEQUACY_AARD, f"{salt}: {deviations}"
 
@@ -291,7 +257,6 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
         uncertainty_ratios.append(abs(calculated - published) / uncertainty)
         evidence.observe(
             f"published_row/{len(deviations) - 1}",
-            quantity="mean ionic activity coefficient",
             model=float(calculated),
             reference=float(published),
             unit="1",
@@ -302,14 +267,8 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
                 "_parameters": parameter_metadata,
                 "_reference": _figiel_model_reference(),
             },
-            basis="Cross-model sanity",
-            method="digitized source row observation",
-            claim="Retain the installed model and digitized published-model operands; the aggregate envelope row carries the criterion.",
             comparison_group_id="published-curve/gamma",
             point_id=f"molality-{len(deviations) - 1}",
-            quantity_latex=r"\gamma_{\pm}",
-            relationship_latex=r"\gamma_{\pm}^{model} \text{ observed against } \gamma_{\pm}^{published}",
-            inputs_latex=r"T,\ p,\ m",
         )
         print(row["molality_mol_kg"], published, calculated, uncertainty_ratios[-1])
     actual = sum(deviations) / len(deviations)
@@ -319,7 +278,6 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
     ) / len(rows)
     evidence.compare(
         "published_curve_aard",
-        quantity="published activity curve AARD",
         model=actual,
         reference=expected,
         unit="1",
@@ -330,20 +288,8 @@ def test_published_model_curve_reproduces_source(evidence: Any) -> None:
             "_parameters": parameter_metadata,
             "_reference": _figiel_model_reference(),
         },
-        criterion=_aard_criterion(
-            threshold=expected,
-            verdict=actual <= expected,
-            rule="AARD(model) <= supplied digitization envelope(reference)",
-            rationale="Retain the supplied per-point digitization uncertainty as the existing curve envelope.",
-        ),
-        basis="Cross-model sanity",
-        method="AARD against digitized curve",
-        claim="The model curve remains within the supplied digitization envelope; equation matching is not established.",
         comparison_group_id="published-curve/aard",
         point_id="aggregate",
-        quantity_latex=r"\operatorname{AARD}(\gamma_{\pm})",
-        relationship_latex=r"\operatorname{AARD}(\gamma_{\pm}) \leq \tau_{digitization}",
-        inputs_latex=r"T,\ p,\ \{m_i\}",
     )
     assert actual <= expected
 
@@ -356,7 +302,7 @@ def test_trace_osmotic_debye_limit_and_reporting_floor() -> None:
                                   ions=("sodium-cation", "chloride-anion"), stoichiometry=(1, 1))
     # Limiting law 1 - phi = A sqrt(m) / 3 from the model's own water density and
     # permittivity; at 1e-6 mol/kg the next Debye-Hueckel term, about 1.5 kappa a,
-    # is 1.5e-3 of it, so 3e-3 bounds it twice over.
+    # is 1.5e-3 of it, so 3e-3 bounds it twice over. An independent closed form, so its CODATA 2018 constants stay typed.
     pure = mixture.state(298.15, P=100000.0, x=[1, 0, 0], phase="liquid")
     e, eps0, kb, na, mw = 1.602176634e-19, 8.8541878128e-12, 1.380649e-23, 6.02214076e23, 0.0180153
     eps = eps0 * pure.bulk_relative_permittivity
@@ -447,12 +393,12 @@ def test_electrolyte_exact_columns_and_debye_limit() -> None:
         high = _core.observations_at(p._native, cs, plus, [], observations, [0] * len(observations))
         low = _core.observations_at(p._native, cs, minus, [], observations, [0] * len(observations))
         for i, value in enumerate(exact):
-            delta = 298.15 * 8.31446261815324 * 1e-7 if i == len(observations) - 1 else 1e-7
+            delta = 298.15 * GAS_CONSTANT_J_PER_MOL_K * 1e-7 if i == len(observations) - 1 else 1e-7
             cd = (high[i].observed - low[i].observed) / (2 * step)
             assert abs(value - cd) <= 2e-5 * max(abs(v) for v in exact) + delta
-    assert abs(raw[-1][1] / (298.15 * 8.31446261815324)) <= 1e-9
+    assert abs(raw[-1][1] / (298.15 * GAS_CONSTANT_J_PER_MOL_K)) <= 1e-9
     assert (
-        abs(sum(raw[-1][i] for i, j in enumerate(tie) if j == 2) / (298.15 * 8.31446261815324))
+        abs(sum(raw[-1][i] for i, j in enumerate(tie) if j == 2) / (298.15 * GAS_CONSTANT_J_PER_MOL_K))
         <= 1e-9
     )
     epsilon = r.electrolyte(
@@ -562,7 +508,7 @@ def test_electrolyte_density_columns_and_debye_density_limit() -> None:
         mass_basis=False,
     )
     drho = r.differentiate(model, density).value[0]
-    # Debye limiting-law verification, SI constants from core/physical_constants.hpp.
+    # Debye limiting law: an independent closed form, so its CODATA 2018 constants stay typed.
     e, eps0, kb, na, mw = 1.602176634e-19, 8.8541878128e-12, 1.380649e-23, 6.02214076e23, 0.0180153
     eps = eps0 * pure.bulk_relative_permittivity
     a = (

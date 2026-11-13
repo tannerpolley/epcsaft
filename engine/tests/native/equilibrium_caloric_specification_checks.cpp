@@ -337,6 +337,7 @@ void volume_specification() {
         }
     }
     auto p=binary();p.temperature=FreeValue::fixed(220);p.volume_m3=0.002;p.pressure=FreeValue::variable();p.phases.erase(p.phases.begin());
+    // Clapeyron 0.6.29, matched Gross (2001) parameters, one mole and rho=500 mol/m3.
     const auto r=solve_equilibrium(model,p);CHECK(r.has_state());compare("TV/homogeneous/P",*r.pressure,830502.7179639882,830502.7179639882,1e-8);
     const auto c=compile_problem(model,p);auto d=direction(c);d.volume_m3=*p.volume_m3;
     const auto state=model.state(220,500,{0.5,0.5});

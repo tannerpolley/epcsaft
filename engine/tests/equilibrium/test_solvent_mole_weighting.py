@@ -1,38 +1,17 @@
 """Manufactured MEA packet: exact consuming actions against re-solved lower actions."""
 
-import gzip
 import json
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 import epcsaft
 from epcsaft import _core as c
-
-
-def decode(v: Any) -> Any:
-    if isinstance(v, list):
-        return [decode(x) for x in v]
-    if not isinstance(v, dict):
-        return v
-    if "enum" in v:
-        return getattr(getattr(c, v["enum"]), v["name"])
-    cls = getattr(c, v["type"])
-    fields = {k: decode(x) for k, x in v["fields"].items()}
-    try:
-        obj = cls()
-    except TypeError:
-        return cls(**fields)
-    for k, x in fields.items():
-        setattr(obj, k, x)
-    return obj
+from tests.native_inputs import decode, mea_cp
 
 
 def packet(mode: str) -> Any:
-    data = json.loads(
-        gzip.decompress((Path(__file__).resolve().parents[3] / "tools/fixtures/mea-cp.json.gz").read_bytes())
-    )
+    data = mea_cp()
     doc = data["parameters"]
     f = next(f for f in doc["model_families"] if f["kind"] == "permittivity")
     f.update(choice="solvent-mole-weighting", solvents=["water", "monoethanolamine"], normalization=mode)

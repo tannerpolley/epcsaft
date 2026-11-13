@@ -1,7 +1,8 @@
 """Record the C++ reference rows of the binding checks (#59).
 
-Runs the Python-free native checks of the prepared build and keeps their full-precision
-`model` values once, in native-rows.tsv, with the commit and whether engine/ was clean beside them.
+Runs the Python-free native checks of the prepared build and stores their full-precision
+`model` values in native-rows.tsv, with the commit beside them. It refuses an engine/ tree with
+uncommitted changes, so the stored commit reproduces the rows.
 Run after `bash tools/setup.sh`: `.venv/bin/python engine/tests/oracle/record_native_rows.py`.
 """
 import json
@@ -31,6 +32,10 @@ SKIPPED_SUFFIXES = ("/rate", "/perturbed-nu", "/step0", "/step1", "/coarse", "/p
 
 
 def main() -> None:
+    changes = subprocess.run(["git", "status", "--porcelain", "--", "engine", ":!engine/tests/oracle/native-rows.*"],
+                             cwd=ROOT, capture_output=True, text=True, check=True)
+    if changes.stdout:
+        raise SystemExit(f"engine/ has uncommitted changes; rows not recorded:\n{changes.stdout}")
     build = Path((ROOT / "build/environment-wheel/meson-build-dir").read_text().strip())
     # Test programs are not built by default (#319): build the runners recorded here (#326).
     subprocess.run([str(ROOT / ".venv/bin/meson"), "compile", "-C", str(build),
@@ -57,11 +62,9 @@ def main() -> None:
         raise SystemExit(f"repeated row ids; rows not recorded: {repeated}")
     (HERE / "native-rows.tsv").write_text("\n".join(lines) + "\n")
     revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True)
-    changes = subprocess.run(["git", "status", "--porcelain", "--", "engine"], cwd=ROOT, capture_output=True, text=True, check=True)
     (HERE / "native-rows.json").write_text(json.dumps({
         "rows": len(lines) - 1,
         "recorded_at_revision": revision.stdout.strip(),
-        "engine_clean": not changes.stdout,
         "commands": commands,
         "failed_native_comparisons": failures,
         "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",

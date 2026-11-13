@@ -26,6 +26,7 @@ from epcsaft.equilibrium import (
 SELECTIONS = Path(__file__).resolve().parents[3] / "analyses/2026-dielectric-alternatives/inputs/selections"
 COMPONENTS = ("water", "sodium-cation", "chloride-anion")
 T, RHO, X = 298.15, 55000.0, (0.96, 0.02, 0.02)
+# Typed CODATA 2018 constants: the permittivity forms are checked against independent closed forms.
 AVOGADRO, BOLTZMANN = 6.02214076e23, 1.380649e-23
 # Debye^2 in J A^3 from the SI Debye (1e-21/c C m), CODATA 2018 epsilon_0 and the angstrom.
 DEBYE_SQUARED_J_A3 = (1.0e-21 / 299792458.0) ** 2 / (4.0 * math.pi * 8.8541878128e-12 * 1.0e-30)

@@ -1663,8 +1663,8 @@ void check_conditioning() {
         const auto parameters = properties_support::associating_binary();
         const HelmholtzModel direct(parameters), inner(parameters, {}, std::nullopt, nested);
         const std::vector<std::vector<double>> directions(3, {1, 0, 0, 0});
-        const auto outside = direct.residual_energy_action(313.15, 1.0 / 42441.09427799721, {0.25, 0.75}, directions);
-        const auto inside = inner.residual_energy_action(313.15, 1.0 / 42441.09427799721, {0.25, 0.75}, directions);
+        const auto outside = direct.residual_energy_action(313.15, 1.0 / properties_support::associating_binary_density, {0.25, 0.75}, directions);
+        const auto inside = inner.residual_energy_action(313.15, 1.0 / properties_support::associating_binary_density, {0.25, 0.75}, directions);
         CHECK(outside.status == PropertyActionStatus::Available && inside.status == outside.status);
         CHECK(outside.diagnostics.site_conditioning && outside.diagnostics.site_conditioning->observation.available);
         CHECK(!inside.diagnostics.site_conditioning && inside.diagnostics.site_rank == outside.diagnostics.site_rank);

@@ -163,7 +163,8 @@ def test_ionic_feed_and_caloric_actions_match_native(evidence: Any) -> None:
     partial = actions(Mixture(aqueous_electrolyte()), problem, observables[:3], directions[:1]).results
     assert partial[2].status == SolvedStateActionStatus.MissingThermochemistry
     assert partial[2].value is None and partial[2].action is None and partial[2].diagnostic_message
-    same(evidence, "partial/residual-sibling", partial[0].action, ROWS["e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A1"])
+    same(evidence, "partial/residual-sibling", partial[0].action, ROWS["e5-5/electrolyte/phase[0].property/ResidualEnthalpy/A1"],
+         1e-10, 1e-10)
     with pytest.raises(ParameterError, match="solved-state action direction"):  # feed width is the component count
         actions(model, problem, observables[:1], [(0.0, 0.0, [0.0, 0.0])])
 

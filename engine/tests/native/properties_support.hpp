@@ -51,6 +51,19 @@ inline epcsaft::Parameters ethane() {
     return p;
 }
 
+// Two identical ethane() components.
+inline epcsaft::Parameters identical_ethane_pair() {
+    auto p = parameters(2);
+    p.segment_count = {1.6069, 1.6069};
+    p.sigma_constant = {3.5206, 3.5206};
+    p.dispersion_energy_over_k = {191.42, 191.42};
+    p.molar_mass_kg_per_mol = {0.03007, 0.03007};
+    return p;
+}
+
+// Pa: the 200 K pressure at which ethane() has both a liquid and a vapor density root.
+inline constexpr double ethane_two_root_pressure = 217800.69494692178;
+
 inline epcsaft::Parameters neutral_binary() {
     auto p = parameters(2);
     p.segment_count = {1.0, 1.6069};
@@ -95,6 +108,9 @@ inline epcsaft::Parameters associating_binary() {
     set_edge(2, 3, 1804.17, 0.2039);
     return p;
 }
+
+// mol/m3: the associating_binary() state density at 313.15 K and x = (0.25, 0.75).
+inline constexpr double associating_binary_density = 42441.09427799721;
 
 // #658 manufactured aqueous Li/Mg/Cl liquid; `mixing` adds the cation pair (-0.2) and triple (0.02) corrections.
 inline epcsaft::Parameters li_mg_cl_water(bool mixing = true) {

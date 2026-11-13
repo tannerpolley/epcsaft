@@ -18,9 +18,9 @@ struct P1Case final {
 
 std::array<P1Case, 5> p1_cases() {
     return {{
-        {"ethane-vapor", properties_support::ethane(), {1.0}, 200.0, 217800.69494692178,
+        {"ethane-vapor", properties_support::ethane(), {1.0}, 200.0, properties_support::ethane_two_root_pressure,
          epcsaft::DensityBranch::Vapor, "vapor"},
-        {"ethane-liquid", properties_support::ethane(), {1.0}, 200.0, 217800.69494692178,
+        {"ethane-liquid", properties_support::ethane(), {1.0}, 200.0, properties_support::ethane_two_root_pressure,
          epcsaft::DensityBranch::Liquid, "liquid"},
         {"associating-binary", properties_support::associating_binary(), {0.1385, 0.8615},
          313.15, 1.0e5, epcsaft::DensityBranch::Liquid, "liquid"},

@@ -3,18 +3,15 @@ without records) at 1 bar. Its MEA record is anchored at h = s = 0 at 313.15 K, 
 of the driven TP state recover it from a start 4 K above, inside every record and reaction-law interval; dT/dH and
 dT/dS match 1/(N_f c_P,eq) and T/(N_f c_P,eq) from a separately compiled driven-TP apparent Cp."""
 
-import gzip
-import json
-from pathlib import Path
 from typing import Any
 
 import pytest
 
 import epcsaft
 from epcsaft import _core as c
-from tests.equilibrium.test_solvent_mole_weighting import decode
+from tests.native_inputs import decode, mea_cp
 
-DATA = json.loads(gzip.decompress((Path(__file__).resolve().parents[3] / "tools/fixtures/mea-cp.json.gz").read_bytes()))
+DATA = mea_cp()
 MODEL = c.HelmholtzModel(epcsaft.Parameters.from_mapping(DATA["parameters"])._native, [], decode(DATA["thermochemistry"]))
 K = c.SolvedStateObservableKind
 Observable = c.SolvedStateObservable
