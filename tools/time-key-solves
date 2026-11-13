@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Compare native work and paired solve time; see --help and #285."""
 import argparse
-import ast
 import csv
 import gzip
 import hashlib
@@ -11,6 +10,7 @@ import os
 from pathlib import Path
 import platform
 if os.name != "nt":
+    import fcntl
     import resource
 import statistics
 import subprocess
@@ -166,43 +166,6 @@ def frozen_result(case, operation):
     return dict(seconds=seconds, cpu_seconds=cpu_seconds, reference_taylor_evaluations=central, rows=[row])
 
 
-def unloaded_declaration():
-    """Reuse #261's declaration exactly, as in #272's unloaded_input.py probe.
-
-    Extract only its Problem, without running solves or caloric actions; the inputs come from
-    engine/tests/native_inputs.py. This keeps the test and its shared inputs the single owners.
-    """
-    source = ROOT / 'engine/tests/equilibrium/test_trace_reliability.py'
-    tree = ast.parse(source.read_text())
-    items = []
-    for node in tree.body:
-        if isinstance(node, ast.Import) and all(x.name in ('json', 'math') for x in node.names):
-            items.append(node)
-        elif isinstance(node, ast.ImportFrom) and node.module in (
-                'pathlib', 'typing', 'epcsaft', 'epcsaft.equilibrium'):
-            items.append(node)
-    function = next(x for x in tree.body if isinstance(x, ast.FunctionDef)
-                    and x.name == 'test_nominally_unloaded_mea_resolves_trace_ion_stationarity')
-    body = []
-    for node in function.body:
-        if isinstance(node, ast.FunctionDef) and node.name == 'actions':
-            break
-        if isinstance(node, ast.FunctionDef) and node.name == 'solve':
-            # Its first statement declares the Problem. No native solve here.
-            node.body = [node.body[0], ast.parse('return problem').body[0]]
-        body.append(node)
-    body.append(ast.parse('return model, solve(353.15)').body[0])
-    function.name = 'declaration'
-    function.args = ast.arguments(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])
-    function.body, function.decorator_list, function.returns = body, [], None
-    items.append(function)
-    sys.path.insert(0, str(ROOT / 'engine'))
-    from tests.native_inputs import MEA, nominally_unloaded_mea
-    namespace = {'__file__': str(source), 'MEA': MEA, 'nominally_unloaded_mea': nominally_unloaded_mea}
-    exec(compile(ast.fix_missing_locations(ast.Module(body=items, type_ignores=[])), str(source), 'exec'), namespace)
-    return namespace['declaration']()
-
-
 def worker():
     # Native libraries write to fd 1. Keep their diagnostics off the JSON pipe.
     replies = os.fdopen(os.dup(1), 'w')
@@ -210,13 +173,15 @@ def worker():
     import epcsaft
     from epcsaft import equilibrium as eq, _core
     from engine_identity import loaded_identity
-    sys.path.insert(0, str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'))
+    sys.path[:0] = [str(ROOT / 'analyses/2026-tpd-phase-discovery/scripts'), str(ROOT / 'analyses/2026-khudaida-idaes-settler/scripts')]
     import baseline as b
+    import run_fixed_settler as fixed
+    sys.path.append(str(ROOT / 'engine'))
+    from tests.native_inputs import nominally_unloaded_mea_liquid
     declarations = {name: (model, problem._native(model)) for name, model, problem in b.declared_cases() if name in ORDINARY}
-    fixed = sys.modules['run_fixed_settler']
     kh_model = epcsaft.Mixture(epcsaft.Parameters.from_json(b.KH_PACKET, components=fixed.COMPONENTS))
     sequence = [(f'khudaida/point-{i}', kh_model, fixed.engine_problem(fixed.feed_rows()[i])._native(kh_model)) for i in range(1, 9)]
-    unloaded_model, unloaded_problem = unloaded_declaration()
+    unloaded_model, unloaded_problem = nominally_unloaded_mea_liquid()
     unloaded = unloaded_model, unloaded_problem._native(unloaded_model)
     for line in sys.stdin:
         request = json.loads(line)
@@ -459,7 +424,7 @@ def main():
     if os.name == 'nt' and not sys.flags.utf8_mode:
         return subprocess.run([sys.executable, '-X', 'utf8', str(Path(__file__).resolve()), *sys.argv[1:]],
                               env={**os.environ, 'PYTHONUTF8': '1'}).returncode
-    from engine_identity import prepared_python
+    from engine_identity import prepared
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
         'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
@@ -474,15 +439,11 @@ def main():
     parser.add_argument('--expect-change', action='store_true',
                         help='report intended work changes without failing; numerical values and ceilings still gate')
     parser.add_argument('--cpu', type=int, help='serial-sample CPU; full fits retain controller affinity')
-    parser.add_argument('--cpu-overhead', action='store_true', help='run the 15-case, before/AB/after CPU uncertainty gate')
-    parser.add_argument('--cpu-blocks', type=int, default=20)
     parser.add_argument('--fit', action='store_true', help='also run one F1 fit per environment with native default workers')
     parser.add_argument('--collect-only', action='store_true')
     parser.add_argument('--compare-only', nargs=2, type=Path)
     parser.add_argument('--control', type=Path, help='passing A=A --fit summary from this host and prepared A image')
     args = parser.parse_args()
-    if args.cpu_overhead and (not LINUX or args.cpu_blocks != 20):
-        parser.error('CPU overhead acceptance requires Linux and exactly 20 balanced blocks')
     if args.pairs < 1:
         parser.error('--pairs must be positive')
     out = args.out.resolve()
@@ -514,14 +475,23 @@ def main():
         args.prepared_A = args.prepared_B = Path(sys.executable)
     if args.prepared_A is None or args.prepared_B is None:
         parser.error('select two prepared environments or --collect-only')
+    if LINUX:
+        # One timing run at a time on this host (owner, 2026-11-09); held until this process exits.
+        # Reuse a handle inherited from an outer `flock` on the same file; a new handle would wait on that parent.
+        path = '/tmp/epcsaft-timing-gate.lock'
+        held = [int(fd.name) for fd in Path('/proc/self/fd').iterdir() if os.path.realpath(fd) == path]
+        lock = os.fdopen(held[0], closefd=False) if held else open(path, 'w')
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print('waiting for /tmp/epcsaft-timing-gate.lock', flush=True)
+            fcntl.flock(lock, fcntl.LOCK_EX)
     begun = time.perf_counter()
     if os.name != "nt" and os.getpriority(os.PRIO_PROCESS, 0) > 10:
         parser.error('inherited niceness exceeds 10; cannot lower it without new authority')
     cpu = (args.cpu if args.cpu is not None else min(os.sched_getaffinity(0))) if LINUX else None
     if LINUX and cpu not in os.sched_getaffinity(0):
         parser.error('--cpu must be in the controller affinity')
-    env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
-           'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     processes, environments, identities = {}, {}, {}
     interpreters = {}
     work_rows, state_rows, pair_rows, start_rows = [], [], [], []
@@ -529,6 +499,8 @@ def main():
                    source_commit=__import__('engine_identity')._source_identity(ROOT)[0],
                    cpu=cpu, nice=10 if LINUX else None, threads=1,
                    cpu_boundary='parent plus children on Linux and macOS; parent only on Windows; fit worker CPU retained separately', host=platform.node(), pairs=args.pairs, warmups=1,
+                   host_load=dict(load_average=os.getloadavg(), top_cpu=subprocess.check_output(
+                       ['ps', '-eo', 'pid,pcpu,rss,comm', '--sort=-pcpu'], text=True).splitlines()[:6]) if LINUX else None,
                    time_boundary='sum of equilibrium call wall times; preparation, imports and result reading excluded',
                    change_percent='100*(B_seconds/A_seconds-1)',
                    state_difference='abs(A-B)/largest magnitude of that quantity in the returned state; gate 1e-10; declared phase order',
@@ -586,10 +558,10 @@ def main():
 
     try:
         for label, selected in (('A', args.prepared_A), ('B', args.prepared_B)):
-            python, selected_env = prepared_python(selected, env)
-            identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
-            if not (identity['source_revision'] and (identity['conda_package'] and identity['source_archive_sha256'] or identity['wheel_sha256'] or identity['meson_configuration_sha256'] and identity['lock_sha256'])):
-                parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+            try:
+                python, selected_env, identity = prepared(selected)
+            except ValueError as error:
+                parser.error(f'{label}: {error}')
             identities[label], environments[label] = identity, selected_env
             interpreters[label] = python
             summary['environments'][label] = dict(path=str(selected), **identity)
@@ -680,7 +652,7 @@ def main():
         same_prepared = identities['A'] == identities['B']
         summary['same_prepared_environment'] = same_prepared
         summary.update(cases=comparisons, identical_engine_images=same_image, expect_change=args.expect_change,
-                       gate_failures=gate(work_rows, state_rows, args.expect_change) + not_comparable)
+                       gate_failures=not_comparable)
         for case in FROZEN:
             if case in summary.get('not_comparable', {}):
                 continue
@@ -688,77 +660,6 @@ def main():
                                      median_B_seconds=baseline[case]['B']['seconds'],
                                      evaluations={label: evaluation(result) for label, result in baseline[case].items()})
             summary['gate_failures'].extend(ceilings(case, comparisons[case]['evaluations'], control=same_prepared))
-        if args.cpu_overhead:
-            # This third process loads exactly A's prepared image for both A=A phases.
-            environments['C'], interpreters['C'], identities['C'] = environments['A'], interpreters['A'], identities['A']
-            launch('C')
-            tick = time.get_clock_info('process_time').resolution
-            counts = {}
-            raw = (out / 'cpu-samples.txt').open('w')
-            evidence = (out / 'cpu-call-evidence.jsonl').open('w')
-            def batch(label, case, count, phase, block):
-                totals = {}
-                for repetition in range(count):
-                    result = call(label, case, starts)
-                    if result['nice'] != 10 or result['affinity'] != [cpu]:
-                        raise RuntimeError('CPU sample topology differs')
-                    if any(row.get('conditioning_warnings', 0) for row in result['rows']):
-                        raise RuntimeError(f'Ordinary CPU case has a conditioning warning: {case}')
-                    reference = baseline[case]['A']
-                    difference = physical_difference(result, reference, quantities(case))[0]
-                    if difference > STATE_TOLERANCE or work(result) != work(reference):
-                        raise RuntimeError(f'CPU sample changed numerical state or work: {case}')
-                    if case in FROZEN and (failures := ceilings(case, {'A': evaluation(result)})):
-                        raise RuntimeError(f'CPU sample exceeded frozen ceilings: {failures}')
-                    evidence.write(json.dumps(dict(phase=phase, block=block, repetition=repetition,
-                        image=label, case=case, difference=difference, result=result), allow_nan=False) + '\n')
-                    for row in result['rows']:
-                        duration = result['cpu_seconds'] if case in FROZEN else row['cpu_seconds']
-                        totals[row['point']] = totals.get(row['point'], 0) + duration
-                return totals
-            try:
-                for case in CASES:
-                    count = 1
-                    if case not in FROZEN:
-                        while min(batch('A', case, count, 'pilot', -1).values()) < 0.25:
-                            count *= 2
-                    counts[case] = count
-                for phase, labels in (('aa_pre', ('A', 'C')), ('ab', ('A', 'B')), ('aa_post', ('A', 'C'))):
-                    for label in labels:
-                        for case in CASES:
-                            batch(label, case, 1, phase + '_warmup', -1)
-                    for case in CASES:
-                        for block in range(20):
-                            samples = {'A': [], 'B': []}
-                            order = 'ABBA' if block % 2 == 0 else 'BAAB'
-                            for arm in order:
-                                samples[arm].append(batch(labels[arm == 'B'], case, counts[case], phase, block))
-                            for point in samples['A'][0]:
-                                # AB and BA are positions, even in a BAAB block.
-                                indices = (0, 1) if order == 'ABBA' else (1, 0)
-                                a, b = samples['A'], samples['B']
-                                left, right = indices
-                                raw.write(f"{phase} {point} {block} {counts[case]} {tick:.17g} "
-                                    f"{a[left][point]:.17g} {b[left][point]:.17g} "
-                                    f"{a[right][point]:.17g} {b[right][point]:.17g}\n")
-                            raw.flush(); evidence.flush()
-                        print(f'CPU {phase}: {case}, K={counts[case]}', flush=True)
-                for label in ('A', 'B', 'C'):
-                    if call(label, '__identity__') != identities[label]:
-                        raise RuntimeError(f'CPU image changed: {label}')
-            finally:
-                raw.close(); evidence.close()
-            reducer = out / 'cpu-reducer'
-            subprocess.run(['c++', '-std=c++17', '-O2', str(ROOT / 'tools/key-solve-cpu.cpp'), '-o', str(reducer)], check=True)
-            subprocess.run([str(reducer), '--selfcheck'], check=True, stdout=(out / 'cpu-arithmetic.txt').open('w'))
-            with (out / 'cpu-decision.csv').open('w') as decision:
-                reduced = subprocess.run([str(reducer), str(out / 'cpu-samples.txt')], stdout=decision)
-            summary['cpu_overhead'] = dict(exit_code=reduced.returncode, batches=counts, blocks=20,
-                clock_tick_seconds=tick, interval_order_statistics=[3, 18], control_image=identities['C'],
-                block_order='even ABBA, odd BAAB',
-                assumptions='independent stationary balanced blocks; simultaneous median coverage at least 95 percent')
-            if reduced.returncode:
-                summary['gate_failures'].append(f'CPU overhead did not pass: reducer exit {reduced.returncode}')
         if args.fit and F1 not in summary.get('not_comparable', {}):
             f1 = comparisons[F1]
             control = json.loads(args.control.read_text()) if args.control else None
@@ -802,7 +703,7 @@ def main():
             if difference > STATE_TOLERANCE:
                 summary['gate_failures'].append(f'F1 fit numerical difference {difference}')
             summary['gate_failures'].extend(ceilings(F1, {}, fits.items()))
-            summary['gate_failures'].extend(gate(work_rows, state_rows, args.expect_change))
+        summary['gate_failures'].extend(gate(work_rows, state_rows, args.expect_change))
         summary['f1_packet_sha256'] = FROZEN[F1]['identity']['packet_sha256']
     except Exception as error:
         summary['error'] = f'{type(error).__name__}: {error}'
@@ -816,13 +717,12 @@ def main():
                 write_csv(out / filename, rows)
         summary['runtime_seconds'] = time.perf_counter() - begun
         summary['input_sha256'] = {path.relative_to(ROOT).as_posix(): digest(path) for path in (
-            Path(__file__).resolve(), ROOT / 'tools/key-solve-cpu.cpp', *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
+            Path(__file__).resolve(), *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
             ROOT / 'analyses/2026-tpd-phase-discovery/scripts/baseline.py',
             ROOT / 'analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py',
             ROOT / 'analyses/reproduction/2026-khudaida/figures/figure-02/source/source-points.csv',
             ROOT / 'analyses/2026-khudaida-idaes-settler/inputs/data/khudaida-2026-figure-2-electrolyte-lle/7/parameters/parameters.json',
             ROOT / 'data/packets/mea-co2-h2o-nine-species-estimation/3/parameters/parameters.json',
-            ROOT / 'engine/tests/equilibrium/test_trace_reliability.py',
             ROOT / 'engine/tests/native_inputs.py',
             *(ROOT / 'engine/data/reference' / path for path in (
                 'mea-nominally-unloaded/request.json', 'mea-nominally-unloaded/parameters.json', 'mea-zero-inventory/ideal-calorics.json')))}

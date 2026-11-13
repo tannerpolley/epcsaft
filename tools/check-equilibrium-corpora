@@ -18,6 +18,7 @@ for amounts, fractions and densities; its work and timing are diagnostic. Exits 
 Tracked results/ are never written.
 """
 import argparse
+import copy
 import csv
 import hashlib
 from concurrent.futures import ThreadPoolExecutor
@@ -230,7 +231,7 @@ def unmet(name, rows, success, residual, criterion):
 
 
 def main():
-    from engine_identity import prepared_python
+    from engine_identity import prepared, prepared_python
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('prepared_a', nargs='?', help='prepared interpreter, virtual environment, or build-tree root')
     parser.add_argument('prepared_b', nargs='?')
@@ -250,8 +251,6 @@ def main():
         parser.error('--out must be outside the tracked tree (use build/)')
     out.mkdir(parents=True, exist_ok=False)
     began = time.perf_counter()
-    env = {**os.environ, 'OMP_NUM_THREADS': '1', 'OPENBLAS_NUM_THREADS': '1', 'MKL_NUM_THREADS': '1',
-           'PYTHONNOUSERSITE': '1', 'PYTHONPATH': ''}
     selections, interpreters, environments, identities = {}, {}, {}, {}
     if args.compare_only:
         failures, inventories = [], {}
@@ -270,13 +269,12 @@ def main():
     else:
         for label, value in ([('A', args.prepared_a)] if args.collect_only else [('A', args.prepared_a), ('B', args.prepared_b)]):
             (out / label).mkdir()
-            python, selected_env = prepared_python(value, env)
-            identity = json.loads(subprocess.check_output([str(python), str(ROOT / 'tools/engine_identity.py')], env=selected_env))
-            if not (identity['source_revision'] and (identity['conda_package'] and identity['source_archive_sha256'] or identity['wheel_sha256'] or identity['meson_configuration_sha256'] and identity['lock_sha256'])):
-                parser.error(f'{label} must identify its prepared source, Meson build, and lock')
+            try:
+                python, selected_env, identity = prepared(value)
+            except ValueError as error:
+                parser.error(f'{label}: {error}')
             selections[label], interpreters[label], environments[label], identities[label] = value, python, selected_env, identity
-        inventories = {label: runpy.run_path(str(ROOT / 'tools/check-equilibrium-corpora'))['ACCEPTED']
-                       for label, identity in identities.items()}
+        inventories = {label: copy.deepcopy(ACCEPTED) for label in identities}
         if sys.platform != 'linux':
             for inventory in inventories.values():
                 inventory['replay_work_histories'] = 'reported'

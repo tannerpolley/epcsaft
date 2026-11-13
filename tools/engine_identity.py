@@ -12,6 +12,7 @@ from urllib.request import url2pathname
 
 NATIVE, ASL = (('{}.dll' if os.name == 'nt' else 'lib{}.dylib' if sys.platform == 'darwin' else 'lib{}.so').format(name)
                for name in ('epcsaft_native', 'epcsaft_asl'))
+ONE_THREAD = dict(OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1')
 
 
 def digest(path):
@@ -37,6 +38,18 @@ def prepared_python(value, environment=None):
     if not path.is_file() or not os.access(path, os.X_OK):
         raise ValueError(f"prepared input must name a Python interpreter or root: {value}")
     return path, env
+
+
+def prepared(value):
+    """Interpreter, one-thread environment and identity of a prepared Engine that identifies its source and
+    either its Meson build and lock, its wheel, or its conda package and source archive."""
+    python, env = prepared_python(value, {**os.environ, **ONE_THREAD, "PYTHONNOUSERSITE": "1", "PYTHONPATH": ""})
+    identity = json.loads(subprocess.check_output([str(python), __file__], env=env))
+    if not (identity["source_revision"] and (identity["conda_package"] and identity["source_archive_sha256"]
+                                             or identity["wheel_sha256"]
+                                             or identity["meson_configuration_sha256"] and identity["lock_sha256"])):
+        raise ValueError(f"{value} must identify its prepared source, Meson build, and lock")
+    return python, env, identity
 
 
 def _source_root(direct):
@@ -149,7 +162,7 @@ def _mapped(path, mappings):
 
 
 def _asl_path(core, build):
-    path = Path(os.environ.get("EPCSAFT_ASL_LIBRARY", core.parent / ASL)).expanduser().resolve(strict=True)
+    path = (core.parent / ASL).resolve(strict=True)
     if not (path.is_relative_to(core.parent) or build and path.is_relative_to(build)):
         raise RuntimeError(f"selected ASL library is outside the loaded install or Meson build: {path}")
     return path
@@ -227,7 +240,7 @@ def loaded_identity():
     options = build / "meson-info/intro-buildoptions.json" if build else None
     if version is None and build:
         version = json.loads((build / "meson-info/intro-projectinfo.json").read_text()).get("version")
-    return {"prepared_stage": os.environ.get("EPCSAFT_PREPARED_STAGE", "editable" if direct.get("dir_info", {}).get("editable") else "prepared"),
+    return {"prepared_stage": "editable" if direct.get("dir_info", {}).get("editable") else "prepared",
             "linear_solver": _core.linear_solver(),
             "interpreter": sys.executable, "python": sys.version, "version": version, "direct_url": direct,
             "wheel": unquote(urlparse(direct.get("url", "")).path) if direct.get("url", "").endswith(".whl") else None,

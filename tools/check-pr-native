@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Prepare and check one frozen PR head in the main checkout's instrumented tree, removed again after the run."""
+"""Prepare one frozen PR head in an instrumented tree under the main checkout, run clang-tidy and the ASan/UBSan
+cases there, and remove the tree again; results/ and the pass record stay."""
 import argparse
 import contextlib
 import fcntl
@@ -10,6 +11,18 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from engine_identity import ONE_THREAD
+
+NATIVE_UNITS = r'engine/(native|tests/native)/.*\.cpp$'
+# Any of these changing since the base lints every unit.
+SWEEP_INPUTS = (r'(^|/)\.clang-tidy$|^engine/((.*/)?meson(\.build|\.options|_options\.txt)|build/subprojects/.*)$'
+                r'|^((engine/)?pyproject\.toml|uv\.lock|\.codex/environments/.*)$')
+SANITIZER_TESTS = ('tests/eos/test_activity.py', 'tests/eos/test_diagnostics.py',
+                   'tests/eos/test_state.py::test_density_anchor_outside_domain_keeps_native_convergence_failure',
+                   'tests/equilibrium/test_problem.py')
 
 
 def output(*command, **kwargs):
@@ -27,19 +40,97 @@ def run(*command, **kwargs):
     subprocess.run(command, check=True, **kwargs)
 
 
+def remove_tree(root, repo):
+    if (root / 'source').exists():
+        run('git', 'worktree', 'remove', '--force', str(root / 'source'), cwd=repo)
+    for name in ('meson', 'venv'):
+        shutil.rmtree(root / name, ignore_errors=True)
+
+
 @contextlib.contextmanager
 def head_tree(root, repo):
     """Hold the head's lock for the run; on exit keep only its results and pass records (owner, 2026-10-22)."""
     with (root / 'lock').open('w') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
+        remove_tree(root, repo)  # left by a run killed before its cleanup
+        for record in root.glob('passed-*.json'):  # a failing rerun must not keep an earlier pass
+            record.unlink()
         try:
             yield
         finally:
-            subprocess.run(['git', 'worktree', 'remove', '--force', str(root / 'source')], cwd=repo, capture_output=True)
-            for name in ('meson', 'venv'):
-                shutil.rmtree(root / name, ignore_errors=True)
-            for name in ('python', 'prepared.json', 'external-headers.json', 'dependencies.txt'):
-                (root / name).unlink(missing_ok=True)
+            remove_tree(root, repo)
+
+
+def lint(log, build, source, results, base, full, jobs, units, dependencies, identity, external, env):
+    """clang-tidy on the units changed since base or including a changed file, read from the build's dependency
+    records; every unit when full, after a sweep-input change, or while no full sweep has passed with this toolchain."""
+    (results / 'lint-objects.txt').write_text(''.join(f'{unit}\n' for unit in units))
+    changed = set(output('git', 'diff', '--name-only', base, '--', ':/', cwd=source).splitlines()) | set(
+        output('git', 'ls-files', '--full-name', '--others', '--exclude-standard', '--', ':/', cwd=source).splitlines())
+    # The sweep identity excludes the head, tracked inputs and the generated HiGHS header embedding the Git revision.
+    tracked = {(source / path).resolve() for path in output('git', 'ls-files', cwd=source).splitlines()}
+    revision_header = build / 'build/subprojects/HiGHS-1.15.1/highs/HConfig.h'
+    toolchain = dict(identity, external=digest(path for path in map(Path, external)
+                                                if path not in tracked and path != revision_header))
+    del toolchain['head']
+    toolchain = hashlib.sha256(json.dumps(toolchain, sort_keys=True).encode()).hexdigest()
+    swept = Path(os.environ.get('XDG_CACHE_HOME', Path.home() / '.cache')) / 'epcsaft/clang-tidy-swept' / toolchain
+    files = [NATIVE_UNITS]
+    if not full and any(re.search(SWEEP_INPUTS, path) for path in changed):
+        print(f'lint configuration, build or environment files changed since {base}: full sweep', file=log, flush=True)
+        full = True
+    elif not full and not swept.exists():
+        print(f'no full sweep has passed with toolchain {toolchain}: full sweep', file=log, flush=True)
+        full = True
+    elif not full:
+        selected, unit = set(), None
+        for line in dependencies.splitlines():
+            if not line.startswith('    '):
+                unit = units.get(line.split(': #deps ', 1)[0])
+            elif unit is not None:
+                path = (build / line.strip()).resolve()
+                if path.is_relative_to(source) and path.relative_to(source).as_posix() in changed:
+                    selected.add(str(unit))
+        files = ['^' + re.escape(path) + '$' for path in sorted(selected)]
+        print(f'linting {len(files)} native units changed or including a changed file' if files else
+              f'no native unit is or includes a file changed since {base}', file=log, flush=True)
+    (results / 'lint-selection.txt').write_text(''.join(f'{file}\n' for file in files))
+    if files and not any(re.search('|'.join(files), os.path.normpath(os.path.join(entry['directory'], entry['file'])))
+                         for entry in json.loads((build / 'compile_commands.json').read_text())):
+        raise RuntimeError('lint selection matches no compile entry in compile_commands.json')
+    if files:
+        run('run-clang-tidy-18', '-clang-tidy-binary', 'clang-tidy-18', '-p', str(build), '-j', str(jobs), '-quiet',
+            *files, cwd=source / 'engine', env=env, stdout=log, stderr=subprocess.STDOUT)
+    if full:
+        swept.parent.mkdir(parents=True, exist_ok=True)
+        swept.touch()
+
+
+def sanitizers(log, build, source, venv, results, env):
+    """The instrumented images keep their symbols and sanitizers; the selected cases run with errors halting."""
+    if '-DNDEBUG' in (build / 'compile_commands.json').read_text():
+        raise RuntimeError('sanitizer compile commands unexpectedly define NDEBUG')
+    print('sanitizer compile commands: NDEBUG absent', file=log, flush=True)
+    python = venv / 'bin/python'
+    run('uv', 'pip', 'check', '--python', str(python), env=env, stdout=log, stderr=subprocess.STDOUT)
+    for library in [*build.glob('_core*.so'), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']:
+        if 'not stripped' not in output('file', str(library)):
+            raise RuntimeError(f'stripped or missing library: {library}')
+        symbols = output('nm', '--defined-only', str(library))
+        (results / f'{library.name}.symbols').write_text(symbols + '\n')
+        dynamic = output('nm', '-D', str(library))
+        if not symbols or '__asan_init' not in dynamic or '__ubsan_handle' not in dynamic:
+            raise RuntimeError(f'no symbols, ASan or UBSan: {library}')
+    print('sanitizer extension, native library and ASL: instrumentation and symbols retained', file=log, flush=True)
+    # Leak detection stays off. Address and undefined-behaviour errors halt.
+    preload = ':'.join(output('clang++-18', '-print-file-name=' + name) for name in
+                       ('libclang_rt.asan-x86_64.so', 'libclang_rt.ubsan_standalone-x86_64.so'))
+    env = dict(env, LD_PRELOAD=preload, ASAN_OPTIONS='detect_leaks=0:halt_on_error=1',
+               UBSAN_OPTIONS='halt_on_error=1:print_stacktrace=1', PYTHONNOUSERSITE='1')
+    with (results / 'prepared-identity.json').open('w') as identity:
+        run(str(python), str(source / 'tools/engine_identity.py'), env=env, stdout=identity, stderr=log)
+    run(str(python), '-m', 'pytest', '-q', f'--junitxml={results / "sanitizers.xml"}', *SANITIZER_TESTS,
+        cwd=source / 'engine', env=env, stdout=log, stderr=subprocess.STDOUT)
 
 
 def main():
@@ -60,97 +151,67 @@ def main():
     root.mkdir(parents=True, exist_ok=True)
     with head_tree(root, repo):
         source, build, venv = root / 'source', root / 'meson', root / 'venv'
-        if not source.exists():
-            run('git', 'worktree', 'add', '--detach', str(source), head, cwd=repo)
-        if output('git', 'rev-parse', 'HEAD', cwd=source) != head or output('git', 'status', '--porcelain', '--untracked-files=all', cwd=source):
-            raise RuntimeError(f'frozen source changed: {source}')
+        run('git', 'worktree', 'add', '--detach', str(source), head, cwd=repo)
         env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(venv), PATH=f'{venv}/bin:' + os.environ['PATH'])
         run('uv', 'sync', '--python', '3.13', '--all-packages', '--no-install-workspace', '--locked', cwd=source, env=env)
         python = venv / 'bin/python'
-        (root / 'python').write_text(str(python) + '\n')
         jobs = int(os.environ.get('EPCSAFT_BUILD_JOBS', min(os.cpu_count(), max(1, int(re.search(r'MemAvailable:\s+(\d+)', Path('/proc/meminfo').read_text())[1]) // (2560 * 1024)))))
         if jobs < 1:
             parser.error('EPCSAFT_BUILD_JOBS must be positive')
         flags = ['--buildtype=debug', '-Db_ndebug=false', '-Db_lundef=false', '-Db_sanitize=address,undefined',
                  '-Db_lto=false', '-Dstrip=false', '-Dcpp_args=-idirafter' + output('gcc', '-print-file-name=include')]
         env.update(EPCSAFT_BUILD_JOBS=str(jobs), CCACHE_COMPILERCHECK='content', CC='ccache clang-18', CXX='ccache clang++-18', CCACHE_BASEDIR=str(source), CCACHE_NOHASHDIR='1')
-        external_file = root / 'external-headers.json'
-        external = json.loads(external_file.read_text()) if external_file.exists() else []
+        run('meson', 'setup', str(build), str(source / 'engine'), '--prefix', str(venv), *flags, env=env)
+        print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)
+        commands = json.loads((build / 'compile_commands.json').read_text())
+        units = {entry['output']: (Path(entry['directory']) / entry['file']).resolve()
+                 for entry in commands if re.search(NATIVE_UNITS, entry['file'])}
+        if not units:
+            raise RuntimeError('no native unit in compile_commands.json')
+        suffix = output(str(python), '-c', 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
+        run('ninja', '-C', str(build), '-j', str(jobs), *units, '_core' + suffix,
+            'libepcsaft_asl.so', 'equilibrium_checks', 'regression_checks', env=env)
+        if len(re.findall(r' \(VALID\)$', output('ninja', '-C', str(build), '-t', 'deps', *units, env=env), re.M)) != len(units):
+            raise RuntimeError('not every native/test object has a current dependency record')
+        dependencies = output('ninja', '-C', str(build), '-t', 'deps', env=env)
         binaries = [Path(shutil.which(name, path=env['PATH'])).resolve() for name in
                     ('clang-18', 'clang++-18', 'clang-tidy-18', 'run-clang-tidy-18', 'gcc', 'ld', 'ninja', 'cmake', 'ccache')]
         binaries += [Path(output('clang++-18', '-print-file-name=' + name)) for name in
                      ('libclang_rt.asan-x86_64.so', 'libclang_rt.ubsan_standalone-x86_64.so')]
-        def identity():
-            return dict(head=head, flags=flags, tools=digest(binaries + [python.resolve()]),
+        external = sorted({str((build / line.strip()).resolve()) for line in dependencies.splitlines() if line.startswith('    ')})
+        identity = dict(head=head, flags=flags, tools=digest(binaries + [python.resolve()]),
                         external=digest(external), lock=digest([source / 'uv.lock']),
                         environment=output('uv', 'pip', 'freeze', '--python', str(python)),
                         ambient={key: env.get(key, '') for key in ('CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')})
-        prepared_file = root / 'prepared.json'
-        current = identity()
-        prepared = json.loads(prepared_file.read_text()) if prepared_file.exists() else None
-        if prepared != current or not (build / 'build.ninja').exists():
-            shutil.rmtree(build, ignore_errors=True)
-            for passed in root.glob('passed-*.json'):
-                passed.unlink()
-            run('meson', 'setup', str(build), str(source / 'engine'), '--prefix', str(venv), *flags, env=env)
-        checks = dict(current, base=base, checks=args.checks, full=args.full)
-        pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
-        suffix = output(str(python), '-c', 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX"))')
-        package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
-        images = [build / ('_core' + suffix)] + [build / name for name in ('libepcsaft_native.so', 'libepcsaft_asl.so', 'compile_commands.json', 'meson-info/intro-buildoptions.json', 'meson-info/intro-compilers.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')]
-        linked = all((package / library.name).is_symlink() and (package / library.name).resolve() == library
-                     for library in images[:3])
-        def image_identity():
-            files = images + list(package.rglob('*.py'))
-            return hashlib.sha256(json.dumps({str(p.relative_to(root)): digest([p]) for p in files}, sort_keys=True).encode()).hexdigest()
-        built = image_identity()
-        if prepared == current and linked and pass_file.exists() and json.loads(pass_file.read_text()) == dict(checks, build_sha256=built):
-            print(f'reused passing checks: {pass_file}', flush=True)
-            return
-        print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)
-        commands = json.loads((build / 'compile_commands.json').read_text())
-        objects = [entry['output'] for entry in commands if re.search(r'engine/(native|tests/native)/.*\.cpp$', entry['file'])]
-        run('ninja', '-C', str(build), '-j', str(jobs), *objects, '_core' + suffix,
-            'libepcsaft_asl.so', 'equilibrium_checks', 'regression_checks', env=env)
-        deps = output('ninja', '-C', str(build), '-t', 'deps', *objects, env=env)
-        if len(re.findall(r' \(VALID\)$', deps, re.M)) != len(objects):
-            raise RuntimeError('not every native/test object has a current dependency record')
-        deps = output('ninja', '-C', str(build), '-t', 'deps', env=env)
-        (root / 'dependencies.txt').write_text(deps)
-        external = [str(path) for path in {(build / line.strip()).resolve() for line in deps.splitlines() if line.startswith('    ')}]
-        external_file.write_text(json.dumps(sorted(external)))
-        current = identity()
-        prepared_file.write_text(json.dumps(current, indent=2))
         run('meson', 'install', '-C', str(build), '--no-rebuild', env=env)
         # Meson installs the prepared image directly, without the wheel metadata normally supplied by pip.
+        package = Path(output(str(python), '-c', 'import sysconfig; print(sysconfig.get_path("platlib"))')) / 'epcsaft'
         version = json.loads((build / 'meson-info/intro-projectinfo.json').read_text())['version']
         metadata = package.parent / f'epcsaft-{version}.dist-info'
         metadata.mkdir(exist_ok=True)
         (metadata / 'METADATA').write_text(f'Metadata-Version: 2.1\nName: epcsaft\nVersion: {version}\n')
         (metadata / 'WHEEL').write_text('Wheel-Version: 1.0\nGenerator: check-pr-native\nRoot-Is-Purelib: false\nTag: cp313-cp313-linux_x86_64\n')
         (metadata / 'RECORD').write_text('')
-        for library in [build / ('_core' + suffix), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']:
+        images = [build / ('_core' + suffix), build / 'libepcsaft_native.so', build / 'libepcsaft_asl.so']
+        for library in images:
             (package / library.name).unlink(missing_ok=True)
             (package / library.name).symlink_to(library)
 
-        env.update(EPCSAFT_SOURCE_ROOT=str(source), EPCSAFT_BUILD_DIR=str(build), MALLOC_PERTURB_='0', OMP_NUM_THREADS='1', OPENBLAS_NUM_THREADS='1', MKL_NUM_THREADS='1')
-        checks.update(current)
+        env.update(EPCSAFT_SOURCE_ROOT=str(source), EPCSAFT_BUILD_DIR=str(build), MALLOC_PERTURB_='0', **ONE_THREAD)
+        checks = dict(identity, base=base, checks=args.checks, full=args.full)
         pass_file = root / ('passed-' + hashlib.sha256(json.dumps(checks, sort_keys=True).encode()).hexdigest() + '.json')
         results = root / 'results' / pass_file.stem
-        results.mkdir(parents=True, exist_ok=True)
-        env['EPCSAFT_GATE_RESULTS'] = str(results)
-        built = image_identity()
+        shutil.rmtree(results, ignore_errors=True)
+        results.mkdir(parents=True)
+        files = images + [build / name for name in ('compile_commands.json', 'meson-info/intro-buildoptions.json', 'meson-info/intro-compilers.json', '.ninja_deps', 'equilibrium_checks', 'regression_checks')] + list(package.rglob('*.py'))
+        built = hashlib.sha256(json.dumps({str(p.relative_to(root)): digest([p]) for p in files}, sort_keys=True).encode()).hexdigest()
         for check in args.checks.split(','):
-            passed_check = results / f'{check}.passed'
-            if passed_check.exists() and passed_check.read_text() == built:
-                continue
-            passed_check.unlink(missing_ok=True)
-            command = ['bash', str(source / 'engine/tools' / f'check-native{"-sanitizers" if check == "sanitizers" else ""}.sh'), '--prepared', str(root)]
-            if check == 'lint' and not args.full:
-                command += ['--changed', base]
+            print(f'{check}: {results / check}.log', flush=True)
             with (results / f'{check}.log').open('w') as log:
-                run(*command, env=env, stdout=log, stderr=subprocess.STDOUT)
-            passed_check.write_text(built)
+                if check == 'lint':
+                    lint(log, build, source, results, base, args.full, jobs, units, dependencies, identity, external, env)
+                else:
+                    sanitizers(log, build, source, venv, results, env)
         pass_file.write_text(json.dumps(dict(checks, build_sha256=built), indent=2))
         print(f'passing checks: {pass_file}', flush=True)
 

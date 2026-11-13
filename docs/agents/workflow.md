@@ -78,16 +78,10 @@ historical studies and merged-main delivery, outside these candidate checks.
 Run checks that share the ordinary editable Meson tree sequentially. After freezing a local candidate commit,
 the lead runs the heavy gate, including before publication approval with the
 candidate's eventual PR number. The gate locks
-`build/pr-gates/pr-N/<head>/` in the main checkout and prepares one detached source,
-one locked environment and one Clang debug ASan/UBSan Meson tree. The existing
-`check-native.sh --prepared <root> [--changed <base>]` and
-`check-native-sanitizers.sh --prepared <root>` own their checks and never build.
-The combined command owns preparation and retains their logs and test records.
-
-Passing evidence is reused only for the same head, base, check selection,
-toolchain, external headers, locked environment and build flags. Compiler,
-header, environment or flag changes replace stale Meson objects; base/selection
-changes rerun checks with reusable objects. Failed checks resume incomplete work.
+`build/pr-gates/pr-N/<head>/` in the main checkout, prepares one detached source,
+one locked environment and one Clang debug ASan/UBSan Meson tree, runs both checks
+there and removes the tree, keeping the logs and test records under `results/`
+and the pass record beside it. Every run compiles again.
 Native tests use `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to restore
 random heap fill.
 

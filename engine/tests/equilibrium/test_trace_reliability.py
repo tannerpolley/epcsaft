@@ -2,7 +2,10 @@
 and the intensive accuracy of trace rows after the amount-weighted optimizer stop; #154/#157 cold
 reacting-liquid starts that recover a manufactured speciation with trace water ions; #159 stability
 decisions that trace curvature below rounding cannot flip."""
+import json
 import math
+from dataclasses import replace
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -14,7 +17,7 @@ from epcsaft.equilibrium import (
     SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
     compile_problem, continue_equilibrium, solve_equilibrium, solved_state_actions, solved_state_first_actions,
 )
-from tests.native_inputs import ETHANE, MEA, MEA_REACTIONS, mea_mapping, nominally_unloaded_mea, parameters, same
+from tests.native_inputs import ETHANE, MEA, MEA_REACTIONS, mea_mapping, nominally_unloaded_mea, nominally_unloaded_mea_liquid, parameters, same
 from tests.packets import parameters_json
 
 
@@ -441,12 +444,10 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     quadratic contraction with every ionic stationarity row near -1.8e-9 z_i^2 under a 7.6e-12 classified
     residual; continuing while raw rows exceed the criterion reaches rounding at the fourth step. The equilibrium heat-capacity action at the polished state
     matches the centered enthalpy difference of re-solved neighbours."""
-    model, reactions, reference, guess, system = nominally_unloaded_mea()
+    model, declared = nominally_unloaded_mea_liquid()
 
     def solve(temperature: float) -> tuple[Problem, Any]:
-        problem = Problem(phases=[Phase("L", kind="liquid", support=MEA, composition_guess=guess)], T=temperature,
-                          P=101325.0, feed=Amounts(dict(zip(MEA, system["feed_amounts_mol"]))), reactions=reactions,
-                          neutral_reference=reference, topology_declared=True)
+        problem = replace(declared, T=temperature)
         result = solve_equilibrium(model, problem)
         assert result.success, result.message
         return problem, result
@@ -464,6 +465,8 @@ def test_nominally_unloaded_mea_resolves_trace_ion_stationarity(evidence: Any) -
     inputs = {"T_K": 353.15, "P_Pa": 101325.0, "classified_residual": result.convergence.residual,
               "unscaled_residual_max": raw, "residuals": list(result.residuals)}
     same(evidence, "mea-unloaded/unscaled-rows", raw, 0.0, atol=1e-9, rtol=0.0, unit="1", inputs=inputs)
+    system = json.loads((Path(__file__).resolve().parents[2] / "data/reference/mea-nominally-unloaded/request.json")
+                        .read_text())["reaction_system"]
     mass = math.fsum(n * m for n, m in zip(system["feed_amounts_mol"], system["molar_masses_kg_per_mol"]))
     (h, dh), (n, dn) = actions(problem, result, 1.0)
     heat_capacity = (n * dh + h * dn) / mass / 1000.0

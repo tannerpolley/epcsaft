@@ -11,7 +11,7 @@ wheels. Use the same prepared environment twice for an A=A control.
 from `analyses/2026-tpd-phase-discovery/scripts/baseline.py`, the eight ordered
 feeds and previous-result sequence from
 `analyses/2026-khudaida-idaes-settler/scripts/run_fixed_settler.py`, and the
-unloaded-MEA declaration in `engine/tests/equilibrium/test_trace_reliability.py`.
+unloaded-MEA declaration `nominally_unloaded_mea_liquid` in `engine/tests/native_inputs.py`.
 Ionic liquid–liquid equilibrium is Khudaida Figure 2 point 7 (293.15 K,
 100000 Pa); the reacting MEA flash is at 318.15 K and 5918.5286 Pa. Each runs
 cold and from a common accepted coordinate vector taken from environment A and given
@@ -23,7 +23,9 @@ guess, reactions and neutral reference.
 **Timing.** Each ordinary case has one complete warmup per environment. Each pair holds an AB
 and a BA block, alternating which comes first. Workers share one CPU
 (`taskset`; `--cpu 31` selects CPU 31 while full fits retain the controller's full affinity), one numerical thread and niceness 10 (inherited niceness above 10
-is rejected). Times sum equilibrium-call wall times only, excluding imports,
+is rejected). On Linux a run waits for `/tmp/epcsaft-timing-gate.lock`, so one
+timing run measures the host at a time (owner, 2026-11-09), and `summary.json`
+`host_load` records the load average and the busiest processes once it holds the lock. Times sum equilibrium-call wall times only, excluding imports,
 declaration and start preparation, messages and output reading. A block's
 change is `100 (B/A - 1)` percent; the two blocks of a pair are averaged, and
 the tool reports median, range and median absolute deviation. Negative means B
@@ -184,22 +186,3 @@ require the source, Meson products and lock; installed identities require the
 source identity plus the conda package record or wheel hash and loaded libraries.
 The Windows production recipe retains independent development and installed
 collections and their A=A controls; these are test inputs, outside the package.
-
-
-The `--cpu-overhead --cpu-blocks 20` mode adds the per-case 1% CPU gate. It
-retains all fifteen cases, fixed main-pilot batches, balanced ABBA/BAAB blocks,
-and A=A controls before and after the main/candidate series. Each sequence
-repetition restarts at cold point 1. The clock brackets the native call and
-returned-object construction, with declarations prepared outside it. F1 and
-Cp each use one fresh serial evaluation per arm run.
-
-`cpu-samples.txt` retains every balanced block; `cpu-call-evidence.jsonl`
-retains the numerical/work evidence for every call. `cpu-decision.csv` gives
-the median CPU log ratio and conservative interval for each case. The native
-reducer uses the third and eighteenth order statistics, clock uncertainty,
-and the larger before/after control uncertainty. Its simultaneous median
-coverage assumes independent stationary blocks. Biased controls or an
-interval overlapping 1% are inconclusive and cannot pass. No sample is
-removed. The ordinary work, numerical, frozen CPU and full-fit gates remain
-required. Keep an inconclusive campaign and fix the host cause before
-repeating the entire campaign.

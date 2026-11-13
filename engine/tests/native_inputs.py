@@ -346,6 +346,14 @@ def nominally_unloaded_mea(thermochemistry: bool = True) -> tuple[Any, list[Reac
     return model, reactions, reference, guess, system
 
 
+def nominally_unloaded_mea_liquid() -> tuple[Any, Problem]:
+    """The reference declaration as one liquid at 353.15 K and 101325 Pa; tools/time-key-solves times it too."""
+    model, reactions, reference, guess, system = nominally_unloaded_mea()
+    return model, Problem(phases=[Phase("L", kind="liquid", support=MEA, composition_guess=guess)], T=353.15,
+                          P=101325.0, feed=Amounts(dict(zip(MEA, system["feed_amounts_mol"]))), reactions=reactions,
+                          neutral_reference=reference, topology_declared=True)
+
+
 # Halite in water, Held 2014 strategy 2: Clarke and Glew 1985 (doi:10.1063/1.555730) Table 34 dissolution constants
 # at 25 C (Gibbs energy, enthalpy in J/mol; heat capacity in J/(mol K)); halite molar volume 27.1 cm3/mol from
 # PHREEQC pitzer.dat (phreeqpython 1.6.2).
