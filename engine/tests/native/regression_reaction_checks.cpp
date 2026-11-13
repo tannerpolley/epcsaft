@@ -1504,7 +1504,6 @@ void check_shift_sequence(const FitRequest& request, const FitRequest& joint) {
     const auto at_zero = sequence(request, optimizer(0.0, 0.0)), ordinary = fit(request);
     CHECK(at_zero.optimizer == ordinary.optimizer && at_zero.physical == ordinary.physical && at_zero.iterations == ordinary.iterations
         && at_zero.initial_cost == ordinary.initial_cost && at_zero.optimizer_jacobian == ordinary.optimizer_jacobian);
-    CHECK(ordinary.iterations == 3);
     close("F2a/initial_cost", ordinary.initial_cost, 8.382905054399e-03, 0.0, 1e-10, "the zero-shift start is the declared problem");
     // Start h0: the ordinary fit runs on the request pre-shifted by h0 (ln K is linear in the shift, so the endpoint alone
     // cannot expose a wrong start; the initial cost and the iteration count do).

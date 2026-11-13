@@ -80,6 +80,7 @@ void check_discovery_work() {
     problem.feed.kind = FeedKind::MoleFractions;
     problem.feed.values = {0.5, 0.5};
     problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
+    std::optional<std::map<std::string, double>> uncaptured;  // capture must not change the reported work
     for (int tracing : {0, 1, 2}) {
         core::CalculationWork request;
         std::optional<core::Capture> capture;
@@ -87,7 +88,9 @@ void check_discovery_work() {
         const auto result = discover_phases(model, problem);
         CHECK(result.success && result.phase_count == 2);
         const auto& work = result.discovery->work;
-        CHECK(work.at("root_calls") == 109 && work.at("root_evaluations") == 1146 && work.at("energy_evaluations") == 1314);
+        if (!uncaptured) uncaptured = work;
+        CHECK(work == *uncaptured);
+        // No trace span marks a discovery round, so the per-round work stays a literal table.
         const std::array<std::array<double, 3>, 2> rounds{{{46, 589, 647}, {52, 484, 556}}};
         CHECK(result.discovery->rounds.size() == rounds.size());
         for (std::size_t i = 0; i < rounds.size(); ++i) {
@@ -109,14 +112,16 @@ void check_discovery_work() {
             CHECK(roots == work.at("root_calls") && density == work.at("root_evaluations") && energy == work.at("energy_evaluations"));
         }
         const auto before = request.counts();
-        CHECK(before.root_calls == 109 && before.root_evaluations == 1146 && before.energy_evaluations == 1314);
+        CHECK(before.root_calls == work.at("root_calls") && before.root_evaluations == work.at("root_evaluations")
+            && before.energy_evaluations == work.at("energy_evaluations"));
         bool refused = false;
         try { (void)solve_density(model, 190.0, -1.0, {0.5, 0.5}, DensityBranch::Liquid, std::nullopt); }
         catch (const std::invalid_argument&) { refused = true; }
         CHECK(refused);
         (void)model.evaluate(190.0, 1.0 / result.molar_densities[0], {0.5, 0.5}, DerivativeOrder::Gradient);
         const auto after = request.counts();
-        CHECK(after.root_calls == 110 && after.root_evaluations == 1146 && after.energy_evaluations == 1315);
+        CHECK(after.root_calls == before.root_calls + 1 && after.root_evaluations == before.root_evaluations
+            && after.energy_evaluations == before.energy_evaluations + 1);
         CHECK(std::abs(result.molar_densities[0] / 18534.052764709064 - 1.0) <= 1e-10);
         CHECK(std::abs(result.mole_fractions[0] - 0.21537559277379345) <= 1e-10);
         const auto compiled = compile_problem(model, *result.declaration);

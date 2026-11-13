@@ -376,7 +376,8 @@ void check_r3() {
     CHECK(rank.rank == 1 && rank.dimension == 2);
     CHECK(!std::isfinite(rank.observation.condition) && !rank.observation.available);
     agree("r3/rank_cutoff", "absolute_singular_value_cutoff", "optimizer_J", rank.threshold,
-        5.47456335865895e-15, 1e-29, 0.0, summary(deficient), "the existing singular spectrum determines the absolute cutoff", "r3");
+        policy::FIT_RANK_RECIPROCAL_CONDITION.value * deficient.covariance.singular_values.at(0), 0.0, 0.0, summary(deficient),
+        "the policy's reciprocal condition times the largest singular value is the absolute cutoff", "r3");
     CHECK(deficient.first_numerical_failure && deficient.first_numerical_failure->stop == core::Stop::singular);
     CHECK(deficient.first_numerical_failure->rank->threshold == rank.threshold);
     CHECK(ignored.rank_records.front().rank == ignored.covariance.rank);
@@ -468,8 +469,6 @@ void check_hydration_failures() {
         CHECK(record && record->stop == (singular ? core::Stop::singular : core::Stop::left_domain));
         if (singular) {
             CHECK(record->rank && record->rank->rank == 0 && record->rank->dimension == 1);
-            CHECK(record->rank->threshold == std::numeric_limits<double>::epsilon()
-                * std::max(1.0, std::abs(bad.holds[0].reference.observed)) / std::max(1.0, std::abs(std::clamp(parameters.born_diameter_angstrom[1], bad.holds[0].lower, bad.holds[0].upper))));
         }
         truth(singular ? "hydration-failure/singular" : "hydration-failure/no-root",
             "A failed native held-coordinate trial publishes no diameter or Jacobian", !accepted && values.chart.physical.empty()

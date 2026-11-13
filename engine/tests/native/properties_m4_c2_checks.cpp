@@ -451,15 +451,16 @@ void solvent_activity_properties() {
     HelmholtzModel model(properties_support::aqueous_electrolyte(), {{F::DispersionEnergyOverK,{0}}});
     const std::vector<double> solvent{1,0,0};
     const auto ref = solvent_reference(model, 298.15, 1e5, solvent);
-    for (double q : {0.5e-8,1e-8,2e-8}) {
+    const double molality_floor = epcsaft::policy::OSMOTIC_MOLALITY_FLOOR.value;
+    for (double q : {0.5*molality_floor,molality_floor,2*molality_floor}) {
         // Construct the declared particle ratio directly: formula_composition rounds the exact-floor case below it.
         const double D = q * model.parameters().molar_mass_kg_per_mol[0], water = 1/(1+D);
         const std::vector<double> x{water,D*water/2,D*water/2};
         const auto result = solvent_activity(model, 298.15, 1e5, x, ref);
         CHECK(result.solvent_activity.has_value());
-        CHECK(std::holds_alternative<double>(*result.osmotic_coefficient) == (q >= 1e-8));
+        CHECK(std::holds_alternative<double>(*result.osmotic_coefficient) == (q >= molality_floor));
         CHECK(result.solvent_activity_parameter_derivative[0].has_value());
-        CHECK(result.osmotic_parameter_derivative[0].has_value() == (q >= 1e-8));
+        CHECK(result.osmotic_parameter_derivative[0].has_value() == (q >= molality_floor));
     }
     CHECK(solvent_reference(model, 650.0, 100.0, solvent).solvent_cause.find("VaporSideState") == 0);
     auto bad = *ref.pure_solvent_state; bad.pressure_density_derivative = 0.0;

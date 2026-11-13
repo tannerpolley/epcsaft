@@ -64,16 +64,13 @@ def test_single_phase_flash_verdict() -> None:
 
 def test_recoverable_flash_keeps_recovery() -> None:
     """F7: at 240 K and 4.535 MPa the search finds a resolved descending split, so the unchanged recovery runs; the
-    recovered state includes the equilibrated tangent. The search work and one additional eighth-step evaluation in the
-    subsequently refused Newton attempt are added. Its rank-9/10 optimizer polish takes three steps to the raw criterion
-    rather than stopping on Jacobian rank (#1071)."""
+    recovered state includes the equilibrated tangent, and the recovery's own work remains after the charged search."""
     problem = Problem(phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")], T=240.0, P=4535437.839536398,
                       feed=Amounts({"methane": 0.7, "ethane": 0.3}))
     result = solve_equilibrium(methane_ethane(), problem)
     report = result.recovery_stability
     assert report is not None and result.success and any(t.resolved_descent for t in report.trials)
     assert list(result.amounts) == pytest.approx([0.08578566729375318, 0.9142143327062467], rel=1e-12, abs=0.0)  # equilibrated tangent
-    # The recovery's own work remains after the charged search: 71 / 149 / 92 with MA57, 71 / 148 / 92 with MUMPS.
     assert all(a - b > 0 for a, b in zip(work(result), charged(report))), (work(result), charged(report))
 
 

@@ -19,6 +19,10 @@
 
 namespace {
 
+// The default recovery caps, read from their runtime owner.
+const auto RECOVERY_CAPS = epcsaft::equilibrium::DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
+    static_cast<std::size_t>(epcsaft::policy::EQUILIBRIUM_RECOVERY_WORK.value));
+
 double centered_step(double value) {
     return std::sqrt(std::numeric_limits<double>::epsilon())
         * std::max(std::abs(value), 1.0);
@@ -603,9 +607,9 @@ void check_s15c() {
     const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, problem));
     CHECK(result.message.rfind(ordinary.message + "; recovery: ", 0) == 0);
     CHECK(result.message.find("phases_coalesced") != std::string::npos);
-    CHECK(result.iterations > ordinary.iterations && result.iterations - ordinary.iterations <= 512);
-    CHECK(result.evaluations > ordinary.evaluations && result.evaluations - ordinary.evaluations <= 2048);
-    CHECK(result.hessian_calls > ordinary.hessian_calls && result.hessian_calls - ordinary.hessian_calls <= 1024);
+    CHECK(result.iterations > ordinary.iterations && result.iterations - ordinary.iterations <= RECOVERY_CAPS.iterations);
+    CHECK(result.evaluations > ordinary.evaluations && result.evaluations - ordinary.evaluations <= RECOVERY_CAPS.evaluation_cap);
+    CHECK(result.hessian_calls > ordinary.hessian_calls && result.hessian_calls - ordinary.hessian_calls <= RECOVERY_CAPS.hessian_cap);
 }
 
 // ------------------------------------------------------------------ E4 continuation
@@ -852,9 +856,9 @@ void check_e4_d() {
         !refused.success && !refused.has_state() && refused.message.rfind("local phase instability", 0) == 0
             && recovered.success && deviation <= 1.0e-8 && std::abs(recovered.mole_fractions[0] - 0.5) <= 1.0e-8
             && recovered.message.find("; recovered after: " + refused.message) != std::string::npos
-            && recovered.iterations > refused.iterations && recovered.iterations - refused.iterations <= 512
-            && recovered.evaluations > refused.evaluations && recovered.evaluations - refused.evaluations <= 2048
-            && recovered.hessian_calls > refused.hessian_calls && recovered.hessian_calls - refused.hessian_calls <= 1024,
+            && recovered.iterations > refused.iterations && recovered.iterations - refused.iterations <= RECOVERY_CAPS.iterations
+            && recovered.evaluations > refused.evaluations && recovered.evaluations - refused.evaluations <= RECOVERY_CAPS.evaluation_cap
+            && recovered.hessian_calls > refused.hessian_calls && recovered.hessian_calls - refused.hessian_calls <= RECOVERY_CAPS.hessian_cap,
         recording_support::fields({recording_support::field("message", recovered.message), recording_support::field("deviation", deviation)}));
     request.start_problem = seeded(260.0);
     request.target_problem = seeded(280.0);
@@ -1049,7 +1053,7 @@ void check_recovery() {
         rows.push_back({"p02b", true, 239.3700696309195, seed, 2035211.56822574});
     for (const double x : {0.1, 0.2, 0.3}) rows.push_back({"p02b-guess", true, 239.3700696309195, 6.16e6, 2035211.56822574, {x, 1.0 - x}});
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
-    // Recovery and, when it ran (#987), the trial search before it each stay within the 512/2048/1024 caps.
+    // Recovery and, when it ran (#987), the trial search before it each stay within the default recovery caps.
     const auto within_caps = [](const EquilibriumResult& r, const EquilibriumResult& ordinary) {
         std::array<double, 3> test{};
         if (const auto& t = r.recovery_stability) for (std::size_t k = 0; k < 3; ++k) {
@@ -1059,8 +1063,9 @@ void check_recovery() {
         }
         const std::array<double, 3> added{double(r.iterations) - ordinary.iterations - test[0],
             double(r.evaluations) - ordinary.evaluations - test[1], double(r.hessian_calls) - ordinary.hessian_calls - test[2]};
-        return r.iterations >= ordinary.iterations && added[0] >= 0 && added[0] <= 512 && added[1] <= 2048 && added[2] <= 1024
-            && test[0] <= 512 && test[1] <= 2048 && test[2] <= 1024;
+        return r.iterations >= ordinary.iterations && added[0] >= 0 && added[0] <= RECOVERY_CAPS.iterations
+            && added[1] <= RECOVERY_CAPS.evaluation_cap && added[2] <= RECOVERY_CAPS.hessian_cap
+            && test[0] <= RECOVERY_CAPS.iterations && test[1] <= RECOVERY_CAPS.evaluation_cap && test[2] <= RECOVERY_CAPS.hessian_cap;
     };
     std::size_t passed = 0, recovered = 0;
     std::string failures;
@@ -1119,7 +1124,7 @@ void check_recovery() {
         return l;
     };
     const auto never = std::chrono::steady_clock::time_point::max();
-    auto full = limits(512, 2048, 1024, never);
+    auto full = RECOVERY_CAPS;
     const auto reached = epcsaft::equilibrium::recover_from_source(target, full);
     const auto ordinary = epcsaft::equilibrium::solve_compiled(target);
     const auto public_dew = epcsaft::equilibrium::solve_equilibrium(model, dew256);
@@ -1128,13 +1133,14 @@ void check_recovery() {
         && public_dew.hessian_calls == ordinary.hessian_calls + full.hessian_calls;
     std::vector<double> spent;
     for (int cut = 0; cut < 3; ++cut) {
-        auto l = limits(cut == 0 ? full.consumed / 2 : 512, cut == 1 ? full.evaluations / 2 : 2048, cut == 2 ? full.hessian_calls / 2 : 1024, never);
+        auto l = limits(cut == 0 ? full.consumed / 2 : RECOVERY_CAPS.iterations, cut == 1 ? full.evaluations / 2 : RECOVERY_CAPS.evaluation_cap,
+            cut == 2 ? full.hessian_calls / 2 : RECOVERY_CAPS.hessian_cap, never);
         const auto refused = epcsaft::equilibrium::recover_from_source(target, l);
         exhausted = exhausted && !refused.success && !refused.has_state() && l.exhausted && l.consumed <= l.iterations
             && l.evaluations <= l.evaluation_cap && l.hessian_calls <= l.hessian_cap;
         spent.insert(spent.end(), {double(l.consumed), double(l.evaluations), double(l.hessian_calls)});
     }
-    auto late = limits(512, 2048, 1024, std::chrono::steady_clock::now());
+    auto late = limits(RECOVERY_CAPS.iterations, RECOVERY_CAPS.evaluation_cap, RECOVERY_CAPS.hessian_cap, std::chrono::steady_clock::now());
     exhausted = exhausted && !epcsaft::equilibrium::recover_from_source(target, late).success
         && late.consumed == 0 && late.evaluations == 0 && late.hessian_calls == 0;
     record_bool("e4-r/exhausted", "e4-r", "recovery work is reported exactly and an exhausted cap or deadline ends it within the cap",
