@@ -3,8 +3,8 @@
 
 C++ is organised by dependency layer because include direction is the only
 structural fact a checker can enforce. Each rule is a cheap stdlib reading named
-in main()'s check table. The Python-free archive rule needs a built archive and
-reports "skipped" without one; the stub rule, which imports the extension, runs only with --build-dir.
+in main()'s check table. The archive and stub rules read the configured Meson build
+named by --build-dir.
 """
 
 from __future__ import annotations
@@ -16,13 +16,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+from diffstat import architecture
+
 ROOT = Path(__file__).resolve().parent.parent
 NATIVE = ROOT / "engine" / "native"
 MESON = ROOT / "engine" / "meson.build"
 
 # Include direction: a layer may include itself and anything below it.
-LAYERS = ["core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings"]
-RANK = {name: index for index, name in enumerate(LAYERS)}
+RANK = {name: index for index, name in enumerate(architecture("layers", ROOT))}
 
 # Names that may only be defined in core/physical_constants.hpp. The tree
 # this replaces had fifteen definitions of the gas constant.
@@ -75,20 +76,15 @@ def rule_one_archive() -> list[str]:
     return bad
 
 
-def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str], bool]:
-    if build_dir is None:
-        found = sorted((ROOT / "engine").glob("build/**/libepcsaft_native.a"))
-    else:
-        build_dir = build_dir.resolve()
-        if not build_dir.is_dir():
-            return [f"configured build directory does not exist: {build_dir}"], True
-        if not (build_dir / "meson-info" / "meson-info.json").is_file():
-            return [f"not a configured Meson build: {build_dir}"], True
-        found = sorted(build_dir.glob("libepcsaft_native.a"))
-        if len(found) != 1:
-            return [f"expected one native archive in {build_dir}, found {found}"], True
-    if not found:
-        return [], False
+def rule_archive_is_python_free(build_dir: Path) -> list[str]:
+    build_dir = build_dir.resolve()
+    if not build_dir.is_dir():
+        return [f"configured build directory does not exist: {build_dir}"]
+    if not (build_dir / "meson-info" / "meson-info.json").is_file():
+        return [f"not a configured Meson build: {build_dir}"]
+    found = sorted(build_dir.glob("libepcsaft_native.a"))
+    if len(found) != 1:
+        return [f"expected one native archive in {build_dir}, found {found}"]
     out = subprocess.run(
         ["nm", "--defined-only", str(found[0])],
         capture_output=True,
@@ -103,32 +99,31 @@ def rule_archive_is_python_free(build_dir: Path | None = None) -> tuple[list[str
         }
     )
     if leaked:
-        return [f"{found[0].name} exports Python symbols: {leaked[:5]}"], True
-    if build_dir is not None:
-        ninja = (build_dir / "build.ninja").read_text().splitlines()
-        def link(name):
-            return next((line.split(" |", 1)[0].split()[3:] for line in ninja
-                         if line.startswith(f"build {name}: ")), [])
-        archive_objects = link("libepcsaft_native.a")
-        shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
-        if not archive_objects or archive_objects != shared_objects:
-            return ["native shared library and private archive do not reuse one PIC object set"], True
-        support_consumers = []
-        for line in ninja:
-            if line.startswith("build ") and ": cpp_LINKER " in line:
-                output = line.split()[1].removesuffix(":")
-                inputs = line.split()[3:]
-                if "libnanobind_support.a" in inputs:
-                    support_consumers.append(output)
-                if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
-                    return [f"private archive used outside ASL: {output}"], True
-        if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
-            return [f"nanobind support must link only into _core: {support_consumers}"], True
-        dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
-        exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
-        if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
-            return ["ASL private native copy is not localized"], True
-    return [], True
+        return [f"{found[0].name} exports Python symbols: {leaked[:5]}"]
+    ninja = (build_dir / "build.ninja").read_text().splitlines()
+    def link(name):
+        return next((line.split(" |", 1)[0].split()[3:] for line in ninja
+                     if line.startswith(f"build {name}: ")), [])
+    archive_objects = link("libepcsaft_native.a")
+    shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
+    if not archive_objects or archive_objects != shared_objects:
+        return ["native shared library and private archive do not reuse one PIC object set"]
+    support_consumers = []
+    for line in ninja:
+        if line.startswith("build ") and ": cpp_LINKER " in line:
+            output = line.split()[1].removesuffix(":")
+            inputs = line.split()[3:]
+            if "libnanobind_support.a" in inputs:
+                support_consumers.append(output)
+            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
+                return [f"private archive used outside ASL: {output}"]
+    if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
+        return [f"nanobind support must link only into _core: {support_consumers}"]
+    dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
+    exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
+    if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
+        return ["ASL private native copy is not localized"]
+    return []
 
 
 def rule_include_direction() -> list[str]:
@@ -395,26 +390,21 @@ def rule_known_eager_trace_payload_forms() -> list[str]:
 
 
 def rule_declared_selectors() -> list[str]:
-    # Every declared document: Parameters today, Thermochemistry once it exists.
-    documents = (("parameters.hpp", "Parameters", True), ("thermochemistry.hpp", "Thermochemistry", False))
+    path = NATIVE / "core" / "parameters.hpp"
+    if not path.is_file():
+        return [f"{path.relative_to(ROOT)} is missing"]
+    text = path.read_text()
     bad = []
-    for name, struct, required in documents:
-        path = NATIVE / "core" / name
-        if not path.is_file():
-            if required:
-                bad.append(f"{path.relative_to(ROOT)} is missing")
-            continue
-        text = path.read_text()
-        if "Unspecified" in text:
-            bad.append(f"{path.relative_to(ROOT)} contains Unspecified")
-        enum_names = re.findall(r"enum\s+class\s+(\w+)", text)
-        match = re.search(rf"struct\s+{struct}\b.*?\n}};", text, re.S)
-        if match and enum_names:
-            enum_pattern = "|".join(map(re.escape, enum_names))
-            bare = re.compile(rf"^\s*(?:{enum_pattern})\s+\w+\s*[=;{{]")
-            for number, line in enumerate(match.group().splitlines(), 1):
-                if bare.search(line):
-                    bad.append(f"{path.relative_to(ROOT)}:{number}: bare enum selector")
+    if "Unspecified" in text:
+        bad.append(f"{path.relative_to(ROOT)} contains Unspecified")
+    enum_names = re.findall(r"enum\s+class\s+(\w+)", text)
+    match = re.search(r"struct\s+Parameters\b.*?\n};", text, re.S)
+    if match and enum_names:
+        enum_pattern = "|".join(map(re.escape, enum_names))
+        bare = re.compile(rf"^\s*(?:{enum_pattern})\s+\w+\s*[=;{{]")
+        for number, line in enumerate(match.group().splitlines(), 1):
+            if bare.search(line):
+                bad.append(f"{path.relative_to(ROOT)}:{number}: bare enum selector")
     return bad
 
 
@@ -427,7 +417,7 @@ def rule_surface_defaults() -> list[str]:
         except SyntaxError as error:
             bad.append(f"{path.relative_to(ROOT)}:{error.lineno}: syntax error")
             continue
-        for node in __import__("ast").walk(tree):
+        for node in ast.walk(tree):
             if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 continue
             defaults = [*node.args.defaults, *[item for item in node.args.kw_defaults if item is not None]]
@@ -441,7 +431,6 @@ BOUND_FUNCTION = re.compile(
     r'\.def\(\s*"[^"]+"\s*,\s*&(?:epcsaft::)?'
     r'(?:(?P<class>\w+)::)?(?P<function>\w+)'
 )
-NON_SCOPED_BOUND_FUNCTIONS: set[str] = set()  # rule 13 has no allowlist (owner ruling)
 HAND_NAMED_RESIDUAL_STOP = re.compile(
     r'(?:\.stop|->stop)\s*=\s*core::Stop::'
     r'(?:converged|converged_to_floor|stalled|budget_exhausted)\b'
@@ -452,10 +441,7 @@ def rule_bound_functions_open_a_scope() -> list[str]:
     bound = []
     for path in sorted((NATIVE / "bindings").glob("*.cpp")):
         for match in BOUND_FUNCTION.finditer(without_comments(path.read_text())):
-            function = match.group("function")
-            if function in NON_SCOPED_BOUND_FUNCTIONS:
-                continue
-            bound.append((match.group("class"), function))
+            bound.append((match.group("class"), match.group("function")))
     bad = []
     for owner, function in bound:
         qualified = f"{owner}::{function}" if owner else function
@@ -544,16 +530,12 @@ def rule_stub_matches_extension() -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--build-dir", type=Path)
+    parser.add_argument("--build-dir", type=Path, required=True)
     arguments = parser.parse_args()
 
-    archive_findings, archive_built = rule_archive_is_python_free(arguments.build_dir)
     checks = [
         ("one PIC object set, shared/private libraries, one extension", rule_one_archive()),
-        (
-            "archive is Python-free" if archive_built else "archive is Python-free (skipped, not built)",
-            archive_findings,
-        ),
+        ("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
         ("include direction is downward", rule_include_direction()),
         ("regression stays below stability", rule_regression_stays_below_stability()),
         ("constants defined once", rule_constants_defined_once()),
@@ -568,9 +550,8 @@ def main() -> int:
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
+        ("type stub matches the extension", rule_stub_matches_extension()),
     ]
-    if arguments.build_dir is not None:
-        checks.append(("type stub matches the extension", rule_stub_matches_extension()))
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")

@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 """Remove finished task worktrees and their branches at merge closeout (owner, 2026-10-20).
 
-Usage: tools/prune-worktrees [--dry-run] [--archive-unmerged] [WORKTREE ...]
+Usage: tools/prune-worktrees [--dry-run] [--archive-unmerged] [--kept-file PATH] [WORKTREE ...]
 The lead names each WORKTREE whose task has finished: its agent thread is terminal with no queued turn and
 its pull request is merged or its issue closed. The tool still refuses a worktree with a process inside it
 or an open pull request on its branch, and lets tools/archive-worktree keep its ignored evidence and refuse
 dirty or still-written worktrees. It then deletes the local branch, and the remote branch only while its
 tip is on origin/main. Branches no worktree holds are handled the same way. Unmerged work is kept unless
 --archive-unmerged is given and its issue is closed; it is then first kept as a pushed archive/<branch> tag
-on the exact commit. --dry-run changes nothing and plans from the cached origin refs.
+on the exact commit. --dry-run changes nothing and plans from the cached origin refs. --kept-file writes the
+worktrees it kept, with their reasons, to PATH for the lead to resolve, or deletes PATH when it kept none.
 """
 import argparse
+import contextlib
 import os
 import re
 import subprocess
 import sys
 
-from host_state import HostState
+from datetime import datetime
+
+from host_state import HostState, worktrees
 
 TOOLS = os.path.dirname(os.path.realpath(__file__))
 
@@ -33,6 +37,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--archive-unmerged", action="store_true")
+    parser.add_argument("--kept-file")
     parser.add_argument("worktrees", nargs="*")
     options = parser.parse_args()
     if not options.dry_run:
@@ -40,8 +45,8 @@ def main():
     try:
         state = HostState(TOOLS)
         open_heads = {pr["head"]["ref"] for pr in state.open_items("pulls")}
-    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
-        sys.exit("prune-worktrees: open pull requests unknown (host read failed); nothing removed")
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
+        sys.exit(f"prune-worktrees: open pull requests unknown (host read failed: {error!r}); nothing removed")
     live = set()
     for pid in filter(str.isdigit, os.listdir("/proc")):
         try:
@@ -58,7 +63,8 @@ def main():
             return False
         try:
             return state.issue(issue[1])["state"] == "closed"
-        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
+        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
+            print(f"issue {issue[1]} state unknown ({error!r}); {name} not archived")
             return False
 
     def archive_tag(name, commit):
@@ -90,18 +96,16 @@ def main():
                 "--delete", branch)
         elif remote:
             print(f"kept remote {branch}: its tip {remote[0][:8]} is not on origin/main")
-        if f"branch refs/heads/{branch}\0" in run("git", "worktree", "list", "--porcelain", "-z"):
+        if any(fields.get("branch") == f"refs/heads/{branch}" for fields in worktrees(TOOLS).values()):
             print(f"kept branch {branch} (checked out)")
             return
         run("git", "update-ref", "--no-deref", "-d", f"refs/heads/{branch}", tip)
         print(f"deleted branch {branch}")
 
-    entries = {}  # path -> (head, branch)
-    for record in filter(None, run("git", "worktree", "list", "--porcelain", "-z").split("\0\0")):
-        fields = dict(field.partition(" ")[::2] for field in record.strip("\0").split("\0"))
-        entries[os.path.realpath(fields["worktree"])] = (fields.get("HEAD", ""),
-                                                       fields.get("branch", "").removeprefix("refs/heads/"))
+    entries = {path: (fields.get("HEAD", ""), fields.get("branch", "").removeprefix("refs/heads/"))
+               for path, fields in worktrees(TOOLS).items()}
     main_checkout = next(iter(entries))
+    kept = []
     given = [os.path.realpath(path) for path in options.worktrees]
     held = {branch for path, (_, branch) in entries.items() if branch and path not in given}
     for path in sorted(given, key=len, reverse=True):  # nested baselines before their parents
@@ -113,13 +117,26 @@ def main():
                   "open PR" if branch in open_heads else
                   "unmerged" if not merged(head) and not (archivable(name) and archive_tag(name, head)) else None)
         if reason:
-            print(f"kept {path} ({reason})")
+            kept.append(f"kept {path} ({reason})")
+            print(kept[-1])
             held.add(branch)
         elif options.dry_run:
             print(f"would archive and remove {path}")
-        elif subprocess.run([sys.executable, os.path.join(TOOLS, "archive-worktree"), path,
-                             f"{os.path.basename(path)}-{head[:8]}"]).returncode:
-            held.add(branch)
+        else:
+            archived = subprocess.run([sys.executable, os.path.join(TOOLS, "archive-worktree"), path,
+                                       f"{os.path.basename(path)}-{head[:8]}"], stderr=subprocess.PIPE, text=True)
+            print(archived.stderr, end="", file=sys.stderr)
+            if archived.returncode:
+                kept.append(f"kept {path} ({(archived.stderr.strip().splitlines() or ['archive-worktree failed'])[-1]})")
+                held.add(branch)
+    if options.kept_file and kept:
+        with open(options.kept_file, "w") as listing:
+            listing.write(f"# Worktrees the {datetime.now():%Y-%m-%d} cleanup kept\n\nFor each: commit the work (or tag "
+                          "it archive/<branch>-wip) or discard it, then run tools/prune-worktrees on it.\n\n"
+                          + "".join(f"- {line}\n" for line in kept))
+    elif options.kept_file:
+        with contextlib.suppress(FileNotFoundError):
+            os.remove(options.kept_file)
     for branch in run("git", "for-each-ref", "--format=%(refname:short)", "refs/heads/").split():
         if branch != "main" and branch not in held and branch not in open_heads:
             drop_branch(branch)

@@ -14,6 +14,8 @@ import subprocess
 import sys
 import tarfile
 
+from host_state import main_checkout, worktrees
+
 MARKERS = (("pyvenv.cfg", stat.S_ISREG), ("conda-meta", stat.S_ISDIR), ("build.ninja", stat.S_ISREG),
            ("meson-private", stat.S_ISDIR), ("CACHEDIR.TAG", stat.S_ISREG))
 CACHEDIR_SIGNATURE = b"Signature: 8a477f597d28d172789f06886806bc55"
@@ -27,35 +29,20 @@ def git(directory, *args):
     return subprocess.run(["git", "-C", directory, *args], check=True, stdout=subprocess.PIPE).stdout
 
 
-def worktrees(directory):
-    """Registered worktrees of the repository containing `directory`, main first: [(real path, attributes)]."""
-    records = git(directory, "worktree", "list", "--porcelain", "-z").split(b"\0\0")
-    entries = []
-    for record in filter(None, records):
-        fields = record.strip(b"\0").split(b"\0")
-        entries.append((os.path.realpath(os.fsdecode(fields[0].removeprefix(b"worktree "))), fields[1:]))
-    return entries
-
-
 def marker(directory):
     for name, is_type in MARKERS:
         try:
             mode = os.lstat(os.path.join(directory, name)).st_mode
         except FileNotFoundError:
             continue
-        if is_type(mode) and (name != "CACHEDIR.TAG" or _starts_with_signature(os.path.join(directory, name))):
+        if not is_type(mode):
+            continue
+        if name != "CACHEDIR.TAG":
             return name
+        with open(os.path.join(directory, name), "rb") as tag:
+            if tag.read(len(CACHEDIR_SIGNATURE)) == CACHEDIR_SIGNATURE:
+                return name
     return None
-
-
-def _starts_with_signature(path):
-    with open(path, "rb") as tag:
-        return tag.read(len(CACHEDIR_SIGNATURE)) == CACHEDIR_SIGNATURE
-
-
-def sha256(path):
-    with open(path, "rb") as source:
-        return hashlib.file_digest(source, "sha256").hexdigest()
 
 
 def _raise(error):
@@ -131,8 +118,11 @@ def verify(wt, files, unzstd):
             if member.issym():
                 same = stat.S_ISLNK(mode) and member.linkname == os.readlink(source)
             else:
-                same = (member.isreg() and stat.S_ISREG(mode) and member.size == before[member.name][1]
-                        and hashlib.file_digest(tar.extractfile(member), "sha256").hexdigest() == sha256(source))
+                same = member.isreg() and stat.S_ISREG(mode) and member.size == before[member.name][1]
+                if same:
+                    with open(source, "rb") as current:
+                        same = (hashlib.file_digest(tar.extractfile(member), "sha256").digest()
+                                == hashlib.file_digest(current, "sha256").digest())
             if not same or stats(wt, [member.name]) != before:
                 raise RuntimeError(f"member {member.name!r} differs from the worktree")
             verified.update(before)
@@ -154,12 +144,11 @@ def main():
     if not os.path.isdir(wt):
         die(f"{wt!r} is not a directory")
     registered = worktrees(wt)
-    if wt == registered[0][0]:
+    if wt == next(iter(registered)):
         die(f"{wt!r} is a main working tree, not a linked worktree")
-    entry = next((fields for path, fields in registered[1:] if path == wt), None)
-    if entry is None:
+    if wt not in registered:
         die(f"{wt!r} is not a registered linked worktree of its repository")
-    if any(field.startswith(b"locked") for field in entry):
+    if "locked" in registered[wt]:
         die(f"{wt!r} is locked")
     for directory, subdirs, names in os.walk(wt, onerror=_raise):
         if directory != wt and ".git" in subdirs + names:
@@ -174,8 +163,7 @@ def main():
     files = retained_files(wt)
     verified = {}
     if files:
-        main_checkout = worktrees(os.path.dirname(os.path.realpath(__file__)))[0][0]
-        out = os.path.join(main_checkout, "build", "archive", f"{name}.tar.zst")
+        out = os.path.join(main_checkout(os.path.dirname(os.path.realpath(__file__))), "build", "archive", f"{name}.tar.zst")
         os.makedirs(os.path.dirname(out), exist_ok=True)
         try:
             archive = open(out, "xb")
@@ -193,7 +181,7 @@ def main():
     if (retained_files(wt, report=False) != files or stats(wt, files) != verified
             or git(wt, "status", "--porcelain=v1", "-z", "--untracked-files=all")):
         die(f"{wt!r} changed while it was archived; archive kept, worktree kept")
-    subprocess.run(["git", "-C", registered[0][0], "worktree", "remove", wt], check=True)
+    subprocess.run(["git", "-C", next(iter(registered)), "worktree", "remove", wt], check=True)
     print(f"removed {wt!r}")
 
 

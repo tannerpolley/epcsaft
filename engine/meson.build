@@ -100,11 +100,9 @@ endif
 # which is what makes the include direction checkable.
 native_inc = include_directories('native')
 
-# Filled by the build stages; the order is the layer order. Nothing here may
-# include nanobind — that is bindings/, and it is the only place.
-# contributions/ is header-only: the terms are templated so one source both
-# evaluates a double and records a tape, so there is nothing to compile into
-# the archive until the properties layer.
+# The order is the layer order. Nothing here may include nanobind — that is
+# bindings/, and it is the only place. contributions/ is header-only: the terms
+# are templated so one source both evaluates a double and records a tape.
 superancillary_table = custom_target('pcsaft_superancillary',
   input: 'data/superancillary/pcsaft.json',
   output: 'pcsaft_superancillary_table.hpp',
@@ -117,7 +115,6 @@ properties_sources = files(
   'native/properties/thermochemistry.cpp',
 )
 surface_sources = files('native/surface/parameter_builder.cpp')
-# Stages 4, 5, 6
 equilibrium_sources = files(
   'native/equilibrium/stoichiometry.cpp',
   'native/equilibrium/request_compile.cpp',
@@ -128,7 +125,6 @@ equilibrium_sources = files(
   'native/equilibrium/implicit_sensitivity.cpp',
   'native/equilibrium/singular_value_decompositions.cpp',
 )
-# Stage 7
 regression_sources = files(
   'native/regression/coordinates.cpp',
   'native/regression/observations.cpp',
@@ -141,26 +137,15 @@ if windows
   worker_platform_dep = [cpp.find_library('advapi32')]
 endif
 
+native_sources = ['native/core/trace.cpp', properties_sources, superancillary_table, surface_sources,
+  equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
+native_deps = [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep, worker_platform_dep]
+
 epcsaft_native = shared_library(
   'epcsaft_native',
-  'native/core/trace.cpp',
-  properties_sources,
-  superancillary_table,
-  surface_sources,
-  equilibrium_sources,
-  regression_sources,
-  cppad_temp_file,
-  highs_conf_file,
+  native_sources,
   cpp_args: native_warnings + native_export_args,
-  dependencies: [
-    threads_dep,
-    ipopt_dep,
-    eigen_dep,
-    ceres_dep,
-    highs_dep,
-    cppad_headers_dep,
-    worker_platform_dep,
-  ],
+  dependencies: native_deps,
   include_directories: native_inc,
   install: true,
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
@@ -171,11 +156,10 @@ epcsaft_native = shared_library(
 
 private_sources = []
 if windows
-  private_sources = ['native/core/trace.cpp', properties_sources, superancillary_table,
-    surface_sources, equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
+  private_sources = native_sources
   private_options = {
     'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
-    'dependencies': [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep, worker_platform_dep],
+    'dependencies': native_deps,
     'include_directories': native_inc,
   }
 else
@@ -192,14 +176,7 @@ asl_library = shared_library(
   'epcsaft_asl',
   'native/bindings/asl_adapter.cpp',
   cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
-  dependencies: [
-    threads_dep,
-    ipopt_dep,
-    eigen_dep,
-    ceres_dep,
-    highs_dep,
-    cppad_headers_dep,
-  ],
+  dependencies: native_deps,
   include_directories: native_inc,
   link_args: release_link_args + asl_link_args,
   kwargs: asl_export_options,
@@ -208,7 +185,6 @@ asl_library = shared_library(
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
 )
 
-# Stage 3 adds module.cpp and eos_bindings.cpp; stages 4-7 add the rest.
 core_extension = py.extension_module(
   '_core',
   files('native/bindings/module.cpp', 'native/bindings/eos_bindings.cpp',
@@ -234,8 +210,6 @@ core_extension = py.extension_module(
   subdir: 'epcsaft',
 )
 
-# Python ships alone: the native tree lives outside src/, so there is nothing
-# to exclude but caches.
 contributions_checks = executable(
   'contributions_checks',
   'tests/native/contributions_checks.cpp',
@@ -250,6 +224,17 @@ contributions_checks = executable(
 )
 test('contributions', contributions_checks)
 
+# Every native test program links the shared library and is built only on request.
+check_kwargs = {
+  'cpp_args': native_warnings,
+  'gnu_symbol_visibility': 'inlineshidden',
+  'include_directories': native_inc,
+  'link_with': epcsaft_native,
+  'build_rpath': native_rpath,
+  'install': false,
+  'build_by_default': false,
+}
+
 properties_checks = executable(
   'properties_checks',
   files('tests/native/properties_checks.cpp',
@@ -262,14 +247,8 @@ properties_checks = executable(
         'tests/native/properties_temperature_law_checks.cpp',
         'tests/native/properties_pathway_weight_checks.cpp',
         'tests/native/properties_cation_mixing_checks.cpp'),
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 # One test per case, named properties/<case> from the case table, as for equilibrium below.
 properties_cases = import('fs').read('tests/native/properties_checks.cpp').split('{{"native.properties.')
@@ -281,14 +260,8 @@ endforeach
 diagnostics_checks = executable(
   'diagnostics_checks',
   'tests/native/diagnostics_checks.cpp',
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 test('diagnostics', diagnostics_checks)
 
@@ -302,14 +275,8 @@ equilibrium_checks = executable(
         'tests/native/equilibrium_caloric_specification_checks.cpp',
         'tests/native/equilibrium_critical_envelope_checks.cpp',
         'tests/native/equilibrium_reactive_caloric_checks.cpp'),
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep] + quadmath_dep,
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 # One test per case, named equilibrium/<execution_policy>/<case> from the case table,
 # so the slow group runs in parallel and check-affected.sh can honor the policy.
@@ -328,28 +295,16 @@ endforeach
 surface_example = executable(
   'surface_example',
   'tests/native/surface_example.cpp',
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 test('surface_example', surface_example)
 
 boundary_checks = executable(
   'boundary_checks',
   'tests/native/boundary_checks.cpp',
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 test('boundary', boundary_checks, timeout: 600)
 
@@ -370,14 +325,8 @@ regression_checks = executable(
         'tests/native/regression_stability_checks.cpp',
         'tests/native/regression_capped_addition_checks.cpp'),
   capped_addition_input,
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep] + quadmath_dep,
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
@@ -388,17 +337,13 @@ test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp']
 specification_checks = executable(
   'specification_checks',
   'tests/native/specification_checks.cpp',
-  cpp_args: native_warnings,
-  gnu_symbol_visibility: 'inlineshidden',
   dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
-  include_directories: native_inc,
-  link_with: epcsaft_native,
-  build_rpath: native_rpath,
-  install: false,
-  build_by_default: false,
+  kwargs: check_kwargs,
 )
 test('specification', specification_checks)
 
+# Python ships alone: the native tree lives outside src/, so there is nothing
+# to exclude but caches.
 install_subdir(
   'src/epcsaft',
   exclude_directories: [
@@ -408,20 +353,8 @@ install_subdir(
   install_dir: py.get_install_dir(),
 )
 
-executable('reaction_reference_e3', '../analyses/2026-reaction-reference-association/scripts/e3.cpp',
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
-  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
-
-executable('nasrifar_effective_water', '../analyses/reproduction/2010-nasrifar-mdea/scripts/effective_water.cpp',
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
-  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
-
 executable('association_comparison', '../analyses/2026-association-native-comparison/scripts/association_comparison.cpp',
   dependencies: [eigen_dep, cppad_headers_dep], include_directories: [native_inc, include_directories('tests/native')],
-  link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
-
-executable('wu_chloride_coverage', '../analyses/2026-mixed-chloride-water-activity/scripts/wu_coverage.cpp',
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep], include_directories: native_inc,
   link_with: epcsaft_native, build_rpath: native_rpath, install: false, build_by_default: false)
 
 if host_machine.system() == 'windows'

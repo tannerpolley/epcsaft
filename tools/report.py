@@ -15,6 +15,8 @@ import xml.etree.ElementTree as ET
 from html import escape
 from pathlib import Path
 
+from host_state import main_checkout
+
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "build/report.html"
 
@@ -173,8 +175,7 @@ def main(args):
     if args:
         wheels = build / "wheels"
     else:  # Worktrees have no wheels; refresh-main-wheel keeps them in the main checkout.
-        main_root = git("worktree", "list", "--porcelain").splitlines()[0].removeprefix("worktree ")
-        wheels = Path(main_root) / "build/wheels"
+        wheels = Path(main_checkout(ROOT)) / "build/wheels"
     commit, state = source()
     head = commit, int(git("log", "-1", "--format=%ct"))
     sections = [("Tests", tests(build / "test-results", head)), ("Key solves", key_solves(wheels, head)),

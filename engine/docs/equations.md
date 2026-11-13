@@ -1,7 +1,7 @@
 # EOS Equation Registry
 
 Canonical, human-editable equation definitions. Edit each equation here once;
-`python3 engine/scripts/docs/sync_equation_registry.py` generates the YAML index.
+`python3 engine/tools/sync_equation_registry.py` generates the YAML index.
 The index is not an implementation-availability declaration. Symbols, source
 applicability and conventions are in [full-eos.md](science/full-eos.md) and
 [formulation.md](equilibrium/formulation.md); methods and derivative domains

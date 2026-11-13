@@ -99,7 +99,7 @@ read_only: false
 # abort activation. a per-project timeout (activation_command_timeout, default 180s) is the safety
 # backstop for non-terminating commands; on expiry the process is killed and activation continues.
 # example: activation_command: "npx nx run-many -t build"
-activation_command: bash tools/prepare-serena-cpp.sh
+activation_command: '[ ! -e compile_commands.json ] || [ -L compile_commands.json ] && ln -sfn "$(cat build/environment-wheel/meson-build-dir)/compile_commands.json" compile_commands.json'
 
 # maximum time in seconds to wait for activation_command to complete before killing it (default 180s).
 # must be a positive number.

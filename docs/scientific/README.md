@@ -53,7 +53,7 @@ freshness flags.
 `CODING_STANDARDS.md` owns revalidating the mathematics with a scientific
 change; record that disposition in the change description.
 
-Run `python3 engine/scripts/docs/sync_equation_registry.py` after editing
+Run `python3 engine/tools/sync_equation_registry.py` after editing
 [definitions](../../engine/docs/equations.md), then `bash tools/check-affected.sh HEAD`
 for uncommitted work. The normal checks reject malformed or duplicate equation
 IDs, duplicate algorithm IDs, unresolved equation/algorithm references, and a

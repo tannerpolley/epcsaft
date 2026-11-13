@@ -100,7 +100,7 @@ Source: `ARCHITECTURE.yaml`
 
 **Capability**:
 A named behavior such as density evaluation or equilibrium solution; it may use several layers without changing their ownership.
-Source: `ARCHITECTURE.yaml` header (Python is organised by capability) and `python.capabilities`
+Source: `ARCHITECTURE.yaml` header (Python is organised by capability)
 
 **Milestone**:
 A numbered GitHub milestone (for example `04 - Equilibrium`) grouping leaf issues with explicit acceptance; its number expresses delivery priority, not a scientific dependency.

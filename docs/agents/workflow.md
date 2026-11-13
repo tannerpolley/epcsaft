@@ -75,8 +75,7 @@ historical studies and merged-main delivery, outside these candidate checks.
 | Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>` and an A=A control (two workers from the same prepared main environment). Exit 0 is the gate; `tools/time-key-solves.md` owns its work-count, value and CPU limits. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner; this never waives ceilings or missing evidence |
 | Change to fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work, or density algorithms | Add `--fit --control <main-A=A-summary.json>` to the same key-solve command. First run main A=A with `--fit` to retain the same-host control. `tools/time-key-solves.md` owns the fit limits and measurement boundaries |
 
-Run checks that share the ordinary editable Meson tree sequentially; independent
-checks can use `tools/run-together.sh`. After freezing a local candidate commit,
+Run checks that share the ordinary editable Meson tree sequentially. After freezing a local candidate commit,
 the lead runs the heavy gate, including before publication approval with the
 candidate's eventual PR number. The gate locks
 `build/pr-gates/pr-N/<head>/` in the main checkout and prepares one detached source,

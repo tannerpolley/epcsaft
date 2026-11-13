@@ -114,7 +114,8 @@ PY
         uv pip install --python "$python" --no-deps --no-build-isolation --reinstall-package epcsaft \
             "${config[@]}" -C editable-verbose=true -e engine
     fi
-    bash tools/prepare-serena-cpp.sh
+    # Serena's C++ server reads the root compile database; the link is the only file at that path.
+    [[ ! -e compile_commands.json || -L compile_commands.json ]] && ln -sfn "$build_dir/compile_commands.json" compile_commands.json
     ;;
 --native)
     [[ -f "$build_dir/build.ninja" ]] ||

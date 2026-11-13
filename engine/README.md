@@ -105,9 +105,6 @@ tools/native-isolated falsify equilibrium_checks E2-2 plant.diff  # passes only 
 tools/native-isolated compare regression_checks ionic-addition origin/main  # rows at 1e-10 against a commit
 ```
 
-`bash tools/check-all-container.sh` runs `check-affected.sh --all` on HEAD from a cold
-build in a digest-pinned `ubuntu:24.04` container, the system a hosted runner would use.
-
 Build the documentation with its optional documentation dependencies and the
 checkout's editable Engine:
 

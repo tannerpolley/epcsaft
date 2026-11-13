@@ -118,13 +118,11 @@ def synchronize(docs: Path, *, check: bool) -> None:
     unregistered = unregistered_mentions(docs.parent, {entry["eqid"] for entry in entries})
     if unregistered:
         raise ValueError("\n".join(unregistered))
-    outputs = {registry: render_registry(entries)}
-    stale = [path for path, text in outputs.items() if not path.exists() or path.read_text(encoding="utf-8") != text]
-    if check and stale:
-        raise ValueError("stale: " + ", ".join(path.name for path in stale))
+    text = render_registry(entries)
     if not check:
-        for path, text in outputs.items():
-            path.write_text(text, encoding="utf-8")
+        registry.write_text(text, encoding="utf-8")
+    elif not registry.exists() or registry.read_text(encoding="utf-8") != text:
+        raise ValueError(f"stale: {registry.name}")
 
 
 def self_check(docs: Path) -> None:
@@ -180,7 +178,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="verify without writing")
     args = parser.parse_args()
-    docs = Path(__file__).resolve().parents[2] / "docs"
+    docs = Path(__file__).resolve().parents[1] / "docs"
     if args.check:
         self_check(docs)
     synchronize(docs, check=args.check)

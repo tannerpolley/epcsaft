@@ -58,7 +58,7 @@ done
 # Setup first: the budget count formats Python with the locked .venv Ruff.
 timed setup bash tools/setup.sh
 timed readiness bash -e -c '
-python3 engine/scripts/docs/sync_equation_registry.py --check
+python3 engine/tools/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
 python3 tools/project-map.py
 [[ "$1" == true ]] || python3 tools/tests/test-time-key-solves-gate.py

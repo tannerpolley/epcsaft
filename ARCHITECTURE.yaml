@@ -8,26 +8,10 @@ version: 17
 # Python is organised by capability, because that is what a caller imports.
 # The two do not mirror each other on purpose.
 
-artifact:
-  repository: tannerpolley/ePC-SAFT
-  source_directory: engine
-  distribution: epcsaft
-  python: ">=3.13"
-  build_owner: pyproject.toml
-  native_build_owner: meson.build
-  public_modules: [epcsaft, epcsaft.equilibrium, epcsaft.regression]
-
-plan:
-  delivery: https://github.com/tannerpolley/ePC-SAFT/milestones
-  scientific_authority: docs/scientific/CONTEXT.md
-  historical_evidence: docs/scientific/reviews
-
 # Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
 # the counting and the band rule.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
 code_budgets: {"core": 1572, "contributions": 1444, "properties": 7366, "equilibrium": 15702, "regression": 4976, "surface": 851, "bindings": 2692, "python": 2819, "total": 37422}
-
-property_categories: [Ideal, Residual, Total]
 
 # Project map: every project file resolves to one owner and one artifact role by
 # the longest matching path prefix. Owners are components or Engine layers.
@@ -65,7 +49,6 @@ project_map: {
     ["engine/tests/oracle/", "engine", "evidence"],
     ["engine/docs/", "engine", "specification"],
     ["engine/data/", "engine", "data"],
-    ["engine/scripts/", "engine", "tooling"],
     ["engine/tools/", "engine", "tooling"],
     ["engine/build/", "generated", "external"],
     ["engine/meson.build", "engine", "configuration"],
@@ -126,7 +109,8 @@ native:
   extension: epcsaft._core
   checker: tools/check-engine-architecture.py
   # Downward only. bindings may include anything; nothing includes bindings.
-  layers: [core, contributions, properties, equilibrium, regression, surface, bindings]
+  # JSON flow list: the architecture checker and the line counter read this order.
+  layers: ["core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings"]
   layer_content:
     core: policy, the declared-choice and convergence contracts, the trace, shared numerical error calculations
     contributions: ideal-gas and individual residual Helmholtz formulations; no equilibrium solver; CppAD named only by the parameter-liveness predicate
@@ -140,33 +124,8 @@ native:
   # observation; it may not discover phases, because a fit needs differentiable
   # residuals and a discovered phase count is not one.
   regression_boundary:
-    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, stability_measure, properties/helmholtz_model.hpp]  # documentation only; no checker reads this list
+    permitted: [equilibrium/problem.hpp, solve_equilibrium, solve_phase_boundary, stability_measure, properties/helmholtz_model.hpp]
     forbidden: [phase_stability.hpp, find_phases, problems with omitted topology]
-  invariants:
-    native_pic_object_sets: 1
-    private_static_archives: 1
-    native_extensions: 1
-    python_inside_native_library: forbidden
-    installed_headers: forbidden
-    public_cpp_abi: forbidden
-    iterative_python_callbacks: forbidden
-    constant_defined_twice: forbidden
-    category_one_constants_home: core/physical_constants.hpp
-
-python:
-  root: engine/src/epcsaft
-  # Python maps inputs to _core and _core results to types. It performs no
-  # arithmetic: a frontend call is agnostic to what it is solving.
-  numerics: forbidden
-  capabilities: [eos, equilibrium, regression]
-
-formulation:
-  document: engine/docs/equilibrium/formulation.md
-  algorithms: engine/docs/science/algorithms.md
-  # All admitted specifications use one driver and shared energy/row owners.
-  # Its numerical method and curvature must be qualified for each admitted domain.
-  equilibrium_drivers: 1
-  not_expressible: [solids, augmented critical-point equations, kinetics]
 
 naming:
   # No proper nouns in identifiers. Source names are citations, not symbols.
@@ -183,20 +142,3 @@ evidence:
   basis: independent analytic identities, measurements, evaluated references, and source-model comparisons
   route_specific_gates: forbidden
   downstream_specific_flags: forbidden
-
-scientific_boundaries:
-  reusable_packets: data
-  installed_artifact_evidence: analyses
-  packet_access: explicit_materialization_only
-  sibling_discovery: forbidden
-
-build_invariants:
-  distributions: 1
-  versions: 1
-  wheels: 1
-  meson_roots: 1
-  editable_downstream_dependencies: forbidden
-  compatibility_aliases: forbidden
-  mutable_wheel_inputs: forbidden
-  third_party_cmake_use: ceres_package_lookup_only
-  inferred_parameter_defaults: forbidden

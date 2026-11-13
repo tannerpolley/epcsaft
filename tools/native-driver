@@ -20,6 +20,7 @@ args = shlex.split(entry["command"]); args[args.index("-o") + 1] = f"{out}/drive
 subprocess.run(args + [f"-I{tests}"], cwd=entry["directory"], check=True)
 link = shlex.split(subprocess.check_output(["ninja", "-C", build, "-t", "commands", program], text=True).splitlines()[-1])
 link[link.index("-o") + 1] = f"{out}/driver"
+link.append(f"-Wl,-rpath,{build}")  # the driver lives outside the build directory its $ORIGIN path assumes
 own = [i for i, a in enumerate(link) if a.startswith(f"{program}.p/tests_native_")]
 link[own[0]:own[-1] + 1] = [f"{out}/driver.o"]
 subprocess.run(link, cwd=build, check=True)

@@ -3,8 +3,7 @@
 
 File lists come from the filesystem (tracked plus untracked, not ignored). The
 longest matching prefix rule wins; unmapped and ambiguous paths are reported,
-never dropped. Generated, environment and independent-repository roots are
-summarized by presence only.
+never dropped.
 """
 
 from __future__ import annotations
@@ -19,7 +18,6 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SUMMARIZED_ROLES = {"generated", "external"}
 
 
 def declaration(root: Path = ROOT) -> dict[str, Any]:
@@ -71,13 +69,8 @@ def project_map(root: Path = ROOT) -> dict[str, Any]:
     declared = declaration(root)
     rules = declared["rules"]
     nodes: dict[str, dict[str, Any]] = {}
-    for name, item in declared["components"].items():
-        nodes[name] = {
-            "id": name, "name": item["name"], "purpose": item.get("purpose", ""),
-            "parent": item.get("parent"), "external": item.get("external", []),
-            "paths": [rule[0] for rule in rules if rule[1] == name],
-            "files": {}, "summarized": [],
-        }
+    for name in declared["components"]:
+        nodes[name] = {"id": name, "files": {}}
     unmapped: list[str] = []
     ambiguous: list[str] = []
     for path in project_files(root):
@@ -88,9 +81,6 @@ def project_map(root: Path = ROOT) -> dict[str, Any]:
         if conflict:
             ambiguous.append(path)
         nodes[owner]["files"].setdefault(role, []).append(path)
-    for prefix, owner, role in rules:
-        if role in SUMMARIZED_ROLES and (root / prefix).exists():
-            nodes[owner]["summarized"].append({"path": prefix, "role": role})
     return {
         "nodes": list(nodes.values()),
         "unmapped": unmapped,
@@ -118,15 +108,11 @@ def self_test() -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--self-test", action="store_true")
-    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     if args.self_test:
         self_test()
         return 0
     result = project_map()
-    if args.json:
-        json.dump(result, sys.stdout, indent=1)
-        return 0 if result["complete"] else 1
     for node in result["nodes"]:
         counted = sum(len(files) for files in node["files"].values())
         print(f"{node['id']:22} {counted:5} files  " + ", ".join(f"{role}={len(files)}" for role, files in sorted(node["files"].items())))

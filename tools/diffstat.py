@@ -159,18 +159,22 @@ def formatted_lines(path: Path) -> int:
     return python_lines(formatted) if path.suffix in {".py", ".pyx", ".pxd"} else cpp_lines(formatted)
 
 
+def architecture(key: str, root=None):
+    """The JSON flow value of the one ARCHITECTURE.yaml entry named `key`."""
+    import json
+    text = ((TOOLS.parent if root is None else Path(root)) / "ARCHITECTURE.yaml").read_text()
+    sections = list(re.finditer(rf"^\s*{key}:", text, re.MULTILINE))
+    if len(sections) != 1:
+        raise ValueError(f"expected one {key} JSON flow value in ARCHITECTURE.yaml")
+    return json.JSONDecoder().raw_decode(text[sections[0].end():].lstrip())[0]
+
+
 def code_budgets(root=None) -> int:
     """Count the complete runtime tree; budgets have one owner in ARCHITECTURE."""
-    import json
-    import re
     from concurrent.futures import ThreadPoolExecutor
     root = TOOLS.parent if root is None else Path(root)
-    architecture = (root / "ARCHITECTURE.yaml").read_text()
-    sections = list(re.finditer(r"^code_budgets:", architecture, re.MULTILINE))
-    if len(sections) != 1:
-        raise ValueError("expected one code_budgets JSON flow mapping in ARCHITECTURE.yaml")
-    budgets, _ = json.JSONDecoder().raw_decode(architecture[sections[0].end():].lstrip())
-    expected = {"core", "contributions", "properties", "equilibrium", "regression", "surface", "bindings", "python", "total"}
+    budgets = architecture("code_budgets", root)
+    expected = {*architecture("layers", root), "python", "total"}
     if set(budgets) != expected:
         raise ValueError("code budgets must classify every runtime layer and total")
     if any(type(n) is not int or n < 0 for n in budgets.values()):
@@ -284,7 +288,7 @@ int inactive;
         (root / "engine/src/epcsaft").mkdir(parents=True)
         (root / "engine/src/epcsaft/packed.py").write_text("x = 1; y = 2\n")
         limits = {"core": 102, "python": 2, "total": 104} | dict.fromkeys(layers, 0)
-        (root / "ARCHITECTURE.yaml").write_text("code_budgets: " + json.dumps(limits))
+        (root / "ARCHITECTURE.yaml").write_text(f"code_budgets: {json.dumps(limits)}\nlayers: {json.dumps(['core', *layers])}")
         source = root / "engine/native/core/untracked.cpp"
         with contextlib.redirect_stdout(io.StringIO()):
             # Packed statements count as the formatter lays them out: two per line here, two lines each.

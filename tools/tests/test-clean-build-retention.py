@@ -25,6 +25,9 @@ class HostState:
         return {"9007": {"state": "unknown", "closed_at": old}, "9008": {"closed_at": old},
                 "9009": {"state": "open"}}.get(
             str(number), {"state": "closed", "closed_at": old})
+def worktrees(directory):
+    import os
+    return {os.path.dirname(os.path.realpath(directory)): {}}
 '''
 # Today's tool prints nothing per folder, so print each folder it would hand to keep_reports.
 BEFORE = '''import importlib.machinery, importlib.util, sys

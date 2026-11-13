@@ -10,6 +10,8 @@ import subprocess
 import tempfile
 from zipfile import ZipFile
 
+from host_state import main_checkout
+
 
 def command(*args, **kwargs):
     return subprocess.check_output(args, **kwargs).decode().strip()
@@ -38,8 +40,7 @@ def conflict(local, remote):
                      f'retained/remote={json.dumps(remote, sort_keys=True)}')
 
 
-os.chdir(command('git', '-C', str(Path(__file__).resolve().parent), 'worktree', 'list', '--porcelain')
-         .splitlines()[0].removeprefix('worktree '))
+os.chdir(main_checkout(Path(__file__).resolve().parent))
 if command('git', 'branch', '--show-current') != 'main' or command('git', 'status', '--porcelain'):
     raise SystemExit(f'the canonical main checkout must be clean: {Path.cwd()}')
 commit = command('git', 'rev-parse', 'HEAD')

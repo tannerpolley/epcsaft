@@ -4,7 +4,7 @@
 Usage: tools/clean-build [--dry-run]
 Run daily by the user timer epcsaft-clean-build.timer. In order:
 1. tools/prune-worktrees on every linked worktree; its own guards keep live, open-PR, dirty and unmerged ones,
-   and those kept worktrees are listed in build/worktrees-to-resolve.md for the lead to commit or discard.
+   and it lists those kept worktrees in build/worktrees-to-resolve.md for the lead to commit or discard.
 2. build/issue-N: retention() names one state per folder, the first that applies, and prints it:
    open (issue or pull request N open on the host), unknown (its host state cannot be read), recent (closed less than
    DAYS ago), cited (a tracked file names build/issue-N), unpromoted (it holds a file a tracked analyses/ record names
@@ -35,7 +35,7 @@ import subprocess
 import sys
 import time
 
-from host_state import HostState
+from host_state import HostState, worktrees
 
 DAYS = 3
 REPORT_SUFFIXES = {".md", ".qmd", ".html", ".png"}
@@ -144,9 +144,7 @@ def main():
     parser.add_argument("--dry-run", action="store_true")
     dry = parser.parse_args().dry_run
     tools = Path(__file__).resolve().parent
-    porcelain = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=tools,
-                               check=True, capture_output=True, text=True).stdout
-    paths = [line.removeprefix("worktree ") for line in porcelain.splitlines() if line.startswith("worktree ")]
+    paths = list(worktrees(tools))
     root, build = Path(paths[0]), Path(paths[0]) / "build"
     if build.is_symlink() or Path(os.path.realpath(build)) != build:
         sys.exit("clean-build: build/ is or lies behind a symlink; nothing removed")
@@ -156,22 +154,13 @@ def main():
         # The issues list also includes pull requests; both protect open numbers.
         open_issues = {item["number"] for item in state.open_items("issues")}
         open_prs = {item["number"] for item in state.open_items("pulls")}
-    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
-        sys.exit("clean-build: open issues or PRs unknown (host read failed); nothing removed")
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
+        sys.exit(f"clean-build: open issues or PRs unknown (host read failed: {error!r}); nothing removed")
 
     if len(paths) > 1:
-        pruned = subprocess.run([sys.executable, str(tools / "prune-worktrees"), *(["--dry-run"] if dry else []),
-                                 *paths[1:]], cwd=root, capture_output=True, text=True)
-        print(pruned.stdout + pruned.stderr, end="")
-        blocked = [line for line in (pruned.stdout + pruned.stderr).splitlines()
-                   if line.startswith(("kept /", "archive-worktree:"))]
-        attention = build / "worktrees-to-resolve.md"
-        if not dry and blocked:
-            attention.write_text(f"# Worktrees the {datetime.now():%Y-%m-%d} cleanup kept\n\nFor each: commit the "
-                                 "work (or tag it archive/<branch>-wip) or discard it, then run tools/prune-worktrees "
-                                 "on it.\n\n" + "".join(f"- {line}\n" for line in blocked))
-        elif not dry:
-            attention.unlink(missing_ok=True)
+        listing = ["--dry-run"] if dry else ["--kept-file", str(build / "worktrees-to-resolve.md")]
+        sys.stdout.flush()
+        subprocess.run([sys.executable, str(tools / "prune-worktrees"), *listing, *paths[1:]], cwd=root)
 
     recorded, promoted = recorded_and_promoted(root)
     grep = subprocess.run(["git", "grep", "-ohE", r"build/(issue-[0-9]+|archive/[A-Za-z0-9._-]+)"], cwd=root,
@@ -188,7 +177,8 @@ def main():
             continue
         try:
             record = state.issue(folder.name.removeprefix("issue-"))
-        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError):
+        except (OSError, subprocess.CalledProcessError, ValueError, KeyError, TypeError) as error:
+            print(f"build/{folder.name}: host read failed ({error!r})")
             record = None
         name, reason, held = retention(folder, record, cited, recorded, promoted)
         print(f"{name} build/{folder.name} {reason}")
