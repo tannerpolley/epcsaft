@@ -242,6 +242,12 @@ def test_ipopt_initialization_or_fatal_return_publishes_no_state(tmp_path: Path,
     with pytest.raises(ParameterError, match="EPCSAFT_IPOPT_OPTIONS_FILE") as failure:
         solve_equilibrium(model, loose)
     assert str(missing) in str(failure.value)
+    # Public continuation raises the corrector's failure with the same type and text.
+    with pytest.raises(ParameterError) as continued:
+        equilibrium.continue_equilibrium(model, loose, Problem(phases=[Phase("L", kind="liquid")], T=301.0, P=1.0e5,
+                                                               feed=Amounts({"methane": 0.5, "ethane": 0.5}), row_tolerance=2.0),
+                                          equilibrium.Continuation(initial_step=0.5, minimum_step=0.5, max_steps=2, max_retries_per_step=1))
+    assert str(continued.value) == str(failure.value)
     monkeypatch.setenv("EPCSAFT_IPOPT_OPTIONS_FILE", str(tmp_path / "diagnostic.opt"))
     for option, fatal in (("bogus_option 1", True), ("linear_solver custom", True), ("max_iter 0", False)):
         (tmp_path / "diagnostic.opt").write_text(option + "\n")

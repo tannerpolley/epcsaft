@@ -35,6 +35,13 @@ bool supports_split_seed(const CompiledSystem& compiled) {
 
 namespace {
 
+// The one rethrow of a continuation corrector's numerical failure, after keeping its observations.
+EquilibriumResult unless_failed(EquilibriumResult solved, StageWork* observations) {
+    if (!solved.failure) return solved;
+    if (observations) observations->observe(solved);
+    std::rethrow_exception(solved.failure);
+}
+
 std::vector<double> seed_composition(const CompiledSystem& compiled, std::size_t phase,
                       std::vector<double> composition,
                       std::vector<double>& point, std::size_t offset, bool declared = false) {
@@ -776,7 +783,6 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
         const bool inside = inside_domain(compiled, predicted, projected);
         scope.probe("predictor_projected", static_cast<double>(projected));
         if (inside) {
-            EquilibriumResult audit;
             if (compiled.problem.spinodal) {
                 try {
                     const auto& before = spinodal_search(current, limits, anchors[0]);
@@ -788,9 +794,7 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
                     return admit_result(compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
                 }
             }
-            EquilibriumResult solved;
-            try { solved = solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm), &audit); }
-            catch (...) { if (observations) observations->observe(audit); throw; }
+            auto solved = unless_failed(solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm)), observations);
             if (!predict_anchors || compiled.mode_count) return admit_result(compiled, std::move(solved), anchors, false, scope);
             auto previous = admit_result(compiled, solved, anchors, false, scope);
             if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
@@ -897,13 +901,9 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
     const CompiledSystem start = compile_problem(model, base);
     if (!start.feasible) { observations.observe(structural_result(start, scope)); return finish(std::move(result), ContinuationStop::invalid_path, "envelope cell is not full rank"); }
     const bool pure = start.n_feed.size() == 1;
-    EquilibriumResult audit;
-    auto admitted = [&] {
-        try { return admit_result(start, solve_equilibrium_from_coordinates(model, base,
-            request.start_result ? request.start_result->coordinates : boundary_start(start, true, nullptr, &observations),
-            nullptr, nullptr, {}, &audit), {}, true, scope); }
-        catch (...) { observations.observe(audit); throw; }
-    }();
+    auto admitted = admit_result(start, unless_failed(solve_equilibrium_from_coordinates(model, base,
+        request.start_result ? request.start_result->coordinates : boundary_start(start, true, nullptr, &observations)),
+        &observations), {}, true, scope);
     observations.observe(admitted.observations);
     if (!admitted.accepted) {
         reject(result, admitted, base.envelope->target);
@@ -1186,7 +1186,8 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         auto seed = structural_result(source, scope);
         std::exception_ptr failure;
         try {
-            seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, seed_initial, nullptr, &budget, {}, &seed);
+            seed = solve_equilibrium_from_coordinates(*compiled.model, seed_problem, seed_initial, nullptr, &budget);
+            failure = seed.failure;
         } catch (...) {
             failure = std::current_exception();
         }
@@ -1666,9 +1667,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         initial.probe("path_value", 0.0);
         BoundaryAttempt admitted;
         const auto solve_initial = [&](const std::vector<double>& coordinates) {
-            EquilibriumResult audit;
-            try { return solve_equilibrium_from_coordinates(start, coordinates, nullptr, nullptr, {}, &audit); }
-            catch (...) { observations.observe(audit); throw; }
+            return unless_failed(solve_equilibrium_from_coordinates(start, coordinates), &observations);
         };
         if (request.start_result.has_value()) {
             const auto& supplied = *request.start_result;
@@ -1820,22 +1819,30 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
             for (double ratio : {policy::COOLING_RATIO.value, 1.0 / policy::COOLING_RATIO.value, 1.25, 1.5}) {
                 limits.check();
                 source.temperature = FreeValue::fixed(target.seed_temperature() * ratio);
-                EquilibriumResult audit;
-                try {
-                    found = solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits, {}, false, &audit);
-                    observations.observe(found);
-                    scope.probe("recovery_source", {source.temperature.value}, 0, found.message.c_str());
-                    if (!found.success) continue;
-                    auto reached = solve_compiled(target, found, nullptr, &limits, {}, false, &audit);
-                    observations.observe(reached);
-                    if (reached.success) return publish(std::move(reached));
-                    refused.message = reached.message;
-                } catch (const std::bad_alloc&) { throw; }
-                catch (const std::exception& error) {
-                    observations.observe(audit);
+                const auto failed = [&](const EquilibriumResult& solved) {
+                    observations.observe(solved);
+                    with_failure(solved, [&](const std::exception& error) { retain_density_failure(observations.first_numerical_failure, error, "saturation source"); });
+                    refused.message = solved.message;
+                };
+                std::optional<CompiledSystem> compiled;
+                try { compiled.emplace(compile_problem(model, source)); }
+                catch (const std::bad_alloc&) { throw; }
+                catch (const std::exception& error) {  // a source that does not compile is skipped like one that fails
+                    ++observations.stage;
                     retain_density_failure(observations.first_numerical_failure, error, "saturation source");
                     refused.message = error.what();
+                    continue;
                 }
+                found = try_solve_compiled(*compiled, std::nullopt, nullptr, &limits);
+                if (found.failure) { failed(found); continue; }
+                observations.observe(found);
+                scope.probe("recovery_source", {source.temperature.value}, 0, found.message.c_str());
+                if (!found.success) continue;
+                auto reached = try_solve_compiled(target, found, nullptr, &limits);
+                if (reached.failure) { failed(reached); continue; }
+                observations.observe(reached);
+                if (reached.success) return publish(std::move(reached));
+                refused.message = reached.message;
             }
             if (refused.message.empty()) refused.message = "no admitted saturation source: " + found.message;
             return publish(std::move(refused));
@@ -1843,9 +1850,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         for (int j = 1; j <= static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value) && !found.success; ++j) {
             limits.check();  // the slot is spent before compilation
             source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, j));
-            EquilibriumResult audit;
-            try { found = solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits, {}, false, &audit); }
-            catch (...) { observations.observe(audit); throw; }
+            found = unless_failed(try_solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits), &observations);
             observations.observe(found);
             scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), found.message.c_str());
         }
@@ -1857,9 +1862,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
             request.start_problem.pressure = FreeValue::fixed(*found.pressure);
             auto chart = found.coordinates;
             chart[target.primal_size - 1] = *found.temperature;
-            EquilibriumResult corrected;
-            try { corrected = solve_equilibrium_from_coordinates(model, request.start_problem, chart, nullptr, &limits, {}, &corrected); }
-            catch (...) { observations.observe(corrected); throw; }
+            auto corrected = unless_failed(solve_equilibrium_from_coordinates(model, request.start_problem, chart, nullptr, &limits), &observations);
             observations.observe(corrected);
             double drift = corrected.success ? std::max(std::abs(*corrected.temperature / *found.temperature - 1.0),
                 largest_difference(corrected.mole_fractions, found.mole_fractions)) : INFINITY;

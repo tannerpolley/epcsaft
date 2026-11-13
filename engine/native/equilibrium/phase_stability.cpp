@@ -899,11 +899,8 @@ GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, con
             }
         }();
         core::Scope scope("reaction_relaxed_split");
-        EquilibriumResult split, audit;
-        try {
-            split = run_driver(compiled, start, structural_result(compiled, scope), scope, nullptr, &audit,
-                &limits, Attempt::Cold, {}, false, false, Retry::None);
-        } catch (const std::exception& error) { split = audit; split.message = error.what(); }
+        auto split = run_driver(compiled, start, structural_result(compiled, scope), scope, nullptr,
+            &limits, Attempt::Cold, {}, false, false, Retry::None);
         std::move(stages).report(split);
         count_driver(work, split, "split_driver_invocations");
         if (!split.success) throw std::runtime_error(split.message);
@@ -1058,12 +1055,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 const auto initial = found ? std::vector<double>{} : trial_coordinates(compiled, seed, eta);
                 if (options.evaluate_supplied_trials) trial.raw_coordinates = initial;
                 else if (!found) {
-                    EquilibriumResult audit;
                     StageWork prior; prior.observe(trial.optimizer);
-                    try {
-                        trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
-                            scope, &trial.raw_coordinates, &audit, limits, Attempt::Cold, {}, false, true);
-                    } catch (const std::exception& error) { trial.optimizer = audit; trial.optimizer.message = error.what(); }
+                    trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
+                        scope, &trial.raw_coordinates, limits, Attempt::Cold, {}, false, true);
                     prior.report_observations(trial.optimizer);
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
                     trial.message = trial.optimizer.message;
@@ -1305,10 +1299,7 @@ StabilityReport recovery_stability(const CompiledSystem& input, const DriverLimi
         auto single = c.problem;
         single.phases = {PhaseSpec{kind == PhaseKind::Liquid ? "L1" : "V1", kind}};
         auto compiled = compile_problem(*c.model, single);
-        EquilibriumResult audit, parent;  // a parent that throws keeps the driver's audit work
-        try { parent = solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, false, &audit); }
-        catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) { parent = audit; parent.message = error.what(); }
+        auto parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits);  // a failed parent keeps its work
         count_driver(parents.work, parent, "parent_declarations");
         core::retain_first(parents.first_numerical_failure, parent.first_numerical_failure);
         if (!parent.success) parents.message += "; " + single.phases[0].name + ": " + parent.message;
@@ -1340,10 +1331,10 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
     declaration.phases.erase(declaration.phases.begin() + static_cast<std::ptrdiff_t>(phase));
     const std::string kind = vanished.kind == PhaseKind::Vapor ? "vapor" : "liquid";
     StabilityReport report;
-    EquilibriumResult audit, parent;  // `audit` holds the parent's work, also when it throws
+    EquilibriumResult parent;  // also a failed parent's work
     try {
         const auto compiled = compile_problem(*input.model, declaration);
-        audit = parent = solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, false, &audit);
+        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits);
         if (!parent.success) throw std::runtime_error(parent.message);
         StabilityOptions options;
         options.trials = std::vector<PhaseSpec>{vanished};
@@ -1361,8 +1352,8 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
     catch (const std::exception& error) {  // before the first trial: the trials' own catches keep theirs
         report.message = (parent.success ? kind + " trial search unresolved: " : "surviving declaration unresolved: ") + error.what();
     }
-    count_driver(report.work, audit, "parent_declarations");
-    core::retain_first(report.first_numerical_failure, audit.first_numerical_failure, true);
+    count_driver(report.work, parent, "parent_declarations");
+    core::retain_first(report.first_numerical_failure, parent.first_numerical_failure, true);
     return report;
 }
 
@@ -1598,10 +1589,9 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             if (!newton_accepted) {
                 invoked = true;
-                result = run_driver(c, seed, audit, scope, &attempt, &audit, nullptr, Attempt::Cold, {}, false, false, Retry::None);
-                auto retried = audit;
-                if (!fast) (void)recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
-                    &retry_attempt, &retried, true, &calls, budget, &invoked, Work::Invocation);
+                audit = result = run_driver(c, seed, audit, scope, &attempt, nullptr, Attempt::Cold, {}, false, false, Retry::None);
+                auto retried = fast ? result : recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
+                    &retry_attempt, true, &calls, budget, &invoked, Work::Invocation);
                 if (calls != before) {
                     count_driver(record->work, result, "declaration_invocations");
                     StageWork(newton_work).report(result);

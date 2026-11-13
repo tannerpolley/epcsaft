@@ -1425,7 +1425,7 @@ void check_association_publication() {
     auto initial = eq::structural_result(compiled, scope);
     core::Convergence refusal; refusal.cause = "occupied unrelated refusal"; refusal.stop = core::Stop::left_domain;
     initial.first_numerical_failure = refusal;
-    const auto result = eq::run_driver(compiled, point, initial, scope, nullptr, nullptr, nullptr, eq::Attempt::Newton);
+    const auto result = eq::run_driver(compiled, point, initial, scope, nullptr, nullptr, eq::Attempt::Newton);
     CHECK(result.success && std::abs(result.molar_densities[0] / density - 1) <= 1e-10);
     std::shared_ptr<core::ConditioningObservation> produced;
     for (const auto& span : capture.trace().spans) if (span.convergence && span.convergence->rank

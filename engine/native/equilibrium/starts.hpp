@@ -125,8 +125,9 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                     check(initial[j] > 0.0, field("free temperature or pressure is not positive"));
                 audit = structural_result(compiled, scope);
                 audit->convergence.residual = std::numeric_limits<double>::quiet_NaN();
-                auto result = compiled.feasible ? run_driver(compiled, std::move(initial), *audit, scope, nullptr, &*audit, &work)
-                                                : *audit;
+                if (compiled.feasible) audit = run_driver(compiled, std::move(initial), *audit, scope, nullptr, &work);
+                if (audit->failure) std::rethrow_exception(audit->failure);  // the attempt's one failure handler below
+                auto result = *audit;
                 StageWork(stages).report(result);
                 if (work.expired()) { result.message += "; elapsed work budget exhausted";
                     reject_elapsed(result, scope); }

@@ -389,17 +389,18 @@ EquilibriumResult solve_saturation(const CompiledSystem& compiled) {
         const auto rejected = std::make_shared<const EquilibriumResult>(std::move(result));
         result = structural;
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
-        try {
-            result = continue_compiled(compiled, std::nullopt, scope, nullptr, {}, false, &result,
-                structural, stages, initial, rejected);
-        } catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) {
+        const auto failed = [&](const std::exception& error) {
             core::retain_failure(result.first_numerical_failure, error, "saturation continuation");
             if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.terminal_numerical_failure = failure->record;
             result.message = error.what(); refuse(result);
             std::move(stages).report(result);
             result.rejected_reduction = rejected;
-        }
+        };
+        try {
+            result = continue_compiled(compiled, std::nullopt, scope, nullptr, {}, false, structural, stages, initial, rejected);
+            if (result.failure) with_failure(result, failed);
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { failed(error); }
     } else std::move(stages).report(result);
     if (!result.success) result = recover_from_source(compiled, std::move(result));
     if (result.has_state() && result.phase_pressures.empty()) {

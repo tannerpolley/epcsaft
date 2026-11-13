@@ -53,11 +53,11 @@ void check_physical_amount_work() {
     primary.retry = Retry::PhysicalAmounts;
     bool invoked = false;
     const auto accumulated = recover_physical_amounts(compiled, primary, true, scope, nullptr, nullptr,
-        nullptr, nullptr, false, nullptr, 0, &invoked, Work::Accumulated);
+        nullptr, false, nullptr, 0, &invoked, Work::Accumulated);
     CHECK(invoked);
     invoked = false;
     const auto invocation = recover_physical_amounts(compiled, primary, true, scope, nullptr, nullptr,
-        nullptr, nullptr, false, nullptr, 0, &invoked, Work::Invocation);
+        nullptr, false, nullptr, 0, &invoked, Work::Invocation);
     CHECK(invoked);
     CHECK(accumulated.iterations == invocation.iterations + 7);
     CHECK(accumulated.evaluations == invocation.evaluations + 11);
@@ -372,7 +372,7 @@ void check_trial_refinement() {
     std::fill(point.begin() + trial.primal_size, point.end(), 0.0);
     core::Capture capture(true); core::Scope scope("trial-refinement");
     std::vector<double> attempt;
-    const auto result = run_driver(trial, point, structural_result(trial, scope), scope, &attempt, nullptr, nullptr, Attempt::Cold, {}, false, true);
+    const auto result = run_driver(trial, point, structural_result(trial, scope), scope, &attempt, nullptr, Attempt::Cold, {}, false, true);
     const auto raw = trial.prepare(attempt, true);
     const auto composition = reconstruct_trial_composition(raw.composition[0], phase.support, p.charge_number, phase.kind);
     const auto inputs = recording_support::fields({recording_support::field("composition", composition),
@@ -1328,7 +1328,7 @@ void check_reaction_relaxed_split() {
     core::Scope scope("reaction-relaxed-split");
     auto structural = structural_result(compiled, scope);
     const auto solve = [&] {
-        return run_driver(compiled, seed, structural, scope, nullptr, nullptr, nullptr,
+        return run_driver(compiled, seed, structural, scope, nullptr, nullptr,
                           Attempt::PhysicalAmounts, {}, false, false, Retry::None);
     };
     const auto ordinary = solve();

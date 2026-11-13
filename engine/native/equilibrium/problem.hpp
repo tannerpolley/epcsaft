@@ -6,6 +6,7 @@
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
+#include <exception>
 #include <chrono>
 #include <algorithm>
 #include <cmath>
@@ -822,6 +823,8 @@ struct EquilibriumResult final {
     std::optional<CriticalRecord> critical;
     std::optional<SpinodalRecord> spinodal;
     std::vector<double> solid_amounts, solid_affinity_decades;  // per declared solid: mol, and SI_s in decades
+    // A numerical failure after the driver began, with its work record; solve_compiled rethrows it, refuse clears it.
+    std::exception_ptr failure;
 
     bool has_state() const noexcept {
         return success && temperature && pressure
@@ -938,10 +941,14 @@ EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const Equi
     const std::optional<EquilibriumResult>& start = std::nullopt);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
 // `recover`: the public no-start solve and cooling onset only (ALG-EQUILIBRIUM neutral recovery, #565).
+// try_solve_compiled returns a numerical failure in its result; solve_compiled throws it.
 struct DriverLimits;
+EPC_API EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
+                                 core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false);
 EPC_API EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, EquilibriumResult* audit = nullptr, bool select_endpoint = false);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false);
 
 EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
 struct SolvedStateActionDiagnostics;
