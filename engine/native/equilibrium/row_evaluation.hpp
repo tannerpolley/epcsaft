@@ -1017,19 +1017,32 @@ RowSeries CompiledSystem::row_series(
         std::vector<std::size_t> needed = {1};
         if (has_caloric_condition()) needed.push_back(0);
         for (const std::size_t species : problem.phases[phase].support) needed.push_back(2 + species);
-        const auto contraction = [&](std::vector<std::vector<double>> directions, std::optional<std::size_t> component) {
-            if (component) {
-                std::vector<double> unit(width, 0.0);
-                unit[*component] = 1.0;
-                directions.push_back(unit);
-            }
-            // Central inputs are fixed by the prepared state; preserve raw direction bits and shape.
+        // Central inputs are fixed by the prepared state; a key preserves raw direction bits and shape.
+        const auto action_key = [&](const std::vector<std::vector<double>>& directions) {
             std::string key(reinterpret_cast<const char*>(&phase), sizeof(phase));
             for (const auto& direction : directions) {
                 const auto size = direction.size();
                 key.append(reinterpret_cast<const char*>(&size), sizeof(size));
                 key.append(reinterpret_cast<const char*>(direction.data()), size * sizeof(double));
             }
+            return key;
+        };
+        const auto with_unit = [&](std::vector<std::vector<double>> directions, std::optional<std::size_t> component) {
+            if (component) directions.emplace_back(width, 0.0).at(*component) = 1.0;
+            return directions;
+        };
+        // The actions `directions` needs with each unit, absent from the prepared state, in one model batch.
+        const auto contract_together = [&](const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>& units) {
+            std::vector<std::vector<std::vector<double>>> sets;
+            for (const std::size_t unit : units)
+                if (!prepared.energy_actions.count(action_key(with_unit(directions, unit)))) sets.push_back(with_unit(directions, unit));
+            if (sets.empty()) return;
+            auto actions = model->residual_energy_actions(prepared.temperature, prepared.volume[phase], prepared.composition[phase], sets);
+            for (std::size_t i = 0; i < sets.size(); ++i) prepared.energy_actions.emplace(action_key(sets[i]), std::move(actions[i]));
+        };
+        const auto contraction = [&](std::vector<std::vector<double>> directions, std::optional<std::size_t> component) {
+            directions = with_unit(std::move(directions), component);
+            auto key = action_key(directions);
             const auto found = prepared.energy_actions.find(key);
             const bool reused = found != prepared.energy_actions.end();
             const auto& energy = reused ? found->second : prepared.energy_actions.emplace(
@@ -1045,6 +1058,7 @@ RowSeries CompiledSystem::row_series(
                 for (std::size_t j = 0; j < width; ++j)
                     series.gradient[k][i] += derivative.hessian[i * width + j] * series.point[k][j];
             if (k == 2) {
+                contract_together({series.point[1], series.point[1]}, needed);
                 for (const std::size_t j : needed)
                     series.gradient[2][j] += 0.5 * contraction({series.point[1], series.point[1]}, j);
             } else if (k == 3) {

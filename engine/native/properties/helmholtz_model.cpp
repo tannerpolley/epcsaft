@@ -14,6 +14,7 @@
 #include <bitset>
 #include <cmath>
 #include <chrono>
+#include <cstring>
 #include <future>
 #include <limits>
 #include <iomanip>
@@ -1489,6 +1490,23 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
 
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
     const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
+    return residual_energy_actions(temperature, volume, amounts, {directions}).front();
+}
+
+std::vector<ResidualEnergyAction> HelmholtzModel::residual_energy_actions(double temperature, double volume,
+    const std::vector<double>& amounts, const std::vector<std::vector<std::vector<double>>>& sets) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<ResidualEnergyAction> results;
+    std::vector<double> held;
+    for (const auto& directions : sets)
+        results.push_back(residual_energy_action_locked(temperature, volume, amounts, directions, held));
+    return results;
+}
+
+// `held` is the first-order coefficient of the repeated-direction path whose orders one and two the tape of this point
+// holds within one locked sequence of calls, or empty.
+ResidualEnergyAction HelmholtzModel::residual_energy_action_locked(double temperature, double volume,
+    const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions, std::vector<double>& held) const {
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
@@ -1513,7 +1531,6 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
         }
         for (double& value : normalized[direction]) value /= std::max(norms[direction], std::numeric_limits<double>::min());
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
     core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
     const double density = total / volume;
@@ -1554,12 +1571,15 @@ ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, 
             for (std::size_t i = 0; i < width; ++i) series[1][i] = s * normalized[repeated->second][i];
             for (std::size_t i = 0; i < width; ++i)
                 series[3][i] = sign * normalized[repeated->first][i];
+            const bool same = held.size() == width && std::memcmp(held.data(), series[1].data(), width * sizeof(double)) == 0;
             coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual).front() / (s * s);
+                &result.diagnostics.association_residual, nullptr, nullptr, nullptr, same ? 2 : 0).front() / (s * s);
+            held = series[1];
             ++result.diagnostics.directional_paths;
         }
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
+        held.clear();
         // Half of the 2^q linear sign paths, weighted by their sign products.
         std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));
         series.front() = point;

@@ -151,6 +151,7 @@ struct HelmholtzTape final {
     bool residual_available = true, ideal_available = false;
     std::vector<double> site_values;
     std::vector<double> zero_point, zero_value;
+    std::vector<double> order_residual;  // implicit_taylor's site residual of each order now on the tape
 
     static std::unique_ptr<HelmholtzTape> record(
         const Parameters& parameters,
@@ -254,6 +255,7 @@ struct HelmholtzTape final {
         if (zero_point.size() != point.size()
             || std::memcmp(zero_point.data(), point.data(), point.size() * sizeof(double)) != 0) {
             zero_point.clear();
+            order_residual.clear();  // the higher orders on the tape belonged to the previous point
             zero_value = function.Forward(0, point);
             zero_point = point;
             if (forward_count != nullptr) ++*forward_count;
@@ -269,7 +271,8 @@ struct HelmholtzTape final {
         std::size_t* forward_count = nullptr,
         double* coefficient_residual = nullptr,
         std::vector<std::vector<double>>* output_prefix = nullptr,
-        std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr
+        std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr,
+        std::size_t held = 0  // orders 1..held stay on the tape from the preceding call, whose coefficients through `held` were these
     ) {
         core::CalculationWork::energy_evaluation();
         core::Scope scope("implicit_taylor"), evaluation("evaluate");
@@ -291,6 +294,12 @@ struct HelmholtzTape final {
                 if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-output[1+a]);
                 continue;
             }
+            if (current <= held && current < order_residual.size()) {
+                if (coefficient_residual != nullptr) *coefficient_residual = std::max(*coefficient_residual, order_residual[current]);
+                continue;
+            }
+            order_residual.resize(std::max(order_residual.size(), order + 1));
+            order_residual[current] = 0.0;
             const auto known = function.Forward(current, input);
             if (forward_count != nullptr) ++*forward_count;
             if (site_count && factorization != nullptr) {
@@ -312,7 +321,7 @@ struct HelmholtzTape final {
             if (output_prefix != nullptr) output_prefix->push_back(output);
             if (site_coefficients) site_coefficients->insert(site_coefficients->end(), input.begin() + regular_count, input.end());
             if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-known[1+a]);
-            if (coefficient_residual != nullptr && site_count != 0 && factorization != nullptr) {
+            if (site_count != 0 && factorization != nullptr) {
                 double scale = 1.0;
                 for (std::size_t site = 0; site < site_count; ++site)
                     scale = std::max(scale, std::abs(known[1 + site]));
@@ -321,8 +330,9 @@ struct HelmholtzTape final {
                         && std::isfinite(output[1 + site])
                         ? std::abs(output[1 + site]) / scale
                         : std::numeric_limits<double>::infinity();
-                    *coefficient_residual = std::max(*coefficient_residual, residual);
+                    order_residual[current] = std::max(order_residual[current], residual);
                 }
+                if (coefficient_residual != nullptr) *coefficient_residual = std::max(*coefficient_residual, order_residual[current]);
             }
         }
         return output;

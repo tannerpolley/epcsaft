@@ -552,6 +552,9 @@ lower-triangle Hessian in `q`: native T and P actions in their columns, `J_y B` 
 actions in the theta columns, including every mixed entry. The native actions own the
 ln K(T), reaction-reference and density chains in T and P. E5 owns these implicit actions, not a finite-difference
 callback. Pyomo owns any additional control products, ratios and process units.
+A real argument that is a constant of the caller's problem, which ASL marks in `arglist::dig`
+(a fixed T, P, feed or parameter), costs no derivative work: its gradient column and Hessian
+pairs are neither computed nor written, and every other entry is unchanged.
 Both functions share one solved state per record and `q`, and each fills only its own
 rows: an enthalpy refusal fails only the enthalpy function. Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap

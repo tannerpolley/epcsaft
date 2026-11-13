@@ -55,14 +55,15 @@ def record(model: Mixture, T: float = 298.15) -> str:
     return eq.asl_record(model, problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
 
 
-def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2, phases: int = 2) -> tuple[float, Any, Any]:
+def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2, phases: int = 2, fixed: Any = None) -> tuple[float, Any, Any]:
     """Row p*components + c at q, solid s at row phases*components + s, or the system enthalpy for row None; the Hessian
-    unpacked from the lower triangle i + j(j+1)/2."""
+    unpacked from the lower triangle i + j(j+1)/2. `fixed` marks the real arguments ASL passes as constants (dig)."""
     from epcsaft.idaes import PropertyExternalFunction, asl_library
     solid = row is not None and row >= phases * components
     callback = PropertyExternalFunction(library=str(asl_library()), function=ENTHALPY if row is None else SOLID if solid else FUNCTION)
     strings = [] if row is None else [str(row - phases * components)] if solid else [str(row // components), str(row % components)]
-    v, g, h = callback.evaluate_fgh([*q, text, *strings], fgh=order)
+    marks = None if fixed is None else [*fixed, *[False] * (1 + len(strings))]
+    v, g, h = callback.evaluate_fgh([*q, text, *strings], fixed=marks, fgh=order)
     n = len(q)
     hessian = np.array([[h[min(i, j) + max(i, j) * (max(i, j) + 1) // 2] for j in range(n)] for i in range(n)]) if order == 2 else None
     return float(v), np.array(g[:n]) if order else None, hessian
@@ -93,8 +94,8 @@ def native(model: Mixture, feed: Any, target: eq.Problem | None = None, enthalpy
     return [[zero[r].value, *(b[r].action for b in first), *(b[r].action for b in second)] for r in range(len(observables))]
 
 
-def callback_row(text: str, q: Any, row: int | None, components: int = 2, phases: int = 2) -> list[float]:
-    v, g, h = fgh(text, q, row, 2, components, phases)
+def callback_row(text: str, q: Any, row: int | None, components: int = 2, phases: int = 2, fixed: Any = None) -> list[float]:
+    v, g, h = fgh(text, q, row, 2, components, phases, fixed)
     return [v, *g, *(h[i, j] for j in range(len(q)) for i in range(j + 1))]
 
 
@@ -115,6 +116,22 @@ def test_record_equals_direct_engine() -> None:
                 assert [x.hex() for x in got[row]] == [float(x).hex() for x in want[row]], (q, row)
             else:
                 assert got[row] == pytest.approx(want[row], rel=1e-12, abs=0.0), (q, row)
+
+
+def test_constant_arguments_keep_the_other_columns() -> None:
+    """A1: at a state the callback first enters with arguments marked constant, the value and every first and second
+    action among the other arguments equal the direct Engine bitwise, and no entry of a constant argument is written."""
+    from epcsaft.idaes import PropertyExternalFunction, asl_library
+    model, pairs = mixture(active=False), [(i, j) for j in range(4) for i in range(j + 1)]
+    for G, fixed in (((0.7, 0.295), [True, True, False, False]), ((0.7, 0.29), [False, False, True, False])):
+        callback = PropertyExternalFunction(library=str(asl_library()), function=FUNCTION)
+        _, g, h = callback._evaluate([*TP0, *G, record(model), "0", "0"], [*fixed, False, False, False], 2)
+        assert {g[i] for i in range(4) if fixed[i]} | {h[i + j * (j + 1) // 2] for i, j in pairs if fixed[i] or fixed[j]} == {0.0}, G
+        want = native(model, G)
+        keep = [True, *(not f for f in fixed), *(not (fixed[i] or fixed[j]) for i, j in pairs)]
+        for row in range(4):
+            got = callback_row(record(model), [*TP0, *G], row, fixed=fixed)
+            assert [x.hex() for x, k in zip(got, keep, strict=True) if k] == [float(x).hex() for x, k in zip(want[row], keep, strict=True) if k], (G, row)
 
 
 def test_columns_match_central_differences() -> None:

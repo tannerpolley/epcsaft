@@ -34,18 +34,15 @@ thread_local std::string callback_error;
 
 constexpr double invalid_value = std::numeric_limits<double>::quiet_NaN();
 
+// ASL reads no partial with respect to a real argument it marks in `dig` (a constant of the problem); those stay untouched.
+bool live(const arglist* arguments, int i) { return arguments->dig == nullptr || arguments->dig[i] == 0; }
+
 void invalidate(arglist* arguments) {
     if (arguments == nullptr) return;
-    if (arguments->derivs != nullptr) {
-        for (int index = 0; index < arguments->nr; ++index) {
-            arguments->derivs[index] = invalid_value;
-        }
-    }
-    if (arguments->hes != nullptr) {
-        const int count = arguments->nr * (arguments->nr + 1) / 2;
-        for (int index = 0; index < count; ++index) {
-            arguments->hes[index] = invalid_value;
-        }
+    for (int j = 0, packed = 0; j < arguments->nr; ++j) {
+        if (arguments->derivs != nullptr && live(arguments, j)) arguments->derivs[j] = invalid_value;
+        for (int i = 0; i <= j; ++i, ++packed)
+            if (arguments->hes != nullptr && live(arguments, i) && live(arguments, j)) arguments->hes[packed] = invalid_value;
     }
 }
 
@@ -171,11 +168,12 @@ struct EquilibriumContext final {
     eq::EquilibriumResult anchor_result;
     std::unique_ptr<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
+    std::optional<eq::PhasePoint> prepared;  // the central phase point of `compiled`, kept for every batch at `feed`
     std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
     struct Rows final {
         std::vector<double> values;
         std::vector<std::vector<double>> gradients, hessians;
-        int order = -1;  // highest order filled at `feed`
+        std::vector<char> filled;  // at `feed`: [0] the values, then each gradient column, then each packed Hessian pair
     } rows[2];  // 0: the F C phase-component amounts, then the S solid amounts; 1: the system enthalpy
 };
 
@@ -248,6 +246,7 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
         rows.values.resize(counts[kind]);
         rows.gradients.assign(counts[kind], std::vector<double>(n));
         rows.hessians.assign(counts[kind], std::vector<double>(n * (n + 1) / 2));
+        rows.filled.assign(1 + n + n * (n + 1) / 2, 0);
     }
     context->anchor_result = eq::solve_equilibrium(*context->model, problem);
     if (auto failure = central_failure(*context, context->anchor_result, observable)) throw *failure;
@@ -296,6 +295,7 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
     context.compiled.reset();  // it points at its model
+    context.prepared.reset();
     if (theta == context.model->active_parameter_values()) context.shifted.reset();
     if (theta != (context.shifted ? *context.shifted : *context.model).active_parameter_values()) try {
         context.shifted = model_at(*context.model, theta);  // rebuilt against the current model's own values
@@ -333,11 +333,11 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     if (auto failure = central_failure(context, context.central, observable)) throw *failure;
     context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
     context.feed = q;
-    for (auto& rows : context.rows) rows.order = -1;
+    for (auto& rows : context.rows) std::fill(rows.filled.begin(), rows.filled.end(), 0);
 }
 
 // One native batch of one kind's rows; an unavailable row fails only its own kind's callback.
-// ponytail: a caller reading both kinds at a new q pays both batches (185 ms Hessian against 116 ms combined); the upgrade is
+// ponytail: a caller reading both kinds at a new q pays both batches; the upgrade is
 // one combined batch with per-row failure orders, as PropertyContext::Branch::failures keeps, which could also fill the
 // amount rows from an enthalpy call when they are all available.
 eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates, int kind) {
@@ -355,7 +355,7 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         const auto theta = e.begin() + 2 + controls;
         request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
-    auto batch = eq::solved_state_actions(*context.compiled, context.central, request);
+    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.prepared);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
         const auto& item = batch.results[row];
         auto status = item.status;
@@ -373,6 +373,7 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         }
         context.rows[kind].values[row] = *item.value;
     }
+    context.rows[kind].filled[0] = 1;
     return batch;
 }
 
@@ -420,26 +421,21 @@ double equilibrium_observable(arglist* arguments, int kind) {
         }
         if (!context.compiled || context.feed != q) select_state(context, q, observable);
         auto& rows = context.rows[kind == 1];  // the amount batch also holds the solid amounts
-        const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
-        if (order == 0 && rows.order < 0) actions(context, {-1}, kind == 1);
-        if (order >= 1 && rows.order < 1) {
-            for (int i = 0; i < n; ++i) {
-                const auto batch = actions(context, {i}, kind == 1);
-                for (std::size_t row = 0; row < rows.values.size(); ++row) rows.gradients[row][i] = *batch.results[row].action;
-            }
-        }
-        if (order >= 2 && rows.order < 2) {
-            std::size_t packed = 0;
-            for (int j = 0; j < n; ++j) for (int i = 0; i <= j; ++i) {
-                const auto batch = actions(context, {i, j}, kind == 1);
-                for (std::size_t row = 0; row < rows.values.size(); ++row) rows.hessians[row][packed] = *batch.results[row].action;
-                ++packed;
-            }
-        }
-        rows.order = std::max(rows.order, order);
         const auto row = kind == 2 ? phases * count + p : p * count + c;
-        if (arguments->derivs != nullptr) std::copy(rows.gradients[row].begin(), rows.gradients[row].end(), arguments->derivs);
-        if (arguments->hes != nullptr) std::copy(rows.hessians[row].begin(), rows.hessians[row].end(), arguments->hes);
+        // Each live gradient column and Hessian pair is one batch, computed once per state and kind.
+        const auto fill = [&](const std::vector<int>& coordinates, char& filled, std::vector<std::vector<double>>& out, std::size_t entry, real* to) {
+            if (std::any_of(coordinates.begin(), coordinates.end(), [&](int i) { return !live(arguments, i); })) return;
+            if (!filled) {
+                const auto batch = actions(context, coordinates, kind == 1);
+                for (std::size_t r = 0; r < rows.values.size(); ++r) out[r][entry] = *batch.results[r].action;
+                filled = 1;
+            }
+            to[entry] = out[row][entry];
+        };
+        for (int i = 0; arguments->derivs != nullptr && i < n; ++i) fill({i}, rows.filled[1 + i], rows.gradients, i, arguments->derivs);
+        for (int j = 0, packed = 0; arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
+            fill({i, j}, rows.filled[1 + n + packed], rows.hessians, packed, arguments->hes);
+        if (!rows.filled[0]) actions(context, {-1}, kind == 1);
         return rows.values[row];  // On the caller's declared absolute batch basis.
     } catch (const EquilibriumFailure& error) {
         callback_error = error.what();

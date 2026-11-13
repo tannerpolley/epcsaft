@@ -906,7 +906,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
 static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
-    const CaloricNeed& covering = {}
+    const CaloricNeed& covering = {}, std::optional<PhasePoint>* prepared = nullptr
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -943,7 +943,7 @@ static SolvedStateActionBatch evaluate_action(
         const double delta = enthalpy_target ? thermal.enthalpy_j : thermal.temperature_k;
         const bool new_thermal = !shared || !shared->thermal_enthalpy;
         if (new_thermal) {
-            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope, covering);
+            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope, covering, prepared);
             if (!shared) {
                 for (std::size_t i = 0; i < first.results.size(); ++i) {
                     first.results[i].observable = request.observables[i];
@@ -953,9 +953,9 @@ static SolvedStateActionBatch evaluate_action(
             }
             shared->thermal_enthalpy = std::move(first);
         }
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
         enthalpy.directions.insert(enthalpy.directions.begin(), thermal);
-        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope, covering);
+        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
         const auto &direction = request.directions.front();
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
@@ -1015,7 +1015,9 @@ static SolvedStateActionBatch evaluate_action(
         shared.emplace();
         auto& common = *shared;
         common.caloric = covering;
-        common.center.prepared = compiled.prepare(central.coordinates);
+        // A caller's point is the fresh preparation of this same system and state; each center works on its own copy.
+        if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates);
+        common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates);
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
         const auto evaluation = compiled.evaluate_at(common.center.prepared);
@@ -1341,14 +1343,25 @@ static SolvedStateActionBatch evaluate_action(
     return batch;
 }
 
+static SolvedStateActionBatch actions_at(const CompiledSystem& compiled, const EquilibriumResult& central,
+    const SolvedStateActionRequest& request, std::optional<PhasePoint>* prepared, core::Scope& scope) {
+    validate_request(compiled, central, request);
+    std::optional<ActionCenter> shared;
+    if (compiled.solids.empty()) return evaluate_action(compiled, central, request, shared, scope, {}, prepared);
+    return evaluate_action(classify_solids(compiled, central.coordinates), central, request, shared, scope, {}, prepared);
+}
+
 SolvedStateActionBatch solved_state_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central, const SolvedStateActionRequest& request
 ) {
     core::Scope scope("solved_state_actions");
-    validate_request(compiled, central, request);
-    std::optional<ActionCenter> shared;
-    if (compiled.solids.empty()) return evaluate_action(compiled, central, request, shared, scope);
-    return evaluate_action(classify_solids(compiled, central.coordinates), central, request, shared, scope);
+    return actions_at(compiled, central, request, nullptr, scope);
+}
+
+SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
+    const SolvedStateActionRequest& request, std::optional<PhasePoint>& prepared) {
+    core::Scope scope("solved_state_actions");
+    return actions_at(compiled, central, request, &prepared, scope);
 }
 
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
