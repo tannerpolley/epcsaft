@@ -39,3 +39,6 @@ analyses/2026-errors-in-variables/results/ionic/*/
 # Restored locally from pinned FeOs sources (non-commercial use).
 data/packets/feos-esper-2023/
 data/packets/feos-rehner-2023/
+
+# Private validation repository checkout (tannerpolley/epcsaft-validation)
+/validation/
