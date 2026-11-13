@@ -1529,6 +1529,38 @@ class DensityDiagnosticBracket:
     upper_residual: float
     """Pressure minus target pressure at upper, Pa."""
 
+class DensityDiagnosticRequest:
+    """One density_diagnostics request; every unset field keeps its native default."""
+    nodes: list[float]
+    """Increasing positive densities in mol/m^3 below the geometric cap; empty selects 513 geometric densities from 1e-3 mol/m^3 to 0.999 times the cap."""
+    density_tolerance: float
+    """Positive absolute density bracket width in mol/m^3; default 1e-9."""
+    log_tolerance: float
+    """Positive dimensionless logarithmic density bracket width; default 1e-14."""
+    finite_upper: float
+    """Upper density in mol/m^3 for the optional finite-domain search; default 0."""
+    max_evaluations: int
+    """Positive count limiting diagnostic EOS evaluations; default 100000."""
+    max_seconds: Optional[float]
+    """Positive elapsed-time limit in s, default 60; None sets no time budget."""
+    finite_anchor: Optional[float]
+    """Finite density in mol/m^3 starting the evaluability-boundary search; None skips it."""
+    refine: bool
+    """Whether crossing and fold sign brackets are refined; default True."""
+    adaptive: bool
+    """Whether to add adaptive density samples; default True."""
+    evaluation_order: DerivativeOrder
+    """Gradient, PressureSlope or Hessian for finite-domain admission; default PressureSlope."""
+    def __init__(self) -> None:
+        """Initialize DensityDiagnosticRequest with the native defaults.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        ...
+
 class DensityDiagnostics:
     """Finite pressure-root and mechanical-loop search evidence."""
     solver_options: list[dict[str, Any]]
@@ -1865,11 +1897,8 @@ class HelmholtzModel:
         """
         ...
     def density_diagnostics(self, temperature: float, pressure: float, composition: Sequence[float],
-                            nodes: Sequence[float], density_tolerance: float, log_tolerance: float,
-                            max_evaluations: int, max_seconds: float, adaptive: bool,
-                            finite_anchor: Optional[float], finite_upper: float,
-                            evaluation_order: DerivativeOrder) -> DensityDiagnostics:
-        """Inspect a declared finite isotherm grid and refine crossings.
+                            request: DensityDiagnosticRequest) -> DensityDiagnostics:
+        """Inspect a finite isotherm grid and refine crossings.
 
         Parameters
         ----------
@@ -1879,24 +1908,8 @@ class HelmholtzModel:
             Positive prescribed pressure in Pa.
         composition : Sequence[float]
             Length n, dimensionless mole fractions in component_ids order; normalized and charge neutral.
-        nodes : Sequence[float]
-            At least two strictly increasing positive densities in mol/m^3 below the geometric cap.
-        density_tolerance : float
-            Positive absolute density bracket width in mol/m^3.
-        log_tolerance : float
-            Positive dimensionless logarithmic density bracket width.
-        max_evaluations : int
-            Positive count limiting diagnostic EOS evaluations.
-        max_seconds : float
-            Positive elapsed-time limit in seconds.
-        adaptive : bool
-            Whether to add adaptive density samples.
-        finite_anchor : Optional[float]
-            Optional finite density in mol/m^3 starting the evaluability-boundary search.
-        finite_upper : float
-            Upper density in mol/m^3 for the optional finite-domain search.
-        evaluation_order : DerivativeOrder
-            Gradient, PressureSlope or Hessian for finite-domain admission.
+        request : DensityDiagnosticRequest
+            Grid, bracket widths, budgets and optional finite-domain search.
 
         Returns
         -------

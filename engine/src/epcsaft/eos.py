@@ -10,7 +10,6 @@ Parameter names and array order come from ``Parameters``.
 from __future__ import annotations
 
 import json
-import math
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from pathlib import Path
@@ -689,16 +688,15 @@ class Mixture:
         Partial results retain budget/domain causes; a finite scan is not a proof
         that no additional root exists (ALG-DENSITY).
         """
-        if nodes is None:
-            span = math.log(0.999 * self.molar_density_upper_bound(T, x=x) / 1e-3)
-            nodes = [math.exp(math.log(1e-3) + k / 512 * span) for k in range(513)]
-        order = DerivativeOrder.PressureSlope if evaluation_order is None else evaluation_order
-        return self._model.density_diagnostics(
-            T, P, self._composition(x), nodes, 1e-9 if density_tolerance is None else density_tolerance,
-            1e-14 if log_tolerance is None else log_tolerance, 100000 if max_evaluations is None else max_evaluations,
-            60.0 if max_seconds is None else max_seconds, True if adaptive is None else adaptive, finite_anchor,
-            0.0 if finite_upper is None else finite_upper, order,
-        )
+        request = _core.DensityDiagnosticRequest()
+        for name, value in dict(
+            nodes=nodes, density_tolerance=density_tolerance, log_tolerance=log_tolerance,
+            max_evaluations=max_evaluations, max_seconds=max_seconds, adaptive=adaptive, finite_anchor=finite_anchor,
+            finite_upper=finite_upper, evaluation_order=evaluation_order,
+        ).items():
+            if value is not None:  # None keeps the native default
+                setattr(request, name, value)
+        return self._model.density_diagnostics(T, P, self._composition(x), request)
 
     def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:
         """Return the geometric packing limit for the declared composition.

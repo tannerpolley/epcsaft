@@ -323,6 +323,18 @@ struct DensityDiagnostics final {
     std::string stop;
     std::optional<core::Convergence> first_numerical_failure;
 };
+// One density_diagnostics request; every default is native. Empty `nodes` (increasing positive mol/m3 below
+// the geometric cap) selects 513 geometric densities from 1e-3 mol/m3 to 0.999 of the cap. Bracket widths are
+// absolute (mol/m3) and natural-log; `refine` false keeps crossings and folds as their declared sign brackets;
+// no `max_seconds` (s) is no time budget; `finite_anchor` and `finite_upper` (mol/m3) bound the finite-domain search.
+struct DensityDiagnosticRequest final {
+    std::vector<double> nodes;
+    double density_tolerance = 1e-9, log_tolerance = 1e-14, finite_upper = 0.0;
+    std::size_t max_evaluations = 100000;
+    std::optional<double> max_seconds = 60.0, finite_anchor;
+    bool refine = true, adaptive = true;
+    DerivativeOrder evaluation_order = DerivativeOrder::PressureSlope;
+};
 
 enum class SpeciesReference { InfiniteDilution, PureLiquid, PureGas };
 
@@ -517,12 +529,8 @@ public:
         double temperature,
         const std::vector<double>& mole_fractions
     ) const;
-    EPC_API DensityDiagnostics density_diagnostics(
-        double temperature, double pressure, const std::vector<double>& composition,
-        const std::vector<double>& nodes, double density_tolerance, double log_tolerance,
-        std::size_t max_evaluations, double max_seconds, bool adaptive,
-        std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
-    ) const;
+    EPC_API DensityDiagnostics density_diagnostics(double temperature, double pressure,
+        const std::vector<double>& composition, const DensityDiagnosticRequest& request = {}) const;
     // Physical-state admission (full-eos.md §12): |sum z_i x_i| <= COMPOSITION_SUM_TOLERANCE (absolute).
     // Public state requests and equilibrium feeds only; internal iterates use the unconstrained extension.
     EPC_API void validate_electroneutrality(const std::vector<double>& mole_fractions) const;
@@ -783,6 +791,10 @@ void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const 
     const std::vector<double>& composition, const Parameters& parameters, double number_density,
     const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
+// ALG-DENSITY search domain in mol/m3: DENSITY_LOWER_FRACTION of P/RT to DENSITY_UPPER_FRACTION of the
+// close-packing density for packing coefficient `coefficient`; log_nodes spaces `intervals` cells geometrically.
+std::array<double, 2> density_search_domain(double temperature, double pressure, double coefficient);
+std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t intervals);
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
 // liquid-side; explicit labels and roots without a sample are kept. liquid_reference_refusal names a vapor-side root.
 DensityBranch density_side(DensityBranch branch, double density, std::optional<double> sample);

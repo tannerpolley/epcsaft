@@ -283,17 +283,16 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                         throw std::runtime_error("nonpositive pure-reference pressure slope");
                     if (state.density_branch == DensityBranch::Unspecified) {
                         // One stable root serves the declared branch unless it lies past the mechanical
-                        // loop. The ALG-DENSITY scan grid finds the folds; a stable root is already sided
-                        // against an unrefined fold sign bracket, so no refinement or budget is requested.
-                        const double low = std::log(policy::DENSITY_LOWER_FRACTION.value * pressure
-                            / (GAS_CONSTANT_J_PER_MOL_K * temperature)), span = std::log(policy::DENSITY_UPPER_FRACTION.value
-                            * model.molar_density_upper_bound(temperature, composition)) - low;
-                        const auto n = static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value);
-                        std::vector<double> nodes(n + 1);
-                        for (std::size_t k = 0; k <= n; ++k) nodes[k] = std::exp(low + static_cast<double>(k) / n * span);
-                        constexpr double none = std::numeric_limits<double>::max();
-                        const auto loop = model.density_diagnostics(temperature, pressure, composition, nodes, none, none,
-                            std::numeric_limits<std::size_t>::max(), none, true, std::nullopt, none, DerivativeOrder::PressureSlope);
+                        // loop. The ALG-DENSITY solve grid finds the folds; a stable root is already sided
+                        // against an unrefined fold sign bracket, so no refinement or time budget is requested.
+                        const auto [lower, upper] = properties::density_search_domain(temperature, pressure,
+                            model.packing_fraction_coefficient(temperature, composition));
+                        DensityDiagnosticRequest request;
+                        request.nodes = properties::log_nodes(std::log(lower), std::log(upper),
+                            static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value));
+                        request.refine = false;
+                        request.max_seconds = std::nullopt;
+                        const auto loop = model.density_diagnostics(temperature, pressure, composition, request);
                         const bool gas = choice == SpeciesReference::PureGas;
                         if (!loop.unresolved.empty() || (!loop.spinodals.empty() && (gas
                             ? state.molar_density > loop.spinodals.front().upper

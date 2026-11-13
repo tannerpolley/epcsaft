@@ -224,6 +224,10 @@ void register_eos(nb::module_& module) {
             pressure_density_derivative, lower, upper, residual, mechanical_sign, linked, declared, cause, stop);
     nb::class_<epcsaft::DensityDiagnosticBracket>(module, "DensityDiagnosticBracket")
         EPCSAFT_READONLY(epcsaft::DensityDiagnosticBracket, lower, upper, lower_residual, upper_residual);
+    nb::class_<epcsaft::DensityDiagnosticRequest>(module, "DensityDiagnosticRequest")
+        .def(nb::init<>())
+        EPCSAFT_READWRITE(epcsaft::DensityDiagnosticRequest, nodes, density_tolerance, log_tolerance, finite_upper,
+            max_evaluations, max_seconds, finite_anchor, refine, adaptive, evaluation_order);
     nb::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
@@ -300,11 +304,8 @@ void register_eos(nb::module_& module) {
              nb::arg("branch"), nb::arg("anchor_density") = std::nullopt, nb::arg("derived_properties") = false)
         .def("molar_density_upper_bound", &epcsaft::HelmholtzModel::molar_density_upper_bound, nb::arg("temperature"),
              nb::arg("composition"))
-        .def("density_diagnostics", &epcsaft::HelmholtzModel::density_diagnostics,
-             nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("nodes"),
-             nb::arg("density_tolerance"), nb::arg("log_tolerance"), nb::arg("max_evaluations"),
-             nb::arg("max_seconds"), nb::arg("adaptive"), nb::arg("finite_anchor"),
-             nb::arg("finite_upper"), nb::arg("evaluation_order"))
+        .def("density_diagnostics", &epcsaft::HelmholtzModel::density_diagnostics, nb::arg("temperature"),
+             nb::arg("pressure"), nb::arg("composition"), nb::arg("request"))
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
     nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")

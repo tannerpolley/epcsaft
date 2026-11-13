@@ -42,12 +42,6 @@ void density_conditioning(core::Convergence& record, double density, double deri
 
 namespace {
 
-// The diagnostic scan's evaluation or time budget ran out; it ends the scan instead of
-// becoming one sample's cause.
-struct DiagnosticBudgetExhausted final : std::runtime_error {
-    DiagnosticBudgetExhausted() : std::runtime_error("density diagnostic budget exhausted") {}
-};
-
 // 2 - phi: the golden-section interior fraction, a mathematical constant.
 constexpr double GOLDEN_SECTION = 0.3819660112501051;
 
@@ -629,7 +623,7 @@ void search_slope(
                     (u < x ? a : b) = u;
                 }
             }
-        } catch (const std::runtime_error& error) {
+        } catch (const std::exception& error) {
             if (unresolved) unresolved(std::exp(a), std::exp(b), error.what());
             throw;
         }
@@ -668,13 +662,6 @@ std::vector<DensityRoot> partition_roots(
     return roots;
 }
 
-std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t intervals) {
-    std::vector<double> nodes;
-    for (std::size_t i = 0; i <= intervals; ++i)
-        nodes.push_back(std::exp(log_lower + static_cast<double>(i) / intervals * (log_upper - log_lower)));
-    return nodes;
-}
-
 // Deterministic log-density grid, then the cells. A loop with positive slopes at both ends
 // of its cell is invisible to the cells; with one mechanical loop P_rho has one interior
 // minimum, so a positive grid minimum of the slope is bracketed and searched by golden
@@ -691,7 +678,7 @@ std::vector<DensityRoot> scan_roots(
         part.lower = std::max(std::exp(log_lower), part.lower); part.upper = std::min(std::exp(log_upper), part.upper);
         part.active = true;
         if (part.lower < part.upper) {
-            auto nodes = log_nodes(std::log(part.lower), std::log(part.upper), static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value));
+            auto nodes = properties::log_nodes(std::log(part.lower), std::log(part.upper), static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value));
             nodes.front() = part.lower; nodes.back() = part.upper;
             for (const auto& [rho, point] : part.samples) if (rho > part.lower && rho < part.upper) nodes.push_back(rho);
             std::sort(nodes.begin(), nodes.end()); nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
@@ -728,7 +715,7 @@ std::vector<DensityRoot> scan_roots(
     bool linked = false;
     if (scope.diagnostics_on()) scope.probe("density_scan_input",
         {temperature, pressure, std::exp(log_lower), std::exp(log_upper), static_cast<double>(intervals)});
-    auto nodes = log_nodes(log_lower, log_upper, intervals);
+    auto nodes = properties::log_nodes(log_lower, log_upper, intervals);
     if (model.partition && model.partition->lower < model.partition->upper) {
         nodes.insert(nodes.end(), {model.partition->lower, model.partition->upper});
         std::sort(nodes.begin(), nodes.end()); nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
@@ -1314,22 +1301,30 @@ DensityRoot anchor(
 
 }  // namespace
 
-DensityDiagnostics HelmholtzModel::density_diagnostics(
-    double temperature, double pressure, const std::vector<double>& composition,
-    const std::vector<double>& nodes, double density_tolerance, double log_tolerance,
-    std::size_t max_evaluations, double max_seconds, bool adaptive,
-    std::optional<double> finite_anchor, double finite_upper, DerivativeOrder evaluation_order
-) const {
+std::array<double, 2> properties::density_search_domain(double temperature, double pressure, double coefficient) {
+    // EqID: ideal_gas_density; EqID: density_upper_bound
+    return {pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature) * policy::DENSITY_LOWER_FRACTION.value,
+            policy::CLOSE_PACKING_FRACTION.value / coefficient * policy::DENSITY_UPPER_FRACTION.value};
+}
+
+std::vector<double> properties::log_nodes(double log_lower, double log_upper, std::size_t intervals) {
+    std::vector<double> nodes;
+    for (std::size_t i = 0; i <= intervals; ++i)
+        nodes.push_back(std::exp(log_lower + static_cast<double>(i) / intervals * (log_upper - log_lower)));
+    return nodes;
+}
+
+DensityDiagnostics HelmholtzModel::density_diagnostics(double temperature, double pressure,
+    const std::vector<double>& composition, const DensityDiagnosticRequest& request) const {
     core::Scope scope("density_diagnostics");
     validate_composition(composition);
-    if (!std::isfinite(temperature) || temperature <= 0.0 || !std::isfinite(pressure) || pressure <= 0.0
-        || !std::isfinite(density_tolerance) || density_tolerance <= 0.0
-        || !std::isfinite(log_tolerance) || log_tolerance <= 0.0
-        || !std::isfinite(max_seconds) || max_seconds <= 0.0 || max_evaluations == 0)
+    const auto positive = [](double value) { return std::isfinite(value) && value > 0.0; };
+    if (!positive(temperature) || !positive(pressure) || !positive(request.density_tolerance) || !positive(request.log_tolerance)
+        || (request.max_seconds && !positive(*request.max_seconds)) || request.max_evaluations == 0)
         throw std::invalid_argument("invalid density diagnostic inputs or budget");
     DensityDiagnostics result;
     result.solver_options = solver_options();
-    result.evaluation_order = evaluation_order;
+    result.evaluation_order = request.evaluation_order;
     // Composition and temperature are admitted above: the coefficient is computed once for the cap and every row.
     const double coefficient = [&] {
         core::Scope cap("molar_density_upper_bound");
@@ -1337,29 +1332,39 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         result.geometric_cap = density_upper_bound(value);
         return value;
     }();
+    // The default grid: 513 geometric densities from 1e-3 mol/m3 to 0.999 of the geometric cap.
+    auto nodes = request.nodes;
+    if (nodes.empty()) for (std::size_t k = 0; k <= 512; ++k)
+        nodes.push_back(std::exp(std::log(1e-3) + static_cast<double>(k) / 512 * std::log(0.999 * result.geometric_cap / 1e-3)));
     if (nodes.size() < 2) throw std::invalid_argument("density diagnostics require at least two declared nodes");
     for (std::size_t i = 0; i < nodes.size(); ++i)
         if (!std::isfinite(nodes[i]) || nodes[i] <= 0.0 || nodes[i] >= result.geometric_cap
             || (i && nodes[i] <= nodes[i - 1])) throw std::invalid_argument("invalid declared density grid");
-    if (finite_anchor && (!std::isfinite(*finite_anchor) || *finite_anchor <= 0.0
-        || *finite_anchor >= result.geometric_cap || !std::isfinite(finite_upper) || finite_upper <= *finite_anchor))
+    if (request.finite_anchor && (!positive(*request.finite_anchor) || *request.finite_anchor >= result.geometric_cap
+        || !std::isfinite(request.finite_upper) || request.finite_upper <= *request.finite_anchor))
         throw std::invalid_argument("invalid finite-domain interval");
-    if (evaluation_order != DerivativeOrder::Gradient && evaluation_order != DerivativeOrder::PressureSlope
-        && evaluation_order != DerivativeOrder::Hessian)
+    if (request.evaluation_order != DerivativeOrder::Gradient && request.evaluation_order != DerivativeOrder::PressureSlope
+        && request.evaluation_order != DerivativeOrder::Hessian)
         throw std::invalid_argument("finite-domain evaluation requires Gradient, PressureSlope or Hessian");
     const auto started = std::chrono::steady_clock::now();
     const PressureSeries<> series(*this, temperature, composition);
-    auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
-        if (result.evaluations >= max_evaluations
-            || std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= max_seconds)
-            throw DiagnosticBudgetExhausted();
+    // An exhausted budget ends the scan before the next evaluation; it is never one point's cause.
+    auto budget = [&] {
+        if (result.evaluations >= request.max_evaluations || (request.max_seconds
+            && std::chrono::duration<double>(std::chrono::steady_clock::now() - started).count() >= *request.max_seconds))
+            throw std::runtime_error("density diagnostic budget exhausted");
+    };
+    // The point at rho; a geometric exit, fluid-domain refusal or nonfinite value is its cause.
+    auto point_at = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
         if (rho >= result.geometric_cap) throw std::runtime_error("geometric domain exit");
-        // A fluid-domain refusal is an unavailable point here, like the geometric exit above.
-        auto point = [&] { try { return at_density(series, temperature, pressure, composition, rho, result.evaluations, order); }
-            catch (const std::invalid_argument& error) { throw std::runtime_error(error.what()); } }();
+        auto point = at_density(series, temperature, pressure, composition, rho, result.evaluations, order);
         if (!std::isfinite(point.pressure) || !std::isfinite(point.slope) || !std::isfinite(point.gradient_floor))
             throw std::runtime_error("nonfinite density evaluation");
         return point;
+    };
+    auto evaluate = [&](double rho, DerivativeOrder order = DerivativeOrder::PressureSlope) {
+        budget();
+        return point_at(rho, order);
     };
     auto row = [&](double rho, const PressurePoint& point, double lo, double hi, bool spinodal) {
         DensityDiagnosticPoint value;
@@ -1377,7 +1382,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
         auto value = [&](const PressurePoint& p) { return spinodal ? p.slope : p.pressure - pressure; };
         std::string stop = "bracket_tolerance";
         try {
-            while (hi - lo > density_tolerance || std::log(hi / lo) > log_tolerance) {
+            while (request.refine && (hi - lo > request.density_tolerance || std::log(hi / lo) > request.log_tolerance)) {
                 if (value(low) == 0.0 || value(high) == 0.0) break;
                 double rho = lo + 0.5 * (hi - lo);
                 if (!(rho > lo && rho < hi))
@@ -1386,7 +1391,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 if ((value(point) > 0.0) == (value(low) > 0.0)) { lo = rho; low = point; }
                 else { hi = rho; high = point; }
             }
-        } catch (const std::runtime_error& error) {
+        } catch (const std::exception& error) {
             auto record = row(lo, low, lo, hi, spinodal);
             record.stop = "unresolved_bracket";
             record.cause = error.what();
@@ -1403,8 +1408,9 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
     bool linked = false;
     try {
         for (double rho : nodes) {
+            budget();
             try {
-                const auto point = evaluate(rho);
+                const auto point = point_at(rho);
                 auto sample = row(rho, point, rho, rho, false);
                 sample.linked = linked;
                 result.samples.push_back(sample);
@@ -1423,8 +1429,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 result.declared_crossings = result.declared_brackets.size();
                 points.push_back({rho, point, linked});
                 linked = true;
-            } catch (const DiagnosticBudgetExhausted&) { throw;
-            } catch (const std::runtime_error& error) {
+            } catch (const std::exception& error) {
                 DensityDiagnosticPoint sample;
                 sample.molar_density = sample.lower = sample.upper = rho;
                 sample.cause = error.what();
@@ -1454,7 +1459,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             }
         };
         crossings(points);
-        if (adaptive) {
+        if (request.adaptive) {
             search_slope(series, temperature, pressure, composition, points, scope, result.evaluations,
                          [&](double rho) {
                 auto point = evaluate(rho);
@@ -1477,38 +1482,38 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
                 const auto& low = points[i - 1];
                 const auto fold = refine_crossing(low.density, low.point, node.density, node.point, true);
                 result.spinodals.push_back(fold);
-                if (adaptive) partitions.push_back({fold.molar_density, evaluate(fold.molar_density), true});
+                if (request.adaptive) partitions.push_back({fold.molar_density, evaluate(fold.molar_density), true});
             }
             partitions.push_back(node);
         }
-        if (adaptive) crossings(partitions);
+        if (request.adaptive) crossings(partitions);
         result.stop = result.pressure_roots.empty() ? "no_sampled_crossing" : "resolved_crossings";
         for (const auto& fold : result.spinodals)
             if (std::abs(fold.pressure - pressure) <= solver_options().value(policy::density)
                 * fold.molar_density * GAS_CONSTANT_J_PER_MOL_K * temperature)
                 result.stop = "unresolved_tangent_pressure_root";
-        if (finite_anchor) {
-            double lo = *finite_anchor, hi = lo;
-            evaluate(lo, evaluation_order);
+        if (request.finite_anchor) {
+            double lo = *request.finite_anchor, hi = lo;
+            evaluate(lo, request.evaluation_order);
             result.finite_domain = DensityDiagnosticPoint{};
             result.finite_domain->lower = result.finite_domain->upper = lo;
-            const double cap = std::min(finite_upper, result.geometric_cap);
+            const double cap = std::min(request.finite_upper, result.geometric_cap);
             bool unavailable = false;
             while (hi < cap) {
                 hi = std::min(2.0 * lo, cap);
                 result.finite_domain->upper = hi;
-                try { evaluate(hi, evaluation_order); lo = hi; }
-                catch (const DiagnosticBudgetExhausted&) { throw; }
-                catch (const std::runtime_error& error) {
+                budget();
+                try { point_at(hi, request.evaluation_order); lo = hi; }
+                catch (const std::exception& error) {
                     result.finite_domain->cause = error.what(); unavailable = true; break;
                 }
                 result.finite_domain->lower = lo;
             }
             while (unavailable && std::nextafter(lo, hi) < hi) {
                 const double rho = lo + 0.5 * (hi - lo);
-                try { evaluate(rho, evaluation_order); lo = rho; }
-                catch (const DiagnosticBudgetExhausted&) { throw; }
-                catch (const std::runtime_error& error) {
+                budget();
+                try { point_at(rho, request.evaluation_order); lo = rho; }
+                catch (const std::exception& error) {
                     hi = rho; result.finite_domain->cause = error.what();
                 }
                 result.finite_domain->lower = lo; result.finite_domain->upper = hi;
@@ -1516,7 +1521,7 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(
             result.finite_domain->molar_density = lo;
             result.finite_domain->stop = unavailable ? "finite_to_unavailable" : "declared_interval_finite";
         }
-    } catch (const std::runtime_error& error) {
+    } catch (const std::exception& error) {
         result.stop = error.what();
         if (result.finite_domain) result.finite_domain->stop = "unresolved_bracket";
     }
@@ -1702,11 +1707,10 @@ DensityRoot solve_density(
         return root;
     }
     const PressureSeries<> series(model, temperature, mole_fractions);
-    const double lower = ideal_density * policy::DENSITY_LOWER_FRACTION.value;
-    // EqID: density_upper_bound, from the series' admitted diameter.
+    // The packing coefficient from the series' admitted diameter.
     const double coefficient = packing_fraction_from_geometry(1.0, mole_fractions, model.parameters(), series.diameter());
     if (!(std::isfinite(coefficient) && coefficient > 0.0)) throw std::invalid_argument("invalid packing coefficient");
-    const double upper = policy::CLOSE_PACKING_FRACTION.value / coefficient * policy::DENSITY_UPPER_FRACTION.value;
+    const auto [lower, upper] = properties::density_search_domain(temperature, pressure, coefficient);
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
