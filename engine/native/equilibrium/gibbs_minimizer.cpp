@@ -146,13 +146,12 @@ std::string local_phase_instability(const CompiledSystem& compiled, const PhaseP
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
         const auto& support = phases[phase].support;
         const auto& x = prepared.composition[phase];
-        const std::string name = "local phase instability: phase " + phases[phase].name;
         HelmholtzSpectrum spectrum;
         try { spectrum = helmholtz_spectrum(prepared.derivative[phase], x, support); }
         catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) { return name + ": " + error.what(); }
+        catch (const std::exception& error) { return "phase " + phases[phase].name + " spectrum unavailable: " + error.what(); }
         const double lowest = spectrum.values(0), band = spectrum.band;
-        if (lowest < -band) { disposition = Candidate::Unstable; return name + " has lowest eigenvalue " + core::optional_number(lowest)
+        if (lowest < -band) { disposition = Candidate::Unstable; return "local phase instability: phase " + phases[phase].name + " has lowest eigenvalue " + core::optional_number(lowest)
             + " below the rounding band -" + core::optional_number(band); }
     }
     return {};
@@ -1019,7 +1018,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (accepted) {
         topology_failure = local_phase_instability(compiled, prepared, disposition);
         topology_ok = accepted = topology_failure.empty();
-        cause = "local_phase_instability";
+        cause = disposition == Candidate::Unstable ? "local_phase_instability" : "phase_spectrum_unavailable";
     }
     if (!accepted) {
         if (!topology_ok) {

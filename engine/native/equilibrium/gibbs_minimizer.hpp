@@ -170,7 +170,6 @@ struct DriverLimits final {
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
 EquilibriumResult recover_from_source(const CompiledSystem&, EquilibriumResult);
 // #987: the finite trial search of a coalesced fixed-T/P flash before recovery, charged to `limits`.
-extern EPC_API thread_local std::optional<std::size_t> stability_stop_trial_for_test;
 EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const DriverLimits& limits);
 // ALG-STABILITY: one trial of the vanished phase's kind and support from the declaration without it, charged to `limits`.
 StabilityReport vanished_phase_stability(const CompiledSystem& compiled, std::size_t phase, const DriverLimits& limits);

@@ -1237,6 +1237,11 @@ void check_gross_2002_cooling_onset() {
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
     CHECK(!refused.success); CHECK(!refused.temperature && refused.molar_densities.empty());
     CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root 10325.2153") != std::string::npos);
+    // Water(0.87) from 600 K: the ordinary dew coalesces into the vapor; a rejected publication is not
+    // instability, so the onset search does not run and the failure returns unchanged.
+    const auto [coalesced, unsearched] = run(model, 0.87, 600.0, 1.013e5);
+    CHECK(!coalesced.success && unsearched.empty() && coalesced.convergence.cause == "phases_coalesced"
+          && coalesced.message.find("cooling onset refused") == std::string::npos);
 }
 
 // #423: a sole cold root lies on the other side of its negative-slope sample from the declared phase.

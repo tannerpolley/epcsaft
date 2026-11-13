@@ -20,7 +20,6 @@
 
 // ALG-STABILITY: the explicit tangent-plane test and fixed-T/P phase discovery.
 namespace epcsaft::equilibrium {
-thread_local std::optional<std::size_t> stability_stop_trial_for_test;
 
 double present_phase_residual_distance(double chemical_contraction, double pressure_row) {
     return chemical_contraction - pressure_row;
@@ -69,7 +68,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const auto n = static_cast<Eigen::Index>(S.size());
     struct Iterate { Eigen::VectorXd W, g; std::vector<double> w; double density = 0.0, objective = 0.0; };
     auto& o = trial.optimizer;
-    bool first = true, stopped_for_test = false;
+    bool first = true;
     const auto at = [&](Eigen::VectorXd W) {
         Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
@@ -119,19 +118,13 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             const bool accepted = q && q->objective <= p.objective;
             o.hessian_calls += accepted;
             p = accepted ? std::move(*q) : at(p.W.array() * (-p.g.array()).exp());
-            if (stability_stop_trial_for_test == static_cast<std::size_t>(work["trial_invocations"])
-                && p.g.lpNorm<Eigen::Infinity>() > criterion.value
-                && p.W.dot(p.g) / p.W.sum() - std::log(p.W.sum()) < 0.0) { stopped_for_test = true; break; }
         }
         const double residual = p.g.lpNorm<Eigen::Infinity>();
         const auto stop = core::classify(residual, criterion, std::nullopt, std::nullopt, true);  // converged or the cap
         o.convergence = core::Convergence{residual, {std::shared_ptr<const policy::Tolerance>{}, &criterion}, std::nullopt, std::nullopt, std::nullopt, o.iterations,
             o.evaluations, stop};
-        if (stopped_for_test) {
-            o.convergence.cause = "selected trial stopping control";
-        }
-        if (o.convergence.stop == core::Stop::converged || stopped_for_test) {
-            o.success = !stopped_for_test; o.message = trial.message = "Michelsen tangent-plane trial " + core::describe(o.convergence);
+        if (o.convergence.stop == core::Stop::converged) {
+            o.success = true; o.message = trial.message = "Michelsen tangent-plane trial " + core::describe(o.convergence);
             o.packing_fractions = {model.packing_fraction_coefficient(T, p.w) * p.density};
             for (auto i : S) trial.raw_coordinates.push_back(std::log(p.w[i]));
             trial.raw_coordinates.insert(trial.raw_coordinates.end(), {1.0, std::log(o.packing_fractions[0])});
@@ -1377,7 +1370,12 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
         }) || !std::all_of(c.feed_composition.begin(), c.feed_composition.end(), [](double z) { return z > 0.0; }))
         throw std::invalid_argument("cooling onset requires full supports and generated phase starts");
     auto failed = solve_compiled(c, std::nullopt, nullptr, nullptr, {}, true);
-    if (!failed.success && failed.message.rfind("local phase instability:", 0) != 0 && failed.message.rfind("infeasible:", 0) != 0)
+    // Search only after a resolved local instability or the optimizer's own infeasibility at a point with no
+    // topology event; a rejected publication (coalesced, vanished), an unavailable phase spectrum and a
+    // structurally rank-deficient declaration (no solve run) return unchanged.
+    if (!failed.success && failed.candidate != equilibrium::Candidate::Unstable
+        && !(c.feasible && failed.convergence.stop == core::Stop::infeasible && failed.convergence.cause.empty()
+             && failed.topology_event == TopologyEvent::None))
         return {std::move(failed), {}};
     std::vector<StabilityReport> reports; StageWork work; std::vector<double> composition;
     // The existing starts owner retains work when a reference or corrector throws after entering the driver.

@@ -1591,7 +1591,8 @@ $$
 $$
 
 with `v` the normalized eigenvector. A value inside the band is unresolved and
-admitted; no positive margin is required. The band covers eigenvalue rounding
+admitted; no positive margin is required. A nonfinite matrix or failed eigensolve
+refuses the state as `phase spectrum unavailable`, not as instability. The band covers eigenvalue rounding
 only, not error in the returned state or the equation of state. Associating
 mixtures are admitted with this band alone: the 12 MEA–water bubble and dew
 states checked have `lambda_min` 0.88 to 1.28, but near-critical associating
@@ -3353,7 +3354,8 @@ means the optimizer converged and the Engine rejected the point. Every such
 rejection of a converged or floor-converged stop records `Stop::infeasible`
 and a `convergence.cause`: `phases_coalesced`, `phase_disappeared`,
 `solid_classification`, `log_charge_rank`, `local_phase_instability`,
-`caloric_split` or `reduced_hessian_not_positive_definite`. Singular and
+`phase_spectrum_unavailable`, `caloric_split` or
+`reduced_hessian_not_positive_definite`. Singular and
 nonfinite stops keep their own stop and publish no new cause; a rank-deficient
 present-solid block stays `singular`. The verdict changes no work, coordinate
 or state.
@@ -3923,8 +3925,10 @@ zero from above. Equal chemical potentials alone also admit lower metastable roo
 the trial distance at one temperature does not order their zero temperatures (row 558
 from 375 K otherwise returns 369.425 K).
 
-The ordinary declared solve runs once; a failure other than local instability or
-infeasibility returns unchanged with an empty report list. At each sampled $T$ the
+The ordinary declared solve runs once; a failure other than a resolved local instability
+or the optimizer's own infeasibility at a point with no topology event returns unchanged
+with an empty report list, a rejected publication (coalesced or vanished phases), an
+unavailable phase spectrum and a structurally rank-deficient declaration included. At each sampled $T$ the
 one-phase vapor reference is solved and admitted only with sufficient evidence that it is
 vapor-side: the density owner's vapor-branch request at $(T, P, z)$ returns more than one
 stable root, or its sole stable root lies below the scan's first negative pressure-slope
