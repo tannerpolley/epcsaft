@@ -58,6 +58,7 @@ struct FixedParameters {
     std::vector<double> k_ij_reference_temperature_k;
 
     // Association sites; pair arrays are row-major over sites
+    std::vector<std::string> site_ids;  // "component_id/site_id" per site, or empty; names sites in messages
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::vector<int> association_active;  // 0 inactive, 1 active, 2 Wolbach--Sandler rule edge

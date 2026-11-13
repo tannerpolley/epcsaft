@@ -313,6 +313,8 @@ class ParameterDocument:
     """
     component_ids: list[str]
     """Component identities in the order used by all component arrays, length n."""
+    site_ids: list[str]
+    """``component_id/site_id`` for each association site, length s, or empty; names sites in messages."""
     site_component: list[int]
     """Owning component index for each association site, length s."""
     site_multiplicity: list[int]

@@ -19,6 +19,7 @@ struct ParameterEntry final {
 
 struct ParameterDocument final {
     std::vector<std::string> component_ids;
+    std::vector<std::string> site_ids;  // "component_id/site_id" per site, or empty
     std::vector<int> site_component;
     std::vector<int> site_multiplicity;
     std::string base_choice;

@@ -197,7 +197,8 @@ Parameters build_parameters(const ParameterDocument& document) {
     core::Scope scope("build_parameters");
     const std::size_t components = document.component_ids.size();
     const std::size_t sites = document.site_component.size();
-    if (document.site_multiplicity.size() != sites) reject("site structural lists have different sizes");
+    if (document.site_multiplicity.size() != sites || (!document.site_ids.empty() && document.site_ids.size() != sites))
+        reject("site structural lists have different sizes");
     if (document.base_choice == "ideal-gas") {
         if (sites || !document.ionic_dispersion_choice.empty() || document.association_choice != "none" || document.electrolyte_choice != "none"
             || document.permittivity_choice != "none" || (!document.polar_choice.empty() && document.polar_choice != "none"))
@@ -247,6 +248,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     result.k_ij_reciprocal_temperature_slope.assign(components * components, 0.0);
     result.k_ij_reference_temperature_k.assign(components * components, 0.0);
     result.l_ij.assign(components * components, 0.0);
+    result.site_ids = document.site_ids;
     result.site_component = document.site_component;
     result.site_multiplicity = document.site_multiplicity;
     result.association_active.assign(sites * sites, 0);

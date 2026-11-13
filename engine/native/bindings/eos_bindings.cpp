@@ -101,7 +101,7 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READWRITE(epcsaft::ParameterEntry, identity, field, index, magnitude, unit);
     nb::class_<epcsaft::ParameterDocument>(module, "ParameterDocument")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_component, site_multiplicity, base_choice,
+        EPCSAFT_READWRITE(epcsaft::ParameterDocument, component_ids, site_ids, site_component, site_multiplicity, base_choice,
             association_choice, electrolyte_choice, ionic_dispersion_choice, permittivity_choice, polar_choice)
         EPCSAFT_COPIED(epcsaft::ParameterDocument, entries);
     module.def("build_parameters", &epcsaft::build_parameters, nb::arg("document"));
@@ -180,8 +180,7 @@ void register_eos(nb::module_& module) {
     nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
         EPCSAFT_VALUES(epcsaft::StateStatus, Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError);
     nb::class_<epcsaft::StateBatch> batch(module, "StateBatch");
-    batch EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, failure_record)
-        .def_rw("cause", &epcsaft::StateBatch::cause)
+    batch EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, cause, failure_record)
         .def_prop_ro("first_numerical_failure", [](const epcsaft::StateBatch& value) {
             std::vector<std::optional<epcsaft::core::Convergence>> result;
             for (std::size_t k = 0; k < value.rows.size(); ++k)

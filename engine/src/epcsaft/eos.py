@@ -10,8 +10,7 @@ Parameter names and array order come from ``Parameters``.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator, Mapping, Sequence
-from contextlib import contextmanager
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -247,20 +246,6 @@ class Mixture:
         self.site_ids = parameters.site_ids
         self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
 
-    @contextmanager
-    def _association_error(self) -> Iterator[None]:
-        try:
-            yield
-        except EosError as error:
-            error.args = (self._association_message(str(error)),)
-            raise
-
-    def _association_message(self, message: str) -> str:
-        if "association Jacobian is singular" in message:
-            sites = ", ".join(f"{component}/{site}" for component, site in self.site_ids)
-            return f"{message}; declared association sites: {sites}"
-        return message
-
     def states(
         self, T: Sequence[float], *, rho: float | Sequence[float] | None = None,
         P: float | Sequence[float] | None = None,
@@ -311,9 +296,7 @@ class Mixture:
         values = cast(Sequence[float], value) if hasattr(value, "__iter__") else (cast(float, value),)
         matrix = x is not None and not isinstance(x, Mapping) and len(x) > 0 and hasattr(x[0], "__iter__")
         composition = cast(Sequence[Sequence[float]], x) if matrix else (self._composition(cast(Any, x)),)
-        result = self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
-        result.cause = [self._association_message(message) for message in result.cause]
-        return result
+        return self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
 
     def virial_coefficients(self, T: float, x: Mapping[str, float] | Sequence[float] | None = None) -> VirialCoefficients:
         """Return exact neutral-model B (m³/mol) and C (m⁶/mol²) at T in K.
@@ -401,13 +384,12 @@ class Mixture:
         if (rho is None) == (P is None):
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
-        with self._association_error():
-            if rho is not None:
-                return self._model.state(T, rho, self._composition(x), bool(derived_properties))
-            assert P is not None
-            return self._model.state_at_pressure(
-                T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
-            )
+        if rho is not None:
+            return self._model.state(T, rho, self._composition(x), bool(derived_properties))
+        assert P is not None
+        return self._model.state_at_pressure(
+            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
+        )
 
     def reference(
         self,
@@ -461,8 +443,7 @@ class Mixture:
             raise ParameterError("reference requires both ions and stoichiometry or neither")
         if ions is None:
             fractions = tuple(solvent_fractions)
-            with self._association_error():
-                native = _core.solvent_reference(self._model, T, P, fractions)
+            native = _core.solvent_reference(self._model, T, P, fractions)
             return Reference(self._model, self.component_ids, T, P, fractions, None, None, native)
         assert stoichiometry is not None
         if len(ions) < 2 or ions[0] not in self.component_ids or ions[1] not in self.component_ids:
@@ -470,8 +451,7 @@ class Mixture:
         ion_indices = (self.component_ids.index(ions[0]), self.component_ids.index(ions[1]))
         # The reference keeps its own copies: later caller edits cannot mix states with the native fugacities.
         fractions, formula = tuple(solvent_fractions), cast(tuple[int, int], tuple(stoichiometry))
-        with self._association_error():
-            native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
+        native = _core.infinite_dilution_reference(self._model, T, P, fractions, ion_indices, formula)
         return Reference(self._model, self.component_ids, T, P, fractions, ion_indices, formula, native)
 
     def density_actions(

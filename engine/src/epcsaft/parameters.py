@@ -738,6 +738,7 @@ class Parameters:
 
         native_document = _core.ParameterDocument()
         native_document.component_ids = list(selected_ids)
+        native_document.site_ids = [f"{component}/{site}" for component, site in site_ids]
         native_document.site_component = site_component
         native_document.site_multiplicity = site_multiplicity
         native_document.base_choice = base
