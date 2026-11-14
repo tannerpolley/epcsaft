@@ -4263,8 +4263,12 @@ not admit it.
 
 ### Cation-mixing coordinates
 
-The optional `cation_pair_mixing` and `cation_triple_mixing` scalar families
-use the affine chart with target `None` and their declared empty-or-one slots.
+The optional `cation_pair_mixing` and `cation_triple_mixing` families use the
+affine chart. A target names the two cation component ids in either order; it
+resolves to the record's slot after lexicographic ordering of sorted cation
+pairs. A target without an admitted record is refused. Target `None` is allowed
+only with one record. Native construction and fitted-document writeback use
+the same record order, so a coefficient returns to its named pair.
 The common Helmholtz tape owns their exact columns, including at zero
 coefficients and on an absent-cation face. Native construction owns topology,
 units and coefficient admission; no observation-level activity correction is

@@ -137,13 +137,17 @@ struct HelmholtzResult final {
 template <typename Scalar, typename ParameterSet>
 Scalar cation_mixing_helmholtz(const std::vector<Scalar>& x, const ParameterSet& parameters) {
     if (parameters.cation_mixing.empty()) return Scalar(0.0);
-    const auto [s, i, j, k] = parameters.cation_mixing.front();
-    if (x[s] == Scalar(0.0) && (x[i] == Scalar(0.0) || x[j] == Scalar(0.0)))
-        return Scalar(0.0);
-    const Scalar mass = parameters.molar_mass_kg_per_mol[s] * x[s];
-    if (!(mass > Scalar(0.0))) throw std::invalid_argument("cation mixing requires positive solvent mass");
-    return 2.0 * parameters.cation_pair_mixing[0] * x[i] * x[j] / mass
-        + parameters.cation_triple_mixing[0] * x[i] * x[j] * x[k] / (mass * mass);
+    Scalar result(0.0);
+    for (std::size_t r = 0; r < parameters.cation_mixing.size(); ++r) {
+        const auto [s, i, j, k] = parameters.cation_mixing[r];
+        if (x[s] == Scalar(0.0) && (x[i] == Scalar(0.0) || x[j] == Scalar(0.0)))
+            continue;
+        const Scalar mass = parameters.molar_mass_kg_per_mol[s] * x[s];
+        if (!(mass > Scalar(0.0))) throw std::invalid_argument("cation mixing requires positive solvent mass");
+        result += 2.0 * parameters.cation_pair_mixing[r] * x[i] * x[j] / mass
+            + parameters.cation_triple_mixing[r] * x[i] * x[j] * x[k] / (mass * mass);
+    }
+    return result;
 }
 
 // Fixed: the scalar of quantities that do not depend on density (temperature and composition), so a

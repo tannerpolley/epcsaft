@@ -174,7 +174,14 @@ def _slot(parameters: Parameters, family: str, target: object) -> list[int]:
     """Native slot indices of one target: a component, a mirrored component pair or a site pair."""
     if family not in _FAMILIES:
         raise ParameterError(f"unknown parameter family {family}; expected one of {', '.join(_FAMILIES)}")
-    if family in ("born_c_dielectric", "ionic_region_relative_permittivity") or family.startswith("cation_"):
+    if family.startswith("cation_"):
+        from .parameters import _cation_mixing
+        records = _cation_mixing(parameters._source[0] if parameters._source else {}, parameters.component_ids)
+        if target is None and len(records) == 1:
+            return [0]
+        pair = sorted(target) if isinstance(target, tuple) and len(target) == 2 else []
+        return [_index([r["cations"] for r in records], pair, "cation pair")]
+    if family in ("born_c_dielectric", "ionic_region_relative_permittivity"):
         if target is not None:
             raise ParameterError(f"{family} is global and takes no component target")
         return [0]

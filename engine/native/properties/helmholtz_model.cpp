@@ -663,10 +663,10 @@ std::array<PropertyActionStatus, 2> support_status(
 
 bool ionic_insertion_value(const Parameters& p, const std::vector<double>& x, std::size_t component, bool charged) {
     if (!charged && p.charge_number[component] != 0) return true;
-    if (p.cation_mixing.empty()) return false;
-    const auto [s, i, j, k] = p.cation_mixing.front();
-    return x[s] == 0.0 && ((component == i && x[i] == 0.0 && x[j] > 0.0)
-        || (component == j && x[j] == 0.0 && x[i] > 0.0));
+    for (const auto& [s, i, j, k] : p.cation_mixing)
+        if (x[s] == 0.0 && ((component == i && x[i] == 0.0 && x[j] > 0.0)
+            || (component == j && x[j] == 0.0 && x[i] > 0.0))) return true;
+    return false;
 }
 
 PropertyActionBatch evaluate_actions(
@@ -767,14 +767,16 @@ PropertyActionBatch evaluate_actions(
 }
 void validate_cation_mixing(const Parameters& p) {
     const auto size = p.cation_mixing.size();
-    require(size <= 1 && p.cation_pair_mixing.size() == size && p.cation_triple_mixing.size() == size, "cation mixing record");
-    if (!size) return;
-    const auto [s, i, j, k] = p.cation_mixing.front();
-    for (const int index : {s, i, j, k}) require(index >= 0 && static_cast<std::size_t>(index) < p.component_count(), "cation mixing index");
-    require(i < j && p.charge_number[s] == 0 && p.charge_number[i] > 0 && p.charge_number[j] > 0
-        && p.charge_number[k] < 0 && p.electrolyte_form.declared(), "cation mixing participants");
-    require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
-        && all_finite(p.cation_pair_mixing) && all_finite(p.cation_triple_mixing), "cation mixing values");
+    require(p.cation_pair_mixing.size() == size && p.cation_triple_mixing.size() == size, "cation mixing record");
+    std::set<std::pair<int,int>> pairs;
+    for (const auto& [s, i, j, k] : p.cation_mixing) {
+        require(pairs.emplace(i,j).second, "duplicate cation mixing pair");
+        for (const int index : {s, i, j, k}) require(index >= 0 && static_cast<std::size_t>(index) < p.component_count(), "cation mixing index");
+        require(i < j && p.charge_number[s] == 0 && p.charge_number[i] > 0 && p.charge_number[j] > 0
+            && p.charge_number[k] < 0 && p.electrolyte_form.declared(), "cation mixing participants");
+        require(std::isfinite(p.molar_mass_kg_per_mol[s]) && p.molar_mass_kg_per_mol[s] > 0.0
+            && all_finite(p.cation_pair_mixing) && all_finite(p.cation_triple_mixing), "cation mixing values");
+    }
 }
 }  // namespace
 
