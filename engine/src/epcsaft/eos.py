@@ -246,6 +246,10 @@ class Mixture:
         self.site_ids = parameters.site_ids
         self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
 
+    def outside_domains(self, x: Sequence[float]) -> list[dict[str, Any]]:
+        """Report declared composition bounds exceeded by one phase, in component order."""
+        return _core.outside_domains(self.parameters._native, self.parameters._bounds, x)
+
     def states(
         self, T: Sequence[float], *, rho: float | Sequence[float] | None = None,
         P: float | Sequence[float] | None = None,

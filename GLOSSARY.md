@@ -141,3 +141,10 @@ Availability of a declared homogeneous state row or the category of the scalar e
 Source: `engine/native/bindings/module.cpp` scalar exception mapping; `engine/docs/science/algorithms.md` Independent state arrays.
 Scope: `engine/`, `docs/site/guide/states-and-properties.md`
 
+
+**Outside domains**:
+The requested list of declared packet composition bounds exceeded by a phase.
+Each record retains the packet, domain, quantity, comparison limit, bound and
+phase value. It describes declared applicability, not thermodynamic stability.
+Source: packet contract composition bounds; [molality](engine/docs/equations.md#molality_activity_conversion),
+[ionic strength](engine/docs/equations.md#molality_ionic_strength), and Figiel2025 Eq. 11.

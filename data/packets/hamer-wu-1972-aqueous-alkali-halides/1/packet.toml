@@ -15,6 +15,10 @@ retrieved_on = "2026-07-27"
 use_basis = "Official NIST-hosted reference-data source; manually transcribed values are retained with the source digest and transformation record."
 
 [[domains]]
+solvent = "water"
+solute_molality_min = { lithium-cation = 0.001, sodium-cation = 0.001, potassium-cation = 0.001 }
+solute_molality_max = { lithium-cation = 6.0, sodium-cation = 6.0, potassium-cation = 6.0 }
+solute_molality_unit = "mole / kilogram"
 domain_id = "aqueous-alkali-halides-298.15-k"
 kind = "source-observation"
 temperature_min = 298.15

@@ -2,7 +2,7 @@
 
 Status: canonical
 
-Version: 3
+Version: 4
 
 ## Purpose
 
@@ -131,3 +131,32 @@ that revision. The containing `tannerpolley/ePC-SAFT` commit binds the lock,
 packet and in-repository materialization record atomically. An exported or
 post-commit record may additionally record that containing commit after it
 exists; it never replaces the packet fingerprint.
+
+## Composition bounds in schema 2 domains
+
+`packet.toml` `[[domains]]` owns optional composition bounds. Descriptions retain
+source provenance; absent bounds imply no declared range.
+
+| Field | Meaning |
+| --- | --- |
+| `solvent` | Component id whose mass defines kilograms of solvent |
+| `solute_molality_min`, `solute_molality_max` | Tables of solute component id to molality |
+| `solute_molality_unit` | Required with either table: `mole / kilogram` |
+| `ionic_strength_min`, `ionic_strength_max` | Molality-based ionic strength |
+| `ionic_strength_unit` | Required with either bound: `mole / kilogram` |
+| `ionic_strength_solutes` | Required nonempty list of component ids whose fit the bound concerns |
+| `ion_mole_fraction_max` | Maximum sum of mole fractions of all charged species |
+
+Molality and ionic-strength bounds require `solvent`. Numbers are finite and
+nonnegative; minima do not exceed maxima. Component ids are nonempty and must
+belong to the parameter document when present. Scalar `molality_min`,
+`molality_max` and `molality_unit` are refused.
+
+A bound is compared only with positive solvent and a positive named solute.
+Ionic strength includes every charged species in the phase, and its bound is
+compared if any named ionic-strength solute is present. Ion fraction is always
+compared. Strict inequalities define outside; no tolerance is added.
+Packet solutes are intersected with that packet's selected components before
+mapping into the model. Every compared bound applies independently.
+`Mixture.outside_domains(x)` returns packet, domain id, quantity, solute (for
+molality), limit, bound, value and unit on request. It does not refuse a state.

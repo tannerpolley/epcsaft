@@ -13,6 +13,11 @@ doi = "10.1007/BF00644551"
 use_basis = "Tables I-III pp.260-262; procedure p.260; column definitions p.261; Zotero BHXKZXUP/V67QRMAU; source PDF SHA256 b9ff9e913d1526e96c668f3199cf5f2480bde2d39fc856f84f4368ed4e693bec"
 
 [[domains]]
+solvent = "water"
+ionic_strength_min = 0.95
+ionic_strength_max = 5.75
+ionic_strength_unit = "mole / kilogram"
+ionic_strength_solutes = ["sodium-cation", "potassium-cation", "calcium-cation"]
 domain_id = "saad-padova-marcus-1980-aqueous-298-15-k"
 kind = "source-observation"
 temperature_min = 298.15

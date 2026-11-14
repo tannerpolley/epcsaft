@@ -9,6 +9,23 @@
 
 namespace epcsaft {
 
+enum class DomainQuantity { SoluteMolality, IonicStrength, IonMoleFraction };
+enum class DomainLimit { Minimum, Maximum };
+struct CompositionBound final {
+    std::string packet, domain_id, solute, unit;
+    DomainQuantity quantity;
+    DomainLimit limit;
+    std::size_t solvent;
+    std::vector<std::size_t> solutes;
+    double bound;
+};
+struct OutsideDomain final {
+    CompositionBound declaration;
+    double value;
+};
+EPC_API std::vector<CompositionBound> admit_domains(const Parameters&, std::vector<CompositionBound>);
+EPC_API std::vector<OutsideDomain> outside_domains(const Parameters&, const std::vector<CompositionBound>&, const std::vector<double>&);
+
 struct ParameterEntry final {
     std::string identity;
     std::string field;

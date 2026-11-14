@@ -136,3 +136,18 @@ The polar model may select a quadrupole–quadrupole contribution. Only one
 polar choice is active, and dipole–quadrupole mixing is not supported. Gross's
 mixing rule is unsuitable for real mixtures with more than one quadrupolar
 component. The [EOS theory](../theory/eos.md) describes the contribution.
+
+## Composition domain report
+
+For packet-loaded parameters, call `mixture.outside_domains(x)` with one phase's
+mole fractions in component order (including a phase returned by equilibrium).
+Each returned dictionary names `packet`, `domain_id`, `quantity`, `limit`,
+`bound`, `value`, `unit`, and `solute` for molality. Quantity and limit are native
+`DomainQuantity` and `DomainLimit` enum values. Comparisons are strict.
+
+Only declared bounds are reported. Temperature and pressure are outside this
+report. A missing solvent or absent bounded solute skips its comparison. Each
+packet contributes only bounds for its own selected solutes; ionic strength
+still includes all ions in the phase. A bare parameter JSON uses its own domains;
+fitted and directly constructed parameters have no packet bounds. Applications
+choose how to respond to a report; calculations are unaffected.

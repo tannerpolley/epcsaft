@@ -282,6 +282,38 @@ class Capture:
         """
         ...
 
+class DomainQuantity:
+    """Composition quantity; enum name and value follow the module convention."""
+    SoluteMolality: DomainQuantity
+    IonicStrength: DomainQuantity
+    IonMoleFraction: DomainQuantity
+
+class DomainLimit:
+    """Strict comparison direction; enum name and value follow the module convention."""
+    Minimum: DomainLimit
+    Maximum: DomainLimit
+
+class CompositionBound:
+    """One declared composition bound, indexed in native component order."""
+    packet: str
+    domain_id: str
+    solute: str
+    unit: str
+    quantity: DomainQuantity
+    limit: DomainLimit
+    solvent: int
+    solutes: list[int]
+    bound: float
+    def __init__(self, packet: str, domain_id: str, solute: str, unit: str, quantity: DomainQuantity,
+                 limit: DomainLimit, solvent: int, solutes: Sequence[int], bound: float) -> None: ...
+
+def admit_domains(parameters: Parameters, bounds: Sequence[CompositionBound]) -> list[CompositionBound]:
+    """Admit indexed declarations and their units without evaluating a phase."""
+    ...
+def outside_domains(parameters: Parameters, bounds: Sequence[CompositionBound], x: Sequence[float]) -> list[dict[str, Any]]:
+    """Report strict composition-bound violations for one phase."""
+    ...
+
 class ParameterEntry:
     """One source-identified parameter magnitude and declared unit."""
     identity: str

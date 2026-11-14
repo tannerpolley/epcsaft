@@ -1,6 +1,7 @@
 #include "surface/parameter_builder.hpp"
 
 #include "core/trace.hpp"
+#include "core/numerical_policy.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include <algorithm>
@@ -10,6 +11,7 @@
 #include <cstring>
 #include <map>
 #include <optional>
+#include <numeric>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -721,6 +723,43 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
             reject("fitted " + std::string(family_name(f)) + " slot " + std::to_string(k)
                 + (unit == units.end() ? " has no document entry" : " does not round-trip in " + unit->second));
         }
+    }
+    return result;
+}
+
+std::vector<CompositionBound> admit_domains(const Parameters& p, std::vector<CompositionBound> bounds) {
+    core::Scope scope("admit_domains");
+    for (const auto& b : bounds) {
+        const bool fraction = b.quantity == DomainQuantity::IonMoleFraction;
+        if (!std::isfinite(b.bound) || b.bound < 0 || b.unit != (fraction ? "dimensionless" : "mole / kilogram") ||
+            (!fraction && (b.solvent >= p.component_count() || b.solutes.empty())) ||
+            std::any_of(b.solutes.begin(), b.solutes.end(), [&](auto i) { return i >= p.component_count(); }))
+            reject("invalid composition bound or unit");
+        for (const auto& other : bounds)
+            if (b.packet == other.packet && b.domain_id == other.domain_id && b.quantity == other.quantity &&
+                b.solutes == other.solutes && b.limit == DomainLimit::Minimum && other.limit == DomainLimit::Maximum && b.bound > other.bound)
+                reject("composition minimum exceeds maximum");
+    }
+    return bounds;
+}
+
+std::vector<OutsideDomain> outside_domains(const Parameters& p, const std::vector<CompositionBound>& bounds, const std::vector<double>& x) {
+    core::Scope scope("outside_domains");
+    if (x.size() != p.component_count() || std::any_of(x.begin(), x.end(), [](double v) { return !std::isfinite(v) || v < 0; }) ||
+        std::abs(std::accumulate(x.begin(), x.end(), 0.0) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value)
+        reject("outside_domains requires phase mole fractions summing to one");
+    std::vector<OutsideDomain> result;
+    for (const auto& b : bounds) {
+        const bool fraction = b.quantity == DomainQuantity::IonMoleFraction;
+        if (!fraction && (x[b.solvent] <= 0 || std::none_of(b.solutes.begin(), b.solutes.end(), [&](auto i) { return x[i] > 0; }))) continue;
+        double value = 0;
+        if (b.quantity == DomainQuantity::SoluteMolality) value = x[b.solutes.front()];
+        else for (std::size_t i = 0; i < x.size(); ++i) {
+            const double z = p.charge_number[i];
+            if (z != 0) value += x[i] * (fraction ? 1.0 : 0.5 * z * z);
+        }
+        if (!fraction) value /= x[b.solvent] * p.molar_mass_kg_per_mol[b.solvent];
+        if (b.limit == DomainLimit::Minimum ? value < b.bound : value > b.bound) result.push_back({b, value});
     }
     return result;
 }

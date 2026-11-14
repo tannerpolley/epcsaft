@@ -95,7 +95,28 @@ void register_thermal_inputs(nb::module_& module) {
 }  // namespace
 
 void register_eos(nb::module_& module) {
+    using namespace epcsaft;
     register_thermal_inputs(module);
+    nb::enum_<DomainQuantity>(module, "DomainQuantity")
+        EPCSAFT_VALUES(DomainQuantity, SoluteMolality, IonicStrength, IonMoleFraction);
+    nb::enum_<DomainLimit>(module, "DomainLimit") EPCSAFT_VALUES(DomainLimit, Minimum, Maximum);
+    nb::class_<CompositionBound>(module, "CompositionBound")
+        .def(nb::init<std::string, std::string, std::string, std::string, DomainQuantity, DomainLimit, std::size_t, std::vector<std::size_t>, double>())
+        EPCSAFT_READONLY(CompositionBound, packet, domain_id, solute, unit, quantity, limit, solvent, solutes, bound);
+    module.def("admit_domains", &admit_domains, nb::arg("parameters"), nb::arg("bounds"));
+    module.def("outside_domains", [](const Parameters& p, const std::vector<CompositionBound>& bounds, const std::vector<double>& x) {
+        nb::list result;
+        for (const auto& row : outside_domains(p, bounds, x)) {
+            const auto& b = row.declaration;
+            nb::dict record;
+            record["packet"] = b.packet; record["domain_id"] = b.domain_id;
+            record["quantity"] = b.quantity; record["limit"] = b.limit;
+            if (b.quantity == DomainQuantity::SoluteMolality) record["solute"] = b.solute;
+            record["bound"] = b.bound; record["value"] = row.value; record["unit"] = b.unit;
+            result.append(record);
+        }
+        return result;
+    }, nb::arg("parameters"), nb::arg("bounds"), nb::arg("x"));
     nb::class_<epcsaft::ParameterEntry>(module, "ParameterEntry")
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::ParameterEntry, identity, field, index, magnitude, unit);

@@ -98,6 +98,10 @@ citation = "Hamer and Wu 1972; Jiang 1996; Held 2008; native two-coordinate HCl 
 use_basis = "70 fitted observations and 14 adjusted-water guards of zero fitting weight"
 
 [[domains]]
+solvent = "water"
+ionic_strength_max = 9.9
+ionic_strength_unit = "mole / kilogram"
+ionic_strength_solutes = ["sodium-cation", "magnesium-cation", "calcium-cation"]
 domain_id = "issue-575-chloride-brine-298-15-k"
 kind = "reported-conditions"
 temperature_min = 298.15
@@ -109,6 +113,10 @@ pressure_unit = "bar"
 description = "Aqueous NaCl-MgCl2-CaCl2 at 298.15 K and 1 bar, ionic strength <= 9.9 mol/kg."
 
 [[domains]]
+solvent = "water"
+ionic_strength_max = 8.3
+ionic_strength_unit = "mole / kilogram"
+ionic_strength_solutes = ["lithium-cation"]
 domain_id = "issue-658-aqueous-298-15-k"
 kind = "reported-conditions"
 temperature_min = 298.15
@@ -120,6 +128,9 @@ pressure_unit = "bar"
 description = "Aqueous liquid, scored LiCl-MgCl2 ionic strength through 8.3 mol/kg; inherited /1 chloride-brine limits remain."
 
 [[domains]]
+solvent = "water"
+solute_molality_max = { hydronium-cation = 7.0 }
+solute_molality_unit = "mole / kilogram"
 domain_id = "hydrogen-chloride-298-15-k"
 kind = "reported-conditions"
 temperature_min = 298.15
