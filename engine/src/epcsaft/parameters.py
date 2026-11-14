@@ -114,10 +114,20 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
 
 
-def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> dict[str, Any] | None:
-    if "cation_mixing" not in document:
-        return None
-    record = dict(_mapping(document["cation_mixing"], "cation_mixing"))
+def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> list[dict[str, Any]]:
+    value = document.get("cation_mixing", [])
+    records = [_cation_mixing_record(v, document) for v in ([value] if isinstance(value, Mapping) else _array(value, "cation_mixing"))]
+    admitted = sorted(records, key=lambda r: r["cations"])
+    if len({tuple(r["cations"]) for r in admitted}) != len(admitted):
+        raise ParameterError("duplicate cation_mixing pair")
+    chosen = [r for r in admitted if set(r["cations"]) <= set(selected)]
+    if any(not {r["solvent"], *r["cations"], r["anion"]} <= set(selected) for r in chosen):
+        raise ParameterError("cation_mixing selection omits its solvent or anion")
+    return chosen
+
+
+def _cation_mixing_record(value: object, document: Mapping[str, Any]) -> dict[str, Any]:
+    record = dict(_mapping(value, "cation_mixing"))
     names = [record.get("solvent"), *_array(record.get("cations"), "cations"), record.get("anion")]
     available = {c["component_id"] for c in document["components"]}
     if set(record) != {"solvent", "cations", "anion", "coefficients"}:
@@ -131,10 +141,6 @@ def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> dict
     if len(set(names)) != 4:
         raise ParameterError(f"cation_mixing participants are not distinct: {names}")
     record["cations"] = sorted(cast(list[str], names[1:3]))
-    if not set(names[1:3]) <= set(selected):
-        return None
-    if not set(names) <= set(selected):
-        raise ParameterError("cation_mixing selection omits its solvent or anion")
     return record
 
 
@@ -189,12 +195,15 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1 or set(document) - _KEYS:
             raise _core.ParameterError(f"{packet} is not a schema 1 parameter document the Engine reads")
         mixing = _cation_mixing(document, [name for _, ids in packets for name in ids])
-        if mixing is not None:
-            if not {mixing["solvent"], *mixing["cations"], mixing["anion"]} <= set(names):
+        for record in mixing:
+            if not {record["solvent"], *record["cations"], record["anion"]} <= set(names):
                 raise ParameterError("cation_mixing must come from one complete source selection")
-            if merged.get("cation_mixing", mixing) != mixing:
+            records = merged.setdefault("cation_mixing", [])
+            same = next((r for r in records if r["cations"] == record["cations"]), None)
+            if same is not None and same != record:
                 raise ParameterError("conflicting cation_mixing declarations")
-            merged["cation_mixing"] = mixing
+            if same is None:
+                records.append(record)
         chosen = set(names)
         if missing := sorted(chosen - {c["component_id"] for c in document["components"]}):
             raise _core.ParameterError(f"{packet} has no component {missing[0]}")
@@ -440,7 +449,7 @@ class Parameters:
         positions = {item: index for index, item in enumerate(selected_ids)}
         entries = _Entries()
         laws: dict[str, tuple[int, Mapping[str, object]]] = {}
-        if mixing := _cation_mixing(document, selected):
+        for mixing in _cation_mixing(document, selected):
             indices = [positions[name] for name in (mixing["solvent"], *mixing["cations"], mixing["anion"])]
             for value in _array(mixing["coefficients"], "cation_mixing coefficients"):
                 item = _mapping(value, "cation_mixing coefficient")

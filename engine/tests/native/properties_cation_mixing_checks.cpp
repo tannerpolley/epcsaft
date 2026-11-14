@@ -26,6 +26,35 @@ void cation_mixing() {
     neutral.cation_mixing = p.cation_mixing;
     neutral.cation_pair_mixing = p.cation_pair_mixing;
     neutral.cation_triple_mixing = p.cation_triple_mixing;
+    // Two overlapping cation pairs: direct derivatives of F=2 theta n_i n_j/W+psi n_i n_j n_k/W^2.
+    {
+        auto two = neutral;
+        two.charge_number[4] = 1;
+        two.packing_diameter_angstrom[4] = 2.5;
+        two.debye_huckel_diameter_angstrom[4] = 3;
+        two.cation_mixing.push_back({0, 2, 4, 3});
+        two.cation_pair_mixing.push_back(-0.3);
+        two.cation_triple_mixing.push_back(0);
+        auto off = two;
+        off.cation_mixing.clear(); off.cation_pair_mixing.clear(); off.cation_triple_mixing.clear();
+        const HelmholtzModel on_model(two), off_model(off);
+        const std::vector<double> m = {0, .2, .4, 1.1, .1}, solvent = {1,0,0,0,0};
+        const auto ref0 = infinite_dilution_reference(off_model,T,1e5,solvent,{1,3},{1,1});
+        const auto ref1 = infinite_dilution_reference(on_model,T,1e5,solvent,{1,3},{1,1});
+        const auto a = electrolyte_activity(off_model,T,1e5,solvent,{1,3},{1,1},.2,ref0,std::nullopt,m);
+        const auto b = electrolyte_activity(on_model,T,1e5,solvent,{1,3},{1,1},.2,ref1,std::nullopt,m);
+        const std::vector<double> expected = {0.05248*mass,-.1512,-.1356,.0016,-.24};
+        for(std::size_t j=0;j<expected.size();++j) {
+            const double difference = *(*b.state.log_fugacity_coefficient)[j]-*(*a.state.log_fugacity_coefficient)[j];
+            CHECK(std::abs(difference-expected[j]) <= 1e-12+1e-10*std::abs(expected[j]));
+        }
+        const double difference = std::get<double>(*b.osmotic_coefficient)-std::get<double>(*a.osmotic_coefficient);
+        CHECK(std::abs(difference-(-.05248/1.8)) <= 1e-12+1e-10*std::abs(difference));
+        two.cation_mixing.push_back(two.cation_mixing.front());
+        two.cation_pair_mixing.push_back(0); two.cation_triple_mixing.push_back(0);
+        CHECK(recording_support::refusal([&]{HelmholtzModel repeated(two);}).find("duplicate cation mixing pair") != std::string::npos);
+        std::printf("two-record-identity,%.17g\n",difference);
+    }
     const std::vector<double> aqueous = {1 / mass, 0.2, 0.4, 1.0};
     auto extended = aqueous;
     extended.push_back(0);

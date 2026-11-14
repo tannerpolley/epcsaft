@@ -745,10 +745,15 @@ establishes global equilibrium.
 
 ## 12. Domain and rejection rules
 
-The optional `cation_mixing` declaration adds the empirical solvent-mass
-pair/triple term in EqID `cation_pair_triple_mixing_helmholtz`. It names one
-neutral solvent, two distinct cations and one declared anion, with both constant
-coefficients supplied explicitly. The term is evaluated in every phase on the
+The optional `cation_mixing` declaration is one record or an array of records.
+Each record adds the empirical solvent-mass pair/triple term in EqID
+`cation_pair_triple_mixing_helmholtz` and names one neutral solvent, two distinct
+cations and one declared anion, with both constant coefficients explicit.
+Records add independently; an ion in several records receives their sum.
+No three-cation cross term is included. Repeated unordered cation pairs are
+refused. An identical record shared across merged packets is accepted once.
+Admission orders records lexicographically by the two sorted cation component
+ids, independently of component or input-record order. The term is evaluated in every phase on the
 molality basis of that declared neutral solvent, with positive solvent mass and
 the declared anion retained. Additional anions are admitted: $\theta_{ij}$ is
 independent of the anion, while only the declared $\psi_{ijk}$ is nonzero;

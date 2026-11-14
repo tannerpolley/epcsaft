@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters
+from epcsaft import Mixture, ParameterError, Parameters, _core
 from epcsaft import equilibrium as eq
 from tests.packets import PACKETS
 
@@ -158,3 +158,44 @@ def test_packet_composition_bounds() -> None:
         "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
         "limit": _core.DomainLimit.Maximum, "bound": 4.5,
         "value": pytest.approx(5.0, rel=1e-12), "unit": "mole / kilogram"}
+
+
+def test_cation_pair_coordinate_round_trip_preserves_the_other_record() -> None:
+    from copy import deepcopy
+    from epcsaft import _core
+    from epcsaft import regression as reg
+    doc = packet("figiel-2025-chloride-mixture-refit/3")
+    inherited = deepcopy(doc["cation_mixing"])
+    added = deepcopy(inherited)
+    added["cations"] = ["sodium-cation", "hydronium-cation"]
+    for c in added["coefficients"]:
+        c["identity"] = "H-Na/" + c["family"]
+        c["value"]["magnitude"] = 0.0
+    doc["cation_mixing"] = [inherited, added]  # reverse of canonical pair order
+    start = Parameters.from_mapping(doc)
+    assert start._document is not None
+    coordinate = reg.coordinate(start, [("cation_pair_mixing", ("sodium-cation", "hydronium-cation"), 1)],
+                                origin=0, scale=1, bounds=(-1, 1))
+    chart = reg.evaluate_coordinates(start, [coordinate], [-0.11], [])
+    written = _core.fitted_document(start._document, chart.parameters)
+    # Native read/write/read preserves every untargeted coefficient, including the other cation pair.
+    target = next(e for e in written.entries if e.identity == "H-Na/cation_pair_mixing")
+    assert target.magnitude == -0.11
+    before = [(e.identity, e.magnitude) for e in start._document.entries if not e.identity.startswith("H-Na/")]
+    after = [(e.identity, e.magnitude) for e in written.entries if not e.identity.startswith("H-Na/")]
+    assert before == after
+    assert native_document_entries(_core.fitted_document(written, _core.build_parameters(written))) == native_document_entries(written)
+    duplicated = _core.fitted_document(start._document, chart.parameters)
+    entry = next(e for e in duplicated.entries if e.identity == "H-Na/cation_pair_mixing")
+    entry.identity += "/duplicate"
+    duplicated.entries = [*duplicated.entries, entry]
+    with pytest.raises(ParameterError, match="duplicate H-Na/"):
+        _core.build_parameters(duplicated)
+    with pytest.raises(ParameterError, match="duplicate cation_mixing pair"):
+        Parameters.from_mapping({**doc, "cation_mixing": [added, added]})
+    with pytest.raises(ParameterError, match="unknown cation pair"):
+        reg.active_parameter(start, "cation_pair_mixing", ("hydronium-cation", "calcium-cation"))
+
+
+def native_document_entries(document: _core.ParameterDocument) -> list[tuple[object, ...]]:
+    return [(e.identity, e.field, tuple(e.index), e.magnitude, e.unit) for e in document.entries]

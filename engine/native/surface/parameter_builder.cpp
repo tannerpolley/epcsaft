@@ -312,6 +312,15 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::pair<std::string, std::size_t>> component_fields;
     std::set<std::string> scalar_fields;
     std::set<std::string> mixing_identities;
+    const auto& names = document.component_ids;
+    std::map<std::pair<std::string, std::string>, std::size_t> mixing_slots;
+    for (const auto& e : document.entries) if (e.field == "cation_pair_mixing" || e.field == "cation_triple_mixing") {
+        require_index(e, 4, "cation mixing indices");
+        mixing_slots.emplace(std::minmax(names.at(e.index[1]), names.at(e.index[2])), 0);
+    }
+    for (auto& item : mixing_slots) item.second = result.cation_mixing.size(), result.cation_mixing.push_back({-1,-1,-1,-1});
+    result.cation_pair_mixing.resize(mixing_slots.size(), std::numeric_limits<double>::quiet_NaN());
+    result.cation_triple_mixing.resize(mixing_slots.size(), std::numeric_limits<double>::quiet_NaN());
     double ion_fraction_suppression = 0.0;
     std::vector<Rule> rules;
     std::set<std::pair<std::size_t, std::size_t>> no_cross;
@@ -363,12 +372,13 @@ Parameters build_parameters(const ParameterDocument& document) {
                 if (indices[r] >= components) reject("cation mixing index for " + where(entry));
                 topology[r] = static_cast<int>(indices[r]);
             }
-            if (entry.identity.empty() || !mixing_identities.insert(entry.identity).second) reject("cation mixing identity");
-            if (result.cation_mixing.empty()) result.cation_mixing.push_back(topology);
-            if (result.cation_mixing.front() != topology) reject("conflicting cation mixing topology");
+            const auto slot = mixing_slots.at(std::minmax(names[indices[1]], names[indices[2]]));
             const bool pair = entry.field == "cation_pair_mixing";
             auto& values = pair ? result.cation_pair_mixing : result.cation_triple_mixing;
-            values.push_back(entry.magnitude * unit_factor(entry, pair ? "kilogram / mole" : "kilogram ** 2 / mole ** 2"));
+            if (result.cation_mixing[slot][0] < 0) result.cation_mixing[slot] = topology;
+            if (entry.identity.empty() || !mixing_identities.insert(entry.identity).second) reject("cation mixing identity");
+            if (result.cation_mixing[slot] != topology) reject("conflicting cation mixing topology");
+            values[slot] = entry.magnitude * unit_factor(entry, pair ? "kilogram / mole" : "kilogram ** 2 / mole ** 2");
         } else if (const Field* row = find_field(entry.field);
                    row && row->values && !(entry.field == "ion_suppression_coefficient" && entry.index.empty())) {
             auto& values = result.*row->values;
@@ -692,7 +702,10 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
     const auto& laws = base.temperature_law_coefficient_identity;  // a law term's slot is its identity's position
     for (auto& entry : result.entries) {
         std::size_t k = entry.index.empty() ? 0 : entry.index[0];
-        if (entry.field == "cation_pair_mixing" || entry.field == "cation_triple_mixing") k = 0;
+        if (entry.field == "cation_pair_mixing" || entry.field == "cation_triple_mixing") {
+            const auto index = canonical_index(entry);
+            k = std::find_if(base.cation_mixing.begin(), base.cation_mixing.end(), [&](const auto& r) { return r[1] == int(index[1]) && r[2] == int(index[2]); }) - base.cation_mixing.begin();
+        }
         if (entry.index.size() == 2)  // a site pair or a component pair
             k = k * (entry.field.rfind("association_", 0) == 0 ? start.site_component.size() : start.component_ids.size()) + entry.index[1];
         // The builder spreads the scalar suppression coefficient over the charged slots.

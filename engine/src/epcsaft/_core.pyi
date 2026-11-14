@@ -870,9 +870,9 @@ class ParameterFamily:
     polynomial power.
     """
     CationPairMixing: ParameterFamily
-    """Declared cation-pair mixing coefficient in kg/mol; scalar slot."""
+    """Declared cation-pair mixing coefficient in kg/mol; slot in sorted cation-pair order."""
     CationTripleMixing: ParameterFamily
-    """Declared cation-triple mixing coefficient in kg^2/mol^2; scalar slot."""
+    """Declared cation-triple mixing coefficient in kg^2/mol^2; slot in sorted cation-pair order."""
     PathwayWeight: ParameterFamily
     """Pathway weight coefficient b_0, b_alpha or b_T, dimensionless; slots 0, 1, 2."""
 
