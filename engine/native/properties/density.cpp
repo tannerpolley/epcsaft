@@ -1332,10 +1332,10 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(double temperature, doubl
         result.geometric_cap = density_upper_bound(value);
         return value;
     }();
-    // The default grid: 513 geometric densities from 1e-3 mol/m3 to 0.999 of the geometric cap.
+    // The default geometric grid is set by the density diagnostic policies.
     auto nodes = request.nodes;
-    if (nodes.empty()) for (std::size_t k = 0; k <= 512; ++k)
-        nodes.push_back(std::exp(std::log(1e-3) + static_cast<double>(k) / 512 * std::log(0.999 * result.geometric_cap / 1e-3)));
+    if (nodes.empty()) for (std::size_t k = 0; k < static_cast<std::size_t>(policy::DENSITY_DIAGNOSTIC_NODES.value); ++k)
+        nodes.push_back(std::exp(std::log(policy::DENSITY_DIAGNOSTIC_LOWER.value) + static_cast<double>(k) / (policy::DENSITY_DIAGNOSTIC_NODES.value - 1) * std::log(policy::DENSITY_UPPER_FRACTION.value * result.geometric_cap / policy::DENSITY_DIAGNOSTIC_LOWER.value)));
     if (nodes.size() < 2) throw std::invalid_argument("density diagnostics require at least two declared nodes");
     for (std::size_t i = 0; i < nodes.size(); ++i)
         if (!std::isfinite(nodes[i]) || nodes[i] <= 0.0 || nodes[i] >= result.geometric_cap

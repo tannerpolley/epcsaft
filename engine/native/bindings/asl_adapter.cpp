@@ -108,6 +108,7 @@ public:
     explicit RecordReader(const char* raw) : text_(raw, strnlen(raw, max_record + 1)) {
         if (text_.size() > max_record) reject("equilibrium record exceeds 4 MiB");
     }
+    // Bound atom allocation while reading untrusted serialized records.
     std::string next() {
         const auto colon = text_.find(':', position_);
         if (colon == std::string_view::npos) reject("missing netstring length");
@@ -135,6 +136,7 @@ public:
             || end != text.c_str() + text.size() || errno == ERANGE || !std::isfinite(value))
             reject("invalid record number");
     }
+    // Bound default component-index and count fields during record admission.
     template<class T> void whole(T& value, std::size_t maximum = 64) {
         const auto text = next();
         std::size_t result = 0;
@@ -154,6 +156,7 @@ public:
         if (position_ != text_.size()) reject("trailing equilibrium record data");
     }
 private:
+    // Bound record scanning and memory consumption at the ASL boundary.
     static constexpr std::size_t max_record = 4 * 1024 * 1024;
     std::string_view text_;
     std::size_t position_ = 0;

@@ -1566,17 +1566,17 @@ class DensityDiagnosticBracket:
 class DensityDiagnosticRequest:
     """One density_diagnostics request; every unset field keeps its native default."""
     nodes: list[float]
-    """Increasing positive densities in mol/m^3 below the geometric cap; empty selects 513 geometric densities from 1e-3 mol/m^3 to 0.999 times the cap."""
+    """Increasing positive densities in mol/m^3 below the geometric cap; empty selects the native policy geometric grid."""
     density_tolerance: float
-    """Positive absolute density bracket width in mol/m^3; default 1e-9."""
+    """Positive absolute density bracket width in mol/m^3; native policy default."""
     log_tolerance: float
-    """Positive dimensionless logarithmic density bracket width; default 1e-14."""
+    """Positive dimensionless logarithmic density bracket width; native policy default."""
     finite_upper: float
     """Upper density in mol/m^3 for the optional finite-domain search; default 0."""
     max_evaluations: int
-    """Positive count limiting diagnostic EOS evaluations; default 100000."""
+    """Positive count limiting diagnostic EOS evaluations; native policy default."""
     max_seconds: Optional[float]
-    """Positive elapsed-time limit in s, default 60; None sets no time budget."""
+    """Positive elapsed-time limit in s; native policy default; None sets no time budget."""
     finite_anchor: Optional[float]
     """Finite density in mol/m^3 starting the evaluability-boundary search; None skips it."""
     refine: bool

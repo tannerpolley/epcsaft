@@ -324,14 +324,14 @@ struct DensityDiagnostics final {
     std::optional<core::Convergence> first_numerical_failure;
 };
 // One density_diagnostics request; every default is native. Empty `nodes` (increasing positive mol/m3 below
-// the geometric cap) selects 513 geometric densities from 1e-3 mol/m3 to 0.999 of the cap. Bracket widths are
+// the geometric cap) selects the policy geometric grid. Bracket widths are
 // absolute (mol/m3) and natural-log; `refine` false keeps crossings and folds as their declared sign brackets;
 // no `max_seconds` (s) is no time budget; `finite_anchor` and `finite_upper` (mol/m3) bound the finite-domain search.
 struct DensityDiagnosticRequest final {
     std::vector<double> nodes;
-    double density_tolerance = 1e-9, log_tolerance = 1e-14, finite_upper = 0.0;
-    std::size_t max_evaluations = 100000;
-    std::optional<double> max_seconds = 60.0, finite_anchor;
+    double density_tolerance = policy::DENSITY_DIAGNOSTIC_ABSOLUTE_WIDTH.value, log_tolerance = policy::DENSITY_DIAGNOSTIC_LOG_WIDTH.value, finite_upper = 0.0;
+    std::size_t max_evaluations = static_cast<std::size_t>(policy::DENSITY_DIAGNOSTIC_MAX_EVALUATIONS.value);
+    std::optional<double> max_seconds = policy::DENSITY_DIAGNOSTIC_MAX_SECONDS.value, finite_anchor;
     bool refine = true, adaptive = true;
     DerivativeOrder evaluation_order = DerivativeOrder::PressureSlope;
 };

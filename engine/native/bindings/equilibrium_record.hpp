@@ -121,6 +121,7 @@ template <class A> void document(A& a, ParameterDocument& d) {
          {"electrolyte_choice", &d.electrolyte_choice}, {"ionic_dispersion_choice", &d.ionic_dispersion_choice},
          {"permittivity_choice", &d.permittivity_choice}, {"polar_choice", &d.polar_choice}})
         a.tag(name), a.text(*choice);
+    // Bound parameter-list allocation and parsing work for serialized records.
     if (d.entries.size() > 4096) throw std::invalid_argument("ASL record exceeds 4096 parameters");
     a.tag("parameter_entries");
     list(a, d.entries, [&a](ParameterEntry& e) {

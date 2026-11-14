@@ -631,16 +631,22 @@ class Mixture:
             Dimensionless mole fractions in component order; required for a mixture.
         nodes : sequence of float, optional
             At least two increasing positive densities in mol/m³, below the
-            geometric density cap. Default: 513 geometric densities from
-            1e-3 mol/m³ to 0.999 times ``molar_density_upper_bound``.
-        density_tolerance : float, default 1e-9
-            Positive absolute density-bracket width in mol/m³.
-        log_tolerance : float, default 1e-14
-            Positive dimensionless bracket width in natural log density ratio.
-        max_evaluations : int, default 100000
-            Positive maximum number of native pressure evaluations.
-        max_seconds : float, default 60.0
-            Positive wall-time budget in s.
+            geometric density cap. The default geometric grid uses the
+            ``DENSITY_DIAGNOSTIC_NODES`` node count and ``DENSITY_DIAGNOSTIC_LOWER``
+            lower density in mol/m³. Its upper density is the geometric cap times
+            ``DENSITY_UPPER_FRACTION``. These entries are available from ``epcsaft.tolerances()``.
+        density_tolerance : float, optional
+            Positive absolute density-bracket width in mol/m³. Default: the
+            ``DENSITY_DIAGNOSTIC_ABSOLUTE_WIDTH`` entry of ``epcsaft.tolerances()``.
+        log_tolerance : float, optional
+            Positive dimensionless bracket width in natural log density ratio. Default: the
+            ``DENSITY_DIAGNOSTIC_LOG_WIDTH`` entry of ``epcsaft.tolerances()``.
+        max_evaluations : int, optional
+            Positive maximum number of native pressure evaluations. Default: the
+            ``DENSITY_DIAGNOSTIC_MAX_EVALUATIONS`` entry of ``epcsaft.tolerances()``.
+        max_seconds : float, optional
+            Positive wall-time budget in s. Default: the
+            ``DENSITY_DIAGNOSTIC_MAX_SECONDS`` entry of ``epcsaft.tolerances()``.
         adaptive : bool, default True
             Enable native adaptive grid investigation.
         finite_upper : float, default 0.0

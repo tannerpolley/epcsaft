@@ -154,6 +154,20 @@ inline constexpr Tolerance DENSITY_UPPER_FRACTION{"DENSITY_UPPER_FRACTION",
     "fraction of the model's close-packing molar density where the log scan stops",
 };
 
+// Existing diagnostic defaults (#2); provisional discretization and stopping choices, not accuracy bounds.
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_ABSOLUTE_WIDTH{"DENSITY_DIAGNOSTIC_ABSOLUTE_WIDTH", 1e-9, Category::AlgorithmTolerance,
+    "default bracket width in mol/m3; refinement continues until this and the log width are met"};
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_LOG_WIDTH{"DENSITY_DIAGNOSTIC_LOG_WIDTH", 1e-14, Category::AlgorithmTolerance,
+    "default log-density bracket width; refinement continues until this and the absolute width are met"};
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_MAX_EVALUATIONS{"DENSITY_DIAGNOSTIC_MAX_EVALUATIONS", 100000, Category::AlgorithmTolerance,
+    "default work budget; exhaustion leaves a partial diagnostic"};
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_MAX_SECONDS{"DENSITY_DIAGNOSTIC_MAX_SECONDS", 60.0, Category::AlgorithmTolerance,
+    "default elapsed-time budget in seconds; exhaustion leaves a partial diagnostic"};
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_NODES{"DENSITY_DIAGNOSTIC_NODES", 513, Category::AlgorithmTolerance,
+    "default geometric scan resolution; crossings between nodes may be missed"};
+inline constexpr Tolerance DENSITY_DIAGNOSTIC_LOWER{"DENSITY_DIAGNOSTIC_LOWER", 1e-3, Category::AlgorithmTolerance,
+    "default scan lower density in mol/m3; crossings below it are not scanned"};
+
 inline constexpr Tolerance DENSITY_BISECTION_FRACTION{"DENSITY_BISECTION_FRACTION",
     0.5,
     Category::AlgorithmTolerance,
@@ -460,6 +474,8 @@ EPC_POLICY_TABLE(const Tolerance*) ENTRIES[] = {
     &CLOSE_PACKING_FRACTION, &SITE_FRACTION_FLOOR, &SITE_FRACTION_CEILING, &ASSOCIATION_RESIDUAL,
     &ASSOCIATION_ACTION_RESIDUAL, &ASSOCIATION_MAX_ITERATIONS, &ASSOCIATION_BOUNDARY_FRACTION,
     &ASSOCIATION_JACOBIAN_CONDITION, &ASSOCIATION_JACOBIAN_RANK, &DENSITY_ROOT_RESIDUAL, &DENSITY_MAX_ITERATIONS,
+    &DENSITY_DIAGNOSTIC_ABSOLUTE_WIDTH, &DENSITY_DIAGNOSTIC_LOG_WIDTH, &DENSITY_DIAGNOSTIC_MAX_EVALUATIONS,
+    &DENSITY_DIAGNOSTIC_MAX_SECONDS, &DENSITY_DIAGNOSTIC_NODES, &DENSITY_DIAGNOSTIC_LOWER,
     &DENSITY_BRACKET_INTERVALS, &DENSITY_LOWER_FRACTION, &DENSITY_UPPER_FRACTION, &DENSITY_BISECTION_FRACTION,
     &DENSITY_ANCHOR_LOG_WINDOW, &DENSITY_ANCHOR_SCAN_INTERVALS, &DENSITY_ANCHOR_REGULARITY, &DENSITY_SLOPE_SEPARATION, &DENSITY_STRUCTURE_ROUNDOFF,
     &COMPOSITION_SUM_TOLERANCE,
