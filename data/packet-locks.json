@@ -56,7 +56,7 @@
       "packet_id": "figiel-2025-chloride-activity-refit",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-chloride-activity-refit/2",
-      "packet_fingerprint": "d79865152abaf527b4602c13b20e3e2c46db8eb0b3f2b294b138b8bdde65a865",
+      "packet_fingerprint": "4ef70d3e82d891bfd1646841678ee5b5a68e25a90df74aeed81df3ced1bd2c77",
       "materialization": "byte-for-byte"
     },
     {
@@ -175,7 +175,7 @@
       "packet_id": "hamer-wu-1972-aqueous-alkali-halides",
       "packet_version": "1",
       "packet_path": "data/packets/hamer-wu-1972-aqueous-alkali-halides/1",
-      "packet_fingerprint": "41df247ea3c3de03df9f17daa69dc8f9c834d5de61a7270a986e2a89db9e4bdc",
+      "packet_fingerprint": "f0090bcb1ecda96d0bca4b9c11c648daed5694b57ca6899ffc265f4c51e2f2e8",
       "materialization": "byte-for-byte"
     },
     {
@@ -280,14 +280,14 @@
       "packet_id": "held-2014-strategy2",
       "packet_version": "1",
       "packet_path": "data/packets/held-2014-strategy2/1",
-      "packet_fingerprint": "ed48d4398ada6597ad530ccde64c2672842870aa75fa2f243be27c245250232e",
+      "packet_fingerprint": "95f618f3bd88f1540188fb5b830455c52e251cb890789c31f338501ca801aaea",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "held-2014-strategy2",
       "packet_version": "2",
       "packet_path": "data/packets/held-2014-strategy2/2",
-      "packet_fingerprint": "36f57f713a7b148725eb1164127016df7e995a57c5838dc1786549e90bbafde1",
+      "packet_fingerprint": "77b53703ba72f3a48e552fc4239665326f551ca73c55c28dac3e9a25dd53a550",
       "materialization": "byte-for-byte"
     },
     {
@@ -329,35 +329,35 @@
       "packet_id": "saad-padova-marcus-1980-nacl-kcl-cacl2-observations",
       "packet_version": "1",
       "packet_path": "data/packets/saad-padova-marcus-1980-nacl-kcl-cacl2-observations/1",
-      "packet_fingerprint": "7719154a02443a0745a369e559b0ea01991b093241519f18603a6f64749e9696",
+      "packet_fingerprint": "16cf610ff106bbca3aca1b944f2488c0a4f167e477332d30339fd9dbf7b5e9bd",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "held-2014-chloride-mixture-refit",
       "packet_version": "1",
       "packet_path": "data/packets/held-2014-chloride-mixture-refit/1",
-      "packet_fingerprint": "991c6e7442cb6968d5d1985b6565c1275659dbd13c8b513643a10443a7482256",
+      "packet_fingerprint": "1a619fad49078e43f660be0065da698f70e1e250d3d1328d73f347a6510a337a",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-chloride-mixture-refit",
       "packet_version": "1",
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/1",
-      "packet_fingerprint": "ad1194a1dab24e5cd748e8992500e91b664715be59892cdd82ac5888a7b85004",
+      "packet_fingerprint": "0253334d55adf8ebb3cec613176444116f30b50ecc85609781d2223b85731e7a",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-chloride-mixture-refit",
       "packet_version": "2",
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/2",
-      "packet_fingerprint": "43386c94e67c1d2b8b822e1396c3d36c9e54099ba160c7177f8a96f2b68ef1df",
+      "packet_fingerprint": "1ce43db4afaa145db5388c464456073187cc8aaefc7a2618e33df5221a3ab0ca",
       "materialization": "byte-for-byte"
     },
     {
       "packet_id": "figiel-2025-chloride-mixture-refit",
       "packet_version": "3",
       "packet_path": "data/packets/figiel-2025-chloride-mixture-refit/3",
-      "packet_fingerprint": "42c7f79bec50b449a4d9044ceb8f18950e18a8ea50dcf83a0dc29724496ffb2d",
+      "packet_fingerprint": "a27ca04bb2a7d7771d29947ce3bc37ff5abe2716425714069c26e5a03e7853a9",
       "materialization": "byte-for-byte"
     },
     {

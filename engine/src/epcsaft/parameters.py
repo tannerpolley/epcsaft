@@ -9,6 +9,7 @@ remain explicit. Selecting components does not fit or validate parameters.
 from __future__ import annotations
 
 import json
+import tomllib
 from copy import deepcopy
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -218,6 +219,9 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         for into, key, items in [(merged, "correlations", document), (merged, "pairs", document)] + [
                 (merged["topology"], key, topology) for key in ("sites", "edges", "no_cross_association")]:
             into[key] += [r for r in items.get(key, ()) if _named(r) <= chosen]
+        manifest = Path(root) / packet / "packet.toml"
+        if manifest.is_file():
+            document["domains"] = tomllib.loads(manifest.read_text())["domains"]
         merged["materialization"].append({"packet": packet, "components": list(names)} | {
             key: document.get(key, []) for key in ("sources", "domains")})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
@@ -258,7 +262,7 @@ class Parameters:
     existing native record; it does not read a source document.
     """
 
-    __slots__ = ("component_ids", "site_ids", "_native", "_document", "_document_refusal", "_source")
+    __slots__ = ("component_ids", "site_ids", "_native", "_document", "_document_refusal", "_source", "_bounds")
 
     component_ids: tuple[str, ...]
     site_ids: tuple[tuple[str, str], ...]
@@ -287,6 +291,7 @@ class Parameters:
         It retains no source document for later property/ASL serialization.
         """
         self._native = native
+        self._bounds: list[_core.CompositionBound] = []
         self._document: _core.ParameterDocument | None = None
         self._document_refusal: str | None = None  # why a fit has no document
         self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
@@ -749,6 +754,32 @@ class Parameters:
         native_document.polar_choice = polar
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
+        bounds = []
+        for bound_source in cast(Any, document).get("materialization", [{"domains": document.get("domains", []), "components": selected_ids}]):
+            chosen = set(bound_source["components"]) & set(selected_ids)
+            for domain in bound_source.get("domains", []):
+                for field, quantity in (("solute_molality", _core.DomainQuantity.SoluteMolality),
+                                        ("ionic_strength", _core.DomainQuantity.IonicStrength),
+                                        ("ion_mole_fraction", _core.DomainQuantity.IonMoleFraction)):
+                    for suffix, limit in (("min", _core.DomainLimit.Minimum), ("max", _core.DomainLimit.Maximum)):
+                        if (key := f"{field}_{suffix}") not in domain:
+                            continue
+                        fraction = field == "ion_mole_fraction"
+                        if not fraction and domain.get("solvent") not in selected_ids:
+                            continue
+                        values = domain[key] if field == "solute_molality" else {"": domain[key]}
+                        for solute, value in values.items():
+                            names = [solute] if solute else domain.get("ionic_strength_solutes", [])
+                            indices = [selected_ids.index(n) for n in names if n in chosen]
+                            if not fraction and not indices:
+                                continue
+                            unit = "dimensionless" if fraction else domain.get(f"{field}_unit", "")
+                            if isinstance(value, Mapping):
+                                value, unit = value["magnitude"], value["unit"]
+                            bounds.append(_core.CompositionBound(bound_source.get("packet", ""), domain["domain_id"], solute,
+                                unit, quantity, limit,
+                                0 if fraction else selected_ids.index(domain["solvent"]), indices, value))
+        result._bounds = _core.admit_domains(result._native, bounds)
         result._document = native_document
         result._source = (document, entries.values, entries.scalars)
         return result

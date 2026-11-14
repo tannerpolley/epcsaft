@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import hashlib
+import json
+import math
 import subprocess
 import sys
 import tomllib
@@ -408,6 +410,12 @@ def validate_packet(manifest: Path) -> list[str]:
             errors.append(f"{prefix}: duplicate source_id {source_id}")
         source_ids.add(source_id)
 
+    component_ids = None
+    parameter_path = packet_root / "parameters" / "parameters.json"
+    if parameter_path.is_file():
+        payload = json.loads(parameter_path.read_text())
+        if payload.get("schema") == "epcsaft.parameters":
+            component_ids = {c["component_id"] for c in payload["components"]}
     domain_ids: set[str] = set()
     for index, domain in enumerate(domains):
         if not isinstance(domain, dict) or not all(
@@ -420,6 +428,45 @@ def validate_packet(manifest: Path) -> list[str]:
         if domain_id in domain_ids:
             errors.append(f"{prefix}: duplicate domain_id {domain_id}")
         domain_ids.add(domain_id)
+        location = f"{prefix}: domain {domain_id}"
+        def component(value: Any) -> bool:
+            return _nonempty_string(value) and (component_ids is None or value in component_ids)
+        if any(key in domain for key in ("molality_min", "molality_max", "molality_unit")):
+            errors.append(f"{location}: scalar molality keys are refused")
+        for quantity in ("solute_molality", "ionic_strength", "ion_mole_fraction"):
+            bounds = [domain.get(f"{quantity}_{limit}") for limit in ("min", "max")]
+            if all(b is None for b in bounds):
+                continue
+            if schema_version != 2:
+                errors.append(f"{location}: composition bounds require schema 2")
+            if quantity != "ion_mole_fraction":
+                if domain.get(f"{quantity}_unit") != "mole / kilogram":
+                    errors.append(f"{location}: {quantity}_unit must be mole / kilogram")
+                if not component(domain.get("solvent")):
+                    errors.append(f"{location}: solvent must be a known component")
+            if quantity == "ionic_strength":
+                solutes = domain.get("ionic_strength_solutes")
+                if not isinstance(solutes, list) or not solutes or not all(component(c) for c in solutes):
+                    errors.append(f"{location}: ionic_strength_solutes must name known components")
+            tables = []
+            for bound in bounds:
+                table = bound if quantity == "solute_molality" else {"value": bound}
+                if bound is None:
+                    table = {}
+                if not isinstance(table, dict) or not table:
+                    if bound is not None:
+                        errors.append(f"{location}: {quantity} requires a nonempty table")
+                    table = {}
+                for key, value in table.items():
+                    if quantity == "solute_molality" and not component(key):
+                        errors.append(f"{location}: unknown solute {key}")
+                    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                        errors.append(f"{location}: {quantity} must be finite and nonnegative")
+                tables.append(table)
+            for key in tables[0].keys() & tables[1].keys():
+                low, high = tables[0][key], tables[1][key]
+                if isinstance(low, (int, float)) and isinstance(high, (int, float)) and low > high:
+                    errors.append(f"{location}: {quantity} minimum exceeds maximum")
 
     listed: set[PurePosixPath] = set()
     parameter_bundle_files: set[PurePosixPath] = set()

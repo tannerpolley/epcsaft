@@ -24,6 +24,10 @@ citation = "NIST Chemistry WebBook, SRD 69, Water, CAS 7732-18-5."
 use_basis = "water identity and molecular weight"
 
 [[domains]]
+solvent = "water"
+solute_molality_min = { lithium-cation = 0.001, sodium-cation = 0.001, potassium-cation = 0.001, magnesium-cation = 0.001, calcium-cation = 0.001 }
+solute_molality_max = { lithium-cation = 4.5, sodium-cation = 4.5, potassium-cation = 4.5, magnesium-cation = 4.5, calcium-cation = 4.5 }
+solute_molality_unit = "mole / kilogram"
 domain_id = "held-2014-chlorides-298-15-k-1-bar"
 kind = "reported-conditions"
 temperature_min = 298.15

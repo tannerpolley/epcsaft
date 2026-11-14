@@ -84,3 +84,77 @@ def test_entries_read_before_reassignment_stay_valid() -> None:
     d.entries = d.entries
     d.entries = earlier
     assert [(e.identity, e.magnitude) for e in earlier] == expected == [(e.identity, e.magnitude) for e in d.entries]
+
+
+def test_packet_composition_bounds() -> None:
+    """Verify species molality, 2:1 ionic strength and all-ion fraction; no EOS validation claim."""
+    from epcsaft import _core
+
+    def mixture(packet_id: str, names: list[str]) -> Mixture:
+        return Mixture(Parameters.from_packets(PACKETS, [(packet_id, names)]))
+
+    refit = "figiel-2025-chloride-mixture-refit/3"
+    hcl = mixture(refit, ["water", "hydronium-cation", "chloride-anion"])
+    # One kilogram of solvent and stoichiometric ion amounts, normalized independently.
+    water_moles = 1 / hcl.parameters.molar_masses[0]
+    for molality in (8.0, 5.0):
+        total = water_moles + 2 * molality
+        records = hcl.outside_domains([water_moles / total, molality / total, molality / total])
+        if molality == 5:
+            assert records == []
+        else:
+            assert len(records) == 1
+            assert records[0] == {"packet": refit, "domain_id": "hydrogen-chloride-298-15-k",
+                "quantity": _core.DomainQuantity.SoluteMolality, "solute": "hydronium-cation",
+                "limit": _core.DomainLimit.Maximum, "bound": 7.0,
+                "value": pytest.approx(8.0, rel=1e-12), "unit": "mole / kilogram"}
+
+    mgcl2 = mixture(refit, ["water", "magnesium-cation", "chloride-anion"])
+    water_moles = 1 / mgcl2.parameters.molar_masses[0]
+    for molality in (3.4, 3.2):
+        total = water_moles + 3 * molality
+        records = mgcl2.outside_domains([water_moles / total, molality / total, 2 * molality / total])
+        if molality == 3.2:
+            assert records == []  # I = 9.6 must not trigger the absent lithium fit's 8.3 maximum.
+        else:
+            assert len(records) == 1
+            assert records[0] == {"packet": refit, "domain_id": "issue-575-chloride-brine-298-15-k",
+                "quantity": _core.DomainQuantity.IonicStrength, "limit": _core.DomainLimit.Maximum,
+                "bound": 9.9, "value": pytest.approx(10.2, rel=1e-12), "unit": "mole / kilogram"}
+
+    nacl = mixture("figiel-yu-held-2025/4", ["water", "sodium-cation", "chloride-anion"])
+    records = nacl.outside_domains([0.6, 0.2, 0.2])
+    assert len(records) == 1
+    assert records[0]["quantity"] == _core.DomainQuantity.IonMoleFraction
+    assert records[0]["limit"] == _core.DomainLimit.Maximum
+    assert records[0]["bound"] == 0.38
+    assert records[0]["value"] == pytest.approx(0.4, rel=1e-12)
+    assert records[0]["unit"] == "dimensionless"
+
+    held = "held-2014-strategy2/2"
+    nacl = mixture(held, ["water", "sodium-cation", "chloride-anion"])
+    water_moles = 1 / nacl.parameters.molar_masses[0]
+    total = water_moles + 2 * 0.0005
+    records = nacl.outside_domains([water_moles / total, 0.0005 / total, 0.0005 / total])
+    assert len(records) == 1
+    assert records[0] == {"packet": held, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
+        "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
+        "limit": _core.DomainLimit.Minimum, "bound": 0.001,
+        "value": pytest.approx(0.0005, rel=1e-12), "unit": "mole / kilogram"}
+
+    # A's sodium bound must not apply when B supplies sodium, although sodium is in the final model.
+    other = "held-2014-strategy2/1"
+    # Cross-packet pairs are explicit inputs; retain B's published coefficients unchanged.
+    cross_pairs = {(p["component_id_a"], p["component_id_b"]): c["value"]["magnitude"]
+                   for p in packet(other)["pairs"] for c in p["coefficients"]
+                   if "sodium-cation" in (p["component_id_a"], p["component_id_b"]) and c["family"] == "k_ij"}
+    mixed = Mixture(Parameters.from_packets(PACKETS,
+        [(held, ["water", "chloride-anion"]), (other, ["sodium-cation"])], k_ij=cross_pairs))
+    water_moles = 1 / mixed.parameters.molar_masses[0]
+    total = water_moles + 2 * 5.0
+    records = mixed.outside_domains([water_moles / total, 5.0 / total, 5.0 / total])
+    assert len(records) == 1
+    assert records[0] == {"packet": other, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
+        "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
+        "limit": _core.DomainLimit.Maximum, "bound": 4.5,
+        "value": pytest.approx(5.0, rel=1e-12), "unit": "mole / kilogram"}

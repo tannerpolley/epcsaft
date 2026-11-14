@@ -3170,3 +3170,15 @@ $$
 $$
 \sum_p N_p\,\mathbf{B}\,\mathbf{x}_p+\sum_s n_s\,\mathbf{B}\boldsymbol\nu_s=\mathbf{B}\,\mathbf{n}_{\mathrm{feed}}.
 $$
+
+## `molality_ionic_strength`
+
+- Section: Electrolyte reference states and reported activities
+- Status: Source equation
+- Source: [IUPAC Gold Book, ionic strength, I03180](https://goldbook.iupac.org/terms/view/I03180), molality-basis definition; Green Book, 2nd ed., p. 50
+- Description: Ionic strength per kilogram of the declared solvent; all charged species present contribute.
+- Change note: Uses species molality from molality_activity_conversion, independently of the solutes naming a fit domain.
+
+$$
+I=\frac12\sum_{z_i\ne0}m_i z_i^2.
+$$

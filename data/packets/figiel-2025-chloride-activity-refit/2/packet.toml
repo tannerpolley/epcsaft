@@ -85,6 +85,10 @@ doi = "10.1063/1.555569"
 use_basis = "Evaluated MgCl2 Table 17 and CaCl2 Table 20, 42 molalities each; retained inputs/evaluated.csv in the Held-2014 analysis."
 
 [[domains]]
+solvent = "water"
+solute_molality_min = { magnesium-cation = 0.001, calcium-cation = 0.001 }
+solute_molality_max = { magnesium-cation = 4.5, calcium-cation = 4.5 }
+solute_molality_unit = "mole / kilogram"
 domain_id = "issue-209-provisional-binary-aqueous"
 kind = "reported-conditions"
 temperature_min = 298.15
@@ -93,9 +97,6 @@ temperature_unit = "kelvin"
 pressure_min = 1
 pressure_max = 1
 pressure_unit = "bar"
-molality_min = 0.001
-molality_max = 4.5
-molality_unit = "mol/kg water"
 description = "provisional: relaxed target. MgCl2: gamma max/mean 0.06407599491/0.02947203674, Phi max/mean 0.03957717574/0.01578270588 decade; CaCl2: gamma max/mean 0.04834780429/0.02311442551, Phi max/mean 0.0334417264/0.01328778411 decade. Binary aqueous MgCl2/CaCl2 at 298.15 K, 1 bar, 0.001-4.5 mol/kg on unchanged /1 aqueous LiCl/NaCl/KCl basis. Original 0.02-decade target not met; relaxed by owner 2026-10-06. Boundary optimum, k_ij not identified. No mixed-salt, ternary, temperature, density, caloric or alcohol qualification. No global-optimum, covariance or physical-validation claim. Inherits /1 Na/K feasible-point and identification limits. Delivered review and owner acceptance pending."
 
 [[files]]
