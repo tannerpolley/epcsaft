@@ -1150,6 +1150,7 @@ FitResult fit(const FitRequest& request) {
         return result;
     }
     result.initial_cost = initial.cost;
+    initial = ObservationEvaluation{};
 
     Cost cost(request, evaluator);
     ceres::Problem::Options problem_options;

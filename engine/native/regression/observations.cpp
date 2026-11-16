@@ -605,8 +605,14 @@ Prediction predict(
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
     if (observation.kind == ObservationKind::Stability) {
-        if (!result.stability) result.stability = std::make_shared<equilibrium::StabilityMeasure>(
-            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+        if (!result.stability) {
+            result.stability = std::make_shared<equilibrium::StabilityMeasure>(
+                equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+            for (auto& trial : result.stability->report.trials) {
+                trial.optimizer.prepared_endpoint.reset();
+                trial.optimizer.optimizer_state.reset();
+            }
+        }
         result.unit = "1";
         if (!result.stability->available) { result.value.reset(); result.residual.reset();
             result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
