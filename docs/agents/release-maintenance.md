@@ -18,6 +18,7 @@ publication; snapshot generation does not publish or tag a release.
 After merges, `tools/refresh-main-wheel` compares retained previous/candidate
 prepared environments before packaging main. Select the retained baseline with
 `EPCSAFT_PREVIOUS_PREPARED`; the candidate defaults to main’s prepared build tree.
+The tool first pushes `main` to `engine-main` in the release repository so the tagged commit exists there.
 Set `EPCSAFT_NUMERICAL_EVIDENCE` to space-separated existing evidence paths.
 Wheels are `auditwheel`-repaired `manylinux_2_39` wheels carrying Ipopt, MUMPS and
 Ceres; before retaining one it runs `tools/check-wheel-container.sh`, which refuses
