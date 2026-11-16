@@ -2395,6 +2395,16 @@ class DiscoveryMode:
     Fast: DiscoveryMode
     FastTested: DiscoveryMode
 
+class PreparedSuppliedTrials:
+    """Immutable supplied-trial preparation at one temperature for one model object."""
+    @property
+    def temperature(self) -> float: ...
+    @property
+    def work(self) -> dict[str, float]: ...
+    def __len__(self) -> int: ...
+
+def prepare_supplied_trials(model: HelmholtzModel, temperature: float, trials: list[PhaseSpec]) -> PreparedSuppliedTrials: ...
+
 class StabilityOptions:
     """Finite declared trial search for a tangent-plane descent witness.
 
@@ -2404,6 +2414,7 @@ class StabilityOptions:
     """
     mode: DiscoveryMode
     """Discovery only: full default or explicitly limited fast search."""
+    prepared_trials: Optional[PreparedSuppliedTrials]
     evaluate_supplied_trials: bool
     """Evaluate supplied trial points directly rather than optimizing their compositions."""
     trials: Optional[list[PhaseSpec]]

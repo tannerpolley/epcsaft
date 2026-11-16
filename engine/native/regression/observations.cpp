@@ -155,7 +155,7 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
     if (observation.kind == ObservationKind::Stability) {
         require(observation.form == ResidualForm::Difference && observation.observed == 0.0, "zero Difference stability requirement");
         require(observation.stability_options.mode == equilibrium::DiscoveryMode::Full
-            && !observation.stability_options.evaluate_supplied_trials, "Full optimized stability trials");
+            && !observation.stability_options.evaluate_supplied_trials && !observation.stability_options.prepared_trials, "Full optimized stability trials");
         require(!observation.problem.pressure.free && std::all_of(observation.problem.phases.begin(), observation.problem.phases.end(),
             [](const auto& p) { return p.kind == equilibrium::PhaseKind::Liquid; }), "declared liquid parent at fixed pressure");
         require(std::isfinite(observation.pressure_ratio) && observation.pressure_ratio > 0.0, "positive pressure ratio");

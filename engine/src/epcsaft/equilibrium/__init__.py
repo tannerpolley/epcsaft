@@ -84,6 +84,12 @@ solved_state_first_actions = _core.solved_state_first_actions
 cooling_onset = _core.cooling_onset
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
+PreparedSuppliedTrials = _core.PreparedSuppliedTrials
+
+def prepare_supplied_trials(model: _Model, temperature: float, trials: list[_core.PhaseSpec]) -> PreparedSuppliedTrials:
+    """Prepare ordered supplied points at temperature [K] for this fluid model."""
+    return _core.prepare_supplied_trials(model._model, temperature, trials)
+
 
 Quantity = _core.Quantity
 ComparisonMode = _core.ComparisonMode
@@ -113,6 +119,8 @@ __all__ = (
     "cooling_onset",
     "stability_test",
     "StabilityOptions",
+    "PreparedSuppliedTrials",
+    "prepare_supplied_trials",
     "asl_record",
     "Continuation",
     "ContinuationResult",
