@@ -271,11 +271,20 @@ def test_solvent_mole_weighting_declaration(mode: str) -> None:
         if mode == "solvent-normalized":
             with pytest.raises(ValueError, match="solvent denominator"):
                 model.state(T, rho=1000.0, x=[0.0 if name == "water" else 0.5 for name in order])
-    for solvents in ([], ["water", "water"], ["sodium-cation"], ["unknown"]):
+    for solvents in ([], ["water", "water"], ["unknown"]):
         bad = copy.deepcopy(document)
         next(f for f in bad["model_families"] if f["kind"] == "permittivity").update(solvents=solvents)
         with pytest.raises(ValueError):
             Parameters.from_mapping(bad)
+    bad = copy.deepcopy(document)
+    next(f for f in bad["model_families"] if f["kind"] == "permittivity").update(solvents=["sodium-cation"])
+    next(c for c in bad["components"] if c["component_id"] == "water")["coefficients"] = [
+        r for r in water["coefficients"] if r["family"] != "relative_permittivity"]
+    sodium = next(c for c in bad["components"] if c["component_id"] == "sodium-cation")
+    sodium["coefficients"].append({"identity": "sodium/permittivity", "family": "relative_permittivity",
+                                   "value": {"magnitude": 80.0, "unit": "dimensionless"}})
+    with pytest.raises(ValueError, match="invalid permittivity neutral solvent"):
+        Mixture(Parameters.from_mapping(bad))
     if mode == "unnormalized":  # the unknown normalization replaces the mode, so one mode covers it
         next(f for f in document["model_families"] if f["kind"] == "permittivity").update(normalization="unknown")
         with pytest.raises(ValueError):

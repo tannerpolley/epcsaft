@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time recipe (#569): four pinned FeOs PC-SAFT parameter files -> packets feos-*/1 and their locks.
+"""One-time recipe (#569): four pinned FeOs PC-SAFT parameter files -> packets feos-*/1.
 
 Usage: python3 data/tools/import_feos.py <directory holding the four FeOs JSON files>
 Every source record becomes an admitted Engine record or a refusal with its cause
@@ -9,7 +9,7 @@ import csv, io, json, math, sys
 from decimal import Decimal
 from pathlib import Path
 
-from validate_packets import ROOT, packet_fingerprint, sha256
+from validate_packets import ROOT, sha256
 
 REPO, COMMIT, TREE = "feos-org/feos", "af84e3f9da2fac2d102d449cd07cbbb48237617b", "1e7fb4770d9055b96d010e0b3f3f2d0241269508"
 HASH = {"gross2001.json": "f4b4018c7f02341b937c086cbb38626b72c1f3f3d9677a26b463112e16dfd404",
@@ -192,11 +192,7 @@ def write(packet_id, admitted, pairs, extra, none, rows):
         toml.append(f"\n[[files]]\npath = {q(path)}\nrole = {q(role)}\nmedia_type = {q(media)}\nsha256 = {q(sha256(root / path))}\n"
                     f"source_refs = {ids}\ndomain_refs = [{q(packet_id)}]\nunits_basis = {q(units)}")
     (root / "packet.toml").write_text("\n".join(toml) + "\n")
-    locks = json.loads((ROOT / "packet-locks.json").read_text())
-    locks["packets"] = [p for p in locks["packets"] if p["packet_id"] != packet_id] + [
-        {"packet_id": packet_id, "packet_version": "1", "packet_path": f"data/packets/{packet_id}/1",
-         "packet_fingerprint": packet_fingerprint(root), "materialization": "byte-for-byte"}]
-    (ROOT / "packet-locks.json").write_text(json.dumps(locks, indent=2) + "\n")
+
 
 
 if __name__ == "__main__":

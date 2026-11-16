@@ -526,8 +526,9 @@ Parameters build_parameters(const ParameterDocument& document) {
             require_index(entry, slope ? 1 : (constant ? 3 : 2), "temperature law term index");
             const auto found = laws.find(entry.index[0]);
             if (found == laws.end()) reject("temperature law term without its law: " + where(entry));
+            if ((!slope && !constant && entry.index[1] > 3) || (found->second.second == 0.0) != constant)
+                reject("invalid temperature law term " + where(entry));
             const int power = slope ? -1 : (constant ? 0 : static_cast<int>(entry.index[1]));
-            if (power > 3 || (found->second.second == 0.0) != constant) reject("invalid temperature law term " + where(entry));
             const int energy = found->second.first == "association_energy_over_k" ? 1 : 0;
             const double value = entry.magnitude * unit_factor(entry, energy + (slope ? 1 : -power));
             if (!std::isfinite(value)) reject("nonfinite " + where(entry));
