@@ -30,7 +30,7 @@ reference map, that the task needs before selecting the evidence-justified route
 - cse:prose — inspect scientific writing without editing it
 - cse:zotero, cse:data, cse:digitize — sources, datasets, figure values, and PDF transcription
 - cse:plot, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents
-- cse:audit — remove software ceremony, duplicated values, or misplaced records
+- cse:audit — inspect software ceremony, duplicated values, misplaced records, or untraced numerical limits read-only
 - delegated roles — review: cse:review; implementation: cse:build; design: cse:design; research: cse:research; diagnosis: cse:diagnose; analysis: cse:analyze; writing: cse:write
 
 For a requested retrospective, invoke `cse:audit` and use its retrospective reference.
