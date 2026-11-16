@@ -1320,6 +1320,65 @@ void check_tangent_plane_jacobian() {
     }
 }
 
+// #24: certified inventory face; the pure-component TPD is ln(phi_V) - ln(phi_L).
+void check_stability_inventory_face() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto parameters = properties_support::parameters(3);
+    const auto ethane = properties_support::ethane();
+    for (std::size_t i = 0; i < 3; ++i) {
+        parameters.segment_count[i] = ethane.segment_count[0]; parameters.sigma_constant[i] = ethane.sigma_constant[0];
+        parameters.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+        parameters.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+    }
+    const HelmholtzModel model(parameters), pure(ethane);
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature = FreeValue::fixed(200.0); problem.feed.values = {1.0, 0.0, 0.0};
+    problem.reactions = {{"s1=s2", {0.0, -1.0, 1.0}, 1.0}};
+    const auto compiled = compile_problem(model, problem);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.success);
+    const auto generated = stability_measure(compiled, parent);
+    StabilityOptions omitted;
+    omitted.trials = std::vector<PhaseSpec>{equilibrium_support::phase("omitted-liquid", PhaseKind::Liquid),
+        equilibrium_support::phase("omitted-vapor", PhaseKind::Vapor)};
+    const auto resolved = stability_measure(compiled, parent, omitted);
+    // Report both before assertions so the unfixed build records C1b independently of C1.
+    std::printf("inventory-face,generated_available=%d,omitted_available=%d,generated_trials=%zu,omitted_trials=%zu\n",
+        generated.available, resolved.available, generated.report.trials.size(), resolved.report.trials.size());
+    CHECK(generated.available && resolved.available);
+    CHECK(generated.report.trials.size() == 2 && resolved.report.trials.size() == 2);
+    CHECK(generated.value == resolved.value);
+    for (std::size_t i = 0; i < generated.report.trials.size(); ++i) {
+        const auto& a = generated.report.trials[i]; const auto& b = resolved.report.trials[i];
+        CHECK(a.phase.support == std::vector<std::size_t>{0});
+        CHECK(a.phase.kind == b.phase.kind && a.phase.support == b.phase.support && a.seed == b.seed);
+        CHECK(a.evidence == b.evidence && a.quantities.at("tpd_over_rt") == b.quantities.at("tpd_over_rt"));
+    }
+    problem.reactions.clear();
+    const auto nonreacting = compile_problem(model, problem);
+    const auto reference = stability_measure(nonreacting, solve_compiled(nonreacting));
+    CHECK(reference.available);
+    const auto liquid = pure.state_at_pressure(200.0, 1e5, {1.0}, DensityBranch::Liquid);
+    const auto vapor = pure.state_at_pressure(200.0, 1e5, {1.0}, DensityBranch::Vapor);
+    const double identity = vapor.log_fugacity_coefficient->at(0).value() - liquid.log_fugacity_coefficient->at(0).value();
+    const double tau = generated.raw_minimum.value();
+    const double uncertainty = generated.uncertainty.value();
+    CHECK(std::abs(tau - reference.raw_minimum.value()) <= uncertainty + reference.uncertainty.value());
+    CHECK(std::abs(tau - identity) <= uncertainty + std::numeric_limits<double>::epsilon());
+    std::printf("inventory-face,tau=%.17g,nonreacting=%.17g,lnphi_difference=%.17g,uncertainty=%.17g\n",
+        tau, reference.raw_minimum.value(), identity, uncertainty);
+    StabilityOptions explicit_support;
+    auto phase = equilibrium_support::phase("explicit-liquid", PhaseKind::Liquid);
+    phase.support = {0, 1, 2}; phase.support_declared = true;
+    explicit_support.trials = std::vector<PhaseSpec>{phase};
+    const auto explicit_measure = stability_measure(compiled, parent, explicit_support);
+    CHECK(!explicit_measure.available && !explicit_measure.report.trials.empty());
+    for (const auto& trial : explicit_measure.report.trials)
+        CHECK(trial.evidence == "negative_plane_without_positive_donor");
+    std::printf("inventory-face,explicit_trials=%zu,evidence=negative_plane_without_positive_donor\n", explicit_measure.report.trials.size());
+}
+
 // Manufactured A=B, K=1e-12 at 150 K: unresolved finite decrease must retain gas-root diagnostics.
 void check_stability_phase_comparison() {
     using namespace epcsaft;

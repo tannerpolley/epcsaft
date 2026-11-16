@@ -216,14 +216,18 @@ double energy_estimate(const Quantities& q) {
 
 std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const StabilityOptions& options) {
     const auto& z = c.model->parameters().charge_number;
-    std::vector<std::size_t> united, zero_charge;
+    std::vector<std::size_t> united, feasible, zero_charge;
     const auto participant = reaction_participants(c.n_feed.size(), c.problem.reactions);
     for (std::size_t i = 0; i < c.n_feed.size(); ++i)
-        if (c.n_feed[i] > 0.0 || participant[i]) { united.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i); }
+        if (c.n_feed[i] > 0.0 || participant[i]) {
+            united.push_back(i);
+            if (std::find(c.removed_species.begin(), c.removed_species.end(), i) != c.removed_species.end()) continue;
+            feasible.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i);
+        }
     std::vector<PhaseSpec> phases;
     if (options.trials) phases = *options.trials;
     else {
-        PhaseSpec liquid; liquid.name = "trial-liquid"; liquid.support = united;
+        PhaseSpec liquid; liquid.name = "trial-liquid"; liquid.support = feasible;
         phases.push_back(liquid);
         if (!zero_charge.empty()) {
             liquid.support = zero_charge; phases.push_back(liquid);
@@ -233,7 +237,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
     if (phases.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
     for (auto phase : phases) {
-        phase.support = resolve_support(phase, united, z, &c.model->parameters());
+        phase.support = resolve_support(phase, feasible, z, &c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
             if (std::find(united.begin(), united.end(), i) == united.end())

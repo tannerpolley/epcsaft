@@ -431,6 +431,11 @@ through a critical point) other than an envelope's requested ln K straddle.
 
 ## Discovery and global claims
 
+The certified inventory-face argument for incipient phases also applies to
+trial phases: nonnegativity and the zero conserved inventory force each
+certified-absent species to have zero fraction in every phase of positive amount,
+so generated trial supports exclude those species.
+
 EqID: `tangent_plane_distance` defines the reduced molar distance from the
 candidate's conserved supporting plane. Sources: Michelsen1982 Part I;
 Pereira2012 Eq. 12; Perdomo2025 §3.3 Eqs. 37–40; Ascani2022 §3.3 Eqs. 33–35.
