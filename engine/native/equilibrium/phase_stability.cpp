@@ -1019,6 +1019,7 @@ CompiledSystem& supplied_system(TrialSystems& systems, const HelmholtzModel& mod
 struct PreparedSuppliedPoints { std::vector<SuppliedPoint> entries; };
 std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const HelmholtzModel& model, double T,
     const std::vector<PhaseSpec>& trials) {
+    core::Scope scope("prepare_supplied_trials");
     auto set = std::make_shared<PreparedSuppliedTrials>();
     set->model = &model; set->temperature = T; set->trials = trials;
     auto points = std::make_shared<PreparedSuppliedPoints>(); set->points = points;
