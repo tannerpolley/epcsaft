@@ -17,7 +17,11 @@ def declarations() -> list[Any]:
     rc=[r.coordinate(reacting,[('k_ij',('s0','s1'),1)],origin=0.,scale=.1,bounds=(-.1,.1)),r.reaction_coordinate('isomerisation','a',origin=-1.25,scale=1.),r.reaction_coordinate('isomerisation','b',origin=90.,scale=250.)]
     rp=eq.Problem(T=200.,P=1e5,row_tolerance=1e-10,feed=eq.Amounts({'s0':.5,'s1':.5}),phases=[eq.Phase('L',kind='liquid')],reactions=[reaction])
     rr=eq.Problem(T=200.,P=eq.Free(2e5),row_tolerance=1e-10,feed=rp.feed,phases=[eq.Phase('L',kind='liquid'),eq.Phase('V',kind='vapor',amount=eq.Pinned(0.))],reactions=[reaction])
-    return [(neutral,nc,np,nr,2.),(reacting,rc,rp,rr,.5)]
+    zero=parameters((ETHANE,)*3,pairs=[('k_ij',(0,1),0.),('k_ij',(0,2),0.),('k_ij',(1,2),0.)])
+    zreaction=eq.Reaction({'s1':-1.,'s2':1.},name='unfed-isomerisation',correlation=reaction.correlation)
+    zc=[r.coordinate(zero,[('dispersion_energy_over_k','s0',1)],origin=191.42,scale=250.,bounds=(150.,250.)),r.reaction_coordinate('unfed-isomerisation','a',origin=-1.25,scale=1.)]
+    zp=eq.Problem(T=200.,P=1e5,row_tolerance=1e-10,feed=eq.Amounts({'s0':1.}),phases=[eq.Phase('L',kind='liquid')],reactions=[zreaction])
+    return [(neutral,nc,np,nr,2.),(reacting,rc,rp,rr,.5),(zero,zc,zp,None,1.)]
 
 
 def branch_identity(measure: Any) -> tuple[Any, ...]:
@@ -27,11 +31,11 @@ def branch_identity(measure: Any) -> tuple[Any, ...]:
             tuple(p['density_side'] for p in measure.report.present_phases))
 
 
-@pytest.mark.parametrize("case,relative", [(0, False), (0, True), (1, False), (1, True)])
+@pytest.mark.parametrize("case,relative", [(0, False), (0, True), (1, False), (1, True), (2, False)])
 def test_stability_actions_against_resolved_central_differences(case: int, relative: bool) -> None:
     p, coordinates, parent, reference, ratio = declarations()[case]
     row = r.stability(p, parent, scale=.1, pressure_reference=reference if relative else None, pressure_ratio=ratio)
-    center = [1.929] if case == 0 else [.5, 0., 0.]
+    center = [1.929] if case == 0 else [.5, 0., 0.] if case == 1 else [0., 0.]
     def evaluate(point: list[float]) -> tuple[Any, Any, Any]:
         value = r.differentiate(p, coordinates, optimizer=point, observations=[row])
         prediction = value.stability_predictions[0]

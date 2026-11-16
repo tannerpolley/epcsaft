@@ -2188,19 +2188,22 @@ No stability or instability conclusion follows from supplied-point evaluation.
 ### Supports, seeds and trial solves
 
 Let U be fed species plus all reaction participants and U₀ its neutral subset.
+Let A be the species certified absent by the verified nonnegative conserved
+inventory certificate of ALG-EQUILIBRIUM, recorded in the compiled parent's
+`removed_species`. Generated trial supports use U∖A.
 Initial discovery candidates are one free phase on U, Liquid, and also Vapor
 when U is neutral. For reactions, first construct the existing positive
 charge-neutral base on U, then run the unchanged ideal-solution speciation
-sweeps. A zero-fed reaction participant remains on the required support; its
+sweeps. A zero-fed reaction participant remains on the required support unless certified absent; its
 feed fraction is not an admissible log-chart seed. Record all initial attempts
 and retain the accepted lower-G candidate; shared branch admission refuses a
 candidate whose sole root lies on the other side. This preparation belongs only to
 discovery; declared initialization remains unchanged.
-Trial defaults are (U,Liquid), (U₀,Liquid), (U₀,Vapor), deduplicating identical
-pairs. Omit empty default U₀ with an explicit no-neutral-species diagnostic.
+Trial defaults are (U∖A,Liquid), (U₀∖A,Liquid), (U₀∖A,Vapor), deduplicating identical
+pairs. Omit empty default U₀∖A with an explicit no-neutral-species diagnostic.
 Caller support/label entries **replace** defaults and limit the tested domain;
 they do not restrict the initial union candidate. An omitted caller support
-resolves on U by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
+resolves on U∖A (its neutral subset for Vapor) by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
 supports; explicit ionic Vapor requires `DensityTemperature`. Reject empty caller lists, species outside U and one-sign
 ionic supports.
 
