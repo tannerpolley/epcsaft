@@ -72,6 +72,14 @@ def _document() -> dict[str, object]:
     }
 
 
+def test_temperature_law_rejects_large_power() -> None:
+    document = _document()
+    pairs = cast(list[Any], document["pairs"])
+    pairs[0]["coefficients"][0]["temperature_law"]["terms"][0]["power"] = 4294967296
+    with pytest.raises(ValueError, match="invalid temperature law term"):
+        Parameters.from_mapping(document)
+
+
 def test_temperature_law_coefficients_reach_fit_workers() -> None:
     parameters = Parameters.from_mapping(_document())
     identities = parameters._native.temperature_law_coefficient_identities

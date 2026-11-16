@@ -509,6 +509,9 @@ void temperature_laws() {
     refused("refuse/value-and-law", document_with([](auto& e) {
         add_law(e, "k", "k_ij", 0, 0, 1, T_R, {0.01, NAN_TERM, NAN_TERM, NAN_TERM, NAN_TERM});
         e.push_back(entry("k-value", "k_ij", {1, 0}, 0.01, "dimensionless")); }), "duplicate");
+    refused("refuse/large-power", document_with([](auto& e) {
+        add_law(e, "k", "k_ij", 0, 0, 1, T_R, {0.01, NAN_TERM, NAN_TERM, NAN_TERM, NAN_TERM});
+        e.back().index[1] = 4294967296ULL; }), "invalid temperature law term");
     refused("refuse/coefficient-unit", document_with([](auto& e) {
         add_law(e, "k", "k_ij", 0, 0, 1, T_R, {0.01, NAN_TERM, NAN_TERM, NAN_TERM, NAN_TERM});
         e.push_back(entry("k/a1", "temperature_law_coefficient", {0, 1}, 1e-4, "dimensionless")); }), "expected 1 / kelvin");

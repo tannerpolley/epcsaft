@@ -574,8 +574,6 @@ class Problem:
     row_tolerance : float or None
         Dimensionless tolerance for native scaled equation rows; ``None`` keeps
         the native policy. It is not a physical uncertainty estimate.
-    solver_options : mapping of str to float or None
-        Native tolerances and work limits with the units of each named option.
     enthalpy_j : float or None
         Total extensive enthalpy constraint in J, on the compiled feed basis.
     entropy_j_per_k : float or None
@@ -625,7 +623,6 @@ class Problem:
     standard_gibbs_j_per_mol: Sequence[float] = ()
     topology_declared: bool | None = True
     row_tolerance: float | None = None
-    solver_options: Mapping[str, float] | None = None
     enthalpy_j: float | None = None
     entropy_j_per_k: float | None = None
     internal_energy_j: float | None = None
@@ -666,7 +663,6 @@ class Problem:
         native.temperature = _free_value(self.T)
         native.pressure = _free_value(self.P)
         native.neutral_reference = None if self.neutral_reference is None else self.neutral_reference._native(model)
-        native.solver_options = self.solver_options
         if self.row_tolerance is not None:
             native.row_tolerance = self.row_tolerance
         native_phases: list[_core.PhaseSpec] = []
@@ -745,7 +741,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     """
     allowed = {
         "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
-        "row_tolerance", "solver_options", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3", "internal_energy_j",
+        "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3", "internal_energy_j",
     }
     if unknown := set(mapping) - allowed:
         raise _core.ParameterError(f"unknown Problem key {', '.join(sorted(map(str, unknown)))}")
@@ -772,7 +768,6 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
         topology_declared=topology,
         row_tolerance=cast(float | None, mapping.get("row_tolerance")),
-        solver_options=cast(Mapping[str, float] | None, mapping.get("solver_options")),
         enthalpy_j=cast(float | None, mapping.get("enthalpy_j")),
         entropy_j_per_k=cast(float | None, mapping.get("entropy_j_per_k")),
         internal_energy_j=cast(float | None, mapping.get("internal_energy_j")),

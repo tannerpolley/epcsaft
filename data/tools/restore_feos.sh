@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Restore the FeOs packets that source archives omit under their CC BY-NC terms: download the four
 # pinned FeOs parameter files, rebuild the feos-*/1 packets (import_feos.py refuses any file whose
-# SHA-256 differs from its pin) and regenerate the parameter index. No-op when both are present.
+# SHA-256 differs from its pin) without rewriting tracked files. No-op when both are present.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 if [[ -f data/packets/feos-esper-2023/1/packet.toml && -f data/packets/feos-rehner-2023/1/packet.toml ]]; then
@@ -16,4 +16,3 @@ for name in gross2001 gross2002 esper2023 rehner2023_binary; do
         "https://raw.githubusercontent.com/feos-org/feos/$commit/parameters/pcsaft/$name.json"
 done
 python3 data/tools/import_feos.py "$downloads"
-python3 data/tools/parameter_index.py > data/docs/parameter-index.md
