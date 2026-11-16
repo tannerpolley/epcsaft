@@ -10,11 +10,11 @@ an installation with a native pressure closure.
 
 ## Conda package
 
-Install release 1.3.0 for Linux (linux-64) and Windows (win-64) from the
+Install release 1.3.1 for Linux (linux-64) and Windows (win-64) from the
 `tannerwpolley` conda channel:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.0
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.1
 conda activate epcsaft
 python -c 'import epcsaft; print(epcsaft.__file__)'
 ```
