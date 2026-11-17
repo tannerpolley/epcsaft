@@ -54,7 +54,7 @@ FIELDS(equilibrium::SolidSpec, a, b, c, d, e, f, g)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
-FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
+FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
 // Declaration validation refuses prepared trials before worker serialization.
 auto fields(equilibrium::StabilityOptions& item) {
     auto& [a, b, prepared, c, d, e, f] = item;
@@ -95,7 +95,7 @@ auto fields(equilibrium::EquilibriumResult& v) {
 auto fields(Prediction& v) {
     return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,
         v.saturation, v.saturation_loading, v.endpoint_loading, v.added_amount, v.cap_branch,
-        v.stability, v.pressure_reference, v.stability_raw_gradient);
+        v.stability, v.pressure_reference, v.stability_raw_gradient, v.analytical_osmotic_coefficient, v.analytical_osmotic_cause);
 }
 // A derived record cannot be bound as a whole; its size pins the scalar and vector members listed here.
 auto fields(Parameters& v) {

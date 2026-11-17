@@ -3,6 +3,7 @@
 // The case registry. Each case function is defined in one regression_*_checks.cpp unit.
 namespace regression_checks {
 void check_stability_requirement();
+void check_reactive_solvent_activity();
 void check_propane_inventory_boundary();
 void check_inventory_face();
 void check_neutral_electrostatics();
@@ -43,6 +44,7 @@ void check_measurement_correlation();
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.reactive-solvent-activity", "reactive-solvent-activity"}, check_reactive_solvent_activity, "R2"},
         {{"native.regression.stability-requirement", "stability-requirement"}, check_stability_requirement, "stability-requirement"},
         {{"native.regression.measurement-columns", "measurement-columns"}, check_measurement_columns, "R2"},
         {{"native.regression.measurement-fit", "measurement-fit"}, check_measurement_fit, "R2"},

@@ -4444,6 +4444,8 @@ class ObservationKind:
     """
     PartialPressure: ObservationKind
     """Solved system pressure times the selected phase mole-fraction sum, Pa."""
+    PhaseSolventActivity: ObservationKind
+    """Solved liquid solvent activity relative to its pure liquid at fixed T/P."""
     PhaseAmountRatio: ObservationKind
     """Selected numerator component amount divided by selected denominator amount, dimensionless;
     denominator must be nonzero.
@@ -4513,6 +4515,8 @@ class Observation:
     loading_bounds: tuple[float, float]
     loading_grid: list[float]
 
+    analytical_solute_molality: float
+    """Analytical solute molality sum before speciation, mol/kg solvent; zero leaves osmotic output undefined."""
     ion_indices: tuple[int, int]
     """Two component indices in (cation, anion) order for the formula-salt reference."""
     stoichiometry: tuple[int, int]
@@ -4587,6 +4591,8 @@ class Prediction:
 
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
+    analytical_osmotic_coefficient: Optional[float]
+    analytical_osmotic_cause: str
     value: Optional[float]
     """Predicted physical quantity in unit, or None with status/message."""
     unit: str

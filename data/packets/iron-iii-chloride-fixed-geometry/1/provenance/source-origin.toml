@@ -1,0 +1,78 @@
+provenance_kind = "derived-record-provenance-v1"
+schema_version = 1
+validation_commit = "b9776233f8112af96788d3af825079fc2e7c953a"
+transformations = ["Preserve inherited chloride component, interaction, correlation, topology and domain records; add explicit Fe(III) chloro-complexes under owner-fixed research geometry.", "Freeze the training-only minimum-cost baseline candidate from the corrected 43-target recovery and one authorized replacement 36-fit campaign. The invalidated first campaign evaluated the holdout at 18:19:05, before the corrected mask was frozen at 18:30:50. The corrected recovery used source pixels, stroke continuity and calibration only; the replacement campaign selected on training only. No stronger claim of holdout independence is made. Exact native derivatives; no hydrolysis. Identification unresolved and no checked Fe activity domain."]
+
+[[records]]
+retained_path = "parameters/parameters.json"
+sha256 = "860b19a9c6075142344a32ffdb3b506b191b985ea077d47de5f35063d06003ec"
+
+[[records]]
+retained_path = "parameters/reactions.json"
+sha256 = "882395d5db8fae6e126f02f17afe067c3d6f9bb217bbfde12241a86d711cd88f"
+
+[[sources]]
+source_id = "inherited-chloride-4"
+role = "Frozen background model"
+retained_path = "data/packets/figiel-2025-chloride-mixture-refit/4/parameters/parameters.json"
+sha256 = "6e2e81254d33ca2fd82f96893d1172030d21ef961c52bac2ae9348cfb1600892"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/inputs/liu-fractions.csv"
+sha256 = "4f05c78366a85438243000bccb7b7cd38f1dc9dae6ef1d6c101abcd4b3f3f61f"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/inputs/feeds.json"
+sha256 = "bad8105e01bde868915bd31311f54ed01eca06dfeeb2eb7489a29a57a01924ba"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/inputs/input-admission.json"
+sha256 = "163fbb61f3a5d78743f561306f382a28876669986048828ed512e3b99af1775e"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/inputs/recovery-changes.json"
+sha256 = "f264f2d9754f3a0e3a3d83445046ed2e8ecbbe996ff7b48583d7496ca920dbe3"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/scripts/study.py"
+sha256 = "eca8b77b72d6a3a1297a13ade943d456ef4ff0d566d7a5a5c83e501b01905613"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/scripts/compare.cpp"
+sha256 = "081e08f0403e0fa784d68b155cf97122c4fe2565938b670b808aec2fa1de1240"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/baseline-beta1-1.52-start-100.json"
+sha256 = "07dc8aed4f1294c08c5d6702ce2749735dbf11c5707e179ec84d12eacd89e219"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/comparison.csv"
+sha256 = "2a55c43a09b24c6098a3c60d12423fc6d8c700a9d6ad226198c1cee3e50c01b8"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/selected.json"
+sha256 = "e8bbbce60f254d4cc38c0ed9eaa4ead4385f2d4242ba9373d502a9822de974e2"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/notebook.qmd"
+sha256 = "9fe7ba6a4c2e93cb0eb75e3bafbe61055c7c56b7d382046e569689db82d2ba41"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/analytical-osmotic.csv"
+sha256 = "8ab4a2e8a33213aac97ce0dc7b7693607b58cbae46f9260b9e6e485358a70cf1"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/scripts/read_analytical_osmotic.py"
+sha256 = "ccd970def6ec0117221b6e33c04a5ca20e6fa428c5d0750b10f98115976fb61d"

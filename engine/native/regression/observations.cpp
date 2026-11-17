@@ -124,6 +124,8 @@ bool same_state(const Observation& left, const Observation& right) {
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
         || addition(left.kind) || addition(right.kind)) return false;
+    if (left.kind == ObservationKind::PhaseSolventActivity || right.kind == ObservationKind::PhaseSolventActivity)
+        if (left.kind != right.kind || left.phase != right.phase || left.species != right.species) return false;
     const auto& a = left.problem;
     const auto& b = right.problem;
     const auto intensive = [](const auto& v) { return std::tie(v.free, v.value, v.absent); };
@@ -275,8 +277,16 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
         return;
     }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
+    if (observation.kind == ObservationKind::PhaseSolventActivity) {
+        require(!compiled.problem.temperature.free && !compiled.problem.pressure.free, "solvent activity requires fixed T/P");
+        require(compiled.problem.phases[observation.phase].kind == equilibrium::PhaseKind::Liquid, "liquid solvent activity");
+        require(observation.species.size() == 1 && observation.species[0] < model.parameters().component_count(), "one solvent species");
+        const auto solvent = observation.species[0];
+        require(model.parameters().charge_number[solvent] == 0 && model.parameters().molar_mass_kg_per_mol[solvent] > 0.0, "neutral solvent with molar mass");
+        require(std::isfinite(observation.analytical_solute_molality) && observation.analytical_solute_molality >= 0.0, "analytical solute molality");
+    }
     if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure
-        && observation.kind != ObservationKind::PhaseAmountRatio) return;
+        && observation.kind != ObservationKind::PhaseAmountRatio && observation.kind != ObservationKind::PhaseSolventActivity) return;
     for (const auto& [phase, species_set] : {std::pair{observation.phase, observation.species},
              std::pair{observation.denominator_phase, observation.kind == ObservationKind::PhaseAmountRatio
                  ? observation.denominator_species : observation.species}}) {
@@ -688,6 +698,43 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
         if (observation.kind == ObservationKind::PartialPressure) value *= *solved.pressure;
         break;
+    case ObservationKind::PhaseSolventActivity: {
+        const auto solvent = observation.species[0];
+        std::vector<double> pure(components, 0.0);
+        pure[solvent] = 1.0;
+        if (!result.reference) result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
+        const auto& reference = *result.reference;
+        if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
+        if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
+            result.status = ObservationStatus::ReferenceUnavailable; result.message = reference.solvent_cause;
+            core::retain_first(result.first_numerical_failure, reference.solvent_convergence); return;
+        }
+        equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
+        const auto entry = equilibrium::solved_state_actions(*result.compiled, solved,
+            {{observable(Kind::PhaseLogActivity, phase, solvent)}, {zero}}).results.front();
+        if (entry.property_diagnostics) core::retain_first(result.first_numerical_failure, entry.property_diagnostics->first_numerical_failure);
+        if (!entry.value) {
+            result.status = ObservationStatus::ActionUnavailable;
+            result.message = entry.diagnostic_message.value_or("solved solvent log activity unavailable"); return;
+        }
+        if (!reference.pure_solvent_log_fugacity) {
+            result.status = ObservationStatus::ReferenceUnavailable;
+            result.message = "pure solvent log fugacity unavailable"; return;
+        }
+        value = std::exp(*entry.value - *reference.pure_solvent_log_fugacity
+            - std::log(*solved.pressure / (GAS_CONSTANT_J_PER_MOL_K * *solved.temperature)));
+        result.unit = "1";
+        result.analytical_osmotic_coefficient.reset();
+        result.analytical_osmotic_cause.clear();
+        if (!(value > 0.0) || !std::isfinite(value)) {
+            result.status = ObservationStatus::Nonfinite; result.message = "nonfinite or nonpositive solvent activity"; return;
+        }
+        if (observation.analytical_solute_molality > 0.0)
+            result.analytical_osmotic_coefficient = -std::log(value)
+                / (parameters.molar_mass_kg_per_mol[solvent] * observation.analytical_solute_molality);
+        else result.analytical_osmotic_cause = "OsmoticUndefinedPureSolvent";
+        break;
+    }
     case ObservationKind::PhaseAmountRatio:
         result.unit = "1";
         value = component_amount(solved, phase, observation.species)
@@ -1034,6 +1081,9 @@ std::vector<PredictionGradient> differentiate_group(
                 add(observable(Kind::PhaseMoleFraction, phase, species));
             if (observation.kind == ObservationKind::PartialPressure) add(observable(Kind::Pressure, 0));
             break;
+        case ObservationKind::PhaseSolventActivity:
+            add(observable(Kind::PhaseLogActivity, phase, observation.species[0]));
+            break;
         case ObservationKind::PhaseAmountRatio:
             for (const auto i : observation.species) add(observable(Kind::PhaseComponentAmount, phase, i));
             for (const auto i : observation.denominator_species)
@@ -1103,6 +1153,26 @@ std::vector<PredictionGradient> differentiate_group(
             if (gradient.status != ObservationStatus::Available) break;
             double value = 0.0;
             switch (observation.kind) {
+            case ObservationKind::PhaseSolventActivity: {
+                const auto solvent = observation.species[0];
+                if (!prediction.reference || !prediction.reference->pure_solvent_state || !prediction.value
+                    || directions[k].temperature_k != 0.0 || directions[k].pressure_pa != 0.0) {
+                    gradient.value.clear(); gradient.status = ObservationStatus::ActionUnavailable;
+                    gradient.message = "fixed-T/P pure solvent action unavailable"; break;
+                }
+                double reference_action = 0.0;
+                if (k < active_width) {
+                    const auto& pure = *prediction.reference->pure_solvent_state;
+                    const auto column = pure.log_fugacity_parameter_derivative.at(solvent * active_width + k);
+                    if (!column) {
+                        gradient.value.clear(); gradient.status = ObservationStatus::ActionUnavailable;
+                        gradient.message = "pure solvent parameter action unavailable"; break;
+                    }
+                    reference_action = *column;
+                }
+                value = *prediction.value * (action[0] - reference_action);
+                break;
+            }
             case ObservationKind::PhaseAmountRatio: {
                 const double A = component_amount(*solved, phase, observation.species);
                 const double B = component_amount(*solved, observation.denominator_phase, observation.denominator_species);

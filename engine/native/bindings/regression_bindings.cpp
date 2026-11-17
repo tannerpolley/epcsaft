@@ -110,7 +110,7 @@ m._serve_fit(channel)
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
-            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability);
+            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability);
     nb::enum_<ResidualForm>(module, "ResidualForm")
         EPCSAFT_VALUES(ResidualForm, Difference, LogRatio);
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
@@ -119,7 +119,7 @@ m._serve_fit(channel)
             ActionUnavailable, Nonfinite, InadmissibleTrial);
     nb::class_<Observation>(module, "Observation")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, finite_solute_molalities,
+        EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, analytical_solute_molality, finite_solute_molalities,
             reference_composition, branch, problem, final_problem, feed_amount, basis_amount, loading_cap, loading_bounds, loading_grid, reaction, phase, species,
             denominator_phase, denominator_species, mass_basis, observed, form, scale, stability_options, pressure_reference, pressure_ratio);
     nb::enum_<CheckMetric>(module, "CheckMetric")
@@ -155,7 +155,7 @@ m._serve_fit(channel)
             accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)
-        EPCSAFT_READONLY(Prediction, value, unit, status, message, residual, convergence, branch, stable_root_count,
+        EPCSAFT_READONLY(Prediction, analytical_osmotic_coefficient, analytical_osmotic_cause, value, unit, status, message, residual, convergence, branch, stable_root_count,
             requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
         EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure);

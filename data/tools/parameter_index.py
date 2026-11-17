@@ -11,6 +11,7 @@ from pathlib import Path
 
 DATA = Path(__file__).resolve().parents[1]
 USES = {
+    "iron-iii-chloride-fixed-geometry": "Exploratory five-species Fe(III) chloride under fixed research geometry; hydrolysis omitted, untested; identification unresolved; checked_domain_ids=[]; no checked Fe activity domain.",
     "pahlavanzadeh-2013-mdea": "Pahlavanzadeh 2013 raw molecular MDEA/water association alternatives; Engine sigma-cubed differs from printed d-cubed; Figure 4 k_ij=0; no ideal chemistry.",
     "held-2012-alcohols": "Held 2012 solvent-specific ethanol and methanol salts at 298.15 K; printed screening sigma, 0.88 sigma packing; no Born or ion-ion dispersion.",
     "nasrifar-2010-mdea": "Nasrifar and Tafazzol 2010 molecular PC-SAFT: MDEA 3B and water 2B with neutral gases; no reactive or electrolyte calculation.",
