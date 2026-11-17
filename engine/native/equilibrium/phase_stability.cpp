@@ -759,7 +759,7 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     return w;
 }
 namespace {
-// `relaxed`: a reaction-relaxed split classifies this trial, so the species-frozen slope and splits do not.
+// For a relaxed trial the frozen slope can classify no descent only within plane arithmetic error.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
     StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed) {
     const auto& at = candidate.physical;
@@ -807,12 +807,19 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     q["arithmetic_error_estimate_over_rt"] = arithmetic;
     if (options.evaluate_supplied_trials) { trial.evidence = "evaluated"; return; }
     trial.evidence = "indeterminate";
-    if (relaxed) return;
     if (std::isfinite(slope) && std::isfinite(uncertainty) && uncertainty >= 0.0 && slope >= -uncertainty) {
+        if (relaxed) {
+            double plane_magnitude = std::abs(q.at("g_over_rt"));
+            for (auto i : trial.phase.support) plane_magnitude += std::abs(w[i] * report.plane_over_rt[i]);
+            const double roundoff = (2.0 * trial.phase.support.size() + 1.0) * std::numeric_limits<double>::epsilon();
+            const double error = q.at("summation_estimate_over_rt") + roundoff * plane_magnitude / (1.0 - roundoff);
+            if (!(std::isfinite(error) && error >= 0.0 && q.at("tpd_over_rt") >= -error)) return;
+            q["tpd_arithmetic_error_estimate_over_rt"] = error;
+        }
         trial.evidence = "no_resolved_descent";
         return;
     }
-    if (!descent_resolved(q.at("tpd_over_rt"), slope, uncertainty)) return;
+    if (relaxed || !descent_resolved(q.at("tpd_over_rt"), slope, uncertainty)) return;
     const auto& z = c.model->parameters().charge_number;
     double beta = capacity / 2.0;
     for (std::size_t check = 0; check <= 8; ++check, beta /= 2.0) {
@@ -1268,12 +1275,14 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         else gas = q.at("root_density_side") == static_cast<double>(DensityBranch::Vapor);
                     } catch (const std::exception& error) { trial.diagnostic_cause = error.what(); }
                 }
-                // A reacting gas-side trial, not a declared vapour itself, is classified by its relaxed split.
+                // A distinct reacting gas-side trial uses the relaxed split if the frozen check leaves it indeterminate.
                 const bool reacting = explicit_negative && c.has_reaction && trial.optimizer.success;
                 if (options.evaluate_supplied_trials || negative)
                     donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident);
                 if (reacting && gas && !coincident && trial.evidence == "indeterminate") {
-                    auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) { return same_stationary_trial(s.first, trial, false); });
+                    auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) {
+                        return s.first.donor == trial.donor && same_stationary_trial(s.first, trial, false);
+                    });
                     if (shared == splits.end()) {
                         if (!parent) {  // the original plane and repair, their numerical estimates counted here
                             auto counted = result;

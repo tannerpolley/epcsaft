@@ -1919,6 +1919,37 @@ void check_reaction_relaxed_split() {
 
 }
 
+void check_mea_census_state_3() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-census-state-3.inc"
+    const auto compiled = compile_problem(model, problem);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.success);
+    vapor.name = "trial-V";
+    liquid.name = "trial-L";
+    StabilityOptions options;
+    options.trials = std::vector<PhaseSpec>{liquid, vapor};
+    const auto report = stability_test(compiled, parent, options);
+    CHECK(report.completed && report.trials.size() == 9);
+    const auto found = std::find_if(report.trials.begin(), report.trials.end(), [&](const auto& trial) {
+        return trial.phase.kind == PhaseKind::Liquid && trial.phase.support == liquid.support && trial.seed == "near-pure-0";
+    });
+    CHECK(found != report.trials.end());
+    const auto& trial = *found;
+    const auto& q = trial.quantities;
+    const double plane = q.at("tpd_over_rt");
+    if (plane < 0.0 && trial.evidence == "no_resolved_descent") {
+        CHECK(plane >= -q.at("tpd_arithmetic_error_estimate_over_rt"));
+        CHECK(q.at("donor_slope_over_rt") >= -q.at("descent_error_estimate_over_rt"));
+    }
+    CHECK(trial.split_coordinates.empty());
+    CHECK(report.no_descent_in_trial_set);
+    CHECK(std::all_of(report.trials.begin(), report.trials.end(), [](const auto& t) {
+        return t.optimizer.success && !t.resolved_descent && t.evidence == "no_resolved_descent";
+    }));
+}
+
 // The exact A32 bubble enters the Full search without a supplied split; the Engine forms its own.
 void check_reaction_relaxed_search() {
     using namespace epcsaft;
