@@ -45,6 +45,7 @@ inline bool LessThanZero(const Quad& x){return x<0;}
 inline bool LessThanOrZero(const Quad& x){return x<=0;}
 inline bool abs_geq(const Quad& x,const Quad& y){return fabsq(x.raw())>=fabsq(y.raw());}
 inline Quad abs(const Quad& x){return fabsq(x.raw());}
+inline bool isfinite(const Quad& x) { return finiteq(x.raw()); }
 inline Quad sign(const Quad& x){return x>0?1:x<0?-1:0;}
 #define EPCSAFT_QUAD_MATH(name) inline Quad name(const Quad& x){return name##q(x.raw());}
 EPCSAFT_QUAD_MATH(acos) EPCSAFT_QUAD_MATH(asin) EPCSAFT_QUAD_MATH(atan) EPCSAFT_QUAD_MATH(cos) EPCSAFT_QUAD_MATH(cosh)

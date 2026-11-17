@@ -500,10 +500,12 @@ double repair_effect(const CompiledSystem &c, const PhasePoint &at, const PhaseP
     return allowance;
 }
 
-// Density-independent permittivity is a condensed-liquid correlation: a charged trial counts only on its own liquid side.
-void condensed_admission(const std::optional<DensityRoot>& root, Quantities* q = nullptr) {
+// Without a unit vacuum limit, a charged trial counts only on its own liquid side.
+void condensed_admission(const std::optional<DensityRoot>& root, bool quotient, Quantities* q = nullptr) {
     if (!root || properties::density_side(root->branch, root->molar_density, root->negative_slope_density) != DensityBranch::Liquid)
-        throw std::invalid_argument("charged trial outside the condensed domain of density-independent permittivity");
+        throw std::invalid_argument(quotient
+            ? "charged trial outside the condensed domain of permittivity without a unit vacuum limit"
+            : "charged trial outside the condensed domain of density-independent permittivity");
     if (q && root->negative_slope_density) (*q)["negative_slope_density_mol_m3"] = *root->negative_slope_density;
 }
 
@@ -1093,6 +1095,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     for (const auto& phase : supports) {
         std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
         for (auto i : phase.support) identity += std::to_string(i) + ",";
+        const bool quotient = form.is(PermittivityForm::DensityTemperatureIonSuppression);
         const bool condensed = !form.is(PermittivityForm::DensityTemperature) && !form.is(PermittivityForm::DipolarPerturbation)
             && std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
         std::vector<std::pair<std::string, std::vector<double>>> seeds;
@@ -1151,7 +1154,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 else {
                     const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                     core::retain_first(trial.optimizer.first_numerical_failure, root.first_numerical_failure);
-                    if (condensed) condensed_admission(root);
+                    if (condensed) condensed_admission(root, quotient);
                     seed_density = root.molar_density;
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
                 }
@@ -1221,7 +1224,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
                 }
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
-                    volume, PhaseKind::Liquid, trial.quantities, "condensed_"), &trial.quantities);
+                    volume, PhaseKind::Liquid, trial.quantities, "condensed_"), quotient, &trial.quantities);
                 advance(SuppliedStage::Energy);
                 trial.quantities.merge(phase_energy(*c.model, at.temperature, at.pressure, volume, trial.composition,
                     report.standard_over_rt, report.work, nullptr, &point.energy));

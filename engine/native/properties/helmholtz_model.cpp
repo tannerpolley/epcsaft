@@ -537,7 +537,7 @@ void validate_parameter_coordinate(
             || family == ParameterFamily::PackingDiameter || family == ParameterFamily::IonSuppressionCoefficient)
             require(parameters.charge_number[indices.front()] != 0, "electrolyte coordinate needs charged slot");
         if (family == ParameterFamily::DielectricVolume || family == ParameterFamily::DielectricTemperature)
-            require(parameters.charge_number[indices.front()] == 0 && parameters.permittivity_form.is(PermittivityForm::DensityTemperature),
+            require(parameters.charge_number[indices.front()] == 0 && density_temperature_permittivity(parameters.permittivity_form),
                 "dielectric coordinate needs a neutral density-temperature slot");
         return;
     }
@@ -1776,7 +1776,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
             (void)born_contribution(temperature, composition, parameters_, electro.bulk_relative_permittivity);
         }
         if (!reference_tape_ || reference_tape_->predicates != signature) {
-            reference_tape_ = detail::HelmholtzTape::record(parameters_, active_, point,
+            reference_tape_ = detail::HelmholtzTape::record(*this, point,
                 central.site_fractions, signature, {}, 0.0, true, true);
             ++counters_.recordings;
             result.diagnostics.recordings = 1;
@@ -1950,7 +1950,7 @@ bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::ve
         tape_.swap(previous_tape_);
         return false;
     }
-    previous_tape_ = detail::HelmholtzTape::record(parameters_, active_, point, sites, signature, correlations, ideal_pressure, residual);
+    previous_tape_ = detail::HelmholtzTape::record(*this, point, sites, signature, correlations, ideal_pressure, residual);
     tape_.swap(previous_tape_);
     ++counters_.recordings;
     return true;

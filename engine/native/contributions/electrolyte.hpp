@@ -24,7 +24,7 @@ inline bool dielectric_solvent_component(
     if (parameters.charge_number[component] != 0) {
         return false;
     }
-    if (parameters.permittivity_form.is(PermittivityForm::DensityTemperature)
+    if (density_temperature_permittivity(parameters.permittivity_form)
         || parameters.permittivity_form.is(PermittivityForm::DipolarPerturbation)) {
         return true;
     }
@@ -71,6 +71,23 @@ struct ElectrolyteResult final {
     Scalar bulk_relative_permittivity;
     Scalar debye_huckel;
 };
+
+struct EPC_EXCEPTION BulkPermittivityDomainError final : std::domain_error {
+    using std::domain_error::domain_error;
+};
+
+template <typename Scalar>
+Scalar permittivity_primal(const Scalar& value) { return value; }
+
+template <typename Base>
+Base permittivity_primal(const CppAD::AD<Base>& value) { return CppAD::Value(CppAD::Var2Par(value)); }
+
+template <typename Scalar>
+void require_positive_permittivity_operand(const Scalar& value, const char* cause) {
+    using wide_math::isfinite;
+    const auto primal = permittivity_primal(scalar_lead(value));
+    if (!(primal > 0.0) || !isfinite(primal)) throw BulkPermittivityDomainError(cause);
+}
 
 template <typename Scalar, class ParameterSet, typename Fixed>
 Scalar bulk_relative_permittivity(
@@ -152,13 +169,22 @@ Scalar bulk_relative_permittivity(
                     * y_effective * y_effective
             );
     }
-    if (parameters.permittivity_form.is(PermittivityForm::DensityTemperature)) {
+    if (density_temperature_permittivity(parameters.permittivity_form)) {
+        const bool suppressed = parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
+        if (suppressed) require_positive_permittivity_operand(solvent_fraction, "invalid permittivity solvent fraction");
         // EqID: density_correlation_mixed_parameters
         const Fixed mixed_volume = dielectric_volume / solvent_fraction;
         const Fixed mixed_temperature = dielectric_temperature / solvent_fraction;
         // EqID: density_correlated_bulk_permittivity
-        return Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
+        const Scalar solvent = Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
             * (mixed_temperature / temperature - Fixed(1.0));
+        if (!suppressed) return solvent;
+        // EqID: ion_suppressed_density_correlated_bulk_permittivity
+        const Fixed denominator = Fixed(1.0) + ion_suppression;
+        require_positive_permittivity_operand(denominator, "invalid permittivity suppression denominator");
+        const Scalar bulk = solvent / denominator;
+        require_positive_permittivity_operand(bulk, "invalid bulk relative permittivity");
+        return bulk;
     }
 
     if (parameters.permittivity_form.is(PermittivityForm::ComponentMixing)) {
