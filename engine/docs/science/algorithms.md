@@ -2117,7 +2117,8 @@ empirical retention policy, equal to $\ln(1+f/\tau)$ for the $10^{-8}$
 composition box and $10^{-10}$ row criterion; no accuracy bound follows from
 that identity. At a rejected correction, recovery
 starts only if the best classified point still exceeds the existing row criterion.
-A row-acceptable trial, including a curvature refusal, keeps its original result.
+A row-acceptable trial, including a curvature refusal, keeps its original result,
+unless the end-point rule below returns the optimizer's end point.
 Supplied-trial evaluation performs no optimization and grants no permission.
 The scoped charged density-temperature Vapor trial also requires the normalized
 declared-root inspection specified in ALG-EQUILIBRIUM before retaining the
@@ -2137,7 +2138,20 @@ Existing deadline/evaluation limits, raw-row and correction stops remain; a
 nonfinite direction or no representable progress stops recovery with its cause.
 
 The shared driver keeps the best classified point and the unchanged final
-row/curvature admission. Reaching a cap confers no success; detailed diagnostics
+row/curvature admission. The polish solves interior stationarity rows without
+the optimizer's composition box, so it can leave the optimizer's end point for a
+stationary point of another basin. The trial therefore returns the optimizer's
+end point instead of the polished point when all four hold, tested in this order:
+the optimizer exit is optimal (Ipopt `SUCCESS`); the polished point is not
+coincident with the end point (a mole fraction or the log packing fraction
+differs by more than `PHASE_COINCIDENCE_DISTANCE`, checked without a model
+evaluation); the end point's tangent-plane distance is negative (one native
+evaluation, counted in the trial's work); and the polished distance is not
+lower. A negative distance at a feasible point is sufficient for descent, so
+the kept end point is classified like a stalled polish's returned start: not
+converged, with the unchanged donor slope and finite split. At any other
+optimizer exit the end point is not shown to satisfy the trial's rows and the
+polished result stands. Reaching a cap confers no success; detailed diagnostics
 retain the cap or no-progress cause even if the best point passes final admission.
 The existing positive-support charge reconstruction and reevaluated finite descent
 then consume the returned raw point. Reconstruction does not revise optimizer

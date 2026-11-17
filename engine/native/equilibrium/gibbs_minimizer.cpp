@@ -1751,6 +1751,7 @@ static EquilibriumResult run_driver_once(
         return polish_correction(compiled, coordinates, result, scope, limits, newton, refine_trial,
             non_error, inside_box, trial_branch, solid_violations, polish_evaluations, corrected, capped, initial_branch_stop);
     };
+    const auto end_point = refine_trial && !newton && status == Ipopt::SUCCESS ? full : std::vector<double>{};
     if (!polish(full)) return limited_result();
     if (expired()) return limited_result();
     if (newton) {
@@ -1777,8 +1778,24 @@ static EquilibriumResult run_driver_once(
         return association_result(std::move(result), observations);
     }
     if (expired()) return limited_result();
+    auto evaluation = compiled.evaluate_at(prepared);
+    // A negative distance at the optimal end point is a witness; a polish that leaves it for a distinct point
+    // of no lower distance (a stationary point of another basin) returns the end point instead (#49).
+    if (!end_point.empty()) {
+        const auto e = check_topology(compiled, end_point), p = check_topology(compiled, full);
+        const double apart = std::max(largest_difference(e.log_packing, p.log_packing),
+            largest_difference(e.compositions[0], p.compositions[0]));  // a trial has one phase
+        if (apart > policy::PHASE_COINCIDENCE_DISTANCE.value) {
+            auto at = compiled.prepare(end_point, false, &result.first_numerical_failure);
+            auto kept = compiled.evaluate_at(at);
+            ++polish_evaluations;
+            if (kept.objective < 0.0 && !(evaluation.objective < kept.objective)) {
+                scope.probe("trial_end_point_kept", {kept.objective, evaluation.objective, apart});
+                std::tie(full, prepared, evaluation) = std::tuple(end_point, std::move(at), std::move(kept));
+            }
+        }
+    }
     if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
-    const auto evaluation = compiled.evaluate_at(prepared);
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
     result.objective = evaluation.objective;
