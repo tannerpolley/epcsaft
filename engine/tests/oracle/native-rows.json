@@ -1,5 +1,5 @@
 {
-  "rows": 359,
+  "rows": 360,
   "recorded_at_revision": "e0df7fbcb115cac329742dbf8b228b8fc1249d22",
   "engine_clean": false,
   "commands": [
@@ -32,6 +32,10 @@
       "exit": 0
     },
     {
+      "command": "equilibrium_checks diffusive-spinodal",
+      "exit": 0
+    },
+    {
       "command": "equilibrium_checks E5-10",
       "exit": 0
     },
@@ -59,5 +63,13 @@
       "e5-3/isomerisation/A1"
     ],
     "reason": "No candidate-versus-cc42efbf0 arithmetic effect; discard unrelated historical updates."
+  },
+  "added_rows": {
+    "ids": [
+      "spinodal/1/0/rho"
+    ],
+    "recorded_on_base": "ba1a6c10 plus issue #12 (no runtime change: recovery caps renamed only)",
+    "command": "equilibrium_checks diffusive-spinodal",
+    "reason": "one new selector; the other rows keep their recorded revision"
   }
 }

@@ -149,8 +149,8 @@ struct DriverLimits final {
     std::size_t attempt_cap = 0;
     mutable std::size_t attempts = 0;
     static DriverLimits recovery_allowance(std::chrono::steady_clock::time_point deadline, std::size_t iterations) {
-        const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-        return {iterations, deadline, 0, true, 4 * cap, 2 * cap};
+        return {iterations, deadline, 0, true, static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_EVALUATIONS.value),
+            static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_HESSIAN_CALLS.value)};
     }
     bool iterations_spent() const { return consumed >= iterations; }
     bool caps_spent() const { return evaluations >= evaluation_cap || hessian_calls >= hessian_cap; }

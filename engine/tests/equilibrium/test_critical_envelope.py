@@ -1,9 +1,12 @@
 """Installed-wheel transport of critical and envelope declarations, against independent teqp and FeOs values."""
 import math
+from typing import Any
+
 import pytest
 from epcsaft import Mixture, Parameters, Pure, tolerances
 from epcsaft.equilibrium import (Amounts, critical_point, CriticalDeclaration, EnvelopeCondition, EnvelopeCoordinate, Free, Phase, Pinned,
                                  Problem, compile_problem, solve_equilibrium)
+from tests.native_inputs import same
 from tests.packets import parameters_json
 
 
@@ -38,9 +41,9 @@ def test_associating_critical_candidate_after_failed_declared_start() -> None:
     assert max(map(abs, result.classified_residuals)) <= 1e-10
     search = result.critical_search
     assert search is not None and search.selected is not None
-    cap = next(t.value for t in tolerances() if t.name == "EQUILIBRIUM_RECOVERY_WORK")
-    # The native recovery allowance caps evaluations at 4x and Hessian callbacks at 2x this work.
-    assert all(i <= cap and e <= 4 * cap and h <= 2 * cap for i, e, h in search.added_work)
+    cap = {t.name: t.value for t in tolerances()}
+    assert all(i <= cap["EQUILIBRIUM_RECOVERY_WORK"] and e <= cap["EQUILIBRIUM_RECOVERY_EVALUATIONS"]
+               and h <= cap["EQUILIBRIUM_RECOVERY_HESSIAN_CALLS"] for i, e, h in search.added_work)
     assert all(r.numerical_estimates is not None and r.numerical_estimates.cause == ""
                for r in search.results if r.success)
 
@@ -120,7 +123,7 @@ def test_polish_endpoint_conditioning() -> None:
             break
 
 
-def test_diffusive_spinodal_transport() -> None:
+def test_diffusive_spinodal_transport(evidence: Any) -> None:
     from epcsaft.equilibrium import SpinodalDeclaration
 
     model = Mixture(Parameters.from_json(parameters_json("gross-2001-methane-ethane", 3), components=("methane", "ethane")))
@@ -131,7 +134,7 @@ def test_diffusive_spinodal_transport() -> None:
         phases=[Phase("F", kind="liquid")], spinodal=declaration, row_tolerance=1e-11))
     assert result.success and result.spinodal is not None, result.message
     assert result.critical is None
-    assert result.molar_densities[0] == pytest.approx(4652.0793682042395, rel=1e-8)
+    same(evidence, "spinodal/1/0/rho", result.molar_densities[0])
     assert len(result.spinodal.search.brackets) == 2
     assert result.spinodal.normalized_null_residual <= 1e-10
     assert [r.eqid for r in result.rows].count("diffusive_spinodal") == 3
