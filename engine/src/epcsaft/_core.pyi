@@ -2427,6 +2427,11 @@ class StabilityOptions:
     """Optional count limiting trial searches."""
     standard_uncertainty_over_rt: list[float]
     """Optional length-n dimensionless species-standard uncertainty estimates in component order."""
+    retry_condensed_refusals: bool
+    """stability_test only, default False: after the completed schedule, retry each charged Liquid trial refused by
+    condensed-domain admission once, guarded to its liquid side under one recovery work allowance (ALG-STABILITY).
+    Other callers ignore it.
+    """
     def __init__(self) -> None:
         """Initialize StabilityOptions from the declared inputs.
 

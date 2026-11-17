@@ -2167,7 +2167,13 @@ void check_condensed_trial_recovery() {
     };
     {   // The refusal before optimization recovers from the parent-liquid restriction; the refused endpoint stays unresolved.
         const auto compiled = compile_problem(model, problem);
-        const auto report = stability_test(compiled, solve_compiled(compiled), options);
+        const auto parent = solve_compiled(compiled);
+        const auto plain = stability_test(compiled, parent, options);  // by default no second pass
+        CHECK(!plain.work.count("recovery_density_credits"));
+        for (const auto* seed : {"near-pure-0", "positive-neutral-base"})
+            CHECK(slot(plain, seed).evidence == "unresolved" && !second_pass(slot(plain, seed)));
+        options.retry_condensed_refusals = true;
+        const auto report = stability_test(compiled, parent, options);
         CHECK(report.completed && report.trials.size() == 9);
         const auto recovered = slot(report, "near-pure-0");
         const auto& q = recovered.quantities;

@@ -2308,14 +2308,14 @@ Compositions with no loop at T are under-admitted, and admission establishes
 condensed density only, not the correlation's fitted range. Declared solves,
 continuation, fitting and ASL are unaffected.
 
-Second pass (#21). After the public Full optimized `stability_test` completes its
+Second pass (#21). Only on request (`StabilityOptions.retry_condensed_refusals`,
+default off), after the public Full optimized `stability_test` completes its
 original schedule, each charged Liquid slot refused by this admission under a
 density-independent form gets at most one guarded shared-driver retry, all funded
 by one `DriverLimits::recovery_allowance` (`EQUILIBRIUM_RECOVERY_WORK`) and any
 remaining caller trial budget. A slot refused before optimization starts from the
 parent-liquid restriction, or, when that seed root is refused, from the first
-admitted original seed of its support; a refused end point restarts from its own
-admitted seed. Every optimizer and polish point must keep the admitted Liquid root
+admitted seed of its support; a refused end point restarts from its own seed. Every optimizer and polish point must keep the admitted Liquid root
 of its own normalized composition: that root and the point both denser than the
 root's negative-slope sample, a positive `(∂P/∂ρ)_{T,x}` at the point, and the point
 within `DENSITY_ANCHOR_LOG_WINDOW` of the root. The point's molar density is the
@@ -2328,7 +2328,8 @@ donor root) and each finite-split energy spends one evaluation credit, counted a
 `recovery_density_credits` apart from the cache hits. The end point then passes the
 unchanged admission and donor/descent classification. Only an optimized retry with
 a determined verdict replaces its slot. Its message keeps the original refusal and
-names the start, and whether that start was an already-searched seed or the result
+names the start, and whether that start, used as already reconstructed, was an
+already-searched seed or the result
 a present phase; such a result is no independent coverage. Otherwise the slot stays
 unresolved with both causes. A seed root solved during admission is solved again
 rather than reused (an accepted work reduction left out).

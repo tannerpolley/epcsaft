@@ -1221,8 +1221,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             };
             try {
                 if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = point.seed; }
-                else { seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
-                    ++report.work["reconstruction_evaluations"]; }
+                else if (!slot) { seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
+                    ++report.work["reconstruction_evaluations"]; }  // a second-pass start is reconstructed already
                 double eta, seed_density = 0.0;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
@@ -1232,7 +1232,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                         core::retain_first(trial.optimizer.first_numerical_failure, root->first_numerical_failure);
                         if (condensed) try { condensed_admission(root, quotient); }
-                        catch (const CondensedRefusal&) {  // a refused parent restriction: the first admitted original seed
+                        catch (const CondensedRefusal&) {  // a refused parent restriction: the first admitted seed
                             if (!slot || start != Start::ParentRestriction || rooted.empty()) throw;
                             start = Start::FirstAdmittedSeed;
                             root.reset(), seed = rooted.front().first;
@@ -1403,7 +1403,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 bool present = false;
                 for (std::size_t i = 0; i < at.amount.size() && !trial.composition.empty(); ++i) present |= c.problem.phases[i].kind
                     == phase.kind && largest_difference(trial.composition, at.composition[i]) <= policy::PHASE_COINCIDENCE_DISTANCE.value;
-                const char* from[] = {"the parent-liquid restriction", "the first admitted original seed", "its own admitted seed"};
+                const char* from[] = {"the parent-liquid restriction", "the first admitted seed", "its own seed"};
                 trial.message = original.message + "; second pass from " + from[static_cast<int>(start)]
                     + (searched ? ", an already-searched seed" : "") + (present ? ", returned a present phase" : "") + ": " + trial.message;
                 if (trial.optimizer.success && (trial.resolved_descent || trial.evidence == "no_resolved_descent")) original = std::move(trial);
@@ -1450,8 +1450,9 @@ StabilityReport recovered_stability_test(const CompiledSystem& c, const Equilibr
 }
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
     core::Scope scope("stability_test");
-    return recovered_stability_test(c, result, options, DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
-        static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value)));
+    auto recovery = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
+        static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value));
+    return explicit_test(c, result, options, nullptr, options.retry_condensed_refusals ? &recovery : nullptr);
 }
 
 namespace {
