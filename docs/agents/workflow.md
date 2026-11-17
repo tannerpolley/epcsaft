@@ -53,6 +53,10 @@ adoption gate, and implement only observation forms consumed by current scope;
 the parameter regression formulation's broader algebra defines meaning rather
 than requiring unused nodes.
 
+Before adding a derivative, iteration, or action, name the returned quantity,
+numerical step, or diagnostic that uses its result. Run the calculation only
+when that consumer needs it (owner, 2026-11-13).
+
 `CODING_STANDARDS.md` owns revalidating the mathematics with a scientific change
 and treating a gated result as a diagnosis; run the owning issue's smallest
 independent falsifier before acceptance (examples in ALG-TERMINATION
@@ -115,11 +119,11 @@ Missing accuracy/runtime thresholds stay owner decisions.
 
 After each merge, the lead runs `tools/prune-worktrees WORKTREE ...` (owner,
 2026-10-20) on each task worktree whose agent task is terminal with no queued
-turn and whose pull request is merged or issue closed; the daily
-`tools/clean-build` timer (owner, 2026-11-03) sweeps the rest. Their header comments
-gives what each refuses, archives and expires. The lead resolves the two lists
-`clean-build` writes: each entry in `build/evidence-to-promote.md` is promoted
-(its exact bytes committed into the analysis) or discarded (deleted, with the
-loss recorded there by issue number, never by the path `build/issue-N`); each
-worktree in `build/worktrees-to-resolve.md` is committed or discarded, then
-pruned.
+turn and whose pull request is merged or issue closed. Report dirty or active
+worktrees and leave them in place. The daily `epcsaft-clean-build.timer` is
+disabled. For a manual cleanup, the lead reviews `tools/clean-build --dry-run`
+from the main checkout before running `tools/clean-build`. For each entry in
+`build/evidence-to-promote.md`, the lead commits its exact bytes to the analysis
+or deletes it and records the loss there by issue number. Once a task is
+finished, the lead commits or discards the changes in its listed worktree in
+`build/worktrees-to-resolve.md`, then prunes it.

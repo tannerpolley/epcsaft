@@ -25,3 +25,19 @@
 - Business jargon, filler adverbs, stacked sentence fragments, and rhetorical setups.
 - Em dashes.
 - Claims beyond the tested domain or source support.
+
+## Manuscript deliverables
+
+| Scope | Standing owner decision | Authority |
+| --- | --- | --- |
+| Project-wide | Deliver manuscripts only as final products. | Owner, 2026-10-15, “manuscripts are only final products ever.” |
+
+## ePC-SAFT engine manuscript
+
+Sources in the private validation checkout are `validation/manuscript/main.tex`,
+`validation/manuscript/supplement.tex`, and `validation/manuscript/figures/`.
+
+| Scope | Standing owner decision | Authority |
+| --- | --- | --- |
+| Main article and supporting information | Deliver the main article and supporting information as separate PDFs. | Owner, 2026-10-28, recorded in issue #37. |
+| Supporting information | Put the long figure-comparison table in its own file. The supplement points readers to `supplementary-comparisons.csv`. | Owner decision recorded in the 2026-11-16 review in issue #37. |
