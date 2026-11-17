@@ -853,6 +853,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
                 throw std::invalid_argument("finite split arithmetic conservation failed");
             ++report.work["finite_split_evaluations"];
+            if (limits && limits->admit && !limits->spend(limits->evaluations, limits->evaluation_cap)) limits->check();
             const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
             const auto changed = phase_energy(*c.model, at.temperature, at.pressure, donor_volume, x,
                 report.standard_over_rt, report.work);
@@ -1067,7 +1068,7 @@ namespace {
 StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& requested, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false,
-    std::optional<GibbsDifferenceReference>* reference = nullptr) {
+    std::optional<GibbsDifferenceReference>* reference = nullptr, DriverLimits* recovery = nullptr) {
     auto options = requested;
     if (options.prepared_trials) {
         const auto& set = *options.prepared_trials;
@@ -1102,13 +1103,50 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     std::optional<GibbsDifferenceReference> own;
     auto& parent = reference ? *reference : own;
     std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;  // one comparison per coincident gas endpoint
-    for (const auto& phase : supports) {
+    // #21: after the completed schedule, one guarded pass over its condensed-domain refusals, funded by `recovery`.
+    using Slot = std::pair<std::size_t, std::vector<double>>;  // the original trial and its start, none if refused before it
+    std::vector<Slot> slots;
+    std::vector<std::vector<std::pair<std::vector<double>, double>>> admitted(supports.size());
+    std::map<std::vector<double>, std::optional<DensityRoot>> liquid_roots;  // by normalized composition
+    std::map<std::vector<double>, bool> decisions;  // by prepared point
+    const auto credit = [&] { if (!recovery->spend(recovery->evaluations, recovery->evaluation_cap)) recovery->check(); };
+    // A proposal keeps the admitted liquid root of its own composition: denser than its negative-slope sample,
+    // mechanically stable and within the anchor window of that root.
+    const auto guard = [&](const PhasePoint& point) {
+        const auto [decision, fresh] = decisions.try_emplace(point.point, false);
+        if (!fresh) { ++report.work["recovery_guard_cache_hits"]; return decision->second; }
+        try {
+            auto w = point.composition[0];
+            const double total = std::accumulate(w.begin(), w.end(), 0.0), rho = 1.0 / point.volume[0];
+            for (double& x : w) x /= total;
+            auto [root, missing] = liquid_roots.try_emplace(w);
+            if (!missing) ++report.work["recovery_root_cache_hits"];
+            else try {  // a spent allowance leaves the root unavailable and the point refused
+                credit();
+                auto found = stability_root(*c.model, at.temperature, at.pressure, w, PhaseKind::Liquid);
+                condensed_admission(found, false);
+                if (found.convergence.residual <= found.convergence.criterion->value) root->second = std::move(found);
+            } catch (const std::exception&) {}
+            const auto& liquid = root->second;
+            if (!liquid || !liquid->negative_slope_density) return false;
+            const double sample = *liquid->negative_slope_density;
+            const double slope = c.model->state(at.temperature, rho, w).pressure_density_derivative;
+            decision->second = liquid->molar_density > sample && rho > sample && std::isfinite(slope) && slope > 0.0
+                && std::abs(std::log(rho / liquid->molar_density)) <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+        } catch (const std::exception&) {}
+        return decision->second;
+    };
+    for (const bool retry : {false, true}) for (const auto& phase : supports) {
+        if (retry && (!recovery || slots.empty())) break;
+        if (retry) limits = recovery, recovery->admit = guard;
+        const auto k = static_cast<std::size_t>(&phase - supports.data());
         std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
         for (auto i : phase.support) identity += std::to_string(i) + ",";
         const bool quotient = form.is(PermittivityForm::DensityTemperatureIonSuppression);
         const bool condensed = !form.is(PermittivityForm::DensityTemperature) && !form.is(PermittivityForm::DipolarPerturbation)
             && std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
         std::vector<std::pair<std::string, std::vector<double>>> seeds;
+        std::vector<const Slot*> sources;
         if (options.evaluate_supplied_trials) seeds.emplace_back("supplied-composition", phase.composition_guess);
         else {
             std::vector<double> base(z.size(), 0.0), remainder;
@@ -1146,9 +1184,17 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             for (const auto& [previous, composition] : removed)
                 if (previous.kind == phase.kind && previous.support == phase.support)
                     seeds.emplace_back("removed-phase", composition);
+            if (retry) seeds.clear();
+            for (const auto& slot : slots) if (const auto& original = report.trials[slot.first]; retry
+                    && original.phase.kind == phase.kind && original.phase.support == phase.support) {
+                seeds.emplace_back(original.seed, slot.second.empty() ? remainder : slot.second);
+                sources.push_back(&slot);
+            }
         }
-        std::vector<std::pair<std::vector<double>, double>> rooted;
+        auto& rooted = admitted[k];
+        std::size_t visited = 0;
         for (auto& [seed_name, seed] : seeds) {
+            const Slot* slot = retry ? sources[visited++] : nullptr;
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             SuppliedPoint point = options.prepared_trials ? options.prepared_trials->points->entries[entry++] : SuppliedPoint{};
@@ -1162,19 +1208,29 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 double eta, seed_density = 0.0;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
-                    const auto root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
-                    core::retain_first(trial.optimizer.first_numerical_failure, root.first_numerical_failure);
-                    if (condensed) condensed_admission(root, quotient);
-                    seed_density = root.molar_density;
-                    eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root.molar_density;
+                    std::optional<DensityRoot> root;
+                    while (!root) {
+                        if (slot) credit();
+                        root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
+                        core::retain_first(trial.optimizer.first_numerical_failure, root->first_numerical_failure);
+                        if (condensed) try { condensed_admission(root, quotient); }
+                        catch (const std::invalid_argument&) {  // a refused parent restriction: the first admitted original seed
+                            if (!slot || !slot->second.empty() || rooted.empty() || seed == rooted.front().first) throw;
+                            trial.message = "parent restriction refused; start from the first admitted original seed";
+                            root.reset(), seed = rooted.front().first;
+                        }
+                    }
+                    seed_density = root->molar_density;
+                    eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root->molar_density;
                 }
                 packing_admission(eta);
-                if (std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
+                if (!slot && std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
                         return prior.first == seed && std::abs(std::log(prior.second / eta))
                             <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; })) continue;
-                rooted.emplace_back(seed, eta);
+                if (!slot) rooted.emplace_back(seed, eta);
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
                 if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
+                    if (slot) throw std::runtime_error(std::string(spent ? "work" : "trial") + " budget exhausted before the second-pass optimizer");
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { report_work(report.work, work); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
@@ -1233,6 +1289,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0))
                         throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
                 }
+                if (condensed && slot) credit();
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
                     volume, PhaseKind::Liquid, trial.quantities, "condensed_"), quotient, &trial.quantities);
                 advance(SuppliedStage::Energy);
@@ -1317,6 +1374,15 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             } catch (const std::exception& error) {
                 trial.message += "; " + std::string(error.what());
                 trial.evidence = "unresolved";
+                if (recovery && !retry && condensed && !quotient && std::strstr(error.what(), "condensed domain"))
+                    slots.emplace_back(report.trials.size(), trial.raw_coordinates.empty() ? std::vector<double>{} : seed);
+            }
+            if (slot) {  // only a determined optimized retry replaces the original slot; its message keeps the refusal
+                auto& original = report.trials[slot->first];
+                trial.message = original.message + "; second pass: " + trial.message;
+                if (trial.optimizer.success && (trial.resolved_descent || trial.evidence == "no_resolved_descent")) original = std::move(trial);
+                else original.message = std::move(trial.message);
+                continue;
             }
             report.trials.push_back(std::move(trial));
             if (fast && report.trials.back().resolved_descent) stopped = true;
@@ -1342,18 +1408,24 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
 
 // `reference` keeps the original plane and repair a reaction-relaxed split computed, for the measure.
 StabilityReport explicit_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
-    std::optional<GibbsDifferenceReference>* reference) {
+    std::optional<GibbsDifferenceReference>* reference, DriverLimits* recovery = nullptr) {
     if (options.mode != DiscoveryMode::Full) throw std::invalid_argument("discovery mode is only admitted in Discover");
     if (c.ideal) throw std::invalid_argument("ideal phase stability unavailable");
     if (c.model->parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability testing is deferred");
     if (!c.problem.solids.empty()) throw std::invalid_argument("stability trials are not admitted with solids");
-    return test_snapshot(c, result, options, {}, nullptr, nullptr, true, reference);
+    return test_snapshot(c, result, options, {}, nullptr, nullptr, true, reference,
+        options.evaluate_supplied_trials || options.prepared_trials ? nullptr : recovery);
 }
 } // namespace
 
-StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+StabilityReport recovered_stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
+    DriverLimits recovery) {
     core::Scope scope("stability_test");
-    return explicit_test(c, result, options, nullptr);
+    return explicit_test(c, result, options, nullptr, &recovery);
+}
+StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    return recovered_stability_test(c, result, options, DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
+        static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value)));
 }
 
 namespace {

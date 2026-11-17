@@ -2148,4 +2148,64 @@ void check_associating_isomer_gibbs() {
         recording_support::Rule::Absolute, error, 0, "identical residual interactions");
     CHECK(std::abs(value - target) <= error);
 }
+
+// #21: published MEA record (density-independent permittivity), census states 19 and 18 at 313.15 K and loading 0.05.
+void check_condensed_trial_recovery() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-published-state-19.inc"
+    auto l = liquid, v = vapor;
+    l.name = "trial-L"; v.name = "trial-V";
+    StabilityOptions options;
+    options.trials = std::vector<PhaseSpec>{l, v};
+    const auto slot = [](const StabilityReport& report, const std::string& seed) {
+        return *std::find_if(report.trials.begin(), report.trials.end(), [&](const auto& t) {
+            return t.phase.kind == PhaseKind::Liquid && t.seed == seed; });
+    };
+    const auto second_pass = [](const StabilityTrial& t) {
+        return t.message.find("condensed domain") != std::string::npos && t.message.find("second pass") != std::string::npos;
+    };
+    {   // The refusal before optimization recovers from the parent-liquid restriction; the refused endpoint stays unresolved.
+        const auto compiled = compile_problem(model, problem);
+        const auto report = stability_test(compiled, solve_compiled(compiled), options);
+        CHECK(report.completed && report.trials.size() == 9);
+        const auto recovered = slot(report, "near-pure-0");
+        const auto& q = recovered.quantities;
+        CHECK(recovered.optimizer.success && recovered.evidence == "no_resolved_descent" && second_pass(recovered));
+        CHECK(recovered.optimizer.convergence.residual <= 1e-10);
+        CHECK(std::abs(q.at("normalization_residual")) <= 1e-10 && std::abs(q.at("charge_residual")) <= 1e-10);
+        CHECK(q.at("condensed_root_log_displacement") <= policy::DENSITY_ANCHOR_LOG_WINDOW.value);
+        CHECK(1.0 / q.at("volume_m3_per_mol") > q.at("negative_slope_density_mol_m3"));
+        const auto endpoint = slot(report, "positive-neutral-base");
+        CHECK(endpoint.evidence == "unresolved" && second_pass(endpoint));
+    }
+    // A second pass with no work, one exhausted during its optimizer, and the full allowance keep the original witnesses.
+    problem.pressure = FreeValue::fixed(3210.7051705127587);
+    const auto compiled = compile_problem(model, problem);
+    const auto parent = solve_compiled(compiled);
+    const auto forever = std::chrono::steady_clock::time_point::max();
+    const auto none = recovered_stability_test(compiled, parent, options, DriverLimits::recovery_allowance(forever, 0));
+    const auto spent = recovered_stability_test(compiled, parent, options, DriverLimits::recovery_allowance(forever, 2));
+    const auto full = stability_test(compiled, parent, options);
+    CHECK(none.work.at("trial_driver_invocations") == 8 && spent.work.at("trial_driver_invocations") == 9);
+    CHECK(spent.work.at("iterations") - none.work.at("iterations") == 2);
+    for (const auto* report : {&none, &spent}) {
+        const auto refused = slot(*report, "near-pure-0");
+        CHECK(refused.evidence == "unresolved" && second_pass(refused) && refused.message.find("exhausted") != std::string::npos);
+    }
+    for (const auto* seed : {"positive-neutral-base", "near-pure-1", "near-pure-2"})
+        for (const auto* report : {&spent, &full}) {
+            const auto a = slot(none, seed), b = slot(*report, seed);
+            CHECK(a.resolved_descent && b.resolved_descent && a.evidence == b.evidence);
+            CHECK(a.quantities.at("tpd_over_rt") == b.quantities.at("tpd_over_rt"));
+            CHECK(a.quantities.at("split_delta_g_over_rt") == b.quantities.at("split_delta_g_over_rt"));
+        }
+    const auto added = slot(full, "near-pure-0");
+    CHECK(added.resolved_descent && second_pass(added));
+    check_split_admission(model, compiled, problem, added);
+    recording_support::observe("condensed-trial-recovery/state-18", "near-pure-0 TPD over RT", "1", added.quantities.at("tpd_over_rt"),
+        std::nullopt, "second-pass witness", recording_support::fields({recording_support::field("split_delta_g_over_rt",
+            added.quantities.at("split_delta_g_over_rt")), recording_support::field("split_error_estimate_over_rt",
+            added.quantities.at("split_error_estimate_over_rt"))}));
+}
 }  // namespace equilibrium_checks

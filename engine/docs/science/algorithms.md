@@ -2308,6 +2308,26 @@ Compositions with no loop at T are under-admitted, and admission establishes
 condensed density only, not the correlation's fitted range. Declared solves,
 continuation, fitting and ASL are unaffected.
 
+Second pass (#21). After the public Full optimized `stability_test` completes its
+original schedule, each charged Liquid slot refused by this admission under a
+density-independent form gets at most one guarded shared-driver retry, all funded
+by one `DriverLimits::recovery_allowance` (`EQUILIBRIUM_RECOVERY_WORK`) and any
+remaining caller trial budget. A slot refused before optimization starts from the
+parent-liquid restriction, or, when that seed root is refused, from the first
+admitted original seed of its support; a refused end point restarts from its own
+admitted seed. Every optimizer and polish point must keep the admitted Liquid root
+of its own normalized composition: that root and the point both denser than the
+root's negative-slope sample, a positive `(∂P/∂ρ)_{T,x}` at the point, and the point
+within `DENSITY_ANCHOR_LOG_WINDOW` of the root. Roots are cached by composition and
+decisions by prepared point, and each actual density call (seed, guard miss,
+end point and finite-split donor root) spends one evaluation credit. The end point
+then passes the unchanged admission and donor/descent classification. Only an
+optimized retry with a determined verdict replaces its slot, keeping the original
+refusal in its message; otherwise the slot stays unresolved with both causes.
+Determined original verdicts are never changed. Fitting's `stability_measure`,
+discovery, recovery and vanished-phase searches and supplied evaluations keep the
+original schedule alone.
+
 For ordinary search, for every admitted pair enumerate a positive charge-neutral base from equal
 supported weights with ionic group rescaling. A compatible candidate's strictly
 positive reconstructed restriction may supply the near-pure remainder;
