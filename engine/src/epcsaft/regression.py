@@ -59,6 +59,7 @@ _KINDS = {
     "phase_fraction": ObservationKind.PhaseFraction,
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
+    "solvent_activity": ObservationKind.PhaseSolventActivity,
 }
 __all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
@@ -490,7 +491,8 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
 
 def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool | None = None,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
-                denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None) -> Observation:
+                denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None,
+                analytical_solute_molality: float | None = None) -> Observation:
     """Declare an observable of a solved equilibrium problem.
 
     Parameters
@@ -502,7 +504,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         kg/m³), ``mole_fraction`` (dimensionless sum over selected species),
         ``partial_pressure`` (Pa, P times that sum), ``phase_fraction``
         (dimensionless molar fraction), ``amount_ratio`` (dimensionless ratio
-        of selected phase-component mol), or
+        of selected phase-component mol), ``solvent_activity`` (unit 1 relative to
+        the pure liquid solvent at fixed T/P), or
         ``equilibrium_isobaric_heat_capacity`` (J/(mol-feed K), driven T/P or PH).
     problem : Problem
         Declared phases and physical constraints; discovery is refused.
@@ -516,10 +519,14 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         Required phase name except for pressure, temperature and equilibrium
         heat capacity.
     species : sequence of str, optional
-        Selected numerator components for composition, pressure or amount rows.
+        Selected numerator components for composition, pressure or amount rows;
+        exactly one neutral solvent for solvent activity.
     scale : float, optional
         Required positive scale in observed units for difference residuals;
         absent for log-ratio residuals.
+    analytical_solute_molality : float, optional
+        Analytical solute molality sum before speciation in mol/kg solvent, used
+        only for osmotic reporting. An absent or zero sum leaves that coefficient undefined.
     denominator_phase : str, optional
         Required denominator phase for an amount ratio.
     denominator_species : sequence of str, optional
@@ -547,6 +554,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
     result.kind = _KINDS[kind]
+    if analytical_solute_molality is not None:
+        result.analytical_solute_molality = analytical_solute_molality
     if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
         raise ParameterError(f"{kind} needs its phase")
     if mass_basis is None and kind == "phase_density":  # only a density has a basis

@@ -3265,6 +3265,16 @@ source record directly (EqID: `source_log_equilibrium_constant_observation`).
 It skips equilibrium compilation, reference transfer and solving; its exact
 columns reuse the coefficient basis above, with zero EOS/other-reaction columns.
 It admits Difference residuals only and shares named-coordinate admission.
+`PhaseSolventActivity` evaluates the fixed-T/P liquid solvent activity relative to
+its pure liquid using the solved-state EOS log activity and the existing
+pressure-closed pure-solvent fugacity reference. Its exact parameter action
+subtracts the pure-reference action from the total reactive solved-state action;
+a fixed-composition derivative cannot replace it. A declared analytical solute
+molality sum supplies optional osmotic reporting on the pre-reaction basis,
+$\phi=-\ln a_w/(M_w\sum_j m_j^{analytical})$. The pure-water zero denominator
+leaves that coefficient unavailable while $a_w=1$ remains valid. Reference and
+solved-state failures retain their causes. State grouping includes the selected
+solvent and phase; workers transport the reporting input and outputs.
 `PhaseAmountRatio` composes component amounts by the quotient rule; any constant
 caller factor belongs in the observed value and, for Difference, in its scale.
 Declared pure solids are admitted by `PhaseMoleFraction`, `PhaseAmountRatio`,

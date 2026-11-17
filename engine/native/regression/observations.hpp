@@ -18,7 +18,7 @@ namespace epcsaft::regression {
 enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction, PartialPressure, PhaseAmountRatio, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability
+    PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -47,6 +47,7 @@ struct Observation final {
     std::array<std::size_t, 2> ion_indices{};
     std::array<int, 2> stoichiometry{};
     double molality = 0.0;
+    double analytical_solute_molality = 0.0;  // mol/kg solvent, before chemical speciation; reporting only
     std::optional<std::vector<double>> finite_solute_molalities;
     std::vector<double> reference_composition;
     DensityBranch branch = DensityBranch::Unspecified;
@@ -106,6 +107,8 @@ struct Prediction final {
     std::optional<ElectrolyteActivity> activity;
     std::optional<State> state, reference_state;
     std::optional<double> value;
+    std::optional<double> analytical_osmotic_coefficient;
+    std::string analytical_osmotic_cause;
     std::string unit;
     ObservationStatus status = ObservationStatus::Nonfinite;
     std::string message;
@@ -141,6 +144,7 @@ struct PredictionGradient final {
 struct ObservationInputDirection final {
     equilibrium::SolvedStateActionDirection state;
     double molality = 0.0;
+    double analytical_solute_molality = 0.0;  // mol/kg solvent, before chemical speciation; reporting only
 };
 
 // Admission by name: finite inputs, phase/species indices inside the declared problem.

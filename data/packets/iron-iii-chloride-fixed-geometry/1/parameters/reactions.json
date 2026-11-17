@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "qualification_status": "research",
+  "checked_domain_ids": [],
+  "hydrolysis": "hydrolysis omitted, untested",
+  "identification": "unresolved; no covariance or bounded uncertainty",
+  "basis": "common-molality infinite-dilution source formation constant; standard molality 1 mol/kg water; declared charge-neutral dilution path Li:H:Cl:Fe3:FeCl1:FeCl2:FeCl3:FeCl4 = 1:1:7:1:1:1:1:1",
+  "temperature_basis": "Liu prior at 298.15 K; constant log-polynomial across 298\u2013298.15 K is a research approximation",
+  "reactions": [
+    {
+      "name": "beta1",
+      "stoichiometry": {
+        "iron-iii": -1,
+        "chloride-anion": -1,
+        "iron-iii-monochloro": 1
+      },
+      "correlation": "ln(beta)=a+b/T+c*ln(T)+d*T",
+      "a": 3.4999293413509496,
+      "b": 0,
+      "c": 0,
+      "d": 0,
+      "T_ref_K": 298.15,
+      "T_min_K": 298,
+      "T_max_K": 298.15,
+      "source_id": "liu-2006",
+      "coordinate_status": "fixed log10 beta1=1.52",
+      "coefficient_basis": "dimensionless activities from molalities divided by standard molality"
+    },
+    {
+      "name": "beta2",
+      "stoichiometry": {
+        "iron-iii": -1,
+        "chloride-anion": -2,
+        "iron-iii-dichloro": 1
+      },
+      "correlation": "ln(beta)=a+b/T+c*ln(T)+d*T",
+      "a": -2.302585092994046,
+      "b": 0,
+      "c": 0,
+      "d": 0,
+      "T_ref_K": 298.15,
+      "T_min_K": 298,
+      "T_max_K": 298.15,
+      "source_id": "issue-39-revision-4",
+      "coordinate_status": "fitted lower bound",
+      "coefficient_basis": "dimensionless activities from molalities divided by standard molality"
+    },
+    {
+      "name": "beta3",
+      "stoichiometry": {
+        "iron-iii": -1,
+        "chloride-anion": -3,
+        "iron-iii-trichloro": 1
+      },
+      "correlation": "ln(beta)=a+b/T+c*ln(T)+d*T",
+      "a": -6.907755278982138,
+      "b": 0,
+      "c": 0,
+      "d": 0,
+      "T_ref_K": 298.15,
+      "T_min_K": 298,
+      "T_max_K": 298.15,
+      "source_id": "issue-39-revision-4",
+      "coordinate_status": "fitted lower bound",
+      "coefficient_basis": "dimensionless activities from molalities divided by standard molality"
+    },
+    {
+      "name": "beta4",
+      "stoichiometry": {
+        "iron-iii": -1,
+        "chloride-anion": -4,
+        "iron-iii-tetrachloro": 1
+      },
+      "correlation": "ln(beta)=a+b/T+c*ln(T)+d*T",
+      "a": -11.51292546497023,
+      "b": 0,
+      "c": 0,
+      "d": 0,
+      "T_ref_K": 298.15,
+      "T_min_K": 298,
+      "T_max_K": 298.15,
+      "source_id": "issue-39-revision-4",
+      "coordinate_status": "fitted lower bound",
+      "coefficient_basis": "dimensionless activities from molalities divided by standard molality"
+    }
+  ]
+}

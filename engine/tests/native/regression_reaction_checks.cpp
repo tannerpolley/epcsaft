@@ -1862,3 +1862,49 @@ void check_reaction_enthalpy_shift() {
     CHECK(wrong.coordinates.start(wrong.parameters,wrong.observations).size() == 1);
 }
 }  // namespace regression_checks
+
+namespace regression_checks {
+void check_reactive_solvent_activity() {
+    auto parameters = properties_support::aqueous_electrolyte();
+    auto problem = referenced_formula(std::nullopt);
+    problem.reactions[0].correlation->a = std::log(1.0e-4);
+    Observation row = solved(ObservationKind::PhaseSolventActivity, problem, 0, {0});
+    row.analytical_solute_molality = 1.0;
+    const ActiveParameter active{ParameterFamily::SegmentCount, {0}};
+    const HelmholtzModel model(parameters, {active});
+    const auto prediction = predict(model, row);
+    CHECK(prediction.status == ObservationStatus::Available);
+    const auto& state = *prediction.solved;
+    const auto reference = solvent_reference(model, *state.temperature, *state.pressure, {1, 0, 0});
+    const auto activity = solvent_activity(model, *state.temperature, *state.pressure, state.mole_fractions, reference);
+    CHECK(activity.solvent_activity);
+    agree("reactive-solvent/value", "aw", "1", *prediction.value, *activity.solvent_activity, 1e-12, 1e-10, "shared solvent reference");
+    const auto gradient = differentiate(model, row, prediction);
+    CHECK(gradient.status == ObservationStatus::Available);
+    const auto value = [&](double shift) {
+        auto shifted = parameters; shifted.segment_count[0] += shift;
+        const auto p = predict(HelmholtzModel(shifted), row);
+        CHECK(p.status == ObservationStatus::Available);
+        return *p.value;
+    };
+    ladder_agrees("reactive-solvent/action", "daw_dm", gradient.value[0], ladder(value, 0.001), "reactive composition and pure reference");
+    row.problem.reactions.clear(); row.problem.source_reference.reset();
+    row.problem.feed.values = {1, 0, 0}; row.analytical_solute_molality = 0;
+    const auto pure = predict(model, row);
+    CHECK(pure.status == ObservationStatus::Available && !pure.analytical_osmotic_coefficient);
+    agree("reactive-solvent/pure", "aw", "1", *pure.value, 1.0, 1e-12, 1e-10, "pure liquid limit");
+    CHECK(pure.analytical_osmotic_cause == "OsmoticUndefinedPureSolvent");
+    row.problem.feed.values = {1, 0.02, 0.02};
+    row.analytical_solute_molality = 0.04 / parameters.molar_mass_kg_per_mol[0];
+    const auto chloride = predict(model, row);
+    CHECK(chloride.status == ObservationStatus::Available);
+    const auto old = solvent_activity(model, *chloride.solved->temperature, *chloride.solved->pressure,
+        chloride.solved->mole_fractions, reference);
+    agree("reactive-solvent/zero-Fe-chloride", "aw", "1", *chloride.value, *old.solvent_activity, 1e-12, 1e-10, "unchanged chloride limit");
+    agree("reactive-solvent/analytical-osmotic", "phi", "1", *chloride.analytical_osmotic_coefficient,
+        std::get<double>(*old.osmotic_coefficient), 1e-12, 1e-10, "analytical denominator equals dissolved species count without reactions");
+    auto missing = prediction; missing.reference->pure_solvent_state.reset();
+    project_prediction(model, row, missing);
+    CHECK(missing.status == ObservationStatus::ReferenceUnavailable);
+}
+} // namespace regression_checks

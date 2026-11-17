@@ -401,6 +401,13 @@
       "packet_path": "data/packets/pahlavanzadeh-2013-mdea/1",
       "packet_fingerprint": "d7c29cdb4377bde7649b0c445bacba65b3b000f99395dc9e6a5b7a0c08050a73",
       "materialization": "byte-for-byte"
+    },
+    {
+      "packet_id": "iron-iii-chloride-fixed-geometry",
+      "packet_version": "1",
+      "packet_path": "data/packets/iron-iii-chloride-fixed-geometry/1",
+      "packet_fingerprint": "03079968aec299d9c97b9066d0950f58e8a4ee7ea0b8362ef9ce8e9fd0960127",
+      "materialization": "byte-for-byte"
     }
   ]
 }

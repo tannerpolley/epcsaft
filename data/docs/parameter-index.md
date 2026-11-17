@@ -32,6 +32,7 @@ observations (for example `hamer-wu-1972-aqueous-alkali-halides`) for the intend
 | `held-2014-strategy2` | 2 | 1, 2 | Held 2014 strategy-2 water and chloride ions at 298.15 K; /2 uses the Eq. (21) 0.88 sigma closest approach that reproduces the paper figures, /1 the text's sigma; transcription, not a qualified fit. |
 | `held-cameretti-sadowski-2008` | 4 | 2, 3, 4 | Held 2008 water and 29 ions, fully dissociated aqueous electrolytes at 298.15 K and 1 bar. |
 | `hydrogen-binary-vle` | 2 | 2 | Observations, not parameters: H2/benzene bubble points and H2/CH4 coexisting compositions, cryogenic to 423 K. |
+| `iron-iii-chloride-fixed-geometry` | 1 | 1 | Exploratory five-species Fe(III) chloride under fixed research geometry; hydrolysis omitted, untested; identification unresolved; checked_domain_ids=[]; no checked Fe activity domain. |
 | `khudaida-2026-figure-2-electrolyte-lle` | 7 | 5, 6, 7 | Khudaida 2026 Figure 2: water/ethanol/isobutanol/NaCl electrolyte LLE. |
 | `mea-co2-h2o-nine-species-estimation` | 5 | 2, 3, 4, 5 | CO2-MEA-water nine-species model under development; carries only reactions R4 and R5 and Born constants 0 (see engine/README.md, reaction sets). |
 | `mixed-chloride-water-observations` | 1 | 1 | Source observations and reference conversions for NaCl-MgCl2 and NaCl-CaCl2 water properties at 298.15 K; no model qualification or pointwise weights. |
@@ -100,7 +101,7 @@ Current packet versions whose parameter files hold the component.
 | `butanal` | `gross-vrabec-2006/1` |
 | `butane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `butanone` | `gross-vrabec-2006/1` |
-| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `calcium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `zuber-2014-electrolyte-permittivity/1` |
 | `carbamate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `carbon dioxide` | `feos-gross-sadowski-2001/1` |
 | `carbon disulfide` | `feos-gross-sadowski-2001/1` |
@@ -111,7 +112,7 @@ Current packet versions whose parameter files hold the component.
 | `carbonate-anion` | `mea-co2-h2o-nine-species-estimation/5` |
 | `cesium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorate-anion` | `held-cameretti-sadowski-2008/4` |
-| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `chloride-anion` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `chlorine` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `chlorobenzene` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `chloroethane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3`, `gross-vrabec-2006/1` |
@@ -155,18 +156,23 @@ Current packet versions whose parameter files hold the component.
 | `hydrogen-cation` | `figiel-yu-held-2025/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `hydrogen-chloride` | `gross-vrabec-2006/1` |
 | `hydrogen-phosphate-anion` | `held-cameretti-sadowski-2008/4` |
-| `hydronium-cation` | `figiel-2025-chloride-mixture-refit/4`, `held-cameretti-sadowski-2008/4`, `mea-co2-h2o-nine-species-estimation/5` |
+| `hydronium-cation` | `figiel-2025-chloride-mixture-refit/4`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `mea-co2-h2o-nine-species-estimation/5` |
 | `hydroxide-anion` | `held-cameretti-sadowski-2008/4`, `mea-co2-h2o-nine-species-estimation/5`, `zuber-2014-electrolyte-permittivity/1` |
 | `iodide-anion` | `figiel-2025-aqueous-iodides/3`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `iron-cation` | `held-cameretti-sadowski-2008/4` |
+| `iron-iii` | `iron-iii-chloride-fixed-geometry/1` |
+| `iron-iii-dichloro` | `iron-iii-chloride-fixed-geometry/1` |
+| `iron-iii-monochloro` | `iron-iii-chloride-fixed-geometry/1` |
+| `iron-iii-tetrachloro` | `iron-iii-chloride-fixed-geometry/1` |
+| `iron-iii-trichloro` | `iron-iii-chloride-fixed-geometry/1` |
 | `isobutane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `isobutanol` | `khudaida-2026-figure-2-electrolyte-lle/7` |
 | `isopentane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `isopropyl ethanoate` | `feos-gross-sadowski-2001/1` |
 | `isopropyl-ethanoate` | `gross-sadowski-2001/3` |
-| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `lithium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `zuber-2014-electrolyte-permittivity/1` |
 | `m-xylene` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
-| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `magnesium-cation` | `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `zuber-2014-electrolyte-permittivity/1` |
 | `methane` | `feos-gross-sadowski-2001/1`, `gross-2001-methane-ethane/3`, `gross-sadowski-2001/3`, `hda-pc-saft/1`, `nasrifar-2010-mdea/1` |
 | `methanol` | `feos-gross-sadowski-2002/1`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1` |
 | `methyl butanoate` | `feos-gross-sadowski-2001/1` |
@@ -204,7 +210,7 @@ Current packet versions whose parameter files hold the component.
 | `pentadecane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `pentane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `perchlorate-anion` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
+| `potassium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `zuber-2014-electrolyte-permittivity/1` |
 | `propanal` | `gross-vrabec-2006/1` |
 | `propane` | `feos-gross-sadowski-2001/1`, `gross-2001-propane/3`, `gross-sadowski-2001/3` |
 | `propyl ethanoate` | `feos-gross-sadowski-2001/1` |
@@ -213,7 +219,7 @@ Current packet versions whose parameter files hold the component.
 | `propylene` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `protonated-monoethanolamine` | `mea-co2-h2o-nine-species-estimation/5` |
 | `rubidium-cation` | `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
-| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
+| `sodium-cation` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `khudaida-2026-figure-2-electrolyte-lle/7`, `zuber-2014-electrolyte-permittivity/1` |
 | `strontium-cation` | `held-cameretti-sadowski-2008/4` |
 | `sulfate-anion` | `figiel-yu-held-2025/4`, `held-cameretti-sadowski-2008/4`, `zuber-2014-electrolyte-permittivity/1` |
 | `sulfur dioxide` | `feos-gross-sadowski-2001/1` |
@@ -227,6 +233,6 @@ Current packet versions whose parameter files hold the component.
 | `undecane` | `feos-gross-sadowski-2001/1`, `gross-sadowski-2001/3` |
 | `vanadium-iii-cation` | `figiel-yu-held-2025/4` |
 | `vanadyl-cation` | `figiel-yu-held-2025/4` |
-| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-gross-sadowski-2002/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
+| `water` | `ascani-2022-case-study-2-electrolyte-lle/3`, `dielectric-response-records/1`, `feos-gross-sadowski-2002/1`, `figiel-2025-aqueous-iodides/3`, `figiel-2025-chloride-activity-refit/2`, `figiel-2025-chloride-mixture-refit/4`, `figiel-2025-reference-electrolytes/4`, `figiel-2025-validation-parameters/3`, `figiel-yu-held-2025/4`, `held-2012-alcohols/1`, `held-2014-chloride-mixture-refit/1`, `held-2014-strategy2/2`, `held-cameretti-sadowski-2008/4`, `iron-iii-chloride-fixed-geometry/1`, `khudaida-2026-figure-2-electrolyte-lle/7`, `mea-co2-h2o-nine-species-estimation/5`, `nasrifar-2010-mdea/1` |
 | `water_2B` | `pahlavanzadeh-2013-mdea/1` |
 | `water_4C` | `pahlavanzadeh-2013-mdea/1` |

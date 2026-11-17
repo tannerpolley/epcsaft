@@ -260,3 +260,33 @@ def test_worker_image_refusal(tmp_path: Path, image: int, mismatch: str) -> None
 
 if __name__ == '__main__':
     print(json.dumps([record(fit(n)) for n in (1, 2)], sort_keys=True))
+
+@pytest.mark.parametrize("failure", [False, True])
+def test_reactive_solvent_worker_agreement(failure: bool) -> None:
+    from epcsaft import Mixture, regression as reg
+    from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction
+    from tests.native_inputs import ETHANE, parameters
+
+    p = parameters((ETHANE,) * 2, pairs=[("k_ij", (0, 1), 0.0)])
+    model = Mixture(p)
+    rows = []
+    for temperature in (180.0, 185.0):
+        problem = Problem(phases=[Phase("L", kind="liquid")], T=temperature, P=1e5,
+                          feed=Amounts({"s0": 0.5, "s1": 0.5}),
+                          reactions=[Reaction({"s0": -1, "s1": 1}, equilibrium_constant=2.0)])
+        row = reg.observation(p, "solvent_activity", problem, phase="L", species=["s0"],
+                              analytical_solute_molality=1.0, observed=1.0, form="difference", scale=1.0)
+        value = reg.predict(model, row).value
+        assert value is not None
+        row.observed = value
+        rows.append(row)
+    if failure:
+        rows[1].observed, rows[1].scale = 1e300, 1e-300
+    coordinate = reg.coordinate(p, [("k_ij", ("s0", "s1"), 1.0)], origin=0.0, scale=0.01, bounds=(-0.1, 0.1))
+    results = [record(reg.fit(p, [coordinate], rows, controls=reg.FitControls(
+        maximum_iterations=20, maximum_elapsed_time_seconds=30.0, workers=workers))) for workers in (1, 2)]
+    assert results[0] == results[1]
+    if failure:
+        assert results[0]["failures"][0][0] == 1
+    else:
+        assert any(value != 0.0 for value in results[0]["optimizer_jacobian"])
