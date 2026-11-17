@@ -2484,7 +2484,7 @@
   ],
   "document_id": "iron-iii-chloride-fixed-geometry",
   "document_version": 1,
-  "purpose": "Exploratory Fe(III) chloride under fixed research geometry; hydrolysis omitted, untested; identification unresolved; no bounded uncertainty; no checked Fe activity domain.",
+  "purpose": "Exploratory Fe(III) chloride under fixed research geometry; hydrolysis omitted, untested; identification unresolved; no bounded uncertainty; no checked Fe activity domain. Issue #39 delivers this research set and the native observation; checked FeCl4 activity is the separate objective of https://github.com/tannerpolley/epcsaft/issues/43.",
   "sources": [
     {
       "source_id": "figiel-yu-held-2025",
@@ -2821,5 +2821,6 @@
     }
   ],
   "qualification_status": "research",
-  "checked_domain_ids": []
+  "checked_domain_ids": [],
+  "selection_history": "The invalidated first campaign evaluated the holdout at 18:19:05, before the corrected mask was frozen at 18:30:50. The corrected recovery used source pixels, stroke continuity and calibration only; the replacement campaign selected on training only. No stronger claim of holdout independence is made."
 }

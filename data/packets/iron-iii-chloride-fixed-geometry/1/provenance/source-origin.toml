@@ -1,11 +1,11 @@
 provenance_kind = "derived-record-provenance-v1"
 schema_version = 1
-validation_commit = "1ac2bcb7fab36a602e4448164330dc0bf0cc0f84"
-transformations = ["Preserve inherited chloride component, interaction, correlation, topology and domain records; add explicit Fe(III) chloro-complexes under owner-fixed research geometry.", "Freeze the training-only minimum-cost baseline candidate from the corrected 43-target recovery and one authorized replacement 36-fit campaign. Exact native derivatives; no hydrolysis. Identification unresolved and no checked Fe activity domain."]
+validation_commit = "b9776233f8112af96788d3af825079fc2e7c953a"
+transformations = ["Preserve inherited chloride component, interaction, correlation, topology and domain records; add explicit Fe(III) chloro-complexes under owner-fixed research geometry.", "Freeze the training-only minimum-cost baseline candidate from the corrected 43-target recovery and one authorized replacement 36-fit campaign. The invalidated first campaign evaluated the holdout at 18:19:05, before the corrected mask was frozen at 18:30:50. The corrected recovery used source pixels, stroke continuity and calibration only; the replacement campaign selected on training only. No stronger claim of holdout independence is made. Exact native derivatives; no hydrolysis. Identification unresolved and no checked Fe activity domain."]
 
 [[records]]
 retained_path = "parameters/parameters.json"
-sha256 = "37e0f25a15154ebeff34698dcf8fb96e365deca75832f6bcc56ff3a42014d430"
+sha256 = "860b19a9c6075142344a32ffdb3b506b191b985ea077d47de5f35063d06003ec"
 
 [[records]]
 retained_path = "parameters/reactions.json"
@@ -45,7 +45,7 @@ sha256 = "eca8b77b72d6a3a1297a13ade943d456ef4ff0d566d7a5a5c83e501b01905613"
 [[validation_inputs]]
 repository = "tannerpolley/epcsaft-validation"
 retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/scripts/compare.cpp"
-sha256 = "d3315c534ef24c50a6ddfd864760c13bc5a0cf0a582e16e36779125ddb10b0b1"
+sha256 = "081e08f0403e0fa784d68b155cf97122c4fe2565938b670b808aec2fa1de1240"
 
 [[validation_inputs]]
 repository = "tannerpolley/epcsaft-validation"
@@ -55,7 +55,7 @@ sha256 = "07dc8aed4f1294c08c5d6702ce2749735dbf11c5707e179ec84d12eacd89e219"
 [[validation_inputs]]
 repository = "tannerpolley/epcsaft-validation"
 retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/comparison.csv"
-sha256 = "52d6891c9722c7d32a2293d71f07d16c672ca057a77e0202344a0012ab2ce894"
+sha256 = "2a55c43a09b24c6098a3c60d12423fc6d8c700a9d6ad226198c1cee3e50c01b8"
 
 [[validation_inputs]]
 repository = "tannerpolley/epcsaft-validation"
@@ -65,4 +65,14 @@ sha256 = "e8bbbce60f254d4cc38c0ed9eaa4ead4385f2d4242ba9373d502a9822de974e2"
 [[validation_inputs]]
 repository = "tannerpolley/epcsaft-validation"
 retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/notebook.qmd"
-sha256 = "a561b92f6fabdf567815e21c0072ec450e839e55e038cbf55c42876ed238efcc"
+sha256 = "9fe7ba6a4c2e93cb0eb75e3bafbe61055c7c56b7d382046e569689db82d2ba41"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/results/analytical-osmotic.csv"
+sha256 = "8ab4a2e8a33213aac97ce0dc7b7693607b58cbae46f9260b9e6e485358a70cf1"
+
+[[validation_inputs]]
+repository = "tannerpolley/epcsaft-validation"
+retained_path = "fits/2026-iron-iii-chloride-fixed-geometry/scripts/read_analytical_osmotic.py"
+sha256 = "ccd970def6ec0117221b6e33c04a5ca20e6fa428c5d0750b10f98115976fb61d"
