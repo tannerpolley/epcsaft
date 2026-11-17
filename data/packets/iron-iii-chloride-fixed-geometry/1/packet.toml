@@ -187,12 +187,12 @@ use_basis = "Fixed geometry research hypothesis, ten geometry cases and bounded 
 
 [[sources]]
 source_id = "liu-2006"
-citation = "Liu et al. (2006), Geochimica et Cosmochimica Acta 70, 326–349, Fig. 8a, Table 1, Table 8 and Eqs. 2 and 7."
+citation = "Liu et al. (2006), Chemical Geology 231, 326–349, Fig. 8a, Table 1, Table 8 and Eqs. 2 and 7."
 use_basis = "Derived fractions and secondary molal beta1 prior; source model correlation and digitization limitations retained privately."
 
 [[sources]]
 source_id = "awakura-1987"
-citation = "Awakura et al. (1987), Materials Transactions JIM 28, 145–152, Table 4."
+citation = "Awakura et al. (1987), Hydrometallurgy 19, 137–157, Table 4."
 use_basis = "Water activity and analytical molalities of FeCl3–HCl–water at 298 K; source decimals retained privately."
 
 [[sources]]
