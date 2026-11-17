@@ -553,7 +553,7 @@ public:
         double temperature_direction, const std::vector<double>& composition_direction) const;
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
-    std::vector<double> active_parameter_values() const;
+    EPC_API std::vector<double> active_parameter_values() const;
     const std::optional<ThermochemistryRecord>& thermochemistry() const { return thermochemistry_; }
 
     void validate_composition(const std::vector<double>& composition) const;

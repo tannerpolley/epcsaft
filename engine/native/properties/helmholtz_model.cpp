@@ -14,8 +14,7 @@
 #include <array>
 #include <bitset>
 #include <cmath>
-#include <chrono>
-#include <future>
+#include <condition_variable>
 #include <limits>
 #include <iomanip>
 #include <sstream>
@@ -30,8 +29,9 @@
 
 namespace {
 std::mutex cppad_slots_mutex;
-// Keep notification states alive when an AMPL host unloads this image before thread exit.
-auto& cppad_slots = *new std::array<std::future<void>, CPPAD_MAX_NUM_THREADS>;
+// Runtime exit notifications may outlive an AMPL image: retain their mutexes and condition.
+auto& cppad_slots = *new std::array<std::mutex, CPPAD_MAX_NUM_THREADS>;
+auto& cppad_slot_exit = *new std::condition_variable;
 bool cppad_parallel_enabled = false;
 bool cppad_in_parallel() { return cppad_parallel_enabled; }
 
@@ -39,12 +39,10 @@ std::size_t cppad_thread_num() {
     thread_local const std::size_t slot = [] {
         std::lock_guard<std::mutex> lock(cppad_slots_mutex);
         for (std::size_t index = 0; index < cppad_slots.size(); ++index) {
-            auto& exited = cppad_slots[index];
-            if (!exited.valid() || exited.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                std::promise<void> completion;
-                exited = completion.get_future();
-                // Readiness follows all thread-local destructors, including later CppAD use.
-                completion.set_value_at_thread_exit();
+            std::unique_lock<std::mutex> reservation(cppad_slots[index], std::try_to_lock);
+            if (reservation.owns_lock()) {
+                // Unlock after every TLS destructor, including earlier objects that use CppAD.
+                std::notify_all_at_thread_exit(cppad_slot_exit, std::move(reservation));
                 return index;
             }
         }

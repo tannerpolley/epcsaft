@@ -86,11 +86,11 @@ unless they say they compare with measurements.
 
 ## Installation
 
-Install release 1.3.0 for Linux and Windows (x86-64) from the
+Install release 1.3.1 for Linux and Windows (x86-64) from the
 `tannerwpolley` conda channel:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.0
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.1
 ```
 
 Try [first saturation and flash](https://tannerpolley.github.io/epcsaft/quickstart.html#first-saturation-and-flash)
