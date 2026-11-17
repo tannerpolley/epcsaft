@@ -135,6 +135,12 @@ xml=build/test-results/pytest.xml
 if [[ "$python_batch" == true ]]; then
     timed pytest env -C engine ../.venv/bin/python -m pytest -q --junitxml="../$xml.tmp" || failed=1
     mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
+    # The committed native fixture is generated from these inputs through the extension this batch built (#62).
+    if grep -Eq '^(tools/fixtures/mea-f1(-identity)?\.json(\.gz)?|engine/src/epcsaft/parameters\.py|engine/tests/native/fixtures/mea_capped_addition\.(py|inc))$' <<<"$paths" || [[ "${1:-}" == --all ]]; then
+        timed mea-fixture-drift bash -c '.venv/bin/python engine/tests/native/fixtures/mea_capped_addition.py \
+            "$(.venv/bin/python -c "import epcsaft._core as c; print(c.__file__)")" build/mea_capped_addition.inc &&
+            cmp build/mea_capped_addition.inc engine/tests/native/fixtures/mea_capped_addition.inc' || failed=1
+    fi
 fi
 timed ruff env -C engine ../.venv/bin/ruff check src tests || failed=1
 timed mypy env -C engine ../.venv/bin/mypy || failed=1
