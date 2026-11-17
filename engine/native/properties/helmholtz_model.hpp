@@ -663,7 +663,7 @@ EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool pressure_jets = true,
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
-    bool parameter_jets = false,  // dC/dtheta for every active parameter
+    const std::vector<std::size_t>& parameter_jets = {},  // dC/dtheta for these active coordinates, ascending
     std::size_t reference_order = 0,  // consumed C3/C4 and one-theta columns; 0 preserves lower work
     std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values = nullptr,
     const std::vector<std::size_t>& pair_coordinates = {}  // ascending; d2C/dtheta_a dtheta_b for a <= b among them

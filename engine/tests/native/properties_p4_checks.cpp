@@ -939,8 +939,11 @@ void properties_p4() {
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0], observables[0]},
         {valid_direction}); }, "invalid observables");
-    malformed_rejections += rejects([&] { model.density_actions(
-        313.15, properties_support::associating_binary_density, composition, {observables[0]}, {}); }, "invalid action order");
+    {  // An empty direction list asks for values only: the same values, no action.
+        const auto values = model.density_actions(313.15, properties_support::associating_binary_density, composition, {observables[0]}, {});
+        const auto one = model.density_actions(313.15, properties_support::associating_binary_density, composition, {observables[0]}, {valid_direction});
+        CHECK(values.results.size() == one.results.size() && values.results[0].value == one.results[0].value && !values.results[0].action);
+    }
     malformed_rejections += rejects([&] { model.density_actions(
         313.15, properties_support::associating_binary_density, composition, {observables[0]},
         std::vector<epcsaft::DensityActionDirection>(4, valid_direction)); }, "invalid action order");
@@ -963,9 +966,9 @@ void properties_p4() {
         300.0, 1000.0, {0.98, 0.01, 0.01},
         {epcsaft::PropertyObservable::ResidualEnthalpy},
         {epcsaft::DensityActionDirection{0.0, 0.0, {-0.01, 0.01, 0.0}, {}}}); }, "invalid direction charge balance");
-    const bool malformed_ok = malformed_rejections == 9;
+    const bool malformed_ok = malformed_rejections == 8;
     recording_support::compare_custom("supplemental/malformed-requests", "invalid_argument", "count",
-        static_cast<double>(malformed_rejections), 9.0, "absolute", malformed_ok, "request-validation",
+        static_cast<double>(malformed_rejections), 8.0, "absolute", malformed_ok, "request-validation",
         "empty,duplicate,order,dimension,nonfinite,balance,slot,charge");
     // A neutral insertion is its exact infinite-dilution limit (#73): f(0) = 2 f(eps) - f(2 eps) + O(eps^2).
     epcsaft::HelmholtzModel neutral(properties_support::neutral_binary());

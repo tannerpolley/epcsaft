@@ -480,7 +480,7 @@ class Mixture:
         observables : sequence of PropertyObservable
             Requested native properties in output order.
         directions : sequence of DensityActionDirection
-            One to three physical directions: temperature in K, rho in mol/m³,
+            Zero to three physical directions (none returns values only): temperature in K, rho in mol/m³,
             composition dimensionless and parameters in native family units.
             Each composition increment must have one entry per component; a
             mixture refuses an empty increment and one component reads it as zero.
@@ -536,7 +536,7 @@ class Mixture:
         observables : sequence of PropertyObservable
             Requested native properties in output order.
         directions : sequence of PressureActionDirection
-            One to three physical directions: temperature in K, P in Pa,
+            Zero to three physical directions (none returns values only): temperature in K, P in Pa,
             composition dimensionless and parameters in native family units.
             Each composition increment must have one entry per component; a
             mixture refuses an empty increment and one component reads it as zero.
