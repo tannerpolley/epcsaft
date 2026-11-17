@@ -406,7 +406,7 @@
       "packet_id": "iron-iii-chloride-fixed-geometry",
       "packet_version": "1",
       "packet_path": "data/packets/iron-iii-chloride-fixed-geometry/1",
-      "packet_fingerprint": "6994160acfa54ebf85f0b6aedc9f89a49d9bb3d0585ac2dc08f0ca7dce613879",
+      "packet_fingerprint": "fbd88aac6dcdb3db37630bfd7e9662cf9fa8b69d9df35bdc2afa38a0d923c4aa",
       "materialization": "byte-for-byte"
     }
   ]
