@@ -584,9 +584,8 @@ def test_reference_mea_stalled_trial_recovery_stops_without_changing_the_trial()
     from the neutral base seed enters polish recovery and stalls at a raw row plateau far above the row criterion.
     Its damped contraction over the remaining correction cap cannot reach the criterion, so recovery stops after
     five damped corrections. The trial returns the same best classified point (residual 2.4865211765153985e-4) with
-    57 +/- 3 evaluations instead of 364. The residual is compared to a relative 1e-9: build-to-build rounding moves it by
-    about 4e-13 relative (source build against the manylinux wheel), while a different returned point moves it by
-    orders of magnitude more."""
+    57 +/- 3 evaluations instead of 364. The residual is compared to a relative 1e-9: build-to-build rounding moved it
+    by about 4e-13 relative (source build against the manylinux wheel), so 1e-9 leaves room for rounding."""
     model, reactions, reference, guess, system = nominally_unloaded_mea()
     feed = list(system["feed_amounts_mol"])
     feed[0] = 0.3 * feed[1]
