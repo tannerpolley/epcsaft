@@ -945,7 +945,7 @@ void classify_split(const CompiledSystem& c, const StabilityReport& report, Stab
     trial.split_checks.push_back(std::move(check));
 }
 
-enum class SuppliedStage { Seed, Inventory, Raw, Composition, State, Energy, Complete };
+enum class SuppliedStage { Seed, Inventory, Coordinates, Raw, Composition, State, Energy, Complete };
 struct SuppliedPoint {
     SuppliedStage next = SuppliedStage::Seed;
     std::string failure;
@@ -973,8 +973,10 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
             case SuppliedStage::Inventory:
                 for (const auto& bound : inventory_bounds(*c, phase.support, false, 0.0)) admit_inventory_bound(bound);
                 break;
-            case SuppliedStage::Raw:
+            case SuppliedStage::Coordinates:
                 point.coordinates = trial_coordinates(*c, point.seed, eta);
+                break;
+            case SuppliedStage::Raw:
                 point.raw = c->prepare(point.coordinates, true);
                 for (auto& d : point.raw.derivative) std::vector<double>().swap(d.hessian);
                 break;
@@ -1004,7 +1006,7 @@ CompiledSystem& supplied_system(TrialSystems& systems, const HelmholtzModel& mod
     if (found == systems.end()) {
         auto c = compile_stability_trial(model, T, P, phase, point.seed, shift, transformation);
         found = systems.emplace(key, std::make_pair(std::move(c), transformation)).first;
-        if (point.next == SuppliedStage::Inventory) point.next = SuppliedStage::Raw;
+        if (point.next == SuppliedStage::Inventory) point.next = SuppliedStage::Coordinates;
     } else {
         transformation = found->second.second;
         auto& c = found->second.first;
@@ -1173,9 +1175,12 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     trial, report.work, limits) : std::nullopt;
                 if (limits) limits->check();  // an interrupted trial starts no driver fallback
                 if (native && !found) compile();
-                const auto initial = found ? std::vector<double>{} : trial_coordinates(compiled, seed, eta);
-                if (options.evaluate_supplied_trials) trial.raw_coordinates = point.next > SuppliedStage::Raw ? point.coordinates : initial;
+                if (options.evaluate_supplied_trials) {
+                    advance(SuppliedStage::Coordinates, &compiled, eta);
+                    trial.raw_coordinates = point.coordinates;
+                }
                 else if (!found) {
+                    const auto initial = trial_coordinates(compiled, seed, eta);
                     StageWork prior; prior.observe(trial.optimizer);
                     trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
                         scope, &trial.raw_coordinates, limits, Attempt::Cold, {}, false, true);
