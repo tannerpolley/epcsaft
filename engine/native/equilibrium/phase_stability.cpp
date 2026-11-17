@@ -317,7 +317,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     }
     const auto factor = weighted.completeOrthogonalDecomposition();
     report.last_rank = core::numerical_rank(factor, "weighted_amount_correction");
-    const auto refuse = [&](const char* cause, double defect) {
+    const auto refuse = [&](const std::string& cause, double defect) {
         core::Convergence r; r.cause = cause; r.residual = defect; r.stop = core::Stop::infeasible; if (report.last_rank) r.rank = std::make_shared<core::NumericalRank>(*report.last_rank);
         core::retain_first(report.first_numerical_failure, r);
         throw core::DeclarationError(cause, r);
@@ -325,18 +325,24 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     const Eigen::VectorXd intended = amount.cwiseProduct(factor.solve(scaled_rhs));
     if (!intended.allFinite())
         refuse("stability amount correction nonfinite response", NAN);
+    const auto lost = [&](std::size_t p, std::size_t i) {
+        return "stability correction destroys positive support: species " + std::to_string(i) + " in " + c.problem.phases[p].name;
+    };
     Eigen::VectorXd applied(cells.size());
     std::vector<std::vector<double>> inventory(at.amount.size(), std::vector<double>(c.n_feed.size(), 0.0));
+    std::optional<std::size_t> bounded;
     for (std::size_t j = 0; j < cells.size(); ++j) {
         const auto [p, i] = cells[j];
         inventory[p][i] = amount(j) + intended(j);
-        if (!(inventory[p][i] > 0.0) || !std::isfinite(inventory[p][i])) refuse("stability correction destroys positive support", std::abs(inventory[p][i]));
+        // #7: a trace cell whose linear step is not positive keeps n exp(dn/n); the applied balance decides.
+        if (!(inventory[p][i] > 0.0)) { inventory[p][i] = amount(j) * std::exp(intended(j) / amount(j)); if (!bounded) bounded = j; }
+        if (!(inventory[p][i] > 0.0) || !std::isfinite(inventory[p][i])) refuse(lost(p, i), std::abs(inventory[p][i]));
         applied(j) = inventory[p][i] - amount(j);
         candidate.feasibility_estimate += (std::abs(applied(j)) + std::abs(intended(j) - applied(j))) * std::abs(mu(j));
         candidate.correction_norm += std::abs(applied(j));
     }
-    if ((J * applied - rhs).lpNorm<Eigen::Infinity>() > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
-        refuse("stability amount correction applied balance defect", (J * applied - rhs).lpNorm<Eigen::Infinity>());
+    if (const double defect = (J * applied - rhs).lpNorm<Eigen::Infinity>(); defect > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
+        refuse(bounded ? lost(cells[*bounded].first, cells[*bounded].second) : "stability amount correction applied balance defect", defect);
     at.energy_actions.clear();
     report.candidate_coordinates.clear();
     for (std::size_t p = 0; p < at.amount.size(); ++p) {
@@ -374,7 +380,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         const auto [p, i] = cells[j];
         const double represented = at.amount[p] * at.composition[p][i];
         const double logged = at.amount[p] * std::exp(std::log(at.composition[p][i]));
-        if (!(represented > 0.0) || !(logged > 0.0)) refuse("stability correction destroys positive support", std::abs(inventory[p][i]));
+        if (!(represented > 0.0) || !(logged > 0.0)) refuse(lost(p, i), std::abs(inventory[p][i]));
         represented_rhs -= J.col(j) * represented; logged_rhs -= J.col(j) * logged;
         const double displacement = std::abs(represented - inventory[p][i]) + std::abs(logged - represented);
         candidate.correction_norm += displacement;
