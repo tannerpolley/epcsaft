@@ -60,3 +60,18 @@ def test_stability_actions_against_resolved_central_differences(case: int, relat
                 tolerance = 1e-6 + 1e-4 * max(abs(analytic), abs(difference))
                 assert error < tolerance, "stencil is inconclusive"
                 assert abs(analytic - difference) <= tolerance
+
+
+def test_rejected_start_snapshot_keeps_minimizing_trial_and_seeds() -> None:
+    p, coordinates, *_ = declarations()[0]
+    def row(pressure: float, x: float) -> Any:
+        return r.stability(p, eq.Problem(T=293.15, P=pressure, row_tolerance=1e-10, feed=eq.Amounts({'water': x, 'isobutanol': 1 - x}),
+                                         phases=[eq.Phase('L', kind='liquid', composition_guess=(x, 1 - x))]), scale=.1)
+    # Rows 0-2 are evaluated by the fit process and two workers; row 3 has no density root and rejects the start.
+    result = r.fit(p, coordinates, [row(1e5, .6), row(1e5, .3), row(1e5, .9), row(1e12, .6)], weights=[1.] * 4,
+                   controls=r.FitControls(workers=3, maximum_iterations=1, maximum_elapsed_time_seconds=600.))
+    assert result.status == 'initial_evaluation_failed'
+    for prediction in result.stability_predictions[:3]:
+        assert prediction is not None and (measure := prediction.stability) is not None
+        for i, trial in enumerate(measure.report.trials):
+            assert trial.seed and bool(trial.quantities) == (i == measure.minimizing_trial)
