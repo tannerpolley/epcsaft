@@ -1,7 +1,6 @@
 {
-  "rows": 359,
-  "recorded_at_revision": "e0df7fbcb115cac329742dbf8b228b8fc1249d22",
-  "engine_clean": false,
+  "rows": 360,
+  "recorded_at_revision": "98553e3a5553b891c52cc2c351543f375aa51756",
   "commands": [
     {
       "command": "properties_checks P3",
@@ -32,6 +31,10 @@
       "exit": 0
     },
     {
+      "command": "equilibrium_checks diffusive-spinodal",
+      "exit": 0
+    },
+    {
       "command": "equilibrium_checks E5-10",
       "exit": 0
     },
@@ -50,14 +53,5 @@
   ],
   "failed_native_comparisons": [],
   "value": "the native check's unrounded model operand; its own reference and criterion stay with the native owner",
-  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity",
-  "retained_previous_rows": {
-    "recorded_at_revision": "0bec2bdf42e31bf37e8d4679169c8174b580408f",
-    "ids": [
-      "e5-1/neutral-ternary/phase[1].log_activity[2]/A1",
-      "e5-1/neutral-ternary/phase[0].log_activity[1]/A3",
-      "e5-3/isomerisation/A1"
-    ],
-    "reason": "No candidate-versus-cc42efbf0 arithmetic effect; discard unrelated historical updates."
-  }
+  "claim_limit": "identical explicit inputs through one build; transport agreement, not model validity"
 }
