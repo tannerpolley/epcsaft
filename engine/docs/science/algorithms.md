@@ -2136,6 +2136,18 @@ consume slots in the original `EQUILIBRIUM_MAX_ITERATIONS` cap: at most 200
 corrections and 600 candidate proposals, without a new solve or reset of work.
 Existing deadline/evaluation limits, raw-row and correction stops remain; a
 nonfinite direction or no representable progress stops recovery with its cause.
+Recovery also stops ("recovery stalled") at the start of correction $k$, before
+any proposal, once `STALL_WINDOW` = 5 consecutive corrections from its start were
+damped and their contraction cannot reach the row criterion $\tau$ within the
+cap $K$ = `EQUILIBRIUM_MAX_ITERATIONS`: $r_k c_k^{K-k} > \tau$, with $r_k$ the raw
+row maximum and $c_k = (r_k/r_{k-5})^{1/5}$. A correction is damped when it
+accepts no proposal or a step fraction below the log-step limit
+$\min(1, L/\max|\Delta|)$; accepting that limit (a full or cap-limited step)
+clears the window. On the Engine MEA reference sets every recovery that
+converges has one damped correction, the one that starts it, while the
+nonconverging recoveries this stop ends have 34 or more; the contraction rate alone does not separate
+them. No separation is claimed outside those sets. The polish returns its best classified point, as at
+every other stop.
 
 The shared driver keeps the best classified point and the unchanged final
 row/curvature admission. The polish solves interior stationarity rows without
