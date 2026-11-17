@@ -2319,8 +2319,8 @@ admitted seed. Every optimizer and polish point must keep the admitted Liquid ro
 of its own normalized composition: that root and the point both denser than the
 root's negative-slope sample, a positive `(∂P/∂ρ)_{T,x}` at the point, and the point
 within `DENSITY_ANCHOR_LOG_WINDOW` of the root. The point's molar density is the
-chart total over its chart volume, since the chart volume is per unit total of the
-unnormalized chart amounts. A refused point keeps the failed condition as its cause
+chart total over its chart volume, the volume holding the unnormalized chart
+amounts. A refused point keeps the failed condition as its cause
 in the optimizer's or polish's first failure. Roots and their refusal causes are
 cached by composition and decisions by prepared point. Each actual density call
 (seed, guard miss, end point, density-side check of a negative plane, finite-split

@@ -1126,7 +1126,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         if (!fresh) { ++report.work["recovery_guard_cache_hits"]; return decision->second; }
         auto& refusal = decision->second;
         try {
-            auto w = point.composition[0];  // the unnormalized chart: its volume is per unit chart total
+            auto w = point.composition[0];  // the unnormalized chart: its volume holds the chart total
             const double total = std::accumulate(w.begin(), w.end(), 0.0), rho = total / point.volume[0];
             for (double& x : w) x /= total;
             auto [root, missing] = liquid_roots.try_emplace(w);
@@ -1143,7 +1143,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             else if (!liquid->negative_slope_density) refusal = "liquid root without a negative-slope sample";
             else if (const double sample = *liquid->negative_slope_density; !(liquid->molar_density > sample && rho > sample))
                 refusal = "point or root not denser than the negative-slope sample";
-            else if (const double slope = c.model->state(at.temperature, rho, w).pressure_density_derivative; !(slope > 0.0))
+            else if (const double slope = c.model->state(at.temperature, rho, w).pressure_density_derivative; !(std::isfinite(slope) && slope > 0.0))
                 refusal = "pressure-density slope not positive";
             else if (std::abs(std::log(rho / liquid->molar_density)) > policy::DENSITY_ANCHOR_LOG_WINDOW.value)
                 refusal = "outside the anchor window of the liquid root";
@@ -1248,7 +1248,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (!slot) rooted.emplace_back(seed, eta);
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
                 if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
-                    if (slot) throw BudgetExhausted("budget exhausted before the second-pass optimizer");
+                    if (slot) throw BudgetExhausted(spent ? "recovery allowance exhausted" : "trial budget exhausted");
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { report_work(report.work, work); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
