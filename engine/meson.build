@@ -18,7 +18,9 @@ cpp = meson.get_compiler('cpp')
 windows = host_machine.system() == 'windows'
 linux = host_machine.system() == 'linux'
 native_rpath = {'windows': '', 'darwin': '@loader_path'}.get(host_machine.system(), '$ORIGIN')
-native_export_args = windows ? ['-DEPCSAFT_NATIVE_BUILD'] : []
+# Off Windows, the MSVC linkage model: functions hidden unless EPC_API, types and their typeinfo visible, so an unmarked
+# function fails the Linux link as it fails the Windows one (#41).
+native_export_args = windows ? ['-DEPCSAFT_NATIVE_BUILD'] : ['-fvisibility-ms-compat']
 quadmath_dep = linux ? [cpp.find_library('quadmath')] : []
 # One exported symbol hides the statically linked Engine, as the version script does on Linux.
 asl_link_args = {'windows': [], 'darwin': ['-Wl,-exported_symbol,_funcadd_ASL']}.get(host_machine.system(), [
@@ -153,7 +155,6 @@ epcsaft_native = shared_library(
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
   build_rpath: native_rpath,
   install_rpath: native_rpath,
-  gnu_symbol_visibility: 'hidden',
 )
 
 private_sources = []
@@ -239,6 +240,8 @@ check_kwargs = {
   'gnu_symbol_visibility': 'inlineshidden',
   'include_directories': native_inc,
   'link_with': epcsaft_native,
+  # CppAD's own temp_file stays hidden in the library; debug builds call it out of line.
+  'objects': epcsaft_native.extract_objects(cppad_temp_file),
   'build_rpath': native_rpath,
   'install': false,
   'build_by_default': false,
