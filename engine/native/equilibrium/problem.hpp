@@ -164,6 +164,7 @@ struct StabilityOptions final {
     std::optional<std::size_t> declaration_budget;
     std::optional<std::size_t> trial_budget;
     std::vector<double> standard_uncertainty_over_rt;
+    bool retry_condensed_refusals = false;  // #21: the explicit test's guarded second pass, on request only
 };
 struct DiscoveryRecord;
 struct StabilityReport;

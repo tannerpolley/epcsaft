@@ -57,8 +57,8 @@ FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
 FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
 // Declaration validation refuses prepared trials before worker serialization.
 auto fields(equilibrium::StabilityOptions& item) {
-    auto& [a, b, prepared, c, d, e, f] = item;
-    return std::tie(a, b, c, d, e, f);
+    auto& [a, b, prepared, c, d, e, f, g] = item;
+    return std::tie(a, b, c, d, e, f, g);
 }
 FIELDS(equilibrium::StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance)
 FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, j, k, l, m, present_phase_comparisons, diagnostic_cause, n, o)

@@ -172,7 +172,7 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
         EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, prepared_trials, declaration_budget, trial_budget,
-            standard_uncertainty_over_rt)
+            standard_uncertainty_over_rt, retry_condensed_refusals)
         EPCSAFT_COPIED(StabilityOptions, trials);
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(nb::init<>())

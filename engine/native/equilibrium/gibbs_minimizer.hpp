@@ -9,6 +9,7 @@
 
 #include <cstddef>
 #include <chrono>
+#include <functional>
 #include <optional>
 #include <stdexcept>
 #include <string>
@@ -148,6 +149,8 @@ struct DriverLimits final {
     mutable bool exhausted = false;
     std::size_t attempt_cap = 0;
     mutable std::size_t attempts = 0;
+    // #21: a guarded pass refuses an optimizer or polish point for which this returns a cause.
+    std::function<std::optional<std::string>(const PhasePoint&)> admit;
     static DriverLimits recovery_allowance(std::chrono::steady_clock::time_point deadline, std::size_t iterations) {
         return {iterations, deadline, 0, true, static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_EVALUATIONS.value),
             static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_HESSIAN_CALLS.value)};
@@ -171,6 +174,8 @@ EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, cons
 EquilibriumResult recover_from_source(const CompiledSystem&, EquilibriumResult);
 // #987: the finite trial search of a coalesced fixed-T/P flash before recovery, charged to `limits`.
 EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const DriverLimits& limits);
+// The public explicit test with `recovery` funding its second pass over condensed-domain refusals (#21).
+EPC_API StabilityReport recovered_stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions&, DriverLimits recovery);
 // ALG-STABILITY: one trial of the vanished phase's kind and support from the declaration without it, charged to `limits`.
 StabilityReport vanished_phase_stability(const CompiledSystem& compiled, std::size_t phase, const DriverLimits& limits);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
