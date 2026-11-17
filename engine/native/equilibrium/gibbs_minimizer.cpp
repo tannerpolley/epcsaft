@@ -1379,9 +1379,14 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 if (compiled.problem.pressure.free && index == static_cast<Eigen::Index>(intensive)) quantity = "P in Pa";
                 scope.probe("polish_coordinate", {control, phase, component, double(full[index])}, step, quantity);
             });
+            // The endpoint estimate reuses this step's factor: the returned point is `full == best` with the row criterion met.
+            const auto publish_endpoint = [&] {
+                if constexpr (std::is_same_v<Base, double>) if (!compiled.problem.solver_options.nested_solve)
+                    result.last_rank = core::conditioning(lu, "numerical", step, "endpoint", {double(at.temperature), double(at.pressure)});
+            };
             if (correction_stop && !final_correction) {
                 if constexpr (std::is_same_v<Base, double>) {
-                    if (!compiled.problem.solver_options.nested_solve) result.last_rank = core::conditioning(lu, "numerical", step, "endpoint", {double(at.temperature), double(at.pressure)});
+                    publish_endpoint();
                     retain_error(bound, policy::EQUILIBRIUM_POLISH_CORRECTION, "inner_floor_unavailable");
                 }
                 stop("scaled correction"); break;
@@ -1462,7 +1467,14 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 else if (refine_trial && best_classified > row_tolerance) {
                     trial_recovery = true;
                     scope.probe("trial_recovery_begin", {double(defect), double(classified_before)}, step);
-                } else { stop("no accepted trial"); break; }
+                } else {
+                    // Another linear solver can leave the correction just above its criterion; the endpoint conditioning is still the factor's.
+                    if (full == best && classified_before <= row_tolerance && lu.rank() == n) {
+                        publish_endpoint();
+                        if constexpr (std::is_same_v<Base, double>) core::retain_rank(result.rank_records, *result.last_rank);
+                    }
+                    stop("no accepted trial"); break;
+                }
             }
             if (step + 1 == static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) { capped = true; stop("iteration cap"); }
             if constexpr (std::is_same_v<Base, double>) if (final_correction) { corrected = true; stop("final correction"); break; }
