@@ -8,7 +8,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.."
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 (($# >= 1 && $# <= 2)) || { echo "usage: tools/native-run <program> [case|--list] | <meson test name>" >&2; exit 2; }
 # A checkout without a build tree gets a configured Meson tree, not the Python module.
-[[ -f build/environment-wheel/build-jobs ]] || bash tools/setup.sh --native >&2
+[[ -f build/environment-wheel/meson-build-dir ]] || bash tools/setup.sh --native >&2
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 if (($# == 1)); then
     # A Meson test name as run-native-tests.sh prints it (equilibrium/Automatic_fast/e5-neutral) runs that test's program and arguments.
@@ -17,5 +17,5 @@ import json, os, sys
 print(*[" ".join([os.path.basename(t["cmd"][0]), *t["cmd"][1:]]) for t in json.load(sys.stdin) if t["name"] == sys.argv[1]])' "$1")"
     [[ -z "$test_cmd" ]] || set -- $test_cmd
 fi
-.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "$1" >&2
+.venv/bin/meson compile -C "$build_dir" -j "$(tools/build-jobs)" "$1" >&2
 exec "$build_dir/$1" "${@:2}"

@@ -646,6 +646,8 @@ std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vect
                 + std::to_string(i) + " (z=" + std::to_string(z[i])
                 + (parameters && parameters->permittivity_form.is(PermittivityForm::DipolarPerturbation)
                     ? "); explicit charged vapor under DipolarPerturbation is not numerically qualified"
+                    : parameters && parameters->permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression)
+                    ? "); charged vapor requires a unit vacuum limit of permittivity"
                     : "); charged vapor outside the condensed domain of the selected permittivity"));
     return result;
 }

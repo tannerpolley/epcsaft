@@ -155,11 +155,9 @@ def main():
         env = dict(os.environ, UV_PROJECT_ENVIRONMENT=str(venv), PATH=f'{venv}/bin:' + os.environ['PATH'])
         run('uv', 'sync', '--python', '3.13', '--all-packages', '--no-install-workspace', '--locked', cwd=source, env=env)
         python = venv / 'bin/python'
-        jobs = int(os.environ.get('EPCSAFT_BUILD_JOBS', min(os.cpu_count(), max(1, int(re.search(r'MemAvailable:\s+(\d+)', Path('/proc/meminfo').read_text())[1]) // (2560 * 1024)))))
-        if jobs < 1:
-            parser.error('EPCSAFT_BUILD_JOBS must be positive')
+        jobs = int(output(str(repo / 'tools/build-jobs'), '2560'))
         flags = ['--buildtype=debug', '-Db_ndebug=false', '-Db_lundef=false', '-Db_sanitize=address,undefined',
-                 '-Db_lto=false', '-Dstrip=false', '-Dcpp_args=-idirafter' + output('gcc', '-print-file-name=include')]
+                 '-Db_lto=false', '-Dstrip=false', '-Dcpp_args=-idirafter' + output('gcc', '-print-file-name=include') + ' -gline-tables-only']
         env.update(EPCSAFT_BUILD_JOBS=str(jobs), CCACHE_COMPILERCHECK='content', CC='ccache clang-18', CXX='ccache clang++-18', CCACHE_BASEDIR=str(source), CCACHE_NOHASHDIR='1')
         run('meson', 'setup', str(build), str(source / 'engine'), '--prefix', str(venv), *flags, env=env)
         print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)

@@ -3,8 +3,8 @@
 
 C++ is organised by dependency layer because include direction is the only
 structural fact a checker can enforce. Each rule is a cheap stdlib reading named
-in main()'s check table. The archive and stub rules read the configured Meson build
-named by --build-dir.
+in main()'s check table. The archive and stub rules need the linked images, so they run
+only with --build-dir, the configured Meson build of the lead's editable batch (#58).
 """
 
 from __future__ import annotations
@@ -529,12 +529,11 @@ def rule_stub_matches_extension() -> list[str]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--build-dir", type=Path, required=True)
+    parser.add_argument("--build-dir", type=Path)
     arguments = parser.parse_args()
 
     checks = [
         ("one PIC object set, shared/private libraries, one extension", rule_one_archive()),
-        ("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
         ("include direction is downward", rule_include_direction()),
         ("regression stays below stability", rule_regression_stays_below_stability()),
         ("constants defined once", rule_constants_defined_once()),
@@ -549,8 +548,10 @@ def main() -> int:
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
-        ("type stub matches the extension", rule_stub_matches_extension()),
     ]
+    if arguments.build_dir:
+        checks += [("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
+                   ("type stub matches the extension", rule_stub_matches_extension())]
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")

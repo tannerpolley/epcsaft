@@ -108,6 +108,7 @@ public:
                 parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
     mutable std::optional<DensityPartition> partition;
+    mutable std::string permittivity_refusal;
     mutable std::optional<core::Convergence> first_numerical_failure;
     mutable std::vector<core::NumericalRank> rank_records;
     mutable std::optional<core::Convergence> refinement;  // wider site refinement: converged or stagnated at the floor
@@ -127,7 +128,7 @@ public:
     template <std::size_t N, bool Thermal = false>
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
                        std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0,
-                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const {
+                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const try {
         using Series = Taylor<N, Base>;
         core::CalculationWork::energy_evaluation();
         core::Scope entry("pressure_series_residual"), scope("evaluate");
@@ -334,6 +335,10 @@ public:
             for (const auto& x : site_series) sites_out->insert(sites_out->end(), x.c.begin(), x.c.begin() + N);
         }
         return result;
+    } catch (const BulkPermittivityDomainError& error) {
+        if (permittivity_refusal.empty()) permittivity_refusal = error.what();
+        core::retain_failure(first_numerical_failure, error, "density series");
+        throw;
     }
 
     const std::vector<Base>& diameter() const { return diameter_; }
@@ -1707,6 +1712,7 @@ DensityRoot solve_density(
         return root;
     }
     const PressureSeries<> series(model, temperature, mole_fractions);
+    try {
     // The packing coefficient from the series' admitted diameter.
     const double coefficient = packing_fraction_from_geometry(1.0, mole_fractions, model.parameters(), series.diameter());
     if (!(std::isfinite(coefficient) && coefficient > 0.0)) throw std::invalid_argument("invalid packing coefficient");
@@ -1715,25 +1721,20 @@ DensityRoot solve_density(
     std::size_t evaluations = 0;
     DensityRoot result;
     if (anchor_density.has_value()) {
-        try {
-            if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
-            if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
-                throw std::invalid_argument("invalid density anchor");
-            }
-            if (!(*anchor_density > lower && *anchor_density < upper)) {
-                core::Convergence record{0.0, {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)}, std::nullopt,
-                    std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
-                record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
-                    + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
-                    + "; upper=" + core::optional_number(upper);
-                throw core::ConvergenceFailure(record);
-            }
-            result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
-                            *anchor_density, evaluations);
-        } catch (const std::exception& error) {
-            if (scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
-            throw;
+        if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
+        if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
+            throw std::invalid_argument("invalid density anchor");
         }
+        if (!(*anchor_density > lower && *anchor_density < upper)) {
+            core::Convergence record{0.0, {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)}, std::nullopt,
+                std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
+            record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
+                + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
+                + "; upper=" + core::optional_number(upper);
+            throw core::ConvergenceFailure(record);
+        }
+        result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
+                        *anchor_density, evaluations);
     } else {
         Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope);
         const auto structure = structured_roots(iso, branch, sibling_root != nullptr);
@@ -1828,7 +1829,15 @@ DensityRoot solve_density(
     if (sibling_root) core::retain_first(sibling_root->first_numerical_failure, series.first_numerical_failure);
     scope.finish(result.convergence);
     return result;
-
+    } catch (const std::exception& error) {
+        if (anchor_density && scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
+        const bool raw = dynamic_cast<const BulkPermittivityDomainError*>(&error) != nullptr;
+        if (!raw && series.permittivity_refusal.empty()) throw;
+        if (raw) core::retain_failure(series.first_numerical_failure, error, "density closure");
+        const std::string message = error.what();
+        throw DensityStructureError(!raw && message.find(series.permittivity_refusal) == std::string::npos
+            ? series.permittivity_refusal + "; " + message : message, series.first_numerical_failure);
+    }
 }
 
 namespace {

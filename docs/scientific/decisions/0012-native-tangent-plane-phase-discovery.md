@@ -190,6 +190,16 @@ veto are unchanged. The scope is explicit declared calculations and supplied-poi
 branch evaluation only, with no charged-vapor discovery or physical vapor-validation
 claim.
 
+## Density-correlated ion suppression (#38)
+
+The owner adopted the quotient of the density–temperature solvent law and the
+ion-specific suppression denominator on 2026-11-17. Its fixed-composition
+vacuum limit is $1/D$. Supplied and optimized charged trials and discovery under
+this choice require a stable liquid-side root of the trial composition. Explicit
+charged Vapor is refused because the declared form lacks a unit vacuum limit.
+Both rules apply at zero coefficients as well. Neutral Vapor remains available.
+Liquid-side admission establishes the density branch within the finite search.
+
 ## Explicit fast discovery (#868)
 
 The owner adopted `Discover(mode="fast")` on 2026-10-31 for nonreacting

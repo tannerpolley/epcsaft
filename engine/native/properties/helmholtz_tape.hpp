@@ -16,6 +16,7 @@
 #include <cstring>
 #include <limits>
 #include <memory>
+#include <numeric>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -94,10 +95,10 @@ struct HelmholtzTape final {
     bool residual_available = true, ideal_available = false;
     std::vector<double> site_values;
     std::vector<double> zero_point, zero_value;
+    const HelmholtzModel* quotient_model = nullptr;
 
     static std::unique_ptr<HelmholtzTape> record(
-        const Parameters& parameters,
-        const std::vector<ActiveParameter>& active,
+        const HelmholtzModel& model,
         const std::vector<double>& point,
         const std::vector<double>& site_fractions,
         PredicateSignature predicates,
@@ -106,6 +107,7 @@ struct HelmholtzTape final {
         bool include_residual = true,
         bool reference_insertion = false
     ) {
+        const auto& parameters = model.parameters();
         const std::size_t components = parameters.component_count();
         const std::size_t point_size = point.size();
         const std::size_t sites_count = include_residual ? site_fractions.size() : 0;
@@ -144,7 +146,7 @@ struct HelmholtzTape final {
             const std::vector<AD> sites(
                 independent.end() - static_cast<std::ptrdiff_t>(sites_count), independent.end());
             const auto tape_parameters = make_tape_parameters(
-                parameters, active,
+                parameters, model.active_parameters(),
                 std::vector<AD>(
                     independent.begin() + 2 + static_cast<std::ptrdiff_t>(components),
                     independent.begin() + static_cast<std::ptrdiff_t>(point_size)));
@@ -184,6 +186,8 @@ struct HelmholtzTape final {
         recording.active = false;
         result->function.optimize("no_cumulative_sum_op");
         result->predicates = std::move(predicates);
+        if (include_residual && parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression))
+            result->quotient_model = &model;
         result->regular_count = point_size;
         result->site_count = sites_count;
         result->ideal_offset = include_residual ? 1 + sites_count : 0;
@@ -196,6 +200,19 @@ struct HelmholtzTape final {
     std::vector<double> forward_zero(const std::vector<double>& point, std::size_t* forward_count = nullptr) {
         if (zero_point.size() != point.size()
             || std::memcmp(zero_point.data(), point.data(), point.size() * sizeof(double)) != 0) {
+            if (quotient_model) {
+                const auto& parameters = quotient_model->parameters();
+                const auto& active = quotient_model->active_parameters();
+                const auto end = point.begin() + 2 + parameters.component_count();
+                std::vector<double> composition(point.begin() + 2, end);
+                const double total = std::accumulate(composition.begin(), composition.end(), 0.0);
+                for (auto& x : composition) x /= total;
+                const auto evaluate = [&](const Parameters& mapped) {
+                    return bulk_relative_permittivity(point[0], total / point[1], composition, mapped);
+                };
+                if (active.empty()) evaluate(parameters);
+                else evaluate(make_tape_parameters<double>(parameters, active, {end, point.begin() + regular_count}));
+            }
             zero_point.clear();
             zero_value = function.Forward(0, point);
             zero_point = point;

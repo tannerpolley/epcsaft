@@ -463,6 +463,17 @@ The source water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 both parameters; missing records, records on an ion, or a constant solvent
 permittivity record under this choice fail closed.
 
+The choice `solvent-density-temperature-ion-specific-suppression` retains those
+solvent records and requires one dimensionless
+`ion_specific_suppression_coefficient` per charged species, including explicit
+zeros. Each coefficient is an effective value for the declared solvent system.
+Signed coefficients are admitted where the denominator and resulting permittivity
+are finite and positive and the neutral solvent fraction is finite and positive.
+
+Defining relation: [EqID: `ion_suppressed_density_correlated_bulk_permittivity`](../equations.md#ion_suppressed_density_correlated_bulk_permittivity).
+The fixed-composition zero-density limit is $1/D$. Charged trials use the
+own-composition liquid-side root rule in [ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md#density-correlated-ion-suppression-38).
+
 ### 6.3 Zuber ion-specific topology
 
 For a single source-supported solvent, Zuber2014 Eq. (9) is

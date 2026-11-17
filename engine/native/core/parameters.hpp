@@ -22,7 +22,12 @@ enum class PermittivityForm {
     ComponentMixing = 2,     // linear mixing over components
     DensityTemperature = 3,  // density and temperature correlation
     DipolarPerturbation = 4, // dipolar density perturbation
+    DensityTemperatureIonSuppression = 6,
 };
+
+inline bool density_temperature_permittivity(core::Declared<PermittivityForm> form) {
+    return form.is(PermittivityForm::DensityTemperature) || form.is(PermittivityForm::DensityTemperatureIonSuppression);
+}
 
 enum class ElectrolyteForm {
     DebyeHuckel = 1,

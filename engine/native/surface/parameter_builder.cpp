@@ -289,6 +289,8 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.permittivity_form = PermittivityForm::ComponentMixing;
     } else if (document.permittivity_choice == "solvent-density-temperature") {
         result.permittivity_form = PermittivityForm::DensityTemperature;
+    } else if (document.permittivity_choice == "solvent-density-temperature-ion-specific-suppression") {
+        result.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
     } else if (document.permittivity_choice == "dipolar-perturbation") {
         result.permittivity_form = PermittivityForm::DipolarPerturbation;
     } else if (document.permittivity_choice != "none") {
@@ -330,7 +332,8 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::set<std::pair<int, std::size_t>> law_slots;   // (target, canonical slot)
     std::map<std::size_t, std::size_t> corrections;   // canonical rule edge -> law
     // Density-dependent forms consume only their own records (full EOS 6.2, 6.4).
-    const bool density_temperature = document.permittivity_choice == "solvent-density-temperature";
+    const bool density_temperature = density_temperature_permittivity(result.permittivity_form);
+    const bool quotient = result.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
     const bool dipolar = document.permittivity_choice == "dipolar-perturbation";
     for (const auto& entry : document.entries) {
         const bool dipolar_field = entry.field == "dipole_scaling" || entry.field == "polarizability_scaling"
@@ -340,7 +343,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         const bool quadrupole_field = entry.field == "quadrupole_moment" || entry.field == "quadrupole_count";
         if ((entry.field == "ion_suppression_coefficient"
              && document.permittivity_choice != "ion-fraction-suppression"
-             && document.permittivity_choice != "ion-specific-suppression")
+             && (quotient ? entry.index.empty() : document.permittivity_choice != "ion-specific-suppression"))
             || (dipolar_field && !dipolar) || (density_field && !density_temperature) || (dipole_field && !polar) || (quadrupole_field && !quadrupolar)
             || ((entry.field == "relative_permittivity" || entry.field == "permittivity_term_coefficient"
                  || entry.field == "permittivity_reference_temperature") && (dipolar || density_temperature))
@@ -609,8 +612,14 @@ Parameters build_parameters(const ParameterDocument& document) {
         for (std::size_t i = 0; i < components; ++i) result.ion_suppression_coefficient[i] = result.charge_number[i] == 0 ? 0.0 : ion_fraction_suppression;
     } else if (document.permittivity_choice == "solvent-only" || document.permittivity_choice == "none") {
         std::fill(result.ion_suppression_coefficient.begin(), result.ion_suppression_coefficient.end(), 0.0);
-    } else if (document.permittivity_choice == "ion-specific-suppression") {
-        for (std::size_t i = 0; i < components; ++i) if (result.charge_number[i] != 0 && component_fields.find({"ion_suppression_coefficient", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/ion_suppression_coefficient");
+    } else if (quotient || document.permittivity_choice == "ion-specific-suppression") {
+        for (std::size_t i = 0; i < components; ++i) {
+            const bool present = component_fields.count({"ion_suppression_coefficient", i});
+            if (!present && result.charge_number[i] != 0)
+                reject("missing component/" + document.component_ids[i] + "/ion_suppression_coefficient");
+            if (quotient && present && result.charge_number[i] == 0)
+                reject("unconsumed component/" + document.component_ids[i] + "/ion_suppression_coefficient");
+        }
     }
     for (const auto& rule : rules) {
         const auto output = rule.index[0] * sites + rule.index[1];
