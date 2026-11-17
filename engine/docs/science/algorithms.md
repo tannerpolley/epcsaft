@@ -2452,7 +2452,29 @@ An explicit optimized Full search uses this comparison for a reacting trial
 whose optimizer succeeded, whose raw plane is negative and whose anchored root
 lies on the gas side, unless it coincides with a declared vapour (same support,
 composition and log volume within the phase-coincidence distance). The trial's
-phase comparisons and density side are recorded before classification. The
+phase comparisons and density side are recorded before classification. With a
+positive full-support donor, skip the relaxed solve and retain
+`no_resolved_descent` when $-E_t\le t<0$ and the frozen donor slope satisfies
+$d_p\ge -E_d$, with finite slope and finite nonnegative estimates. For reconstructed
+trial fractions $w_i$, trial support $S$, and the original frozen conserved plane
+$\pi$, use
+
+$$
+t=g_t/(RT)-\sum_{i\in S}w_i\pi_i,\qquad
+E_t=E_{\mathrm{sum},g_t}+\frac{m\epsilon}{1-m\epsilon}
+\left(\left|g_t/(RT)\right|+\sum_{i\in S}|w_i\pi_i|\right),\qquad m=2|S|+1.
+$$
+
+$E_{\mathrm{sum},g_t}$ is the trial Gibbs summation estimate and $\epsilon$ is
+double-precision machine epsilon. Record $E_t$ alongside the unchanged raw plane,
+donor slope and complete slope estimate $E_d$. The arithmetic estimate applies
+to the represented operands. Its operation-count convention comes from
+[the descent uncertainty equation](../equations.md#tangent_plane_descent_uncertainty).
+[ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md)
+defines the finite-search interpretation of the
+[owner's adopted rule](https://github.com/tannerpolley/epcsaft/issues/50#issuecomment-6957345657).
+
+For the eligible trials that still require a comparison, the
 largest-capacity donor and the trial form a conserved two-phase fixed-$T/P$
 Gibbs cell of the original reactions, standards and reference: feed is the
 repaired donor inventory, both amounts are free, other phases stay outside. One
@@ -2462,13 +2484,20 @@ returns its cause. A cell refused for balance rank has rank one: each phase
 holds its own reaction equilibrium, the donor potentials equal the plane and
 the split change is at most $\beta\,\mathrm{tpd}$, with equality when the
 reactions conserve mole number, so a frozen descent is a witness and the frozen
-slope and finite splits below classify that trial, with the refusal kept as a note. The comparison decides the trial before the frozen slope:
+slope and finite splits above classify that trial, with the refusal kept as a note. The relaxed comparison otherwise decides the trial:
 decrease is a witness, no decrease supplies no witness, and overlap or any
 refusal is indeterminate with its cause. A reacting trial with no admitted
 density side and no independently resolved split is likewise indeterminate.
-Coincident endpoints share one comparison. Nonreacting, liquid-side and
-supplied-point trials keep the frozen slope and finite splits above. This does
-not establish global stability.
+In fixed enumeration order, use the first actual comparison source that
+directly matches the endpoint by coincidence and has the same donor. A refusal
+at that source can leave a later eligible start untested. A skipped trial keeps
+its frozen-slope verdict without split coordinates or a Gibbs comparison. An
+admitted decrease counts on its source trial regardless of the order of the
+skipped and source trials. A budget-limited Full search returns the accumulated
+trials and work, including any admitted decrease, with both `completed` and
+`no_descent_in_trial_set` false and the budget cause. Nonreacting and liquid-side
+trials use the ordinary frozen slope and finite split. Supplied and prepared
+supplied points are evaluated without optimizing or classifying a split.
 
 The adopted output is **numerically resolved descending split with estimated
 uncertainty**. Calling it a **proved instability witness** requires justified
