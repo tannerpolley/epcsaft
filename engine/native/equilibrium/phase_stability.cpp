@@ -1420,10 +1420,10 @@ StabilityReport explicit_test(const CompiledSystem& c, const EquilibriumResult& 
 
 StabilityReport recovered_stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
     DriverLimits recovery) {
-    core::Scope scope("stability_test");
     return explicit_test(c, result, options, nullptr, &recovery);
 }
 StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    core::Scope scope("stability_test");
     return recovered_stability_test(c, result, options, DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
         static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value)));
 }
