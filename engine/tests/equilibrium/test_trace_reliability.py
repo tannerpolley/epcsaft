@@ -564,7 +564,7 @@ def test_reference_mea_trial_keeps_its_negative_optimizer_end_point() -> None:
     compiled = compile_problem(model, problem)
     report = stability_test(compiled, parent)
     assert report.message.startswith("numerically resolved descending split"), report.message
-    trial = next(t for t in report.trials if t.phase.kind.name == "Liquid" and len(t.phase.support) == len(MEA)
+    trial = next(t for t in report.trials if t.phase.kind == _core.PhaseKind.Liquid and len(t.phase.support) == len(MEA)
                  and t.seed == "positive-neutral-base")
     point = _core.PhaseSpec()
     point.name, point.kind, point.support, point.support_declared = (trial.phase.name, trial.phase.kind,
