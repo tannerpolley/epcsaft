@@ -1619,7 +1619,7 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
 
 template HelmholtzDerivativeValues<double> HelmholtzModel::isothermal(double, double,
     const std::vector<double>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
-template HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
+template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
     const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
 
 template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;

@@ -8,8 +8,8 @@
 #else
 #define EPC_API __declspec(dllimport)
 #endif
-#define EPC_EXCEPTION EPC_API
 #else
-#define EPC_API
-#define EPC_EXCEPTION __attribute__((visibility("default")))
+// The library builds with hidden default visibility, so an unmarked symbol fails the Linux link as it fails on Windows.
+#define EPC_API __attribute__((visibility("default")))
 #endif
+#define EPC_EXCEPTION EPC_API
