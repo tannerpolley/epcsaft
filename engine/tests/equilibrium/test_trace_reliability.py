@@ -11,11 +11,11 @@ from typing import Any
 import pytest
 
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters, PropertyObservable
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K, Mixture, Parameters, PropertyObservable, _core
 from epcsaft.equilibrium import (
     Amounts, Continuation, ContinuationStop, EOS_STANDARD_STATE_ID, Free, Phase, Problem, Reaction, ReactionLogPolynomial,
     SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus, SolvedStateObservable, SolvedStateObservableKind as Kind,
-    compile_problem, continue_equilibrium, solve_equilibrium, solved_state_actions, solved_state_first_actions,
+    StabilityOptions, compile_problem, continue_equilibrium, solve_equilibrium, stability_test, solved_state_actions, solved_state_first_actions,
 )
 from tests.native_inputs import ETHANE, MEA, MEA_REACTIONS, mea_mapping, nominally_unloaded_mea, nominally_unloaded_mea_liquid, parameters, same
 from tests.packets import parameters_json
@@ -545,3 +545,35 @@ def test_reference_mea_vanished_vapor_is_named_from_the_surviving_liquid(
     total = (result.iterations, result.evaluations, result.hessian_calls)
     assert all(s <= c for s, c in zip(spent, diagnostic)), spent
     assert total[0] - spent[0] < relaxed, (total, spent)
+
+
+def test_reference_mea_trial_keeps_its_negative_optimizer_end_point() -> None:
+    """#49: the reference declaration, one liquid at 298.15 K, 1 bar, loading 0.0160. The full-support liquid trial's
+    optimizer exits optimal at a near-solvent-free carbamate salt with TPD/RT -1.27793; its Newton polish walked to a
+    non-minimum stationary point at +0.62838, and the search reported no witness. A negative distance at a feasible
+    point is sufficient for descent, so the trial must report the end point, as at loading 0.01625 (-1.29065). The
+    reported distance must agree with the supplied-trial evaluation of its own returned point within the sum of both
+    descent error estimates."""
+    model, reactions, reference, guess, system = nominally_unloaded_mea()
+    feed = list(system["feed_amounts_mol"])
+    feed[0] = 0.0160 * feed[1]
+    problem = Problem(phases=[Phase("L", kind="liquid", support=MEA, composition_guess=guess)], T=298.15, P=1e5,
+                      feed=Amounts(dict(zip(MEA, feed))), reactions=reactions, neutral_reference=reference, topology_declared=True)
+    parent = solve_equilibrium(model, problem)
+    assert parent.success, parent.message
+    compiled = compile_problem(model, problem)
+    report = stability_test(compiled, parent)
+    assert report.message.startswith("numerically resolved descending split"), report.message
+    trial = next(t for t in report.trials if t.phase.kind.name == "Liquid" and len(t.phase.support) == len(MEA)
+                 and t.seed == "positive-neutral-base")
+    point = _core.PhaseSpec()
+    point.name, point.kind, point.support, point.support_declared = (trial.phase.name, trial.phase.kind,
+                                                                     list(trial.phase.support), trial.phase.support_declared)
+    point.composition_guess, point.packing_guess = list(trial.composition), math.exp(trial.raw_coordinates[len(MEA) + 1])
+    options = StabilityOptions()
+    options.trials, options.evaluate_supplied_trials = [point], True
+    (check,) = stability_test(compiled, parent, options).trials
+    tpd, again = trial.quantities["tpd_over_rt"], check.quantities["tpd_over_rt"]
+    assert tpd < 0.0 and trial.resolved_descent, (tpd, trial.message)
+    error = trial.quantities["descent_error_estimate_over_rt"] + check.quantities["descent_error_estimate_over_rt"]
+    assert abs(tpd - again) <= error, (tpd, again, error)
