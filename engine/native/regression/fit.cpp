@@ -541,6 +541,15 @@ struct ObservationEvaluator::Impl final {
                         core::retain_first(retry.first_numerical_failure, prediction.first_numerical_failure, true);
                         prediction = std::move(retry);
                     }
+                    // A fit and its workers read only the minimizing trial and the other trials' seeds (a reduced copy).
+                    if (prediction.stability && (interruptible_ || process_)) {
+                        auto measure = std::make_shared<equilibrium::StabilityMeasure>(*prediction.stability);
+                        for (std::size_t t = 0; t < measure->report.trials.size(); ++t) if (t != measure->minimizing_trial) {
+                            equilibrium::StabilityTrial kept; kept.seed = std::move(measure->report.trials[t].seed);
+                            measure->report.trials[t] = std::move(kept);
+                        }
+                        prediction.stability = std::move(measure);
+                    }
                 } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
                 retain(prediction.first_numerical_failure);
                 if (prediction.saturation) out.saturation_predictions[i] = prediction;
