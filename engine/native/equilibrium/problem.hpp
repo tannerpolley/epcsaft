@@ -326,14 +326,11 @@ struct ReferenceJets final {
     std::size_t reference_order = 0;
     std::vector<std::size_t> pairs;
     bool errors = false;
+    void request_every_parameter(const HelmholtzModel& model) {  // for a caller that reads them all
+        parameters.resize(model.active_parameters().size());
+        std::iota(parameters.begin(), parameters.end(), std::size_t(0));
+    }
 };
-
-// Every active coordinate: the parameter request of a caller that reads them all.
-inline std::vector<std::size_t> every_coordinate(const HelmholtzModel& model) {
-    std::vector<std::size_t> coordinates(model.active_parameters().size());
-    std::iota(coordinates.begin(), coordinates.end(), std::size_t(0));
-    return coordinates;
-}
 
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The
 // pressure fields are the matching first and second derivatives at fixed T.

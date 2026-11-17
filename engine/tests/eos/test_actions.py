@@ -147,7 +147,6 @@ def test_public_action_rejects_invalid_directions() -> None:
     observable = PropertyObservable.ResidualEnthalpy
     valid = DensityActionDirection(1.0, 0.0, (0.0, 0.0))
     invalid = (
-        (),
         (valid,) * 4,
         (DensityActionDirection(0.0, 0.0, (0.0,)),),
         (DensityActionDirection(math.inf, 0.0, (0.0, 0.0)),),

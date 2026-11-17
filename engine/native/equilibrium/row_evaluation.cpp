@@ -110,7 +110,7 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
     if (solids.empty() || (!parameters && !thermal)) return {};
     ReferenceJets jets;
     jets.temperature_order = thermal;
-    if (parameters) jets.parameters = every_coordinate(*c.model);
+    if (parameters) jets.request_every_parameter(*c.model);
     jets.pairs = pairs;
     auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, jets);
     for (std::size_t s = 0; s < solids.size(); ++s) {
@@ -160,7 +160,7 @@ StandardTerm standard_term(
             ReferenceJets jets;
             jets.temperature_order = thermal;
             jets.pressure = pressure_jets;
-            if (parameter_jets) jets.parameters = every_coordinate(*compiled.model);
+            if (parameter_jets) jets.request_every_parameter(*compiled.model);
             jets.reference_order = parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
             jets.pairs = pairs;
             reactions = central_reference_reactions(
@@ -334,7 +334,7 @@ std::shared_ptr<const ReferenceCalorics> caloric_reference(const CompiledSystem&
     ReferenceJets jets;
     jets.temperature_order = c.reference_diagnostics.empty() ? 4 : 3;
     jets.pressure = pressure;
-    if (parameters) jets.parameters = every_coordinate(*c.model);
+    if (parameters) jets.request_every_parameter(*c.model);
     auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, jets));
     if (result->status != SolvedStateActionStatus::Available)
         throw std::invalid_argument("caloric reference at " + std::to_string(T) + " K: " + result->message);
