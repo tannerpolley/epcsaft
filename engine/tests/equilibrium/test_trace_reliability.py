@@ -583,8 +583,9 @@ def test_reference_mea_stalled_trial_recovery_stops_without_changing_the_trial()
     """#31: the reference declaration, one liquid at 333.15 K, 3.5 bar, loading 0.3. The full-support liquid trial
     from the neutral base seed enters polish recovery and stalls at a raw row plateau far above the row criterion.
     Its damped contraction over the remaining correction cap cannot reach the criterion, so recovery stops after
-    five damped corrections. The trial returns the same best classified point (residual 2.4865211765153985e-4, bit for
-    bit) with 57 +/- 3 evaluations instead of 364."""
+    five damped corrections. The trial returns the same best classified point (residual 2.4865211765153985e-4) with
+    57 +/- 3 evaluations instead of 364. The residual is compared to a relative 1e-9: build-to-build rounding moved it
+    by about 4e-13 relative (source build against the manylinux wheel), so 1e-9 leaves room for rounding."""
     model, reactions, reference, guess, system = nominally_unloaded_mea()
     feed = list(system["feed_amounts_mol"])
     feed[0] = 0.3 * feed[1]
@@ -595,5 +596,5 @@ def test_reference_mea_stalled_trial_recovery_stops_without_changing_the_trial()
     report = stability_test(compile_problem(model, problem), parent)
     trial = next(t for t in report.trials if t.phase.kind == _core.PhaseKind.Liquid and len(t.phase.support) == len(MEA)
                  and t.seed == "positive-neutral-base")
-    assert trial.optimizer.convergence.residual == 0.00024865211765153985, trial.optimizer.convergence.residual
+    assert trial.optimizer.convergence.residual == pytest.approx(2.4865211765153985e-4, rel=1e-9), trial.optimizer.convergence.residual
     assert abs(trial.optimizer.evaluations - 57) <= 3, trial.optimizer.evaluations
