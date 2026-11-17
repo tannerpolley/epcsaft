@@ -1950,6 +1950,25 @@ void check_mea_census_state_3() {
     }));
 }
 
+// #7: discovery on the frozen MEA row at 1.859375 mol CO2/mol MEA, 313.15 K, 7,533,583.1305387868 Pa. Its added
+// CO2-rich liquid carries carbamate at mole fraction ~1.6e-30 (2.26e-32 mol), whose charge defect is the phase's whole
+// ionic charge; before the bounded amount correction discovery refused "destroys positive support" there. It now
+// reaches the two water-rich liquids.
+void check_mea_trace_ion_discovery() {
+    using namespace epcsaft; using namespace epcsaft::equilibrium;
+#include "fixtures/mea_capped_addition.inc"
+    const HelmholtzModel model(parameters);
+    auto problem = row.final_problem;
+    problem.feed.values[0] = 1.859375 * row.basis_amount;
+    problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
+    problem.pressure = FreeValue::fixed(7533583.1305387868);
+    const auto result = discover_phases(model, problem);
+    CHECK(result.success && result.phase_count == 2 && result.residual_norm() <= 1e-10);
+    for (std::size_t p = 0; p < 2; ++p)
+        CHECK(result.declaration->phases[p].kind == PhaseKind::Liquid && result.mole_fractions[9 * p + 2] > 0.5);
+    (void)thermal; (void)coordinates;
+}
+
 // Independent admission of a reported split: conserved moieties, positive support, phase charge.
 void check_split_admission(const epcsaft::HelmholtzModel& model, const epcsaft::equilibrium::CompiledSystem& compiled,
     const epcsaft::equilibrium::EquilibriumProblem& q, const epcsaft::equilibrium::StabilityTrial& t) {

@@ -2404,8 +2404,20 @@ where $S_{kk}=1/a_k$ for nonzero rows and 1 for zero rows. Divide each row
 and its right-hand side directly by $a_k$; the existing complete orthogonal
 decomposition handles redundant and zero charge rows. No squared inventories,
 step shortening, iteration or backtracking is used. Attempt the full correction
-even below tolerance; refuse nonfinite or nonpositive supported amounts and
-incompatible original rows. This is local numerical reconstruction of a declared
+even below tolerance. Where $m^0_j+\delta_j$ is not positive, a trace cell
+whose defect is its whole inventory (a near-neutral phase's charge row carried
+by carbamate at mole fraction $\sim1.6\times10^{-30}$, 2.26e-32 mol, #7), store
+$m^1_j=m^0_j\exp(\delta_j/m^0_j)$ instead; every other cell keeps $\operatorname{fl}(m^0+\delta)$ bit for bit.
+The applied material/charge rows then decide admission at the existing
+`ADDITION_MATERIAL_BALANCE` criterion, and a refusal names the first bounded
+species and phase with the applied defect. Refuse nonfinite or nonpositive
+supported amounts after this update (the exponential can underflow) and
+incompatible original rows. Two limits follow. The bounded cell keeps its
+phase's row closed only absolutely: in #7 the second liquid's charge defect
+falls from 2.26e-32 to about 8.3e-33 mol, still about all of that phase's ionic
+charge. A bounded cell changes by at least 63 %, above the $\sqrt{\epsilon}$
+repair limit below, so a candidate that needed the bounded step gets no
+reaction-relaxed split comparison. This is local numerical reconstruction of a declared
 parent, not a general constrained-feasibility solver.
 
 Reconstruct phase amounts/compositions and check original material rows,
