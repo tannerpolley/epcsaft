@@ -2,7 +2,7 @@
 
 namespace regression_checks {
 void check_saturation_capped_addition() {
-#include "mea_capped_addition.inc"
+#include "fixtures/mea_capped_addition.inc"
   using namespace epcsaft::equilibrium;
   const HelmholtzModel model(parameters, coordinates.active_parameters(),
                              thermal);
