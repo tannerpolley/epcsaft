@@ -316,15 +316,20 @@ struct SolidLogK final {
 };
 
 // The reference columns a caller asks for at (T, P): temperature derivatives through temperature_order, pressure jets,
-// jets in every active parameter, the order of the consumed mixed reference columns, the parameter coordinates whose
-// second derivatives are needed, and numerical error estimates. Each owner reads only the fields it uses.
+// first-order jets in the listed active coordinates (ascending), the order of the consumed mixed reference columns,
+// the parameter coordinates whose second derivatives are needed, and numerical error estimates. Each owner reads only
+// the fields it uses.
 struct ReferenceJets final {
     std::size_t temperature_order = 0;
     bool pressure = false;
-    bool parameters = false;
+    std::vector<std::size_t> parameters;
     std::size_t reference_order = 0;
     std::vector<std::size_t> pairs;
     bool errors = false;
+    void request_every_parameter(const HelmholtzModel& model) {  // for a caller that reads them all
+        parameters.resize(model.active_parameters().size());
+        std::iota(parameters.begin(), parameters.end(), std::size_t(0));
+    }
 };
 
 // derivative[k][i] is d^k (g_i / RT) / dT^k at the prepared temperature.  The

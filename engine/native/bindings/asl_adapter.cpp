@@ -469,7 +469,7 @@ struct PropertyContext final {
         std::vector<std::vector<double>> gradients, hessians;
         std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
         int order = -1;
-        std::vector<bool> live;  // per q column: whether its derivatives were computed
+        std::vector<bool> live;  // per q column: whether its derivatives are read
     } branches[2], solid_rows;  // liquid (highest stable root), vapor (lowest); solid rows need no density root
     std::vector<eq::SolidSpec> solids;
     std::optional<epcsaft::NeutralReferenceDeclaration> reference;
@@ -569,19 +569,19 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
         std::vector<double> actions(rows);
         const bool first = !anchor;
         if (first) anchor = branch.values[0] = *batch.molar_density;
-        actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
+        if (!directions.empty()) actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
         for (std::size_t row = 1; row < rows; ++row) {
             const auto& item = batch.results[row - 1];
             if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
             if (first && !item.value) fail(row, 0, item.status);
             actions[row] = item.action.value_or(0.0);
-            // With T constant, the first run's T action is neither read nor allowed to fail the call.
-            if ((!first || live[0]) && (item.status != Status::Available || !item.action)) fail(row, static_cast<int>(directions.size()), item.status);
+            if (!directions.empty() && (item.status != Status::Available || !item.action)) fail(row, static_cast<int>(directions.size()), item.status);
         }
         return actions;
     };
     for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
         if (k > 0 && !live[k]) continue;
+        if (k == 0 && (order == 0 || !live[0])) { run({}); continue; }  // values only: no T action is read
         const auto actions = run({basis[k]});
         for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
     }
@@ -605,16 +605,16 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, con
     const std::size_t S = context.solids.size(), n = q.size(), first = n - context.model->active_parameters().size();
     const std::vector<double> theta(q.begin() + first, q.end());
     if (theta != context.model->active_parameter_values()) context.model = model_at(*context.model, theta);
-    std::vector<std::size_t> pairs;  // the live parameters
-    for (std::size_t k = first; order >= 2 && k < n; ++k) if (live[k]) pairs.push_back(k - first);
+    std::vector<std::size_t> parameters;  // the live parameters: their first-order jets, and pairs at order 2
+    for (std::size_t k = first; order >= 1 && k < n; ++k) if (live[k]) parameters.push_back(k - first);
     rows = {q, std::vector<double>(S), std::vector<std::vector<double>>(S, std::vector<double>(n)),
             std::vector<std::vector<double>>(S, std::vector<double>(n * (n + 1) / 2)), std::vector<std::pair<int, std::string>>(S, {3, ""}), order};
     rows.live = live;
     const double T = q[0], P = q[1], RT = epcsaft::GAS_CONSTANT_J_PER_MOL_K * T;
     eq::ReferenceJets jets;
     jets.temperature_order = live[0] ? std::max(order, 0) : 0;
-    jets.parameters = order >= 1 && std::find(live.begin() + first, live.end(), true) != live.end();
-    jets.pairs = pairs;
+    jets.parameters = parameters;
+    if (order >= 2) jets.pairs = parameters;
     for (std::size_t s = 0; s < S; ++s) {
         const auto& solid = context.solids[s];
         const auto row = std::to_string(first + s) + ": solid " + solid.name + ": ";

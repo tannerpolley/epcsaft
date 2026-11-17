@@ -110,7 +110,7 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
     if (solids.empty() || (!parameters && !thermal)) return {};
     ReferenceJets jets;
     jets.temperature_order = thermal;
-    jets.parameters = parameters;
+    if (parameters) jets.request_every_parameter(*c.model);
     jets.pairs = pairs;
     auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, jets);
     for (std::size_t s = 0; s < solids.size(); ++s) {
@@ -160,7 +160,7 @@ StandardTerm standard_term(
             ReferenceJets jets;
             jets.temperature_order = thermal;
             jets.pressure = pressure_jets;
-            jets.parameters = parameter_jets;
+            if (parameter_jets) jets.request_every_parameter(*compiled.model);
             jets.reference_order = parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
             jets.pairs = pairs;
             reactions = central_reference_reactions(
@@ -334,7 +334,7 @@ std::shared_ptr<const ReferenceCalorics> caloric_reference(const CompiledSystem&
     ReferenceJets jets;
     jets.temperature_order = c.reference_diagnostics.empty() ? 4 : 3;
     jets.pressure = pressure;
-    jets.parameters = parameters;
+    if (parameters) jets.request_every_parameter(*c.model);
     auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, jets));
     if (result->status != SolvedStateActionStatus::Available)
         throw std::invalid_argument("caloric reference at " + std::to_string(T) + " K: " + result->message);
@@ -907,7 +907,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     };
     std::vector<ReactionSpec> result = request.reactions;
     std::vector<NeutralReferenceReactionDiagnostic> reused;
-    if (fixed_pressure != nullptr && jets.temperature_order == 0 && !jets.parameters) {
+    if (fixed_pressure != nullptr && jets.temperature_order == 0 && jets.parameters.empty()) {
         // Fixed-pressure references depend only on the compiled model, temperature,
         // declaration and stoichiometry; rebuild only system-pressure traces.
         for (const auto& diagnostic : *fixed_pressure)
@@ -1022,7 +1022,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                                      const ReferenceJets &jets) {
     if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     const std::size_t derivative_order = std::max(jets.temperature_order, std::size_t(1));
-    const bool pressure_slope = jets.pressure, parameter_slopes = jets.parameters, numerical_errors = jets.errors;
+    const bool pressure_slope = jets.pressure, parameter_slopes = !jets.parameters.empty(), numerical_errors = jets.errors;
     const auto &pair_coordinates = jets.pairs;
     using AD = CppAD::AD<double>;
     ReferenceCalorics result;
@@ -1148,7 +1148,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
                                   pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
                                   std::min(derivative_order, std::size_t(2)),
-                                  parameter_slopes, derivative_order, nullptr, pair_coordinates);
+                                  jets.parameters, derivative_order, nullptr, pair_coordinates);
     if (numerical_errors && !derived.empty()) for (std::size_t r = 0; r < diagnostics.size(); ++r) {
         reference_errors(model, temperature, problem.reactions[reference_rows[r]].stoichiometry, diagnostics[r]);
         if (!diagnostics[r].numerical_error_cause.empty()) result.numerical_error_cause = diagnostics[r].numerical_error_cause;

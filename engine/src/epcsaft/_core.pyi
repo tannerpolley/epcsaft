@@ -1826,7 +1826,7 @@ class HelmholtzModel:
 
         Notes
         -----
-        One through three directions form the mixed contraction. All action units equal the observable unit. LogFugacityCoefficient is refused on this chart; see ALG-ACTIONS.
+        One through three directions form the mixed contraction; none returns values only. All action units equal the observable unit. LogFugacityCoefficient is refused on this chart; see ALG-ACTIONS.
         """
         ...
     def pressure_action_difference(self, temperature: float, pressure: float, mole_fractions: Sequence[float],
@@ -1866,7 +1866,7 @@ class HelmholtzModel:
 
         Notes
         -----
-        One through three directions form the mixed contraction on the admitted branch. Each log-fugacity observable expands into component order. A central value can remain available when an action is refused.
+        One through three directions form the mixed contraction on the admitted branch; none returns values only. Each log-fugacity observable expands into component order. A central value can remain available when an action is refused.
         """
         ...
     def packing_fraction_coefficient(self, temperature: float, composition: list[float]) -> float:

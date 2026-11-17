@@ -531,7 +531,7 @@ void check_s2() {
         for (std::size_t source = 0; source < sources.size(); ++source) {
             const auto diagnostic = epcsaft::reaction_references(
                 pair, temperature, pressure, identical_declaration, {identical_nu},
-                {sources[source]}, false, std::nullopt, 1, true).front();
+                {sources[source]}, false, std::nullopt, 1, {0, 1}).front();
             const double mixed = diagnostic.terminal_contraction_temperature_parameter_derivative.size() != 2
                 ? std::numeric_limits<double>::quiet_NaN()
                 : diagnostic.terminal_contraction_temperature_parameter_derivative[0].value_or(
@@ -614,7 +614,7 @@ void check_s2() {
                                            const epcsaft::ReactionReference& source) {
             const auto diagnostic = epcsaft::reaction_references(
                 current, at_temperature, pressure, declaration, {stoichiometry}, {source},
-                false, std::nullopt, 1, false).front();
+                false, std::nullopt, 1, {}).front();
             CHECK(diagnostic.status == epcsaft::NeutralReferenceStatus::Available
                   && diagnostic.terminal_contraction_temperature_derivative.has_value());
             return diagnostic.terminal_contraction_temperature_derivative.value_or(
@@ -625,7 +625,7 @@ void check_s2() {
                                          std::size_t coordinate) {
             const auto diagnostic = epcsaft::reaction_references(
                 model, at_temperature, pressure, declaration, {stoichiometry}, {source},
-                false, std::nullopt, 0, true).front();
+                false, std::nullopt, 0, {0, 1}).front();
             CHECK(diagnostic.status == epcsaft::NeutralReferenceStatus::Available
                   && diagnostic.terminal_contraction_parameter_derivative.size() == active.size()
                   && diagnostic.terminal_contraction_parameter_derivative[coordinate].has_value());
@@ -637,7 +637,7 @@ void check_s2() {
         for (std::size_t source = 0; source < sources.size(); ++source) {
             const auto exact_diagnostic = epcsaft::reaction_references(
                 model, temperature, pressure, declaration, {stoichiometry}, {sources[source]},
-                false, std::nullopt, 1, true).front();
+                false, std::nullopt, 1, {0, 1}).front();
             CHECK(exact_diagnostic.status == epcsaft::NeutralReferenceStatus::Available
                   && exact_diagnostic.terminal_contraction_temperature_parameter_derivative.size() == active.size());
             for (std::size_t coordinate = 0; coordinate < active.size(); ++coordinate) {
@@ -755,7 +755,7 @@ void check_s2() {
             const double richardson = (4.0 * fine - coarse) / 3.0;
             epcsaft::equilibrium::ReferenceJets jets;
             jets.temperature_order = 2;
-            jets.parameters = true;
+            jets.request_every_parameter(*compiled.model);
             const auto calorics = epcsaft::equilibrium::reference_calorics(
                 compiled, problem.temperature.value, problem.pressure.value, jets);
             CHECK(calorics.status == epcsaft::equilibrium::SolvedStateActionStatus::Available);

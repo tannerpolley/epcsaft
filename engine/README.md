@@ -351,7 +351,7 @@ the Born constants `c_shell = c_dielectric = 1.0`, where the packet declares
 and `analyses/mea_parameter_bundle/scripts/shared_evaluation.py`.
 
 Actions are order one to three contractions along caller directions and keep the
-observable's unit. A state direction holds K, mol/m^3 or Pa, a zero-sum
+observable's unit; an empty direction list returns the values with no action. A state direction holds K, mol/m^3 or Pa, a zero-sum
 composition increment and native family/slot parameter increments; a solved-state
 direction holds K, Pa, absolute feed mol (component width) and one increment per
 active parameter (active width). A free T or P is an output: its entry is zero.
@@ -556,9 +556,8 @@ from the native pressure actions plus the exact normalization chain; a `theta` c
 is one native parameter-direction action at fixed `(T, P, x)`. A real argument marked constant
 in `arglist::dig` costs no derivative work: its gradient column and Hessian pairs are neither
 computed nor written, and an action unavailable only in such a column does not fail the call.
-Two exceptions remain: with T constant, the first native call at a `q` still carries its T
-action, unread; a solid row with one live parameter still computes the first-order reference
-jets of every active parameter. At another `theta` the
+At value order, or with T constant, the first native call at a `q` computes values only, and a
+solid row computes reference jets only for its live parameters. At another `theta` the
 record's model is rebuilt with every slot of each active parameter set to its value;
 a value the model refuses returns `invalid_input`. IDAES `PressureProperties` declares
 them as `epcsaft_active_parameter[k]` on the parameter block, dimensionless to Pyomo,

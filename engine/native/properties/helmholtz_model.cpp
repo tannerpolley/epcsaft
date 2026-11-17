@@ -568,7 +568,7 @@ void validate_action_request(
     const std::vector<PropertyObservable>& observables,
     const std::vector<DensityActionDirection>& directions
 ) {
-    require(directions.size() >= 1 && directions.size() <= 3, "action order");
+    require(directions.size() <= 3, "action order");
     std::vector<bool> seen(static_cast<std::size_t>(PropertyObservable::LogFugacityCoefficient) + 1, false);
     for (const auto observable : observables) {
         const auto index = static_cast<std::size_t>(observable);
@@ -2204,7 +2204,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         else if (is_fugacity(item.observable) && item.value)
             *item.value -= std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * molar_density));
     const double product = std::accumulate(scales.begin(), scales.end(), 1.0, std::multiplies<>());
-    for (auto& item : result.results) if (item.action) item.action = *item.action * product;
+    // An empty direction list asks for values only: its order-zero jet is the value, not an action.
+    for (auto& item : result.results) if (item.action) item.action = directions.empty() ? std::nullopt : std::optional<double>(*item.action * product);
     for (std::size_t i = 0; i < result.density_action.size(); ++i) result.density_action[i] *= scales[i];
     if (result.density_mixed_action) result.density_mixed_action = *result.density_mixed_action * product;
     result.diagnostics = diagnostics;
@@ -2313,7 +2314,6 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     require(std::isfinite(pressure) && pressure > 0.0, "pressure");
     validate_composition(mole_fractions);
-    require(!directions.empty() && directions.size() <= 3, "action order");
     std::vector<DensityActionDirection> validation;
     validation.reserve(directions.size());
     std::vector<double> pressure_directions;

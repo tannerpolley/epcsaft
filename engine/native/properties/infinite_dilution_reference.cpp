@@ -148,7 +148,7 @@ struct NeutralReferenceTrace final {
     State state;
     std::vector<std::optional<State>> pure_state;
     std::size_t temperature_order = 0;
-    bool parameter_jets = false;
+    std::vector<std::size_t> parameter_jets;  // coordinates with first-order jets, ascending
 };
 
 void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
@@ -217,7 +217,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     const NeutralReferenceDeclaration& declaration,
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
-    bool parameter_jets
+    const std::vector<std::size_t>& parameter_jets
 ) {
     core::Scope scope("neutral_reference_trace");
     NeutralReferenceTraceResult result;
@@ -411,10 +411,14 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             if (pressure_jets)
                 result.terminal_contraction_temperature_pressure_derivative = admit(1, 1, std::nullopt);
         }
-        for (std::size_t a = 0; trace.parameter_jets && a < model.active_parameters().size(); ++a) {
-            result.terminal_contraction_parameter_derivative.push_back(admit(0, 0, a));
+        // One entry per active coordinate; an unrequested coordinate stays empty.
+        const std::size_t active = trace.parameter_jets.empty() ? 0 : model.active_parameters().size();
+        result.terminal_contraction_parameter_derivative.resize(active);
+        result.terminal_contraction_temperature_parameter_derivative.resize(trace.temperature_order > 0 ? active : 0);
+        for (const auto a : trace.parameter_jets) {
+            result.terminal_contraction_parameter_derivative[a] = admit(0, 0, a);
             if (trace.temperature_order > 0)
-                result.terminal_contraction_temperature_parameter_derivative.push_back(admit(1, 0, a));
+                result.terminal_contraction_temperature_parameter_derivative[a] = admit(1, 0, a);
         }
         if (reference.reference_pressure_pa.has_value()) {
             result.terminal_contraction_pressure_derivative = 0.0;
@@ -574,7 +578,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     bool pressure_jets,
     std::optional<double> solvent_anchor,
     std::size_t temperature_order,
-    bool parameter_jets,
+    const std::vector<std::size_t>& parameter_jets,
     std::size_t reference_order,
     std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values,
     const std::vector<std::size_t>& pair_coordinates
@@ -583,7 +587,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
     if (scope.on()) {
         scope.probe("reference_inputs", {temperature, system_pressure, double(pressure_jets),
-            double(temperature_order), double(parameter_jets), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
+            double(temperature_order), double(parameter_jets.size()), double(solvent_anchor.has_value()), solvent_anchor.value_or(0.0)});
         scope.probe("reference_declaration", {double(declaration.solvent_index.has_value()),
             double(declaration.solvent_index.value_or(0)), declaration.standard_molality_mol_per_kg});
         scope.probe("reference_ratios", declaration.solute_molality_ratios);
@@ -593,10 +597,14 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         throw std::invalid_argument("neutral reference batch size");
     // Every input of this pure function of the model, segment sizes first so the flat key is unambiguous.
     std::vector<double> inputs{temperature, system_pressure, double(solvent_anchor.has_value()),
-        solvent_anchor.value_or(0.0), double(pressure_jets), double(temperature_order), double(parameter_jets),
+        solvent_anchor.value_or(0.0), double(pressure_jets), double(temperature_order),
         double(reference_order), double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
         declaration.standard_molality_mol_per_kg, double(declaration.solute_molality_ratios.size()),
         double(declaration.species_reference.size()), double(stoichiometries.size())};
+    // One 0/1 entry per active coordinate at 6.., before reference_order: the window a stored superset covers.
+    const std::size_t active = model.active_parameters().size();
+    for (std::size_t a = active; a-- > 0;)
+        inputs.insert(inputs.begin() + 6, double(std::binary_search(parameter_jets.begin(), parameter_jets.end(), a)));
     inputs.insert(inputs.end(), declaration.solute_molality_ratios.begin(), declaration.solute_molality_ratios.end());
     for (const auto species : declaration.species_reference) inputs.push_back(double(species));
     inputs.push_back(double(pair_coordinates.size()));
@@ -607,7 +615,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         inputs.insert(inputs.end(), {double(references[row].reference_pressure_pa.has_value()),
             references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
     }
-    if (!species_values) if (auto stored = model.stored_references(inputs, 4, 8)) return std::move(*stored);
+    if (!species_values) if (auto stored = model.stored_references(inputs, 4, 7 + active)) return std::move(*stored);
     if (species_values) species_values->resize(stoichiometries.size());
     scope.probe("reference_cache_miss", 1.0);
     struct CachedTrace final {
@@ -678,12 +686,13 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
             }
         }
         const auto values = model.active_parameter_values();
-        for (std::size_t c = 0; c <= std::size_t(parameter_jets); ++c)
+        for (std::size_t c = 0; c <= std::size_t(!parameter_jets.empty()); ++c)
             for (std::size_t d = 2; d <= reference_order; ++d)
                 for (std::size_t b = 0; b <= (pressure_jets ? d-c : 0); ++b) {
                     const std::size_t a = d-b-c;
                     if (d == 2 && !(c && b)) continue;  // existing lower slopes keep their admitted owner
                     for (std::size_t coordinate = 0; coordinate < (c ? values.size() : 1); ++coordinate) {
+                        if (c && !std::binary_search(parameter_jets.begin(), parameter_jets.end(), coordinate)) continue;
                         const auto parameter = c ? std::optional<std::size_t>(coordinate) : std::nullopt;
                         NeutralReferenceReactionDiagnostic::Derivative column;
                         if (b && reference.reference_pressure_pa) {
