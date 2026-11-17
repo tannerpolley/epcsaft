@@ -107,4 +107,6 @@ def include_source(app, relative_path, parent_docname, content):
 
 
 def setup(app):
+    from pygments.lexers import TextLexer
+    app.add_lexer("mermaid", TextLexer)
     app.connect("include-read", include_source)
