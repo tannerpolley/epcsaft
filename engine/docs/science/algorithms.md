@@ -4073,8 +4073,8 @@ free-$T$ boundary, first corrected at its own pressure in the free-$T$ chart (ag
 within the row tolerance) and continued at fixed $P$. Continuation steps are 0.05 to $10^{-6}$ with ten
 retries; the source densities anchor its initial admission. The reached state passes the target's rows
 and cold density-branch admission. Added optimizer iterations and continuation attempts are each at most
-`EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations four times and Hessian callbacks twice
-that, within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
+`EQUILIBRIUM_RECOVERY_WORK` (512), objective/polish evaluations `EQUILIBRIUM_RECOVERY_EVALUATIONS` (2048)
+and Hessian callbacks `EQUILIBRIUM_RECOVERY_HESSIAN_CALLS` (1024), within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
 with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
 
 **Trial search before recovery.** A fixed-T/P flash whose first run coalesced (no ideal gas, no
@@ -4180,8 +4180,8 @@ Figure 1, support reduced T/theta and number density times sigma cubed and the d
 of nonassociating critical coordinates on m; they do not derive these guesses or an
 association correction. Clapeyron's SAFT `x0_crit_pure` likewise uses physical scales.
 
-All generated attempts share `EQUILIBRIUM_RECOVERY_WORK` (512) iterations, four times
-as many driver evaluations and twice as many Hessian callbacks, with the existing
+All generated attempts share `EQUILIBRIUM_RECOVERY_WORK` (512) iterations,
+`EQUILIBRIUM_RECOVERY_EVALUATIONS` (2048) driver evaluations and `EQUILIBRIUM_RECOVERY_HESSIAN_CALLS` (1024) Hessian callbacks, with the existing
 200-iteration per-attempt cap. Returned-point numerical estimates spend the same
 evaluation allowance using the ordinary critical-row producer. The result's
 `critical_search` retains every attempted T/density, result and cumulative added work,

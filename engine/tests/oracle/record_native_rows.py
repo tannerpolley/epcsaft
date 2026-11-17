@@ -22,6 +22,7 @@ CASES = (
     ("equilibrium_checks", "E5-3", ("e5-3/isomerisation/A",)),
     ("equilibrium_checks", "E5-5", ("e5-5/electrolyte/",)),
     ("equilibrium_checks", "E5-7", ("e5-7/thermal-320/",)),
+    ("equilibrium_checks", "diffusive-spinodal", ("spinodal/1/0/rho",)),
     ("equilibrium_checks", "E5-10", ("e5-10/manifold/value/", "e5-10/manifold/pressure-temperature/",
                                      "e5-10/manifold/temperature-temperature-temperature/")),
     ("regression_checks", "R2-J2", ("r4/",)),
