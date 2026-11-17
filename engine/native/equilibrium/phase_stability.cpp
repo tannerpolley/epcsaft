@@ -776,7 +776,7 @@ void spend_credit(const DriverLimits& limits, Quantities& work) {
 }
 // For a relaxed trial the frozen slope can classify no descent only within plane arithmetic error.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
-    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool charged = false) {
+    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool credited = false) {
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
@@ -860,9 +860,9 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
                 throw std::invalid_argument("finite split arithmetic conservation failed");
             ++report.work["finite_split_evaluations"];
-            if (charged) spend_credit(*limits, report.work);
+            if (credited) spend_credit(*limits, report.work);
             const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
-            if (charged) spend_credit(*limits, report.work);
+            if (credited) spend_credit(*limits, report.work);
             const auto changed = phase_energy(*c.model, at.temperature, at.pressure, donor_volume, x,
                 report.standard_over_rt, report.work);
             const double delta = remaining * changed.at("g_over_rt") + beta * q.at("g_over_rt")
