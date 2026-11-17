@@ -154,7 +154,7 @@ installation boundary.
 
 `bash engine/tools/run-native-tests.sh` compiles and runs the fast suites
 `contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
-and `regression`; name other tests to run them. `regression` compiles `_core` (no wheel, no install) because its fixture generator loads it.
+and `regression`; name other tests to run them. `regression` compiles the ordinary (non-sanitizer) `_core` (no wheel, no install) because its fixture generator loads it.
 `tools/check-affected.sh` selects
 the equilibrium, boundary and Explicit tests when their code changes (see [Checks](#checks)).
 

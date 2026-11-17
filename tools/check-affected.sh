@@ -152,12 +152,12 @@ echo "native gate passed (base $base_ref)"
 # One reader of docs/agents/workflow.md "Gates": the remaining rows these paths select.
 gates=()
 [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] \
-    && gates+=("tools/check-equilibrium-corpora <main environment> <slice environment> --out build/<dir>")
+    && gates+=("lead's batch: tools/check-equilibrium-corpora <prepared-A> <prepared-B> --out build/<dir>")
 [[ " $owners " =~ \ engine\.(equilibrium|regression)\  ]] \
     && gates+=("bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'")
 if grep -Eq '^engine/(native|src)/' <<<"$paths"; then
-    gates+=("tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>, and an A=A control"
-        "if fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work or density algorithms changed: add --fit --control <main-A=A-summary.json>")
+    gates+=("lead's batch: tools/time-key-solves <prepared-A> <prepared-B> --pairs 1 --out build/<dir>, and an A=A control (two workers from A)"
+        "lead's batch, if fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work or density algorithms changed: add --fit --control <A=A-summary.json> (A=A run with --fit from the previous qualified batch environment)")
 fi
 grep -Eq '^engine/.*\.(cpp|hpp|h)$' <<<"$paths" \
     && gates+=("lead's batch: agent-heavy tools/check-pr-native --pr N --head <full-sha> --base <previous-qualified-sha>")
