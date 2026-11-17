@@ -335,7 +335,7 @@ struct ObservationEvaluator::Impl final {
                     auto event = stability_transition(i, previous.first, previous.second, optimizer, *out.stability_predictions[i]);
                     if (!event.kind.empty()) result_.stability_transitions.push_back(std::move(event));
                 }
-                previous = {optimizer, *out.stability_predictions[i]};
+                previous = {optimizer, transition_record(*out.stability_predictions[i])};
             }
         }
         if (failure) return {Disposition::Rejected, std::move(*failure)};
@@ -447,6 +447,24 @@ struct ObservationEvaluator::Impl final {
     }
 
     std::vector<std::pair<std::vector<double>, Prediction>> stability_history_;
+    // A separate copy of what stability_transition reads; the shared report is never edited.
+    static Prediction transition_record(const Prediction& p) {
+        Prediction out;
+        if (p.compiled) { out.compiled.emplace(); out.compiled->problem.phases = p.compiled->problem.phases; }
+        if (!p.stability) return out;
+        const auto& s = *p.stability;
+        auto& m = *(out.stability = std::make_shared<equilibrium::StabilityMeasure>());
+        m.available = s.available; m.event = s.event; m.minimizing_trial = s.minimizing_trial; m.minima = s.minima;
+        m.report.completed = s.report.completed; m.report.no_descent_in_trial_set = s.report.no_descent_in_trial_set;
+        m.report.trials.resize(s.report.trials.size());
+        for (const auto i : s.minima) m.report.trials.at(i).seed = s.report.trials.at(i).seed;
+        if (s.minimizing_trial) m.report.trials.at(*s.minimizing_trial) = s.report.trials.at(*s.minimizing_trial);
+        for (const auto& phase : s.report.present_phases) {
+            auto& kept = m.report.present_phases.emplace_back();
+            if (const auto side = phase.find("density_side"); side != phase.end()) kept.insert(*side);
+        }
+        return out;
+    }
 
     std::optional<Failure> compute_rows(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out,
                                        Trial& trial, bool same_point, core::Scope& scope) {
@@ -594,9 +612,23 @@ struct ObservationEvaluator::Impl final {
                         Trial& fresh, bool same_point) {
         for (std::size_t g = 0; g < groups_.size(); ++g)
             if (trial.centers[g].solved) starts_[g] = trial.centers[g].solved;
+        // After a derivative commit the cache answers every request at this point: no row here is recomputed.
+        if (jacobian) {
+            for (std::size_t g = 0; g < groups_.size(); ++g)
+                if (request_.observations[g].kind == ObservationKind::Stability) trial.centers[g] = Prediction{};
+            trial.references.pressures = {};
+        }
         out.chart = trial.chart;
         trial.optimizer = optimizer;
-        trial.evaluation = out;
+        // A worker has no reuse path; a fit's own process keeps only its stability rows' transition fields.
+        if (!process_) {
+            std::vector<std::optional<Prediction>> rows;
+            if (interruptible_) rows.swap(out.stability_predictions);
+            trial.evaluation = out;
+            for (const auto& row : rows)
+                trial.evaluation.stability_predictions.push_back(row ? std::optional(transition_record(*row)) : std::nullopt);
+            if (interruptible_) out.stability_predictions = std::move(rows);
+        }
         trial.jacobian = jacobian;
         if (!same_point) {
             cached_.emplace(std::move(fresh));
@@ -620,7 +652,7 @@ struct ObservationEvaluator::Impl final {
     std::size_t profile_evaluations_ = 0;
     std::vector<std::size_t> owner_;  // the process that evaluates each row; 0 is the fit's own
     std::size_t process_ = 0;
-    bool interruptible_ = false;  // a least-squares fit's own process polls cancellation between rows
+    bool interruptible_ = false;  // a least-squares fit's own process: polls cancellation, compacts its committed rows
     Workers workers_;
 };
 
@@ -1254,6 +1286,7 @@ FitResult fit(const FitRequest& request) {
             result.covariance.projected_gradient_norm = std::max(result.covariance.projected_gradient_norm,
                 std::abs(optimizer[c] - std::clamp(optimizer[c] - gradient[c], lower[c], upper[c])));
     }
+    owned.reset();  // the replay reads only the result: release the evaluator and its workers first
     if (!result.stability_predictions.empty()) {
         auto observations = request.observations; request.coordinates.apply(observations, result.optimizer);
         const HelmholtzModel model(result.parameters, {}, request.thermochemistry, request.controls.solver_options);
