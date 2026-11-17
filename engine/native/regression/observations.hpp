@@ -149,10 +149,10 @@ struct ObservationInputDirection final {
 
 // Admission by name: finite inputs, phase/species indices inside the declared problem.
 using equilibrium::same_reaction;
-bool same_state(const Observation& left, const Observation& right);
+EPC_API bool same_state(const Observation& left, const Observation& right);
 Observation pressure_reference_row(const Observation& observation);
 // Returns whether compiled predicates remain after declaration admission.
-bool validate_declaration(const Observation&, const HelmholtzModel&);
+EPC_API bool validate_declaration(const Observation&, const HelmholtzModel&);
 EPC_API void validate(const Observation& observation, const HelmholtzModel& model,
               const equilibrium::CompiledSystem* prepared = nullptr);
 EPC_API void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);

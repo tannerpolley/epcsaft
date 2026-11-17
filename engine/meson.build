@@ -153,7 +153,7 @@ epcsaft_native = shared_library(
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
   build_rpath: native_rpath,
   install_rpath: native_rpath,
-  gnu_symbol_visibility: 'default',
+  gnu_symbol_visibility: 'hidden',
 )
 
 private_sources = []
@@ -211,6 +211,13 @@ core_extension = py.extension_module(
   install_rpath: native_rpath,
   subdir: 'epcsaft',
 )
+if linux
+  # An extension module links with unresolved Python symbols, so a binding call to a symbol without EPC_API fails only
+  # at import. Relinking its objects with every symbol resolved fails the build the way the Windows link does (#41).
+  shared_module('core_export_check', objects: core_extension.extract_all_objects(recursive: false),
+    link_with: [epcsaft_native, nanobind_support], dependencies: [py.dependency(embed: true), ipopt_dep, ceres_dep],
+    link_args: ['-Wl,-z,defs'], install: false)
+endif
 
 contributions_checks = executable(
   'contributions_checks',

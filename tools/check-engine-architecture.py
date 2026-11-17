@@ -113,7 +113,7 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
         if line.startswith("build ") and ": cpp_LINKER " in line:
             output = line.split()[1].removesuffix(":")
             inputs = line.split()[3:]
-            if "libnanobind_support.a" in inputs:
+            if "libnanobind_support.a" in inputs and output != "libcore_export_check.so":  # #41 relink of _core
                 support_consumers.append(output)
             if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
                 return [f"private archive used outside ASL: {output}"]

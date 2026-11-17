@@ -601,6 +601,8 @@ private:
 };
 #if defined(_WIN32) && !defined(EPCSAFT_NATIVE_BUILD) && !defined(EPCSAFT_NATIVE_STATIC)
 extern template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
+extern template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
+    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
 #endif
 
 
