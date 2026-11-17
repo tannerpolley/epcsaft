@@ -1,4 +1,6 @@
-"""Export frozen Engine declarations; thermodynamic calculations stay native."""
+"""Regenerate mea_capped_addition.inc: python mea_capped_addition.py <_core extension> <output>.
+
+The committed .inc is checked against this output by tools/check-affected.sh --python; no thermodynamics here."""
 import copy
 import importlib.util
 import sys
@@ -6,22 +8,10 @@ import types
 import gzip
 import hashlib
 import json
-import os
-import subprocess
 from pathlib import Path
 from typing import Any
 
 root = Path(__file__).resolve().parents[4]
-if len(sys.argv) > 3:
-    assert sys.argv[3] == "sanitize"
-    # Match the native gate when importing its instrumented extension into Python.
-    runtimes = [subprocess.check_output([*sys.argv[4:], "-print-file-name=" + name], text=True).strip()
-                for name in ("libclang_rt.asan-x86_64.so", "libclang_rt.ubsan_standalone-x86_64.so")]
-    assert all(Path(path).is_file() for path in runtimes)
-    environment = dict(os.environ, LD_PRELOAD=":".join(runtimes),
-                       ASAN_OPTIONS="detect_leaks=0:halt_on_error=1",
-                       UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1")
-    os.execve(sys.executable, [sys.executable, *sys.argv[:3]], environment)
 package = types.ModuleType("epcsaft")
 package.__dict__["__path__"] = [str(root / "engine/src/epcsaft")]
 sys.modules["epcsaft"] = package
