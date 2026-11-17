@@ -23,6 +23,8 @@ void properties_thermochemistry_p3();
 void properties_p4();
 void cache_invariance();
 void modular_permittivity_actions();
+void density_correlated_ion_suppression();
+void pressure_closed_ion_suppression_fit();
 void electrolyte_parameter_actions();
 void energy_e5_ladder();
 void energy_action_ladders();
@@ -59,6 +61,8 @@ int main(int argc, char** argv) {
         {{"native.properties.p4", "P4"}, properties_p4, "P4"},
         {{"native.properties.m9", "M9"}, cache_invariance},
         {{"native.properties.issue26", "Issue26"}, modular_permittivity_actions},
+        {{"native.properties.density-correlated-ion-suppression", "DensityCorrelatedIonSuppression"}, density_correlated_ion_suppression},
+        {{"native.properties.pressure-closed-ion-suppression-fit", "PressureClosedIonSuppressionFit"}, pressure_closed_ion_suppression_fit},
         {{"native.properties.electrolyte-coordinates", "ElectrolyteCoordinates"}, electrolyte_parameter_actions},
         {{"native.properties.e5-ladder", "C4"}, energy_e5_ladder},
         {{"native.properties.issue26e", "Issue26E"}, energy_action_ladders},

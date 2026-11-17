@@ -905,6 +905,231 @@ void check_supplied_tangent_plane(const epcsaft::equilibrium::CompiledSystem& c,
     tpd_compare(id + "/standard-uncertainty", uncertainty.trials[0].quantities.at("standard_error_estimate_over_rt"), 2e-7, 32.0 * eps * 2e-7);
 }
 
+void check_density_correlated_ion_suppression_admission() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto p = properties_support::aqueous_electrolyte();
+    p.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
+    p.dielectric_volume_m3_per_mol = {3.777e-4, 0, 0};
+    p.dielectric_temperature_k = {1403, 0, 0};
+    const std::string vacuum = "unit vacuum limit";
+    auto charged = equilibrium_support::phase("charged-liquid", PhaseKind::Liquid);
+    charged.support = {0, 1, 2}; charged.support_declared = true;
+    auto neutral = equilibrium_support::phase("neutral-vapor", PhaseKind::Vapor);
+    neutral.support = {0}; neutral.support_declared = true;
+    const auto report_trials = [](const std::string& id, const StabilityReport& report) {
+        for (std::size_t j = 0; j < report.trials.size(); ++j) {
+            const auto& t = report.trials[j];
+            const auto inputs = recording_support::fields({
+                recording_support::field("seed", t.seed), recording_support::field("evidence", t.evidence),
+                recording_support::field("composition", t.composition), recording_support::field("raw_rows", t.raw_residuals),
+                recording_support::field("cause", t.message), recording_support::field("descent", t.resolved_descent)});
+            const auto prefix = "density-correlated-ion-suppression/" + id + "/" + std::to_string(j);
+            recording_support::observe(prefix, "resolved_descent", "1", t.resolved_descent, std::nullopt, "native-stability-trial", inputs);
+            for (const auto* name : {"tpd_over_rt", "donor_slope_over_rt", "descent_error_estimate_over_rt",
+                                     "molar_density_mol_m3", "pressure_row", "pressure_density_derivative",
+                                     "negative_slope_density_mol_m3", "condensed_root_residual"})
+                if (t.quantities.count(name)) recording_support::observe(prefix + "/" + name, name, "native", t.quantities.at(name),
+                    std::nullopt, "native-stability-trial", inputs);
+        }
+    };
+
+    for (bool suppressed : {false, true}) {
+        p.ion_suppression_coefficient = suppressed ? std::vector<double>{0, 3.62, 6.80} : std::vector<double>{0, 0, 0};
+        const HelmholtzModel model(p);
+        auto problem = equilibrium_support::flash(3);
+        problem.feed.values = {0.98, 0.01, 0.01};
+        problem.pressure = FreeValue::fixed(1000);
+        problem.solver_options.values[policy::row] = 1e-10;
+        const std::string alpha = suppressed ? "nonzero" : "zero";
+        for (double temperature : {298.15, 800.0}) {
+            problem.temperature = FreeValue::fixed(temperature);
+            const bool liquid_side = temperature == 298.15;
+            const auto compiled = compile_problem(model, problem);
+            const auto solved = solve_compiled(compiled);
+            CHECK(solved.success);
+            auto trial = charged;
+            trial.composition_guess = problem.feed.values;
+            StabilityOptions options;
+            options.trials = std::vector<PhaseSpec>{charged};
+            const auto optimized = stability_test(compiled, solved, options);
+            const std::string id = alpha + (liquid_side ? "/liquid" : "/loopless");
+            report_trials(id + "/optimized", optimized);
+
+            auto request = problem;
+            request.phases.clear(); request.topology_declared = false; request.discovery = options;
+            const auto discovery = discover_phases(model, request);
+            CHECK(discovery.discovery && !discovery.discovery->rounds.empty());
+            const auto& discovered = discovery.discovery->rounds.front();
+            report_trials(id + "/discovery", discovered);
+            for (const auto* report : {&optimized, &discovered}) {
+                const auto admitted = std::any_of(report->trials.begin(), report->trials.end(), [](const auto& item) {
+                    return item.quantities.count("tpd_over_rt") && item.quantities.count("negative_slope_density_mol_m3");
+                });
+                if (liquid_side) CHECK(admitted);
+                else {
+                    // The uniform, salt-rich seed can find its own dense endpoint at 800 K.
+                    const auto seed = std::find_if(report->trials.begin(), report->trials.end(), [](const auto& item) {
+                        return item.seed == "near-pure-0";
+                    });
+                    CHECK(seed != report->trials.end());
+                    CHECK(seed->evidence == "unresolved" && seed->message.find(vacuum) != std::string::npos);
+                    CHECK(!seed->resolved_descent && seed->split_checks.empty() && !seed->quantities.count("tpd_over_rt"));
+                    CHECK(!seed->quantities.count("addition_root_residual"));
+                }
+            }
+            if (liquid_side) CHECK(discovery.discovery->declarations.size() == 1);
+            options.evaluate_supplied_trials = true;
+            if (liquid_side) {
+                auto gas = trial;
+                const auto gas_root = solve_density(model, temperature, 1000, gas.composition_guess, DensityBranch::Vapor, {});
+                gas.packing_guess = model.packing_fraction_coefficient(temperature, gas.composition_guess) * gas_root.molar_density;
+                auto vapor = neutral; vapor.composition_guess = {1, 0, 0};
+                options.trials = std::vector<PhaseSpec>{trial, gas, vapor};
+                const auto supplied = stability_test(compiled, solved, options);
+                report_trials(id + "/supplied", supplied);
+                CHECK(supplied.trials.size() == 3);
+                CHECK(supplied.trials[0].evidence == "evaluated");
+                CHECK(supplied.trials[1].evidence == "unresolved" && supplied.trials[1].message.find(vacuum) != std::string::npos);
+                CHECK(!supplied.trials[1].resolved_descent && !supplied.trials[1].quantities.count("tpd_over_rt"));
+                CHECK(supplied.trials[2].evidence == "evaluated");
+                auto vapor_declaration = problem; trial.kind = PhaseKind::Vapor; vapor_declaration.phases = {trial};
+                const auto cause = recording_support::refusal([&] { (void)compile_problem(model, vapor_declaration); });
+                CHECK(cause.find(vacuum) != std::string::npos);
+                recording_support::observe(id + "/charged-vapor", "available", "1", 0, std::nullopt, "support-resolution",
+                    recording_support::fields({recording_support::field("cause", cause)}));
+            } else {
+                options.trials = std::vector<PhaseSpec>{trial};
+                const auto supplied = stability_test(compiled, solved, options);
+                report_trials(id + "/supplied", supplied);
+                CHECK(supplied.trials.size() == 1);
+                CHECK(supplied.trials[0].evidence == "unresolved" && supplied.trials[0].message.find(vacuum) != std::string::npos);
+                CHECK(!supplied.trials[0].resolved_descent && !supplied.trials[0].quantities.count("tpd_over_rt"));
+            }
+        }
+    }
+
+    // The parent declaration's generic rank point also needs a positive denominator.
+    p.ion_suppression_coefficient = {0, -1.29, -1.29};
+    const HelmholtzModel model(p);
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.feed.values = {0.996, 0.002, 0.002};
+    const auto compiled = compile_problem(model, problem);
+    const auto solved = solve_compiled(compiled);
+    CHECK(solved.success);
+    charged.composition_guess = {0.2, 0.4, 0.4};
+    StabilityOptions supplied;
+    supplied.evaluate_supplied_trials = true; supplied.trials = std::vector<PhaseSpec>{charged};
+    const auto refused = stability_test(compiled, solved, supplied);
+    report_trials("denominator-refusal", refused);
+    CHECK(refused.trials.size() == 1);
+    CHECK(refused.trials[0].evidence == "unresolved");
+    CHECK(refused.trials[0].message.find("suppression denominator") != std::string::npos);
+    CHECK(!refused.trials[0].resolved_descent && !refused.trials[0].quantities.count("tpd_over_rt"));
+}
+
+void check_ion_suppression_reacting_liquid_actions() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto parameters = properties_support::aqueous_electrolyte();
+    parameters.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
+    parameters.dielectric_volume_m3_per_mol = {3.777e-4, 0, 0};
+    parameters.dielectric_temperature_k = {1403, 0, 0};
+    parameters.ion_suppression_coefficient = {0, 3.62, 6.80};
+    constexpr double T = 298.15, P = 1e5, eps = std::numeric_limits<double>::epsilon();
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature = FreeValue::fixed(T);
+    problem.pressure = FreeValue::fixed(P);
+    problem.feed.values = {1.0, 1e-6, 1e-6};
+    ReactionSpec reaction;
+    reaction.name = "water-to-ion-pair";
+    reaction.stoichiometry = {-1, 1, 1};
+    reaction.correlation = ReactionLogPolynomial{std::log(1e-8), 0, 0, 0, T, 250, 350, "analytic-source"};
+    reaction.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+    problem.reactions = {reaction};
+    NeutralReferenceDeclaration reference;
+    reference.solvent_index = 0;
+    reference.solute_molality_ratios = {0, 1, 1};
+    reference.standard_molality_mol_per_kg = 1;
+    problem.source_reference = reference;
+    const HelmholtzModel model(parameters, {{ParameterFamily::IonSuppressionCoefficient, {1}}});
+    const auto compiled = compile_problem(model, problem);
+    const auto central = solve_compiled(compiled);
+    CHECK(central.success);
+    SolvedStateActionDirection motion;
+    motion.feed_amounts_mol = {0, 0, 0};
+    motion.active_parameters = {1};
+    const auto batch = solved_state_first_actions(compiled, central, {{SolvedStateObservableKind::PhaseMoleFraction, 0, 1}}, {motion}).front();
+    const auto action = batch.results.front();
+    if (!action.action) throw std::runtime_error(std::string(solved_state_status_name(action.status))
+        + ": " + action.diagnostic_message.value_or(""));
+    const auto resolve = [&](double alpha_change) {
+        auto changed = parameters;
+        changed.ion_suppression_coefficient[1] += alpha_change;
+        const HelmholtzModel candidate(changed);
+        const auto solved = solve_equilibrium(candidate, problem);
+        CHECK(solved.success);
+        return solved.mole_fractions[1];
+    };
+    const double h = 0.5;
+    const double coarse = (resolve(h) - resolve(-h))/(2*h);
+    const double fine = (resolve(h/2) - resolve(-h/2))/h;
+    const double richardson = (4*fine - coarse)/3;
+    tpd_compare("ion-suppression/reacting-composition-action", *action.action, richardson,
+        std::abs(fine - coarse) + 32*eps*central.mole_fractions[1]/h,
+        recording_support::fields({recording_support::field("central_x", central.mole_fractions),
+            recording_support::field("central_residual", central.convergence.residual),
+            recording_support::field("linear_residual", batch.diagnostics.maximum_linear_residual.value_or(NAN)),
+            recording_support::field("coarse", coarse),
+            recording_support::field("fine", fine), recording_support::field("step", h)}));
+
+    auto trial = compiled.problem.phases[0]; trial.packing_guess.reset();
+    const auto supplied = [&](const std::vector<double>& w) {
+        trial.composition_guess = w;
+        StabilityOptions options; options.evaluate_supplied_trials = true; options.trials = std::vector<PhaseSpec>{trial};
+        const auto report = stability_test(compiled, central, options);
+        CHECK(report.trials.size() == 1 && report.trials[0].evidence == "evaluated");
+        return report;
+    };
+    const double trace = central.mole_fractions[1]/8;
+    const std::vector<double> u{-2*trace, trace, trace};
+    auto x = central.mole_fractions;
+    for (std::size_t i = 0; i < x.size(); ++i) x[i] += u[i];
+    const auto center = supplied(x);
+    const auto& q = center.trials[0].quantities;
+    const auto gradient = [&](const std::vector<double>& w, const State& state) {
+        double slope = 0;
+        for (std::size_t i = 0; i < w.size(); ++i)
+            slope += u[i] * (std::log(w[i]*state.molar_density) + state.residual_chemical_potential_over_rt[i].value()
+                + center.standard_over_rt[i] - center.plane_over_rt[i]);
+        return slope;
+    };
+    const auto state = model.state_at_pressure(T, P, x, DensityBranch::Liquid);
+    const auto chart = model.pressure_actions(T, P, x, DensityBranch::Liquid,
+        {PropertyObservable::LogFugacityCoefficient}, {{0, 0, u, {}}});
+    double curvature = 0;
+    for (std::size_t i = 0; i < u.size(); ++i)
+        curvature += u[i] * (u[i]/x[i] + chart.results[i].action.value());
+    const auto sample = [&](double step) {
+        auto w = x;
+        for (std::size_t i = 0; i < w.size(); ++i) w[i] += step*u[i];
+        const auto report = supplied(w);
+        const auto& quantities = report.trials[0].quantities;
+        return std::pair{quantities.at("tpd_over_rt"), gradient(w, model.state_at_pressure(T, P, w, DensityBranch::Liquid))};
+    };
+    const auto a = sample(-h), b = sample(h), c = sample(-h/2), d = sample(h/2);
+    const auto check = [&](const char* quantity, double actual, double coarse, double fine, double floor) {
+        tpd_compare(std::string("ion-suppression/") + quantity, actual, (4*fine - coarse)/3, std::abs(fine - coarse) + floor,
+            recording_support::fields({recording_support::field("tpd", q.at("tpd_over_rt")),
+                recording_support::field("coarse", coarse), recording_support::field("fine", fine),
+                recording_support::field("pressure_row", q.at("pressure_row")), recording_support::field("u", u)}));
+    };
+    check("tpd-gradient", gradient(x, state), (b.first-a.first)/(2*h), (d.first-c.first)/h,
+        64 * eps * std::max(1.0, std::abs(q.at("g_over_rt")))/h);
+    check("tpd-hessian-contraction", curvature, (b.second-a.second)/(2*h), (d.second-c.second)/h, 64*eps*trace/h);
+}
+
 void check_tangent_plane_admission() {
     using namespace epcsaft::equilibrium;
     tpd_compare("witness/pressure-identity", present_phase_residual_distance(0.0, 1e-10), -1e-10, 0.0);

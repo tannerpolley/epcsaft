@@ -1,6 +1,11 @@
 // P3, Issue26, energy and Born actions, F8, F9, reference limits and residual cv.
 #include "equilibrium_support.hpp"
 #include "properties_checks_shared.hpp"
+#include "regression/fit.hpp"
+#include "surface/parameter_builder.hpp"
+
+#include <cstring>
+#include <tuple>
 
 namespace properties_checks {
 
@@ -559,6 +564,20 @@ void modular_permittivity_actions() {
         }
         actions_match(name, parameters, active, theta, x, composition_direction, pressure);
     }
+    auto quotient = density_temperature;
+    quotient.permittivity_form = epcsaft::PermittivityForm::DensityTemperatureIonSuppression;
+    quotient.ion_suppression_coefficient = {0.0, 3.62, 6.80};  // Zuber 2014 Table 2
+    const epcsaft::HelmholtzModel model(quotient);
+    const auto root = epcsaft::solve_density(model, temperature, pressure, x, epcsaft::DensityBranch::Liquid, {});
+    CHECK(root.negative_slope_density && root.molar_density > *root.negative_slope_density);
+    const auto quotient_epsilon = actions_match("density-temperature-ion-suppression", quotient, active, theta, x, composition_direction, pressure);
+    const double solvent = 1.0 + root.molar_density * x[0] * 3.777e-4 * (1403.0 / temperature - 1.0);
+    p3_compare("density-temperature-ion-suppression/aqueous", "epsilon_r", "1", quotient_epsilon, solvent / 1.2084,
+        recording_support::fields({recording_support::field("T_K", temperature), recording_support::field("P_Pa", pressure),
+            recording_support::field("rho_mol_m3", root.molar_density),
+            recording_support::field("negative_slope_density_mol_m3", *root.negative_slope_density),
+            recording_support::field("pressure_residual_Pa", root.pressure_residual)}),
+        16.0 * std::numeric_limits<double>::epsilon());
     // Issue 409: Bulow 2021 Fig. 9 [C4mim][TfO] + NaCl, every species charged; 1 bar liquid.
     auto il = properties_support::parameters(4);
     il.segment_count = {2.4805, 3.7432, 1.0, 1.0};
@@ -780,6 +799,250 @@ void born_parameter_columns() {
                 recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}));
         }
     }
+}
+
+void density_correlated_ion_suppression() {
+    using namespace epcsaft;
+    using detail::AD;
+    constexpr double T = 353.0;
+    const std::vector<double> x{0.80, 0.18, 0.01, 0.01}, u{-3.0/64, 1.0/64, 1.0/64, 1.0/64};
+    auto solvent = properties_support::parameters(4);
+    solvent.segment_count = {1.2, 1.8, 1, 1};
+    solvent.sigma_constant = {2.8, 3.2, 2.6, 3.4};
+    solvent.dispersion_energy_over_k = {354, 240, 180, 220};
+    solvent.molar_mass_kg_per_mol = {0.018, 0.061, 0.062, 0.104};
+    solvent.charge_number = {0, 0, 1, -1};
+    solvent.packing_diameter_angstrom = {0, 0, 2.1, 3.2};
+    solvent.debye_huckel_diameter_angstrom = solvent.packing_diameter_angstrom;
+    solvent.born_diameter_angstrom = solvent.packing_diameter_angstrom;
+    solvent.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    solvent.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    solvent.permittivity_form = PermittivityForm::DensityTemperature;
+    // Historical #390 fixed-state probe, endpoint.json, SHA-256 ae17803e…defed.
+    constexpr double vw = 0.3777e-3, vm = 0.7309865858310542e-3, tw = 1403.0, tm = 1019.0802597119892;
+    solvent.dielectric_volume_m3_per_mol = {vw, vm, 0, 0};
+    solvent.dielectric_temperature_k = {tw, tm, 0, 0};
+    auto quotient = solvent;
+    quotient.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
+    const std::vector<ActiveParameter> active{
+        {ParameterFamily::DielectricVolume, {0}}, {ParameterFamily::DielectricVolume, {1}},
+        {ParameterFamily::DielectricTemperature, {0}}, {ParameterFamily::DielectricTemperature, {1}},
+        {ParameterFamily::IonSuppressionCoefficient, {2}}, {ParameterFamily::IonSuppressionCoefficient, {3}}};
+    const HelmholtzModel original(solvent, active), zero(quotient, active);
+    const auto same_bits = [](double a, double b) { return std::memcmp(&a, &b, sizeof(double)) == 0; };
+    constexpr double rounding = 32.0 * std::numeric_limits<double>::epsilon();
+    for (double rho : {45000.0, 40000.0}) {
+        const auto inputs = recording_support::fields({recording_support::field("T_K", T), recording_support::field("rho_mol_m3", rho),
+            recording_support::field("x", x), recording_support::field("u", u)});
+        const auto check = [&](const char* quantity, double value, double reference, double scale) {
+            recording_support::compare("density-correlated-ion-suppression/" + std::to_string(static_cast<int>(rho)) + "/" + quantity,
+                quantity, "native", value, reference, recording_support::Rule::Absolute, rounding * scale, 0.0,
+                "quotient/product rule and floating-point roundoff", inputs);
+        };
+        const auto a = original.state(T, rho, x), b = zero.state(T, rho, x);
+        CHECK(same_bits(a.bulk_relative_permittivity, b.bulk_relative_permittivity));
+        check("historical-epsilon", b.bulk_relative_permittivity, rho == 45000 ? 55.15795653250771 : 49.14040580667352,
+            b.bulk_relative_permittivity);
+        const auto left = original.evaluate(T, 1 / rho, x, DerivativeOrder::Hessian);
+        const auto right = zero.evaluate(T, 1 / rho, x, DerivativeOrder::Hessian);
+        CHECK(same_bits(left.value, right.value));
+        constexpr std::size_t shared = 10, width = 12;
+        for (std::size_t j = 0; j < shared; ++j) {
+            CHECK(same_bits(left.gradient[j], right.gradient[j]));
+            for (std::size_t k = 0; k < shared; ++k)
+                CHECK(same_bits(left.hessian[j * width + k], right.hessian[j * width + k]));
+        }
+        const std::vector<std::vector<double>> directions{
+            {1, 0, 0, 0, 0, 0, vw, vm, 0, 0, 0, 0},
+            {0, 1 / rho, 0, 0, 0, 0, 0, 0, tw, tm, 0, 0},
+            {0, 0, u[0], u[1], u[2], u[3], 0, 0, 0, 0, 0, 0}};
+        const auto la = original.residual_energy_action(T, 1/rho, x, directions),
+                   ra = zero.residual_energy_action(T, 1/rho, x, directions);
+        CHECK(la.action && ra.action && same_bits(*la.action, *ra.action));
+        check("zero-mixed-residual-action", *ra.action, *la.action, 0.0);
+
+        const double S = x[0] + x[1], A = x[0]*vw + x[1]*vm, B = x[0]*tw + x[1]*tm, C = B / (S*T) - 1;
+        const double Au = u[0]*vw + u[1]*vm, Bu = u[0]*tw + u[1]*tm, Su = u[0] + u[1];
+        const double F = 1 + rho*A*C, Fu = rho*(Au*C + A*(Bu*S - B*Su)/(S*S*T)), Fr = A*C;
+        for (double alpha : {0.0, 2.0}) {
+            std::vector<AD> q{0.0, 0.0, 0.0, 0.0};
+            CppAD::Independent(q);
+            detail::RecordingOwner owner;
+            auto mapped = detail::make_tape_parameters<AD>(quotient, {active[4], active[5]}, {alpha + q[1], 2*alpha + q[2]});
+            // q[0] moves normalized composition. q[3] uses n_u = x + u at V = 1/rho.
+            std::vector<AD> composition;
+            const AD total = 1.0 + q[3];
+            for (std::size_t j = 0; j < x.size(); ++j) composition.push_back((x[j] + q[0]*u[j] + q[3]*(x[j]+u[j])) / total);
+            const auto eps = bulk_relative_permittivity(AD(T), total * rho, composition, mapped);
+            CppAD::ADFun<double> tape(q, std::vector<AD>{eps});
+            owner.active = false;
+            const std::vector<double> point(4, 0.0);
+            const auto value = tape.Forward(0, point).front();
+            const auto grad = tape.Jacobian(point);
+            const double D = 1 + alpha*x[2] + 2*alpha*x[3], Du = alpha*u[2] + 2*alpha*u[3];
+            const double e = F/D, eu = (Fu - e*Du)/D, ea = -F*x[2]/(D*D);
+            const char* coefficients = alpha == 0 ? "zero" : "nonzero";
+            check((std::string(coefficients) + "-epsilon").c_str(), value, e, std::abs(e));
+            check((std::string(coefficients) + "-cation-column").c_str(), grad[1], ea, std::abs(ea));
+            check((std::string(coefficients) + "-anion-column").c_str(), grad[2], -F*x[3]/(D*D), std::abs(ea));
+            if (alpha != 0) {
+                check("composition-action", grad[0], eu, (std::abs(Fu) + std::abs(e*Du))/D);
+                check("fixed-volume-amount-action", grad[3], eu + rho*Fr/D, (std::abs(Fu) + std::abs(e*Du) + std::abs(rho*Fr))/D);
+                const auto hessian = tape.Hessian(point, 0);
+                check("composition-coefficient-action", hessian[1], (-eu*x[2] - ea*Du - e*u[2])/D,
+                    (std::abs(eu*x[2]) + std::abs(ea*Du) + std::abs(e*u[2]))/D);
+            }
+        }
+    }
+    quotient.dielectric_volume_m3_per_mol = {1e-3, 1e-3, 0, 0};
+    quotient.dielectric_temperature_k = {300, 300, 0, 0};
+    quotient.ion_suppression_coefficient = {0, 0, -100, -100};
+    const HelmholtzModel invalid(quotient, active);
+    const std::vector<double> admitted{0.80, 0.196, 0.002, 0.002};
+    const auto at = [&](const auto& model, double density, const std::vector<double>& w) {
+        return model.evaluate(600.0, 1/density, w, DerivativeOrder::Hessian).value;
+    };
+    const double before = at(invalid, 1000, admitted);
+    const auto count = invalid.counters().recordings;
+    const std::string denominator = "invalid permittivity suppression denominator";
+    CHECK(recording_support::refusal([&] { at(invalid, 4000, x); }) == denominator);
+    CHECK(invalid.counters().recordings == count);
+    CHECK(same_bits(before, at(invalid, 1000, admitted)));
+    CHECK(recording_support::refusal([&] { (void)invalid.isothermal(WiderScalar(600), WiderScalar(1)/4000,
+        std::vector<WiderScalar>(x.begin(), x.end())); }) == denominator);
+    const auto state = invalid.states({600}, {4000}, {x}, false, DensityBranch::Unspecified);
+    CHECK(!state.rows[0] && state.cause[0] == denominator);
+    core::Capture trace(true);
+    const auto pressure = invalid.pressure_actions(600, 1e5, x, DensityBranch::Liquid,
+        {PropertyObservable::ResidualEnthalpy}, {{1, 0, {0, 0, 0, 0}, {}}});
+    CHECK(pressure.density_status == PropertyActionStatus::DensityUnavailable && !pressure.molar_density && pressure.density_action.empty());
+    CHECK(!pressure.results.front().action);
+    for (const char* stage : {"structured_broken", "density_scan_failure"})
+        CHECK(std::any_of(trace.trace().events.begin(), trace.trace().events.end(), [&](const auto& event) {
+            return std::string_view(event.name) == stage && event.reason == denominator;
+        }));
+    CHECK(pressure.density_structure_refused && pressure.density_message.find(denominator) != std::string::npos);
+    CHECK(pressure.diagnostics.first_numerical_failure
+        && pressure.diagnostics.first_numerical_failure->cause.find(denominator) != std::string::npos);
+    recording_support::observe("density-correlated-ion-suppression/density-refusal", "available", "1", 0.0,
+        std::nullopt, "property-action-batch", recording_support::fields({
+            recording_support::field("cause", pressure.density_message),
+            recording_support::field("first_failure", pressure.diagnostics.first_numerical_failure->cause)}));
+
+    for (const auto& [w, density, alpha, cause] : std::vector<std::tuple<std::vector<double>, double, double, std::string>>{
+            {{0, 0, .5, .5}, 1000, 0, "invalid permittivity solvent fraction"},
+            {x, 1000, -50, denominator}, {x, 4000, 0, "invalid bulk relative permittivity"},
+            {x, std::numeric_limits<double>::max(), 0, "invalid bulk relative permittivity"}}) {
+        quotient.ion_suppression_coefficient = {0, 0, alpha, alpha};
+        const double temperature = density == std::numeric_limits<double>::max() ? 0.1 : 600.0;
+        CHECK(recording_support::refusal([&] { (void)bulk_relative_permittivity(temperature, density, w, quotient); }) == cause);
+    }
+}
+
+void pressure_closed_ion_suppression_fit() {
+    using namespace epcsaft;
+    using namespace epcsaft::regression;
+    const auto aqueous = properties_support::aqueous_electrolyte();
+    ParameterDocument document;
+    document.component_ids = {"water", "sodium", "chloride"};
+    document.site_ids = {"water/a", "water/b"};
+    document.site_component = {0, 0};
+    document.site_multiplicity = {1, 1};
+    document.base_choice = "pc-saft";
+    document.association_choice = "general-site";
+    document.electrolyte_choice = "fully-dissociated-debye-huckel";
+    document.ionic_dispersion_choice = "exclude-same-sign-ion-pairs";
+    document.permittivity_choice = "solvent-density-temperature-ion-specific-suppression";
+    const auto row = [&](const char* family, std::vector<std::size_t> indices, double value, const char* unit) {
+        document.entries.push_back({family, family, std::move(indices), value, unit});
+    };
+    const char* ion = "ion_suppression_coefficient";
+    for (std::size_t i = 0; i < 3; ++i) {
+        row("charge_number", {i}, aqueous.charge_number[i], "elementary-charge");
+        row("molar_mass", {i}, aqueous.molar_mass_kg_per_mol[i], "kilogram / mole");
+        row("segment_count", {i}, aqueous.segment_count[i], "dimensionless");
+        row("sigma_constant", {i}, aqueous.sigma_constant[i], "angstrom");
+        row("dispersion_energy_over_k", {i}, aqueous.dispersion_energy_over_k[i], "kelvin");
+        if (i != 0) {
+            row("packing_diameter", {i}, aqueous.packing_diameter_angstrom[i], "angstrom");
+            row("debye_huckel_diameter", {i}, aqueous.debye_huckel_diameter_angstrom[i], "angstrom");
+        }
+        for (std::size_t j = i + 1; j < 3; ++j)
+            row("k_ij", {i, j}, aqueous.k_ij[3*i+j], "dimensionless");
+    }
+    row("association_energy_over_k", {0, 1}, 2425.7, "kelvin");
+    row("association_volume", {0, 1}, 0.04509, "dimensionless");
+    row("dielectric_volume", {0}, 0.3777, "liter / mole");
+    row("dielectric_temperature", {0}, 1403, "kelvin");
+    row(ion, {2}, 6.80, "dimensionless");
+    CHECK(recording_support::refusal([&] { build_parameters(document); }).find("missing component/sodium") != std::string::npos);
+    for (const auto& slot : std::vector<std::vector<std::size_t>>{{}, {0}}) {
+        row(ion, slot, 0, "dimensionless");
+        CHECK(recording_support::refusal([&] { build_parameters(document); }).find("unconsumed") != std::string::npos);
+        document.entries.pop_back();
+    }
+    row(ion, {1}, 0, "dimensionless");
+
+    FitRequest request;
+    request.parameters = build_parameters(document);
+    request.controls.maximum_iterations = 100;
+    request.controls.maximum_elapsed_time_seconds = 30;
+    request.controls.solver_options.values[policy::function] = 1e-15;
+    request.controls.solver_options.values[policy::gradient] = 1e-14;
+    request.controls.solver_options.values[policy::parameter] = 1e-14;
+    request.coordinates.coordinates = {{{{ParameterFamily::IonSuppressionCoefficient, {1}}}, 0, 1, -10, 10}};
+    constexpr double T = 298.15, rho = 56500, alpha = 3.62, D = 1.2084;
+    const std::vector<double> x{0.96, 0.02, 0.02};
+    auto parameters = request.parameters;
+    parameters.ion_suppression_coefficient[1] = alpha;
+    const HelmholtzModel truth(parameters, request.coordinates.active_parameters());
+    const auto state = truth.state(T, rho, x);
+    CHECK(state.pressure > 0.0 && state.pressure_density_derivative > 0.0);
+    const double slope = x[0]*3.777e-4*(1403/T - 1);
+    const double F = 1 + rho*slope;
+    Observation observation;
+    observation.kind = ObservationKind::BulkRelativePermittivity;
+    observation.temperature = T;
+    observation.pressure = state.pressure;
+    observation.composition = x;
+    observation.ion_indices = {1, 2};
+    observation.stoichiometry = {1, 1};
+    observation.branch = DensityBranch::Liquid;
+    observation.observed = F/D;
+    observation.form = ResidualForm::Difference;
+    observation.scale = 1;
+    const auto exact = predict(truth, observation);
+    CHECK(exact.value && exact.state);
+    const double density_error = std::abs(exact.state->molar_density - rho);
+    const double rounding = 32 * std::numeric_limits<double>::epsilon();
+    const double observation_error = slope/D*density_error + rounding*observation.observed;
+    const double jacobian = differentiate(truth, observation, exact).value.at(0);
+    const double fixed = -(1 + exact.state->molar_density*slope)*x[1]/(D*D);
+    const double closure = slope/D*exact.state->density_parameter_derivative.at(0).value();
+    const auto inputs = recording_support::fields({recording_support::field("rho_mol_m3", rho),
+        recording_support::field("P_Pa", observation.pressure), recording_support::field("fixed_column", fixed),
+        recording_support::field("density_closure", closure), recording_support::field("density_error_mol_m3", density_error)});
+    const auto verify = [&](const char* quantity, double actual, double reference, double limit) {
+        recording_support::compare("pressure-closed-ion-suppression-fit/" + std::string(quantity), quantity, "native",
+            actual, reference, recording_support::Rule::Absolute, limit, 0, "manufactured pressure-closed observation", inputs);
+    };
+    verify("epsilon", *exact.value, observation.observed, observation_error);
+    verify("Jacobian", jacobian, fixed + closure, rounding*(std::abs(fixed) + std::abs(closure)));
+    request.observations = {observation};
+    const auto fitted = fit(request);
+    CHECK(fitted.usable && fitted.status == "converged");
+    verify("alpha", fitted.physical.at(0), alpha, observation_error / std::abs(jacobian));
+    const auto written = fitted_document(document, fitted.parameters);
+    CHECK(written.entries.back().magnitude == fitted.physical[0]);
+    const HelmholtzModel reloaded(build_parameters(written));
+    verify("roundtrip-epsilon", predict(reloaded, observation).value.value(), observation.observed, observation_error);
+    parameters.ion_suppression_coefficient = {0, -100, -100};
+    const HelmholtzModel inadmissible(parameters);
+    const auto refusal = predict(inadmissible, observation);
+    CHECK(!refusal.value && refusal.message.find("suppression denominator") != std::string::npos);
+    CHECK(refusal.first_numerical_failure && refusal.first_numerical_failure->cause.find("suppression denominator") != std::string::npos);
+    recording_support::observe("pressure-closed-ion-suppression-fit/refusal", "available", "1", 0,
+        std::nullopt, "native-observation", recording_support::fields({recording_support::field("cause", refusal.message)}));
 }
 
 using PO = epcsaft::PropertyObservable;

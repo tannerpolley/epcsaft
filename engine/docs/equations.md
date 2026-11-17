@@ -1167,6 +1167,19 @@ $$
 \varepsilon=\frac{\varepsilon_{\mathrm{sf}}}{1+\sum_i\alpha_i x_i}.
 $$
 
+## `ion_suppressed_density_correlated_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Bounded empirical relation
+- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a)--(3), and Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9)
+- Description: Density-correlated solvent permittivity divided by the ion-specific suppression denominator.
+- Change note: Issue #38 uses the solvent numerator from Eq.~`density_correlated_bulk_permittivity` and effective coefficients on the total species mole-fraction basis. The neutral solvent fraction, denominator and quotient must be finite and positive. The fixed-composition vacuum limit is $1/D$.
+
+$$
+\epsilon_{r,\mathrm{bulk}}=\frac{F}{D},\qquad
+D=1+\sum_{i\in\mathcal I}\alpha_i x_i.
+$$
+
 ## `ionic_packing_diameter`
 
 - Section: Parameter setup
