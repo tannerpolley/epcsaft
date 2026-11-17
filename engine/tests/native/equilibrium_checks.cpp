@@ -37,6 +37,7 @@ void check_e5_identities();
 void check_phase_removal_inventory();
 void check_tangent_plane_curvature();
 void check_tangent_plane_admission();
+void check_prepared_supplied_trials();
 void check_trace_ion_curvature();
 void check_candidate_publication();
 void check_budget_retry();
@@ -112,6 +113,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.azeotrope", "azeotrope", "Automatic_fast"}, critical_envelope_checks::azeotrope, "critical-envelope"},
         {{"native.equilibrium.removal", "TPD", "Automatic_fast"}, check_phase_removal_inventory},
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
+        {{"native.equilibrium.prepared-supplied-trials", "prepared-supplied-trials", "Automatic_fast"}, check_prepared_supplied_trials},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
         {{"native.equilibrium.candidate-publication", "candidate-publication", "Automatic_fast"}, check_candidate_publication},

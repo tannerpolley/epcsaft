@@ -2185,6 +2185,44 @@ refused charged point is an unavailable row with its cause. `completed` means th
 including unavailable rows; a trial budget can leave the sequence incomplete.
 No stability or instability conclusion follows from supplied-point evaluation.
 
+`prepare_supplied_trials(model, T, trials)` prepares an immutable ordered set for
+one model object and one bit-identical temperature. Every entry declares its
+support; composition and packing retain their exact values and multiplicity.
+Assign the set to `StabilityOptions.prepared_trials` to select supplied evaluation.
+A set cannot accompany `trials`, enter discovery or `stability_measure`, or be
+used in a fitting stability observation. Each parent still admits its supports
+against the fed and reaction union and the ionic signs.
+
+Preparation stores the seed reconstruction, inventory admission, raw chart point,
+final reconstruction and molar volume, a charged vapor point's own state, and
+the final energy derivatives and association diagnostics. Their stages have one
+owner shared with list evaluation. Evaluation replays each product or failure
+only at its original statement: packing and budget admission precede compilation;
+raw coordinates, residuals and final composition precede pressure admission;
+energy quantities follow it. A later stored failure cannot replace an earlier
+pressure refusal. Entries without supplied packing, or whose preparation system
+could not compile, retain their seed and finish their work separately per parent.
+
+A call compiles one trial system per kind and support, using the first entry
+that compiles successfully. Each entry retargets its declared feed, neutral-feed
+admission, normalization and balances; inventory programs retain their original
+refusal. The raw point takes pressure and the fixed standard term from the
+parent's compiled system before row evaluation. Pressure-root admission, reduced
+energy assembly, the candidate plane and donor arithmetic remain per parent.
+The optimized search uses the same final reconstruction and energy owners with
+fresh records and unchanged evaluation order.
+
+Work is charged where it runs. The set's `work` contains preparation; each report
+contains only its call. Replayed stages charge nothing. On the nine-species MEA
+reference with association, preparation and fresh list evaluation charge six
+energy evaluations per available entry plus one generic-point evaluation per
+compiled kind and support. Preparation also evaluates energy for points a later
+parent may refuse on pressure. Prepared reports charge candidate work, one
+compilation per kind and support, pressure-root work and entries finished per
+parent. Trial invocation counts and trial-budget meaning remain unchanged.
+A caller obtains total work by adding preparation and report counts. This reuse
+provides numerical equivalence, not physical validation or a stability proof.
+
 ### Supports, seeds and trial solves
 
 Let U be fed species plus all reaction participants and U₀ its neutral subset.

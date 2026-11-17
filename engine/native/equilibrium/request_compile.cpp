@@ -36,6 +36,39 @@ std::vector<double> CompiledSystem::optimizer_identity() const {
     return id;
 }
 
+void admit_trial_feed(CompiledSystem& compiled) {
+    const auto& model = *compiled.model;
+    const auto components = model.parameters().component_count();
+    const auto& z = model.parameters().charge_number;
+    // A neutral feed meets the state rule on its mole fractions; the ions of the excess sign are
+    // then scaled so the solved feed carries no charge (formulation.md "Constraints and specification").
+    std::vector<double> x_feed = compiled.n_feed;
+    const double declared_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
+    for (double& value : x_feed) value /= declared_total;
+    try {
+        model.validate_electroneutrality(x_feed);
+    } catch (const std::invalid_argument& error) {
+        throw std::invalid_argument(std::string("feed carries net z: ") + error.what());
+    }
+    double cation = 0.0, anion = 0.0;
+    for (std::size_t i = 0; i < components; ++i) (z[i] > 0.0 ? cation : anion) += std::abs(z[i]) * compiled.n_feed[i];
+    if (cation != anion)  // C = A, including an ion-free feed, is left untouched
+        for (std::size_t i = 0; i < components; ++i)
+            if (z[i] != 0.0 && (z[i] > 0.0) == (cation > anion))
+                compiled.n_feed[i] *= std::min(cation, anion) / std::max(cation, anion);
+    compiled.feed_total = sum(compiled.n_feed);
+}
+
+void normalize_trial_feed(CompiledSystem& compiled) {
+    compiled.feed_composition = compiled.n_feed;
+    for (double& value : compiled.feed_composition) value /= compiled.feed_total;
+    compiled.balance = matvec(compiled.B, compiled.n_feed);
+}
+
+void admit_inventory_bound(const InventoryBound& bound) {
+    if (bound.status == "infeasible_inventory") throw std::invalid_argument("infeasible_inventory: " + bound.termination);
+}
+
 namespace {
 
 
@@ -184,23 +217,7 @@ static CompiledSystem compile_with_basis(
     if (request.volume_m3 && request.pressure.absent && *request.volume_m3 > 0.0)
         compiled.problem.pressure = FreeValue::variable(sum(compiled.n_feed) * GAS_CONSTANT_J_PER_MOL_K * compiled.seed_temperature() / *request.volume_m3);
     const auto& z = model.parameters().charge_number;
-    // A neutral feed meets the state rule on its mole fractions; the ions of the excess sign are
-    // then scaled so the solved feed carries no charge (formulation.md "Constraints and specification").
-    std::vector<double> x_feed = compiled.n_feed;
-    const double declared_total = sum(compiled.n_feed);  // resolve_feed admitted a positive finite total
-    for (double& value : x_feed) value /= declared_total;
-    try {
-        model.validate_electroneutrality(x_feed);
-    } catch (const std::invalid_argument& error) {
-        throw std::invalid_argument(std::string("feed carries net z: ") + error.what());
-    }
-    double cation = 0.0, anion = 0.0;
-    for (std::size_t i = 0; i < components; ++i) (z[i] > 0.0 ? cation : anion) += std::abs(z[i]) * compiled.n_feed[i];
-    if (cation != anion)  // C = A, including an ion-free feed, is left untouched
-        for (std::size_t i = 0; i < components; ++i)
-            if (z[i] != 0.0 && (z[i] > 0.0) == (cation > anion))
-                compiled.n_feed[i] *= std::min(cation, anion) / std::max(cation, anion);
-    compiled.feed_total = sum(compiled.n_feed);
+    admit_trial_feed(compiled);
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& nu = request.reactions[row].stoichiometry;
         if (nu.size() != components) throw std::invalid_argument("stoichiometry size");
@@ -233,9 +250,7 @@ static CompiledSystem compile_with_basis(
         if (const auto row = thermal_reference_missing(temperature_guess, request.reactions, request.standard_gibbs_j_per_mol, model.thermochemistry() ? &*model.thermochemistry() : nullptr))
             throw std::invalid_argument("temperature-dependent standard state required for reaction "
                                         + reaction_name(request.reactions[*row], *row));
-    compiled.feed_composition = compiled.n_feed;
-    for (double& value : compiled.feed_composition) value /= compiled.feed_total;
-    compiled.balance = matvec(compiled.B, compiled.n_feed);
+    normalize_trial_feed(compiled);
     std::vector<bool> covered(components, false);
     const auto participant = reaction_participants(components, request.reactions);
     auto inventory = compiled;
@@ -265,7 +280,7 @@ static CompiledSystem compile_with_basis(
             && exact_zero_dot(candidate, compiled.n_feed);
     };
     for (const auto& bound : bounds) {
-        if (bound.status == "infeasible_inventory") throw std::invalid_argument("infeasible_inventory: " + bound.termination);
+        admit_inventory_bound(bound);
         if (bound.status == "optimal") compiled.inventory_upper_bounds[bound.species] = *bound.feed_normalized_amount;
         if (!trial_basis && bound.status == "optimal" && *bound.maximum == 0.0 && !bound.conserved_functional.empty())
             absent[bound.species] = certify(bound.species, bound.conserved_functional);

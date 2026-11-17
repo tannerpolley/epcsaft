@@ -3,11 +3,86 @@
 #include "surface/parameter_builder.hpp"
 
 #include <condition_variable>
+#include "regression/observations.hpp"
 #include <future>
+#include <sstream>
+#include <cstring>
+#include <cstdint>
 #include <iostream>
 #include <mutex>
 
 namespace equilibrium_checks {
+
+namespace supplied_records {
+using namespace epcsaft;
+using namespace epcsaft::equilibrium;
+struct Writer {
+    std::ostringstream out;
+    template<class T, std::enable_if_t<std::is_arithmetic_v<T> || std::is_enum_v<T>, int> = 0>
+    void put(T v) {
+        if constexpr (std::is_floating_point_v<T>) { std::uint64_t bits; std::memcpy(&bits, &v, sizeof(bits)); out << bits << ';'; }
+        else out << static_cast<long long>(v) << ';';
+    }
+    void put(const std::string& v) { out << v.size() << ':' << v << ';'; }
+    template<class T> void put(const std::vector<T>& v) { put(v.size()); for (const auto& x : v) put(x); }
+    template<class T> void put(const std::optional<T>& v) { put(v.has_value()); if (v) put(*v); }
+    template<class T> void put(const T* v) { put(bool(v)); if (v) put(*v); }
+    template<class T> void put(const std::shared_ptr<T>& v) { put(bool(v)); if (v) put(*v); }
+    template<class A, class B> void put(const std::pair<A, B>& v) { put(v.first); put(v.second); }
+    template<class A, class B> void put(const std::map<A, B>& v) { put(v.size()); for (const auto& x : v) put(x); }
+#define FIELD(name) put(v.name)
+    void put(const policy::Tolerance& v) { put(std::string(v.name)); FIELD(value); FIELD(category); put(std::string(v.source)); FIELD(factor); FIELD(upstream); }
+    void put(const core::ConditioningObservation& v) {
+        FIELD(operation); FIELD(basis); FIELD(norm); FIELD(method); FIELD(cause); FIELD(point_kind); FIELD(criterion);
+        FIELD(dimension); FIELD(rank); FIELD(precision_bits); FIELD(iteration); FIELD(attempt); FIELD(stage); FIELD(phase);
+        FIELD(component); FIELD(threshold); FIELD(condition); FIELD(matrix_norm); FIELD(error); FIELD(criterion_value);
+        FIELD(export_displacement); FIELD(coordinates); FIELD(row_scale); FIELD(column_scale); FIELD(controls); FIELD(available);
+    }
+    void put(const core::NumericalRank& v) {
+        FIELD(basis); FIELD(dimension); FIELD(rank); FIELD(threshold); FIELD(observation); FIELD(first_conditioning_warning);
+    }
+    void put(const core::Convergence& v) {
+        FIELD(residual); FIELD(criterion); FIELD(floor); FIELD(amplification); FIELD(contraction); FIELD(iterations);
+        FIELD(evaluations); FIELD(stop); FIELD(cause); FIELD(rank); FIELD(backward_error);
+    }
+    void put(const PhaseSpec& v) {
+        FIELD(name); FIELD(kind); FIELD(support); FIELD(support_declared); put(v.amount.kind); put(v.amount.fraction);
+        FIELD(composition_guess); FIELD(declared_composition_guess); FIELD(packing_guess);
+    }
+    void put(const Row& v) { FIELD(kind); FIELD(phase); FIELD(index); }
+    void put(const EquilibriumResult& v) {
+        FIELD(attempt); FIELD(retry); FIELD(candidate); FIELD(terminal_numerical_failure); FIELD(last_full_evaluation);
+        FIELD(phase_pressures); FIELD(first_numerical_failure); FIELD(rank_records); FIELD(last_rank); FIELD(solver_settings);
+        FIELD(diagnostic_options_file); FIELD(linear_solver); FIELD(success); FIELD(message); FIELD(solver_status);
+        FIELD(temperature); FIELD(pressure); FIELD(amounts); FIELD(mole_fractions); FIELD(molar_densities);
+        FIELD(packing_fractions); FIELD(multipliers); FIELD(constraint_multipliers); FIELD(residuals); FIELD(classified_residuals);
+        FIELD(coordinates); FIELD(phase_count); FIELD(iterations); FIELD(evaluations); FIELD(hessian_calls);
+        FIELD(objective); FIELD(reduced_hessian_minimum); FIELD(convergence); FIELD(rows); FIELD(unknown_count);
+        FIELD(jacobian_rank); FIELD(generic_nullity); FIELD(requested_tolerance_met); FIELD(topology_event);
+        FIELD(topology_phase); FIELD(topology_pair); FIELD(solid_amounts); FIELD(solid_affinity_decades);
+        CHECK(!v.critical_search && !v.rejected_reduction && !v.ipopt_diagnostics && !v.recovered_ipopt_diagnostics
+            && !v.optimizer_state && !v.model_identity && !v.ideal_identity && !v.declaration && !v.discovery
+            && !v.recovery_stability && !v.vanished_phase_stability && !v.linear_solve_diagnostics
+            && !v.numerical_estimates && !v.prepared_endpoint && v.reference_diagnostics.empty()
+            && !v.critical && !v.spinodal && !v.failure);
+    }
+    void put(const StabilityPhaseComparison& v) {
+        FIELD(phase); FIELD(added_species); FIELD(missing_species); FIELD(composition_max_distance); FIELD(volume_log_distance);
+    }
+    void put(const StabilityTrial& v) {
+        FIELD(phase); FIELD(seed); FIELD(evidence); FIELD(message); FIELD(optimizer); FIELD(raw_coordinates);
+        FIELD(raw_residuals); FIELD(composition); FIELD(split_coordinates); FIELD(basis); FIELD(row_transformation);
+        FIELD(quantities); FIELD(split_checks); FIELD(present_phase_comparisons); FIELD(diagnostic_cause);
+        FIELD(donor); FIELD(resolved_descent);
+    }
+    void put(const StabilityReport& v) {
+        FIELD(first_numerical_failure); FIELD(last_rank); FIELD(completed); FIELD(no_descent_in_trial_set); FIELD(message);
+        FIELD(trials); FIELD(candidate_coordinates); FIELD(standard_over_rt); FIELD(plane_over_rt); FIELD(present_phases); FIELD(work);
+    }
+#undef FIELD
+};
+std::string text(StabilityReport v, bool work = false) { if (!work) v.work.clear(); Writer w; w.put(v); return w.out.str(); }
+}
 
 void check_candidate_publication() {
     using namespace epcsaft;
@@ -595,6 +670,139 @@ void check_tangent_plane_curvature() {
         const auto inputs = recording_support::fields({recording_support::field("step", step), recording_support::field("point", point)});
         tpd_compare("plane-stencil/first/" + recording_support::number(step), first_error, 0.0, 1e-7, inputs);
         tpd_compare("plane-stencil/second/" + recording_support::number(step), second_error, 0.0, 1e-5, inputs);
+    }
+}
+
+// #29: exact replay across parents protects pressure admission and the candidate plane from reuse.
+void check_prepared_supplied_trials() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto exercise = [&](const HelmholtzModel& model, EquilibriumProblem a, std::vector<PhaseSpec> trials) {
+        auto b = a; b.pressure.value *= 1.2; b.feed.values[0] *= 1.1;
+        const auto ca = compile_problem(model, a), cb = compile_problem(model, b);
+        const auto ra = solve_compiled(ca), rb = solve_compiled(cb);
+        CHECK(ra.has_state() && rb.has_state());
+        auto invalid = trials.front(); invalid.composition_guess[invalid.support.back()] = 0.0;
+        auto outside = trials.front(); outside.packing_guess = -0.1;
+        auto unrooted = trials.front(); unrooted.packing_guess.reset();
+        trials.insert(trials.begin(), invalid); trials.insert(trials.begin() + 2, outside);
+        trials.push_back(unrooted); trials.push_back(trials[1]);
+        StabilityOptions fresh; fresh.trials = trials; fresh.evaluate_supplied_trials = true;
+        fresh.standard_uncertainty_over_rt.assign(model.parameters().component_count(), 1e-7);
+        auto prepared = fresh; prepared.trials.reset(); prepared.evaluate_supplied_trials = false;
+        prepared.prepared_trials = prepare_supplied_trials(model, a.temperature.value, trials);
+        const auto first = stability_test(ca, ra, prepared);
+        const auto second = stability_test(cb, rb, prepared);
+        const auto again = stability_test(ca, ra, prepared);
+        CHECK(supplied_records::text(first, true) == supplied_records::text(again, true));
+        CHECK(supplied_records::text(first) == supplied_records::text(stability_test(ca, ra, fresh)));
+        CHECK(supplied_records::text(second) == supplied_records::text(stability_test(cb, rb, fresh)));
+        for (auto budget : {std::size_t(0), std::size_t(2)}) {
+            fresh.trial_budget = prepared.trial_budget = budget;
+            const auto x = stability_test(ca, ra, fresh), y = stability_test(ca, ra, prepared);
+            CHECK(!x.completed && supplied_records::text(x) == supplied_records::text(y));
+        }
+        fresh.trial_budget.reset(); prepared.trial_budget.reset();
+        CHECK(first.work.at("trial_invocations") == stability_test(ca, ra, fresh).work.at("trial_invocations"));
+        regression::Observation observation;
+        observation.kind = regression::ObservationKind::Stability;
+        observation.form = regression::ResidualForm::Difference;
+        observation.observed = 0.0; observation.problem = a; observation.stability_options = prepared;
+        CHECK(recording_support::refusal([&] { regression::validate(observation, model); }).find("Full optimized stability trials") != std::string::npos);
+        auto mixed = prepared; mixed.trials = trials;
+        CHECK(recording_support::refusal([&] { stability_test(ca, ra, mixed); }) == "prepared trials given together with trials");
+        const HelmholtzModel other(model.parameters()); const auto co = compile_problem(other, a);
+        CHECK(recording_support::refusal([&] { stability_test(co, solve_compiled(co), prepared); }) == "prepared trials model mismatch");
+        auto hotter = a; hotter.temperature.value = std::nextafter(a.temperature.value, INFINITY);
+        const auto ch = compile_problem(model, hotter);
+        CHECK(recording_support::refusal([&] { stability_test(ch, solve_compiled(ch), prepared); }) == "prepared trials temperature mismatch");
+        CHECK(recording_support::refusal([&] { stability_measure(ca, ra, prepared); }).find("Full optimized") != std::string::npos);
+        auto discovery = a; discovery.phases.clear(); discovery.topology_declared = false; discovery.discovery = prepared;
+        CHECK(recording_support::refusal([&] { discover_phases(model, discovery); }) == "prepared trials are not phase discovery");
+        auto omitted = trials; omitted[0].support.clear(); omitted[0].support_declared = false;
+        CHECK(recording_support::refusal([&] { prepare_supplied_trials(model, a.temperature.value, omitted); }) == "prepared trial requires declared support");
+        return first;
+    };
+    {
+        auto parameters = properties_support::aqueous_electrolyte();
+        parameters.permittivity_form = PermittivityForm::DensityTemperature;
+        parameters.dielectric_volume_m3_per_mol = {3.777e-4, 0.0, 0.0};
+        parameters.dielectric_temperature_k = {1403.0, 0.0, 0.0};
+        const HelmholtzModel model(parameters);
+        auto a = equilibrium_support::flash(3); a.phases.resize(1); a.feed.values = {0.98, 0.01, 0.01};
+        a.temperature = FreeValue::fixed(298.15); a.pressure = FreeValue::fixed(1000.0);
+        std::vector<PhaseSpec> trials;
+        for (auto kind : {PhaseKind::Liquid, PhaseKind::Vapor}) {
+            auto phase = a.phases[0]; phase.kind = kind; phase.support = {0, 1, 2}; phase.support_declared = true;
+            phase.composition_guess = kind == PhaseKind::Vapor ? std::vector<double>{1.0 - 2e-8, 1e-8, 1e-8} : a.feed.values;
+            const auto root = solve_density(model, 298.15, 1000.0, phase.composition_guess, branch_of(kind), {});
+            phase.packing_guess = model.packing_fraction_coefficient(298.15, phase.composition_guess) * root.molar_density;
+            trials.push_back(phase); phase.packing_guess = *phase.packing_guess * 1.1; trials.push_back(phase);
+            if (kind == PhaseKind::Vapor) { phase.packing_guess = 0.4; trials.push_back(phase); }
+        }
+        const auto r = exercise(model, a, trials);
+        CHECK(r.trials[1].evidence == "evaluated");
+        for (std::size_t i : {std::size_t(5), std::size_t(6)})
+            CHECK(!r.trials[i].raw_coordinates.empty() && !r.trials[i].raw_residuals.empty()
+                && !r.trials[i].composition.empty() && !r.trials[i].quantities.count("g_over_rt"));
+    }
+    {
+        const HelmholtzModel model(properties_support::aqueous_electrolyte());
+        auto a = equilibrium_support::flash(3); a.phases.resize(1); a.feed.values = {0.98, 0.01, 0.01};
+        a.temperature = FreeValue::fixed(298.15); a.pressure = FreeValue::fixed(1000.0);
+        auto phase = a.phases[0]; phase.support = {0, 1, 2}; phase.support_declared = true;
+        phase.composition_guess = a.feed.values;
+        const auto root = solve_density(model, 298.15, 1000.0, phase.composition_guess, DensityBranch::Liquid, {});
+        phase.packing_guess = model.packing_fraction_coefficient(298.15, phase.composition_guess) * root.molar_density;
+        auto off = phase; off.packing_guess = *phase.packing_guess * 1.1;
+        const auto r = exercise(model, a, {phase, off});
+        CHECK(r.trials[1].evidence == "evaluated");
+        CHECK(!r.trials[3].raw_residuals.empty() && !r.trials[3].composition.empty()
+            && r.trials[3].quantities.count("condensed_root_log_displacement") && !r.trials[3].quantities.count("g_over_rt"));
+    }
+    {
+        auto parameters = properties_support::parameters(3);
+        const auto ethane = properties_support::ethane();
+        for (std::size_t i = 0; i < 3; ++i) {
+            parameters.segment_count[i] = ethane.segment_count[0]; parameters.sigma_constant[i] = ethane.sigma_constant[0];
+            parameters.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
+            parameters.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
+        }
+        const HelmholtzModel model(parameters);
+        auto a = equilibrium_support::flash(3); a.temperature = FreeValue::fixed(200.0); a.feed.values = {1.0, 0.0, 0.0};
+        a.reactions = {{"s1=s2", {0.0, -1.0, 1.0}, 1.0}};
+        auto pure = a.phases[0]; pure.support = {0}; pure.support_declared = true; pure.composition_guess = {1.0, 0.0, 0.0}; pure.packing_guess = 0.4;
+        auto full = pure; full.support = {0, 1, 2}; full.composition_guess = {0.98, 0.01, 0.01};
+        const auto r = exercise(model, a, {pure, full});
+        CHECK(r.trials[1].evidence == "evaluated" && r.trials[3].evidence == "evaluated_without_positive_donor");
+    }
+    {
+        const HelmholtzModel model(properties_support::neutral_binary());
+        auto a = equilibrium_support::flash(2); a.phases.resize(1);
+        auto phase = a.phases[0]; phase.kind = PhaseKind::Vapor; phase.support = {0, 1}; phase.support_declared = true;
+        phase.composition_guess = {0.5, 0.5}; phase.packing_guess = 0.001;
+        const auto one = prepare_supplied_trials(model, a.temperature.value, {phase});
+        const auto two = prepare_supplied_trials(model, a.temperature.value, {phase, phase});
+        CHECK(one->work.at("energy_evaluations") == 3 && two->work.at("energy_evaluations") == 5);
+        CHECK(one->work.at("reconstruction_evaluations") == 2 && two->work.at("reconstruction_evaluations") == 4);
+        const auto c = compile_problem(model, a); const auto r = solve_compiled(c);
+        StabilityOptions options; options.evaluate_supplied_trials = true; options.trials = std::vector<PhaseSpec>{phase};
+        const auto single = stability_test(c, r, options);
+        options.trials = std::vector<PhaseSpec>{phase, phase}; const auto pair = stability_test(c, r, options);
+        CHECK(pair.work.at("energy_evaluations") - single.work.at("energy_evaluations") == 2);
+        options.trials.reset(); options.prepared_trials = one; const auto replay_single = stability_test(c, r, options);
+        options.prepared_trials = two; const auto replay_pair = stability_test(c, r, options);
+        CHECK(replay_single.work.at("energy_evaluations") == replay_pair.work.at("energy_evaluations"));
+        CHECK(replay_pair.work.at("trial_invocations") == 2 && replay_single.work.at("trial_invocations") == 1);
+        exercise(model, a, {phase});
+    }
+    {
+#include "fixtures/piperazine-a32-split.inc"
+        q.phases.resize(1);
+        const auto c = compile_problem(model, q); const auto r = solve_compiled(c); CHECK(r.has_state());
+        auto phase = q.phases[0]; phase.composition_guess = c.prepare(r.coordinates).composition[0];
+        phase.packing_guess = r.packing_fractions[0]; phase.support_declared = true;
+        exercise(model, q, {phase});
     }
 }
 

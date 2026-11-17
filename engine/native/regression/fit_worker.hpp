@@ -55,7 +55,11 @@ FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
 FIELDS(Observation, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
-FIELDS(equilibrium::StabilityOptions, a, b, c, d, e, f)
+// Declaration validation refuses prepared trials before worker serialization.
+auto fields(equilibrium::StabilityOptions& item) {
+    auto& [a, b, prepared, c, d, e, f] = item;
+    return std::tie(a, b, c, d, e, f);
+}
 FIELDS(equilibrium::StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance)
 FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, j, k, l, m, present_phase_comparisons, diagnostic_cause, n, o)
 FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)

@@ -147,9 +147,19 @@ inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool com
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
 enum class DiscoveryMode { Full, Fast, FastTested };
+struct PreparedSuppliedPoints;
+class PreparedSuppliedTrials final {
+public:
+    const HelmholtzModel* model;
+    double temperature;
+    std::vector<PhaseSpec> trials;
+    std::shared_ptr<const PreparedSuppliedPoints> points;
+    std::map<std::string, double> work;
+};
 struct StabilityOptions final {
     DiscoveryMode mode = DiscoveryMode::Full;
     bool evaluate_supplied_trials = false;
+    std::shared_ptr<const PreparedSuppliedTrials> prepared_trials;
     std::optional<std::vector<PhaseSpec>> trials;
     std::optional<std::size_t> declaration_budget;
     std::optional<std::size_t> trial_budget;
@@ -921,6 +931,10 @@ struct DiscoveryRecord final {
     std::vector<std::vector<double>> declaration_attempt_coordinates;
     std::map<std::string, double> work;
 };
+EPC_API void admit_trial_feed(CompiledSystem&);
+EPC_API void normalize_trial_feed(CompiledSystem&);
+EPC_API void admit_inventory_bound(const InventoryBound&);
+EPC_API std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const HelmholtzModel&, double, const std::vector<PhaseSpec>&);
 EPC_API CompiledSystem compile_stability_trial(const HelmholtzModel&, double, double, const PhaseSpec&,
     const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
 EPC_API double present_phase_residual_distance(double, double);

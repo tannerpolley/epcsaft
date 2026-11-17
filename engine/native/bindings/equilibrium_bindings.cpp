@@ -163,9 +163,15 @@ void register_equilibrium(nb::module_& module) {
             molar_volume_m3_per_mol, amount);
     nb::enum_<DiscoveryMode>(module, "DiscoveryMode")
         EPCSAFT_VALUES(DiscoveryMode, Full, Fast, FastTested);
+    nb::class_<PreparedSuppliedTrials>(module, "PreparedSuppliedTrials")
+        .def_ro("temperature", &PreparedSuppliedTrials::temperature)
+        .def_prop_ro("work", [](const PreparedSuppliedTrials& s) { return s.work; })
+        .def("__len__", [](const PreparedSuppliedTrials& s) { return s.trials.size(); });
+    module.def("prepare_supplied_trials", &prepare_supplied_trials, nb::arg("model"), nb::arg("temperature"),
+        nb::arg("trials"), nb::keep_alive<0, 1>());
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
-        EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, declaration_budget, trial_budget,
+        EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, prepared_trials, declaration_budget, trial_budget,
             standard_uncertainty_over_rt)
         EPCSAFT_COPIED(StabilityOptions, trials);
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
