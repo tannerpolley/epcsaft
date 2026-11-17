@@ -11,6 +11,7 @@ project(
     'cpp_std=c++17',
     'strip=true',
     'b_staticpic=true',
+    'backend_max_links=1',
   ],
 )
 py = import('python').find_installation('python3', pure: false)

@@ -57,7 +57,7 @@ def run_state(label, commit, program, case, plant=None):
         options = (caller_build / "meson-private/cmd_line.txt").read_text()
         pkg = re.search(r"^pkg_config_path = (.*)$", options, re.M).group(1)
         env = {**os.environ, "PATH": f"{ROOT}/.venv/bin:{os.environ['PATH']}"}
-        jobs = (ROOT / "build/environment-wheel/build-jobs").read_text().strip()
+        jobs = subprocess.check_output([str(ROOT / "tools/build-jobs")], text=True).strip()
         log = WORK / f"{program}.{case.replace('/', '_')}.{label}.{tree.name}.log"
         with log.open("w") as out:
             for step in (["meson", "setup", f"-Dpkg_config_path={pkg}", str(build), str(tree / "engine")],

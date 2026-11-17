@@ -64,35 +64,24 @@ independent falsifier before acceptance (examples in ALG-TERMINATION
 
 ## Gates
 
-This is the only gate list. Comparisons select prepared Python interpreters or
-build/environment directories, with verified source and loaded-library identities.
-Use the main checkout's prepared environment for A and the slice's for B; retain
-an unchanged baseline environment before changing its source. Wheels serve
-historical studies and merged-main delivery, outside these candidate checks.
+This is the only gate list. Verify internal Engine changes locally with `tools/native-run`, the native `*_checks` programs, or a small C++ driver. Run the case that exercises the change and keep the issue's numerical acceptance evidence. After several changes have accumulated and a downstream application needs a new wheel, the lead builds the Python extension and wheel once for that batch. Comparisons select prepared Python interpreters or build/environment directories, with verified source and loaded-library identities. Use the previous qualified batch environment for A and the frozen candidate environment for B. Retain an unchanged baseline environment before changing its source.
 
 | When | Run |
 |---|---|
-| Every delivery state | `bash tools/check-affected.sh origin/main`: the fast gate, which then prints the rows below that its changed paths select |
-| Native C++ change, final delivery state only | `nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>` (clang-tidy on the native units changed since the merge base and every unit that includes a changed file, read from the lint build's dependency records; any `.clang-tidy`, Meson, subproject, `pyproject.toml`, `uv.lock` or `.codex/environments/` change sweeps every unit, as does `--full` or a Clang or external-header change since the last passing full sweep; plus the existing ASan/UBSan cases in one instrumented tree) |
-| Change to the native equilibrium layer or a layer below it | `tools/check-equilibrium-corpora <main environment> <slice environment> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
+| Every delivery state | `bash tools/check-affected.sh origin/main`: run the local source checks and affected C++ tests. The command prints the applicable checks for the lead's batch |
+| Lead's downstream wheel batch, once on the frozen candidate | `agent-heavy tools/check-pr-native --pr N --head <full-sha> --base <previous-qualified-sha>` (clang-tidy on the native units changed since the previous qualified batch and every unit that includes a changed file, read from the lint build's dependency records; any `.clang-tidy`, Meson, subproject, `pyproject.toml`, `uv.lock` or `.codex/environments/` change sweeps every unit, as does `--full` or a Clang or external-header change since the last passing full sweep; plus the existing ASan/UBSan cases in one instrumented tree) |
+| Lead's batch, when it contains a change to native equilibrium or a layer below it | `tools/check-equilibrium-corpora <prepared-A> <prepared-B> --out build/<dir>`: Cameretti, Gross 2002, neutral sweep, #243 matrix and replay in one table; every difference must be the claimed change |
 | Before handoff of a change to native equilibrium or parameter regression code | `bash engine/tools/run-native-tests.sh 'equilibrium/Explicit/*' 'regression/Explicit/*'` (the binary128 reactive cases, the charged PH/PS case, the reacting Cp fit and the envelope traces); `check-affected.sh` selects them only when their own code changes |
-| Any Engine runtime change (`engine/native`, `engine/src`) | `tools/time-key-solves <main environment> <slice environment> --pairs 1 --out build/<dir>` and an A=A control (two workers from the same prepared main environment). Exit 0 is the gate; `tools/time-key-solves.md` owns its work-count, value and CPU limits. A slice that intends a work change adds `--expect-change` and reports the printed counts to the owner; this never waives ceilings or missing evidence |
-| Change to fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work, or density algorithms | Add `--fit --control <main-A=A-summary.json>` to the same key-solve command. First run main A=A with `--fit` to retain the same-host control. `tools/time-key-solves.md` owns the fit limits and measurement boundaries |
+| Lead's batch, when it contains a change to Engine runtime code (`engine/native` or `engine/src`) | `tools/time-key-solves <prepared-A> <prepared-B> --pairs 1 --out build/<dir>` and an A=A control (two workers from A). Exit 0 is the gate; `tools/time-key-solves.md` owns its work-count, value and CPU limits. Use `--expect-change` only when a slice in the batch declares an intended change in native work. Report the printed A and B counts to the owner alongside the intended change and its slice. Every other count difference still needs an explanation. The option preserves the existing value limits, CPU ceilings, and requirements for complete and repeatable evidence. If a batch comparison fails, narrow it down commit by commit using prepared environments for the revisions compared |
+| Lead's batch, when it contains a change to fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work, or density algorithms | Add `--fit --control <A=A-summary.json>` to the same key-solve command. First run A=A with `--fit` from the previous qualified batch environment to retain the same-host control. `tools/time-key-solves.md` owns the fit limits and measurement boundaries |
 
-Run checks that share the ordinary editable Meson tree sequentially. After freezing a local candidate commit,
-the lead runs the heavy gate, including before publication approval with the
-candidate's eventual PR number. The gate locks
-`build/pr-gates/pr-N/<head>/` in the main checkout, prepares one detached source,
-one locked environment and one Clang debug ASan/UBSan Meson tree, runs both checks
-there and removes the tree, keeping the logs and test records under `results/`
-and the pass record beside it. Every run compiles again.
+Run jobs that share a Meson tree sequentially. At the downstream wheel batch, freeze the candidate and run `bash tools/check-affected.sh --python <previous-qualified-sha>` for the Python suite and the architecture checks that need linked images. Run `check-pr-native` once for the frozen candidate before delivering its wheel. It uses a separate instrumented tree under `build/pr-gates/pr-N/<head>/` and retains its logs and check records. Publish the wheel after the applicable batch checks pass.
 Native tests use `MALLOC_PERTURB_=0` (owner, #428); set a nonzero byte to restore
 random heap fill.
 
 Work counts are the key-solve gate; `--pairs` above 1 is only for a timing
 claim, run back to back with the A=A control and judged against its spread.
-After merging main, gate again only when the merge touched code the slice
-depends on. Reporting-only fixes get focused checks.
+Rerun the affected native cases if the merge changed code used by the slice. If the frozen batch candidate changes, check the candidate used for wheel delivery. Reporting-only fixes get focused checks.
 
 F1 and the reacting Cp row run once per environment in the default command. Full fits are explicit
 because they repeat residual and Jacobian evaluations across optimizer steps;
