@@ -53,17 +53,21 @@ this intended architecture.
 | `engine/native/` | Shared scientific calculations and numerical solves |
 | `engine/src/epcsaft/` | Python input/output mapping to the native implementation |
 | `engine/tests/` | Compact numerical falsifiers of Engine claims |
-| `analyses/` | One-question calculations, retained results and interpretation using the installed wheel |
+| Private `tannerpolley/epcsaft-validation` repository | One-question calculations, retained results and interpretation using the installed wheel |
 | Official application repositories | Application chemistry, parameter adoption, process equations and application acceptance |
+
+When available, the private repository is checked out at `validation/` inside
+the Engine checkout. Validation paths below are relative to that private
+repository.
 
 The Pyomo/IDAES adapter ships `libepcsaft_asl.so` in the same non-editable Engine
 wheel. Its neutral functions transport shared Helmholtz pressure derivatives;
-the [neutral analysis](../../analyses/2026-idaes-asl-adapter/README.md) owns that
+the neutral analysis in `benchmarks/2026-idaes-asl-adapter/README.md` owns that
 qualification. Its equilibrium functions transport E5 phase-component amounts and the system enthalpy
 with exact first/second temperature, pressure, feed and active EOS-parameter actions on a declared two-liquid or liquid-vapor branch,
 or on one liquid beside declared-present pure solids, whose amounts they also return. With a present solid the amount
 values and actions are available and the system enthalpy is not, since a solid has no caloric record.
-The [Khudaida analysis](../../analyses/2026-khudaida-idaes-settler/README.md) owns
+The Khudaida analysis in `benchmarks/2026-khudaida-idaes-settler/README.md` owns
 the nonreactive qualification. Its pressure-property function transports pressure-chart
 density, total enthalpy and component `ln(phi_i)` with exact first/second
 derivatives in `(T, P, w)` and the model's active EOS parameters; [#73](https://github.com/tannerpolley/ePC-SAFT/issues/73)
@@ -77,10 +81,10 @@ reactive Lithium by implication.
 
 ## Engine responsibilities
 
-The [analysis index](../../analyses/README.md#analysis-index) names each leaf's
-question and status; the #234 native conversions and retirements are recorded in
-the leaves they changed. A zero `scipy.optimize` count is a lexical result, not a
-physical validation claim.
+The private repository's study index, `index.qmd`, organizes the validation
+studies. The index at `analyses/README.md` in the private repository's
+`archive/analyses-2026-11-13` tag points to the #234 native conversions and
+retirements. A zero `scipy.optimize` count verifies the absence of that text.
 
 Native dependencies run downward in `ARCHITECTURE.yaml`; the root
 [native calculation rule](../../AGENTS.md#native-calculation-rule) owns execution.
@@ -140,7 +144,8 @@ symbol that evaluates them.
 | Weighted fitting | `regression/fit.cpp` | `fit` |
 | Python/native boundary | `bindings/`, `engine/src/epcsaft/` | `module.cpp`; `eos_bindings.cpp`, `equilibrium_bindings.cpp`, `regression_bindings.cpp`, `diagnostics_bindings.cpp`; `asl_adapter.cpp` |
 
-Issue #225's reactive caloric actions, their numerical record and delivered review are in the [reactive caloric actions leaf](../../analyses/2026-reactive-caloric-actions/README.md).
+Issue #225's reactive caloric actions, their numerical record and delivered review
+are in `benchmarks/2026-reactive-caloric-actions/README.md`.
 
 ### Residual, ideal and state responsibilities
 
@@ -244,7 +249,7 @@ finite-addition enthalpy actions for referenced endpoints at fixed temperature;
 reference declarations stay fixed. Referenced free-temperature finite-addition
 endpoints consume the same H owner at each solved temperature; driven-T/P
 apparent isobaric heat-capacity fitting consumes mixed thermal H actions.
-The [reaction-constant fitting notebook](../../analyses/2026-reaction-constant-fitting/notebook.qmd)
+The reaction-constant fitting notebook in `fits/2026-reaction-constant-fitting/notebook.qmd`
 retains the manufactured first-derivative and recovery comparisons; it makes
 no application or physical-validation claim. Concrete input forms and
 outstanding qualification are recorded in the owning GitHub issues.
@@ -338,7 +343,7 @@ means a scaled epigraph estimation problem with declared max/mean guards;
 by [ALG-FIT](../../engine/docs/science/algorithms.md#alg-fit). These use the same
 thermodynamic, coordinate, check and candidate owners as least squares.
 
-The [electrolyte parameter-gradient analysis](../../analyses/2026-electrolyte-parameter-gradients/README.md)
+The electrolyte parameter-gradient analysis in `benchmarks/2026-electrolyte-parameter-gradients/README.md`
 retains installed-wheel numerical verification at 298.15 K, 1 bar and the
 declared Figiel solvent/salt selections. This is no physical validation,
 #209 refit, packet adoption or mixed-salt qualification. Methanol and ethanol
@@ -383,7 +388,7 @@ recovery question. Historical stage completion is never current acceptance.
 | Runtime implementation and executable topology | `engine/native/`, `engine/src/epcsaft/`, `ARCHITECTURE.yaml` |
 | Accepted decisions | [decisions/](decisions/README.md), sole sequence |
 | Reusable source packets and source applicability | `data/packets/`, `data/docs/packet-contract.md` |
-| Numerical claims and retained evidence | `engine/tests/`, one-question sets under `analyses/`, dated reviews |
+| Numerical claims and retained evidence | `engine/tests/`, studies in the private validation repository, dated reviews |
 | Numerical policy values | `engine/native/core/numerical_policy.hpp`; algorithm requirements explain their meaning |
 | Runtime source-size budgets | `ARCHITECTURE.yaml:code_budgets`; [meaning and review](code-budgets.md) |
 | Execution and check selection | root `AGENTS.md`, `tools/check-affected.sh` |
