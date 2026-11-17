@@ -1951,14 +1951,14 @@ void check_mea_census_state_3() {
 }
 
 // #7: discovery on the frozen MEA row at 1.859375 mol CO2/mol MEA, 313.15 K, 7,533,583.1305387868 Pa. Its added
-// CO2-rich liquid carries ions near 1e-30 mol whose charge defect is their whole inventory; before the bounded amount
-// correction discovery refused "destroys positive support" there. It now reaches the two water-rich liquids.
+// CO2-rich liquid carries carbamate at mole fraction ~1.6e-30 (2.26e-32 mol), whose charge defect is the phase's whole
+// ionic charge; before the bounded amount correction discovery refused "destroys positive support" there. It now
+// reaches the two water-rich liquids.
 void check_mea_trace_ion_discovery() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
 #include "fixtures/mea_capped_addition.inc"
     const HelmholtzModel model(parameters);
     auto problem = row.final_problem;
-    problem.feed.values = row.problem.feed.values;
     problem.feed.values[0] = 1.859375 * row.basis_amount;
     problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
     problem.pressure = FreeValue::fixed(7533583.1305387868);

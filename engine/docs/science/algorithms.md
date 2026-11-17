@@ -2406,8 +2406,8 @@ decomposition handles redundant and zero charge rows. No squared inventories,
 step shortening, iteration or backtracking is used. Attempt the full correction
 even below tolerance. Where $m^0_j+\delta_j$ is not positive, a trace cell
 whose defect is its whole inventory (a near-neutral phase's charge row carried
-by ions at $10^{-30}$ mol, #7), store $m^1_j=m^0_j\exp(\delta_j/m^0_j)$
-instead; every other cell keeps $\operatorname{fl}(m^0+\delta)$ bit for bit.
+by carbamate at mole fraction $\sim1.6\times10^{-30}$, 2.26e-32 mol, #7), store
+$m^1_j=m^0_j\exp(\delta_j/m^0_j)$ instead; every other cell keeps $\operatorname{fl}(m^0+\delta)$ bit for bit.
 The applied material/charge rows then decide admission at the existing
 `ADDITION_MATERIAL_BALANCE` criterion, and a refusal names the first bounded
 species and phase with the applied defect. Refuse nonfinite or nonpositive
