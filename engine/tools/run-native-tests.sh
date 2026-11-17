@@ -8,7 +8,7 @@ workspace_root="$(dirname "$engine_root")"
 cd "$workspace_root"
 # Meson regeneration finds python3 on PATH; it needs the .venv one with nanobind.
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
-[[ -f build/environment-wheel/meson-build-dir ]] || bash tools/setup.sh
+[[ -f build/environment-wheel/meson-build-dir ]] || bash tools/setup.sh --native
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 tests=("$@")
 if ((${#tests[@]} == 0)); then
@@ -22,7 +22,7 @@ if missing := [p for p in sys.argv[1:] if not fnmatch.filter([t["name"] for t in
     sys.exit("no Meson test matches: " + " ".join(missing))
 print(*sorted({os.path.basename(t["cmd"][0]) for t in tests if any(fnmatch.fnmatch(t["name"], p) for p in sys.argv[1:])}), sep="\n")' "${tests[@]}")
 ((${#programs[@]})) || exit 2
-.venv/bin/meson compile -C "$build_dir" -j "$(<build/environment-wheel/build-jobs)" "${programs[@]}"
+.venv/bin/meson compile -C "$build_dir" -j "$(tools/build-jobs)" "${programs[@]}"
 set +e
 logbase="testlog-${BASHPID}-$(date +%s%N)"
 .venv/bin/meson test -C "$build_dir" "${tests[@]}" --timeout-multiplier 4 --print-errorlogs --no-rebuild --logbase "$logbase"

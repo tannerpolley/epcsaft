@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Compile-job count, the one owner (#58): the smaller of the CPU allowance (AGENT_HEAVY_CORES when set, else
+# nproc) and available memory over the per-job allowance in MiB (argument; default 1536, the sanitizer gate
+# passes 2560). Memory is free RAM or, if tighter, the headroom under the nearest cgroup limit (agent sessions
+# run under one). EPCSAFT_BUILD_JOBS requests a lower maximum. Never below one.
+set -euo pipefail
+cpus="${AGENT_HEAVY_CORES:-$(env -u OMP_NUM_THREADS nproc)}"
+memory_kib=$(awk '/^MemAvailable:/ {print $2}' /proc/meminfo)
+group=/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)
+while [[ $group == /sys/fs/cgroup/* ]]; do
+    for limit_file in memory.high memory.max; do
+        limit=$(cat "$group/$limit_file" 2>/dev/null) || continue
+        [[ $limit == max ]] && continue
+        headroom=$(( (limit - $(cat "$group/memory.current")) / 1024 ))
+        ((headroom < memory_kib)) && memory_kib=$headroom
+        break
+    done
+    group=$(dirname "$group")
+done
+jobs=$(( memory_kib / (${1:-1536} * 1024) ))
+((jobs < cpus)) || jobs=$cpus
+[[ "${EPCSAFT_BUILD_JOBS:-1}" =~ ^[1-9][0-9]*$ ]] || { echo "EPCSAFT_BUILD_JOBS must be a positive integer" >&2; exit 2; }
+((jobs <= ${EPCSAFT_BUILD_JOBS:-jobs})) || jobs=$EPCSAFT_BUILD_JOBS
+echo $(( jobs < 1 ? 1 : jobs ))

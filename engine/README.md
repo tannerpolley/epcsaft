@@ -50,28 +50,32 @@ calculation's inputs.
 
 ## Checks
 
-Each checkout or extracted source tree owns its `.venv`. `bash tools/setup.sh`
-syncs the locked environment and installs `engine/` editable through
-`tools/build-engine.sh` into `build/engine-meson/shared`. Imports rebuild changed
-native sources with Ninja; Python edits need no rebuild. `uv.lock` is the only dependency lock;
+Each checkout or extracted source tree owns its `.venv`. For internal Engine work,
+`bash tools/setup.sh --native` prepares the locked environment and configures
+`build/engine-meson/shared`; verify the change with `tools/native-run`, the native
+`*_checks` programs, or a small C++ driver. The lead uses `bash tools/setup.sh` to
+install `engine/` editable for the downstream batch; imports then rebuild changed
+native sources with Ninja and Python edits need no rebuild. `uv.lock` is the only dependency lock;
 declarations and lock changes land together. Rerun setup after a lock change. Setup rebuilds after a compiler or HiGHS change; after another
 system library upgrade, remove `build/engine-meson/shared` and rerun setup.
-`epcsaft.provenance()` identifies the loaded Engine. Compile jobs default to
-the memory-sized count in `tools/build-engine.sh`; `EPCSAFT_BUILD_JOBS` overrides it.
+`epcsaft.provenance()` identifies the loaded Engine. `tools/build-jobs` caps compile
+jobs by available memory and the active CPU allowance. Use `EPCSAFT_BUILD_JOBS` to
+request a lower maximum. New Engine Ninja trees allow one link at a time.
 
-The native owner checks additionally require `clang-18`, `clang++-18`,
-`clang-tidy-18`, `run-clang-tidy-18`, `file` and `nm`. The line budgets need
-`clang-format-18` and the locked `.venv` Ruff, so run setup first.
+The lead's batch checks (`check-pr-native`) additionally require `clang-18`,
+`clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file` and `nm`. The line budgets
+need `clang-format-18` and the locked `.venv` Ruff, so run `bash tools/setup.sh --native` first.
 Checks that compare revisions require a Git checkout and its history.
 Setup and status also work from an extracted source tree.
 
-The fast gate checks every change; [`docs/agents/workflow.md` "Gates"](../docs/agents/workflow.md#gates)
-owns which further gates a delivery runs, and the script prints those its changed paths select:
-
-```bash
-bash tools/check-affected.sh [base]   # paths changed since base (default: merge base with origin/main)
-bash tools/check-affected.sh --all    # no Git history: source archives
-```
+The [Gates](../docs/agents/workflow.md#gates) table owns check selection. Run
+`bash tools/check-affected.sh [base]` for local source checks and affected C++ cases.
+Use `--all` from a source archive. The lead uses
+`bash tools/check-affected.sh --python <previous-qualified-sha>` at the downstream wheel
+batch to run the Python suite, verify the private native archive and ASL exports, and
+compare the type stubs with the installed extension. The lead runs `check-pr-native`
+once on the frozen batch candidate, then builds the delivery wheel after the applicable
+batch checks pass.
 
 Pull requests and pushes to `main` run only `.github/workflows/ci.yml`: build,
 import, the conda-forge smoke case and Ruff. Every other check, including the
@@ -82,7 +86,7 @@ lists which.
 Develop and debug on native programs alone: `tools/native-run` rebuilds one program
 in the checkout's Meson build directory and runs it, whole or for one case, without
 Python. New studies can be small C++ drivers that write
-CSV rows; plots read the CSV. `check-affected.sh` covers the Python interface too.
+CSV rows; plots read the CSV.
 
 ```bash
 tools/native-run equilibrium_checks --list
@@ -150,7 +154,8 @@ installation boundary.
 
 `bash engine/tools/run-native-tests.sh` compiles and runs the fast suites
 `contributions`, `properties`, `diagnostics`, `specification`, `surface_example`
-and `regression`; name other tests to run them. `tools/check-affected.sh` selects
+and `regression`; name other tests to run them. `regression` compiles `_core` (no wheel, no install) because its fixture generator loads it.
+`tools/check-affected.sh` selects
 the equilibrium, boundary and Explicit tests when their code changes (see [Checks](#checks)).
 
 ## C++ usage and debugging

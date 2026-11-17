@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# The fast gate: setup, readiness, the Python suite and the default native suites on every change, plus the
+# The native gate: native setup, readiness, the source rules and the default native suites on every change, plus the
 # checks the changed paths select; then the remaining gates of docs/agents/workflow.md "Gates" those paths need.
 #   check-affected.sh [base]   paths changed since base (default: the merge base with origin/main) plus uncommitted
 #   check-affected.sh --all    no Git history and no path selection (source archives, the container check)
+#   check-affected.sh --python [base|--all]   the lead's batch: editable extension, Python suite, linked-image rules (#58)
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -19,6 +20,8 @@ timed() {
     return "$status"
 }
 
+python_batch=false
+[[ "${1:-}" != --python ]] || { python_batch=true; shift; }
 changed=() owners=""
 if [[ "${1:-}" == --all ]]; then
     echo "check-affected: all fast checks, no path selection"
@@ -55,8 +58,10 @@ for path in "${changed[@]}"; do
 done
 ((${#notebooks[@]} == 0)) || timed notebook-numbers python3 tools/check-notebook-numbers.py --base "$base_ref" "${notebooks[@]}"
 
-# Setup first: the budget count formats Python with the locked .venv Ruff.
-timed setup bash tools/setup.sh
+# Setup first: the budget count formats Python with the locked .venv Ruff. Only the batch builds the extension.
+setup_args=(--native)
+[[ "$python_batch" == false ]] || setup_args=()
+timed setup bash tools/setup.sh "${setup_args[@]}"
 timed readiness bash -e -c '
 python3 engine/tools/sync_equation_registry.py --check
 python3 tools/diffstat.py --budgets
@@ -127,19 +132,23 @@ failed=0
 mkdir -p build/test-results
 # JUnit goes to a temporary file first, so a reader never sees a partial report.
 xml=build/test-results/pytest.xml
-timed pytest env -C engine ../.venv/bin/python -m pytest -q --junitxml="../$xml.tmp" || failed=1
-mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
+if [[ "$python_batch" == true ]]; then
+    timed pytest env -C engine ../.venv/bin/python -m pytest -q --junitxml="../$xml.tmp" || failed=1
+    mv "$xml.tmp" "$xml" && python3 tools/report.py --stamp "$xml"
+fi
 timed ruff env -C engine ../.venv/bin/ruff check src tests || failed=1
 timed mypy env -C engine ../.venv/bin/mypy || failed=1
-timed engine-architecture .venv/bin/python tools/check-engine-architecture.py --build-dir "$(<build/environment-wheel/meson-build-dir)" || failed=1
+architecture_args=()
+[[ "$python_batch" == false ]] || architecture_args=(--build-dir "$(<build/environment-wheel/meson-build-dir)")
+timed engine-architecture .venv/bin/python tools/check-engine-architecture.py "${architecture_args[@]}" || failed=1
 wait "$native_pid" || failed=1
 ((failed == 0)) || exit 1
 
 if [[ "${1:-}" == --all ]]; then
-    echo "fast gate passed; other gates and when they run: docs/agents/workflow.md \"Gates\""
+    echo "native gate passed; other gates and when they run: docs/agents/workflow.md \"Gates\""
     exit 0
 fi
-echo "fast gate passed (base $base_ref)"
+echo "native gate passed (base $base_ref)"
 # One reader of docs/agents/workflow.md "Gates": the remaining rows these paths select.
 gates=()
 [[ " $owners " =~ \ engine\.(core|contributions|properties|equilibrium)\  ]] \
@@ -151,6 +160,7 @@ if grep -Eq '^engine/(native|src)/' <<<"$paths"; then
         "if fit scheduling, caching, optimizer work, observation composition or derivatives, reference computations, equilibrium solve work or density algorithms changed: add --fit --control <main-A=A-summary.json>")
 fi
 grep -Eq '^engine/.*\.(cpp|hpp|h)$' <<<"$paths" \
-    && gates+=("final delivery state: nice -n 10 tools/check-pr-native --pr N --head <full-sha> --base <merge-base-sha>")
+    && gates+=("lead's batch: agent-heavy tools/check-pr-native --pr N --head <full-sha> --base <previous-qualified-sha>")
+[[ "$python_batch" == true ]] || echo "lead's batch: bash tools/check-affected.sh --python <previous-qualified-sha> (Python suite, linked-image rules)"
 echo "remaining gates (docs/agents/workflow.md \"Gates\"):"
 ((${#gates[@]})) && printf '  %s\n' "${gates[@]}" || echo "  none"
