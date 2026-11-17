@@ -614,9 +614,9 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         objective_hessian_.reset();
         constraint_hessian_.reset();
         ++prepared_points_;
-        if (limits_ && limits_->admit && !limits_->admit(*prepared_)) {
+        if (limits_ && limits_->admit) if (const auto refused = limits_->admit(*prepared_)) {
             prepared_.reset();
-            throw std::domain_error("guarded point outside its admitted density side");
+            throw std::domain_error(*refused);
         }
     }
     if (limits_) limits_->check();
@@ -1456,7 +1456,10 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 else scope.probe("polish_step", {double(defect), double(after), double(classified_before), double(classified_after), double(alpha)},
                     static_cast<std::uint32_t>(step));
                 if (!admit) continue;
-                if constexpr (std::is_same_v<Base, double>) if (limits && limits->admit && !limits->admit(at_candidate)) continue;
+                if constexpr (std::is_same_v<Base, double>) if (limits && limits->admit) if (const auto refused = limits->admit(at_candidate)) {
+                    core::retain_failure(result.first_numerical_failure, *refused, "guarded polish");
+                    continue;
+                }
                 if constexpr (std::is_same_v<Base, double>) if (preserve_trial_branch && !trial_branch(at_candidate, candidate)) {
                     if (expired()) return false;
                     continue;

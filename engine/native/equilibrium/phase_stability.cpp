@@ -18,6 +18,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <variant>
 
 // ALG-STABILITY: the explicit tangent-plane test and fixed-T/P phase discovery.
 namespace epcsaft::equilibrium {
@@ -500,10 +501,11 @@ double repair_effect(const CompiledSystem &c, const PhasePoint &at, const PhaseP
     return allowance;
 }
 
+struct CondensedRefusal final : std::invalid_argument { using std::invalid_argument::invalid_argument; };
 // Without a unit vacuum limit, a charged trial counts only on its own liquid side.
 void condensed_admission(const std::optional<DensityRoot>& root, bool quotient, Quantities* q = nullptr) {
     if (!root || properties::density_side(root->branch, root->molar_density, root->negative_slope_density) != DensityBranch::Liquid)
-        throw std::invalid_argument(quotient
+        throw CondensedRefusal(quotient
             ? "charged trial outside the condensed domain of permittivity without a unit vacuum limit"
             : "charged trial outside the condensed domain of density-independent permittivity");
     if (q && root->negative_slope_density) (*q)["negative_slope_density_mol_m3"] = *root->negative_slope_density;
@@ -767,9 +769,14 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     return w;
 }
 namespace {
+// #21: the second pass spends one evaluation credit before each density or finite-split energy call.
+void spend_credit(const DriverLimits& limits, Quantities& work) {
+    if (!limits.spend(limits.evaluations, limits.evaluation_cap)) limits.check();
+    ++work["recovery_density_credits"];
+}
 // For a relaxed trial the frozen slope can classify no descent only within plane arithmetic error.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
-    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed) {
+    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool charged = false) {
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
@@ -853,8 +860,9 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
                 throw std::invalid_argument("finite split arithmetic conservation failed");
             ++report.work["finite_split_evaluations"];
-            if (limits && limits->admit && !limits->spend(limits->evaluations, limits->evaluation_cap)) limits->check();
+            if (charged) spend_credit(*limits, report.work);
             const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
+            if (charged) spend_credit(*limits, report.work);
             const auto changed = phase_energy(*c.model, at.temperature, at.pressure, donor_volume, x,
                 report.standard_over_rt, report.work);
             const double delta = remaining * changed.at("g_over_rt") + beta * q.at("g_over_rt")
@@ -1104,42 +1112,50 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     auto& parent = reference ? *reference : own;
     std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;  // one comparison per coincident gas endpoint
     // #21: after the completed schedule, one guarded pass over its condensed-domain refusals, funded by `recovery`.
-    using Slot = std::pair<std::size_t, std::vector<double>>;  // the original trial and its start, none if refused before it
+    // A slot refused before optimization restarts from the parent restriction, a refused end point from its own seed.
+    enum class Start { ParentRestriction, FirstAdmittedSeed, OwnSeed };
+    struct Slot { std::size_t trial; Start start; std::vector<double> seed; };
     std::vector<Slot> slots;
     std::vector<std::vector<std::pair<std::vector<double>, double>>> admitted(supports.size());
-    std::map<std::vector<double>, std::optional<DensityRoot>> liquid_roots;  // by normalized composition
-    std::map<std::vector<double>, bool> decisions;  // by prepared point
-    const auto credit = [&] { if (!recovery->spend(recovery->evaluations, recovery->evaluation_cap)) recovery->check(); };
+    std::map<std::vector<double>, std::variant<std::string, DensityRoot>> liquid_roots;  // root or cause, by composition
+    std::map<std::vector<double>, std::optional<std::string>> decisions;  // refusal cause, by prepared point
     // A proposal keeps the admitted liquid root of its own composition: denser than its negative-slope sample,
     // mechanically stable and within the anchor window of that root.
     const auto guard = [&](const PhasePoint& point) {
-        const auto [decision, fresh] = decisions.try_emplace(point.point, false);
+        const auto [decision, fresh] = decisions.try_emplace(point.point);
         if (!fresh) { ++report.work["recovery_guard_cache_hits"]; return decision->second; }
+        auto& refusal = decision->second;
         try {
-            auto w = point.composition[0];
-            const double total = std::accumulate(w.begin(), w.end(), 0.0), rho = 1.0 / point.volume[0];
+            auto w = point.composition[0];  // the unnormalized chart: its volume is per unit chart total
+            const double total = std::accumulate(w.begin(), w.end(), 0.0), rho = total / point.volume[0];
             for (double& x : w) x /= total;
             auto [root, missing] = liquid_roots.try_emplace(w);
             if (!missing) ++report.work["recovery_root_cache_hits"];
-            else try {  // a spent allowance leaves the root unavailable and the point refused
-                credit();
+            else try {
+                spend_credit(*recovery, report.work);
                 auto found = stability_root(*c.model, at.temperature, at.pressure, w, PhaseKind::Liquid);
                 condensed_admission(found, false);
                 if (found.convergence.residual <= found.convergence.criterion->value) root->second = std::move(found);
-            } catch (const std::exception&) {}
-            const auto& liquid = root->second;
-            if (!liquid || !liquid->negative_slope_density) return false;
-            const double sample = *liquid->negative_slope_density;
-            const double slope = c.model->state(at.temperature, rho, w).pressure_density_derivative;
-            decision->second = liquid->molar_density > sample && rho > sample && std::isfinite(slope) && slope > 0.0
-                && std::abs(std::log(rho / liquid->molar_density)) <= policy::DENSITY_ANCHOR_LOG_WINDOW.value;
-        } catch (const std::exception&) {}
-        return decision->second;
+                else root->second = "residual above its criterion";
+            } catch (const std::exception& error) { root->second = error.what(); }
+            const auto* liquid = std::get_if<DensityRoot>(&root->second);
+            if (!liquid) refusal = "liquid root unavailable: " + std::get<std::string>(root->second);
+            else if (!liquid->negative_slope_density) refusal = "liquid root without a negative-slope sample";
+            else if (const double sample = *liquid->negative_slope_density; !(liquid->molar_density > sample && rho > sample))
+                refusal = "point or root not denser than the negative-slope sample";
+            else if (const double slope = c.model->state(at.temperature, rho, w).pressure_density_derivative; !(slope > 0.0))
+                refusal = "pressure-density slope not positive";
+            else if (std::abs(std::log(rho / liquid->molar_density)) > policy::DENSITY_ANCHOR_LOG_WINDOW.value)
+                refusal = "outside the anchor window of the liquid root";
+        } catch (const std::exception& error) { refusal = error.what(); }
+        if (refusal) ++report.work["recovery_guard_refusals"];
+        return refusal;
     };
-    for (const bool retry : {false, true}) for (const auto& phase : supports) {
+    for (std::size_t visit = 0, k = 0; visit < 2 * supports.size(); k = ++visit % supports.size()) {
+        const bool retry = visit >= supports.size();
+        const auto& phase = supports[k];
         if (retry && (!recovery || slots.empty())) break;
         if (retry) limits = recovery, recovery->admit = guard;
-        const auto k = static_cast<std::size_t>(&phase - supports.data());
         std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
         for (auto i : phase.support) identity += std::to_string(i) + ",";
         const bool quotient = form.is(PermittivityForm::DensityTemperatureIonSuppression);
@@ -1185,9 +1201,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (previous.kind == phase.kind && previous.support == phase.support)
                     seeds.emplace_back("removed-phase", composition);
             if (retry) seeds.clear();
-            for (const auto& slot : slots) if (const auto& original = report.trials[slot.first]; retry
+            for (const auto& slot : slots) if (const auto& original = report.trials[slot.trial]; retry
                     && original.phase.kind == phase.kind && original.phase.support == phase.support) {
-                seeds.emplace_back(original.seed, slot.second.empty() ? remainder : slot.second);
+                seeds.emplace_back(original.seed, slot.start == Start::OwnSeed ? slot.seed : remainder);
                 sources.push_back(&slot);
             }
         }
@@ -1197,6 +1213,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             const Slot* slot = retry ? sources[visited++] : nullptr;
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
+            auto start = slot ? slot->start : Start::ParentRestriction;  // in the first pass: the retry a refusal here gets
+            bool searched = false;  // the start coincides with an already-searched original seed
             SuppliedPoint point = options.prepared_trials ? options.prepared_trials->points->entries[entry++] : SuppliedPoint{};
             const auto advance = [&](SuppliedStage stage, CompiledSystem* c = nullptr, double eta = 0.0) {
                 advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work);
@@ -1210,13 +1228,13 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 else {
                     std::optional<DensityRoot> root;
                     while (!root) {
-                        if (slot) credit();
+                        if (slot) spend_credit(*recovery, report.work);
                         root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                         core::retain_first(trial.optimizer.first_numerical_failure, root->first_numerical_failure);
                         if (condensed) try { condensed_admission(root, quotient); }
-                        catch (const std::invalid_argument&) {  // a refused parent restriction: the first admitted original seed
-                            if (!slot || !slot->second.empty() || rooted.empty() || seed == rooted.front().first) throw;
-                            trial.message = "parent restriction refused; start from the first admitted original seed";
+                        catch (const CondensedRefusal&) {  // a refused parent restriction: the first admitted original seed
+                            if (!slot || start != Start::ParentRestriction || rooted.empty()) throw;
+                            start = Start::FirstAdmittedSeed;
                             root.reset(), seed = rooted.front().first;
                         }
                     }
@@ -1224,13 +1242,13 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root->molar_density;
                 }
                 packing_admission(eta);
-                if (!slot && std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
-                        return prior.first == seed && std::abs(std::log(prior.second / eta))
-                            <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; })) continue;
+                searched = std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
+                    return prior.first == seed && std::abs(std::log(prior.second / eta)) <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; });
+                if (!slot && searched) continue;
                 if (!slot) rooted.emplace_back(seed, eta);
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
                 if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
-                    if (slot) throw std::runtime_error(std::string(spent ? "work" : "trial") + " budget exhausted before the second-pass optimizer");
+                    if (slot) throw BudgetExhausted("budget exhausted before the second-pass optimizer");
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { report_work(report.work, work); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
@@ -1264,6 +1282,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
                     trial.message = trial.optimizer.message;
                 }
+                if (!slot) start = Start::OwnSeed;
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
                 if (options.evaluate_supplied_trials) advance(SuppliedStage::Raw, &compiled, eta);
                 auto raw = options.evaluate_supplied_trials ? point.raw : found ? found->first : compiled.prepare(trial.raw_coordinates, true);
@@ -1289,7 +1308,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0))
                         throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
                 }
-                if (condensed && slot) credit();
+                if (condensed && slot) spend_credit(*recovery, report.work);
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
                     volume, PhaseKind::Liquid, trial.quantities, "condensed_"), quotient, &trial.quantities);
                 advance(SuppliedStage::Energy);
@@ -1336,6 +1355,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             && comparison.volume_log_distance <= policy::PHASE_COINCIDENCE_DISTANCE.value;
                         trial.present_phase_comparisons.push_back(std::move(comparison));
                     }
+                    if (slot) spend_credit(*recovery, report.work);
                     try {
                         if (!retain_density_side(*c.model, at.temperature, at.pressure, trial.composition, volume, phase.kind, q))
                             trial.diagnostic_cause = density_refusal;
@@ -1345,7 +1365,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 // A distinct reacting gas-side trial uses the relaxed split if the frozen check leaves it indeterminate.
                 const bool reacting = explicit_negative && c.has_reaction && trial.optimizer.success;
                 if (options.evaluate_supplied_trials || negative)
-                    donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident);
+                    donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident, slot);
                 if (reacting && gas && !coincident && trial.evidence == "indeterminate") {
                     auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) {
                         return s.first.donor == trial.donor && same_stationary_trial(s.first, trial, false);
@@ -1364,7 +1384,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     // the donor potentials are the plane and the split change is at most beta * tpd (equal when the
                     // reactions conserve mole number), so a frozen descent is a witness and the frozen slope and splits decide.
                     if (d.status == GibbsDifferenceStatus::Unavailable && d.cause.rfind("phase count exceeds balance rank", 0) == 0) {
-                        donor_descent(c, candidate, trial, report, options, limits, false);
+                        donor_descent(c, candidate, trial, report, options, limits, false, slot);
                         trial.message += "; reaction-relaxed split: " + d.cause;
                     } else classify_split(c, report, trial, d);
                 } else if (reacting && !trial.diagnostic_cause.empty() && trial.evidence == "no_resolved_descent") {
@@ -1374,12 +1394,18 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             } catch (const std::exception& error) {
                 trial.message += "; " + std::string(error.what());
                 trial.evidence = "unresolved";
-                if (recovery && !retry && condensed && !quotient && std::strstr(error.what(), "condensed domain"))
-                    slots.emplace_back(report.trials.size(), trial.raw_coordinates.empty() ? std::vector<double>{} : seed);
+                if (recovery && !retry && !quotient && dynamic_cast<const CondensedRefusal*>(&error))
+                    slots.push_back({report.trials.size(), start, seed});
             }
             if (slot) {  // only a determined optimized retry replaces the original slot; its message keeps the refusal
-                auto& original = report.trials[slot->first];
-                trial.message = original.message + "; second pass: " + trial.message;
+                auto& original = report.trials[slot->trial];
+                // A start at an already-searched seed or a returned present phase is no independent coverage.
+                bool present = false;
+                for (std::size_t i = 0; i < at.amount.size() && !trial.composition.empty(); ++i) present |= c.problem.phases[i].kind
+                    == phase.kind && largest_difference(trial.composition, at.composition[i]) <= policy::PHASE_COINCIDENCE_DISTANCE.value;
+                const char* from[] = {"the parent-liquid restriction", "the first admitted original seed", "its own admitted seed"};
+                trial.message = original.message + "; second pass from " + from[static_cast<int>(start)]
+                    + (searched ? ", an already-searched seed" : "") + (present ? ", returned a present phase" : "") + ": " + trial.message;
                 if (trial.optimizer.success && (trial.resolved_descent || trial.evidence == "no_resolved_descent")) original = std::move(trial);
                 else original.message = std::move(trial.message);
                 continue;

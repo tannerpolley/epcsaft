@@ -2318,12 +2318,20 @@ admitted original seed of its support; a refused end point restarts from its own
 admitted seed. Every optimizer and polish point must keep the admitted Liquid root
 of its own normalized composition: that root and the point both denser than the
 root's negative-slope sample, a positive `(∂P/∂ρ)_{T,x}` at the point, and the point
-within `DENSITY_ANCHOR_LOG_WINDOW` of the root. Roots are cached by composition and
-decisions by prepared point, and each actual density call (seed, guard miss,
-end point and finite-split donor root) spends one evaluation credit. The end point
-then passes the unchanged admission and donor/descent classification. Only an
-optimized retry with a determined verdict replaces its slot, keeping the original
-refusal in its message; otherwise the slot stays unresolved with both causes.
+within `DENSITY_ANCHOR_LOG_WINDOW` of the root. The point's molar density is the
+chart total over its chart volume, since the chart volume is per unit total of the
+unnormalized chart amounts. A refused point keeps the failed condition as its cause
+in the optimizer's or polish's first failure. Roots and their refusal causes are
+cached by composition and decisions by prepared point. Each actual density call
+(seed, guard miss, end point, density-side check of a negative plane, finite-split
+donor root) and each finite-split energy spends one evaluation credit, counted as
+`recovery_density_credits` apart from the cache hits. The end point then passes the
+unchanged admission and donor/descent classification. Only an optimized retry with
+a determined verdict replaces its slot. Its message keeps the original refusal and
+names the start, and whether that start was an already-searched seed or the result
+a present phase; such a result is no independent coverage. Otherwise the slot stays
+unresolved with both causes. A seed root solved during admission is solved again
+rather than reused (an accepted work reduction left out).
 Determined original verdicts are never changed. Fitting's `stability_measure`,
 discovery, recovery and vanished-phase searches and supplied evaluations keep the
 original schedule alone.

@@ -2176,8 +2176,10 @@ void check_condensed_trial_recovery() {
         CHECK(std::abs(q.at("normalization_residual")) <= 1e-10 && std::abs(q.at("charge_residual")) <= 1e-10);
         CHECK(q.at("condensed_root_log_displacement") <= policy::DENSITY_ANCHOR_LOG_WINDOW.value);
         CHECK(1.0 / q.at("volume_m3_per_mol") > q.at("negative_slope_density_mol_m3"));
+        CHECK(recovered.message.find("returned a present phase") != std::string::npos);  // no independent coverage
         const auto endpoint = slot(report, "positive-neutral-base");
         CHECK(endpoint.evidence == "unresolved" && second_pass(endpoint));
+        CHECK(report.work.at("recovery_guard_refusals") > 0 && report.work.at("recovery_density_credits") > 0);
     }
     // A second pass with no work, one exhausted during its optimizer, and the full allowance keep the original witnesses.
     problem.pressure = FreeValue::fixed(3210.7051705127587);

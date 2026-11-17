@@ -149,8 +149,8 @@ struct DriverLimits final {
     mutable bool exhausted = false;
     std::size_t attempt_cap = 0;
     mutable std::size_t attempts = 0;
-    // #21: a guarded pass refuses an optimizer or polish point outside it, and charges each density call.
-    std::function<bool(const PhasePoint&)> admit;
+    // #21: a guarded pass refuses an optimizer or polish point for which this returns a cause.
+    std::function<std::optional<std::string>(const PhasePoint&)> admit;
     static DriverLimits recovery_allowance(std::chrono::steady_clock::time_point deadline, std::size_t iterations) {
         const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
         return {iterations, deadline, 0, true, 4 * cap, 2 * cap};
