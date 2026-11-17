@@ -45,6 +45,7 @@ void check_physical_amount_work();
 void check_reaction_relaxed_split();
 void check_associating_isomer_gibbs();
 void check_reaction_relaxed_search();
+void check_reaction_relaxed_pz_row();
 void check_mea_census_state_3();
 void check_solve_error_curvature();
 void check_stability_inventory_face();
@@ -122,6 +123,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.associating-isomer-gibbs", "associating-isomer-gibbs", "Automatic_fast"}, check_associating_isomer_gibbs},
         {{"native.equilibrium.reaction-relaxed-split", "reaction-relaxed-split", "Automatic_fast"}, check_reaction_relaxed_split},
         {{"native.equilibrium.reaction-relaxed-search", "reaction-relaxed-search", "Automatic_fast"}, check_reaction_relaxed_search},
+        {{"native.equilibrium.reaction-relaxed-pz-row", "reaction-relaxed-pz-row", "Automatic_fast"}, check_reaction_relaxed_pz_row},
         {{"native.equilibrium.mea-census-state-3", "mea-census-state-3", "Automatic_fast"}, check_mea_census_state_3},
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},

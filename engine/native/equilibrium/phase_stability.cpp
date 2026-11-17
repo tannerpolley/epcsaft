@@ -584,9 +584,10 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                 standard_error += weight * options.standard_uncertainty_over_rt[i];
             plane_mag += weight * std::abs(s.plane_over_rt[i]);
         }
-        long double last = NAN, last_floor = NAN;
+        long double last = NAN, last_floor = NAN, last_quadrature = NAN;
         bool previous_refined = false;
-        for (int steps : {4, 8, 16, 32}) {
+        // Simpson ladder: first eligible rung from 32 panels with two consecutive refinements, capped at 128.
+        for (int steps = 4; steps <= 128; steps *= 2) {
             long double integral = 0, owner_error = 0, arithmetic = 0, volumeerror = 0, charterror = 0;
             for (int j = 0; j <= steps; ++j) {
                 long double t = (long double)j / steps, N = 0, V = v0 + t * dv;
@@ -659,8 +660,13 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
 
             long double complete = integration_floor + trialerror + quadrature + std::abs(plane_defect) + parent_error +
                                    standard_error + repair;
-            if (steps == 32) {
+            const bool qualified = previous_refined && refined;
+            if (steps >= 32 && (qualified || steps == 128)) {
                 out.quantities.merge(Quantities{{"gibbs_change_over_rt_mol", (double)delta},
+                                                {"quadrature_panels", (double)steps},
+                                                {"previous_quadrature_error_over_rt_mol", (double)last_quadrature},
+                                                {"integration_floor_over_rt_mol", (double)integration_floor},
+                                                {"previous_integration_floor_over_rt_mol", (double)last_floor},
                                                 {"complete_error_over_rt_mol", (double)complete},
                                                 {"gradient_error_over_rt_mol", (double)(owner_error)},
                                                 {"pressure_error_over_rt_mol", (double)(volumeerror)},
@@ -673,7 +679,7 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                                                 {"ideal_error_over_rt_mol", (double)(arithmetic)},
                                                 {"summation_error_over_rt_mol", (double)round},
                                                 {"chart_error_over_rt_mol", (double)charterror}});
-                if (!(previous_refined && refined)) {
+                if (!qualified) {
                     out.cause = "incomplete Gibbs integral refinement";
                     return out;
                 }
@@ -686,9 +692,11 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                 out.status = delta + complete < 0   ? GibbsDifferenceStatus::Decrease
                              : delta - complete > 0 ? GibbsDifferenceStatus::NoDecrease
                                                     : GibbsDifferenceStatus::Overlap;
+                return out;
             }
             last = current_integral;
             last_floor = integration_floor;
+            last_quadrature = quadrature;
             previous_refined = refined;
         }
     } catch (const std::exception &error) {
@@ -899,7 +907,9 @@ GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, con
         const double volume[] = {at.volume[p], trial.quantities.at("volume_m3_per_mol")};
         for (std::size_t j = 0; j < 2; ++j) {
             local.phases[j].amount = AmountSpec{};
-            local.phases[j].composition_guess = *guess[j];
+            local.phases[j].composition_guess.clear();
+            for (const auto i : local.phases[j].support)  // compilation reads guesses in support order
+                local.phases[j].composition_guess.push_back((*guess[j])[i]);
             local.phases[j].packing_guess = c.model->packing_fraction_coefficient(at.temperature, *guess[j]) / volume[j];
         }
         for (const double x : at.composition[p]) local.feed.values.push_back(at.amount[p] * x);

@@ -1725,6 +1725,34 @@ void check_mea_census_state_3() {
     }));
 }
 
+// Independent admission of a reported split: conserved moieties, positive support, phase charge.
+void check_split_admission(const epcsaft::HelmholtzModel& model, const epcsaft::equilibrium::CompiledSystem& compiled,
+    const epcsaft::equilibrium::EquilibriumProblem& q, const epcsaft::equilibrium::StabilityTrial& t) {
+    const std::size_t ns = q.feed.values.size();
+    std::vector<double> inventory(ns, 0.0);
+    std::size_t k = 0;
+    for (std::size_t p = 0; p <= q.phases.size(); ++p) {
+        const auto& support = p < q.phases.size() ? q.phases[p].support : t.phase.support;
+        std::vector<double> x(ns, 0.0);
+        double charge = 0.0;
+        for (auto i : support) x[i] = std::exp(t.split_coordinates.at(k++));
+        const double amount = t.split_coordinates.at(k++);
+        k++;
+        for (auto i : support) {
+            CHECK(x[i] > 0.0);
+            inventory[i] += amount * x[i];
+            charge += model.parameters().charge_number[i] * x[i];
+        }
+        CHECK(std::abs(charge) <= 1e-10);
+    }
+    CHECK(k == t.split_coordinates.size());
+    for (const auto& row : compiled.B) {
+        double defect = 0.0;
+        for (std::size_t i = 0; i < ns; ++i) defect += row[i] * (inventory[i] - compiled.n_feed[i]);
+        CHECK(std::abs(defect) <= 1e-10 * compiled.feed_total);
+    }
+}
+
 // The exact A32 bubble enters the Full search without a supplied split; the Engine forms its own.
 void check_reaction_relaxed_search() {
     using namespace epcsaft;
@@ -1764,30 +1792,36 @@ void check_reaction_relaxed_search() {
             recording_support::fields({recording_support::field("T_K", 313.161),
                 recording_support::field("beta_mol", q3.at("split_beta_mol"))}));
         CHECK(D + E < 0.0);
-        // Independent admission of the reported split: conserved moieties, positive support, phase charge.
-        std::vector<double> inventory(ns, 0.0);
-        std::size_t k = 0;
-        for (std::size_t p = 0; p <= q.phases.size(); ++p) {
-            const auto& support = p < q.phases.size() ? q.phases[p].support : t.phase.support;
-            std::vector<double> x(ns, 0.0);
-            double charge = 0.0;
-            for (auto i : support) x[i] = std::exp(t.split_coordinates.at(k++));
-            const double amount = t.split_coordinates.at(k++);
-            k++;
-            for (auto i : support) {
-                CHECK(x[i] > 0.0);
-                inventory[i] += amount * x[i];
-                charge += model.parameters().charge_number[i] * x[i];
-            }
-            CHECK(std::abs(charge) <= 1e-10);
-        }
-        CHECK(k == t.split_coordinates.size());
-        for (const auto& row : compiled.B) {
-            double defect = 0.0;
-            for (std::size_t i = 0; i < ns; ++i) defect += row[i] * (inventory[i] - compiled.n_feed[i]);
-            CHECK(std::abs(defect) <= 1e-10 * compiled.feed_total);
-        }
+        check_split_admission(model, compiled, q, t);
     }
+}
+
+// PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and refine to 128 panels.
+void check_reaction_relaxed_pz_row() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/piperazine-pz-penalty-row.inc"
+    const auto compiled = compile_problem(model, q);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.success);
+    const auto measure = stability_measure(compiled, parent);
+    CHECK(measure.report.completed && measure.report.trials.size() == 16 && !measure.available);
+    CHECK(measure.cause == "distinct stationary minima have overlapping value intervals");
+    CHECK(measure.minima == (std::vector<std::size_t>{1, 6, 10, 11, 12, 13, 15}));
+    double sum = 0.0, difference = 0.0;
+    for (const auto& [index, D0] : {std::pair{1, -5.143629455678e-3}, std::pair{6, -5.143629455531e-3}}) {
+        const auto& t = measure.report.trials.at(index);
+        const auto& check = t.split_checks.at(0);
+        const double D = check.at("gibbs_change_over_rt_mol"), E = check.at("complete_error_over_rt_mol");
+        CHECK(t.resolved_descent && check.at("quadrature_panels") == 128 && D + E < 0.0);
+        recording_support::compare("reaction-relaxed-pz-row/" + std::to_string(t.phase.support.size()),
+            "split Gibbs change over RT", "mol", D, D0, recording_support::Rule::Absolute, E, 0.0,
+            "default Full search, Engine-formed conserved split", recording_support::fields({}));
+        check_split_admission(model, compiled, q, t);
+        sum += E;
+        difference = D - difference;
+    }
+    CHECK(std::abs(difference) <= sum);
 }
 
 // Identical associating isomers: the residual contribution cancels analytically.

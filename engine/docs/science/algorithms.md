@@ -2456,11 +2456,12 @@ Its maximum relative coordinate displacement and scaled sampled Hessian change
 must both be at most $\sqrt{\epsilon_{double}}$. The remainder uses the absolute
 Hessian envelope and variation at the raw, midpoint and corrected phase states;
 this is a local estimate, not a bound between samples.
-Composite Simpson integration uses 4, 8, 16 and 32 panels. The integral differences
+Composite Simpson integration doubles from 4 panels and stops at the first rung
+from 32 to at most 128 panels where both of the last two refinements pass. The integral differences
 are accumulated in `long double`, before adding the fixed trial and inventory
 terms. Both final refinements require $Q_N=|I_N-I_{N/2}|/15\le F_N+F_{N/2}$,
-where $F_N$ contains only integration numerical estimates. The final $Q_{32}$
-remains in the complete error. Failed local admissions return unavailable with
+where $F_N$ contains only integration numerical estimates. The terminal $Q_N$
+remains in the complete error, and a failure at 128 panels keeps the refinement cause. Failed local admissions return unavailable with
 a cause; otherwise $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease,
 and the remaining interval overlaps zero.
 
@@ -2493,7 +2494,9 @@ defines the finite-search interpretation of the
 For the eligible trials that still require a comparison, the
 largest-capacity donor and the trial form a conserved two-phase fixed-$T/P$
 Gibbs cell of the original reactions, standards and reference: feed is the
-repaired donor inventory, both amounts are free, other phases stay outside. One
+repaired donor inventory, both amounts are free, other phases stay outside.
+Each phase's composition guess is its reconstructed fractions gathered in
+support order, with packing from the full composition. One
 boundary start and one cold shared-driver solve with reaction-relaxed charged
 bounds share one recovery allowance; a refused compilation, start or solve
 returns its cause. A cell refused for balance rank has rank one: each phase
