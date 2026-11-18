@@ -2027,6 +2027,33 @@ void check_mea_trace_ion_discovery() {
     (void)thermal; (void)coordinates;
 }
 
+void check_reference_parameter_coverage() {
+#include "fixtures/mea_capped_addition.inc"
+    const HelmholtzModel model(parameters, coordinates.active_parameters(), thermal);
+    auto problem = row.problem;
+    problem.temperature = FreeValue::fixed(323.15);
+    problem.pressure = FreeValue::fixed(101325);
+    problem.feed.values[0] = 0.4;
+    const auto compiled = compile_problem(model, problem);
+    const auto solved = solve_compiled(compiled);
+    CHECK(solved.has_state() && solved.residual_norm() <= 1e-10);
+
+    const std::vector<std::vector<double>> state{solved.coordinates, std::vector<double>(solved.coordinates.size())};
+    const auto slope = [&](const PhasePoint& point, std::size_t position, const std::vector<std::size_t>& coverage) {
+        std::vector<double> control(compiled.control_width());
+        control[2 + compiled.n_feed.size() + position] = 1.0;
+        return compiled.row_series(point, state, control, 1, false, false, coverage).rows[1];
+    };
+    const auto first = slope(compiled.prepare(solved.coordinates), 0, {0});
+    const auto second = slope(compiled.prepare(solved.coordinates), 1, {0, 1});
+    const auto narrow_first = compiled.prepare(solved.coordinates);
+    CHECK(slope(narrow_first, 0, {0}) == first);
+    CHECK(slope(narrow_first, 1, {0, 1}) == second);
+    const auto wide_first = compiled.prepare(solved.coordinates);
+    CHECK(slope(wide_first, 1, {0, 1}) == second);
+    CHECK(slope(wide_first, 0, {0}) == first);
+}
+
 void check_rank_probe_permittivity_denominator() {
 #include "fixtures/mea_capped_addition.inc"
     (void)thermal; (void)coordinates;

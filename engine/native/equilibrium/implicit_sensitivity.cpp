@@ -958,7 +958,7 @@ static SolvedStateActionBatch evaluate_action(
         const auto &direction = request.directions.front();
         if (new_thermal)
             shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared, parameter_union);
-        const auto mixed = shared ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared, parameter_union)
+        const auto mixed = shared ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
                                   : SolvedStateActionBatch{};
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
@@ -1393,13 +1393,19 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
     const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
-    std::vector<std::size_t> parameters;
+    // Solids share one first-order source reference. Reacting directions share only when their T/P requests agree.
+    const auto group = [&](const SolvedStateActionDirection& d) {
+        return compiled.reference_diagnostics.empty() ? 0 : (d.temperature_k != 0.0) + 2 * (d.pressure_pa != 0.0);
+    };
+    std::array<std::vector<std::size_t>, 4> parameters;
     if (!compiled.reference_diagnostics.empty() || !compiled.solids.empty())
         for (std::size_t a = 0; a < compiled.model->active_parameters().size(); ++a)
-            if (std::any_of(directions.begin(), directions.end(), [a](const auto& d) { return d.active_parameters[a] != 0.0; }))
-                parameters.push_back(a);
+            for (const auto& d : directions)
+                if (auto& positions = parameters[group(d)]; d.active_parameters[a] != 0.0 && (positions.empty() || positions.back() != a))
+                    positions.push_back(a);
     for (const auto& request : requests)
-        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope, cover, nullptr, parameters));
+        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
+            cover, nullptr, parameters[group(request.directions.front())]));
     return batches;
 }
 

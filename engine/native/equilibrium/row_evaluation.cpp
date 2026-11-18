@@ -134,9 +134,8 @@ StandardTerm standard_term(
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
-    ReferenceJets jets;
-    jets.parameters = parameters.empty() || parameter_union.empty() ? parameters : parameter_union;
-    jets.pairs = pairs;
+    const std::size_t thermal = temperature_jets ? order : 0;
+    ReferenceJets jets{thermal, pressure_jets, parameter_union.empty() ? parameters : parameter_union, 0, pairs};
     if (!compiled.reference_diagnostics.empty()) {
         if (compiled.model->thermochemistry().has_value()) {
             std::vector<ReactionSpec> ordinary_reactions;
@@ -153,10 +152,7 @@ StandardTerm standard_term(
         auto gibbs = compiled.standard_gibbs;
         std::vector<std::vector<double>> inverse;
         // Fixed-T/P references do not change with phase coordinates or feed directions.
-        const std::size_t thermal = temperature_jets ? order : 0;
         if (problem.pressure.free || pressure_jets || temperature_jets || !parameters.empty()) {
-            jets.temperature_order = thermal;
-            jets.pressure = pressure_jets;
             jets.reference_order = !parameters.empty() && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
             reactions = central_reference_reactions(
                 *compiled.model, problem, temperature, pressure, diagnostics, jets, &compiled.reference_diagnostics);
@@ -2108,45 +2104,43 @@ RowSeries CompiledSystem::row_series(
     std::vector<std::size_t> parameters;
     for (std::size_t a = 0; a < width - 2 - components; ++a)
         if (active_control[a] != 0.0) parameters.push_back(a);
-    const bool parameter_jets = !parameters.empty();
     // Polarised paths need parameter pairs only when two directions move parameters.
     const auto& pairs = parameter_pairs ? parameters : std::vector<std::size_t>{};
     for (std::size_t s = 0; control[0] != 0.0 && s < solids.size(); ++s)
         if (!solids[s].log_k_slope)
             throw ReferenceUnavailable("solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
-    if (!reference_diagnostics.empty() &&
-        (order > 2 && (parameter_jets || pressure_jets || temperature_jets))) {
+    if (!reference_diagnostics.empty() && order > 2 && (!parameters.empty() || pressure_jets || temperature_jets))
         throw ReferenceUnavailable("row series pressure/T/parameter order is unsupported");
-    }
-    // A first-action batch shares the mapped slopes. If a slope is refused, resolve each direction separately.
+    // A batch shares requested columns. Only fixed-intensive reaction directions also share mapped slopes.
     const bool reuse = !reference_diagnostics.empty() && control[0] == 0.0 && control[1] == 0.0;
-    const bool shared_request = reuse && parameter_jets && order == 1 && !parameter_union.empty();
-    if (shared_request
-        && std::holds_alternative<ParameterStandardNotAttempted>(prepared.parameter_standard)) {
+    const bool shared = !parameters.empty() && order == 1 && !parameter_pairs
+        && !parameter_union.empty() && parameter_union.back() < width - 2 - components
+        && std::is_sorted(parameter_union.begin(), parameter_union.end())
+        && std::includes(parameter_union.begin(), parameter_union.end(), parameters.begin(), parameters.end());
+    auto& cached = prepared.parameter_standard;
+    if (reuse && shared && (!cached || cached->positions != parameter_union)) {
         core::Scope scope("parameter_standard");
         try {
-            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, order,
-                pressure_jets, temperature_jets, parameter_union);
+            cached = ParameterStandard{parameter_union, standard_term(*this, prepared.temperature, prepared.pressure, order,
+                pressure_jets, temperature_jets, parameter_union)};
         } catch (const std::invalid_argument& error) {
-            prepared.parameter_standard = ParameterStandardRefused{error.what()};
-            scope.probe("parameter_standard_refused", {}, 0,
-                std::get<ParameterStandardRefused>(prepared.parameter_standard).cause.c_str());
+            cached = ParameterStandard{parameter_union, ParameterStandardRefused{}};
+            scope.probe("parameter_standard_refused", {}, 0, error.what());
         }
     }
-    const auto* cached = shared_request
-        ? std::get_if<StandardTerm>(&prepared.parameter_standard) : nullptr;
-    const auto& standard = cached ? *cached : reuse && !parameter_jets ? prepared.standard
+    const auto* mapped = reuse && shared ? std::get_if<StandardTerm>(&cached->outcome) : nullptr;
+    const auto& standard = mapped ? *mapped : reuse && parameters.empty() ? prepared.standard
         : standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets,
-                        parameters, nullptr, pairs, parameter_union);
+                        parameters, nullptr, pairs, shared ? parameter_union : parameters);
     if (prepared.calorics) {
         // Pressure and parameter columns join the anchored g at this centre on first need; a motion that reads an
         // unavailable column is refused with its cause.
         const auto& gibbs = prepared.calorics->gibbs;
         const bool has_pressure = std::any_of(gibbs.begin(), gibbs.end(), [](const auto& e) { return e.pressure_order > 0; });
         const bool has_parameters = std::any_of(gibbs.begin(), gibbs.end(), [](const auto& e) { return e.parameter.has_value(); });
-        if ((control[1] != 0.0 && !has_pressure) || (parameter_jets && !has_parameters))
+        if ((control[1] != 0.0 && !has_pressure) || (!parameters.empty() && !has_parameters))
             prepared.calorics = caloric_reference(*this, prepared.temperature, prepared.pressure,
-                                                  has_pressure || control[1] != 0.0, has_parameters || parameter_jets);
+                                                  has_pressure || control[1] != 0.0, has_parameters || !parameters.empty());
         for (const auto& e : prepared.calorics->gibbs)
             if (e.column.status != SolvedStateActionStatus::Available
                 && ((e.pressure_order && control[1] != 0.0) || (e.parameter && active_control[*e.parameter] != 0.0)))
