@@ -19,24 +19,42 @@ jobs:
     timeout-minutes: 20
     env:
       EPCSAFT_IPOPT_LINEAR_SOLVER: mumps
+      NATIVE_PACKAGES: >-
+        build-essential ca-certificates clang-format-18 cmake coinor-libipopt-dev
+        file git libceres-dev libeigen3-dev ninja-build pkg-config time
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      # The runner image variables are not in the env context, so read them in a step.
+      - id: image
+        run: echo "id=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
+      - id: packages
+        run: echo "hash=$(printf '%s' "$NATIVE_PACKAGES" | sha256sum | cut -d ' ' -f 1)" >> "$GITHUB_OUTPUT"
+      - name: Restore native package archives
+        id: apt-cache
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/apt-archives/*.deb
+          key: apt-${{ runner.arch }}-${{ steps.image.outputs.id }}-${{ steps.packages.outputs.hash }}
       - name: Install native prerequisites
         run: |
+          mkdir -p "$RUNNER_TEMP/apt-archives"
+          read -r -a packages <<< "$NATIVE_PACKAGES"
           nice -n 10 sudo apt-get update -qq
-          nice -n 10 sudo apt-get install -y --no-install-recommends build-essential ca-certificates \
-            clang-format-18 cmake coinor-libipopt-dev file git libceres-dev libeigen3-dev \
-            ninja-build pkg-config time
+          nice -n 10 sudo apt-get install -y --no-install-recommends \
+            -o Dir::Cache::archives="$RUNNER_TEMP/apt-archives" "${packages[@]}"
           test "$(pkg-config --modversion ipopt)" = 3.11.9
           dpkg-query -W -f='${Version}\n' libceres-dev | grep -E '^2\.2\.'
+      - name: Save native package archives
+        if: steps.apt-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: ${{ runner.temp }}/apt-archives/*.deb
+          key: ${{ steps.apt-cache.outputs.cache-primary-key }}
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
         with:
           version: '0.11.28'
           python-version: '3.13'
           enable-cache: false
-      # The runner image variables are not in the env context, so read them in a step.
-      - id: image
-        run: echo "id=$ImageOS-$ImageVersion" >> "$GITHUB_OUTPUT"
       # tools/build-engine.sh keys the HiGHS prefix on the compilers, flags and Meson version and
       # rebuilds on a mismatch, so a stale restore costs time, never correctness.
       - uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
