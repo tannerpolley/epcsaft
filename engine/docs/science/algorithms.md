@@ -1544,6 +1544,10 @@ by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
 residual ≤ requested tolerance whenever a finite residual exists; an available
 floor-limited state may miss the request and keeps its state with a warning.
+At a generic rank point with neutral species present and suppression denominator
+$D$ below `RANK_PROBE_PERMITTIVITY_DENOMINATOR`, compilation scales the charged
+weights by a common factor to bring $D$ to that margin. The solve starts come
+from the existing initialization rules.
 A declaration's generic-point Jacobian is tested with Eigen full-pivot LU after
 dividing each nonzero column by its infinity norm; zero columns remain zero.
 The default relative pivot threshold is unchanged. This removes dependence on

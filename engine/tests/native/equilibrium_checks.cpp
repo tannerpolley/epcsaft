@@ -37,6 +37,7 @@ void check_e5_identities();
 void check_phase_removal_inventory();
 void check_tangent_plane_curvature();
 void check_density_correlated_ion_suppression_admission();
+void check_rank_probe_permittivity_denominator();
 void check_ion_suppression_reacting_liquid_actions();
 void check_tangent_plane_admission();
 void check_prepared_supplied_trials();
@@ -119,6 +120,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.azeotrope", "azeotrope", "Automatic_fast"}, critical_envelope_checks::azeotrope, "critical-envelope"},
         {{"native.equilibrium.removal", "TPD", "Automatic_fast"}, check_phase_removal_inventory},
         {{"native.equilibrium.density-correlated-ion-suppression", "DensityCorrelatedIonSuppression", "Automatic_fast"}, check_density_correlated_ion_suppression_admission},
+        {{"native.equilibrium.rank-probe-permittivity-denominator", "RankProbePermittivityDenominator", "Automatic_fast"}, check_rank_probe_permittivity_denominator},
         {{"native.equilibrium.ion-suppression-reacting-actions", "IonSuppressionReactingActions", "Automatic_fast"}, check_ion_suppression_reacting_liquid_actions},
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
         {{"native.equilibrium.prepared-supplied-trials", "prepared-supplied-trials", "Automatic_fast"}, check_prepared_supplied_trials},

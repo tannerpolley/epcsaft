@@ -89,6 +89,16 @@ void require_positive_permittivity_operand(const Scalar& value, const char* caus
     if (!(primal > 0.0) || !isfinite(primal)) throw BulkPermittivityDomainError(cause);
 }
 
+template <typename Scalar, typename ParameterSet>
+Scalar ion_suppression_denominator(const std::vector<Scalar>& mole_fractions, const ParameterSet& parameters) {
+    const auto form = parameters.permittivity_form;
+    if (!form.is(PermittivityForm::IonSuppression) && !density_temperature_ion_suppression(form)) return Scalar(1.0);
+    Scalar sum = Scalar(0.0);
+    for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+        if (parameters.charge_number[i] != 0) sum += mole_fractions[i] * parameters.ion_suppression_coefficient[i];
+    return Scalar(1.0) + sum;
+}
+
 template <typename Scalar, class ParameterSet, typename Fixed>
 Scalar bulk_relative_permittivity(
     const Fixed& temperature,
@@ -118,10 +128,8 @@ Scalar bulk_relative_permittivity(
     Fixed ion_dielectric = Fixed(0.0);
     Fixed dielectric_volume = Fixed(0.0);
     Fixed dielectric_temperature = Fixed(0.0);
-    Fixed ion_suppression = Fixed(0.0);
     for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
         const Fixed& fraction = mole_fractions[component];
-        const int charge = parameters.charge_number[component];
         if (dielectric_solvent_component(component, parameters)) {
             solvent_fraction += fraction;
             const Fixed mass = fraction * parameters.molar_mass_kg_per_mol[component];
@@ -131,10 +139,8 @@ Scalar bulk_relative_permittivity(
                 * parameters.dielectric_volume_m3_per_mol[component];
             dielectric_temperature += fraction
                 * parameters.dielectric_temperature_k[component];
-        } else if (charge != 0) {
+        } else if (parameters.charge_number[component] != 0) {
             ion_dielectric += fraction * relative_permittivity[component];
-            ion_suppression += fraction
-                * parameters.ion_suppression_coefficient[component];
         }
     }
 
@@ -180,7 +186,7 @@ Scalar bulk_relative_permittivity(
             * (mixed_temperature / temperature - Fixed(1.0));
         if (!suppressed) return Scalar(1.0) + susceptibility;
         // EqID: ion_suppressed_density_correlated_bulk_permittivity
-        const Fixed denominator = Fixed(1.0) + ion_suppression;
+        const Fixed denominator = ion_suppression_denominator(mole_fractions, parameters);
         require_positive_permittivity_operand(denominator, "invalid permittivity suppression denominator");
         // EqID: susceptibility_suppressed_density_correlated_bulk_permittivity
         const bool quotient = parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
@@ -217,7 +223,7 @@ Scalar bulk_relative_permittivity(
         // Covers ion-specific suppression directly, ion-fraction
         // suppression with alpha equal for every ion, and solvent-only
         // with alpha = 0.
-        return salt_free_permittivity / (Fixed(1.0) + ion_suppression);
+        return salt_free_permittivity / ion_suppression_denominator(mole_fractions, parameters);
     }
     throw std::invalid_argument("no permittivity form selected");
 }

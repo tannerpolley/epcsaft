@@ -1051,7 +1051,7 @@ void check_density_correlated_ion_suppression_admission() {
         }
 
         if (adopted) continue;
-        // The parent declaration's generic rank point also needs a positive denominator.
+        // The supplied composition itself has a nonpositive suppression denominator.
         p.ion_suppression_coefficient = {0, -1.29, -1.29};
         const HelmholtzModel model(p);
         auto problem = equilibrium_support::flash(3);
@@ -2025,6 +2025,119 @@ void check_mea_trace_ion_discovery() {
     for (std::size_t p = 0; p < 2; ++p)
         CHECK(result.declaration->phases[p].kind == PhaseKind::Liquid && result.mole_fractions[9 * p + 2] > 0.5);
     (void)thermal; (void)coordinates;
+}
+
+void check_rank_probe_permittivity_denominator() {
+#include "fixtures/mea_capped_addition.inc"
+    (void)thermal; (void)coordinates;
+    const auto form = PermittivityForm::DensityTemperatureSusceptibilitySuppression;
+    document.permittivity_choice = "solvent-density-temperature-ion-specific-susceptibility-suppression";
+    const auto mea_parameters = [&](const std::array<double, 6>& coefficients) {
+        auto selected = document;
+        for (std::size_t i = 0; i < coefficients.size(); ++i) {
+            const std::size_t species = i + 3;
+            selected.entries.push_back({"component/" + selected.component_ids[species] + "/ion_suppression_coefficient",
+                "ion_suppression_coefficient", {species}, coefficients[i], "dimensionless"});
+        }
+        return build_parameters(selected);
+    };
+    const HelmholtzModel plain(mea_parameters({0, -6.75, -6.75, -6.75, 0, 0}));
+    const HelmholtzModel shifted(mea_parameters({-6.75, 0, 0, 6.75, -6.75, 6.75}));
+    const HelmholtzModel zero(mea_parameters({0, 0, 0, 0, 0, 0}));
+
+    for (const bool loaded : {true, false}) {
+        const std::string id = loaded ? "permittivity-rank-probe/loaded-MEA" : "permittivity-rank-probe/carbon-free-MEA";
+        auto problem = row.problem;
+        problem.temperature = FreeValue::fixed(loaded ? 353.15 : 298.15);
+        problem.pressure = FreeValue::fixed(loaded ? 101325 : 100000);
+        problem.feed.values = {loaded ? 0.55 : 0.0, 1.0,
+            loaded ? (0.7 / 0.01801528) / (0.3 / 0.06108) : 7.911157, 0, 0, 0, 0, 0, 0};
+        const auto compile = [&](const HelmholtzModel& model, const char* representation) {
+            CompiledSystem compiled;
+            const auto cause = recording_support::refusal([&] { compiled = compile_problem(model, problem); });
+            recording_support::compare_custom(id + "/" + representation + "/compile", "compiled", "1",
+                cause.empty(), 1.0, "compiles at the generic rank point", cause.empty(), "native compiler",
+                recording_support::fields({recording_support::field("cause", cause)}));
+            return compiled;
+        };
+        const auto a = compile(loaded ? plain : zero, loaded ? "plain" : "zero");
+        const auto b = compile(shifted, "shifted");
+        const auto left = try_solve_compiled(a), right = try_solve_compiled(b);
+        CHECK(left.success && right.success);
+        const auto cross_rows = [](const CompiledSystem& target, const EquilibriumResult& solved) {
+            CHECK(solved.coordinates.size() >= target.primal_size);
+            const auto end = solved.coordinates.begin() + target.primal_size;
+            std::vector<double> primal(solved.coordinates.begin(), end);
+            // Recover the target declaration's multipliers without moving the physical state.
+            const auto prepared = target.prepare(add_multipliers(target, primal));
+            return target.evaluate_at(prepared).values;
+        };
+        const auto a_at_right = cross_rows(a, right), b_at_left = cross_rows(b, left);
+        const auto inputs = recording_support::fields({
+            recording_support::field("left_x", left.mole_fractions), recording_support::field("right_x", right.mole_fractions),
+            recording_support::field("left_rows_at_right", a_at_right), recording_support::field("right_rows_at_left", b_at_left),
+            recording_support::field("left_rho", left.molar_densities[0]), recording_support::field("right_rho", right.molar_densities[0])});
+        for (std::size_t i = 0; i < left.mole_fractions.size(); ++i) {
+            const double x = left.mole_fractions[i], y = right.mole_fractions[i];
+            if (std::max(x, y) > 0)
+                recording_support::observe(id + "/relative-x/" + document.component_ids[i], "mole fraction relative difference",
+                    "1", std::abs(x-y) / std::max(x, y), std::nullopt, "comparison of solved states", inputs);
+        }
+        if (!loaded) for (std::size_t i : {0, 4, 5, 6})
+            CHECK(left.mole_fractions[i] == 0.0 && right.mole_fractions[i] == 0.0);
+        recording_support::compare(id + "/density", "molar density", "mol/m^3", left.molar_densities[0], right.molar_densities[0],
+            recording_support::Rule::SymmetricClose, 0.0, 1e-10, "separately solved charge references", inputs);
+        const auto finite = [](const auto& rows) {
+            return std::all_of(rows.begin(), rows.end(), [](double row) { return std::isfinite(row); });
+        };
+        CHECK(finite(a_at_right) && finite(b_at_left));
+        tpd_compare(id + "/cross-rows", std::max(maximum_abs(a_at_right), maximum_abs(b_at_left)),
+            0.0, policy::EQUILIBRIUM_ROW_RESIDUAL.value, inputs);
+    }
+
+    auto water = properties_support::aqueous_electrolyte();
+    water.dielectric_volume_m3_per_mol = {3.777e-4, 0, 0};
+    water.dielectric_temperature_k = {1403, 0, 0};
+    auto problem = equilibrium_support::flash(3);
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.feed.values = {0.996, 0.002, 0.002};
+    water.permittivity_form = form;
+    water.ion_suppression_coefficient = {0, -1.29, -1.29};
+    const HelmholtzModel aqueous(water);
+    const auto parent = compile_problem(aqueous, problem);
+    const auto solved = solve_compiled(parent);
+    CHECK(solved.success);
+    auto trial = equilibrium_support::phase("ion-only", PhaseKind::Liquid);
+    trial.support = {1, 2}; trial.support_declared = true;
+    trial.composition_guess = {0, 0.5, 0.5}; trial.packing_guess = 0.2;
+    StabilityOptions options;
+    options.evaluate_supplied_trials = true;
+    options.trials = std::vector<PhaseSpec>{trial};
+    const auto refused = stability_test(parent, solved, options);
+    CHECK(refused.trials.size() == 1 && refused.trials[0].evidence == "unresolved");
+    const auto& cause = refused.trials[0].message;
+    tpd_compare("permittivity-rank-probe/ion-only/cause",
+        cause.find("invalid permittivity solvent fraction") != std::string::npos, 1.0, 0.0,
+        recording_support::fields({recording_support::field("cause", cause)}));
+
+    water.permittivity_form = PermittivityForm::DensityTemperature;
+    water.ion_suppression_coefficient = {0, 0, 0};
+    const HelmholtzModel inactive_zero(water);
+    water.ion_suppression_coefficient = {0, -2, -2};
+    const HelmholtzModel ignored(water);
+    const auto reference = compile_problem(inactive_zero, problem).generic_point();
+    const auto stray = compile_problem(ignored, problem).generic_point();
+    CHECK(stray.size() == reference.size() && std::memcmp(stray.data(), reference.data(), stray.size()*sizeof(double)) == 0);
+    for (auto suppressed : {PermittivityForm::DensityTemperatureIonSuppression, form}) {
+        water.permittivity_form = suppressed;
+        const HelmholtzModel active(water);
+        const auto compiled = compile_problem(active, problem);
+        const auto point = compiled.generic_point();
+        const auto& x = compiled.shape[0].x;
+        const double load = -2*(std::exp(point[x[1]]) + std::exp(point[x[2]]));
+        tpd_compare(suppressed == form ? "permittivity-rank-probe/susceptibility/denominator" : "permittivity-rank-probe/quotient/denominator",
+            1 + load, policy::RANK_PROBE_PERMITTIVITY_DENOMINATOR.value, 32*std::numeric_limits<double>::epsilon()*(1 + std::abs(load)));
+    }
 }
 
 // Independent admission of a reported split: conserved moieties, positive support, phase charge.
