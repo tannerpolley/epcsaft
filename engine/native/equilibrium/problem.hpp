@@ -970,6 +970,9 @@ EPC_API EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {}
 );
+EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
+    std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,
+    const std::vector<std::string>& component_ids = {});
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.
@@ -1258,11 +1261,10 @@ EPC_API SolvedStateActionBatch solved_state_actions(
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
-// The same actions for several requests at one `central`: `prepared` starts empty, holds the central phase point after
-// the first request and spares the later ones its preparation. Each request's results equal solved_state_actions' but
-// the work counters, which are lower for later requests.
-EPC_API SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
-    const SolvedStateActionRequest& request, std::optional<PhasePoint>& prepared);
+// The ASL reader resets this workspace before replacing its compiled system or result.
+struct SolvedStateActionWorkspace;
+SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
+    const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace);
 // Independent first-order directions at one accepted center; each response retains its own status.
 EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,

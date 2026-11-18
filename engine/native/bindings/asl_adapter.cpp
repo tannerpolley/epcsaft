@@ -170,9 +170,9 @@ struct EquilibriumContext final {
     eq::ContinuationOptions options;
     eq::AslFeedMap map;
     eq::EquilibriumResult anchor_result;
-    std::unique_ptr<eq::CompiledSystem> compiled;
+    std::optional<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
-    std::optional<eq::PhasePoint> prepared;  // the central phase point of `compiled`, kept for every batch at `feed`
+    std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
     std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
     struct Rows final {
         std::vector<double> values;
@@ -298,8 +298,8 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
 void select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
+    context.action_workspace.reset();
     context.compiled.reset();  // it points at its model
-    context.prepared.reset();
     if (theta == context.model->active_parameter_values()) context.shifted.reset();
     if (theta != (context.shifted ? *context.shifted : *context.model).active_parameter_values()) try {
         context.shifted = model_at(*context.model, theta);  // rebuilt against the current model's own values
@@ -311,14 +311,19 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
     const bool moved = feed != context.map.anchor || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
+    std::optional<eq::CompiledSystem> direct_compiled;
     if (!moved && !context.shifted) context.central = context.anchor_result;
     else {
         std::optional<EquilibriumFailure> refused;
         std::string direct;  // the direct solve's refusal; empty when it succeeds
-        try { context.central = eq::solve_equilibrium(model, target); }
+        try {
+            if (target.solids.empty()) context.central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
+            else context.central = eq::solve_equilibrium(model, target);
+        }
         catch (const std::exception& error) { direct = error.what(); }
         if (direct.empty() && (refused = central_failure(context, context.central, observable))) direct = refused->what();
         if (!direct.empty()) {
+            direct_compiled.reset();
             for (const auto& solid : context.anchor.solids)
                 if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
                     throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + direct);
@@ -335,7 +340,7 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
         }
     }
     if (auto failure = central_failure(context, context.central, observable)) throw *failure;
-    context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
+    context.compiled.emplace(direct_compiled ? std::move(*direct_compiled) : eq::compile_problem(model, target));
     context.feed = q;
     for (auto& rows : context.rows) std::fill(rows.filled.begin(), rows.filled.end(), 0);
 }
@@ -359,7 +364,7 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         const auto theta = e.begin() + 2 + controls;
         request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
-    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.prepared);
+    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.action_workspace);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
         const auto& item = batch.results[row];
         auto status = item.status;
@@ -450,7 +455,10 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
     } catch (...) {
         callback_error = "epcsaft_equilibrium:untyped:" + observable;
     }
-    for (const auto& item : prepared.contexts) item->compiled.reset();  // every record re-solves at its next call
+    for (const auto& item : prepared.contexts) {  // every record re-solves at its next call
+        item->action_workspace.reset();
+        item->compiled.reset();
+    }
     return report_failure(arguments, "epcsaft_equilibrium");
 }
 

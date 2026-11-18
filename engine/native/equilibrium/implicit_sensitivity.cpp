@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <map>
 #include <optional>
 #include <numeric>
 #include <stdexcept>
@@ -373,6 +374,12 @@ struct Center final {
     Eigen::FullPivLU<Eigen::MatrixXd> lu;
 };
 
+struct FirstCoefficient final {
+    std::vector<double> state;
+    double right_norm, solution_norm;
+    std::size_t energy_order;
+};
+
 struct Path final {
     RowSeries series;
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
@@ -387,7 +394,9 @@ SolvedStateActionStatus energy_status(PropertyActionStatus status) {
 // The coefficient recurrence: J y_k = -[t^k] F(y(t), q(t)) with y_k unknown set to zero,
 // re-evaluated after each solve so the retained residual is the owned row residual.
 Path follow(const CompiledSystem& compiled, const Center& center, const std::vector<double>& control,
-            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane, bool parameter_pairs, const std::vector<std::size_t>& parameter_union) {
+            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane, bool parameter_pairs,
+            const std::vector<std::size_t>& parameter_union, const FirstCoefficient* first = nullptr,
+            FirstCoefficient* retain = nullptr) {
     Path path;
     const std::size_t n = center.prepared.point.size();
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
@@ -404,7 +413,13 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
             return false;
         }
     };
-    for (std::size_t k = 1; k <= order; ++k) {
+    if (first) {
+        state[1] = first->state;
+        right_norm[1] = first->right_norm;
+        solution_norm[1] = first->solution_norm;
+        diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, first->energy_order);
+    }
+    for (std::size_t k = first ? 2 : 1; k <= order; ++k) {
         RowSeries series;
         if (!rows_through({state.begin(), state.begin() + static_cast<std::ptrdiff_t>(k + 1)}, k, series)) return path;
         diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, series.maximum_energy_order);
@@ -421,6 +436,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         ++diagnostics.linear_solves;
         if (!solution.allFinite()) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         for (std::size_t row = 0; row < n; ++row) state[k][row] = solution(static_cast<Eigen::Index>(row));
+        if (retain && k == 1) *retain = {state[k], right_norm[k], solution_norm[k], series.maximum_energy_order};
     }
     if (!rows_through(state, order, path.series)) return path;
     if (compiled.has_caloric_condition() && std::any_of(path.series.temperature.begin() + 1,
@@ -884,6 +900,8 @@ struct ActionCenter final {
     bool matrix_checked = false;
 };
 
+using FirstCoefficients = std::map<std::string, FirstCoefficient>;
+
 }  // namespace
 
 std::string solved_state_observable_id(const SolvedStateObservable& observable) {
@@ -918,7 +936,8 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
 static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
-    const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {}
+    const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {},
+    FirstCoefficients* first_coefficients = nullptr
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -1304,9 +1323,20 @@ static SolvedStateActionBatch evaluate_action(
             for (std::size_t i = 0; i < width; ++i) control[i] += sign * controls[j][i] / magnitude[j];
         }
         core::Scope path_scope("solved_state_action_path");
-        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs, parameter_union);
+        std::string key;
+        const FirstCoefficient* first = nullptr;
+        if (first_coefficients) {
+            key.assign(reinterpret_cast<const char*>(control.data()), control.size() * sizeof(double));
+            const auto found = first_coefficients->find(key);
+            if (found != first_coefficients->end()) first = &found->second;
+        }
+        FirstCoefficient retained{};
+        const bool retain = first_coefficients && !first && (order == 1 || key.find_first_not_of('\0') == std::string::npos);
+        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs, parameter_union,
+            first, retain ? &retained : nullptr);
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
+        if (retain) first_coefficients->emplace(std::move(key), std::move(retained));
         std::vector<PhaseMap> maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(model, path.series.phase[phase], path.series.temperature, components));
         for (std::size_t i = 0; i < batch.results.size(); ++i) {
@@ -1368,10 +1398,32 @@ SolvedStateActionBatch solved_state_actions(
     return actions_at(compiled, central, request, nullptr, scope);
 }
 
+struct SolvedStateActionWorkspace final {
+    std::optional<PhasePoint> prepared;
+    std::optional<ActionCenter> amount_center;
+    FirstCoefficients first_coefficients;
+};
+
 SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
-    const SolvedStateActionRequest& request, std::optional<PhasePoint>& prepared) {
+    const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace) {
     core::Scope scope("solved_state_actions");
-    return actions_at(compiled, central, request, &prepared, scope);
+    if (!workspace) workspace = std::make_shared<SolvedStateActionWorkspace>();
+    const auto& problem = compiled.problem;
+    const bool fixed_feed_actions = compiled.solids.empty() && compiled.model->active_parameters().empty()
+        && !problem.temperature.free && !problem.pressure.free && !compiled.has_caloric_condition()
+        && request.directions.size() <= 2
+        && std::all_of(request.directions.begin(), request.directions.end(), [](const auto& d) {
+            return d.temperature_k == 0 && d.pressure_pa == 0 && d.reaction_coefficients.empty();
+        })
+        && std::all_of(request.observables.begin(), request.observables.end(), [](const auto& o) {
+            return o.kind == SolvedStateObservableKind::PhaseComponentAmount;
+        });
+    if (!fixed_feed_actions) return actions_at(compiled, central, request, &workspace->prepared, scope);
+    validate_request(compiled, central, request);
+    auto batch = evaluate_action(compiled, central, request, workspace->amount_center, scope, {}, &workspace->prepared, {},
+        &workspace->first_coefficients);
+    if (workspace->amount_center) workspace->amount_center->center.prepared.energy_actions.clear();
+    return batch;
 }
 
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
