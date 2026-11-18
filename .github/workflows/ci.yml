@@ -34,16 +34,20 @@ jobs:
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ${{ runner.temp }}/apt-archives/*.deb
-          key: apt-${{ runner.arch }}-${{ steps.image.outputs.id }}-${{ steps.packages.outputs.hash }}
+          key: apt-sandbox-check-${{ runner.arch }}-${{ steps.image.outputs.id }}-${{ steps.packages.outputs.hash }}
       - name: Install native prerequisites
         run: |
-          mkdir -p "$RUNNER_TEMP/apt-archives"
+          cache_dir="$RUNNER_TEMP/apt-archives"
+          apt_archives=/var/cache/apt/archives
+          mkdir -p "$cache_dir"
+          # Keep APT's partial directory accessible to its unprivileged downloader.
+          find "$cache_dir" -maxdepth 1 -type f -name '*.deb' -exec sudo cp -t "$apt_archives" -- {} +
           read -r -a packages <<< "$NATIVE_PACKAGES"
           nice -n 10 sudo apt-get update -qq
-          nice -n 10 sudo apt-get install -y --no-install-recommends \
-            -o Dir::Cache::archives="$RUNNER_TEMP/apt-archives" "${packages[@]}"
+          nice -n 10 sudo apt-get install -y --no-install-recommends "${packages[@]}"
           test "$(pkg-config --modversion ipopt)" = 3.11.9
           dpkg-query -W -f='${Version}\n' libceres-dev | grep -E '^2\.2\.'
+          find "$apt_archives" -maxdepth 1 -type f -name '*.deb' -exec cp -t "$cache_dir" -- {} +
       - name: Save native package archives
         if: steps.apt-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
