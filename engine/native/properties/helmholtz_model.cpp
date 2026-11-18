@@ -2496,6 +2496,26 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
     return result;
 }
 
+std::vector<double> HelmholtzModel::bulk_relative_permittivity_series(const std::vector<double>& temperature,
+    const std::vector<double>& density, const std::vector<std::vector<double>>& composition,
+    const std::vector<double>& parameter_direction) const {
+    const auto evaluate = [&](const auto& coefficient, const auto& parameters) {
+        std::vector<decltype(coefficient(temperature))> x;
+        for (const auto& series : composition) x.push_back(coefficient(series));
+        return bulk_relative_permittivity(coefficient(temperature), coefficient(density), x, parameters);
+    };
+    if (temperature.size() == 1) return {evaluate([](const auto& series) { return series[0]; }, parameters_)};
+    std::vector<Taylor<1>> theta;
+    for (double value : active_parameter_values()) theta.emplace_back(value);
+    for (std::size_t i = 0; i < parameter_direction.size(); ++i) theta[i].c[1] = parameter_direction[i];
+    const auto value = evaluate([](const auto& series) {
+        Taylor<1> coefficient(series[0]);
+        coefficient.c[1] = series[1];
+        return coefficient;
+    }, detail::make_tape_parameters(parameters_, active_, theta));
+    return {value.c[0], value.c[1]};
+}
+
 State HelmholtzModel::state(
     double temperature,
     double molar_density,

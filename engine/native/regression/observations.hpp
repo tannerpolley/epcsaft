@@ -18,7 +18,8 @@ namespace epcsaft::regression {
 enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
-    PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability
+    PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability,
+    PhaseBulkRelativePermittivity
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -168,6 +169,7 @@ EPC_API Prediction predict(
     std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max(),
     const std::vector<const Observation*>& admission = {}
 );
+EPC_API Prediction predict_validated(const HelmholtzModel& model, const Observation& observation);
 EPC_API PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 );

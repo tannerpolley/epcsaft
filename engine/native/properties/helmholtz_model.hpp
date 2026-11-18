@@ -489,6 +489,9 @@ public:
     EPC_API StateBatch states(const std::vector<double>& temperature, const std::vector<double>& input,
         const std::vector<std::vector<double>>& composition, bool at_pressure, DensityBranch branch,
         bool derived_properties = false) const;
+    EPC_API std::vector<double> bulk_relative_permittivity_series(const std::vector<double>& temperature,
+        const std::vector<double>& density, const std::vector<std::vector<double>>& composition,
+        const std::vector<double>& parameter_direction = {}) const;
     EPC_API State state(
         double temperature,
         double molar_density,

@@ -170,6 +170,8 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
     require(observation.final_problem.solids.empty() && (observation.problem.solids.empty() || k == ObservationKind::PhaseMoleFraction
         || k == ObservationKind::PhaseAmountRatio || k == ObservationKind::PartialPressure || k == ObservationKind::PhaseDensity),
         "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
+    require(k != ObservationKind::PhaseBulkRelativePermittivity || model.parameters().permittivity_form.declared(),
+        "bulk relative permittivity requires a declared permittivity form");
     require(std::isfinite(observation.observed), "observed value");
     require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
     require(observation.form == ResidualForm::LogRatio
@@ -308,6 +310,20 @@ void validate(const Observation& observation, const HelmholtzModel& model, const
         auto reference = pressure_reference_row(observation); validate_compiled(reference, model, nullptr);
     }
     validate_compiled(observation, model, prepared);
+}
+
+static Prediction unavailable_solve(Prediction result, const std::exception& failure) {
+    result.status = ObservationStatus::CentralSolveUnavailable;
+    retain_density_failure(result.first_numerical_failure, failure, "prediction solve");
+    result.message = failure.what();
+    return result;
+}
+
+Prediction predict_validated(const HelmholtzModel& model, const Observation& observation) try {
+    validate(observation, model);
+    return predict(model, observation);
+} catch (const std::domain_error& failure) {
+    return unavailable_solve({}, failure);
 }
 
 Prediction predict(
@@ -579,12 +595,10 @@ Prediction predict(
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
         solved = equilibrium::solve_compiled(*result.compiled, start);
-    } catch (const std::runtime_error& failure) {
-        result.status = ObservationStatus::CentralSolveUnavailable;
+    } catch (const std::exception& failure) {
+        if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
         if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
-        retain_density_failure(result.first_numerical_failure, failure, "prediction solve");
-        result.message = failure.what();
-        return result;
+        return unavailable_solve(std::move(result), failure);
     }
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
@@ -745,6 +759,13 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         double total = 0.0;
         for (const auto amount : solved.amounts) total += amount;
         value = solved.amounts[phase] / total;
+        break;
+    }
+    case ObservationKind::PhaseBulkRelativePermittivity: {
+        std::vector<std::vector<double>> composition;
+        for (std::size_t i = 0; i < components; ++i) composition.push_back({fractions[i]});
+        value = model.bulk_relative_permittivity_series({*solved.temperature}, {solved.molar_densities[phase]}, composition)[0];
+        result.unit = "1";
         break;
     }
     case ObservationKind::PhaseDensity:
@@ -1092,6 +1113,9 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::PhaseFraction:
             // NOLINTNEXTLINE(clang-analyzer-core.NullDereference): only a LogEquilibriumConstant row lacks a solved state, and same_state never groups it.
             for (std::size_t q = 0; q < solved->phase_count; ++q) add(observable(Kind::PhaseAmount, q));
+            break;
+        case ObservationKind::PhaseBulkRelativePermittivity:
+            add(observable(Kind::PhaseBulkRelativePermittivity, phase));
             break;
         case ObservationKind::PhaseDensity:
             add(observable(Kind::PhaseMolarDensity, phase));

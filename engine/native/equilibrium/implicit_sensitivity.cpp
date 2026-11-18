@@ -278,6 +278,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         if (item.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
             && (!compiled.admits_apparent_cp() || request.directions.size() != 1))
             throw std::invalid_argument("apparent Cp requires driven T/P or free T with a fixed-P enthalpy target, and first actions only");
+        if (item.kind == SolvedStateObservableKind::PhaseBulkRelativePermittivity && request.directions.size() > 1)
+            throw std::invalid_argument("bulk relative permittivity supports first actions only");
         const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
         if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
@@ -514,6 +516,12 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
                             standard_series(*calorics, series, observable.phase, i, 0, 1, volume.size() - 1)),
                     1.0);
         return volume;
+    }
+    case SolvedStateObservableKind::PhaseBulkRelativePermittivity: {
+        const auto& map = maps[observable.phase];
+        const auto& point = series.phase[observable.phase].point;
+        return model.bulk_relative_permittivity_series(series.temperature, map.density, map.mole_fraction,
+            point.size() == 1 ? Series{} : Series(point[1].end() - model.active_parameters().size(), point[1].end()));
     }
     case SolvedStateObservableKind::PhaseMolarDensity: return maps[observable.phase].density;
     case SolvedStateObservableKind::PhasePackingFraction: return maps[observable.phase].packing;
@@ -894,6 +902,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::PhaseVolume: return phase + ".volume";
     case SolvedStateObservableKind::PhaseGibbsMolarVolume: return phase + ".gibbs_molar_volume";
     case SolvedStateObservableKind::PhaseMolarDensity: return phase + ".molar_density";
+    case SolvedStateObservableKind::PhaseBulkRelativePermittivity: return phase + ".bulk_relative_permittivity";
     case SolvedStateObservableKind::PhasePackingFraction: return phase + ".packing_fraction";
     case SolvedStateObservableKind::PhasePressure: return phase + ".pressure";
     case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:
@@ -936,38 +945,30 @@ static SolvedStateActionBatch evaluate_action(
         // Driven T/P: dH along T. Free T with an enthalpy target: DT along H, so c = delta/(N_f DT[w_H]).
         const bool enthalpy_target = problem.temperature.free;
         const double feed = std::accumulate(compiled.n_feed.begin(), compiled.n_feed.end(), 0.0);
+        const auto kind = enthalpy_target ? SolvedStateObservableKind::Temperature : SolvedStateObservableKind::SystemEnthalpy;
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
-            if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity)
-                o.kind = enthalpy_target ? SolvedStateObservableKind::Temperature : SolvedStateObservableKind::SystemEnthalpy;
+            if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
         const double delta = enthalpy_target ? thermal.enthalpy_j : thermal.temperature_k;
-        const bool new_thermal = !shared || !shared->thermal_enthalpy;
-        if (new_thermal) {
-            auto first = evaluate_action(compiled, central, {enthalpy.observables, {thermal}}, shared, scope, covering, prepared);
-            if (!shared) {
-                for (std::size_t i = 0; i < first.results.size(); ++i) {
-                    first.results[i].observable = request.observables[i];
-                    first.results[i].unit = observable_unit(request.observables[i]);
-                }
-                return first;
-            }
-            shared->thermal_enthalpy = std::move(first);
-        }
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
-        enthalpy.directions.insert(enthalpy.directions.begin(), thermal);
-        const auto mixed = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
+        const bool new_thermal = shared && !shared->thermal_enthalpy;
         const auto &direction = request.directions.front();
+        if (new_thermal)
+            shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared);
+        const auto mixed = shared ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
+                                  : SolvedStateActionBatch{};
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
             if (request.observables[i].kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) continue;
             auto &item = ordinary.results[i];
-            const auto &first = shared->thermal_enthalpy->results[i];
-            const auto &second = mixed.results[i];
             item.observable = request.observables[i];
             item.unit = observable_unit(item.observable);
+            if (!shared) continue;
+            const auto &first = shared->thermal_enthalpy->results.front();
+            const auto &second = mixed.results.front();
             item.value.reset();
             item.action.reset();
             item.status = first.status;
@@ -985,6 +986,7 @@ static SolvedStateActionBatch evaluate_action(
                 item.action.reset();
             }
         }
+        if (!shared) return ordinary;
         auto &diagnostics = ordinary.diagnostics;
         for (const auto *part : {&mixed, new_thermal ? static_cast<const SolvedStateActionBatch *>(&*shared->thermal_enthalpy) : nullptr}) {
             if (!part) continue;
@@ -1118,6 +1120,8 @@ static SolvedStateActionBatch evaluate_action(
     };
     auto& property_rows = shared->property_rows;
     auto& property_lists = shared->property_lists;
+    // Apparent Cp's auxiliary requests select only enthalpy or temperature from the ordinary cache.
+    const bool thermal_subset = batch.results.size() < shared->central_results.size();
     if (shared->central_results.empty()) {
         // Central values and property dependencies are identical for every independent first-order direction.
         const std::vector<double> no_control(width, 0.0);
@@ -1170,6 +1174,9 @@ static SolvedStateActionBatch evaluate_action(
                     refuse(item, calorics->status, calorics->message, true);
         shared->central_results = batch.results;
         shared->diagnostics = batch.diagnostics;
+    } else if (thermal_subset) {
+        batch.results.front() = *std::find_if(shared->central_results.begin(), shared->central_results.end(),
+            [&](const auto& item) { return same_observable(item.observable, request.observables.front()); });
     } else {
         batch.results = shared->central_results;
     }
@@ -1312,7 +1319,7 @@ static SolvedStateActionBatch evaluate_action(
                 refuse(item, error.status, error.what(), false);
             }
         }
-        for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) {
+        for (std::size_t phase = 0; !thermal_subset && phase < problem.phases.size(); ++phase) {
             if (property_rows[phase].empty()) continue;
             const auto chain = property_chain(model, path.series, maps[phase], phase, property_lists[phase],
                                               order, calorics);
