@@ -79,7 +79,7 @@ template<class Handle> void with_failure(const EquilibriumResult& failed, Handle
 EquilibriumResult continue_compiled(const CompiledSystem&, const std::optional<EquilibriumResult>&,
     core::Scope&, const DriverLimits*, std::shared_ptr<const OptimizerState>, bool recover,
     const EquilibriumResult& structural, StageWork stages = {}, std::optional<std::vector<double>> original = std::nullopt,
-    std::shared_ptr<const EquilibriumResult> rejected = {}, bool select_endpoint = false);
+    std::shared_ptr<const EquilibriumResult> rejected = {}, bool select_endpoint = false, EquilibriumAttemptReporting reporting = {});
 // `speciate` false: a supplied composition replaces the start's, so a reacting phase is not speciated.
 // A `packed` phase's packing guess is supplied by the caller and replaces its density root.
 EPC_API std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate = true, const DriverLimits* limits = nullptr,
@@ -213,7 +213,8 @@ EPC_API EquilibriumResult run_driver(
     const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt = nullptr, const DriverLimits* limits = nullptr, Attempt kind = Attempt::Cold,
-    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, Retry runs = Retry::PhysicalAmounts
+    std::shared_ptr<const OptimizerState> warm = {}, bool predicted = false, bool refine_trial = false, Retry runs = Retry::PhysicalAmounts,
+    EquilibriumAttemptReporting reporting = {}
 );
 EPC_API Retry retry_after(Attempt, bool reaction, bool non_error, bool fatal, Ipopt::SolverReturn, TopologyEvent, core::Stop, Candidate);
 // One physical-mol attempt; null restart rebuilds the original declaration, otherwise coordinates are immutable.
@@ -221,7 +222,8 @@ EPC_API EquilibriumResult recover_physical_amounts(
     const CompiledSystem& compiled, EquilibriumResult result, bool eligible, core::Scope& scope,
     const std::vector<double>* restart = nullptr, const DriverLimits* limits = nullptr,
     std::vector<double>* attempt = nullptr, bool admit_density = false,
-    std::size_t* declarations = nullptr, std::size_t declaration_budget = 0, bool* invoked = nullptr, Work counts = Work::Accumulated
+    std::size_t* declarations = nullptr, std::size_t declaration_budget = 0, bool* invoked = nullptr, Work counts = Work::Accumulated,
+    EquilibriumAttemptReporting reporting = {}
 );
 // Internal corrector route for continuation: the full compiled coordinate vector is the
 // seed of the same Ipopt lifecycle; a numerical failure ends in its result. Not bound; solve_equilibrium

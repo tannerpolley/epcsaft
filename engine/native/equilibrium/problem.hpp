@@ -961,10 +961,14 @@ EPC_API StabilityReport stability_test(const CompiledSystem&, const EquilibriumR
 EPC_API std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
 EPC_API EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
+// Set only for an attempt whose declared failure is reported directly to a named caller.
+struct EquilibriumAttemptReporting final {
+    const std::vector<std::string>* composition_bound_species = nullptr;
+};
 EPC_API EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::optional<EquilibriumResult>& start = std::nullopt
+    const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {}
 );
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
@@ -974,10 +978,10 @@ EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const Equi
 struct DriverLimits;
 EPC_API EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false, EquilibriumAttemptReporting reporting = {});
 EPC_API EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start = std::nullopt,
                                  core::Scope* outer = nullptr, const DriverLimits* limits = nullptr,
-                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false);
+                                 std::shared_ptr<const OptimizerState> warm = {}, bool recover = false, bool select_endpoint = false, EquilibriumAttemptReporting reporting = {});
 
 EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
 bool one_component_two_density_eligible(const CompiledSystem&);

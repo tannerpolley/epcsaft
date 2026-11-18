@@ -937,7 +937,9 @@ def solve_equilibrium(
     (ALG-EQUILIBRIUM and ALG-STABILITY).
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
-    return logged(_core.solve_equilibrium, model._model, native, start)
+    if isinstance(model, IdealMoleFraction):
+        return logged(_core.solve_equilibrium, model._model, native, start)
+    return logged(_core.solve_equilibrium, model._model, native, start, model.component_ids)
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
