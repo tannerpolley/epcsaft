@@ -103,15 +103,12 @@ static Eigen::VectorXd map_error(const Eigen::MatrixXd& n, const Eigen::MatrixXd
 // moved coordinate; with T jets of order two L'' + C_TT and d2C/dT dtheta_a; d2C/dtheta_a dtheta_b over the pairs. A
 // requested column the reference owner did not admit refuses with its cause.
 std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P, std::size_t order, bool temperature_jets,
-                                     const std::vector<double>& control, const std::vector<std::size_t>& pairs) {
+                                     const std::vector<std::size_t>& parameters, ReferenceJets& jets) {
     const auto& solids = c.problem.solids;
-    const bool parameters = std::any_of(control.begin(), control.end(), [](double v) { return v != 0.0; });
     const std::size_t thermal = order > 1 && temperature_jets ? 2 : 0;
-    if (solids.empty() || (!parameters && !thermal)) return {};
-    ReferenceJets jets;
+    if (solids.empty() || (parameters.empty() && !thermal)) return {};
     jets.temperature_order = thermal;
-    if (parameters) jets.request_every_parameter(*c.model);
-    jets.pairs = pairs;
+    const auto& pairs = jets.pairs;
     auto laws = solid_log_k(*c.model, T, P, c.problem.source_reference, solids, jets);
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto need = [&](std::size_t a, std::optional<std::size_t> p = {}, std::optional<std::size_t> q = {}) {
@@ -119,8 +116,7 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
                 throw ReferenceUnavailable("solid " + solids[s].name + " " + *column.cause);
         };
         if (thermal) need(2);
-        for (std::size_t a = 0; a < control.size(); ++a) {
-            if (control[a] == 0.0) continue;
+        for (const auto a : parameters) {
             need(0, a);
             if (thermal) need(1, a);
         }
@@ -132,11 +128,15 @@ std::vector<SolidLogK> solid_columns(const CompiledSystem& c, double T, double P
 
 StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
-    bool pressure_jets, bool temperature_jets = false, const std::vector<double>& active_control = {},
-    StandardTerm::NumericalError* error = nullptr, const std::vector<std::size_t>& pairs = {}
+    bool pressure_jets, bool temperature_jets = false, const std::vector<std::size_t>& parameters = {},
+    StandardTerm::NumericalError* error = nullptr, const std::vector<std::size_t>& pairs = {},
+    const std::vector<std::size_t>& parameter_union = {}
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
+    ReferenceJets jets;
+    jets.parameters = parameters.empty() || parameter_union.empty() ? parameters : parameter_union;
+    jets.pairs = pairs;
     if (!compiled.reference_diagnostics.empty()) {
         if (compiled.model->thermochemistry().has_value()) {
             std::vector<ReactionSpec> ordinary_reactions;
@@ -152,17 +152,12 @@ StandardTerm standard_term(
         auto reactions = problem.reactions;
         auto gibbs = compiled.standard_gibbs;
         std::vector<std::vector<double>> inverse;
-        const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
-            [](double value) { return value != 0.0; });
         // Fixed-T/P references do not change with phase coordinates or feed directions.
         const std::size_t thermal = temperature_jets ? order : 0;
-        if (problem.pressure.free || pressure_jets || temperature_jets || parameter_jets) {
-            ReferenceJets jets;
+        if (problem.pressure.free || pressure_jets || temperature_jets || !parameters.empty()) {
             jets.temperature_order = thermal;
             jets.pressure = pressure_jets;
-            if (parameter_jets) jets.request_every_parameter(*compiled.model);
-            jets.reference_order = parameter_jets && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
-            jets.pairs = pairs;
+            jets.reference_order = !parameters.empty() && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
             reactions = central_reference_reactions(
                 *compiled.model, problem, temperature, pressure, diagnostics, jets, &compiled.reference_diagnostics);
             gibbs = standard_state_series(temperature, components, reactions, {}, 0, nullptr, error ? &inverse : nullptr).front();
@@ -213,15 +208,14 @@ StandardTerm standard_term(
         if (thermal > 1) result.derivative[2] = species_slope(second, "second temperature derivative", 2);
         // ln K_src and the molality scale are parameter free: ds_r/dtheta_a = -dC_r/dtheta_a
         // (EqID: standard_state_transfer_parameter_derivative).
-        if (parameter_jets) {
-            result.parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+        if (!parameters.empty()) {
+            result.parameter_derivative.assign(compiled.model->active_parameters().size(), std::vector<double>(components, 0.0));
             if (order > 1 && temperature_jets)
-                result.temperature_parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+                result.temperature_parameter_derivative.assign(compiled.model->active_parameters().size(), std::vector<double>(components, 0.0));
             if (order > 1 && pressure_jets)
-                result.pressure_parameter_derivative.assign(active_control.size(), std::vector<double>(components, 0.0));
+                result.pressure_parameter_derivative.assign(compiled.model->active_parameters().size(), std::vector<double>(components, 0.0));
         }
-        for (std::size_t a = 0; parameter_jets && a < active_control.size(); ++a) {
-            if (active_control[a] == 0.0) continue;
+        for (const auto a : parameters) {
             result.parameter_derivative[a] = species_slope(zero, "parameter derivative", 0, 0, a);
             if (order > 1 && temperature_jets)
                 result.temperature_parameter_derivative[a] = species_slope(zero, "T parameter derivative", 1, 0, a);
@@ -271,7 +265,7 @@ StandardTerm standard_term(
                 error->absolute[k].assign(mapped.data(), mapped.data() + mapped.size());
             }
         }
-        result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, active_control, pairs);
+        result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, parameters, jets);
         return result;
     }
     const auto gibbs = standard_state_series(
@@ -295,7 +289,7 @@ StandardTerm standard_term(
             result.derivative[k][species] = value / GAS_CONSTANT_J_PER_MOL_K;
         }
     }
-    result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, active_control, pairs);
+    result.solid = solid_columns(compiled, temperature, pressure, order, temperature_jets, parameters, jets);
     return result;
 }
 
@@ -934,7 +928,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
     const auto reference_results = reaction_references(
         model, temperature, pressure, *request.source_reference, stoichiometries, references, jets.pressure,
-        solvent_anchor, jets.temperature_order, jets.parameters, jets.reference_order, nullptr, jets.pairs);
+        solvent_anchor, jets.temperature_order, jets.parameters, jets.reference_order, nullptr, jets.pairs, jets.temperature_order > 1);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
         resolved.push_back(reference_results[reference_row]);
@@ -2095,7 +2089,7 @@ std::vector<double> CompiledSystem::hessian_at(
 
 RowSeries CompiledSystem::row_series(
     const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
-    const std::vector<double>& control, std::size_t order, bool plane, bool parameter_pairs
+    const std::vector<double>& control, std::size_t order, bool plane, bool parameter_pairs, const std::vector<std::size_t>& parameter_union
 ) const {
     core::Scope scope("equilibrium_row_series");
     if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
@@ -2110,13 +2104,13 @@ RowSeries CompiledSystem::row_series(
         if (item.size() != n) throw std::invalid_argument("row series state");
     const bool pressure_jets = problem.pressure.free || control[1] != 0.0;
     const bool temperature_jets = problem.temperature.free || control[0] != 0.0;
-    const std::vector<double> active_control(control.begin() + static_cast<std::ptrdiff_t>(2 + components), control.begin() + static_cast<std::ptrdiff_t>(width));
-    const bool parameter_jets = std::any_of(active_control.begin(), active_control.end(),
-        [](double value) { return value != 0.0; });
-    // With two parameter-bearing directions the polarised paths need d2s/dtheta2 on the coordinates they move.
-    std::vector<std::size_t> pairs;
-    for (std::size_t a = 0; parameter_pairs && a < active_control.size(); ++a)
-        if (active_control[a] != 0.0) pairs.push_back(a);
+    const auto active_control = control.begin() + static_cast<std::ptrdiff_t>(2 + components);
+    std::vector<std::size_t> parameters;
+    for (std::size_t a = 0; a < width - 2 - components; ++a)
+        if (active_control[a] != 0.0) parameters.push_back(a);
+    const bool parameter_jets = !parameters.empty();
+    // Polarised paths need parameter pairs only when two directions move parameters.
+    const auto& pairs = parameter_pairs ? parameters : std::vector<std::size_t>{};
     for (std::size_t s = 0; control[0] != 0.0 && s < solids.size(); ++s)
         if (!solids[s].log_k_slope)
             throw ReferenceUnavailable("solid " + problem.solids[s].name + " has no admitted ln K temperature slope");
@@ -2124,35 +2118,26 @@ RowSeries CompiledSystem::row_series(
         (order > 2 && (parameter_jets || pressure_jets || temperature_jets))) {
         throw ReferenceUnavailable("row series pressure/T/parameter order is unsupported");
     }
-    // The prepared term carries the current free-T/P jets. Parameter jets enter the rows only via
-    // sum_a ds/dtheta_a (theta_a - theta_a,center): jets along every active parameter serve every direction
-    // exactly. If any slope is refused, each direction resolves its own, leaving sibling directions intact.
+    // A first-action batch shares the mapped slopes. If a slope is refused, resolve each direction separately.
     const bool reuse = !reference_diagnostics.empty() && control[0] == 0.0 && control[1] == 0.0;
-    const auto* cached = std::get_if<StandardTerm>(&prepared.parameter_standard);
-    const auto parameter_cache_ready = [&] {
-        return cached
-            && !(order > 1 && pressure_jets && cached->pressure_parameter_derivative.empty())
-            && !(order > 1 && temperature_jets && cached->temperature_parameter_derivative.empty())
-            && cached->pair_coordinates == pairs;
-    };
-    if (reuse && parameter_jets && !parameter_cache_ready()
-        && !std::holds_alternative<ParameterStandardRefused>(prepared.parameter_standard)) {
+    const bool shared_request = reuse && parameter_jets && order == 1 && !parameter_union.empty();
+    if (shared_request
+        && std::holds_alternative<ParameterStandardNotAttempted>(prepared.parameter_standard)) {
+        core::Scope scope("parameter_standard");
         try {
-            core::Scope scope("parameter_standard");
-            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, std::max<std::size_t>(order, 1),
-                pressure_jets, temperature_jets, std::vector<double>(active_control.size(), 1.0), nullptr, pairs);
+            prepared.parameter_standard = standard_term(*this, prepared.temperature, prepared.pressure, order,
+                pressure_jets, temperature_jets, parameter_union);
         } catch (const std::invalid_argument& error) {
             prepared.parameter_standard = ParameterStandardRefused{error.what()};
             scope.probe("parameter_standard_refused", {}, 0,
                 std::get<ParameterStandardRefused>(prepared.parameter_standard).cause.c_str());
         }
-        cached = std::get_if<StandardTerm>(&prepared.parameter_standard);
     }
-    const auto& standard = reference_diagnostics.empty()  // T jets and pairs reach only the solids' ln K columns here
-        ? standard_term(*this, prepared.temperature, prepared.pressure, order, false, temperature_jets, active_control, nullptr, pairs)
-        : !reuse || (parameter_jets && !parameter_cache_ready())
-            ? standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets, active_control, nullptr, pairs)
-        : parameter_jets ? *cached : prepared.standard;
+    const auto* cached = shared_request
+        ? std::get_if<StandardTerm>(&prepared.parameter_standard) : nullptr;
+    const auto& standard = cached ? *cached : reuse && !parameter_jets ? prepared.standard
+        : standard_term(*this, prepared.temperature, prepared.pressure, order, pressure_jets, temperature_jets,
+                        parameters, nullptr, pairs, parameter_union);
     if (prepared.calorics) {
         // Pressure and parameter columns join the anchored g at this centre on first need; a motion that reads an
         // unavailable column is refused with its cause.
