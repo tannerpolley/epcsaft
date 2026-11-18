@@ -102,7 +102,9 @@ reference unresolved, tolerance gated or a supported negative until its cause
 is diagnosed and a root-cause fix has been attempted and shown impossible, or
 the state is shown outside the stated physical domain, with evidence. Reviews
 ask whether the outcome could be fixed, not only whether its label is honest.
-Missing accuracy/runtime thresholds stay owner decisions.
+Missing accuracy/runtime thresholds are set by the lead from the design's
+recommendation, with the threshold's origin named (owner standing delegation,
+2026-11-18).
 
 ## Closeout
 

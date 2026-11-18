@@ -70,10 +70,11 @@ The band of a layer, or of the total, is 1% of its current count, rounded up.
    for the total, no more than the sum of the layer ceilings).
    Lower it in the same change; lowering needs no approval. A ceiling up to one
    band above the count needs no table change.
-3. **Approve once per issue.** The owner approves a line allowance per layer
-   when authorizing an issue, and the issue body records it. A merge whose
+3. **Approve once per issue.** The lead approves a line allowance per layer
+   from the design's measured count once readiness is Ready (owner standing
+   delegation, 2026-11-18), and the issue body records it. A merge whose
    raises stay within that allowance needs no second approval. Growth beyond
-   it needs a new owner decision with the scientific requirement and
+   it is a new lead decision recorded with the scientific requirement and
    alternatives.
 
 A temporary over-budget working state may be simplified and repaired. Do not
