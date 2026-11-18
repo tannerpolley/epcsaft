@@ -842,29 +842,48 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     }
     if (relaxed || !descent_resolved(q.at("tpd_over_rt"), slope, uncertainty)) return;
     const auto& z = c.model->parameters().charge_number;
+    const double limit = policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total);
+    // The donor after it gives `moved` mol of composition `y`: its amount and composition, with the split's conservation checks.
+    const auto give = [&](double moved, const std::vector<double>& y, Quantities& split) {
+        const double remaining = at.amount[p] - moved;
+        std::vector<double> x(w.size(), 0.0), error(w.size(), 0.0);
+        double sum = 0.0, charge = 0.0, inventory_error = 0.0;
+        for (auto i : c.problem.phases[p].support) {
+            const double n = at.amount[p] * at.composition[p][i] - moved * y[i];
+            if (!(n > 0.0 && remaining > 0.0)) throw std::invalid_argument("split destroys donor support");
+            x[i] = n / remaining; sum += x[i]; charge += z[i] * x[i];
+            error[i] = remaining * x[i] + moved * y[i] - at.amount[p] * at.composition[p][i];
+            inventory_error = std::max(inventory_error, std::abs(error[i]));
+        }
+        const auto moiety_error = matvec(c.B, error);
+        split["component_error_mol"] = inventory_error;
+        split["moiety_error_mol"] = maximum_abs(moiety_error);
+        split["normalization_residual"] = sum - 1.0; split["charge_residual"] = charge;
+        if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value
+            || inventory_error > limit || maximum_abs(moiety_error) > limit)
+            throw std::invalid_argument("finite split arithmetic conservation failed");
+        return std::pair(remaining, std::move(x));
+    };
+    // The split's optimizer coordinates appended to `out`: every parent phase with the donor as given, then the added phase.
+    const auto write = [&](std::vector<double>& out, double remaining, const std::vector<double>& x, double donor_volume,
+                           const std::vector<std::size_t>& support, double moved, const std::vector<double>& y) {
+        for (std::size_t phase = 0; phase < at.amount.size(); ++phase) {
+            const auto& composition = phase == p ? x : at.composition[phase];
+            for (auto i : c.problem.phases[phase].support) out.push_back(std::log(composition[i]));
+            out.push_back(phase == p ? remaining : at.amount[phase]);
+            out.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature,
+                composition) / (phase == p ? donor_volume : at.volume[phase])));
+        }
+        for (auto i : support) out.push_back(std::log(y[i]));
+        out.push_back(moved);
+        out.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature, y) / q.at("volume_m3_per_mol")));
+    };
     double beta = capacity / 2.0;
     for (std::size_t check = 0; check <= 8; ++check, beta /= 2.0) {
         Quantities split{{"beta_mol", beta}, {"admitted", 0.0}};
         if (limits) limits->check();
         try {
-            const double remaining = at.amount[p] - beta;
-            std::vector<double> x(w.size(), 0.0), error(w.size(), 0.0);
-            double sum = 0.0, charge = 0.0, inventory_error = 0.0;
-            for (auto i : c.problem.phases[p].support) {
-                const double n = at.amount[p] * at.composition[p][i] - beta * w[i];
-                if (!(n > 0.0 && remaining > 0.0)) throw std::invalid_argument("split destroys donor support");
-                x[i] = n / remaining; sum += x[i]; charge += z[i] * x[i];
-                error[i] = remaining * x[i] + beta * w[i] - at.amount[p] * at.composition[p][i];
-                inventory_error = std::max(inventory_error, std::abs(error[i]));
-            }
-            const auto moiety_error = matvec(c.B, error);
-            split["component_error_mol"] = inventory_error;
-            split["moiety_error_mol"] = maximum_abs(moiety_error);
-            split["normalization_residual"] = sum - 1.0; split["charge_residual"] = charge;
-            if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value
-                || inventory_error > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total)
-                || maximum_abs(moiety_error) > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total))
-                throw std::invalid_argument("finite split arithmetic conservation failed");
+            const auto [remaining, x] = give(beta, w, split);
             ++report.work["finite_split_evaluations"];
             if (credited) spend_credit(*limits, report.work);
             const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
@@ -884,17 +903,37 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 trial.evidence = "numerically_resolved_descending_split_with_estimated_uncertainty";
                 q["split_beta_mol"] = beta; q["split_delta_g_over_rt"] = delta;
                 q["split_error_estimate_over_rt"] = error_estimate;
-                for (std::size_t phase = 0; phase < at.amount.size(); ++phase) {
-                    const auto& composition = phase == p ? x : at.composition[phase];
-                    for (auto i : c.problem.phases[phase].support) trial.split_coordinates.push_back(std::log(composition[i]));
-                    trial.split_coordinates.push_back(phase == p ? remaining : at.amount[phase]);
-                    trial.split_coordinates.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature,
-                        composition) / (phase == p ? donor_volume : at.volume[phase])));
-                }
-                for (auto i : trial.phase.support) trial.split_coordinates.push_back(std::log(w[i]));
-                trial.split_coordinates.push_back(beta);
-                trial.split_coordinates.push_back(std::log(c.model->packing_fraction_coefficient(at.temperature, w)
-                    / q.at("volume_m3_per_mol")));
+                write(trial.split_coordinates, remaining, x, donor_volume, trial.phase.support, beta, w);
+                // ALG-STABILITY: the same split with the neutral `bound_species` left in the donor: transfers beta w_i on
+                // the retained species, none on the omitted ones; same volumes, no density or energy evaluation.
+                if (!trial.optimizer.bound_species.empty()) try {
+                    auto y = w;
+                    auto support = trial.phase.support;
+                    for (auto j : trial.optimizer.bound_species) {
+                        if (z[j] != 0.0) throw std::invalid_argument("an ion ends at its composition bound");
+                        y[j] = 0.0;
+                        support.erase(std::find(support.begin(), support.end(), j));
+                    }
+                    for (auto j : support) y[j] *= beta;
+                    const double moved = std::accumulate(y.begin(), y.end(), 0.0);
+                    if (!(moved > 0.0)) throw std::invalid_argument("reduced split transfers no inventory");
+                    for (auto j : support) y[j] /= moved;
+                    Quantities unused;
+                    const auto [rest, kept] = give(moved, y, unused);
+                    std::vector<double> seed, defect(w.size(), 0.0);
+                    write(seed, rest, kept, donor_volume, support, moved, y);
+                    // Check the inventory actually represented by the stored log fractions.
+                    std::size_t column = 0;
+                    for (std::size_t phase = 0; phase < p; ++phase) column += c.problem.phases[phase].support.size() + 2;
+                    for (auto i : c.problem.phases[p].support)
+                        defect[i] = rest * std::exp(seed[column++]);
+                    column = seed.size() - support.size() - 2;
+                    for (auto i : support) defect[i] += moved * std::exp(seed[column++]);
+                    for (auto i : c.problem.phases[p].support) defect[i] -= at.amount[p] * at.composition[p][i];
+                    if (!std::isfinite(maximum_abs(seed)) || !(maximum_abs(defect) <= limit && maximum_abs(matvec(c.B, defect)) <= limit))
+                        throw std::invalid_argument("represented amounts lose inventory");
+                    trial.reduced_split_coordinates = std::move(seed);
+                } catch (const std::exception& error) { trial.message += "; reduced split: " + std::string(error.what()); }
                 trial.split_checks.push_back(std::move(split));
                 return;
             }
@@ -1987,9 +2026,30 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             } catch (const std::exception& error) { trial.message += "; addition: " + std::string(error.what()); continue; }
             phase.name = (phase.kind == PhaseKind::Liquid ? "L" : "V") + std::to_string(next.phases.size() + 1);
             next.phases.push_back(phase);
-            auto system = compile_problem(model, next);
+            // ALG-STABILITY: a trial with a reduced split adds its phase without the species its attempt left at their
+            // composition bounds.
+            const auto& omitted = trial.optimizer.bound_species;
+            std::optional<CompiledSystem> reduced_system;
+            if (!trial.reduced_split_coordinates.empty()) try {
+                auto without = next;
+                auto& last = without.phases.back();
+                last.support.erase(std::remove_if(last.support.begin(), last.support.end(),
+                    [&](auto j) { return std::count(omitted.begin(), omitted.end(), j) != 0; }), last.support.end());
+                last.composition_guess.clear();
+                reduced_system = compile_problem(model, without);
+                if (!reduced_system->feasible) throw std::invalid_argument("rank-deficient reduced declaration");
+            } catch (const std::exception& error) {
+                trial.message += "; addition keeps the trial support: " + std::string(error.what());
+                reduced_system.reset();
+            }
+            const bool omitting = reduced_system.has_value();
+            auto system = omitting ? std::move(*reduced_system) : compile_problem(model, next);
             std::vector<double> attempt;
-            auto result = invoke(system, current.trials[i].split_coordinates, "addition", attempt);
+            auto result = invoke(system, omitting ? trial.reduced_split_coordinates : trial.split_coordinates, "addition", attempt);
+            if (omitting && result.topology_event != TopologyEvent::None) {
+                trial.message += "; addition: reduced declaration encountered a topology event";
+                continue;
+            }
             while (!fast && !result.success && result.topology_event != TopologyEvent::None && !attempt.empty() && calls < budget) {
                 const auto before = system.prepare(attempt, true);
                 const auto event = check_topology(system, attempt);
@@ -2003,6 +2063,22 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                     trial.message += "; removal of " + removed.back().first.name + ": " + error.what(); break; }
             }
             if (!result.success || result.convergence.residual > row_tolerance) continue;
+            // ALG-STABILITY: each omitted species' zero-row log fraction at the converged state must be finite and below
+            // the composition box, the bound an unreduced addition applies at default settings; else no admission.
+            if (omitting) {
+                const auto box = composition_box(system);
+                std::string cause;
+                for (auto j : omitted) {
+                    const double estimate = -system.chemical_row(*result.prepared_endpoint, system.problem.phases.size() - 1, j, 1.0);
+                    const double lower = std::log(box[j]);
+                    const auto species = std::to_string(j);
+                    trial.quantities["addition_omitted_log_fraction_" + species] = estimate;
+                    trial.quantities["addition_omitted_log_bound_" + species] = lower;
+                    if (!std::isfinite(estimate)) cause = "omitted species " + species + " has no finite zero-row estimate";
+                    else if (!(estimate < lower)) cause = "omitted species " + species + " is not below its composition bound";
+                }
+                if (!cause.empty()) { trial.message += "; addition: " + cause; continue; }
+            }
             double error_estimate = 0.0;
             for (std::size_t p = 0; p < current.present_phases.size(); ++p)
                 error_estimate += best.amounts[p] * energy_estimate(current.present_phases[p]);

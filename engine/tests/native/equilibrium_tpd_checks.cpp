@@ -2027,6 +2027,93 @@ void check_mea_trace_ion_discovery() {
     (void)thermal; (void)coordinates;
 }
 
+void check_mea_discovery_omitted_species() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.pressure = FreeValue::fixed(1e5);
+    problem.feed.values[0] = 0.01625 * problem.feed.values[1];
+    auto discovery = problem;
+    discovery.phases.clear();
+    discovery.topology_declared = false;
+    discovery.discovery = StabilityOptions{};
+    const auto result = discover_phases(model, discovery);
+    std::printf("C1 success=%d phases=%zu residual=%.17g message=%s\n",
+        result.success, result.phase_count, result.convergence.residual, result.message.c_str());
+    CHECK(result.success && result.phase_count == 2);
+    const std::vector<std::size_t> retained{2, 3, 4, 5, 6, 7, 8};
+    const auto& phases = result.declaration->phases;
+    CHECK(phases[0].kind == PhaseKind::Liquid && phases[1].kind == PhaseKind::Liquid);
+    CHECK(phases[0].support == liquid.support && phases[1].support == retained);
+    CHECK(result.convergence.residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    const auto& first = result.discovery->rounds.front();
+    const auto& last = result.discovery->rounds.back();
+    CHECK(last.completed && std::none_of(last.trials.begin(), last.trials.end(),
+        [](const auto& trial) { return trial.resolved_descent; }));
+    const auto admitted = std::find_if(first.trials.begin(), first.trials.end(),
+        [](const auto& trial) { return trial.quantities.count("addition_gibbs_estimate_over_rt_mol") != 0; });
+    CHECK(admitted != first.trials.end());
+    for (const auto* species : {"0", "1"}) {
+        const double estimate = admitted->quantities.at(std::string("addition_omitted_log_fraction_") + species);
+        const double lower = admitted->quantities.at(std::string("addition_omitted_log_bound_") + species);
+        CHECK(std::isfinite(estimate) && estimate < lower);
+        std::printf("C1 species=%s zero_row_log_fraction=%.17g log_bound=%.17g\n", species, estimate, lower);
+    }
+
+    PhaseSpec second = liquid;
+    second.name = "L2";
+    second.support = retained;
+    second.composition_guess = {8.22e-5, 0.514, 0.455, 1.83e-3, 0.0289, 1.84e-6, 2.01e-8};
+    problem.phases.push_back(second);
+    const auto compiled = compile_problem(model, problem);
+    const auto declared = solve_compiled(compiled);
+    CHECK(declared.success);
+    const auto declared_search = stability_test(compiled, declared);
+    CHECK(declared_search.completed);
+
+    // Compare energies at the repaired states that supplied the energy estimates.
+    const auto snapshot = [](const StabilityReport& search, const EquilibriumResult& state) {
+        double energy = 0.0, estimate = 0.0;
+        std::vector<double> repair;
+        std::size_t offset = 0;
+        for (std::size_t p = 0; p < state.phase_count; ++p) {
+            const auto& q = search.present_phases.at(p);
+            const double amount = search.candidate_coordinates.at(offset + state.declaration->phases[p].support.size());
+            energy += amount * q.at("g_over_rt");
+            estimate += amount * (q.at("association_energy_estimate_over_rt") + q.at("euler_defect_over_rt")
+                + q.at("summation_estimate_over_rt"));
+            repair.push_back(amount - state.amounts[p]);
+            offset += state.declaration->phases[p].support.size() + 2;
+        }
+        return std::tuple(energy, estimate, repair);
+    };
+    const auto [parent_g, parent_error, parent_repair] = snapshot(first, result.discovery->declarations.front());
+    const auto [found_g, found_error, found_repair] = snapshot(last, result);
+    const auto [reference_g, reference_error, reference_repair] = snapshot(declared_search, declared);
+    const double decrease = parent_g - found_g;
+    const double margin = admitted->quantities.at("addition_gibbs_estimate_over_rt_mol");
+    CHECK(std::abs(found_g - reference_g) <= found_error + reference_error);
+    CHECK(decrease > margin);
+    std::printf("C1 parent_G_over_RT_mol=%.17g found=%.17g reference=%.17g difference=%.17g estimate_sum=%.17g "
+        "decrease=%.17g margin=%.17g parent_estimate=%.17g parent_repair_mol=%.17g reference_residual=%.17g\n",
+        parent_g, found_g, reference_g, found_g - reference_g, found_error + reference_error,
+        decrease, margin, parent_error, parent_repair[0], declared.convergence.residual);
+    for (std::size_t p = 0; p < result.phase_count; ++p) {
+        double fraction_error = 0.0, log_fraction_error = 0.0;
+        for (auto j : phases[p].support) {
+            const std::size_t offset = p * liquid.support.size() + j;
+            const double found = result.mole_fractions[offset], expected = declared.mole_fractions[offset];
+            fraction_error = std::max(fraction_error, std::abs(found - expected));
+            log_fraction_error = std::max(log_fraction_error, std::abs(std::log(found) - std::log(expected)));
+        }
+        std::printf("C1 liquid=%zu amount_mol=%.17g amount_difference_mol=%.17g max_fraction_difference=%.17g "
+            "max_log_fraction_difference=%.17g discovery_repair_mol=%.17g reference_repair_mol=%.17g\n",
+            p + 1, result.amounts[p], result.amounts[p] - declared.amounts[p], fraction_error, log_fraction_error,
+            found_repair[p], reference_repair[p]);
+    }
+}
+
 void check_rank_probe_permittivity_denominator() {
 #include "fixtures/mea_capped_addition.inc"
     (void)thermal; (void)coordinates;

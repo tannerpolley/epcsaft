@@ -207,6 +207,8 @@ double largest_difference(const std::vector<double>& left, const std::vector<dou
 EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr,
     const PhasePoint* cached_prepared = nullptr, const PointEvaluation* cached_rows = nullptr);
 EPC_API EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope);
+// The lower composition bound of each species in the optimizer's log chart (ALG-EQUILIBRIUM).
+std::vector<double> composition_box(const CompiledSystem& compiled);
 EPC_API EquilibriumResult run_driver(
     const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
