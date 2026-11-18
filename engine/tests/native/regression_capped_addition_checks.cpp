@@ -277,6 +277,40 @@ void check_phase_bulk_relative_permittivity() {
                 1e-13 * std::abs(expected), 0, inputs));
         }
 
+        auto apparent_cp = epsilon;
+        apparent_cp.kind = ObservationKind::EquilibriumIsobaricHeatCapacity;
+        const auto cp_prediction = predict_validated(model, apparent_cp);
+        CHECK(cp_prediction.status == ObservationStatus::Available && cp_prediction.value);
+        const auto cp_gradient = differentiate(model, apparent_cp, cp_prediction);
+        CHECK(cp_gradient.status == ObservationStatus::Available && cp_gradient.value.size() == active.size());
+        CHECK(cp_gradient.value.front() != 0 && gradient.value.front() != 0);
+        CHECK(same_state(epsilon, apparent_cp));
+        const auto grouped = [&] {
+            core::Capture capture(true);
+            auto result = differentiate_group(model, {&epsilon, &apparent_cp}, center, coordinates);
+            std::vector<double> widths;
+            const auto& trace = capture.trace();
+            for (const auto& event : trace.events)
+                if (std::string_view(event.name) == "results" &&
+                    std::string_view(trace.spans.at(event.span).name) == "solved_state_first_actions")
+                    widths.push_back(event.values.at(0));
+            CHECK(widths.size() == 2 * active.size() + 1);
+            CHECK(static_cast<std::size_t>(std::count(widths.begin(), widths.end(), 1.0)) == active.size() + 1);
+            CHECK(static_cast<std::size_t>(std::count(widths.begin(), widths.end(), 2.0)) == active.size());
+            return result;
+        }();
+        CHECK(grouped.size() == 2);
+        const PredictionGradient* separate[] = {&gradient, &cp_gradient};
+        const char* quantities[] = {"bulk_relative_permittivity", "apparent_cp"};
+        for (std::size_t o = 0; o < grouped.size(); ++o) {
+            CHECK(grouped[o].status == ObservationStatus::Available && grouped[o].value.size() == active.size());
+            for (std::size_t k = 0; k < active.size(); ++k) {
+                const double expected = separate[o]->value[k];
+                CHECK(agree(record + "grouped-cp/" + quantities[o] + "/" + names[k], quantities[o], "native",
+                    grouped[o].value[k], expected, 1e-13 * std::abs(expected), 0, inputs));
+            }
+        }
+
         SolvedStateActionDirection direction;
         direction.feed_amounts_mol.resize(state.mole_fractions.size());
         direction.active_parameters.resize(active.size());

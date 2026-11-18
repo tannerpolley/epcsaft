@@ -3328,7 +3328,11 @@ permittivity row requires a declared permittivity form and a solid-free
 declared-phase problem. A numerical domain refusal during public observation
 admission or the central solve returns `central_solve_unavailable` with the
 original cause. A numerical domain refusal during fit admission refuses that
-row at setup with its cause. It uses the cross-family affine
+row at setup with its cause. Addition endpoint compilation and
+`project_prediction` run outside the inner native solve handler. The public
+wrapper converts a `std::domain_error` escaping either path to
+`central_solve_unavailable`. A fit trial records such an exception as
+`inadmissible_trial`. The fit uses the cross-family affine
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is

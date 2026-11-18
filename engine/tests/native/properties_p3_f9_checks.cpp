@@ -1095,11 +1095,18 @@ void pressure_closed_ion_suppression_fit() {
         }
         for (const auto kind : {ObservationKind::PhaseDensity, ObservationKind::PhaseBulkRelativePermittivity}) {
             phase.kind = kind;
+            const auto check_unavailable = [&](const Prediction& result) {
+                CHECK(result.status == ObservationStatus::CentralSolveUnavailable && !result.value &&
+                      result.message.find(cause) != std::string::npos);
+                CHECK(result.first_numerical_failure &&
+                      result.first_numerical_failure->cause.find(cause) != std::string::npos);
+            };
+            check_unavailable(predict(refused_model, phase));
+            // Reuse the accepted density at the same composition to reach EOS preparation
+            // even when the cold density closure wraps the refusal as a runtime error.
+            check_unavailable(predict(refused_model, phase, closed.solved));
             const auto unavailable = predict_validated(refused_model, phase);
-            CHECK(unavailable.status == ObservationStatus::CentralSolveUnavailable && !unavailable.value &&
-                  unavailable.message.find(cause) != std::string::npos);
-            CHECK(unavailable.first_numerical_failure &&
-                  unavailable.first_numerical_failure->cause.find(cause) != std::string::npos);
+            check_unavailable(unavailable);
             const auto gradient = differentiate(refused_model, phase, unavailable);
             CHECK(gradient.status == unavailable.status && gradient.message == unavailable.message && gradient.value.empty());
             refused_request.observations = {phase};
