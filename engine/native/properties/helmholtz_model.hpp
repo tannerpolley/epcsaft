@@ -663,7 +663,7 @@ EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const NeutralReferenceDeclaration& declaration,
     const std::vector<std::vector<double>>& stoichiometries,
     const std::vector<ReactionReference>& references,
-    bool pressure_jets = true,
+    std::size_t pressure_order = 2,  // 1: dC/dP; 2: also d2C/dP2 and, with T live, d2C/dTdP
     std::optional<double> solvent_anchor = std::nullopt,  // tried first for the pure-solvent point
     std::size_t temperature_order = 0,  // 1: dC/dT; 2: also d2C/dT2
     const std::vector<std::size_t>& parameter_jets = {},  // dC/dtheta for these active coordinates, ascending

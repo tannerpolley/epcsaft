@@ -321,7 +321,7 @@ struct SolidLogK final {
 // the fields it uses.
 struct ReferenceJets final {
     std::size_t temperature_order = 0;
-    bool pressure = false;
+    std::size_t pressure_order = 0;
     std::vector<std::size_t> parameters;
     std::size_t reference_order = 0;
     std::vector<std::size_t> pairs;
@@ -354,9 +354,11 @@ struct StandardTerm final {
 };
 
 struct ReferenceCalorics;
-struct ParameterStandardNotAttempted final {};
-struct ParameterStandardRefused final { std::string cause; };
-using ParameterStandardOutcome = std::variant<ParameterStandardNotAttempted, StandardTerm, ParameterStandardRefused>;
+struct ParameterStandardRefused final {};
+struct ParameterStandard final {
+    std::vector<std::size_t> positions;
+    std::variant<StandardTerm, ParameterStandardRefused> outcome;
+};
 // One latest-point phase evaluation shared by rows, Jacobian, gradient and curvature.
 template <typename Base>
 struct PhasePointValues final {
@@ -372,9 +374,8 @@ struct PhasePointValues final {
     std::vector<HelmholtzDerivativeValues<Base>> derivative;
     std::vector<PureIsothermalValues<Base>> pure;
     StandardTerm standard;
-    // A referenced problem's standard term with jets along every active parameter, built on the
-    // first parameter-driven row series at this point and reused by every later direction.
-    mutable ParameterStandardOutcome parameter_standard;
+    // The referenced standard term for the parameter positions shared by a first-action batch.
+    mutable std::optional<ParameterStandard> parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
     // An anchored PH/PS cell's g jets at this centre; row_series adds pressure or parameter columns on demand.
     mutable std::shared_ptr<const ReferenceCalorics> calorics;
@@ -537,7 +538,8 @@ struct CompiledSystem final {
     EPC_API RowSeries row_series(
         const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
         const std::vector<double>& control, std::size_t order, bool plane = false,
-        bool parameter_pairs = false  // two or more directions carry parameter increments
+        bool parameter_pairs = false,  // two or more directions carry parameter increments
+        const std::vector<std::size_t>& parameter_union = {}
     ) const;
 
     std::size_t loading_column() const noexcept { return primal_size - free_intensive_count - 1; }

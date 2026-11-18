@@ -86,7 +86,7 @@ std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* m
     std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>> species_references;
     const auto diagnostics = rows.empty() ? std::vector<NeutralReferenceReactionDiagnostic>{}
         : reaction_references(*model, *result.temperature, *result.pressure, *problem.source_reference,
-            rows, references, false, std::nullopt, 0, {}, 0, &species_references);
+            rows, references, 0, std::nullopt, 0, {}, 0, &species_references);
     std::vector<ReactionActivities> output;
     for (std::size_t p = 0; p < result.phase_count; ++p) {
         std::vector<double> x(result.mole_fractions.begin() + p * n, result.mole_fractions.begin() + (p + 1) * n);

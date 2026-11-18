@@ -387,7 +387,7 @@ SolvedStateActionStatus energy_status(PropertyActionStatus status) {
 // The coefficient recurrence: J y_k = -[t^k] F(y(t), q(t)) with y_k unknown set to zero,
 // re-evaluated after each solve so the retained residual is the owned row residual.
 Path follow(const CompiledSystem& compiled, const Center& center, const std::vector<double>& control,
-            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane = false, bool parameter_pairs = false) {
+            std::size_t order, SolvedStateActionDiagnostics& diagnostics, bool plane, bool parameter_pairs, const std::vector<std::size_t>& parameter_union) {
     Path path;
     const std::size_t n = center.prepared.point.size();
     std::vector<std::vector<double>> state(order + 1, std::vector<double>(n, 0.0));
@@ -396,7 +396,7 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     // The series through order k, or false with the path refused when a reference is unavailable.
     const auto rows_through = [&](const std::vector<std::vector<double>>& prefix, std::size_t k, RowSeries& series) {
         try {
-            series = compiled.row_series(center.prepared, prefix, control, k, plane, parameter_pairs);
+            series = compiled.row_series(center.prepared, prefix, control, k, plane, parameter_pairs, parameter_union);
             return true;
         } catch (const ReferenceUnavailable& error) {
             path.status = SolvedStateActionStatus::ReferenceUnavailable;
@@ -918,7 +918,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
 static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
-    const CaloricNeed& covering = {}, std::optional<PhasePoint>* prepared = nullptr
+    const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {}
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -949,7 +949,7 @@ static SolvedStateActionBatch evaluate_action(
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared);
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
@@ -957,7 +957,7 @@ static SolvedStateActionBatch evaluate_action(
         const bool new_thermal = shared && !shared->thermal_enthalpy;
         const auto &direction = request.directions.front();
         if (new_thermal)
-            shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared);
+            shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared, parameter_union);
         const auto mixed = shared ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
                                   : SolvedStateActionBatch{};
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
@@ -1096,7 +1096,7 @@ static SolvedStateActionBatch evaluate_action(
             shared->pairs = pairs;
             ReferenceJets jets;
             jets.temperature_order = std::max<std::size_t>(need[0], 2);  // with the heat-capacity column
-            jets.pressure = need[2];
+            jets.pressure_order = need[2] ? jets.temperature_order : 0;
             if (need[1]) jets.request_every_parameter(model);
             jets.pairs = pairs;
             shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, jets);
@@ -1304,7 +1304,7 @@ static SolvedStateActionBatch evaluate_action(
             for (std::size_t i = 0; i < width; ++i) control[i] += sign * controls[j][i] / magnitude[j];
         }
         core::Scope path_scope("solved_state_action_path");
-        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs);
+        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs, parameter_union);
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
         std::vector<PhaseMap> maps;
@@ -1393,8 +1393,19 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
     const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
+    // Solids share one first-order source reference. Reacting directions share only when their T/P requests agree.
+    const auto group = [&](const SolvedStateActionDirection& d) {
+        return compiled.reference_diagnostics.empty() ? 0 : (d.temperature_k != 0.0) + 2 * (d.pressure_pa != 0.0);
+    };
+    std::array<std::vector<std::size_t>, 4> parameters;
+    if (!compiled.reference_diagnostics.empty() || !compiled.solids.empty())
+        for (std::size_t a = 0; a < compiled.model->active_parameters().size(); ++a)
+            for (const auto& d : directions)
+                if (auto& positions = parameters[group(d)]; d.active_parameters[a] != 0.0 && (positions.empty() || positions.back() != a))
+                    positions.push_back(a);
     for (const auto& request : requests)
-        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope, cover));
+        batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
+            cover, nullptr, parameters[group(request.directions.front())]));
     return batches;
 }
 
