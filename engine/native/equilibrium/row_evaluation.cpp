@@ -993,7 +993,7 @@ std::vector<SolidLogK> solid_log_k(const HelmholtzModel& model, double temperatu
     std::vector<ReactionReference> references;
     for (const auto& solid : solids) nu.push_back(solid.stoichiometry), references.push_back(*solid.reference);
     const auto diagnostics = reaction_references(model, temperature, pressure, *declaration, nu, references, false, std::nullopt,
-                                                 jets.temperature_order, jets.parameters, 0, nullptr, jets.pairs);
+        jets.temperature_order, jets.parameters, 0, nullptr, jets.pairs, jets.temperature_order > 1);
     std::vector<SolidLogK> result;
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto& solid = solids[s];

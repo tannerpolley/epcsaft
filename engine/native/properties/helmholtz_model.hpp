@@ -669,7 +669,8 @@ EPC_API std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const std::vector<std::size_t>& parameter_jets = {},  // dC/dtheta for these active coordinates, ascending
     std::size_t reference_order = 0,  // consumed C3/C4 and one-theta columns; 0 preserves lower work
     std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values = nullptr,
-    const std::vector<std::size_t>& pair_coordinates = {}  // ascending; d2C/dtheta_a dtheta_b for a <= b among them
+    const std::vector<std::size_t>& pair_coordinates = {},  // ascending; d2C/dtheta_a dtheta_b for a <= b among them
+    bool temperature_parameter_jets = true  // include d2C/dT dtheta when T and parameter jets are requested
 );
 
 // Fugacity-based Henry constant H_i^px = lim f_i/x_i = RT rho0 exp(L_i) of a neutral solute in one
