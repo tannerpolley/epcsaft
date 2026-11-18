@@ -2481,6 +2481,20 @@ g^{\circ}_{i,\rho}=g^{\circ}_{i,P}+RT\ln\frac{RT\rho_0}{P_0},\qquad h^{\circ}_{i
 \ln K_\rho=\ln K_P-\Delta\nu\ln\frac{RT\rho_0}{P_0},\qquad \frac{d\ln K_\rho}{dT}=\frac{d\ln K_P}{dT}-\frac{\Delta\nu}{T}.
 $$
 
+## `susceptibility_suppressed_density_correlated_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Bounded empirical relation
+- Source: Yang, Kontogeorgis, and de Hemptinne (2024), DOI 10.1016/j.fluid.2024.114103, Eqs. (1a), (2a), and (2b) for $E=F-1$, and Zuber et al. (2014), DOI 10.1016/j.fluid.2014.05.037, Eq. (9) for $D$
+- Description: Density-correlated solvent susceptibility divided by the ion-specific suppression denominator.
+- Change note: In #78 the owner chose to apply the denominator to susceptibility as an Engine relation with no published source. $S$ is the neutral-solvent set and $s=\sum_{j\in S}x_j$. The neutral solvent fraction $s$, denominator $D$, and bulk permittivity must be finite and positive. At fixed composition the vacuum limit is exactly 1.
+
+$$
+E=\rho_m\left(\sum_{j\in S}x_j d_{V,j}\right)\left(\frac{\sum_{j\in S}x_j d_{T,j}}{sT}-1\right),\quad
+D=1+\sum_{z_i\ne 0}\alpha_i x_i,\quad
+\epsilon_{r,\mathrm{bulk}}=1+\frac{E}{D}.
+$$
+
 ## `system_gibbs_helmholtz_coordinates`
 
 - Section: Equilibrium
@@ -2534,7 +2548,7 @@ $$
 - Status: Exact derivation
 - Source: Basis transformation of normalization/electroneutrality and Euler stationarity
 - Description: Internal unit-amount trial balance basis on S; R contains total-amount and charge rows, omitting charge for neutral support. H is the retained full-rank row transformation; λ_t is conjugate to B_t, not an optimizer multiplier.
-- Change note: No feed-moiety-proportion constraint or reaction is imposed. Charged density-temperature Vapor trials use H=I and the numerical log-charge row h below, evaluated by maximum-shifted log sums. Only that trial charge balance or a declared Vapor Electro row is replaced in Newton correction and classification. Original physical criteria, Ipopt callbacks and solved-state derivatives remain unchanged; full transformed rank does not establish branch or recovery accuracy. Qualification remains incomplete. Other trials retain their existing basis; use λ_t dot b_t in every basis.
+- Change note: No feed-moiety-proportion constraint or reaction is imposed. Charged Vapor trials under `DensityTemperature` or `DensityTemperatureSusceptibilitySuppression` use H=I and the numerical log-charge row h below, evaluated by maximum-shifted log sums. Only that trial charge balance or a declared Vapor Electro row is replaced in Newton correction and classification. Original physical criteria, Ipopt callbacks and solved-state derivatives remain unchanged; full transformed rank does not establish branch or recovery accuracy. Qualification remains incomplete. Other trials retain their existing basis; use λ_t dot b_t in every basis.
 
 $$
 \begin{aligned}

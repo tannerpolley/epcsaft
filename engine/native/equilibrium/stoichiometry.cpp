@@ -641,7 +641,8 @@ std::vector<std::size_t> resolve_support(const PhaseSpec& phase, const std::vect
         throw core::DeclarationError("duplicate support index");
     if (result.back() >= z.size()) throw core::DeclarationError("support index out of range");
     for (const std::size_t i : result)
-        if (vapor && z[i] != 0 && !(parameters && parameters->permittivity_form.is(PermittivityForm::DensityTemperature)))
+        if (vapor && z[i] != 0 && !(parameters && (parameters->permittivity_form.is(PermittivityForm::DensityTemperature)
+            || parameters->permittivity_form.is(PermittivityForm::DensityTemperatureSusceptibilitySuppression))))
             throw core::DeclarationError("vapor phase " + phase.name + " support contains charged component index "
                 + std::to_string(i) + " (z=" + std::to_string(z[i])
                 + (parameters && parameters->permittivity_form.is(PermittivityForm::DipolarPerturbation)

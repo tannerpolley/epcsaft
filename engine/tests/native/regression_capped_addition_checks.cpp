@@ -203,7 +203,9 @@ void check_phase_bulk_relative_permittivity() {
     const char* names[] = {"k_ij", "k_ij_reciprocal_temperature_slope", "segment_diameter", "packing_diameter",
                            "debye_huckel_diameter", "born_diameter", "dispersion_energy_over_k",
                            "ion_suppression_coefficient/meah", "ion_suppression_coefficient/carbamate"};
-    for (const char* form : {"solvent-density-temperature-ion-specific-suppression"}) {
+    for (const char* form : {"solvent-density-temperature-ion-specific-suppression",
+                             "solvent-density-temperature-ion-specific-susceptibility-suppression"}) {
+        const std::string record = std::string(form) + "/phase-permittivity/";
         auto declaration = document;
         declaration.permittivity_choice = form;
         for (std::size_t i = 3; i < 9; ++i)
@@ -213,7 +215,7 @@ void check_phase_bulk_relative_permittivity() {
         const auto active = coordinates.active_parameters();
         const HelmholtzModel model(parameters, active, thermal);
         const auto center = predict_validated(model, epsilon);
-        truth("phase-permittivity/solved", center.status == ObservationStatus::Available && center.value && center.solved,
+        truth(record + "solved", center.status == ObservationStatus::Available && center.value && center.solved,
               fields({field("cause", center.message)}));
         CHECK(center.value && center.solved && center.compiled && center.unit == "1");
         const auto& state = *center.solved;
@@ -222,11 +224,11 @@ void check_phase_bulk_relative_permittivity() {
             field("rho_mol_m3", state.molar_densities[0]), field("residual_norm", state.residual_norm())});
         CHECK(state.residual_norm() <= 1e-10);
         const double reference = model.state(*state.temperature, state.molar_densities[0], state.mole_fractions).bulk_relative_permittivity;
-        CHECK(agree("phase-permittivity/value", "bulk_relative_permittivity", "1", *center.value, reference,
+        CHECK(agree(record + "value", "bulk_relative_permittivity", "1", *center.value, reference,
                     32 * EPS * std::abs(reference), 0, inputs));
 
         const auto gradient = differentiate(model, epsilon, center);
-        truth("phase-permittivity/action-available", gradient.status == ObservationStatus::Available,
+        truth(record + "action-available", gradient.status == ObservationStatus::Available,
               fields({field("cause", gradient.message)}));
         CHECK(gradient.value.size() == active.size());
         const auto start = coordinates.start(parameters, rows, thermal);
@@ -248,7 +250,7 @@ void check_phase_bulk_relative_permittivity() {
                 return *prediction.value;
             };
             const auto full = ladder(value, step);
-            const auto id = std::string("phase-permittivity/") + names[column];
+            const auto id = record + names[column];
             CHECK(ladder_agrees(id, "d_epsilon_d_parameter", gradient.value[column], full,
                 fields({field("form", form), field("step", step), field("T_K", *state.temperature)}), true));
             if (suppression) {
@@ -270,7 +272,7 @@ void check_phase_bulk_relative_permittivity() {
         CHECK(evaluated.statuses == std::vector<ObservationStatus>(rows.size(), ObservationStatus::Available));
         for (std::size_t column = 0; column < active.size(); ++column) {
             const double expected = gradient.value[column] * coordinates.coordinates[column].scale / epsilon.scale;
-            CHECK(agree(std::string("phase-permittivity/grouped-fit/") + names[column], "dr_du", "1",
+            CHECK(agree(record + "grouped-fit/" + names[column], "dr_du", "1",
                 evaluated.residual_optimizer_gradient.at(active.size() + column), expected,
                 1e-13 * std::abs(expected), 0, inputs));
         }

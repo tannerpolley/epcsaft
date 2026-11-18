@@ -200,6 +200,19 @@ charged Vapor is refused because the declared form lacks a unit vacuum limit.
 Both rules apply at zero coefficients as well. Neutral Vapor remains available.
 Liquid-side admission establishes the density branch within the finite search.
 
+## Density-correlated susceptibility suppression (#78)
+
+The owner chose $1+(F-1)/D$ on 2026-11-17 and admitted charged trials
+at all densities and explicit charged Vapor support under the same rules
+as for `DensityTemperature`. A supplied Vapor point must match its own
+vapor pressure root. The owner selected the retained #771 pressure-root and
+omitted-charge-phase checks at coefficients (3.62, 6.80) for qualification.
+At zero coefficients the two laws agree bit for bit on the x86-64 checks.
+For admitted nonzero coefficients their difference at fixed composition is
+$(F-1)(1/D-1)=O(\rho_m)$ as $\rho_m\to0$. The retained vapor test has
+$D-1=1.04\times10^{-7}$ and checks admission, phase kind and root matching.
+The dilute-limit argument establishes the scaling of the permittivity difference.
+
 ## Explicit fast discovery (#868)
 
 The owner adopted `Discover(mode="fast")` on 2026-10-31 for nonreacting

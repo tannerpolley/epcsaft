@@ -23,10 +23,14 @@ enum class PermittivityForm {
     DensityTemperature = 3,  // density and temperature correlation
     DipolarPerturbation = 4, // dipolar density perturbation
     DensityTemperatureIonSuppression = 6,
+    DensityTemperatureSusceptibilitySuppression = 7,
 };
 
+inline bool density_temperature_ion_suppression(core::Declared<PermittivityForm> form) {
+    return form.is(PermittivityForm::DensityTemperatureIonSuppression) || form.is(PermittivityForm::DensityTemperatureSusceptibilitySuppression);
+}
 inline bool density_temperature_permittivity(core::Declared<PermittivityForm> form) {
-    return form.is(PermittivityForm::DensityTemperature) || form.is(PermittivityForm::DensityTemperatureIonSuppression);
+    return form.is(PermittivityForm::DensityTemperature) || density_temperature_ion_suppression(form);
 }
 
 enum class ElectrolyteForm {
