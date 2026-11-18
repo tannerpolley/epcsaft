@@ -53,6 +53,7 @@ void check_mea_census_state_3();
 void check_mea_trace_ion_discovery();
 void check_reference_parameter_coverage();
 void check_mea_discovery_omitted_species();
+void check_mea_composition_bound_message();
 void check_condensed_trial_recovery();
 void check_solve_error_curvature();
 void check_stability_inventory_face();
@@ -138,6 +139,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.mea-trace-ion-discovery", "mea-trace-ion-discovery", "Automatic_fast"}, check_mea_trace_ion_discovery},
         {{"native.equilibrium.reference-parameter-coverage", "reference-parameter-coverage", "Automatic_fast"}, check_reference_parameter_coverage},
         {{"native.equilibrium.mea-discovery-omitted-species", "mea-discovery-omitted-species", "Automatic_fast"}, check_mea_discovery_omitted_species},
+        {{"native.equilibrium.mea-composition-bound-message", "mea-composition-bound-message", "Automatic_fast"}, check_mea_composition_bound_message},
         {{"native.equilibrium.condensed-trial-recovery", "condensed-trial-recovery", "Automatic_fast"}, check_condensed_trial_recovery},
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},

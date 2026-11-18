@@ -2054,6 +2054,33 @@ void check_reference_parameter_coverage() {
     CHECK(slope(wide_first, 0, {0}) == first);
 }
 
+void check_mea_composition_bound_message() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    problem.pressure = FreeValue::fixed(47000.0);
+    problem.feed.values = {0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    PhaseSpec vapour;
+    vapour.name = "V";
+    vapour.kind = PhaseKind::Vapor;
+    vapour.support = {0, 1, 2};
+    vapour.support_declared = true;
+    vapour.composition_guess = {0.01, 0.002, 0.988};
+    problem.phases.push_back(vapour);
+    problem.solver_options.values[policy::row] = 1e-10;
+
+    const auto result = solve_equilibrium(model, problem, std::nullopt, parameters.component_ids);
+    std::printf("C2 %s\n", result.message.c_str());
+    CHECK(!result.success && result.convergence.stop == core::Stop::stalled);
+    const auto first_clause = result.message.find("; species ");
+    CHECK(first_clause != std::string::npos);
+    CHECK(result.message.substr(first_clause) ==
+        "; species carbon-dioxide in phase L ended near its lower composition bound with an unresolved chemical row"
+        "; species monoethanolamine in phase L ended near its lower composition bound with an unresolved chemical row"
+        "; amount chart physical_mol; retry after start_amount: phase V vanished: its amount reached at most "
+        "PHASE_DISAPPEARANCE_AMOUNT of the feed; the declared split was rejected");
+}
+
 void check_mea_discovery_omitted_species() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;

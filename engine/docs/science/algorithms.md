@@ -3472,7 +3472,7 @@ parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
 
-### Composition bounds in cold stability trials
+### Composition bounds in cold attempts
 
 A cold stability-trial attempt with no Ipopt options file and no warm start
 uses the unrelaxed composition box and Ipopt's default `bound_push` and
@@ -3480,8 +3480,14 @@ uses the unrelaxed composition box and Ipopt's default `bound_push` and
 stalled, list species whose end-point log fraction is within
 $\kappa\max(1, |\ell_i|)$ of the lower log bound $\ell_i$, where $\kappa$ is the
 consumed `bound_push`, and whose returned classified chemical row exceeds
-the row criterion. The list proposes omissions for phase discovery. It records
-end-point geometry and a row defect. All other attempts leave the list empty.
+the row criterion. The trial list proposes omissions for phase discovery.
+
+Use the same selector for a caller's declared Helmholtz Gibbs minimization
+with species identifiers, including its cold physical-mol retry. Name each
+selected species and phase in the generic stall message. A specific
+publication refusal takes precedence. The clauses describe end-point
+geometry and an unresolved chemical row. They establish neither the cause
+of the stall nor the physical stability of the declaration.
 
 ### Diagnose an observed refusal
 

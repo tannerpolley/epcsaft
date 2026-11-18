@@ -1612,7 +1612,7 @@ static EquilibriumResult run_driver_once(
     const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, const DriverLimits* limits, Attempt kind,
-    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, EquilibriumAttemptReporting reporting = {}
 ) {
     core::AssociationObservations observations;
     result.attempt = kind == Attempt::Warm ? Attempt::Cold : kind;
@@ -1851,20 +1851,29 @@ static EquilibriumResult run_driver_once(
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
     }
     result.message = core::describe(convergence);
-    // ALG-TERMINATION: a cold trial attempt at the Engine's default Ipopt settings (no options file, no warm start: the
-    // bounds are the unrelaxed box and the start push is Ipopt's default) that ended optimal but stalled lists the
-    // species that ended within that push of their bounds with rows above the criterion. The list proposes; it proves nothing.
-    if (!end_point.empty() && result.attempt == Attempt::Cold && result.diagnostic_options_file.empty()
-        && convergence.stop == core::Stop::stalled) {
+    // ALG-TERMINATION: default cold geometry applies to the trial and the named declaration, also
+    // on the latter's physical-mol retry. Keep the trial's endpoint selection separate above.
+    const bool list_trial_species = !end_point.empty();
+    const auto* names = reporting.composition_bound_species;
+    const bool name_declared_species = names && !compiled.feasibility_cell();
+    const bool cold_geometry = result.attempt == Attempt::Cold || (name_declared_species && result.attempt == Attempt::PhysicalAmounts);
+    const auto& optimizer_point = nlp->solution();
+    if ((list_trial_species || name_declared_species) && cold_geometry && !newton && status == Ipopt::SUCCESS
+        && !optimizer_point.empty() && result.diagnostic_options_file.empty() && convergence.stop == core::Stop::stalled) {
         const auto box = composition_box(compiled);
-        const auto& support = compiled.problem.phases[0].support;  // a trial has one phase
+        const auto push = result.solver_settings.at("bound_push");
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
             const auto& r = compiled.rows[row];
             if (r.kind != RowKind::Chemical || !(result.classified_residuals[row] > row_tolerance)) continue;
+            const auto& phase = compiled.problem.phases[r.phase];
+            const auto& support = phase.support;
             const auto k = std::find(support.begin(), support.end(), r.index) - support.begin();
             const double lower = std::log(box[r.index]);
-            if (nlp->solution()[compiled.shape[0].x[k]] - lower <= result.solver_settings.at("bound_push") * std::max(1.0, std::abs(lower)))
-                result.bound_species.push_back(r.index);
+            if (optimizer_point[compiled.shape[r.phase].x[k]] - lower <= push * std::max(1.0, std::abs(lower))) {
+                if (list_trial_species) result.bound_species.push_back(r.index);
+                else result.message += "; species " + (*names)[r.index] + " in phase " + phase.name
+                    + " ended near its lower composition bound with an unresolved chemical row";
+            }
         }
     }
     scope.finish(convergence);
@@ -1901,7 +1910,7 @@ EquilibriumResult recover_physical_amounts(
     const CompiledSystem& compiled, EquilibriumResult result, bool eligible, core::Scope& scope,
     const std::vector<double>* restart, const DriverLimits* limits, std::vector<double>* attempt,
     bool admit_density, std::size_t* declarations, std::size_t declaration_budget,
-    bool* invoked, Work counts
+    bool* invoked, Work counts, EquilibriumAttemptReporting reporting
 ) {
     const auto exhausted = [&] {
         return limits && (limits->expired() || limits->iterations_spent()
@@ -1927,7 +1936,7 @@ EquilibriumResult recover_physical_amounts(
             stage = "driver";
             if (invoked) *invoked = true;
             auto driven = run_driver_once(compiled, std::move(initial), retried, retry_scope,
-                &raw, limits, Attempt::PhysicalAmounts, {}, false, false);
+                &raw, limits, Attempt::PhysicalAmounts, {}, false, false, reporting);
             if (driven.failure) { cause = std::move(driven.message); driven.message = retried.message; }
             retried = std::move(driven);
         }
@@ -1961,24 +1970,24 @@ EquilibriumResult run_driver(
     const CompiledSystem& compiled,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, const DriverLimits* limits, Attempt kind,
-    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, Retry runs
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, Retry runs, EquilibriumAttemptReporting reporting
 ) {
     const auto restart = initial;
     DriverLimits shared = limits ? *limits : DriverLimits{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
         std::chrono::steady_clock::time_point::max()};
     const auto* work = limits ? limits : warm ? &shared : nullptr;
     const auto primary = [&]() -> EquilibriumResult {
-    if (!warm || kind == Attempt::Newton) return run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt, limits, kind, {}, predicted, refine_trial);
+    if (!warm || kind == Attempt::Newton) return run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt, limits, kind, {}, predicted, refine_trial, reporting);
     auto tried = [&] {
         core::Scope warm_scope("equilibrium_warm_attempt");
-        return run_driver_once(compiled, initial, result, warm_scope, attempt, work, Attempt::Warm, warm, predicted, refine_trial);
+        return run_driver_once(compiled, initial, result, warm_scope, attempt, work, Attempt::Warm, warm, predicted, refine_trial, reporting);
     }();
     if (tried.failure) scope.probe("warm_failed", {}, 0, tried.message.c_str());
     else if (tried.attempt != Attempt::Warm || tried.success) return tried;
     scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
     core::Scope cold_scope("equilibrium_cold_fallback");
     StageWork stages; stages.add(tried);
-    auto cold = run_driver_once(compiled, std::move(initial), result, cold_scope, attempt, work, Attempt::Cold, {}, predicted, refine_trial);
+    auto cold = run_driver_once(compiled, std::move(initial), result, cold_scope, attempt, work, Attempt::Cold, {}, predicted, refine_trial, reporting);
     std::move(stages).report(cold);
     return cold;
     };
@@ -2152,12 +2161,16 @@ static void observe_endpoint(const Model& model, const CompiledSystem* compiled,
 }
 
 EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
-                                    const std::optional<EquilibriumResult>& start) {
+                                    const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids) {
     core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     std::optional<CompiledSystem> compiled;
-    if (!request.discovery) compiled = compile_problem(model, request);
+    EquilibriumAttemptReporting reporting;
+    if (!request.discovery) {
+        compiled = compile_problem(model, request);
+        if (component_ids.size() == model.parameters().component_count()) reporting.composition_bound_species = &component_ids;
+    }
     auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope, nullptr,
-        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr, !start, true);
+        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr, !start, true, reporting);
     if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
         observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
     return result;
@@ -2240,7 +2253,7 @@ bool recovery_eligible(const CompiledSystem& compiled) {
 EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
     core::Scope& scope, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
     bool recover, const EquilibriumResult& structural, StageWork stages,
-    std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint) {
+    std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint, EquilibriumAttemptReporting reporting) {
     const auto& model = *compiled.model;
     const bool pure_source = start && start->success && limits && limits->recovery && one_component_two_density_eligible(compiled);
     const bool use_start = pure_source || (start.has_value() && usable_start(compiled, *start));
@@ -2306,7 +2319,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             if (fast.success) { fast.rejected_reduction = rejected; std::move(stages).report(fast); return selected(std::move(fast), limits); }
             stages.add(fast);
         }
-        result = run_driver(compiled, std::move(initial), structural, scope, nullptr, limits, Attempt::Cold, warm, false, false, Retry::None);
+        result = run_driver(compiled, std::move(initial), structural, scope, nullptr, limits, Attempt::Cold, warm, false, false, Retry::None, reporting);
         if (result.failure && attempt == 0) continue;  // the seeded attempt's failure falls back to the declared start
         if (result.failure) { stages.report_observations(result); return result; }
         if (!result.success) continue;
@@ -2328,7 +2341,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     std::move(stages).report(result);
     const bool retry = result.retry == Retry::PhysicalAmounts && !admission_refused;
     result = recover_physical_amounts(compiled, std::move(result), retry,
-        scope, nullptr, limits, nullptr, true);
+        scope, nullptr, limits, nullptr, true, nullptr, 0, nullptr, Work::Accumulated, reporting);
     result.rejected_reduction = rejected;
     // ALG-EQUILIBRIUM recovery work: its own caps, within any caller remainder.
     const auto allowance = [&] {
@@ -2484,7 +2497,7 @@ static EquilibriumResult recover_critical(const CompiledSystem& compiled, Equili
 
 EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
                                  core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
-                                 bool recover, bool select_endpoint) {
+                                 bool recover, bool select_endpoint, EquilibriumAttemptReporting reporting) {
     std::optional<core::Scope> own;
     auto& scope = outer != nullptr ? *outer : own.emplace("solve_equilibrium");
     if (compiled.ideal && start) throw std::invalid_argument("ideal previous-result starts unsupported before calculation");
@@ -2496,7 +2509,7 @@ EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::
     const bool critical = recover && !start && !limits && !warm && compiled.problem.critical
         && compiled.n_feed.size() == 1 && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     auto result = [&] {
-        try { return continue_compiled(compiled, start, scope, limits, std::move(warm), recover, structural, {}, std::nullopt, {}, select_endpoint); }
+        try { return continue_compiled(compiled, start, scope, limits, std::move(warm), recover, structural, {}, std::nullopt, {}, select_endpoint, reporting); }
         catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) {
             auto failed = structural;
             failed.message = error.what();
@@ -2520,8 +2533,8 @@ EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::
 
 EquilibriumResult solve_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
                                  core::Scope* outer, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
-                                 bool recover, bool select_endpoint) {
-    auto result = try_solve_compiled(compiled, start, outer, limits, std::move(warm), recover, select_endpoint);
+                                 bool recover, bool select_endpoint, EquilibriumAttemptReporting reporting) {
+    auto result = try_solve_compiled(compiled, start, outer, limits, std::move(warm), recover, select_endpoint, reporting);
     if (result.failure) std::rethrow_exception(result.failure);
     return result;
 }

@@ -4112,10 +4112,12 @@ def sensitivity(compiled: CompiledSystem, point: Sequence[float], lever: Sequenc
     Solves J dy = -F_controls dcontrols using exact native columns. An empty result is unavailable sensitivity, not a zero derivative.
     """
     ...
+@overload
 def solve_equilibrium(
-    model: HelmholtzModel | IdealMoleFraction,
+    model: HelmholtzModel,
     problem: EquilibriumProblem,
     start: Optional[EquilibriumResult] = ...,
+    component_ids: Sequence[str] = ...,
 ) -> EquilibriumResult:
     """Solve the declared equilibrium problem natively.
 
@@ -4127,6 +4129,8 @@ def solve_equilibrium(
         Native physical declaration; phase order owns result arrays.
     start : Optional[EquilibriumResult]
         Optional compatible admitted result used only as a seed.
+    component_ids : Sequence[str]
+        Species identifiers in model order for declared composition-bound stall messages.
 
     Returns
     -------
@@ -4138,6 +4142,13 @@ def solve_equilibrium(
     Uses the native equilibrium driver, exact derivatives and declared numerical settings. A returned success is local numerical admission; global stability requires separate evidence. See ALG-EQUILIBRIUM.
     """
     ...
+
+@overload
+def solve_equilibrium(
+    model: IdealMoleFraction,
+    problem: EquilibriumProblem,
+    start: Optional[EquilibriumResult] = ...,
+) -> EquilibriumResult: ...
 
 class ResidualEnergyAction:
     action: float | None
