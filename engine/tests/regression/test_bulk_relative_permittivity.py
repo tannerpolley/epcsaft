@@ -2,7 +2,7 @@
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters
+from epcsaft import Mixture, ParameterError, Parameters, Pure
 from epcsaft import regression as reg
 from epcsaft.equilibrium import Amounts, Phase, Problem
 
@@ -67,7 +67,7 @@ def test_permittivity_form_is_required_at_admission() -> None:
     p = parameters((ETHANE,))
     problem = Problem(phases=[Phase("L", kind="liquid")], T=180, P=1e6, feed=Amounts({"s0": 1}))
     row = reg.observation(p, "bulk_relative_permittivity", problem, observed=1, form="difference", phase="L", scale=1)
-    model = Mixture(p)
+    model = Pure(p)
     message = "bulk relative permittivity requires a declared permittivity form"
     with pytest.raises(ParameterError, match=message):
         reg.predict(model, row)
