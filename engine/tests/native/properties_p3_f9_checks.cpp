@@ -1081,6 +1081,11 @@ void pressure_closed_ion_suppression_fit() {
         auto refused_parameters = parameters;
         refused_parameters.ion_suppression_coefficient = {0, -30, -30};
         const HelmholtzModel refused_model(refused_parameters);
+        // #79 protects the rank probe's denominator. A negative solvent susceptibility
+        // still produces a raw domain refusal there, before density closure can wrap it.
+        auto invalid_bulk_parameters = refused_parameters;
+        invalid_bulk_parameters.dielectric_temperature_k[0] = T / 2;
+        const HelmholtzModel invalid_bulk(invalid_bulk_parameters);
         phase.problem.pressure = FreeValue::fixed(101325);
         FitRequest refused_request = request;
         refused_request.parameters = refused_parameters;
@@ -1095,18 +1100,16 @@ void pressure_closed_ion_suppression_fit() {
         }
         for (const auto kind : {ObservationKind::PhaseDensity, ObservationKind::PhaseBulkRelativePermittivity}) {
             phase.kind = kind;
-            const auto check_unavailable = [&](const Prediction& result) {
+            const auto check_unavailable = [](const Prediction& result, const char* reason) {
                 CHECK(result.status == ObservationStatus::CentralSolveUnavailable && !result.value &&
-                      result.message.find(cause) != std::string::npos);
+                      result.message.find(reason) != std::string::npos);
                 CHECK(result.first_numerical_failure &&
-                      result.first_numerical_failure->cause.find(cause) != std::string::npos);
+                      result.first_numerical_failure->cause.find(reason) != std::string::npos);
             };
-            check_unavailable(predict(refused_model, phase));
-            // Reuse the accepted density at the same composition to reach EOS preparation
-            // even when the cold density closure wraps the refusal as a runtime error.
-            check_unavailable(predict(refused_model, phase, closed.solved));
+            check_unavailable(predict(refused_model, phase), cause);
+            check_unavailable(predict(invalid_bulk, phase), "invalid bulk relative permittivity");
             const auto unavailable = predict_validated(refused_model, phase);
-            check_unavailable(unavailable);
+            check_unavailable(unavailable, cause);
             const auto gradient = differentiate(refused_model, phase, unavailable);
             CHECK(gradient.status == unavailable.status && gradient.message == unavailable.message && gradient.value.empty());
             refused_request.observations = {phase};
