@@ -1124,10 +1124,13 @@ void validate_fit_request(const FitRequest& request, bool optimizing) {
     const HelmholtzModel model(request.parameters, set.active_parameters(), request.thermochemistry, request.controls.solver_options);
     require(n > 0, "needs observations");
     core::Scope validation("fit_validation");
-    for (const auto& observation : request.observations) {
+    for (const auto& observation : request.observations) try {
         if (interrupted()) throw FitInterrupted{};
         validate(observation, model);
         if (observation.kind == ObservationKind::Stability) require(!request.minimax, "stability penalty rows require least squares");
+    } catch (const std::domain_error& error) {
+        throw std::invalid_argument("observation " + std::to_string(&observation - request.observations.data())
+            + ": central_solve_unavailable: " + error.what());
     }
     require(request.weights.empty() || request.weights.size() == n, "weights width");
     for (std::size_t i = 0; i < request.weights.size(); ++i) {

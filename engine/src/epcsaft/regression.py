@@ -53,6 +53,7 @@ _FORMS = {"difference": ResidualForm.Difference, "log_ratio": ResidualForm.LogRa
 _KINDS = {
     "equilibrium_isobaric_heat_capacity": ObservationKind.EquilibriumIsobaricHeatCapacity,
     "phase_density": ObservationKind.PhaseDensity,
+    "bulk_relative_permittivity": ObservationKind.PhaseBulkRelativePermittivity,
     "pressure": ObservationKind.EquilibriumPressure,
     "temperature": ObservationKind.EquilibriumTemperature,
     "mole_fraction": ObservationKind.PhaseMoleFraction,
@@ -501,7 +502,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         Model component order for species and problem conversion.
     kind : str
         ``pressure`` (Pa), ``temperature`` (K), ``phase_density`` (mol/m³ or
-        kg/m³), ``mole_fraction`` (dimensionless sum over selected species),
+        kg/m³), ``bulk_relative_permittivity`` (dimensionless, named phase),
+        ``mole_fraction`` (dimensionless sum over selected species),
         ``partial_pressure`` (Pa, P times that sum), ``phase_fraction``
         (dimensionless molar fraction), ``amount_ratio`` (dimensionless ratio
         of selected phase-component mol), ``solvent_activity`` (unit 1 relative to

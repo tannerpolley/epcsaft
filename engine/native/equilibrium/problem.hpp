@@ -1056,7 +1056,8 @@ enum class SolvedStateObservableKind {
     EquilibriumIsobaricHeatCapacity,
     SolidAmount,  // `phase` is the solid ordinal
     SolidSaturationIndex,
-    Loading
+    Loading,
+    PhaseBulkRelativePermittivity
 };
 
 struct SolvedStateObservable final {

@@ -278,6 +278,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
         if (item.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity
             && (!compiled.admits_apparent_cp() || request.directions.size() != 1))
             throw std::invalid_argument("apparent Cp requires driven T/P or free T with a fixed-P enthalpy target, and first actions only");
+        if (item.kind == SolvedStateObservableKind::PhaseBulkRelativePermittivity && request.directions.size() > 1)
+            throw std::invalid_argument("bulk relative permittivity supports first actions only");
         const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
         if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
@@ -514,6 +516,12 @@ Series observable_series(const HelmholtzModel &model, const SolvedStateObservabl
                             standard_series(*calorics, series, observable.phase, i, 0, 1, volume.size() - 1)),
                     1.0);
         return volume;
+    }
+    case SolvedStateObservableKind::PhaseBulkRelativePermittivity: {
+        const auto& map = maps[observable.phase];
+        const auto& point = series.phase[observable.phase].point;
+        return model.bulk_relative_permittivity_series(series.temperature, map.density, map.mole_fraction,
+            point.size() == 1 ? Series{} : Series(point[1].end() - model.active_parameters().size(), point[1].end()));
     }
     case SolvedStateObservableKind::PhaseMolarDensity: return maps[observable.phase].density;
     case SolvedStateObservableKind::PhasePackingFraction: return maps[observable.phase].packing;
@@ -894,6 +902,7 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::PhaseVolume: return phase + ".volume";
     case SolvedStateObservableKind::PhaseGibbsMolarVolume: return phase + ".gibbs_molar_volume";
     case SolvedStateObservableKind::PhaseMolarDensity: return phase + ".molar_density";
+    case SolvedStateObservableKind::PhaseBulkRelativePermittivity: return phase + ".bulk_relative_permittivity";
     case SolvedStateObservableKind::PhasePackingFraction: return phase + ".packing_fraction";
     case SolvedStateObservableKind::PhasePressure: return phase + ".pressure";
     case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:

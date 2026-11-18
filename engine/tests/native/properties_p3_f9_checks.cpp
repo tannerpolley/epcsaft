@@ -1036,6 +1036,81 @@ void pressure_closed_ion_suppression_fit() {
     CHECK(written.entries.back().magnitude == fitted.physical[0]);
     const HelmholtzModel reloaded(build_parameters(written));
     verify("roundtrip-epsilon", predict(reloaded, observation).value.value(), observation.observed, observation_error);
+    using namespace equilibrium;
+    Observation phase;
+    phase.kind = ObservationKind::PhaseBulkRelativePermittivity;
+    phase.problem.temperature = FreeValue::fixed(T);
+    phase.problem.pressure = FreeValue::fixed(observation.pressure);
+    phase.problem.feed.values = x;
+    phase.problem.phases = {{"L", PhaseKind::Liquid}};
+    phase.observed = observation.observed;
+    const auto closed = predict_validated(truth, phase);
+    CHECK(closed.status == ObservationStatus::Available && closed.value && closed.solved && closed.unit == "1");
+    const double solved_density_error = std::abs(closed.solved->molar_densities[0] - exact.state->molar_density);
+    verify("solved-phase-epsilon", *closed.value, *exact.value,
+           std::abs(slope / D) * solved_density_error + rounding * std::abs(*exact.value));
+
+    auto refused_parameters = parameters;
+    refused_parameters.ion_suppression_coefficient = {0, -30, -30};
+    const HelmholtzModel refused_model(refused_parameters);
+    phase.problem.pressure = FreeValue::fixed(101325);
+    FitRequest refused_request = request;
+    refused_request.parameters = refused_parameters;
+    refused_request.coordinates.coordinates.front().lower = -100;
+    constexpr auto cause = "invalid permittivity suppression denominator";
+    bool compile_refused = false;
+    try {
+        (void)compile_problem(refused_model, phase.problem);
+    } catch (const std::domain_error& error) {
+        CHECK(std::string(error.what()) == cause);
+        compile_refused = true;
+    }
+    for (const auto kind : {ObservationKind::PhaseDensity, ObservationKind::PhaseBulkRelativePermittivity}) {
+        phase.kind = kind;
+        const auto unavailable = predict_validated(refused_model, phase);
+        CHECK(unavailable.status == ObservationStatus::CentralSolveUnavailable && !unavailable.value &&
+              unavailable.message.find(cause) != std::string::npos);
+        CHECK(unavailable.first_numerical_failure &&
+              unavailable.first_numerical_failure->cause.find(cause) != std::string::npos);
+        const auto gradient = differentiate(refused_model, phase, unavailable);
+        CHECK(gradient.status == unavailable.status && gradient.message == unavailable.message && gradient.value.empty());
+        refused_request.observations = {phase};
+        const auto result = fit(refused_request);
+        CHECK(!result.usable && result.predictions.empty());
+        if (compile_refused) {
+            bool validation_refused = false;
+            try {
+                validate(phase, refused_model);
+            } catch (const std::domain_error& error) {
+                CHECK(std::string(error.what()) == cause);
+                validation_refused = true;
+            }
+            CHECK(validation_refused && result.status == "invalid_setup");
+            CHECK(result.message == std::string("observation 0: central_solve_unavailable: ") + cause);
+            CHECK(result.residual_evaluations == 0);
+        } else {
+            // A rank probe that admits the model still leaves the fixed feed outside the law's domain.
+            CHECK(result.status == "initial_evaluation_failed" && !result.failures.empty());
+            CHECK(result.failures.front().observation == 0 &&
+                  result.failures.front().status == ObservationStatus::CentralSolveUnavailable &&
+                  result.failures.front().message.find(cause) != std::string::npos);
+        }
+        recording_support::observe(kind == ObservationKind::PhaseDensity ? "phase-density/refusal" : "phase-permittivity/refusal",
+            "available", "1", 0, std::nullopt, "native-observation",
+            recording_support::fields({recording_support::field("cause", result.message), recording_support::field("status", result.status)}));
+    }
+
+    phase.kind = ObservationKind::PhaseBulkRelativePermittivity;
+    phase.problem.feed.values = {1};
+    const HelmholtzModel no_permittivity(properties_support::ethane());
+    constexpr auto no_form = "observation bulk relative permittivity requires a declared permittivity form";
+    CHECK(recording_support::refusal([&] { (void)predict_validated(no_permittivity, phase); }) == no_form);
+    refused_request.parameters = no_permittivity.parameters();
+    refused_request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}}};
+    refused_request.observations = {phase};
+    const auto missing = fit(refused_request);
+    CHECK(!missing.usable && missing.status == "invalid_setup" && missing.message == no_form && missing.residual_evaluations == 0);
+
     parameters.ion_suppression_coefficient = {0, -100, -100};
     const HelmholtzModel inadmissible(parameters);
     const auto refusal = predict(inadmissible, observation);

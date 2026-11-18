@@ -4403,6 +4403,8 @@ class ObservationKind:
     """
     Stability: ObservationKind
 
+    PhaseBulkRelativePermittivity: ObservationKind
+
     SaturationCappedAdditionEnthalpy: ObservationKind
 
     MeanIonicActivityCoefficient: ObservationKind

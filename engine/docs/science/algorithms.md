@@ -2639,7 +2639,10 @@ An action request identifies observable, independent coordinate order, units,
 directions, derivative order, source domain and branch/support. A successful
 central solve does not imply every action is available. Return per-action
 values or a specific failure reason, with rank/conditioning and linear residual
-where relevant. Cache/reuse thermodynamic work for the same resolved state;
+where relevant. A named phase's bulk relative permittivity admits first
+actions. Evaluate the declared law along the solved temperature, molar
+density and mole fractions with the direct active-parameter direction.
+Cache/reuse thermodynamic work for the same resolved state;
 reuse must preserve all coefficient, T, density and implicit-site dependencies.
 
 The bounded exact-inventory incipient extension in ALG-EQUILIBRIUM changes
@@ -3313,8 +3316,14 @@ See the fitting appendix for [cation-mixing coordinates](#cation-mixing-coordina
 [guarded minimax](#guarded-minimax).
 The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, driven-T/P or PH apparent equilibrium
-isobaric heat capacity, finite-addition enthalpy,
-the declared equilibrium observations and direct source-basis ln K observations. It uses the cross-family affine
+isobaric heat capacity, finite-addition enthalpy, the declared equilibrium
+observations including dimensionless bulk relative permittivity of a named
+fluid phase, and direct source-basis ln K observations. The solved-phase
+permittivity row requires a declared permittivity form and a solid-free
+declared-phase problem. A numerical domain refusal during public observation
+admission or the central solve returns `central_solve_unavailable` with the
+original cause. A numerical domain refusal during fit admission refuses that
+row at setup with its cause. It uses the cross-family affine
 optimizer coordinates of EqID: `affine_parameter_coordinate_map`, a Ceres Levenberg--Marquardt trust
 region with dense QR on one thread, the named `FIT_*` policy tolerances as the
 only defaults, exact owner actions for every Jacobian and a covariance that is

@@ -14,6 +14,7 @@ void check_ionic_addition_enthalpy();
 void check_free_temperature_addition();
 void check_addition_enthalpy();
 void check_saturation_capped_addition();
+void check_phase_bulk_relative_permittivity();
 void check_log_constant();
 void check_f1();
 void check_f2();
@@ -60,6 +61,7 @@ int main(int argc, char** argv) {
         {{"native.regression.ionic-addition", "ionic-addition"}, check_ionic_addition_enthalpy, "R2"},
         {{"native.regression.reactive-caloric-F6-addition", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "R2"},
         {{"native.regression.addition-enthalpy", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
+        {{"native.regression.phase-bulk-relative-permittivity", "phase-bulk-relative-permittivity"}, check_phase_bulk_relative_permittivity, "R2"},
         {{"native.regression.saturation-capped-addition", "saturation-capped-addition"}, check_saturation_capped_addition, "R1"},
         {{"native.regression.ln-k", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "R1-F1"}, check_f1, "R1"},

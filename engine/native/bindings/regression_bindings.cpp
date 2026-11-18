@@ -110,7 +110,7 @@ m._serve_fit(channel)
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
-            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability);
+            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability, PhaseBulkRelativePermittivity);
     nb::enum_<ResidualForm>(module, "ResidualForm")
         EPCSAFT_VALUES(ResidualForm, Difference, LogRatio);
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
@@ -233,13 +233,11 @@ m._serve_fit(channel)
         EPCSAFT_REPR(FitResult, "status", "usable", "final_cost", "iterations", "physical");
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
-        validate(observation, model);
-        return predict(model, observation);
+        return predict_validated(model, observation);
     }, nb::arg("model"), nb::arg("observation"));
     module.def("differentiate", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("differentiate");
-        validate(observation, model);
-        return differentiate(model, observation, predict(model, observation));
+        return differentiate(model, observation, predict_validated(model, observation));
     }, nb::arg("model"), nb::arg("observation"));
     module.def("fit", [](const Parameters& parameters, std::optional<ThermochemistryRecord> thermochemistry,
                          std::vector<Coordinate> coordinates, std::vector<Observation> observations,

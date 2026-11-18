@@ -166,3 +166,126 @@ void check_saturation_capped_addition() {
   }
 }
 } // namespace regression_checks
+
+namespace regression_checks {
+void check_phase_bulk_relative_permittivity() {
+    using namespace epcsaft::equilibrium;
+    using Family = ParameterFamily;
+    using Kind = SolvedStateObservableKind;
+#include "fixtures/mea_capped_addition.inc"
+
+    // The reciprocal-temperature column needs T distinct from the fixture's 313.15 K pivot.
+    Observation epsilon;
+    epsilon.kind = ObservationKind::PhaseBulkRelativePermittivity;
+    epsilon.problem = row.problem;
+    epsilon.problem.temperature = FreeValue::fixed(323.15);
+    epsilon.problem.pressure = FreeValue::fixed(101325);
+    epsilon.problem.feed.values[0] = 0.4;
+    epsilon.observed = 60;
+    epsilon.scale = 3.2;
+    auto density = epsilon;
+    density.kind = ObservationKind::PhaseDensity;
+    density.observed = 55000;
+    density.scale = 1000;
+    const std::vector<Observation> rows{density, epsilon};
+
+    coordinates.coordinates = {
+        {{{Family::Kij, {22, 38}}}, 0, 0.001},
+        {{{Family::KijReciprocalTemperatureSlope, {21, 29}}}, 0, 10},
+        {{{Family::SigmaConstant, {1}}}, 0, 0.001},
+        {{{Family::PackingDiameter, {4}}}, 0, 0.001},
+        {{{Family::DebyeHuckelDiameter, {4}}}, 0, 0.001},
+        {{{Family::BornDiameter, {4}}}, 0, 0.001},
+        {{{Family::DispersionEnergyOverK, {1}}}, 0, 0.1},
+        {{{Family::IonSuppressionCoefficient, {3}}}, 0, 0.005},
+        {{{Family::IonSuppressionCoefficient, {4}}}, 0, 0.005},
+    };
+    const char* names[] = {"k_ij", "k_ij_reciprocal_temperature_slope", "segment_diameter", "packing_diameter",
+                           "debye_huckel_diameter", "born_diameter", "dispersion_energy_over_k",
+                           "ion_suppression_coefficient/meah", "ion_suppression_coefficient/carbamate"};
+    for (const char* form : {"solvent-density-temperature-ion-specific-suppression"}) {
+        auto declaration = document;
+        declaration.permittivity_choice = form;
+        for (std::size_t i = 3; i < 9; ++i)
+            declaration.entries.push_back({"ion_suppression_coefficient", "ion_suppression_coefficient", {i},
+                i == 3 ? 1.0 : i == 4 ? 2.0 : 0.0, "dimensionless"});
+        parameters = build_parameters(declaration);
+        const auto active = coordinates.active_parameters();
+        const HelmholtzModel model(parameters, active, thermal);
+        const auto center = predict_validated(model, epsilon);
+        truth("phase-permittivity/solved", center.status == ObservationStatus::Available && center.value && center.solved,
+              fields({field("cause", center.message)}));
+        CHECK(center.value && center.solved && center.compiled && center.unit == "1");
+        const auto& state = *center.solved;
+        const auto inputs = fields({field("form", form), field("T_K", *state.temperature),
+            field("P_Pa", *state.pressure), field("loading", epsilon.problem.feed.values[0]),
+            field("rho_mol_m3", state.molar_densities[0]), field("residual_norm", state.residual_norm())});
+        CHECK(state.residual_norm() <= 1e-10);
+        const double reference = model.state(*state.temperature, state.molar_densities[0], state.mole_fractions).bulk_relative_permittivity;
+        CHECK(agree("phase-permittivity/value", "bulk_relative_permittivity", "1", *center.value, reference,
+                    32 * EPS * std::abs(reference), 0, inputs));
+
+        const auto gradient = differentiate(model, epsilon, center);
+        truth("phase-permittivity/action-available", gradient.status == ObservationStatus::Available,
+              fields({field("cause", gradient.message)}));
+        CHECK(gradient.value.size() == active.size());
+        const auto start = coordinates.start(parameters, rows, thermal);
+        for (std::size_t column = 0; column < active.size(); ++column) {
+            const bool suppression = active[column].family == Family::IonSuppressionCoefficient;
+            const double step = coordinates.coordinates[column].scale;
+            std::map<double, double> composition_frozen;
+            const auto value = [&](double displacement) {
+                auto optimizer = start;
+                optimizer[column] += displacement / step;
+                const HelmholtzModel shifted(coordinates.apply(parameters, optimizer), active, thermal);
+                const auto prediction = predict(shifted, epsilon);
+                CHECK(prediction.status == ObservationStatus::Available && prediction.value && prediction.solved);
+                const auto& moved = *prediction.solved;
+                CHECK(moved.residual_norm() <= 1e-10);
+                if (suppression)
+                    composition_frozen.emplace(displacement,
+                        shifted.state(*moved.temperature, moved.molar_densities[0], state.mole_fractions).bulk_relative_permittivity);
+                return *prediction.value;
+            };
+            const auto full = ladder(value, step);
+            const auto id = std::string("phase-permittivity/") + names[column];
+            CHECK(ladder_agrees(id, "d_epsilon_d_parameter", gradient.value[column], full,
+                fields({field("form", form), field("step", step), field("T_K", *state.temperature)}), true));
+            if (suppression) {
+                const auto frozen = ladder([&](double displacement) { return composition_frozen.at(displacement); }, step);
+                const double allowance = FIRST_ORDER * std::abs(full.fine);
+                const auto power_inputs = fields({field("frozen_fine", frozen.fine), field("full_fine", full.fine),
+                    field("frozen_coarse", frozen.coarse), field("full_coarse", full.coarse), field("fine_allowance", allowance)});
+                truth(id + "/composition-power", std::abs(frozen.fine - full.fine) > allowance, power_inputs);
+            } else CHECK(full.fine != 0);
+        }
+
+        FitRequest request;
+        request.parameters = parameters;
+        request.thermochemistry = thermal;
+        request.coordinates = coordinates;
+        request.observations = rows;
+        request.controls = budgeted_controls();
+        const auto evaluated = evaluated_columns(request, start);
+        CHECK(evaluated.statuses == std::vector<ObservationStatus>(rows.size(), ObservationStatus::Available));
+        for (std::size_t column = 0; column < active.size(); ++column) {
+            const double expected = gradient.value[column] * coordinates.coordinates[column].scale / epsilon.scale;
+            CHECK(agree(std::string("phase-permittivity/grouped-fit/") + names[column], "dr_du", "1",
+                evaluated.residual_optimizer_gradient.at(active.size() + column), expected,
+                1e-13 * std::abs(expected), 0, inputs));
+        }
+
+        SolvedStateActionDirection direction;
+        direction.feed_amounts_mol.resize(state.mole_fractions.size());
+        direction.active_parameters.resize(active.size());
+        bool order_refused = false;
+        try {
+            (void)solved_state_actions(*center.compiled, state, {{{Kind::PhaseBulkRelativePermittivity}}, {direction, direction}});
+        } catch (const std::invalid_argument& error) {
+            CHECK(std::string(error.what()) == "bulk relative permittivity supports first actions only");
+            order_refused = true;
+        }
+        CHECK(order_refused);
+    }
+}
+}  // namespace regression_checks
