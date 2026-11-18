@@ -481,6 +481,17 @@ bool GibbsMinimizer::get_nlp_info(
     return true;
 }
 
+std::vector<double> composition_box(const CompiledSystem& compiled) {
+    const bool feasibility = compiled.feasibility_cell();
+    std::vector<double> box(compiled.n_feed.size(), feasibility ? std::numeric_limits<double>::min() : policy::EQUILIBRIUM_BOX_FLOOR.value);
+    if (!feasibility)
+        for (std::size_t i = 0; i < box.size(); ++i)
+            if (!(compiled.reaction_relaxed_split && compiled.model->parameters().charge_number[i] != 0.0))
+                box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
+                    policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled.inventory_upper_bounds[i]));
+    return box;
+}
+
 bool GibbsMinimizer::get_bounds_info(
     Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
     Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u
@@ -499,16 +510,8 @@ bool GibbsMinimizer::get_bounds_info(
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
     // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
     // bounds y_i): the phases are never forced to hold a trace species that does not exist (#172).
-    const std::size_t species = compiled_.n_feed.size();
-    const bool feasibility = compiled_.feasibility_cell();
-    std::vector<double> box(species, feasibility ? std::numeric_limits<double>::min() : policy::EQUILIBRIUM_BOX_FLOOR.value);
-    if (!feasibility) {
-        if (limits_ && limits_->expired()) return false;
-        for (std::size_t i = 0; i < species; ++i)
-            if (!(compiled_.reaction_relaxed_split && compiled_.model->parameters().charge_number[i] != 0.0))
-                box[i] = std::max(box[i], std::min(policy::EQUILIBRIUM_COMPOSITION_BOX.value,
-                    policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled_.inventory_upper_bounds[i]));
-    }
+    if (limits_ && limits_->expired()) return false;
+    const auto box = composition_box(compiled_);
     if (limits_ && limits_->expired()) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled_.problem.phases) {
@@ -1848,6 +1851,22 @@ static EquilibriumResult run_driver_once(
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
     }
     result.message = core::describe(convergence);
+    // ALG-TERMINATION: a cold trial attempt at the Engine's default Ipopt settings (no options file, no warm start: the
+    // bounds are the unrelaxed box and the start push is Ipopt's default) that ended optimal but stalled lists the
+    // species that ended within that push of their bounds with rows above the criterion. The list proposes; it proves nothing.
+    if (!end_point.empty() && result.attempt == Attempt::Cold && result.diagnostic_options_file.empty()
+        && convergence.stop == core::Stop::stalled) {
+        const auto box = composition_box(compiled);
+        const auto& support = compiled.problem.phases[0].support;  // a trial has one phase
+        for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
+            const auto& r = compiled.rows[row];
+            if (r.kind != RowKind::Chemical || !(result.classified_residuals[row] > row_tolerance)) continue;
+            const auto k = std::find(support.begin(), support.end(), r.index) - support.begin();
+            const double lower = std::log(box[r.index]);
+            if (nlp->solution()[compiled.shape[0].x[k]] - lower <= result.solver_settings.at("bound_push") * std::max(1.0, std::abs(lower)))
+                result.bound_species.push_back(r.index);
+        }
+    }
     scope.finish(convergence);
     const bool admitted = non_error && (!newton || (!capped && in_bounds && corrected))
         && (convergence.stop == core::Stop::converged

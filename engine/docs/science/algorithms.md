@@ -1536,7 +1536,7 @@ counter-based acceptable stop remains disabled (`acceptable_iter=0`).
 Both the inner target and its feed-scaled dual target must be finite and positive;
 an unrepresentable combined request is rejected before Ipopt initialization.
 The result's `solver_settings` reports consumed `tol`, `acceptable_tol`,
-`constr_viol_tol` and `dual_inf_tol`, after the diagnostic file has been read;
+`constr_viol_tol`, `dual_inf_tol` and `bound_push` after any diagnostic file is read.
 Newton-only results have no consumed Ipopt settings. No starts, bounds,
 barrier settings, complementarity tolerance or iteration budget change.
 A caller-valued criterion is owned
@@ -2580,16 +2580,31 @@ descent solely because the trial is close to a present phase.
 
 Rank distinct resolved descending trials by actual donor slope, more negative
 first, ties by enumeration. This is deterministic, not a claim of the best
-possible addition start. Seed the full added declaration with the admitted
-finite split; preserve feed, reactions, standards and exact selected support.
+possible addition start. Start from the admitted frozen split and preserve feed,
+reactions and standards. A trial with species listed by [ALG-TERMINATION](#alg-termination)
+proposes leaving those species in the donor. A listed ion keeps the full trial
+support. For a neutral omission, use the original transfers on the retained
+species and zero transfers on the omitted species. Recompute the donor and
+added amounts and fractions with the frozen split arithmetic, using the split
+volumes. Check that the amounts represented by the stored log fractions conserve
+components and moieties within `ADDITION_MATERIAL_BALANCE` times the larger of
+1 mol and the feed amount. If the reduced seed fails or the reduced declaration
+is refused or rank-deficient at compilation, use the original support and seed.
+
 Reuse shared density-branch admission. A unique unlabelled root takes the side
 its stored negative-slope sample establishes (ALG-DENSITY), keeping the
 split and its Gibbs decrease: water(0.87)/1-pentanol at 150 K and 101,300 Pa with
 a vapor trial family adds a second liquid. Without a sample it retains the source
 declaration label without asserting a physical phase theorem; an ionic phase
-established as vapor-side is refused. Require
-achieved rows and an uncertainty-qualified lower Gibbs energy before accepting
-an addition; otherwise try the next distinct trial. The acceptance margin sums
+established as vapor-side is refused. Refuse a reduced addition that encounters
+a topology event before attempting any phase removal. After a reduced solve meets
+the row criterion, evaluate the added phase's shared chemical row at fraction
+one for each omitted species, with the other terms fixed at the solved state.
+The negative of that row is the estimated zero-row log fraction. Require it to
+be finite and strictly below the nominal log composition bound used by the full
+addition at default settings. A refused reduced solve advances to the next
+distinct trial. Require achieved rows and an uncertainty-qualified lower Gibbs
+energy before accepting any addition. The acceptance margin sums
 each present phase's molar energy estimate weighted by its amount in mol, so
 the margin and extensive G/RT both have units mol. Retain this computed margin
 with the addition trial; a per-mole estimate alone cannot qualify an extensive
@@ -3456,6 +3471,17 @@ gradient describe local conditioning; dependent-target uncertainty, profiles,
 parameter Hessians and physical validation are not supplied.
 
 ## ALG-TERMINATION
+
+### Composition bounds in cold stability trials
+
+A cold stability-trial attempt with no Ipopt options file and no warm start
+uses the unrelaxed composition box and Ipopt's default `bound_push` and
+`bound_frac`. If Ipopt ends optimal and the Engine classifies the attempt as
+stalled, list species whose end-point log fraction is within
+$\kappa\max(1, |\ell_i|)$ of the lower log bound $\ell_i$, where $\kappa$ is the
+consumed `bound_push`, and whose returned classified chemical row exceeds
+the row criterion. The list proposes omissions for phase discovery. It records
+end-point geometry and a row defect. All other attempts leave the list empty.
 
 ### Diagnose an observed refusal
 

@@ -245,3 +245,23 @@ owns the procedure, budget and accounting.
 ## Addendum: optimizer end point kept over a displaced polish (2026-11-17, #49)
 
 The owner adopted this addendum on 2026-11-17. A negative tangent-plane distance at a feasible trial point is sufficient for descent (D9/D10). The trial polish solves interior stationarity rows and can move to a stationary point of another basin. An optimized trial therefore reports the optimizer's end point when the optimizer's exit is optimal, the polished point is not coincident with it (`PHASE_COINCIDENCE_DISTANCE`), its distance is negative and the polished distance is not lower. At any other optimizer exit the end point is not shown to be feasible, and the trial keeps its polished result. Rejected: a polish held on the optimizer's active bounds, which would leave unconverged the trials that converge below the composition box; a curvature test, which a displaced polish that reaches a different minimum would pass; a test of the polished distance's sign, which a polish reaching the parent's own composition can pass by rounding. Evidence: 64 of 3,644 trials on the Engine MEA reference with solvent-only permittivity, none of 3,939 with density–temperature permittivity; every recorded optimizer exit is optimal. The kept point is a finite-search witness of the declared model; it carries no claim that the trial phase is inside a permittivity correlation's fitted range.
+
+## Addendum on composition bounds in phase additions (#53)
+
+A cold trial attempt at the Engine's default Ipopt settings, with no options
+file or warm start, lists species when Ipopt ends optimal and the Engine
+classifies the attempt as stalled. Each listed species ended within Ipopt's
+default start push of its composition bound with a classified chemical row
+above the row criterion. The list proposes omissions. Attempts at other
+settings keep the trial support.
+
+The added phase omits the listed neutral species and leaves their transferred
+amounts in the donor. A listed ion keeps the trial support. If a reduced
+addition encounters a topology event, discovery refuses it before any removal
+solve. After a reduced solve meets the row criterion, each omitted species'
+zero-row log fraction must be finite and below the composition box that the
+unreduced addition would apply at these settings. Otherwise discovery advances
+to the next trial. An admitted addition solves the reduced declaration and lowers
+Gibbs energy by more than the existing addition margin. The rule provides
+no estimate of the distance from a full-support minimum or evidence of
+composition-domain applicability.

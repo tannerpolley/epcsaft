@@ -709,8 +709,9 @@ check. Search geometry, physical admission and derivative checks stay fixed.
 
 `epcsaft.tolerances()` reports immutable source defaults. Each owning result's
 `solver_options` lists effective names, values, units and defaults. Equilibrium
-results also report consumed Ipopt `solver_settings` (empty for Newton-only
-solves) and the diagnostic options-file path when supplied. Fit results' common
+results also report consumed Ipopt `solver_settings`, including `bound_push`,
+and the diagnostic options-file path when supplied. Newton-only solves have no
+consumed Ipopt settings. Fit results' common
 options do not replace heterogeneous row overrides retained by observations.
 Achieved residuals, numerical floors and conditioning remain the evidence for
 assessing a returned value; requested tolerances alone are not error estimates.
