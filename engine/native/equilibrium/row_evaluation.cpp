@@ -1383,6 +1383,20 @@ PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const
 PointEvaluation CompiledSystem::evaluate_at(const PhasePoint& at, std::optional<std::size_t> chemical_phase) const { return evaluate_at<double>(at, chemical_phase); }
 
 template <typename Base>
+Base CompiledSystem::chemical_row(const PhasePointValues<Base>& prepared, std::size_t phase, std::size_t species, const Base& fraction) const {
+    const auto& point = prepared.point;
+    Base constraint = 0.0;
+    for (std::size_t k = 0; k < rank; ++k)
+        constraint += (primal_size + k < point.size() ? point[primal_size + k] : Base(0.0)) * B[k][species];
+    const auto charge = charge_row[phase];
+    const Base electro = model->parameters().charge_number[species]
+        * (charge && primal_size + rank + *charge < point.size() ? point[primal_size + rank + *charge] : Base(0.0));
+    return wide_math::log(std::max(fraction / prepared.volume[phase], std::numeric_limits<Base>::min()))
+        + prepared.derivative[phase].gradient[2 + species] + prepared.standard.derivative[0][species] - constraint - electro;
+}
+template double CompiledSystem::chemical_row(const PhasePointValues<double>&, std::size_t, std::size_t, const double&) const;
+
+template <typename Base>
 PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<Base>& prepared, std::optional<std::size_t> chemical_phase) const {
     core::Scope scope("equilibrium_evaluate");
     if constexpr (std::is_same_v<Base, double>) if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
@@ -1394,15 +1408,6 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
     const auto& x = prepared.composition;
     const auto& amount = prepared.amount;
     const auto& volume = prepared.volume;
-    std::vector<Base> lambda(rank, 0.0);
-    for (std::size_t row = 0; row < rank && primal_size + row < point.size(); ++row) {
-        lambda[row] = point[primal_size + row];
-    }
-    std::vector<Base> phi(charge_row_count, 0.0);
-    for (std::size_t row = 0; row < charge_row_count
-         && primal_size + rank + row < point.size(); ++row) {
-        phi[row] = point[primal_size + rank + row];
-    }
     const Base rt = GAS_CONSTANT_J_PER_MOL_K * prepared.temperature;
     const auto& standard = prepared.standard.derivative[0];
     PointEvaluationValues<Base> result;
@@ -1414,18 +1419,7 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         }
         Base value = 0.0;
         if (row.kind == RowKind::Chemical) {
-            const auto& derivative = prepared.derivative[row.phase];
-            const std::size_t species = row.index;
-            Base constraint = 0.0;
-            for (std::size_t balance_row = 0; balance_row < rank; ++balance_row) {
-                constraint += lambda[balance_row] * B[balance_row][species];
-            }
-            const Base electro = z[species] * (
-                charge_row[row.phase].has_value() ? phi[*charge_row[row.phase]] : 0.0);
-            value = wide_math::log(std::max(x[row.phase][species] / volume[row.phase],
-                                      std::numeric_limits<Base>::min()))
-                + derivative.gradient[2 + species] + standard[species]
-                - constraint - electro;
+            value = chemical_row(prepared, row.phase, row.index, x[row.phase][row.index]);
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = prepared.derivative[row.phase];
             value = volume[row.phase] * (

@@ -484,6 +484,8 @@ struct CompiledSystem final {
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
         std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt) const;
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
+    // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
+    template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;
     template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
         const std::vector<std::vector<Base>>&) const;
@@ -829,6 +831,8 @@ struct EquilibriumResult final {
     std::optional<EquilibriumNumericalEstimates> numerical_estimates;
     std::shared_ptr<const PhasePoint> prepared_endpoint;
     std::vector<Row> rows;
+    // ALG-TERMINATION: the species a default cold trial attempt left at their composition bounds, rows unconverged.
+    std::vector<std::size_t> bound_species;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
     std::size_t generic_nullity = 0;
@@ -897,6 +901,7 @@ struct StabilityTrial final {
     std::string seed, evidence, message;
     EquilibriumResult optimizer;
     std::vector<double> raw_coordinates, raw_residuals, composition, split_coordinates;
+    std::vector<double> reduced_split_coordinates;  // the split without `optimizer.bound_species` in the added phase
     std::vector<std::vector<double>> basis, row_transformation;
     // Quantities carry units in their names; errors are local estimates, never enclosures.
     std::map<std::string, double> quantities;
