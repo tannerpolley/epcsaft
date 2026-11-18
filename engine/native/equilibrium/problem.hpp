@@ -970,6 +970,9 @@ EPC_API EquilibriumResult solve_equilibrium(
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {}
 );
+EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
+    std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,
+    const std::vector<std::string>& component_ids = {});
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.

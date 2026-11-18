@@ -2162,8 +2162,14 @@ static void observe_endpoint(const Model& model, const CompiledSystem* compiled,
 
 EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
                                     const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids) {
-    core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     std::optional<CompiledSystem> compiled;
+    return solve_equilibrium_retaining_compiled(model, request, compiled, start, component_ids);
+}
+
+EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel& model, const EquilibriumProblem& request,
+    std::optional<CompiledSystem>& compiled, const std::optional<EquilibriumResult>& start,
+    const std::vector<std::string>& component_ids) {
+    core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     EquilibriumAttemptReporting reporting;
     if (!request.discovery) {
         compiled = compile_problem(model, request);

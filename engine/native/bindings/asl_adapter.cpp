@@ -170,7 +170,7 @@ struct EquilibriumContext final {
     eq::ContinuationOptions options;
     eq::AslFeedMap map;
     eq::EquilibriumResult anchor_result;
-    std::unique_ptr<eq::CompiledSystem> compiled;
+    std::optional<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
     std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
     std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
@@ -311,14 +311,19 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
     const bool moved = feed != context.map.anchor || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
+    std::optional<eq::CompiledSystem> direct_compiled;
     if (!moved && !context.shifted) context.central = context.anchor_result;
     else {
         std::optional<EquilibriumFailure> refused;
         std::string direct;  // the direct solve's refusal; empty when it succeeds
-        try { context.central = eq::solve_equilibrium(model, target); }
+        try {
+            if (target.solids.empty()) context.central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
+            else context.central = eq::solve_equilibrium(model, target);
+        }
         catch (const std::exception& error) { direct = error.what(); }
         if (direct.empty() && (refused = central_failure(context, context.central, observable))) direct = refused->what();
         if (!direct.empty()) {
+            direct_compiled.reset();
             for (const auto& solid : context.anchor.solids)
                 if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
                     throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + direct);
@@ -335,7 +340,7 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
         }
     }
     if (auto failure = central_failure(context, context.central, observable)) throw *failure;
-    context.compiled = std::make_unique<eq::CompiledSystem>(eq::compile_problem(model, target));
+    context.compiled.emplace(direct_compiled ? std::move(*direct_compiled) : eq::compile_problem(model, target));
     context.feed = q;
     for (auto& rows : context.rows) std::fill(rows.filled.begin(), rows.filled.end(), 0);
 }
