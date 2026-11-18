@@ -172,7 +172,7 @@ struct EquilibriumContext final {
     eq::EquilibriumResult anchor_result;
     std::unique_ptr<eq::CompiledSystem> compiled;
     eq::EquilibriumResult central;
-    std::optional<eq::PhasePoint> prepared;  // the central phase point of `compiled`, kept for every batch at `feed`
+    std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
     std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
     struct Rows final {
         std::vector<double> values;
@@ -298,8 +298,8 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
 void select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
+    context.action_workspace.reset();
     context.compiled.reset();  // it points at its model
-    context.prepared.reset();
     if (theta == context.model->active_parameter_values()) context.shifted.reset();
     if (theta != (context.shifted ? *context.shifted : *context.model).active_parameter_values()) try {
         context.shifted = model_at(*context.model, theta);  // rebuilt against the current model's own values
@@ -359,7 +359,7 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         const auto theta = e.begin() + 2 + controls;
         request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
-    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.prepared);
+    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.action_workspace);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
         const auto& item = batch.results[row];
         auto status = item.status;
@@ -450,7 +450,10 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
     } catch (...) {
         callback_error = "epcsaft_equilibrium:untyped:" + observable;
     }
-    for (const auto& item : prepared.contexts) item->compiled.reset();  // every record re-solves at its next call
+    for (const auto& item : prepared.contexts) {  // every record re-solves at its next call
+        item->action_workspace.reset();
+        item->compiled.reset();
+    }
     return report_failure(arguments, "epcsaft_equilibrium");
 }
 
