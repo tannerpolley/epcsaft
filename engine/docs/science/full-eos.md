@@ -474,6 +474,13 @@ Defining relation: [EqID: `ion_suppressed_density_correlated_bulk_permittivity`]
 The fixed-composition zero-density limit is $1/D$. Charged trials use the
 own-composition liquid-side root rule in [ADR 0012](../../../docs/scientific/decisions/0012-native-tangent-plane-phase-discovery.md#density-correlated-ion-suppression-38).
 
+The choice `solvent-density-temperature-ion-specific-susceptibility-suppression` uses the same
+records and positivity requirements. It divides the solvent susceptibility
+$F-1$ by $D$, giving $1+(F-1)/D$ and a fixed-composition vacuum limit of 1
+for every admitted $D$. The denominator must remain positive at zero density.
+
+Defining relation: [EqID: `susceptibility_suppressed_density_correlated_bulk_permittivity`](../equations.md#susceptibility_suppressed_density_correlated_bulk_permittivity).
+
 ### 6.3 Zuber ion-specific topology
 
 For a single source-supported solvent, Zuber2014 Eq. (9) is

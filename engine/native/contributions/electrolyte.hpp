@@ -170,19 +170,22 @@ Scalar bulk_relative_permittivity(
             );
     }
     if (density_temperature_permittivity(parameters.permittivity_form)) {
-        const bool suppressed = parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
+        const bool suppressed = density_temperature_ion_suppression(parameters.permittivity_form);
         if (suppressed) require_positive_permittivity_operand(solvent_fraction, "invalid permittivity solvent fraction");
         // EqID: density_correlation_mixed_parameters
         const Fixed mixed_volume = dielectric_volume / solvent_fraction;
         const Fixed mixed_temperature = dielectric_temperature / solvent_fraction;
         // EqID: density_correlated_bulk_permittivity
-        const Scalar solvent = Scalar(1.0) + molar_density * solvent_fraction * mixed_volume
+        const Scalar susceptibility = molar_density * solvent_fraction * mixed_volume
             * (mixed_temperature / temperature - Fixed(1.0));
-        if (!suppressed) return solvent;
+        if (!suppressed) return Scalar(1.0) + susceptibility;
         // EqID: ion_suppressed_density_correlated_bulk_permittivity
         const Fixed denominator = Fixed(1.0) + ion_suppression;
         require_positive_permittivity_operand(denominator, "invalid permittivity suppression denominator");
-        const Scalar bulk = solvent / denominator;
+        // EqID: susceptibility_suppressed_density_correlated_bulk_permittivity
+        const bool quotient = parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
+        const Scalar bulk = quotient ? (Scalar(1.0) + susceptibility) / denominator
+                                     : Scalar(1.0) + susceptibility / denominator;
         require_positive_permittivity_operand(bulk, "invalid bulk relative permittivity");
         return bulk;
     }

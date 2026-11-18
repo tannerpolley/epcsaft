@@ -753,7 +753,7 @@ All admitted specifications use the one equilibrium driver required by the
 [project map](../../../docs/scientific/CONTEXT.md). Compile balances, supports,
 pins and free intensives from data. An omitted phase support is every component,
 restricted in a vapor to the zero-charge components. Explicit charged Vapor support
-is admitted only under `DensityTemperature`, retaining its kind, ionic coordinates
+is admitted under `DensityTemperature` or `DensityTemperatureSusceptibilitySuppression`, retaining its kind, ionic coordinates
 and intensive electroneutrality even at zero pinned amount. `DipolarPerturbation` charged Vapor is refused pending separate numerical
 qualification despite its vacuum limit; density-independent forms retain their
 condensed-domain refusal. This is a numerical declaration capability, with physical
@@ -2272,13 +2272,14 @@ pairs. Omit empty default U₀∖A with an explicit no-neutral-species diagnosti
 Caller support/label entries **replace** defaults and limit the tested domain;
 they do not restrict the initial union candidate. An omitted caller support
 resolves on U∖A (its neutral subset for Vapor) by the ALG-EQUILIBRIUM support rule, which also refuses explicit empty
-supports; explicit ionic Vapor requires `DensityTemperature`. Reject empty caller lists, species outside U and one-sign
+supports. Explicit ionic Vapor follows the ALG-EQUILIBRIUM admission rule. Reject empty caller lists, species outside U and one-sign
 ionic supports.
 
 Charged Liquid supports are admitted under every declared bulk-permittivity form.
-`DensityTemperature` and `DipolarPerturbation` reach $\epsilon_r\to1$ as
-$\rho_m\to0$ (full EOS §6.2/§6.4), and their charged trials count at every
-density. Explicit charged Vapor under `DensityTemperature` must match its own
+`DensityTemperature`, `DensityTemperatureSusceptibilitySuppression` and
+`DipolarPerturbation` reach $\epsilon_r\to1$ as $\rho_m\to0$ (full EOS §6.2/§6.4).
+Their admitted charged trials count at every density. Explicit charged Vapor
+must match its own
 lowest stable pressure root after reconstruction, before energy/donor evaluation,
 including supplied packing. The root must meet `DENSITY_ANCHOR_LOG_WINDOW`, the
 existing pressure-root residual criterion and positive finite corrected slope.

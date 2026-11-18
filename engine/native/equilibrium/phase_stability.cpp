@@ -1165,7 +1165,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         std::string identity = phase.kind == PhaseKind::Liquid ? "Liquid/" : "Vapor/";
         for (auto i : phase.support) identity += std::to_string(i) + ",";
         const bool quotient = form.is(PermittivityForm::DensityTemperatureIonSuppression);
-        const bool condensed = !form.is(PermittivityForm::DensityTemperature) && !form.is(PermittivityForm::DipolarPerturbation)
+        const bool condensed = (quotient || !density_temperature_permittivity(form)) && !form.is(PermittivityForm::DipolarPerturbation)
             && std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
         std::vector<std::pair<std::string, std::vector<double>>> seeds;
         std::vector<const Slot*> sources;

@@ -934,99 +934,142 @@ void check_density_correlated_ion_suppression_admission() {
         }
     };
 
-    for (bool suppressed : {false, true}) {
-        p.ion_suppression_coefficient = suppressed ? std::vector<double>{0, 3.62, 6.80} : std::vector<double>{0, 0, 0};
-        const HelmholtzModel model(p);
-        auto problem = equilibrium_support::flash(3);
-        problem.feed.values = {0.98, 0.01, 0.01};
-        problem.pressure = FreeValue::fixed(1000);
-        problem.solver_options.values[policy::row] = 1e-10;
-        const std::string alpha = suppressed ? "nonzero" : "zero";
-        for (double temperature : {298.15, 800.0}) {
-            problem.temperature = FreeValue::fixed(temperature);
-            const bool liquid_side = temperature == 298.15;
-            const auto compiled = compile_problem(model, problem);
-            const auto solved = solve_compiled(compiled);
-            CHECK(solved.success);
-            auto trial = charged;
-            trial.composition_guess = problem.feed.values;
-            StabilityOptions options;
-            options.trials = std::vector<PhaseSpec>{charged};
-            const auto optimized = stability_test(compiled, solved, options);
-            const std::string id = alpha + (liquid_side ? "/liquid" : "/loopless");
-            report_trials(id + "/optimized", optimized);
-
-            auto request = problem;
-            request.phases.clear(); request.topology_declared = false; request.discovery = options;
-            const auto discovery = discover_phases(model, request);
-            CHECK(discovery.discovery && !discovery.discovery->rounds.empty());
-            const auto& discovered = discovery.discovery->rounds.front();
-            report_trials(id + "/discovery", discovered);
-            for (const auto* report : {&optimized, &discovered}) {
-                const auto admitted = std::any_of(report->trials.begin(), report->trials.end(), [](const auto& item) {
-                    return item.quantities.count("tpd_over_rt") && item.quantities.count("negative_slope_density_mol_m3");
-                });
-                if (liquid_side) CHECK(admitted);
-                else {
-                    // The uniform, salt-rich seed can find its own dense endpoint at 800 K.
-                    const auto seed = std::find_if(report->trials.begin(), report->trials.end(), [](const auto& item) {
-                        return item.seed == "near-pure-0";
-                    });
-                    CHECK(seed != report->trials.end());
-                    CHECK(seed->evidence == "unresolved" && seed->message.find(vacuum) != std::string::npos);
-                    CHECK(!seed->resolved_descent && seed->split_checks.empty() && !seed->quantities.count("tpd_over_rt"));
-                    CHECK(!seed->quantities.count("addition_root_residual"));
+    std::map<std::pair<double, std::string>, StabilityReport> reference_reports;
+    for (auto form : {PermittivityForm::DensityTemperature, PermittivityForm::DensityTemperatureIonSuppression,
+                     PermittivityForm::DensityTemperatureSusceptibilitySuppression}) {
+        p.permittivity_form = form;
+        const bool adopted = form == PermittivityForm::DensityTemperature;
+        const bool quotient = form == PermittivityForm::DensityTemperatureIonSuppression;
+        const char* label = adopted ? "adopted" : quotient ? "quotient" : "susceptibility";
+        const auto check_report = [&](double temperature, const char* kind, bool nonzero, const StabilityReport& report) {
+            const auto key = std::make_pair(temperature, std::string(kind));
+            if (adopted) {
+                reference_reports.emplace(key, report);
+                return;
+            }
+            if (quotient) return;
+            const auto& reference = reference_reports.at(key);
+            if (!nonzero) CHECK(report.trials.size() == reference.trials.size());
+            for (std::size_t j = 0; j < report.trials.size(); ++j) {
+                const auto& trial = report.trials[j];
+                CHECK(trial.message.find(vacuum) == std::string::npos);
+                CHECK(trial.message.find("condensed domain") == std::string::npos);
+                if (nonzero) continue;
+                const auto& other = reference.trials[j];
+                CHECK(trial.seed == other.seed && trial.evidence == other.evidence);
+                CHECK(trial.quantities.size() == other.quantities.size());
+                for (const auto& [quantity, value] : trial.quantities) {
+                    const double expected = other.quantities.at(quantity);
+                    CHECK(std::memcmp(&value, &expected, sizeof(double)) == 0);
                 }
             }
-            if (liquid_side) CHECK(discovery.discovery->declarations.size() == 1);
-            options.evaluate_supplied_trials = true;
-            if (liquid_side) {
-                auto gas = trial;
-                const auto gas_root = solve_density(model, temperature, 1000, gas.composition_guess, DensityBranch::Vapor, {});
-                gas.packing_guess = model.packing_fraction_coefficient(temperature, gas.composition_guess) * gas_root.molar_density;
-                auto vapor = neutral; vapor.composition_guess = {1, 0, 0};
-                options.trials = std::vector<PhaseSpec>{trial, gas, vapor};
-                const auto supplied = stability_test(compiled, solved, options);
-                report_trials(id + "/supplied", supplied);
-                CHECK(supplied.trials.size() == 3);
-                CHECK(supplied.trials[0].evidence == "evaluated");
-                CHECK(supplied.trials[1].evidence == "unresolved" && supplied.trials[1].message.find(vacuum) != std::string::npos);
-                CHECK(!supplied.trials[1].resolved_descent && !supplied.trials[1].quantities.count("tpd_over_rt"));
-                CHECK(supplied.trials[2].evidence == "evaluated");
-                auto vapor_declaration = problem; trial.kind = PhaseKind::Vapor; vapor_declaration.phases = {trial};
-                const auto cause = recording_support::refusal([&] { (void)compile_problem(model, vapor_declaration); });
-                CHECK(cause.find(vacuum) != std::string::npos);
-                recording_support::observe(id + "/charged-vapor", "available", "1", 0, std::nullopt, "support-resolution",
-                    recording_support::fields({recording_support::field("cause", cause)}));
-            } else {
-                options.trials = std::vector<PhaseSpec>{trial};
-                const auto supplied = stability_test(compiled, solved, options);
-                report_trials(id + "/supplied", supplied);
-                CHECK(supplied.trials.size() == 1);
-                CHECK(supplied.trials[0].evidence == "unresolved" && supplied.trials[0].message.find(vacuum) != std::string::npos);
-                CHECK(!supplied.trials[0].resolved_descent && !supplied.trials[0].quantities.count("tpd_over_rt"));
+        };
+        for (bool suppressed : {false, true}) {
+            p.ion_suppression_coefficient = suppressed ? std::vector<double>{0, 3.62, 6.80} : std::vector<double>{0, 0, 0};
+            if (adopted && suppressed) continue;
+            const HelmholtzModel model(p);
+            auto problem = equilibrium_support::flash(3);
+            problem.feed.values = {0.98, 0.01, 0.01};
+            problem.pressure = FreeValue::fixed(1000);
+            problem.solver_options.values[policy::row] = 1e-10;
+            const std::string alpha = suppressed ? "nonzero" : "zero";
+            for (double temperature : {298.15, 800.0}) {
+                problem.temperature = FreeValue::fixed(temperature);
+                const bool liquid_side = temperature == 298.15;
+                const auto compiled = compile_problem(model, problem);
+                const auto solved = solve_compiled(compiled);
+                CHECK(solved.success);
+                auto trial = charged;
+                trial.composition_guess = problem.feed.values;
+                StabilityOptions options;
+                options.trials = std::vector<PhaseSpec>{charged};
+                const auto optimized = stability_test(compiled, solved, options);
+                const std::string id = std::string(label) + "/" + alpha + (liquid_side ? "/liquid" : "/loopless");
+                report_trials(id + "/optimized", optimized);
+
+                check_report(temperature, "optimized", suppressed, optimized);
+                auto request = problem;
+                request.phases.clear(); request.topology_declared = false; request.discovery = options;
+                const auto discovery = discover_phases(model, request);
+                CHECK(discovery.discovery && !discovery.discovery->rounds.empty());
+                const auto& discovered = discovery.discovery->rounds.front();
+                report_trials(id + "/discovery", discovered);
+                check_report(temperature, "discovery", suppressed, discovered);
+                if (quotient) for (const auto* report : {&optimized, &discovered}) {
+                    const auto admitted = std::any_of(report->trials.begin(), report->trials.end(), [](const auto& item) {
+                        return item.quantities.count("tpd_over_rt") && item.quantities.count("negative_slope_density_mol_m3");
+                    });
+                    if (liquid_side) CHECK(admitted);
+                    else {
+                        // The uniform, salt-rich seed can find its own dense endpoint at 800 K.
+                        const auto seed = std::find_if(report->trials.begin(), report->trials.end(), [](const auto& item) {
+                            return item.seed == "near-pure-0";
+                        });
+                        CHECK(seed != report->trials.end());
+                        CHECK(seed->evidence == "unresolved" && seed->message.find(vacuum) != std::string::npos);
+                        CHECK(!seed->resolved_descent && seed->split_checks.empty() && !seed->quantities.count("tpd_over_rt"));
+                        CHECK(!seed->quantities.count("addition_root_residual"));
+                    }
+                }
+                if (quotient && liquid_side) CHECK(discovery.discovery->declarations.size() == 1);
+                options.evaluate_supplied_trials = true;
+                if (liquid_side) {
+                    auto gas = trial;
+                    const auto gas_root = solve_density(model, temperature, 1000, gas.composition_guess, DensityBranch::Vapor, {});
+                    gas.packing_guess = model.packing_fraction_coefficient(temperature, gas.composition_guess) * gas_root.molar_density;
+                    auto vapor = neutral; vapor.composition_guess = {1, 0, 0};
+                    options.trials = std::vector<PhaseSpec>{trial, gas, vapor};
+                    const auto supplied = stability_test(compiled, solved, options);
+                    report_trials(id + "/supplied", supplied);
+                    check_report(temperature, "supplied", suppressed, supplied);
+                    CHECK(supplied.trials.size() == 3);
+                    CHECK(supplied.trials[0].evidence == "evaluated");
+                    if (quotient) {
+                        CHECK(supplied.trials[1].evidence == "unresolved" && supplied.trials[1].message.find(vacuum) != std::string::npos);
+                        CHECK(!supplied.trials[1].resolved_descent && !supplied.trials[1].quantities.count("tpd_over_rt"));
+                    } else CHECK(supplied.trials[1].evidence == "evaluated");
+                    CHECK(supplied.trials[2].evidence == "evaluated");
+                    auto vapor_declaration = problem; trial.kind = PhaseKind::Vapor; vapor_declaration.phases = {trial};
+                    const auto cause = recording_support::refusal([&] { (void)compile_problem(model, vapor_declaration); });
+                    // Admission can still refuse a charged Vapor in the omitted-charge phase.
+                    CHECK(quotient ? cause.find(vacuum) != std::string::npos
+                        : cause == "charged vapor cannot be the omitted-charge phase");
+                    recording_support::observe(id + "/charged-vapor", "available", "1", 0, std::nullopt, "support-resolution",
+                        recording_support::fields({recording_support::field("cause", cause)}));
+                } else {
+                    options.trials = std::vector<PhaseSpec>{trial};
+                    const auto supplied = stability_test(compiled, solved, options);
+                    report_trials(id + "/supplied", supplied);
+                    check_report(temperature, "supplied", suppressed, supplied);
+                    CHECK(supplied.trials.size() == 1);
+                    if (quotient) {
+                        CHECK(supplied.trials[0].evidence == "unresolved" && supplied.trials[0].message.find(vacuum) != std::string::npos);
+                        CHECK(!supplied.trials[0].resolved_descent && !supplied.trials[0].quantities.count("tpd_over_rt"));
+                    } else CHECK(supplied.trials[0].evidence == "evaluated");
+                }
             }
         }
-    }
 
-    // The parent declaration's generic rank point also needs a positive denominator.
-    p.ion_suppression_coefficient = {0, -1.29, -1.29};
-    const HelmholtzModel model(p);
-    auto problem = equilibrium_support::flash(3);
-    problem.temperature = FreeValue::fixed(298.15);
-    problem.feed.values = {0.996, 0.002, 0.002};
-    const auto compiled = compile_problem(model, problem);
-    const auto solved = solve_compiled(compiled);
-    CHECK(solved.success);
-    charged.composition_guess = {0.2, 0.4, 0.4};
-    StabilityOptions supplied;
-    supplied.evaluate_supplied_trials = true; supplied.trials = std::vector<PhaseSpec>{charged};
-    const auto refused = stability_test(compiled, solved, supplied);
-    report_trials("denominator-refusal", refused);
-    CHECK(refused.trials.size() == 1);
-    CHECK(refused.trials[0].evidence == "unresolved");
-    CHECK(refused.trials[0].message.find("suppression denominator") != std::string::npos);
-    CHECK(!refused.trials[0].resolved_descent && !refused.trials[0].quantities.count("tpd_over_rt"));
+        if (adopted) continue;
+        // The parent declaration's generic rank point also needs a positive denominator.
+        p.ion_suppression_coefficient = {0, -1.29, -1.29};
+        const HelmholtzModel model(p);
+        auto problem = equilibrium_support::flash(3);
+        problem.temperature = FreeValue::fixed(298.15);
+        problem.feed.values = {0.996, 0.002, 0.002};
+        const auto compiled = compile_problem(model, problem);
+        const auto solved = solve_compiled(compiled);
+        CHECK(solved.success);
+        charged.composition_guess = {0.2, 0.4, 0.4};
+        StabilityOptions supplied;
+        supplied.evaluate_supplied_trials = true; supplied.trials = std::vector<PhaseSpec>{charged};
+        const auto refused = stability_test(compiled, solved, supplied);
+        report_trials(std::string(label) + "/denominator-refusal", refused);
+        CHECK(refused.trials.size() == 1);
+        CHECK(refused.trials[0].evidence == "unresolved");
+        CHECK(refused.trials[0].message.find("suppression denominator") != std::string::npos);
+        CHECK(!refused.trials[0].resolved_descent && !refused.trials[0].quantities.count("tpd_over_rt"));
+    }
 }
 
 void check_ion_suppression_reacting_liquid_actions() {
@@ -1271,63 +1314,78 @@ void check_tangent_plane_admission() {
         tpd_compare("support/physics-rejected/" + std::to_string(support.size()), rejected ? 1.0 : 0.0, 1.0, 0.0);
     }
     // #771: supplied charged Vapor points retain their kind and match their own root, never its sibling.
-    const std::vector<double> trace{1.0 - 2e-8, 1e-8, 1e-8};
-    const auto vapor_root = epcsaft::solve_density(model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Vapor, std::nullopt);
-    const auto liquid_root = epcsaft::solve_density(model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Liquid, std::nullopt);
-    CHECK(liquid_root.molar_density > vapor_root.molar_density);
-    StabilityOptions supplied; supplied.evaluate_supplied_trials = true;
-    std::vector<PhaseSpec> points;
-    for (double rho : {vapor_root.molar_density, 1.1 * vapor_root.molar_density, liquid_root.molar_density}) {
-        auto point = phase; point.kind = PhaseKind::Vapor; point.support_declared = true;
-        point.composition_guess = trace; point.packing_guess = model.packing_fraction_coefficient(298.15, trace) * rho;
-        points.push_back(point);
-    }
-    supplied.trials = points;
-    const auto evaluated = stability_test(aqueous_system, aqueous_state, supplied);
-    CHECK(evaluated.trials.size() == points.size());
-    for (std::size_t j = 0; j < points.size(); ++j) {
-        const auto& trial = evaluated.trials[j];
-        CHECK(trial.phase.kind == PhaseKind::Vapor && trial.phase.support == phase.support);
-        const auto id = "charged-vapor/supplied/" + std::to_string(j);
-        const auto inputs = recording_support::fields({recording_support::field("composition", trial.composition),
-            recording_support::field("raw_rows", trial.raw_residuals), recording_support::field("cause", trial.message)});
-        for (const auto& [name, value] : trial.quantities)
-            recording_support::observe(id + "/" + name, name.c_str(), "native-field-units", value, std::nullopt,
-                "native-supplied-point", inputs);
-        if (j == 0) {
-            CHECK(trial.evidence == "evaluated" && std::isfinite(trial.quantities.at("tpd_over_rt")));
-            tpd_compare(id + "/pressure", trial.quantities.at("pressure_pa"), 1000.0, 1e-4, inputs, "Pa");
-            CHECK(trial.quantities.at("pressure_density_derivative") > 0.0);
-        } else CHECK(trial.evidence == "unresolved" && trial.message.find("pressure-root window") != std::string::npos);
-    }
-    auto dipolar = parameters; dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
-    dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563}; dipolar.correlation_integral_parameter = {.1276, .215, .138};
-    const epcsaft::HelmholtzModel dipolar_model(dipolar);
-    auto charged = aqueous; charged.phases = {points[0]};
-    epcsaft::core::Capture refusal_capture(true);
-    CHECK(recording_support::refusal([&] { (void)compile_problem(dipolar_model, charged); }).find("not numerically qualified") != std::string::npos);
-    for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
-    for (bool referenced : {false, true}) {
-        auto omitted = charged; omitted.pressure = FreeValue::fixed(1e5); omitted.feed.values = {1.0, 1e-6, 1e-6};
-        if (referenced) {
-            ReactionSpec reaction; reaction.stoichiometry = {-1, 1, 1};
-            reaction.correlation = epcsaft::ReactionLogPolynomial{std::log(1e-8), 0, 0, 0, 298.15, 250, 350, "analytic-source"};
-            reaction.reference = epcsaft::ReactionReference{std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
-            omitted.reactions = {reaction};
-            epcsaft::NeutralReferenceDeclaration reference; reference.solvent_index = 0;
-            reference.solute_molality_ratios = {0, 1, 1}; reference.standard_molality_mol_per_kg = 1;
-            omitted.source_reference = reference;
+    for (bool susceptibility : {false, true}) {
+        auto vapor_parameters = parameters;
+        if (susceptibility) {
+            vapor_parameters.permittivity_form = epcsaft::PermittivityForm::DensityTemperatureSusceptibilitySuppression;
+            vapor_parameters.ion_suppression_coefficient = {0, 3.62, 6.80};
         }
-        epcsaft::core::Capture omitted_capture(true);
-        CHECK(recording_support::refusal([&] { (void)compile_problem(model, omitted); }) == "charged vapor cannot be the omitted-charge phase");
-        std::size_t eos_evaluations = 0, density_solves = 0;
-        for (const auto& span : omitted_capture.trace().spans) {
-            eos_evaluations += std::string(span.name) == "evaluate";
-            density_solves += std::string(span.name) == "solve_density";
+        const epcsaft::HelmholtzModel suppressed_model(vapor_parameters);
+        const auto& vapor_model = susceptibility ? suppressed_model : model;
+        const auto parent = susceptibility ? compile_problem(vapor_model, aqueous) : aqueous_system;
+        const auto central = susceptibility ? solve_compiled(parent) : aqueous_state;
+        CHECK(central.success);
+        const std::string prefix = susceptibility ? "susceptibility/charged-vapor/" : "charged-vapor/";
+        const std::vector<double> trace{1.0 - 2e-8, 1e-8, 1e-8};
+        const auto vapor_root = epcsaft::solve_density(vapor_model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Vapor, std::nullopt);
+        const auto liquid_root = epcsaft::solve_density(vapor_model, 298.15, 1000.0, trace, epcsaft::DensityBranch::Liquid, std::nullopt);
+        CHECK(liquid_root.molar_density > vapor_root.molar_density);
+        StabilityOptions supplied; supplied.evaluate_supplied_trials = true;
+        std::vector<PhaseSpec> points;
+        for (double rho : {vapor_root.molar_density, 1.1 * vapor_root.molar_density, liquid_root.molar_density}) {
+            auto point = phase; point.kind = PhaseKind::Vapor; point.support_declared = true;
+            point.composition_guess = trace; point.packing_guess = vapor_model.packing_fraction_coefficient(298.15, trace) * rho;
+            points.push_back(point);
         }
-        const auto id = std::string("charged-vapor/omitted-charge-phase/") + (referenced ? "referenced/" : "unreferenced/");
-        tpd_compare(id + "eos-evaluations", eos_evaluations, 0.0, 0.0);
-        tpd_compare(id + "density-solves", density_solves, 0.0, 0.0);
+        supplied.trials = points;
+        const auto evaluated = stability_test(parent, central, supplied);
+        CHECK(evaluated.trials.size() == points.size());
+        for (std::size_t j = 0; j < points.size(); ++j) {
+            const auto& trial = evaluated.trials[j];
+            CHECK(trial.phase.kind == PhaseKind::Vapor && trial.phase.support == phase.support);
+            const auto id = prefix + "supplied/" + std::to_string(j);
+            const auto inputs = recording_support::fields({recording_support::field("composition", trial.composition),
+                recording_support::field("raw_rows", trial.raw_residuals), recording_support::field("cause", trial.message)});
+            for (const auto& [name, value] : trial.quantities)
+                recording_support::observe(id + "/" + name, name.c_str(), "native-field-units", value, std::nullopt,
+                    "native-supplied-point", inputs);
+            if (j == 0) {
+                CHECK(trial.evidence == "evaluated" && std::isfinite(trial.quantities.at("tpd_over_rt")));
+                tpd_compare(id + "/pressure", trial.quantities.at("pressure_pa"), 1000.0, 1e-4, inputs, "Pa");
+                CHECK(trial.quantities.at("pressure_density_derivative") > 0.0);
+            } else CHECK(trial.evidence == "unresolved" && trial.message.find("pressure-root window") != std::string::npos);
+        }
+        auto charged = aqueous; charged.phases = {points[0]};
+        if (!susceptibility) {
+            auto dipolar = parameters; dipolar.permittivity_form = epcsaft::PermittivityForm::DipolarPerturbation;
+            dipolar.dipole_scaling_debye2 = {5.199, 5.407, 2.563}; dipolar.correlation_integral_parameter = {.1276, .215, .138};
+            const epcsaft::HelmholtzModel dipolar_model(dipolar);
+            epcsaft::core::Capture refusal_capture(true);
+            CHECK(recording_support::refusal([&] { (void)compile_problem(dipolar_model, charged); }).find("not numerically qualified") != std::string::npos);
+            for (const auto& span : refusal_capture.trace().spans) CHECK(std::string(span.name) != "evaluate");
+        }
+        for (bool referenced : {false, true}) {
+            auto omitted = charged; omitted.pressure = FreeValue::fixed(1e5); omitted.feed.values = {1.0, 1e-6, 1e-6};
+            if (referenced) {
+                ReactionSpec reaction; reaction.stoichiometry = {-1, 1, 1};
+                reaction.correlation = epcsaft::ReactionLogPolynomial{std::log(1e-8), 0, 0, 0, 298.15, 250, 350, "analytic-source"};
+                reaction.reference = epcsaft::ReactionReference{std::nullopt, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+                omitted.reactions = {reaction};
+                epcsaft::NeutralReferenceDeclaration reference; reference.solvent_index = 0;
+                reference.solute_molality_ratios = {0, 1, 1}; reference.standard_molality_mol_per_kg = 1;
+                omitted.source_reference = reference;
+            }
+            epcsaft::core::Capture omitted_capture(true);
+            CHECK(recording_support::refusal([&] { (void)compile_problem(vapor_model, omitted); }) == "charged vapor cannot be the omitted-charge phase");
+            std::size_t eos_evaluations = 0, density_solves = 0;
+            for (const auto& span : omitted_capture.trace().spans) {
+                eos_evaluations += std::string(span.name) == "evaluate";
+                density_solves += std::string(span.name) == "solve_density";
+            }
+            const auto id = prefix + "omitted-charge-phase/" + (referenced ? "referenced/" : "unreferenced/");
+            tpd_compare(id + "eos-evaluations", eos_evaluations, 0.0, 0.0);
+            tpd_compare(id + "density-solves", density_solves, 0.0, 0.0);
+        }
     }
     // A declared electrolyte bubble has ions absent from its first, neutral vapor phase.
     // Explicit trials must still seed their ionic support with strictly positive amounts.
