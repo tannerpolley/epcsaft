@@ -147,8 +147,6 @@ struct NeutralReferenceTrace final {
     std::vector<double> composition;
     State state;
     std::vector<std::optional<State>> pure_state;
-    std::size_t temperature_order = 0;
-    std::vector<std::size_t> parameter_jets;  // coordinates with first-order jets, ascending
 };
 
 void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
@@ -215,9 +213,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
     double temperature,
     double pressure,
     const NeutralReferenceDeclaration& declaration,
-    std::optional<double> solvent_anchor,
-    std::size_t temperature_order,
-    const std::vector<std::size_t>& parameter_jets
+    std::optional<double> solvent_anchor
 ) {
     core::Scope scope("neutral_reference_trace");
     NeutralReferenceTraceResult result;
@@ -237,8 +233,6 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
             return result;
         }
         NeutralReferenceTrace trace;
-        trace.temperature_order = temperature_order;
-        trace.parameter_jets = parameter_jets;
         trace.pressure = pressure;
         trace.solvent_index = *declaration.solvent_index;
         trace.composition.assign(components, 0.0);
@@ -374,8 +368,8 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
     double temperature,
     const std::vector<double>& stoichiometry,
     const ReactionReference& reference,
-    bool pressure_jets,
-    const NeutralReferenceTrace& trace, ReferenceTaylorBatch* batch = nullptr
+    bool pressure_jets, std::size_t temperature_order, const std::vector<std::size_t>& parameter_jets,
+    bool temperature_parameter_jets, const NeutralReferenceTrace& trace, ReferenceTaylorBatch* batch
 ) {
     // EqID: reference_single_insertion_taylor; raw partials at the ion-free solvent state.
     NeutralReferenceReactionDiagnostic result;
@@ -404,20 +398,20 @@ NeutralReferenceReactionDiagnostic neutral_reference_from_trace(
             return result.lower_derivatives.emplace_back(reference_column(model, temperature, trace, stoichiometry,
                 a, b, parameter, batch)).value;
         };
-        if (trace.temperature_order > 0) {
+        if (temperature_order > 0) {
             result.terminal_contraction_temperature_derivative = admit(1, 0, std::nullopt);
-            if (trace.temperature_order > 1)
+            if (temperature_order > 1)
                 result.terminal_contraction_temperature_second_derivative = admit(2, 0, std::nullopt);
             if (pressure_jets)
                 result.terminal_contraction_temperature_pressure_derivative = admit(1, 1, std::nullopt);
         }
         // One entry per active coordinate; an unrequested coordinate stays empty.
-        const std::size_t active = trace.parameter_jets.empty() ? 0 : model.active_parameters().size();
+        const std::size_t active = parameter_jets.empty() ? 0 : model.active_parameters().size();
         result.terminal_contraction_parameter_derivative.resize(active);
-        result.terminal_contraction_temperature_parameter_derivative.resize(trace.temperature_order > 0 ? active : 0);
-        for (const auto a : trace.parameter_jets) {
+        result.terminal_contraction_temperature_parameter_derivative.resize(temperature_parameter_jets ? active : 0);
+        for (const auto a : parameter_jets) {
             result.terminal_contraction_parameter_derivative[a] = admit(0, 0, a);
-            if (trace.temperature_order > 0)
+            if (temperature_parameter_jets)
                 result.terminal_contraction_temperature_parameter_derivative[a] = admit(1, 0, a);
         }
         if (reference.reference_pressure_pa.has_value()) {
@@ -581,9 +575,11 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     const std::vector<std::size_t>& parameter_jets,
     std::size_t reference_order,
     std::vector<std::vector<NeutralReferenceReactionDiagnostic::Derivative>>* species_values,
-    const std::vector<std::size_t>& pair_coordinates
+    const std::vector<std::size_t>& pair_coordinates,
+    bool temperature_parameter_jets
 ) {
     core::Scope scope("reaction_references");
+    temperature_parameter_jets = temperature_parameter_jets && temperature_order > 0 && !parameter_jets.empty();
     if (reference_order > 4) throw std::invalid_argument("reference derivative order");
     if (scope.on()) {
         scope.probe("reference_inputs", {temperature, system_pressure, double(pressure_jets),
@@ -598,7 +594,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
     // Every input of this pure function of the model, segment sizes first so the flat key is unambiguous.
     std::vector<double> inputs{temperature, system_pressure, double(solvent_anchor.has_value()),
         solvent_anchor.value_or(0.0), double(pressure_jets), double(temperature_order),
-        double(reference_order), double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
+        double(reference_order), double(temperature_parameter_jets), double(declaration.solvent_index.has_value()), double(declaration.solvent_index.value_or(0)),
         declaration.standard_molality_mol_per_kg, double(declaration.solute_molality_ratios.size()),
         double(declaration.species_reference.size()), double(stoichiometries.size())};
     // One 0/1 entry per active coordinate at 6.., before reference_order: the window a stored superset covers.
@@ -615,7 +611,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         inputs.insert(inputs.end(), {double(references[row].reference_pressure_pa.has_value()),
             references[row].reference_pressure_pa.value_or(0.0), double(references[row].source_basis)});
     }
-    if (!species_values) if (auto stored = model.stored_references(inputs, 4, 7 + active)) return std::move(*stored);
+    if (!species_values) if (auto stored = model.stored_references(inputs, 4, 8 + active)) return std::move(*stored);
     if (species_values) species_values->resize(stoichiometries.size());
     scope.probe("reference_cache_miss", 1.0);
     struct CachedTrace final {
@@ -653,8 +649,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         if (found == cache.end()) {
             CachedTrace item;
             item.pressure = pressure;
-            item.result = build_neutral_reference_trace(model, temperature, pressure,
-                declaration, solvent_anchor, temperature_order, parameter_jets);
+            item.result = build_neutral_reference_trace(model, temperature, pressure, declaration, solvent_anchor);
             cache.push_back(std::move(item));
             found = std::prev(cache.end());
         }
@@ -671,7 +666,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         }
         diagnostic = neutral_reference_from_trace(
             model, temperature, stoichiometries[row], reference,
-            need_jets, *found->result.trace, &preparation);
+            need_jets, temperature_order, parameter_jets, temperature_parameter_jets, *found->result.trace, &preparation);
         diagnostic.trace = found->result.trace;
         diagnostic.solvent_density = found->result.trace->state.molar_density;
         // Additional consumed columns at the same solvent state.
