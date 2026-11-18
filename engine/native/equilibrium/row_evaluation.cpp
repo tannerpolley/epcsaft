@@ -135,7 +135,7 @@ StandardTerm standard_term(
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
     const std::size_t thermal = temperature_jets ? order : 0;
-    ReferenceJets jets{thermal, pressure_jets, parameter_union.empty() ? parameters : parameter_union, 0, pairs};
+    ReferenceJets jets{thermal, pressure_jets ? order : 0, parameter_union.empty() ? parameters : parameter_union, 0, pairs};
     if (!compiled.reference_diagnostics.empty()) {
         if (compiled.model->thermochemistry().has_value()) {
             std::vector<ReactionSpec> ordinary_reactions;
@@ -226,11 +226,11 @@ StandardTerm standard_term(
                 result.parameter_pair_derivative[i][j] = result.parameter_pair_derivative[j][i]
                     = species_slope(zero, "parameter pair derivative", 0, 0, pairs[i], pairs[j]);
         // EqIDs: neutral_reaction_reference_pressure_jet, standard_state_transfer_temperature_pressure_derivative.
-        if (pressure_jets) {
-            result.pressure_derivative = species_slope(zero, "pressure derivative", 0, 1);
+        if (pressure_jets && order) result.pressure_derivative = species_slope(zero, "pressure derivative", 0, 1);
+        if (pressure_jets && order > 1)
             result.pressure_second_derivative = species_slope(zero, "second pressure derivative", 0, 2);
-            if (thermal > 1) result.temperature_pressure_derivative = species_slope(zero, "temperature-pressure derivative", 1, 1);
-        }
+        if (pressure_jets && thermal > 1)
+            result.temperature_pressure_derivative = species_slope(zero, "temperature-pressure derivative", 1, 1);
         if (error) {
             Eigen::MatrixXd n(reactions.size(), components), w(components, reactions.size());
             for (std::size_t r = 0; r < reactions.size(); ++r) for (std::size_t i = 0; i < components; ++i) {
@@ -323,7 +323,7 @@ std::shared_ptr<const ReferenceCalorics> caloric_reference(const CompiledSystem&
                                                            bool pressure = false, bool parameters = false) {
     ReferenceJets jets;
     jets.temperature_order = c.reference_diagnostics.empty() ? 4 : 3;
-    jets.pressure = pressure;
+    jets.pressure_order = pressure ? jets.temperature_order : 0;
     if (parameters) jets.request_every_parameter(*c.model);
     auto result = std::make_shared<ReferenceCalorics>(reference_calorics(c, T, P, jets));
     if (result->status != SolvedStateActionStatus::Available)
@@ -880,7 +880,7 @@ std::vector<double> critical_hessian(const CompiledSystem& compiled, const Phase
 
 }  // namespace
 
-// Reads jets.temperature_order, pressure, parameters, reference_order and pairs.
+// Reads jets.temperature_order, pressure_order, parameters, reference_order and pairs.
 std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
     std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, const ReferenceJets& jets,
@@ -923,7 +923,7 @@ std::vector<ReactionSpec> central_reference_reactions(
     }
     const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
     const auto reference_results = reaction_references(
-        model, temperature, pressure, *request.source_reference, stoichiometries, references, jets.pressure,
+        model, temperature, pressure, *request.source_reference, stoichiometries, references, jets.pressure_order,
         solvent_anchor, jets.temperature_order, jets.parameters, jets.reference_order, nullptr, jets.pairs, jets.temperature_order > 1);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
     for (std::size_t reference_row = 0; reference_row < reference_rows.size(); ++reference_row) {
@@ -982,8 +982,8 @@ std::vector<SolidLogK> solid_log_k(const HelmholtzModel& model, double temperatu
     std::vector<std::vector<double>> nu;
     std::vector<ReactionReference> references;
     for (const auto& solid : solids) nu.push_back(solid.stoichiometry), references.push_back(*solid.reference);
-    const auto diagnostics = reaction_references(model, temperature, pressure, *declaration, nu, references, false, std::nullopt,
-                                                 jets.temperature_order, jets.parameters, 0, nullptr, jets.pairs);
+    const auto diagnostics = reaction_references(model, temperature, pressure, *declaration, nu, references, 0, std::nullopt,
+        jets.temperature_order, jets.parameters, 0, nullptr, jets.pairs, jets.temperature_order > 1);
     std::vector<SolidLogK> result;
     for (std::size_t s = 0; s < solids.size(); ++s) {
         const auto& solid = solids[s];
@@ -1012,7 +1012,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
                                      const ReferenceJets &jets) {
     if (compiled.ideal) throw std::invalid_argument("ideal reference calorics unavailable");
     const std::size_t derivative_order = std::max(jets.temperature_order, std::size_t(1));
-    const bool pressure_slope = jets.pressure, parameter_slopes = !jets.parameters.empty(), numerical_errors = jets.errors;
+    const bool pressure_slope = jets.pressure_order, parameter_slopes = !jets.parameters.empty(), numerical_errors = jets.errors;
     const auto &pair_coordinates = jets.pairs;
     using AD = CppAD::AD<double>;
     ReferenceCalorics result;
@@ -1136,7 +1136,7 @@ ReferenceCalorics reference_calorics(const CompiledSystem &compiled, double temp
         references.empty()
             ? std::vector<NeutralReferenceReactionDiagnostic>{}
             : reaction_references(model, temperature, pressure, *problem.source_reference, nu, references,
-                                  pressure_slope, reference_solvent_anchor(compiled.reference_diagnostics),
+                                  jets.pressure_order, reference_solvent_anchor(compiled.reference_diagnostics),
                                   std::min(derivative_order, std::size_t(2)),
                                   jets.parameters, derivative_order, nullptr, pair_coordinates);
     if (numerical_errors && !derived.empty()) for (std::size_t r = 0; r < diagnostics.size(); ++r) {

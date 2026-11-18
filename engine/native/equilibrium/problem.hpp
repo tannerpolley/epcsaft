@@ -321,7 +321,7 @@ struct SolidLogK final {
 // the fields it uses.
 struct ReferenceJets final {
     std::size_t temperature_order = 0;
-    bool pressure = false;
+    std::size_t pressure_order = 0;
     std::vector<std::size_t> parameters;
     std::size_t reference_order = 0;
     std::vector<std::size_t> pairs;

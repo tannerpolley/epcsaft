@@ -536,7 +536,7 @@ void density_and_reference() {
         epcsaft::NeutralReferenceDeclaration declaration{0, {0,1,1,4,1,1,1,1,1}, 1.0, {}};
         std::vector<double> nu(9, 0.0); nu[3] = nu[4] = 1.0;
         std::vector<std::vector<epcsaft::NeutralReferenceReactionDiagnostic::Derivative>> columns;
-        const auto diagnostics = epcsaft::reaction_references(nine, 298.15, 1e5, declaration, {nu}, {{}}, false, std::nullopt, 0, {}, 0, &columns);
+        const auto diagnostics = epcsaft::reaction_references(nine, 298.15, 1e5, declaration, {nu}, {{}}, 0, std::nullopt, 0, {}, 0, &columns);
         CHECK(diagnostics[0].status == epcsaft::NeutralReferenceStatus::Available);
         const double mass = nine.parameters().molar_mass_kg_per_mol[0], total_m = std::accumulate(m.begin(), m.end(), 0.0);
         std::vector<double> x(9); x[0] = 1.0 / (1.0 + mass * total_m);
@@ -860,7 +860,7 @@ void liquid_reference_branch_evidence() {
         const epcsaft::NeutralReferenceDeclaration declaration{0, {0,1}, 1.0, {choice,choice}};
         const epcsaft::ReactionReference source{pressure, epcsaft::ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
         std::vector<std::vector<epcsaft::NeutralReferenceReactionDiagnostic::Derivative>> columns;
-        const auto contracted = epcsaft::reaction_references(fluid, 300, pressure, declaration, {{-2,1}}, {source}, false, std::nullopt, 0, {}, 0, &columns);
+        const auto contracted = epcsaft::reaction_references(fluid, 300, pressure, declaration, {{-2,1}}, {source}, 0, std::nullopt, 0, {}, 0, &columns);
         const auto finite = fluid.state_at_pressure(300, pressure, {0.4,0.6}, choice == epcsaft::SpeciesReference::PureGas ? epcsaft::DensityBranch::Vapor : epcsaft::DensityBranch::Liquid);
         const auto read = epcsaft::species_activities({0.4,0.6}, &finite, columns[0]);
         std::printf("activity-pure,choice=%d,P=%.17g,cause=%s\n", int(choice), pressure, contracted[0].message.c_str());

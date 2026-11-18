@@ -1096,7 +1096,7 @@ static SolvedStateActionBatch evaluate_action(
             shared->pairs = pairs;
             ReferenceJets jets;
             jets.temperature_order = std::max<std::size_t>(need[0], 2);  // with the heat-capacity column
-            jets.pressure = need[2];
+            jets.pressure_order = need[2] ? jets.temperature_order : 0;
             if (need[1]) jets.request_every_parameter(model);
             jets.pairs = pairs;
             shared->calorics = reference_calorics(compiled, center.prepared.temperature, center.prepared.pressure, jets);

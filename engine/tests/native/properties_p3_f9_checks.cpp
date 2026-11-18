@@ -1487,7 +1487,7 @@ void reference_limits() {
         epcsaft::NeutralReferenceDeclaration declaration{0,{0,1,1},1};
         epcsaft::ReactionReference reference{fixed?std::optional<double>(src):std::nullopt,
             epcsaft::ReferenceSourceBasis::CommonMolalityInfiniteDilution};
-        const auto jet=epcsaft::reaction_references(model,T,P,declaration,{{-1,1,1}},{reference},true,std::nullopt,2,{0},4)[0];
+        const auto jet=epcsaft::reaction_references(model,T,P,declaration,{{-1,1,1}},{reference},4,std::nullopt,2,{0},4)[0];
         CHECK(jet.status==epcsaft::NeutralReferenceStatus::Available);
         const std::vector<std::array<unsigned,3>> lower_columns{{1,0,0},{2,0,0},{0,0,1},{1,0,1},{1,1,0}};
         for(const auto& column:lower_columns) {
@@ -1519,7 +1519,7 @@ void reference_limits() {
             CHECK(scale*std::abs(*admitted-(fixed && b?0:limit))<=tolerance);
         }
         auto doubled=declaration;doubled.solute_molality_ratios={0,2,2};
-        const auto jet2=epcsaft::reaction_references(model,T,P,doubled,{{-1,1,1}},{reference},true,std::nullopt,2,{0},4)[0];
+        const auto jet2=epcsaft::reaction_references(model,T,P,doubled,{{-1,1,1}},{reference},4,std::nullopt,2,{0},4)[0];
         CHECK(jet2.status==epcsaft::NeutralReferenceStatus::Available);
         for(std::size_t i=0;i<jet.derivatives.size();++i) {
             const auto& column=jet.derivatives[i];const auto& second=jet2.derivatives[i];
@@ -1614,7 +1614,7 @@ void reference_limits() {
     // higher-order reference, which would serve this request with its temperature columns.
     using Column=epcsaft::ReferenceColumnState;
     const epcsaft::HelmholtzModel unused(params,{{PF::DispersionEnergyOverK,{0}}});
-    auto jets=epcsaft::reaction_references(unused,T,P,{0,{0,1,1},1},{{-1,1,1}},{{}},false,std::nullopt,0,{0},0)[0];
+    auto jets=epcsaft::reaction_references(unused,T,P,{0,{0,1,1},1},{{-1,1,1}},{{}},0,std::nullopt,0,{0},0)[0];
     CHECK(jets.status==epcsaft::NeutralReferenceStatus::Available);
     CHECK(jets.column(1,0,std::nullopt).state==Column::NotRequested);
     const auto admitted=jets.column(0,0,0);
