@@ -663,13 +663,25 @@ std::vector<double> CompiledSystem::generic_point() const {
         return point;
     }
     std::vector<double> point(primal_size + rank + charge_row_count, 0.0);
+    const auto& parameters = model->parameters();
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
-        double total = 0.0;
+        const auto& support = problem.phases[phase].support;
+        double total = 0.0, solute = 0.0;
+        std::vector<double> fractions(parameters.component_count(), 0.0);
         for (std::size_t i = 0; i < shape[phase].x.size(); ++i) {
             const double value = 1.0 + 0.37 * static_cast<double>(i) + 0.11 * static_cast<double>(phase)
                 + (phase > 1 ? 0.05 * std::pow(static_cast<double>(i), phase) : 0.0);  // 3+ phases not coplanar
-            point[shape[phase].x[i]] = value;
+            point[shape[phase].x[i]] = fractions[support[i]] = value;
             total += value;
+            if (parameters.charge_number[support[i]] != 0) solute += value;
+        }
+        for (auto& x : fractions) x /= total;
+        const double D = ion_suppression_denominator(fractions, parameters);
+        if (const double margin = policy::RANK_PROBE_PERMITTIVITY_DENOMINATOR.value; total > solute && D < margin) {
+            const double scale = (1 - margin) * (total - solute) / ((1 - D) * total - (1 - margin) * solute);
+            for (std::size_t i = 0; i < support.size(); ++i)
+                if (parameters.charge_number[support[i]] != 0) point[shape[phase].x[i]] *= scale;
+            total = total - solute + scale * solute;
         }
         for (const std::size_t coordinate : shape[phase].x)
             point[coordinate] = std::log(point[coordinate] / total);

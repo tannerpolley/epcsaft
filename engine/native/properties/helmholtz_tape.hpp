@@ -186,7 +186,7 @@ struct HelmholtzTape final {
         recording.active = false;
         result->function.optimize("no_cumulative_sum_op");
         result->predicates = std::move(predicates);
-        if (include_residual && parameters.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression))
+        if (include_residual && density_temperature_ion_suppression(parameters.permittivity_form))
             result->quotient_model = &model;
         result->regular_count = point_size;
         result->site_count = sites_count;

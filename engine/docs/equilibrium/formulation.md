@@ -544,13 +544,15 @@ curvature does not exclude a remote split. [ALG-STABILITY](../science/algorithms
 owns enumeration, conserved addition/removal and separate work budgets.
 
 Charged trial supports are admitted under every declared bulk-permittivity
-form. The existing `DensityTemperature` (Schreckenberg) and
-`DipolarPerturbation` (Rueben) forms reach the vacuum limit,
+form. `DensityTemperature` (Schreckenberg),
+`DensityTemperatureSusceptibilitySuppression` and `DipolarPerturbation` (Rueben)
+reach the vacuum limit,
 $\epsilon_r\to1$ as $\rho_m\to0$, by their definitions in
 [full EOS §6.2 and §6.4](../science/full-eos.md#6-bulk-dielectric-and-debye-huckel),
-EqID: `density_correlated_bulk_permittivity` and EqID:
-`dipolar_perturbation_bulk_permittivity`; their charged trials count at every
-density. `IonSuppression` (including solvent-only, ion-fraction and
+EqID: `density_correlated_bulk_permittivity`,
+EqID: `susceptibility_suppressed_density_correlated_bulk_permittivity` and
+EqID: `dipolar_perturbation_bulk_permittivity`. Their admitted charged trials
+count at every density. `IonSuppression` (including solvent-only, ion-fraction and
 ion-specific choices) and `ComponentMixing` are density independent. Their
 electrolyte terms are defined for condensed phases, and a free-volume trial
 search cannot infer that domain from a Liquid label or mechanical pressure-root

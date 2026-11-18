@@ -291,6 +291,8 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.permittivity_form = PermittivityForm::DensityTemperature;
     } else if (document.permittivity_choice == "solvent-density-temperature-ion-specific-suppression") {
         result.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
+    } else if (document.permittivity_choice == "solvent-density-temperature-ion-specific-susceptibility-suppression") {
+        result.permittivity_form = PermittivityForm::DensityTemperatureSusceptibilitySuppression;
     } else if (document.permittivity_choice == "dipolar-perturbation") {
         result.permittivity_form = PermittivityForm::DipolarPerturbation;
     } else if (document.permittivity_choice != "none") {
@@ -333,7 +335,7 @@ Parameters build_parameters(const ParameterDocument& document) {
     std::map<std::size_t, std::size_t> corrections;   // canonical rule edge -> law
     // Density-dependent forms consume only their own records (full EOS 6.2, 6.4).
     const bool density_temperature = density_temperature_permittivity(result.permittivity_form);
-    const bool quotient = result.permittivity_form.is(PermittivityForm::DensityTemperatureIonSuppression);
+    const bool quotient = density_temperature_ion_suppression(result.permittivity_form);
     const bool dipolar = document.permittivity_choice == "dipolar-perturbation";
     for (const auto& entry : document.entries) {
         const bool dipolar_field = entry.field == "dipole_scaling" || entry.field == "polarizability_scaling"
