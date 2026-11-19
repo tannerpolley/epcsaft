@@ -911,6 +911,7 @@ struct StabilityTrial final {
     std::string diagnostic_cause;
     std::optional<std::size_t> donor;
     bool resolved_descent = false;
+    bool pivot_only = false;
 };
 struct StabilityReport final {
     std::optional<core::Convergence> first_numerical_failure;
@@ -953,7 +954,7 @@ EPC_API CompiledSystem compile_stability_trial(const HelmholtzModel&, double, do
     const std::vector<double>&, const std::vector<double>&, std::vector<std::vector<double>>&);
 EPC_API double present_phase_residual_distance(double, double);
 EPC_API bool descent_resolved(double, double, double);
-EPC_API std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&, PhaseKind = PhaseKind::Liquid);
+EPC_API std::vector<double> reconstruct_trial_composition(std::vector<double>, const std::vector<std::size_t>&, const std::vector<int>&, PhaseKind = PhaseKind::Liquid, bool* pivot_only = nullptr);
 // n dln(phi_i)/dn_j at fixed T, P on the support (row-major), from an IsothermalPhaseHessian evaluation at unit amount and v.
 EPC_API std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives&, double, const std::vector<std::size_t>&);
 EPC_API std::pair<EquilibriumProblem, std::vector<double>> remove_discovery_phase(const CompiledSystem&,

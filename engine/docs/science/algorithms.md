@@ -1985,7 +1985,11 @@ uncertainty and donor/plane discrepancy remain numerical estimates in the reduce
 molar basis. Split errors retain their extensive basis.
 
 Repeated stationary trials use the existing composition/root coincidence rule.
-Distinct minima with overlapping value intervals are unresolved ties. Current-point ties, support/root boundaries and unresolved resolution events refuse the local derivative. Between-evaluation changes retain both optimizer coordinate vectors, both minimizing trials, both classifications and the event kind in the fit result. Once the new Full search resolves a unique stationary branch at its own point, its exact local action is admitted; no derivative is formed across the interval between the points. The resolution transition
+Distinct minima with overlapping value intervals are unresolved ties.
+After the coincidence check, any pivot-only endpoint in the minimum interval
+set makes the measure and its envelope actions unavailable because stationarity
+at the reconstructed point is unqualified. Retain the raw minimum, its
+uncertainty and any independently established descent witness. Current-point ties, support/root boundaries and unresolved resolution events refuse the local derivative. Between-evaluation changes retain both optimizer coordinate vectors, both minimizing trials, both classifications and the event kind in the fit result. Once the new Full search resolves a unique stationary branch at its own point, its exact local action is admitted; no derivative is formed across the interval between the points. The resolution transition
 may jump from negative $\tau$ to zero at nonzero $\tau$; no smoothing is used.
 These are finite-search numerical requirements, without a global certificate
 or physical-validation claim.
@@ -2387,7 +2391,11 @@ residuals, basis or row transformation. Keep raw residuals separate from reconst
 displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
 and the Liquid charge-only increase of the largest opposite-sign pivot followed
 by common multiplicative normalization follow EqID:
-`electroneutral_trial_reconstruction` with ties by index. Newly admitted charged
+`electroneutral_trial_reconstruction` with ties by index. For a successful,
+converged optimized Liquid trial, test the finite positive group rescale before
+writing the fractions. If it would round a supported fraction to zero and both
+original unit-sum and charge defects are within $10^{-12}$, normalize the original
+fractions, apply the same opposite-sign pivot and normalize again. Newly admitted charged
 Vapor trials retain common normalization and multiplicative charge repair in
 log arithmetic, without adding normalization roundoff to ionic coordinates. Recompute molar volume
 from reconstructed composition and the retained packing coordinate. Reject

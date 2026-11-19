@@ -510,8 +510,10 @@ or negative TPD, or a donor estimate establishes no stability conclusion.
 [ALG-STABILITY](../science/algorithms.md#alg-stability) owns these operations.
 
 Raw optimizer points are not physically feasible by construction. Native
-normalization and ionic group rescaling followed by a two-pivot arithmetic
-correction admit a nearby trial (EqID: `electroneutral_trial_reconstruction`).
+ionic group rescaling and normalization followed by an opposite-sign charge
+pivot and common normalization admit a nearby Liquid trial. A converged
+optimized Liquid endpoint can skip a zero-producing finite rescale when both
+original defects are within $10^{-12}$ (EqID: `electroneutral_trial_reconstruction`).
 Recompute its molar volume from composition and packing and reevaluate shared
 energy. Retain raw residuals, displacement and reconstructed point separately.
 Repair remaining candidate balance/charge defects in supported amount variables,
