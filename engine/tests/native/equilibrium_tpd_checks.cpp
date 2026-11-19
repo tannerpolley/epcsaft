@@ -2578,6 +2578,62 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(2298, "density admission") == 2298);
 }
 
+void check_bubble_branch_end() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto cold = [](const HelmholtzModel& model, const EquilibriumProblem& problem) {
+        core::CalculationWork::Limit unbounded{std::numeric_limits<std::size_t>::max()};
+        core::CalculationWork work(true, &unbounded);
+        auto result = solve_equilibrium(model, problem);
+        CHECK(result.has_state() && result.requested_tolerance_met.value_or(false));
+        return std::pair{std::move(result), work.units()};
+    };
+    const auto event = [](const core::Capture& capture, std::string_view name) {
+        const auto& events = capture.trace().events;
+        return std::find_if(events.begin(), events.end(), [&](const auto& e) { return e.name == name; });
+    };
+    {
+        // Independent #1204 density continuation, validation/build/issue-1204/input.inc
+        // SHA-256 9050dc3eff4d631b0f05115bb5e9300968f22aa8c4b8b988ab6b14247de55fe5.
+#include "fixtures/mea-313-bubble.inc"
+        bubble.feed.values = initial;
+        bubble.feed.values[0] = 1.859375;
+        const auto [source, allowance] = cold(model, bubble);
+        bubble.feed.values[0] = 1.875;
+        core::Capture capture(false);
+        const auto fold = solve_equilibrium(model, bubble, source, {}, allowance, 2 * allowance);
+        CHECK(fold.solver_status == "BRANCH_END" && !fold.has_state() && !fold.pressure);
+        CHECK(fold.convergence.stop == core::Stop::budget_exhausted);
+        CHECK(fold.topology_event == TopologyEvent::BranchEnd && fold.branch_end);
+        CHECK(fold.branch_end->condition == BranchEndCondition::LoadingFold);
+        // Rounded up from the refined comparison's absolute errors of 1.96e-9 mol/mol and 0.02513 Pa.
+        CHECK(std::abs(fold.branch_end->limiting_feed_mol[0] - 1.8621514046404) <= 3e-9);
+        CHECK(std::abs(fold.branch_end->limiting_pressure_pa - 7566373.580452) <= 0.03);
+        const auto work = event(capture, "branch_end_work");
+        CHECK(work != capture.trace().events.end() && work->reason.empty() && work->values[0] <= 2 * allowance);
+        std::vector<std::vector<double>> witnesses;
+        double slope = NAN;
+        for (const auto& sample : capture.trace().events) {
+            if (std::string_view(sample.name) == "corrected_slope" && sample.iteration == 1) slope = sample.values[0];
+            if (std::string_view(sample.name) == "branch_end_sample") {
+                witnesses.push_back(sample.values);
+                witnesses.back().push_back(slope);
+                slope = NAN;
+            }
+        }
+        CHECK(witnesses.size() >= 2);
+        const auto& before = witnesses[witnesses.size() - 2];
+        const auto& after = witnesses.back();
+        constexpr double reference_density = 7725.58780, mechanical_limit_density = 7781.70675;
+        CHECK(before[2] < reference_density && reference_density < after[2] && after[2] < mechanical_limit_density);
+        CHECK(before.back() > 0.0 && after.back() > 0.0);
+        CHECK(before[3] > 0.0 && after[3] < 0.0 && before[4] > 0.0 && after[4] < 0.0);
+        bubble.feed.values[0] = 2.0;
+        const auto beyond = solve_equilibrium(model, bubble, source, {}, allowance, 2 * allowance);
+        CHECK(!beyond.has_state() && !beyond.branch_end && beyond.topology_event == TopologyEvent::None);
+    }
+}
+
 // PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and refine to 128 panels.
 void check_reaction_relaxed_pz_row() {
     using namespace epcsaft;

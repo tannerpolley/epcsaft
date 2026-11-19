@@ -1082,6 +1082,21 @@ distinctness at the returned point; optimizer termination alone is insufficient.
 See [equilibrium initialization by declaration](#equilibrium-initialization-by-declaration)
 for start construction, its precedence and declaration-specific exclusions.
 
+A fixed-temperature mixture bubble solve with an admitted start and one
+increased neutral feed amount can opt into branch-end classification with
+`branch_end_work_limit`. The classifier has its own allowance and starts
+from the admitted source after the target attempt refuses, including when
+the target spends its `work_limit`. A failed source admission or feed
+predictor leaves the refusal in place. The classifier follows the
+liquid–vapour solution in log vapour density, with the increased feed amount
+as a coordinate and the bubble rows unchanged. Corrected points bracket a
+loading fold, the loss of positive vapour pressure–density slope, or the
+loss of declared vapour admission under the finite density search. A
+classified result reports the condition, witness feed amounts in path
+order, and estimated limiting feed and pressure. The target state and
+pressure remain unavailable. The sampled interval describes this followed
+branch at the chosen resolution.
+
 The shared driver invokes [neutral recovery](#neutral-recovery) only within
 its declared eligibility and budgets.
 

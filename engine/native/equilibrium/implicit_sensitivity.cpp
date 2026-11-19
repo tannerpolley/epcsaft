@@ -95,14 +95,13 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure
+    const std::vector<double>& column, std::optional<core::Convergence>* failure, std::vector<double> jacobian
 ) {
     core::Scope scope("implicit_sensitivity");
-    const std::size_t rows = compiled.rows.size();
-    const std::size_t dimension = prepared.point.size();
+    const std::size_t rows = compiled.rows.size(), dimension = prepared.point.size();
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
-    const auto jacobian = compiled.jacobian_at(prepared);
+    if (jacobian.empty()) jacobian = compiled.jacobian_at(prepared);
     const auto refuse = [&](const char* cause, core::Stop stop, const auto* factor, std::optional<double> backward = std::nullopt) {
         if (failure) { core::Convergence r; r.cause = cause;
             if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "implicit defining rows"));

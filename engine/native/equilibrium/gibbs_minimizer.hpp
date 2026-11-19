@@ -132,7 +132,7 @@ BranchCheck check_density_branches(
     const PhasePoint* prepared = nullptr
 );
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
-EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
+EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind, bool* same_side = nullptr);
 
 struct EPC_EXCEPTION BudgetExhausted final : std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -169,7 +169,7 @@ struct DriverLimits final {
     }
 };
 bool supports_work_limit(const EquilibriumProblem&);
-EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const EquilibriumResult&, core::Scope&);
+EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const EquilibriumResult&, core::Scope&, std::optional<std::size_t>);
 // ALG-EQUILIBRIUM source recovery: the finite pure-temperature schedule or mixture source/continuation;
 // all child calculations spend `limits`. A refusal has no state and retains the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
@@ -321,11 +321,30 @@ EPC_API ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
+template<class Base, class Direction>
+std::vector<Base> shifted_coordinates(std::vector<Base> point, const Direction& direction, Base scale) {
+    for (std::size_t i = 0; i < point.size(); ++i) point[i] += scale * direction[i];
+    return point;
+}
+
+enum class NewtonTrial { Refused, Accepted, Stop, Interrupted };
+
+template<class Base, class Direction, class Trial>
+NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& direction, Base contraction_limit,
+    const Trial& trial, bool fourth_trial = true) {
+    const auto coordinates = [&](Base alpha) { return shifted_coordinates(point, direction, alpha); };
+    const auto contracts = [&](Base norm) { return norm < contraction_limit; };
+    constexpr double damping[] = {1.0, 0.5, 0.25, 0.125};
+    for (std::uint32_t i = 0; i < (fourth_trial ? 4u : 3u); ++i)
+        if (auto outcome = trial(damping[i], i, coordinates, contracts); outcome != NewtonTrial::Refused) return outcome;
+    return NewtonTrial::Refused;
+}
+
 // J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr
+    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}
 );
 
 EPC_API std::vector<double> sensitivity(

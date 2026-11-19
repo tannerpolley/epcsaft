@@ -263,6 +263,10 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(IpoptDiagnostics, last, first_restoration_iteration, initialization_return, application_return,
             restoration_entries, callbacks, warm_initialized, predicted, physical_amounts, failed_point)
         EPCSAFT_REPR(IpoptDiagnostics, "initialization_return", "application_return", "restoration_entries", "callbacks", "warm_initialized");
+    nb::enum_<BranchEndCondition>(module, "BranchEndCondition")
+        EPCSAFT_VALUES(BranchEndCondition, LoadingFold, VaporMechanicalLimit, VaporKindRefused);
+    nb::class_<BubbleBranchEnd>(module, "BubbleBranchEnd")
+        EPCSAFT_READONLY(BubbleBranchEnd, condition, feed_bracket_mol, limiting_feed_mol, limiting_pressure_pa);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
         .def_prop_ro("critical_search", [](const EquilibriumResult& r) { return r.critical_search ? nb::cast(*r.critical_search) : nb::none(); })
         .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
@@ -271,6 +275,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, PROPERTY_SCOPE) : nb::list(); })
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
+        .def_ro("branch_end", &EquilibriumResult::branch_end)
         EPCSAFT_READONLY(EquilibriumResult, terminal_numerical_failure, last_full_evaluation, phase_pressures, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
             // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
@@ -322,7 +327,7 @@ void register_equilibrium(nb::module_& module) {
         nb::arg("options") = StabilityOptions{});
     nb::enum_<TopologyEvent>(module, "TopologyEvent")
         .value("None_", TopologyEvent::None)
-        EPCSAFT_VALUES(TopologyEvent, PhaseDisappeared, PhasesCoalesced);
+        EPCSAFT_VALUES(TopologyEvent, PhaseDisappeared, PhasesCoalesced, BranchEnd);
     auto continuation_stops = nb::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
          value <= static_cast<int>(ContinuationStop::turning_point); ++value) {
@@ -448,9 +453,9 @@ void register_equilibrium(nb::module_& module) {
         return result;
     }, nb::arg("compiled"), nb::arg("point"), nb::arg("lever"));
     module.def("solve_equilibrium", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&,
-        const std::optional<EquilibriumResult>&, const std::vector<std::string>&, std::optional<std::size_t>>(&solve_equilibrium),
+        const std::optional<EquilibriumResult>&, const std::vector<std::string>&, std::optional<std::size_t>, std::optional<std::size_t>>(&solve_equilibrium),
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
-        nb::arg("work_limit") = std::nullopt);
+        nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt);
     module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::keep_alive<0, 1>());
 }

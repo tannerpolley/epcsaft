@@ -3359,6 +3359,18 @@ class CriticalSearch:
     selected: int | None
     """First admitted candidate when all admitted candidates agree within numerical estimates."""
 
+class BranchEndCondition:
+    LoadingFold: BranchEndCondition
+    VaporMechanicalLimit: BranchEndCondition
+    VaporKindRefused: BranchEndCondition
+
+class BubbleBranchEnd:
+    condition: BranchEndCondition
+    feed_bracket_mol: tuple[float, float]
+    """Witness feed amounts in continuation order."""
+    limiting_feed_mol: list[float]
+    limiting_pressure_pa: float
+
 class EquilibriumResult:
     critical_search: CriticalSearch | None
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
@@ -3460,10 +3472,11 @@ class EquilibriumResult:
     """Whether the finite final residual meets the caller criterion, or None without a finite final
     residual; floor convergence need not be True.
     """
+    branch_end: BubbleBranchEnd | None
     topology_event: TopologyEvent
-    """First vanished free phase, otherwise first coincident pair, when detected."""
+    """Vanished free phase, coincident pair, or classified bubble branch end."""
     topology_phase: Optional[int]
-    """Index of the vanished phase, or None without this event."""
+    """Index of the vanished phase or branch-end vapour, when available."""
     topology_pair: Optional[tuple[int, int]]
     """Declared phase-index pair for coalescence, or None without this event."""
     critical: Optional[CriticalRecord]
@@ -3516,6 +3529,7 @@ class TopologyEvent:
     """First vanished free phase in declaration order."""
     PhasesCoalesced: TopologyEvent
     """First coincident pair in lexicographic phase-index order, if no free phase vanished."""
+    BranchEnd: TopologyEvent
 
 class ContinuationStop:
     """Terminal condition of a declared continuation or envelope trace.
@@ -4119,6 +4133,8 @@ def solve_equilibrium(
     start: Optional[EquilibriumResult] = ...,
     component_ids: Sequence[str] = ...,
     work_limit: int | None = None,
+    *,
+    branch_end_work_limit: int | None = None,
 ) -> EquilibriumResult:
     """Solve the declared equilibrium problem natively.
 
