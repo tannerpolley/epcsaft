@@ -121,13 +121,6 @@ if grep -Eq '^engine/(native/|tests/native/|build/subprojects/|meson\.build)' <<
     fi
 fi
 
-# The native suites share one Meson build directory, so they run in sequence, alongside the Python checks.
-(
-    timed native-default bash engine/tools/run-native-tests.sh
-    ((${#slow_tests[@]} == 0)) || timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
-) &
-native_pid=$!
-
 failed=0
 mkdir -p build/test-results
 # JUnit goes to a temporary file first, so a reader never sees a partial report.
@@ -142,6 +135,13 @@ if [[ "$python_batch" == true ]]; then
             cmp build/mea_capped_addition.inc engine/tests/native/fixtures/mea_capped_addition.inc' || failed=1
     fi
 fi
+# Start native test builds after pytest, whose subprocesses need the same Ninja lock to import the editable Engine.
+(
+    timed native-default bash engine/tools/run-native-tests.sh
+    ((${#slow_tests[@]} == 0)) || timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
+) &
+native_pid=$!
+
 timed ruff env -C engine ../.venv/bin/ruff check src tests || failed=1
 timed mypy env -C engine ../.venv/bin/mypy || failed=1
 architecture_args=()
