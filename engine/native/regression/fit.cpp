@@ -542,11 +542,18 @@ struct ObservationEvaluator::Impl final {
                         core::retain_first(retry.first_numerical_failure, prediction.first_numerical_failure, true);
                         prediction = std::move(retry);
                     }
-                    // A fit and its workers read only the minimizing trial and the other trials' seeds (a reduced copy).
+                    // Keep the action operands of plausible trials through a same-point Jacobian request.
                     if (prediction.stability && (interruptible_ || process_)) {
                         auto measure = std::make_shared<equilibrium::StabilityMeasure>(*prediction.stability);
                         for (std::size_t t = 0; t < measure->report.trials.size(); ++t) if (t != measure->minimizing_trial) {
                             equilibrium::StabilityTrial kept; kept.seed = std::move(measure->report.trials[t].seed);
+                            if (measure->available && measure->coincident_supports
+                                && std::binary_search(measure->minima.begin(), measure->minima.end(), t)) {
+                                auto& trial = measure->report.trials[t];
+                                kept.composition = std::move(trial.composition);
+                                for (const auto* name : {"volume_m3_per_mol", "numerical_plane_value_error_over_rt"})
+                                    kept.quantities.insert(trial.quantities.extract(name));
+                            }
                             measure->report.trials[t] = std::move(kept);
                         }
                         prediction.stability = std::move(measure);
@@ -590,7 +597,8 @@ struct ObservationEvaluator::Impl final {
                     }
                     gradients[g] = pressure_closed(observation.kind) && directions.empty()
                         ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
-                        : differentiate_group(model, rows, prediction, request_.coordinates, directions);
+                        : differentiate_group(model, rows, prediction, request_.coordinates, directions,
+                            [&](const double* gradient, double* mapped) { chain(request_, trial.chart.map, 1, gradient, mapped); });
                 }
                 const auto& gradient = gradients[g][position[g]++];
                 if (prediction.stability && !gradient.raw_minimum.empty()) {

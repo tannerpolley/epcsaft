@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <sstream>
 #include <numeric>
 #include <new>
 #include <stdexcept>
@@ -928,7 +929,7 @@ PredictionGradient differentiate(
 
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
-    const std::vector<ObservationInputDirection>& inputs
+    const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action
 ) {
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
@@ -1027,24 +1028,61 @@ std::vector<PredictionGradient> differentiate_group(
         std::vector<equilibrium::SolvedStateObservable> plane{{Kind::Temperature}, {Kind::Pressure}};
         for (std::size_t i = 0; i < components; ++i) plane.push_back({Kind::SpeciesStandardMinusPlane, 0, i});
         const auto actions = equilibrium::solved_state_first_actions(*prediction.compiled, *prediction.solved, plane, directions);
-        const auto& trial = measure.report.trials[*measure.minimizing_trial];
         const double T = *prediction.solved->temperature, P = *prediction.solved->pressure;
-        const double v = trial.quantities.at("volume_m3_per_mol"), rt = GAS_CONSTANT_J_PER_MOL_K * T;
-        for (std::size_t k = 0; k < directions.size(); ++k) {
-            const auto& d = directions[k];
-            for (const auto& action : actions[k].results) if (!action.action) {
+        const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
+        for (const auto& column : actions)
+            for (const auto& action : column.results) if (!action.action || !std::isfinite(*action.action)) {
                 out.message = "parent plane/intensive action unavailable"; return {out};
             }
-            std::vector<double> tangent(2 + components + active_width, 0.0); tangent[0] = *actions[k].results[0].action;
-            std::copy(d.active_parameters.begin(), d.active_parameters.end(), tangent.begin() + 2 + components);
-            const auto eos = model.evaluate(T, v, trial.composition, DerivativeOrder::Gradient);
-            double value = std::inner_product(tangent.begin(), tangent.end(), eos.gradient.begin(), 0.0)
-                + v / rt * (*actions[k].results[1].action - P / T * tangent[0]);
-            for (std::size_t i = 0; i < components; ++i) {
-                value += trial.composition[i] * *actions[k].results[i + 2].action;
+        const auto trial_action = [&](std::size_t j) {
+            const auto& trial = measure.report.trials[j];
+            const double v = trial.quantities.at("volume_m3_per_mol");
+            std::vector<double> gradient(width);
+            for (std::size_t k = 0; k < directions.size(); ++k) {
+                const auto& d = directions[k];
+                std::vector<double> tangent(2 + components + active_width, 0.0); tangent[0] = *actions[k].results[0].action;
+                std::copy(d.active_parameters.begin(), d.active_parameters.end(), tangent.begin() + 2 + components);
+                const auto eos = model.evaluate(T, v, trial.composition, DerivativeOrder::Gradient);
+                double value = std::inner_product(tangent.begin(), tangent.end(), eos.gradient.begin(), 0.0)
+                    + v / rt * (*actions[k].results[1].action - P / T * tangent[0]);
+                for (std::size_t i = 0; i < components; ++i)
+                    value += trial.composition[i] * *actions[k].results[i + 2].action;
+                gradient[k] = value;
             }
-            out.raw_minimum.push_back(value); out.value.push_back(*measure.value == 0.0 ? 0.0 : value);
+            return gradient;
+        };
+        const auto finite = [](double value) { return std::isfinite(value); };
+        const auto best = *measure.minimizing_trial;
+        const auto minima = measure.coincident_supports ? measure.minima : std::vector{best};
+        std::vector<std::vector<double>> prior;
+        const auto error = [&](std::size_t j) {
+            return measure.report.trials[j].quantities.at("numerical_plane_value_error_over_rt");
+        };
+        for (auto j : minima) {
+            auto current = trial_action(j);
+            if (!std::all_of(current.begin(), current.end(), finite)) {
+                out.message = "trial tangent-plane action unavailable"; return {out};
+            }
+            for (std::size_t i = 0; i < prior.size(); ++i) {
+                std::vector<double> gap(width), mapped(coordinates.coordinates.size() + inputs.size());
+                std::transform(current.begin(), current.end(), prior[i].begin(), gap.begin(), std::minus<>{});
+                if (optimizer_action) {
+                    optimizer_action(gap.data(), mapped.data());
+                    std::copy(gap.begin() + parameter_width, gap.end(), mapped.end() - inputs.size());
+                    gap.swap(mapped);
+                }
+                const double resolution = error(j) + error(minima[i]);
+                for (std::size_t k = 0; k < gap.size(); ++k) if (!(std::abs(gap[k]) <= resolution)) {
+                    std::ostringstream message;
+                    message << "stationary tangent-plane actions disagree in direction " << k
+                        << ": reduced-value gap " << gap[k] << ", numerical resolution " << resolution;
+                    out.message = message.str(); return {out};
+                }
+            }
+            prior.push_back(std::move(current));
         }
+        out.raw_minimum = std::move(prior[std::find(minima.begin(), minima.end(), best) - minima.begin()]);
+        out.value = *measure.value == 0.0 ? std::vector<double>(width, 0.0) : out.raw_minimum;
         out.status = ObservationStatus::Available; return {out};
     }
     if (addition(observations.front()->kind)) {
