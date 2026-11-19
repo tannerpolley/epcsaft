@@ -150,7 +150,7 @@ struct NeutralReferenceTrace final {
 };
 
 void reference_errors(const HelmholtzModel& model, double temperature, const std::vector<double>& nu,
-    NeutralReferenceReactionDiagnostic& diagnostic) {
+    NeutralReferenceReactionDiagnostic& diagnostic, bool temperature_error) {
     const auto refuse = [&](std::string cause) { diagnostic.numerical_error = {NAN, NAN}; diagnostic.numerical_error_cause = std::move(cause); };
     try {
         if (!diagnostic.trace) return refuse("reference state unavailable");
@@ -166,17 +166,19 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
             if (constant.status != PropertyActionStatus::Available || value.status != PropertyActionStatus::Available)
                 return "reference error column unavailable";
             const auto cp = reference_partial_from_state(model, temperature, composition, insertion, 0, 1, {}, state, dilute);
-            const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
-            if (!cp.action || !ctp.action) return "reference pressure sensitivity unavailable";
+            if (!cp.action) return "reference pressure sensitivity unavailable";
             double b0 = wide_math::abs(error.pressure[0] - trace.pressure) + error.pressure_floor[0]
                 + std::numeric_limits<double>::epsilon() * wide_math::abs(trace.pressure);
             if (state.density_convergence && state.density_convergence->floor)
                 b0 += *state.density_convergence->floor * GAS_CONSTANT_J_PER_MOL_K * temperature * state.molar_density;
-            const double b1 = wide_math::abs(error.pressure[1]) + error.pressure_floor[1];
             diagnostic.numerical_error[0] += constant_error.fixed[0] + wide_math::abs(*cp.action) * b0;
+            replayed_sum[0] += constant.contraction[0];
+            if (!temperature_error) return nullptr;
+            const auto ctp = reference_partial_from_state(model, temperature, composition, insertion, 1, 1, {}, state, dilute);
+            if (!ctp.action) return "reference pressure sensitivity unavailable";
+            const double b1 = wide_math::abs(error.pressure[1]) + error.pressure_floor[1];
             diagnostic.numerical_error[1] += (error.fixed[1] + wide_math::abs(*cp.action) * b1) / wide_math::abs(error.temperature_coefficient)
                 + wide_math::abs(*ctp.action) * b0;
-            replayed_sum[0] += constant.contraction[0];
             replayed_sum[1] += static_cast<WiderScalar>(value.contraction[1]) / temperature;
             return nullptr;
         };
@@ -189,12 +191,12 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
             composition[i] = 1; insertion[i] = nu[i];
             if (const auto cause = accumulate(*trace.pure_state[i], composition, insertion, false)) return refuse(cause);
         }
-        if (!diagnostic.terminal_contraction || !diagnostic.terminal_contraction_temperature_derivative)
+        if (!diagnostic.terminal_contraction || (temperature_error && !diagnostic.terminal_contraction_temperature_derivative))
             return refuse("reference consumed center unavailable");
         diagnostic.numerical_error[0] = static_cast<double>(diagnostic.numerical_error[0] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction) - replayed_sum[0]));
-        diagnostic.numerical_error[1] = static_cast<double>(diagnostic.numerical_error[1] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]));
+        if (temperature_error) diagnostic.numerical_error[1] = static_cast<double>(diagnostic.numerical_error[1] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]));
         if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += wide_math::abs(*diagnostic.observed_terminal_change);
-        if (diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += wide_math::abs(*diagnostic.observed_temperature_derivative_change);
+        if (temperature_error && diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += wide_math::abs(*diagnostic.observed_temperature_derivative_change);
         for (double e : diagnostic.numerical_error) if (!wide_math::isfinite(e) || e < 0) return refuse("nonfinite reference error");
         diagnostic.numerical_error_cause.clear();
     } catch (const std::exception& error) { refuse(error.what()); }
@@ -239,7 +241,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
         trace.composition[trace.solvent_index] = 1.0;
         try {
             trace.state = properties::close_density(model, temperature, pressure,
-                trace.composition, DensityBranch::Liquid, solvent_anchor);
+                trace.composition, DensityBranch::Liquid, solvent_anchor, true);
         } catch (const std::exception& error) {
             result.status = NeutralReferenceStatus::DensityUnavailable;
             result.message = std::string("neutral reference density unavailable: ") + error.what();
@@ -272,7 +274,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                 composition[i] = 1.0;
                 try {
                     auto state = model.state_at_pressure(temperature, pressure, composition,
-                        choice == SpeciesReference::PureGas ? DensityBranch::Vapor : DensityBranch::Liquid);
+                        choice == SpeciesReference::PureGas ? DensityBranch::Vapor : DensityBranch::Liquid, {}, false, true);
                     if (!(state.pressure_density_derivative > 0.0))
                         throw std::runtime_error("nonpositive pure-reference pressure slope");
                     if (state.density_branch == DensityBranch::Unspecified) {

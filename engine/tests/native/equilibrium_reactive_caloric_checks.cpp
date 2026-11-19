@@ -1118,7 +1118,7 @@ inline void isothermal_row_columns() {
         return shifted_compiled.evaluate(solved.coordinates).values;
     };
     for(bool warm:{false,true}) {
-        const auto prepared=compiled.prepare(solved.coordinates);
+        const auto prepared=compiled.prepare(solved.coordinates, false, nullptr, {}, {}, true);
         const std::vector<double> z(prepared.point.size(),0);
         const std::vector<double> control{0,0,1,0,0,1};
         if(warm) (void)compiled.row_series(prepared,{prepared.point,z},control,1);

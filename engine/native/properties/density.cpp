@@ -1658,11 +1658,11 @@ std::optional<std::string> properties::liquid_reference_refusal(const State& sta
 }
 
 State properties::close_density(const HelmholtzModel& model, double temperature, double pressure,
-                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density) {
+                                const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density, bool fixed_parameters) {
     if (prior_density) {
         core::Scope scope("density_anchor");
         try {
-            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density);
+            auto state = model.state_at_pressure(temperature, pressure, composition, branch, prior_density, false, fixed_parameters);
             if (regular_density(state.molar_density, state.pressure_density_derivative, state.density_convergence)) return state;
             if (state.density_convergence) scope.finish(*state.density_convergence);
             scope.probe("anchor_failure", {*prior_density}, 0, "target density regularity unavailable or exceeds DENSITY_ANCHOR_REGULARITY");
@@ -1672,7 +1672,7 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
             scope.probe("anchor_failure", {*prior_density}, 0, error.what());
         }
     }
-    return model.state_at_pressure(temperature, pressure, composition, branch);
+    return model.state_at_pressure(temperature, pressure, composition, branch, {}, false, fixed_parameters);
 }
 
 DensityRoot solve_density(

@@ -81,7 +81,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             core::retain_first(o.first_numerical_failure, root.first_numerical_failure); p.density = root.molar_density; }
         first = false;
         packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
-        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::Gradient);
+        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::FixedParameterGradient);
         core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
         for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
             p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];
@@ -539,14 +539,14 @@ GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, cons
         out.physical = stability_candidate(c, result, out.report).physical;
         std::vector<SolvedStateObservable> o;
         for (size_t i = 0; i < c.n_feed.size(); ++i)
-            o.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
+            o.push_back({.kind = SolvedStateObservableKind::SpeciesStandardMinusPlane, .component = i, .plane_uncertainty = true});
         SolvedStateActionDirection zero;
         zero.feed_amounts_mol.assign(c.n_feed.size(), 0);
         zero.active_parameters.assign(c.model->active_parameters().size(), 0);
         auto actions = solved_state_first_actions(c, result, o, {zero}).front();
 
         for (auto &a : actions.results) {
-            if (!a.numerical_error) throw std::domain_error("parent row uncertainty unavailable");
+            if (!a.numerical_error) throw std::domain_error(a.diagnostic_message.value_or("parent row uncertainty unavailable"));
             out.row_errors.push_back(*a.numerical_error);
         }
 
@@ -637,8 +637,8 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                     }
                 auto d = m.evaluate(r.temperature, v, x, DerivativeOrder::IsothermalPhaseHessian);
                 long double chart = 0;
-                size_t width = 2 + ns;
-                for (size_t col = 1; col < width; ++col) {
+                const auto width = d.gradient.size();
+                for (size_t col = 1; col < 2 + ns; ++col) {
                     long double movement = col == 1 ? (long double)v - V / N
                                                     : (long double)x[col - 2] - (n0[col - 2] + t * dn[col - 2]) / N;
                     long double deriv = dv * (d.hessian[width + col] + (col == 1 ? 1 / (v * v) : -1 / v));
@@ -1503,10 +1503,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     });
                     if (shared == splits.end()) {
                         if (!parent) {  // the original plane and repair, their numerical estimates counted here
-                            auto counted = result;
-                            const auto prepared = input.prepare(result.coordinates);
-                            if (!counted.numerical_estimates) counted.numerical_estimates = equilibrium_numerical_estimates(input, result, &prepared, true);
-                            parent = conserved_split_reference(input, counted);
+                            parent = conserved_split_reference(input, result);
                         }
                         shared = splits.emplace(splits.end(), trial, relaxed_split(c, at, trial, *trial.donor, *parent, options, report.work));
                     }
@@ -1657,12 +1654,15 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
     if (rows.size() != c.n_feed.size()) {
         rows.clear();
         std::vector<SolvedStateObservable> plane;
-        for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({SolvedStateObservableKind::SpeciesStandardMinusPlane, 0, i});
+        for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({.kind = SolvedStateObservableKind::SpeciesStandardMinusPlane, .component = i, .plane_uncertainty = true});
         SolvedStateActionDirection zero; zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
         zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
         const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
         for (const auto& action : actions.results) {
-            if (!action.numerical_error) { out.cause = "parent plane uncertainty unavailable"; return out; }
+            if (!action.numerical_error) {
+                out.cause = action.diagnostic_message.value_or("parent plane uncertainty unavailable");
+                return out;
+            }
             rows.push_back(*action.numerical_error);
         }
     }
