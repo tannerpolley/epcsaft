@@ -592,6 +592,7 @@ Prediction predict(
                 result.status = ObservationStatus::CentralSolveUnavailable;
                 result.message = "pressure reference: " + result.pressure_reference->message;
                 result.refusal_convergence = result.pressure_reference->refusal_convergence;
+                core::retain_first(result.first_numerical_failure, result.pressure_reference->first_numerical_failure);
                 core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
             }
             problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
@@ -898,17 +899,13 @@ PredictionGradient differentiate(
             ? std::optional<double>(center->molar_density) : std::nullopt;
         auto batch = model.pressure_actions(observation.temperature, observation.pressure,
             observation.composition, observation.branch, observables, directions, anchor);
-        const auto retain = [&] {
-            core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
-            if (batch.density_status != PropertyActionStatus::Available)
-                core::retain_first(gradient.first_numerical_failure, batch.density_convergence);
-        };
-        retain();
-        const auto cause = [&] {
+        core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
+        const auto density_unavailable = [&] {
+            gradient.refusal_convergence = batch.density_convergence;
             std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
-            return batch.density_message.empty() ? name : name + ": " + batch.density_message;
+            return unavailable(batch.density_message.empty() ? name : name + ": " + batch.density_message);
         };
-        if (batch.density_structure_refused) return unavailable(cause());
+        if (batch.density_structure_refused) return density_unavailable();
         if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
             || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
             if (batch.density_convergence) scope.finish(*batch.density_convergence);
@@ -917,9 +914,9 @@ PredictionGradient differentiate(
                 : equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
             batch = model.pressure_actions(observation.temperature, observation.pressure,
                 observation.composition, observation.branch, observables, directions);
-            retain();
+            core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
         }
-        if (batch.density_status != PropertyActionStatus::Available) return unavailable(cause());
+        if (batch.density_status != PropertyActionStatus::Available) return density_unavailable();
         if (caloric && batch.results[0].status != PropertyActionStatus::Available)
             return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)
@@ -971,7 +968,10 @@ std::vector<PredictionGradient> differentiate_group(
                             value += *batch.molar_density * std::inner_product(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(),
                                 model.parameters().molar_mass_kg_per_mol.begin(), 0.0);
                         }
-                    } else gradient.message = "pressure input action: " + batch.density_message;
+                    } else {
+                        gradient.refusal_convergence = batch.density_convergence;
+                        gradient.message = "pressure input action: " + batch.density_message;
+                    }
                 }
                 if (!std::isfinite(value)) { gradient.status = ObservationStatus::ActionUnavailable; gradient.value.clear(); break; }
                 gradient.value.push_back(value);

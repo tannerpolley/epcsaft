@@ -314,9 +314,6 @@ struct ObservationEvaluator::Impl final {
                 out.first_numerical_failure_observation = part.first_numerical_failure_observation;
             }
         }
-        if (out.first_numerical_failure && failure && out.first_numerical_failure_observation > failure->row)
-            out.first_numerical_failure.reset();
-        core::retain_first(result_.first_numerical_failure, out.first_numerical_failure);
         // The serial sweep stops at its first failure: later rows stay unevaluated.
         for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
             out.predictions[i] = out.residuals[i] = 0.0;
@@ -398,10 +395,11 @@ struct ObservationEvaluator::Impl final {
         const Eigen::Map<const Eigen::VectorXd> r(trial.weighted.data(), static_cast<Eigen::Index>(trial.weighted.size()));
         const Eigen::VectorXd gradient = j.transpose() * r;
         out.assign(gradient.data(), gradient.data() + gradient.size());
-        return all_finite(out) || fail(point, {0, trial.weighted.size(), ObservationStatus::Nonfinite, true, "weighted objective gradient not finite"}, trial);
+        return all_finite(out) || fail(point, {trial.weighted.size(), trial.weighted.size(), ObservationStatus::Nonfinite, true, "weighted objective gradient not finite"}, trial);
     }
 
-    bool fail(const std::vector<double>& optimizer, Failure failure, const ObservationEvaluation& out) {
+    bool fail(const std::vector<double>& optimizer, Failure failure, ObservationEvaluation& out) {
+        if (out.first_numerical_failure_observation > failure.row) out.first_numerical_failure.reset();
         auto first = out.first_numerical_failure;
         std::optional<double> central;
         const auto i = failure.observation;
@@ -637,6 +635,7 @@ struct ObservationEvaluator::Impl final {
         trial.optimizer = optimizer;
         // A worker has no reuse path; a fit's own process keeps only its stability rows' transition fields.
         if (!process_) {
+            core::retain_first(result_.first_numerical_failure, out.first_numerical_failure);
             std::vector<std::optional<Prediction>> rows;
             if (interruptible_) rows.swap(out.stability_predictions);
             trial.evaluation = out;

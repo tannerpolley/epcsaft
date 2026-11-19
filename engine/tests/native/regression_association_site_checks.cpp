@@ -305,9 +305,14 @@ void boundary_refusals() {
         Prediction refused;
         refused.solved = point;
         project_prediction(overflow, row, refused);
-        CHECK(truth("refusal/projection", !refused.value && !refused.residual && refused.convergence
-            && core::describe(*refused.convergence) == core::describe(*failure),
-            fields({field("cause", refused.message), field("convergence", core::describe(*failure))})));
+        CHECK(truth("refusal/projection", refused.status == ObservationStatus::CentralSolveUnavailable
+            && !refused.value && !refused.residual && refused.convergence && refused.refusal_convergence
+            && core::describe(*refused.convergence) == core::describe(*failure)
+            && core::describe(*refused.refusal_convergence) == core::describe(*failure)
+            && refused.refusal_convergence->evaluations == failure->evaluations,
+            fields({field("status", observation_status_name(refused.status)), field("cause", refused.message),
+                field("refusal_record", refused.refusal_convergence ? core::describe(*refused.refusal_convergence) : "absent"),
+                field("mass_action_record", core::describe(*failure))})));
     }
 }
 
@@ -358,10 +363,33 @@ void fit_failure_records() {
         std::string record;
         bool initial_trial = true;
         double weight = 1.;
+        bool diagnostic_after = false;
     };
     const auto describe = [](const std::optional<core::Convergence>& record) {
         return record ? core::describe(*record) : "absent";
     };
+    auto stability = solved(ObservationKind::Stability, cell);
+    stability.form = ResidualForm::Difference;
+    stability.observed = 0.;
+    stability.pressure_reference = coalesced;
+    const auto pressure = predict_validated(model, solved(ObservationKind::EquilibriumPressure, coalesced));
+    CHECK(!pressure.value && pressure.first_numerical_failure && pressure.first_numerical_failure->criterion);
+    auto stability_request = request;
+    stability_request.controls.workers = 1;
+    stability_request.observations = {stability};
+    stability_request.weights = {1.};
+    const auto stability_fit = fit(stability_request);
+    CHECK(stability_fit.failures.size() == 1);
+    const auto& stability_failure = stability_fit.failures.front();
+    CHECK(truth("fit-failure/pressure-reference", stability_failure.observation == 0
+        && stability_failure.status == ObservationStatus::CentralSolveUnavailable
+        && stability_failure.message == "pressure reference: " + pressure.message
+        && describe(stability_failure.first_numerical_failure) == describe(pressure.first_numerical_failure)
+        && describe(stability_fit.first_numerical_failure) == describe(pressure.first_numerical_failure)
+        && describe(stability_failure.convergence) == core::describe(failed_solve.convergence),
+        fields({field("first", describe(stability_failure.first_numerical_failure)),
+            field("nested_first", describe(pressure.first_numerical_failure)), field("record", describe(stability_failure.convergence))})));
+
     const auto subnormal_scale = std::numeric_limits<double>::min() / 16.;
     auto large_mass = parameters;
     large_mass.molar_mass_kg_per_mol[0] = 1e308;
@@ -409,6 +437,7 @@ void fit_failure_records() {
             {"residual", residual, ObservationStatus::Nonfinite, "the residual is not finite", prediction.value, "absent"},
             {"weighted-residual", cost, ObservationStatus::Nonfinite, "weighted residual not finite", prediction.value, "absent", true, large_weight},
             {"weighted-cost", cost, ObservationStatus::Nonfinite, "accumulated weighted cost not finite", prediction.value, "absent"},
+            {"weighted-cost-prefix", cost, ObservationStatus::Nonfinite, "accumulated weighted cost not finite", prediction.value, "absent", true, 1., true},
             {"optimizer-jacobian", jacobian, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", prediction.value, "absent"},
             {"terminal", terminal, terminal_prediction.status, terminal_prediction.message, {}, describe(terminal_prediction.convergence), false},
         };
@@ -427,13 +456,21 @@ void fit_failure_records() {
             trial.controls.workers = workers;
             trial.observations = {first, item.row};
             trial.weights[1] = item.weight;
+            std::optional<core::Convergence> fallback;
+            if (item.diagnostic_after) {
+                CHECK(!cost_prediction.first_numerical_failure && !action.first_numerical_failure);
+                std::swap(trial.observations[0], trial.observations[1]);
+                std::swap(trial.weights[0], trial.weights[1]);
+                core::retain_failure(fallback, item.message, "fit evaluation");
+            }
+            const auto expected_first = item.diagnostic_after ? describe(fallback) : earlier;
             const auto result = fit(trial);
             CHECK(!result.failures.empty());
             const auto& failure = result.failures.front();
-            CHECK(truth(std::string("fit-failure/") + item.stage, failure.observation == 1
+            CHECK(truth(std::string("fit-failure/") + item.stage, failure.observation == (item.diagnostic_after ? 0 : 1)
                 && failure.status == item.status && failure.message == item.message && failure.central_value == item.value
-                && describe(failure.convergence) == item.record && describe(failure.first_numerical_failure) == earlier
-                && describe(result.first_numerical_failure) == earlier
+                && describe(failure.convergence) == item.record && describe(failure.first_numerical_failure) == expected_first
+                && describe(result.first_numerical_failure) == expected_first
                 && (item.initial_trial ? failure.jacobian && result.status == "initial_evaluation_failed"
                     && result.residuals.empty() && result.optimizer_jacobian.empty()
                     : !failure.jacobian && failure.optimizer == std::vector<double>{-1000.}
