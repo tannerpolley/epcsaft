@@ -1420,64 +1420,53 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 stop("scaled correction"); break;
             }
 
-            bool accepted = false, representable = false, trial_in_box = false;
-            // Bounded damping retains raw contraction; preparation admits only positive finite x.
-            // Best-point selection below protects the returned classified residual.
-            std::uint32_t trial = 0;
-            // Newton attempts and wide correction also try the fourth fraction.
-            for (const Base damping : newton_damping) {
-                if constexpr (std::is_same_v<Base, double>) if (trial == 3 && !newton) break;
+            bool representable = false, trial_in_box = false;
+            const auto trial = [&](Base damping, std::uint32_t trial_index, const auto& coordinates, const auto& contracts) {
                 const Base alpha = std::min((trial_recovery ? trial_scale : Base(1)) * damping, trial_limit);
-                if (final_correction && alpha != 1.0) break;
-                const auto trial_index = trial++;
-                if (expired()) { stop("elapsed budget"); break; }
-                std::vector<Base> candidate = full;
-                for (Eigen::Index i = 0; i < n; ++i)
-                    candidate[static_cast<std::size_t>(i)] += alpha * delta(i);
-                representable = representable || candidate != full;
-                if constexpr (!std::is_same_v<Base, double>) if (candidate == full) continue;
-                if (trial_recovery && candidate == full) continue;
+                if (final_correction && alpha != 1.0) return NewtonTrial::Stop;
+                if (expired()) { stop("elapsed budget"); return NewtonTrial::Stop; }
+                const auto report_trial = [&](double raw, double classified, bool admit, const char* reason) {
+                    scope.probe("polish_trial", {double(correction), double(control), double(defect), double(classified_before),
+                        raw, classified, double(alpha), admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, double(ratio),
+                        static_cast<double>(trial_index)}, step, reason);
+                };
+                auto candidate = coordinates(alpha);
+                const bool moved = candidate != full;
+                representable |= moved;
+                if (!moved && (trial_recovery || !std::is_same_v<Base, double>)) return NewtonTrial::Refused;
                 if (guarded_newton && !inside_box(candidate)) {
                     if constexpr (std::is_same_v<Base, double>) if (detailed) scope.probe("polish_trial_bounds", candidate, static_cast<std::uint32_t>(step));
-                    continue;
+                    return NewtonTrial::Refused;
                 }
                 trial_in_box = true;
                 PhasePointValues<Base> at_candidate;
                 std::vector<Base> rows_after;
-                if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
+                if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return NewtonTrial::Interrupted;
                 try {
-                    rows_after = newton_trial_rows(compiled, candidate, at_candidate, &result.first_numerical_failure, [&] {
-                        ++polish_evaluations;
-                        return !expired();
-                    });
-                    if (rows_after.empty() && expired()) { stop("elapsed budget"); return false; }
+                    at_candidate = compiled.prepare_values(candidate, true, &result.first_numerical_failure);
+                    ++polish_evaluations;
+                    if (expired()) { stop("elapsed budget"); return NewtonTrial::Interrupted; }
+                    rows_after = compiled.evaluate_at(at_candidate).values;
                 } catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) {
                     core::retain_failure(result.first_numerical_failure, error, "polish trial");
-                    if (detailed) scope.probe("polish_trial", {double(correction), double(control), double(defect), double(classified_before),
-                        NAN, NAN, double(alpha), 0.0, extension ? 1.0 : 0.0, double(ratio),
-                        static_cast<double>(trial_index)}, step, error.what());
-                    continue;
+                    if (detailed) report_trial(NAN, NAN, false, error.what());
+                    return NewtonTrial::Refused;
                 }
-                // Judged with the step's moiety sizes: a size crossing the trace threshold rescales a row by 1/s_k (#1094).
+                // Judge with the step's moiety sizes. Crossing the trace threshold would rescale a row (#1094).
                 const Base after = maximum_abs(numerical(at_candidate, rows_after, 1, &at));
                 const Base classified_after = maximum_abs(classified_rows(at_candidate, rows_after));
-                const bool admit = final_correction || (free_amount_newton && after <= row_tolerance)
-                    || (after < defect && after <= row_tolerance)
-                    || after < (extension && !trial_recovery ? ratio : 1.0) * defect;
-                if (detailed) scope.probe("polish_trial", {double(correction), double(control), double(defect), double(classified_before),
-                    double(after), double(classified_after), double(alpha), admit ? 1.0 : 0.0, extension ? 1.0 : 0.0, double(ratio),
-                    static_cast<double>(trial_index)}, step,
+                const bool admit = final_correction || (after <= row_tolerance && (free_amount_newton || after < defect)) || contracts(after);
+                if (detailed) report_trial(double(after), double(classified_after), admit,
                     final_correction ? "final correction" : admit ? "raw_contraction" : extension && !trial_recovery ? "extension ratio" : "raw noncontraction");
                 else scope.probe("polish_step", {double(defect), double(after), double(classified_before), double(classified_after), double(alpha)},
                     static_cast<std::uint32_t>(step));
-                if (!admit) continue;
+                if (!admit) return NewtonTrial::Refused;
                 if constexpr (std::is_same_v<Base, double>) if (limits && limits->admit) if (const auto refused = limits->admit(at_candidate)) {
                     core::retain_failure(result.first_numerical_failure, *refused, "guarded polish");
-                    continue;
+                    return NewtonTrial::Refused;
                 }
                 if constexpr (std::is_same_v<Base, double>) if (preserve_trial_branch && !trial_branch(at_candidate, candidate)) {
-                    if (expired()) return false;
-                    continue;
+                    return expired() ? NewtonTrial::Interrupted : NewtonTrial::Refused;
                 }
                 if (trial_recovery) trial_scale = std::min(Base(1), 2.0 * alpha);
                 if (alpha == trial_limit) damped.reset();
@@ -1490,10 +1479,12 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                     best_classified = classified_after;
                     if (detailed) best_raw = after;
                 }
-                accepted = true;
-                break;
-            }
-            if (!accepted) {
+                return NewtonTrial::Accepted;
+            };
+            const auto outcome = damped_newton_step(full, delta, (extension && !trial_recovery ? ratio : Base(1)) * defect,
+                trial, newton || !std::is_same_v<Base, double>);
+            if (outcome == NewtonTrial::Interrupted) return false;
+            if (outcome != NewtonTrial::Accepted) {
                 if (expired()) { stop("elapsed budget"); break; }
                 if ((refine_trial || !std::is_same_v<Base, double>) && !representable) { stop("no representable progress"); break; }
                 if (!trial_in_box) { stop("trial bounds"); break; }

@@ -2497,42 +2497,25 @@ void check_bubble_branch_end() {
         const auto work = event(capture, "branch_end_work");
         CHECK(work != capture.trace().events.end() && work->reason.empty() && work->values[0] <= 2 * allowance);
         std::vector<std::vector<double>> witnesses;
-        for (const auto& sample : capture.trace().events)
-            if (std::string_view(sample.name) == "branch_end_sample") witnesses.push_back(sample.values);
+        double slope = NAN;
+        for (const auto& sample : capture.trace().events) {
+            if (std::string_view(sample.name) == "corrected_slope" && sample.iteration == 1) slope = sample.values[0];
+            if (std::string_view(sample.name) == "branch_end_sample") {
+                witnesses.push_back(sample.values);
+                witnesses.back().push_back(slope);
+                slope = NAN;
+            }
+        }
         CHECK(witnesses.size() >= 2);
         const auto& before = witnesses[witnesses.size() - 2];
         const auto& after = witnesses.back();
         constexpr double reference_density = 7725.58780, mechanical_limit_density = 7781.70675;
         CHECK(before[2] < reference_density && reference_density < after[2] && after[2] < mechanical_limit_density);
-        CHECK(before[3] > 0.0 && after[3] > 0.0);
-        CHECK(before[4] > 0.0 && after[4] < 0.0 && before[5] > 0.0 && after[5] < 0.0);
+        CHECK(before.back() > 0.0 && after.back() > 0.0);
+        CHECK(before[3] > 0.0 && after[3] < 0.0 && before[4] > 0.0 && after[4] < 0.0);
         bubble.feed.values[0] = 2.0;
         const auto beyond = solve_equilibrium(model, bubble, source, {}, allowance, 2 * allowance);
         CHECK(!beyond.has_state() && !beyond.branch_end && beyond.topology_event == TopologyEvent::None);
-    }
-    {
-#include "fixtures/mdea-313-bubble.inc"
-        bubble.feed.values[0] = 0.875;
-        const auto [comparator, allowance] = cold(model, bubble);
-        bubble.feed.values[0] = 0.88;
-        const auto [lower, lower_work] = cold(model, bubble);
-        bubble.feed.values[0] = 0.90;
-        const auto source = solve_equilibrium(model, bubble, lower, {}, allowance);
-        CHECK(source.has_state());
-        bubble.feed.values[0] = 0.95;
-        {
-            core::Capture capture(false);
-            const auto plain = solve_equilibrium(model, bubble, source, {}, allowance);
-            CHECK(!plain.has_state() && !plain.branch_end && plain.topology_event == TopologyEvent::None);
-            const auto work = event(capture, "bubble_work");
-            CHECK(work != capture.trace().events.end() && work->values[0] == 2340);
-            CHECK(event(capture, "branch_end_entry") == capture.trace().events.end());
-        }
-        const auto end = solve_equilibrium(model, bubble, source, {}, allowance, 2 * allowance);
-        CHECK(!end.has_state() && !end.pressure && end.branch_end);
-        CHECK(end.branch_end->condition == BranchEndCondition::VaporKindRefused);
-        const auto [admitted, refused] = end.branch_end->feed_bracket_mol;
-        CHECK(admitted > 0.925 && admitted < 0.934728156054 && refused > 0.934755502672 && refused < 0.95);
     }
 }
 

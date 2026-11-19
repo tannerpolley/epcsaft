@@ -321,12 +321,23 @@ EPC_API ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
-inline constexpr std::array<double, 4> newton_damping{1.0, 0.5, 0.25, 0.125};
-template<class Base, class Prepared>
-std::vector<Base> newton_trial_rows(const CompiledSystem& compiled, const std::vector<Base>& candidate,
-    PhasePointValues<Base>& point, std::optional<core::Convergence>* failure, const Prepared& ready) {
-    point = compiled.prepare_values(candidate, true, failure);
-    return ready() ? compiled.evaluate_at(point).values : std::vector<Base>{};
+template<class Base, class Direction>
+std::vector<Base> shifted_coordinates(std::vector<Base> point, const Direction& direction, Base scale) {
+    for (std::size_t i = 0; i < point.size(); ++i) point[i] += scale * direction[i];
+    return point;
+}
+
+enum class NewtonTrial { Refused, Accepted, Stop, Interrupted };
+
+template<class Base, class Direction, class Trial>
+NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& direction, Base contraction_limit,
+    const Trial& trial, bool fourth_trial = true) {
+    const auto coordinates = [&](Base alpha) { return shifted_coordinates(point, direction, alpha); };
+    const auto contracts = [&](Base norm) { return norm < contraction_limit; };
+    constexpr double damping[] = {1.0, 0.5, 0.25, 0.125};
+    for (std::uint32_t i = 0; i < (fourth_trial ? 4u : 3u); ++i)
+        if (auto outcome = trial(damping[i], i, coordinates, contracts); outcome != NewtonTrial::Refused) return outcome;
+    return NewtonTrial::Refused;
 }
 
 // J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
