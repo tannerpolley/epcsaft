@@ -1839,7 +1839,7 @@ struct BubbleBranchSample final {
     std::optional<BranchEndCondition> refusal;
 };
 
-std::optional<BubbleBranchSample> correct_bubble_density(
+std::optional<BubbleBranchSample> correct_branch_density(
     const CompiledSystem& c, std::vector<double> y, std::size_t v, double lambda,
     core::Scope& scope, bool admitted_seed = false) try {
     const auto tolerance = c.problem.solver_options.value(policy::row);
@@ -1899,7 +1899,7 @@ std::optional<BubbleBranchSample> correct_bubble_density(
 } catch (const std::bad_alloc&) { throw; }
 catch (const std::exception&) { return {}; }
 
-std::optional<BubbleBranchEnd> bubble_branch_end(
+std::optional<BubbleBranchEnd> classify_branch_end(
     const CompiledSystem& source, const CompiledSystem& target, const EquilibriumResult& seed,
     std::size_t component, std::size_t v, core::Scope& scope) {
     const auto q0 = source.n_feed[component], q1 = target.n_feed[component];
@@ -1912,7 +1912,7 @@ std::optional<BubbleBranchEnd> bubble_branch_end(
     const auto column = c.loading_column();
     auto y = seed.coordinates;
     y.insert(y.begin() + column, q0);
-    auto left = correct_bubble_density(c, std::move(y), v, std::log(seed.molar_densities[v]), scope, true);
+    auto left = correct_branch_density(c, std::move(y), v, std::log(seed.molar_densities[v]), scope, true);
     if (!left || left->tangent[column] == 0) return {};
     const auto sign = std::copysign(1.0, left->tangent[column]);
     const auto resolution = policy::DENSITY_ANCHOR_LOG_WINDOW.value / 4;
@@ -1924,7 +1924,7 @@ std::optional<BubbleBranchEnd> bubble_branch_end(
         if (lambda == left->log_density || (upper && lambda == *upper)) return {};
         auto predicted = shifted_coordinates(left->coordinates, left->tangent, delta);
         predicted[column] = std::clamp(predicted[column], q0, q1);
-        auto right = correct_bubble_density(c, std::move(predicted), v, lambda, scope);
+        auto right = correct_branch_density(c, std::move(predicted), v, lambda, scope);
         if (right && right->coordinates[column] < q1 && !swapped_pair(c, left->coordinates, right->coordinates)) {
             const auto directed = sign * right->tangent[column];
             const bool admitted = !right->refusal;
@@ -2002,7 +2002,7 @@ EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const 
         core::CalculationWork::Limit limit{*branch_end_work_limit};
         core::CalculationWork work(true, &limit);
         const auto vapor = source.problem.phases.front().kind == PhaseKind::Vapor ? 0 : 1;
-        try { result.branch_end = bubble_branch_end(source, target, seed, component, vapor, scope); }
+        try { result.branch_end = classify_branch_end(source, target, seed, component, vapor, scope); }
         catch (const std::bad_alloc&) { throw; } catch (const std::exception&) {}
         if (work.units() > limit.units) core::CalculationWork::stop_at("branch-end return");
         if (limit.boundary) result.branch_end.reset();
