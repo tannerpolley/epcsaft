@@ -2337,7 +2337,7 @@ density-independent form gets at most one guarded shared-driver retry, all funde
 by one `DriverLimits::recovery_allowance` (`EQUILIBRIUM_RECOVERY_WORK`) and any
 remaining caller trial budget. A slot refused before optimization starts from the
 parent-liquid restriction, or, when that seed root is refused, from the first
-admitted seed of its support; a refused end point restarts from its own seed. Every optimizer and polish point must keep the admitted Liquid root
+admitted ordinary seed of its support; a refused end point restarts from its own seed. Every optimizer and polish point must keep the admitted Liquid root
 of its own normalized composition: that root and the point both denser than the
 root's negative-slope sample, a positive `(∂P/∂ρ)_{T,x}` at the point, and the point
 within `DENSITY_ANCHOR_LOG_WINDOW` of the root. The point's molar density is the

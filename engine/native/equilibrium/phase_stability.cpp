@@ -1360,7 +1360,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 searched = std::any_of(rooted.begin(), rooted.end(), [&](const auto& prior) {
                     return prior.first == seed && std::abs(std::log(prior.second / eta)) <= policy::DENSITY_ANCHOR_LOG_WINDOW.value; });
                 if (!slot && searched) continue;
-                if (!slot) rooted.emplace_back(seed, eta);
+                if (!slot && !midpoint) rooted.emplace_back(seed, eta);
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
                 if (spent || trial_budget_exhausted()) {
                     if (slot) throw BudgetExhausted(spent ? "recovery allowance exhausted" : "trial budget exhausted");
