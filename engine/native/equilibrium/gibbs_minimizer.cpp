@@ -798,7 +798,7 @@ bool GibbsMinimizer::intermediate_callback(
     regularization_size_ = regularization_size;
     if (warm_ && restored_) core::retain_failure(observations_.first_numerical_failure,
         "warm attempt stopped on restoration", "Ipopt callback");
-    return !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination
+    return !core::CalculationWork::stop_at("Ipopt iteration") && !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination
 }
 
 void GibbsMinimizer::finalize_solution(
@@ -1539,13 +1539,14 @@ static EquilibriumResult association_result(EquilibriumResult result, const core
 EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, EquilibriumResult result,
     core::Scope& scope, const DriverLimits* limits) {
     core::AssociationObservations observations;
-    if (!result.has_state() || !mixture_precision_eligible(compiled) || !result.prepared_endpoint) return association_result(std::move(result), observations);
+    if (!result.has_state() || !mixture_precision_eligible(compiled) || !result.prepared_endpoint
+        || core::CalculationWork::stop_at("endpoint estimate")) return association_result(std::move(result), observations);
     DriverLimits defaults{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
         std::chrono::steady_clock::time_point::max(), result.iterations};
     if (!limits) limits = &defaults;
     const auto evaluated_before = limits->evaluations;
     core::Scope span("mixture_precision");
-    result.numerical_estimates = equilibrium_numerical_estimates(compiled, result, result.prepared_endpoint.get());
+    result.numerical_estimates = equilibrium_numerical_estimates(compiled, result, result.prepared_endpoint.get(), core::CalculationWork::limited());
     const auto& error = *result.numerical_estimates;
     const double radius = error.physical_radius;
     scope.probe("mixture_precision_decision", {*result.temperature, radius}, 0, error.cause.c_str());
@@ -1556,6 +1557,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
     if constexpr (std::numeric_limits<WiderScalar>::digits <= std::numeric_limits<double>::digits) {
         diagnostic.reason = "extra precision unavailable"; return association_result(std::move(result), observations);
     }
+    if (core::CalculationWork::stop_at("wide correction")) return association_result(std::move(result), observations);
     scope.probe("mixture_precision_activate", {*result.temperature, *result.pressure, radius});
     auto refined = result;
     refined.message.clear();
@@ -1569,6 +1571,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
         accepted = bounds.physical_bounds(lower, upper) && box(point) && polish_correction(compiled, point, refined, scope, limits,
             true, false, true, box, [](const auto&, const auto&) { return true; }, [](bool) { return std::string{}; },
             evaluations, corrected, capped, refined.convergence.stop) && corrected && !capped;
+        accepted = accepted && !core::CalculationWork::stop_at("refined endpoint publication");
         if (accepted) {
             std::vector<double> exported;
             for (const auto& value : point) exported.push_back(static_cast<double>(value));
@@ -1585,7 +1588,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             refined.candidate = accepted ? Candidate::Admitted : Candidate::Refused;
             refined = publish_candidate(compiled, at, std::move(refined), scope, limits);
             accepted = refined.success;
-            if (accepted) {
+            if (accepted && !core::CalculationWork::stop_at("returned-point estimate")) {
                 refined.numerical_estimates = equilibrium_numerical_estimates(compiled, refined, point, limits);
                 const auto& returned = *refined.numerical_estimates;
                 const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits, &at);
@@ -1649,6 +1652,7 @@ static EquilibriumResult run_driver_once(
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
         reject_elapsed(result, scope); return association_result(std::move(result), observations); }
+    if (core::CalculationWork::stop_at("driver attempt")) return result;
     if (limits) ++limits->attempts;
     if (declared.problem.spinodal) {
         try { spinodal_search(declared, limits); }
@@ -1697,12 +1701,13 @@ static EquilibriumResult run_driver_once(
         : "; OptimizeTNLP returned ") + application_return_name(returned);
     const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     record.solver_status = result.solver_status;
-    const auto limited_result = [&] {
+    const auto limited_result = [&](const char* cause = "elapsed work budget exhausted") {
         observations.merge(result.rank_records); StageWork::publish_observations(result, record);
-        auto limited = failed("elapsed work budget exhausted");
+        auto limited = failed(cause);
         reject_elapsed(limited, scope); return limited;
     };
     if (expired()) return limited_result();
+    if (core::CalculationWork::stop_at("optimizer endpoint")) return limited_result("work allowance exhausted");
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits || newton ? std::move(fallback) : declared.ideal ? declared.generic_point() : boundary_start(declared);
     const auto& cached = nlp->last_prepared();
@@ -1786,7 +1791,9 @@ static EquilibriumResult run_driver_once(
             non_error, inside_box, trial_branch, solid_violations, polish_evaluations, corrected, capped, initial_branch_stop);
     };
     const auto end_point = refine_trial && !newton && status == Ipopt::SUCCESS ? full : std::vector<double>{};
+    if (core::CalculationWork::stop_at("endpoint polish")) return limited_result("work allowance exhausted");
     if (!polish(full)) return limited_result();
+    if (core::CalculationWork::stop_at("endpoint publication")) return limited_result("work allowance exhausted");
     if (expired()) return limited_result();
     if (newton) {
         if (!free_amount_newton) {
@@ -1924,8 +1931,9 @@ EquilibriumResult recover_physical_amounts(
     bool* invoked, Work counts, EquilibriumAttemptReporting reporting
 ) {
     const auto exhausted = [&] {
-        return limits && (limits->expired() || limits->iterations_spent()
-            || (limits->recovery && limits->caps_spent()));
+        return core::CalculationWork::stop_at("physical amount retry")
+            || (limits && (limits->expired() || limits->iterations_spent()
+                || (limits->recovery && limits->caps_spent())));
     };
     if (result.success || !eligible || !compiled.has_reaction || compiled.feasibility_cell()
         || !compiled.solids.empty() || exhausted()
@@ -1995,6 +2003,7 @@ EquilibriumResult run_driver(
     }();
     if (tried.failure) scope.probe("warm_failed", {}, 0, tried.message.c_str());
     else if (tried.attempt != Attempt::Warm || tried.success) return tried;
+    if (core::CalculationWork::stop_at("warm fallback")) return tried;
     scope.probe("warm_fallback", {static_cast<double>(tried.iterations), static_cast<double>(tried.evaluations)}, 0, tried.message.c_str());
     core::Scope cold_scope("equilibrium_cold_fallback");
     StageWork stages; stages.add(tried);
@@ -2086,7 +2095,7 @@ std::optional<std::vector<double>> speciated_start(const CompiledSystem& compile
             return std::nullopt;
         }
         stages.add(solved);
-        if (!solved.success) return std::nullopt;
+        if (!solved.success || core::CalculationWork::stop_at("speciated boundary start")) return std::nullopt;
         const std::size_t components = compiled.model->parameters().component_count();
         CompiledSystem seeded = compiled;
         std::size_t index = 0;
@@ -2172,9 +2181,34 @@ static void observe_endpoint(const Model& model, const CompiledSystem* compiled,
 }
 
 EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
-                                    const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids) {
-    std::optional<CompiledSystem> compiled;
-    return solve_equilibrium_retaining_compiled(model, request, compiled, start, component_ids);
+                                    const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids,
+                                    std::optional<std::size_t> work_limit) {
+    if (!work_limit) {
+        std::optional<CompiledSystem> compiled;
+        return solve_equilibrium_retaining_compiled(model, request, compiled, start, component_ids);
+    }
+    if (!*work_limit || !supports_work_limit(request) || model.parameters().component_count() < 2)
+        throw std::invalid_argument("positive work_limit requires a declared mixture bubble");
+    core::Scope scope("solve_equilibrium");
+    core::CalculationWork::Limit limit{*work_limit};
+    core::CalculationWork work(true, &limit);
+    const auto compiled = compile_problem(model, request);
+    EquilibriumAttemptReporting reporting;
+    if (component_ids.size() == model.parameters().component_count()) reporting.composition_bound_species = &component_ids;
+    auto result = core::CalculationWork::stop_at("after compilation") ? structural_result(compiled, scope)
+        : start ? solve_from_feed_increment(compiled, *start, scope)
+                : try_solve_compiled(compiled, {}, &scope, nullptr, {}, false, true, reporting);
+    if (work.units() > *work_limit) core::CalculationWork::stop_at("return");
+    // A work stop determines request availability even when the last classified rows converged.
+    result.convergence.stop = limit.boundary ? core::Stop::budget_exhausted : result.convergence.stop;
+    if (limit.boundary) {
+        result.message.insert(0, std::string("bubble work allowance exhausted at ") + limit.boundary
+            + (result.message.empty() ? "" : "; "));
+        refuse(result);
+    }
+    scope.probe("bubble_work", {static_cast<double>(work.units()), static_cast<double>(*work_limit)}, 0, limit.boundary ? limit.boundary : "");
+    scope.finish(result.convergence);
+    return result;
 }
 
 EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel& model, const EquilibriumProblem& request,
@@ -2297,7 +2331,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     EquilibriumResult result;
     bool admission_refused = false;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
-    for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success; ++attempt) {
+    for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success && !core::CalculationWork::stop_at("next start"); ++attempt) {
         stages.add(result);  // a failed seeded attempt
         std::vector<double> initial;
         if (original) initial = *original;
@@ -2355,6 +2389,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             refuse(result);
         }
     }
+    if (!result.declaration) result = structural;
     std::move(stages).report(result);
     const bool retry = result.retry == Retry::PhysicalAmounts && !admission_refused;
     result = recover_physical_amounts(compiled, std::move(result), retry,

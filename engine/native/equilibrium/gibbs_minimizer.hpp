@@ -168,6 +168,8 @@ struct DriverLimits final {
         return !exhausted && ++used;
     }
 };
+bool supports_work_limit(const EquilibriumProblem&);
+EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const EquilibriumResult&, core::Scope&);
 // ALG-EQUILIBRIUM source recovery: the finite pure-temperature schedule or mixture source/continuation;
 // all child calculations spend `limits`. A refusal has no state and retains the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
