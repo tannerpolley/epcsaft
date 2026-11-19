@@ -2113,8 +2113,12 @@ fitting observations reject this mode as they reject `fast`.
 
 ### Unfinished optimized trials
 
-An ordinary explicit trial passes an internal refinement permission to the shared
-driver. Every proposal of this polish, ordinary or recovery, limits its damping to
+When an optimized trial reaches the shared driver fallback, the stability
+search grants trial refinement. This includes explicit Full, the Full measure
+used by fitting observations, the enabled second pass over condensed refusals,
+Full discovery, Fast discovery including charged nonreacting feeds, both
+Fast-tested passes, and the bounded searches before neutral recovery and after
+vanished-phase rejection. Every proposal of this polish limits its damping to
 $\alpha \leftarrow \min(\alpha, L/\max|\Delta|)$ over the supported log mole fractions
 and log packing fraction. Here $L$ = `EQUILIBRIUM_TRIAL_LOG_STEP` = $\ln 101$ is an
 empirical retention policy, equal to $\ln(1+f/\tau)$ for the $10^{-8}$
@@ -2141,21 +2145,16 @@ corrections and 600 candidate proposals, without a new solve or reset of work.
 Existing deadline/evaluation limits, raw-row and correction stops remain; a
 nonfinite direction or no representable progress stops recovery with its cause.
 Recovery also stops ("recovery stalled") at the start of correction $k$, before
-any proposal, once `STALL_WINDOW` = 5 consecutive corrections from its start were
-damped and their contraction cannot reach the row criterion $\tau$ within the
-cap $K$ = `EQUILIBRIUM_MAX_ITERATIONS`: $r_k c_k^{K-k} > \tau$, with $r_k$ the raw
-row maximum and $c_k = (r_k/r_{k-5})^{1/5}$. A correction is damped when it
-accepts no proposal or a step fraction below the log-step limit
-$\min(1, L/\max|\Delta|)$; accepting that limit (a full or cap-limited step)
-clears the window. On the 12-state set and the 144-state grid of the Engine MEA
-reference, every recovery that converges has one damped correction, the one
-that starts it, while the nonconverging recoveries this stop ends have 34 or
-more; the contraction rate alone does not separate them. On the second
-boundary sweep the stop ends 20 recoveries that would converge (stopped at
-correction 15 or 16, converging at 22 to 32); their trial records are unchanged
-only because the end-point rule below restores the optimizer's end point there.
-No separation is claimed outside these sets. The polish returns its best
-classified point, as at every other stop.
+the next Jacobian, when both the raw and classified row maxima forecast a
+miss. For each current maximum $q_k$, the forecast is
+$q_k(q_k/q_{k-5})^{(K-k)/5}$, where $K$ is
+`EQUILIBRIUM_MAX_ITERATIONS`. Both forecasts must be defined over the same
+`STALL_WINDOW` of five consecutive damped corrections and exceed the row
+criterion $\tau$. A correction is damped when it accepts no proposal or a step
+fraction below the log-step limit $\min(1,L/\max|\Delta|)$. Acceptance at that
+limit or a nonfinite classified sample clears the shared window. The forecast
+controls recovery work. The polish returns its best classified point and the
+final admission still uses its evaluated rows.
 
 The shared driver keeps the best classified point and the unchanged final
 row/curvature admission. The polish solves interior stationarity rows without
