@@ -54,6 +54,7 @@ _KINDS = {
     "equilibrium_isobaric_heat_capacity": ObservationKind.EquilibriumIsobaricHeatCapacity,
     "phase_density": ObservationKind.PhaseDensity,
     "bulk_relative_permittivity": ObservationKind.PhaseBulkRelativePermittivity,
+    "association_site_fraction": ObservationKind.AssociationSiteFraction,
     "pressure": ObservationKind.EquilibriumPressure,
     "temperature": ObservationKind.EquilibriumTemperature,
     "mole_fraction": ObservationKind.PhaseMoleFraction,
@@ -493,7 +494,7 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
 def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool | None = None,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None,
-                analytical_solute_molality: float | None = None) -> Observation:
+                analytical_solute_molality: float | None = None, site: tuple[str, str] | None = None) -> Observation:
     """Declare an observable of a solved equilibrium problem.
 
     Parameters
@@ -503,6 +504,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     kind : str
         ``pressure`` (Pa), ``temperature`` (K), ``phase_density`` (mol/m³ or
         kg/m³), ``bulk_relative_permittivity`` (dimensionless, named phase),
+        ``association_site_fraction`` (dimensionless unbonded site fraction),
         ``mole_fraction`` (dimensionless sum over selected species),
         ``partial_pressure`` (Pa, P times that sum), ``phase_fraction``
         (dimensionless molar fraction), ``amount_ratio`` (dimensionless ratio
@@ -526,6 +528,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     scale : float, optional
         Required positive scale in observed units for difference residuals;
         absent for log-ratio residuals.
+    site : tuple[str, str], optional
+        Component and site identifiers, required for the dimensionless association site fraction.
     analytical_solute_molality : float, optional
         Analytical solute molality sum before speciation in mol/kg solvent, used
         only for osmotic reporting. An absent or zero sum leaves that coefficient undefined.
@@ -565,6 +569,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     result.problem = problem._native(parameters)
     result.phase = 0 if phase is None else _index([item.name for item in problem.phases], phase, "phase")
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]
+    if site is not None:
+        result.site = _index(parameters.site_ids, site, "association site")
     if kind == "amount_ratio":
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]

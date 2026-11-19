@@ -59,6 +59,7 @@ struct HelmholtzDerivativeValues final {
     Base gradient_floor = 0.0;
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
+    Eigen::MatrixXd site_sensitivity;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent
@@ -123,6 +124,11 @@ enum class PropertyActionStatus {
     AssociationResidual, DensityUnavailable, PressureSingular,
     CentralPropertyUnavailable, Nonfinite
 };
+struct EPC_EXCEPTION AssociationJacobianFailure final : std::runtime_error {
+    AssociationJacobianFailure(PropertyActionStatus status, const std::string& message)
+        : std::runtime_error(message), status(status) {}
+    PropertyActionStatus status;
+};
 struct DensityActionDirection final {
     double temperature = 0.0, molar_density = 0.0;
     std::vector<double> composition;
@@ -171,7 +177,7 @@ struct PropertyActionBatch final {
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
-    // Pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
+    // Pressure chart: root, density derivatives per direction, status, and the blocking operation's message and record.
     std::optional<double> molar_density;
     std::vector<double> density_action;
     std::optional<double> density_mixed_action;  // d^k rho over all k >= 2 directions, when observables are requested
@@ -466,7 +472,7 @@ public:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
     ) const;
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
@@ -585,7 +591,7 @@ private:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
     ) const;
 
     const policy::SolverOptions solver_options_;
@@ -743,7 +749,7 @@ struct ElectrolyteInputAction final {
     policy::SolverOptions solver_options;
     double mean_ionic = NAN, osmotic = NAN;
     std::array<double, 2> reference_column{};  // analytic limit column
-    std::vector<PropertyActionDiagnostics> diagnostics;
+    std::optional<core::Convergence> refusal_convergence, first_numerical_failure;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     std::string message;
 };

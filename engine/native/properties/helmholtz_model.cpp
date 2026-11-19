@@ -141,7 +141,7 @@ void properties::site_factorization(
         std::string message = "association Jacobian is singular";
         for (std::size_t site = 0; site < parameters.site_ids.size(); ++site)
             message += (site ? ", " : "; declared association sites: ") + parameters.site_ids[site];
-        throw std::runtime_error(message);
+        throw AssociationJacobianFailure(PropertyActionStatus::AssociationSingular, message);
     }
     if (!admitted_pivot_ratio(factorization)) {
         failure("association Jacobian is ill-conditioned");
@@ -149,7 +149,7 @@ void properties::site_factorization(
             *status = PropertyActionStatus::AssociationIllConditioned;
             return;
         }
-        throw std::runtime_error("association Jacobian is ill-conditioned");
+        throw AssociationJacobianFailure(PropertyActionStatus::AssociationIllConditioned, "association Jacobian is ill-conditioned");
     }
 }
 
@@ -1114,11 +1114,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
 ) const {
     require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian);
+    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity);
 }
 
 // Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one
@@ -1153,7 +1153,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
 ) const {
     core::AssociationObservations observations(true);
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
@@ -1342,6 +1342,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         result.gradient_floor = maximum * site_residual;
     }
+    if (retain_site_sensitivity) result.site_sensitivity = std::move(site_sensitivity);
     result.volume_second_derivative = result.hessian[1 * point_size + 1];
     if (order == DerivativeOrder::Hessian) scope.probe("hessian", result.hessian);
     scope.probe("volume_second_derivative", result.volume_second_derivative);
@@ -2013,6 +2014,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     core::AssociationObservations observations(true);
     PropertyActionBatch result;
     std::optional<core::Convergence> first;
+    std::optional<core::Convergence> association_refusal;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, strength;
     const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
@@ -2025,6 +2027,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
                 geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
+            association_refusal = error.record;
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
@@ -2065,7 +2068,10 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result = evaluate_actions(context, ids, observables, plan, result_support,
             ideal_status, association_status, endpoint, temperature_action,
             root != nullptr, root != nullptr ? root->pressure_density_derivative : 0.0);
-        if (pressure_chain) result.density_status = association_status;
+        if (pressure_chain) {
+            result.density_status = association_status;
+            result.density_convergence = std::move(association_refusal);
+        }
     } else {
         const double inverse_pressure_slope = 1.0 / root->pressure_density_derivative;
         std::size_t pressure_solves = 0;

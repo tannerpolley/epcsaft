@@ -219,6 +219,7 @@ bool same_observable(const SolvedStateObservable& a, const SolvedStateObservable
     if (a.kind != b.kind) return false;
     if ((is_phase_kind(a.kind) || is_solid_kind(a.kind)) && a.phase != b.phase) return false;
     if (has_component(a.kind) && a.component != b.component) return false;
+    if (a.kind == SolvedStateObservableKind::AssociationSiteFraction) return a.site == b.site;
     return a.kind != SolvedStateObservableKind::PhaseProperty || a.property == b.property;
 }
 
@@ -281,6 +282,11 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
             throw std::invalid_argument("apparent Cp requires driven T/P or free T with a fixed-P enthalpy target, and first actions only");
         if (item.kind == SolvedStateObservableKind::PhaseBulkRelativePermittivity && request.directions.size() > 1)
             throw std::invalid_argument("bulk relative permittivity supports first actions only");
+        if (item.kind == SolvedStateObservableKind::AssociationSiteFraction) {
+            validate_phase_site(compiled.model->parameters(), problem.phases[item.phase], item.site);
+            if (request.directions.size() != 1)
+                throw std::invalid_argument("association site fraction supports first actions only");
+        }
         const bool log_activity = item.kind == SolvedStateObservableKind::PhaseLogActivity;
         if (log_activity || item.kind == SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt) {
             const auto& support = problem.phases[item.phase].support;
@@ -896,6 +902,7 @@ struct ActionCenter final {
     SolvedStateActionStatus central_gate = SolvedStateActionStatus::Available;
     SolvedStateActionStatus matrix_gate = SolvedStateActionStatus::Available;
     double classified_residual = 0.0;
+    bool preparation_failed = false;
     bool topology_checked = false;
     bool matrix_checked = false;
 };
@@ -903,6 +910,20 @@ struct ActionCenter final {
 using FirstCoefficients = std::map<std::string, FirstCoefficient>;
 
 }  // namespace
+
+void validate_phase_site(const Parameters& parameters, const PhaseSpec& phase, std::optional<std::size_t> site) {
+    if (!site) throw std::invalid_argument("association site selector is required");
+    if (*site >= parameters.site_component.size()) throw std::invalid_argument("association site ordinal outside the model");
+    if (std::find(phase.support.begin(), phase.support.end(), parameters.site_component[*site]) == phase.support.end())
+        throw std::invalid_argument("association site owner outside the phase support");
+}
+
+HelmholtzDerivatives phase_site_values(const HelmholtzModel& model, const EquilibriumResult& central, std::size_t phase) {
+    const auto count = model.parameters().component_count();
+    const auto start = central.mole_fractions.begin() + phase * count;
+    return model.evaluate(*central.temperature, 1.0 / central.molar_densities[phase],
+                          std::vector<double>(start, start + count), DerivativeOrder::Value);
+}
 
 std::string solved_state_observable_id(const SolvedStateObservable& observable) {
     const std::string phase = "phase[" + std::to_string(observable.phase) + "]";
@@ -921,6 +942,8 @@ std::string solved_state_observable_id(const SolvedStateObservable& observable) 
     case SolvedStateObservableKind::PhaseGibbsMolarVolume: return phase + ".gibbs_molar_volume";
     case SolvedStateObservableKind::PhaseMolarDensity: return phase + ".molar_density";
     case SolvedStateObservableKind::PhaseBulkRelativePermittivity: return phase + ".bulk_relative_permittivity";
+    case SolvedStateObservableKind::AssociationSiteFraction:
+        return phase + ".site_fraction[" + (observable.site ? std::to_string(*observable.site) : "unset") + "]";
     case SolvedStateObservableKind::PhasePackingFraction: return phase + ".packing_fraction";
     case SolvedStateObservableKind::PhasePressure: return phase + ".pressure";
     case SolvedStateObservableKind::PhaseResidualChemicalPotentialOverRt:
@@ -973,11 +996,12 @@ static SolvedStateActionBatch evaluate_action(
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
         const double delta = enthalpy_target ? thermal.enthalpy_j : thermal.temperature_k;
-        const bool new_thermal = shared && !shared->thermal_enthalpy;
+        const bool center_available = shared && !shared->preparation_failed;
+        const bool new_thermal = center_available && !shared->thermal_enthalpy;
         const auto &direction = request.directions.front();
         if (new_thermal)
             shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared, parameter_union);
-        const auto mixed = shared ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
+        const auto mixed = center_available ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
                                   : SolvedStateActionBatch{};
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
@@ -985,7 +1009,7 @@ static SolvedStateActionBatch evaluate_action(
             auto &item = ordinary.results[i];
             item.observable = request.observables[i];
             item.unit = observable_unit(item.observable);
-            if (!shared) continue;
+            if (!center_available) continue;
             const auto &first = shared->thermal_enthalpy->results.front();
             const auto &second = mixed.results.front();
             item.value.reset();
@@ -1035,13 +1059,57 @@ static SolvedStateActionBatch evaluate_action(
     // Every result starts CentralSolveUnavailable (the struct default).
     if (!central.success || !central.has_state() || !all_numeric(central.coordinates)) return batch;
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
+    if (shared && shared->preparation_failed) {
+        batch.results = shared->central_results;
+        return batch;
+    }
     if (!shared) {
         shared.emplace();
         auto& common = *shared;
         common.caloric = covering;
         // A caller's point is the fresh preparation of this same system and state; each center works on its own copy.
-        if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates);
-        common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates);
+        std::vector<bool> site_phases;
+        for (const auto& item : request.observables) if (item.kind == SolvedStateObservableKind::AssociationSiteFraction) {
+            site_phases.resize(problem.phases.size());
+            site_phases[item.phase] = true;
+        }
+        const auto refuse_preparation = [&](SolvedStateActionStatus status, const std::exception& error) {
+            std::map<std::size_t, HelmholtzDerivatives> values;
+            for (auto& item : batch.results) {
+                item.status = status;
+                item.diagnostic_message = error.what();
+                auto& diag = item.property_diagnostics.emplace();
+                if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error))
+                    diag.first_numerical_failure = failure->record;
+                else core::retain_failure(diag.first_numerical_failure, error, "solved-state action center");
+                if (item.observable.kind != SolvedStateObservableKind::AssociationSiteFraction) continue;
+                const auto phase = item.observable.phase;
+                auto [it, inserted] = values.try_emplace(phase);
+                if (inserted) try {
+                    it->second = phase_site_values(model, central, phase);
+                } catch (const core::ConvergenceFailure&) {
+                    // The center's first failure already identifies the refused action.
+                }
+                if (!it->second.site_fractions.empty()) item.value = it->second.site_fractions.at(*item.observable.site);
+            }
+            common.central_results = batch.results;
+            common.preparation_failed = true;
+            return batch;
+        };
+        try {
+            if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases);
+            else {
+                if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates);
+                common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates);
+            }
+        } catch (const AssociationJacobianFailure& error) {
+            if (site_phases.empty()) throw;
+            return refuse_preparation(solved_state_status(error.status), error);
+        } catch (const core::ConvergenceFailure& error) {
+            if (site_phases.empty() || !error.record.criterion
+                || std::string_view(error.record.criterion->name) != policy::ASSOCIATION_RESIDUAL.name) throw;
+            return refuse_preparation(SolvedStateActionStatus::AssociationResidual, error);
+        }
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
         const auto evaluation = compiled.evaluate_at(common.center.prepared);
@@ -1135,6 +1203,17 @@ static SolvedStateActionBatch evaluate_action(
         for (std::size_t s = 0; item.observable.kind == SolvedStateObservableKind::SystemEnthalpy && s < compiled.solids.size(); ++s)
             if (compiled.solids[s].present)
                 throw CaloricUnavailable(SolvedStateActionStatus::MissingThermochemistry, "solid " + problem.solids[s].name + " has no enthalpy record");
+        if (item.observable.kind == SolvedStateObservableKind::AssociationSiteFraction) {
+            const auto phase = item.observable.phase;
+            const auto site = *item.observable.site;
+            const auto& derivative = center.prepared.derivative[phase];
+            Series projected{derivative.site_fractions[site]};
+            const auto& point = series.phase[phase].point;
+            if (point.size() > 1)
+                projected.push_back(derivative.site_sensitivity.row(site).dot(
+                    Eigen::Map<const Eigen::VectorXd>(point[1].data(), point[1].size())));
+            return projected;
+        }
         return observable_series(model, item.observable, series, maps, calorics, &item, &batch.diagnostics);
     };
     auto& property_rows = shared->property_rows;
