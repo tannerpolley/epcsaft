@@ -635,7 +635,14 @@ EPC_API std::vector<InventoryBound> inventory_bounds(const CompiledSystem& compi
 enum class Attempt : std::uint8_t { Cold, Warm, Newton, PhysicalAmounts };
 enum class Retry : std::uint8_t { None, PhysicalAmounts, Source };
 enum class Candidate : std::uint8_t { Absent, Refused, Unstable, Admitted, Published };
-enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced };
+enum class TopologyEvent { None, PhaseDisappeared, PhasesCoalesced, BranchEnd };
+enum class BranchEndCondition { LoadingFold, VaporMechanicalLimit, VaporKindRefused };
+struct BubbleBranchEnd final {
+    BranchEndCondition condition;
+    std::pair<double, double> feed_bracket_mol;
+    std::vector<double> limiting_feed_mol;
+    double limiting_pressure_pa;
+};
 
 // Spectrum of M, the cubic form and the augmented-Jacobian diagnostics of a critical-equation
 // candidate; it certifies no stability.
@@ -843,6 +850,7 @@ struct EquilibriumResult final {
     std::optional<std::size_t> topology_phase;
     std::optional<std::pair<std::size_t, std::size_t>> topology_pair;
     std::vector<NeutralReferenceReactionDiagnostic> reference_diagnostics;
+    std::optional<BubbleBranchEnd> branch_end;
     std::optional<CriticalRecord> critical;
     std::optional<SpinodalRecord> spinodal;
     std::vector<double> solid_amounts, solid_affinity_decades;  // per declared solid: mol, and SI_s in decades
@@ -971,7 +979,7 @@ EPC_API EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
     const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {},
-    std::optional<std::size_t> work_limit = std::nullopt
+    std::optional<std::size_t> work_limit = std::nullopt, std::optional<std::size_t> branch_end_work_limit = std::nullopt
 );
 EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
     std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,

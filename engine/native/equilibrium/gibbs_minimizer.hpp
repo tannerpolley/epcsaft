@@ -132,7 +132,7 @@ BranchCheck check_density_branches(
     const PhasePoint* prepared = nullptr
 );
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
-EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind);
+EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind, bool* same_side = nullptr);
 
 struct EPC_EXCEPTION BudgetExhausted final : std::runtime_error {
     using std::runtime_error::runtime_error;
@@ -169,7 +169,7 @@ struct DriverLimits final {
     }
 };
 bool supports_work_limit(const EquilibriumProblem&);
-EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const EquilibriumResult&, core::Scope&);
+EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const EquilibriumResult&, core::Scope&, std::optional<std::size_t>);
 // ALG-EQUILIBRIUM source recovery: the finite pure-temperature schedule or mixture source/continuation;
 // all child calculations spend `limits`. A refusal has no state and retains the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
@@ -321,11 +321,19 @@ EPC_API ContinuationResult continue_equilibrium(
     const HelmholtzModel& model, const ContinuationRequest& request
 );
 
+inline constexpr std::array<double, 4> newton_damping{1.0, 0.5, 0.25, 0.125};
+template<class Base, class Prepared>
+std::vector<Base> newton_trial_rows(const CompiledSystem& compiled, const std::vector<Base>& candidate,
+    PhasePointValues<Base>& point, std::optional<core::Convergence>* failure, const Prepared& ready) {
+    point = compiled.prepare_values(candidate, true, failure);
+    return ready() ? compiled.evaluate_at(point).values : std::vector<Base>{};
+}
+
 // J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr
+    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}
 );
 
 EPC_API std::vector<double> sensitivity(

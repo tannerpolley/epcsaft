@@ -611,7 +611,7 @@ double chart_density(const HelmholtzModel& model, const PhasePoint& prepared, st
 // amount bound is the disappearance boundary itself, and only the bound-constrained corrector
 // can report the typed event there (counted in `projected`). A log mole fraction above zero is
 // projected onto its corrector bound zero. Every other coordinate outside its domain is rejected.
-bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::size_t& projected) {
+bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::size_t& projected, bool affine = false) {
     if (!std::all_of(y.begin(), y.end(), [](double v) { return std::isfinite(v); })) return false;
     std::size_t offset = 0;
     for (const auto& phase : compiled.problem.phases) {
@@ -629,6 +629,7 @@ bool inside_domain(const CompiledSystem& compiled, std::vector<double>& y, std::
         } else if (!admitted_packing_fraction(coordinate)) return false;
     }
     offset += compiled.mode_count;
+    if (affine && (y[offset] < compiled.problem.loading->lower || y[offset++] > compiled.problem.loading->upper)) return false;
     if (compiled.problem.temperature.free && !(y[offset++] > 0.0)) return false;
     if (compiled.problem.pressure.free && !(y[offset++] > 0.0)) return false;
     return true;
@@ -1434,25 +1435,32 @@ std::string declared_state_difference(const EquilibriumProblem& a, const Equilib
 
 namespace {
 
-void check_declared_side(const DensityRoot& root, DensityBranch branch) {
+bool check_declared_side(const DensityRoot& root, DensityBranch branch, bool witness = false) {
     const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
+    if (side == DensityBranch::Unspecified || side == branch) return true;
+    if (witness && root.negative_slope_density) return false;
     const bool liquid = side == DensityBranch::Liquid;
-    if (side != DensityBranch::Unspecified && side != branch)
-        throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch not admitted by the finite search: the sole stable root "
-            + core::optional_number(root.molar_density) + " mol/m3 lies " + (liquid ? "above" : "below")
-            + " the negative-slope sample " + core::optional_number(root.negative_slope_density) + " mol/m3");
+    throw std::runtime_error(std::string(liquid ? "vapor" : "liquid") + " branch not admitted by the finite search: the sole stable root "
+        + core::optional_number(root.molar_density) + " mol/m3 lies " + (liquid ? "above" : "below")
+        + " the negative-slope sample " + core::optional_number(root.negative_slope_density) + " mol/m3");
 }
 
 }  // namespace
 
-DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind) {
+DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x,
+    PhaseKind kind, bool* same_side) {
     const auto branch = branch_of(kind);
     auto root = solve_density(model, T, P, x, branch, std::nullopt);
-    check_declared_side(root, branch);
+    if (!check_declared_side(root, branch, same_side != nullptr)) *same_side = false;
     return root;
 }
 
 namespace {
+
+struct VaporWitness final {
+    double slope = NAN;
+    std::optional<BranchEndCondition> condition;
+};
 
 // Corrected-phase branch identity: the corrected density and the selected stable
 // root must share the anchor's window, with a positive corrected pressure slope. The physical
@@ -1460,12 +1468,29 @@ namespace {
 BranchCheck density_branches_at(
     const CompiledSystem& compiled, const PhasePoint& prepared,
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
-    const std::array<DensityRoot, 2>* roots
+    const std::array<DensityRoot, 2>* roots, VaporWitness* witness = nullptr
 ) {
     const auto& model = *compiled.model;
     BranchCheck outcome;
+    const auto packing_order = [&] {
+        // Declared kinds: a liquid less densely packed than a vapor is the other boundary with its labels swapped (#599).
+        for (std::size_t l = 0; initial && l < prepared.eta.size(); ++l)
+            for (std::size_t v = 0; v < prepared.eta.size(); ++v)
+                if (compiled.problem.phases[l].kind == PhaseKind::Liquid && compiled.problem.phases[v].kind == PhaseKind::Vapor
+                    && !(prepared.eta[l] > prepared.eta[v])) {
+                    outcome.message = "declared liquid " + compiled.problem.phases[l].name + " (packing fraction " + core::optional_number(prepared.eta[l])
+                        + ") is not more densely packed than declared vapor " + compiled.problem.phases[v].name + " ("
+                        + core::optional_number(prepared.eta[v]) + "): swapped phase labels";
+                    return false;
+                }
+        return true;
+    };
+    if (witness && !packing_order()) return outcome;
     const bool pure = one_component_two_density_eligible(compiled);
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+    for (std::size_t index = 0; index < compiled.problem.phases.size(); ++index) {
+        // For branch-end evidence, establish the incumbent before examining a refused vapor.
+        const auto phase = witness && compiled.problem.phases[0].kind == PhaseKind::Vapor ? 1 - index : index;
+        if (witness && core::CalculationWork::stop_at("branch-end density")) return outcome;
         if (limits) limits->check();
         const auto& spec = compiled.problem.phases[phase];
         std::vector<double> x = prepared.composition[phase];
@@ -1476,15 +1501,23 @@ BranchCheck density_branches_at(
         const double slope = pure ? prepared.pure[phase].pressure_density_derivative
             : model.state(prepared.temperature, corrected, x).pressure_density_derivative;
         if (limits) limits->check();
+        if (witness && spec.kind == PhaseKind::Vapor) {
+            witness->slope = slope;
+            if (std::isfinite(slope) && slope <= 0.0) witness->condition = BranchEndCondition::VaporMechanicalLimit;
+            if (!(std::isfinite(slope) && slope > 0.0)) return outcome;
+        }
         double anchor = anchors.empty() ? 0.0 : anchors[phase];
         DensityRoot root;
+        bool same_side = true;
         try {
             if (initial) {
                 if (roots) {
                     root = (*roots)[spec.kind == PhaseKind::Vapor ? 1 : 0];
                     check_declared_side(root, branch);
                 } else {
-                    root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind);
+                    if (witness && core::CalculationWork::stop_at("branch-end unanchored density")) return outcome;
+                    root = declared_root(model, prepared.temperature, prepared.pressure, x, spec.kind,
+                        witness && spec.kind == PhaseKind::Vapor ? &same_side : nullptr);
                 }
                 if (pure && root.stable_root_count.value_or(0) < 2) {
                     outcome.message = "one-component two-density requires two distinct stable density branches"; return outcome;
@@ -1492,8 +1525,10 @@ BranchCheck density_branches_at(
                 anchor = root.molar_density;
                 if (limits) limits->check();
             }
-            if (!initial || !roots)
+            if (same_side && (!initial || !roots)) {
+                if (witness && core::CalculationWork::stop_at("branch-end anchored density")) return outcome;
                 root = solve_density(model, prepared.temperature, prepared.pressure, x, branch, anchor);
+            }
             if (limits) limits->check();
         } catch (const std::exception& error) {
             outcome.message = "phase " + spec.name + " has no locally unique anchored root: " + error.what();
@@ -1517,17 +1552,13 @@ BranchCheck density_branches_at(
             outcome.message = "phase " + spec.name + " corrected density left the anchored branch window";
             return outcome;
         }
+        if (!same_side) {
+            witness->condition = BranchEndCondition::VaporKindRefused;
+            scope.probe("branch_end_wrong_side", {root.molar_density, *root.negative_slope_density});
+            return outcome;
+        }
     }
-    // Declared kinds: a liquid less densely packed than a vapor is the other boundary with its labels swapped (#599).
-    for (std::size_t l = 0; initial && l < prepared.eta.size(); ++l)
-        for (std::size_t v = 0; v < prepared.eta.size(); ++v)
-            if (compiled.problem.phases[l].kind == PhaseKind::Liquid && compiled.problem.phases[v].kind == PhaseKind::Vapor
-                && !(prepared.eta[l] > prepared.eta[v])) {
-                outcome.message = "declared liquid " + compiled.problem.phases[l].name + " (packing fraction " + core::optional_number(prepared.eta[l])
-                    + ") is not more densely packed than declared vapor " + compiled.problem.phases[v].name + " ("
-                    + core::optional_number(prepared.eta[v]) + "): swapped phase labels";
-                return outcome;
-            }
+    if (!witness && !packing_order()) return outcome;
     outcome.accepted = true;
     return outcome;
 }
@@ -1809,7 +1840,134 @@ bool supports_work_limit(const EquilibriumProblem& p) {
     return liquid.kind == PhaseKind::Liquid && liquid.is_free() && vapor.kind == PhaseKind::Vapor && vapor.is_zero_pinned();
 }
 
-EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope) {
+namespace {
+
+struct BubbleBranchSample final {
+    std::vector<double> coordinates, tangent;
+    double pressure, log_density;
+    std::optional<BranchEndCondition> refusal;
+};
+
+std::optional<BubbleBranchSample> correct_bubble_density(
+    const CompiledSystem& c, std::vector<double> y, std::size_t v, double lambda,
+    core::Scope& scope, bool admitted_seed = false) try {
+    const auto l = 1 - v;
+    const auto n = y.size();
+    const auto window = policy::DENSITY_ANCHOR_LOG_WINDOW.value;
+    const auto tolerance = c.problem.solver_options.value(policy::row);
+    const auto density_row = [&](const auto& at) { return std::log(chart_density(*c.model, at, v)) - lambda; };
+    std::size_t projected = 0;
+    if (!inside_domain(c, y, projected, true) || projected || core::CalculationWork::stop_at("branch-end preparation")) return {};
+    auto at = c.prepare(y, true);
+    const auto predicted = at.volume;
+    auto f = c.evaluate_at(at).values;
+    f.back() = density_row(at);
+    while (true) {
+        const auto norm = maximum_abs(f);
+        if (!std::isfinite(norm) || core::CalculationWork::stop_at("branch-end Jacobian")) return {};
+        auto jac = c.jacobian_at(at);
+        auto row = jac.end() - n;
+        std::fill(row, jac.end(), 0.0);
+        row[at.shape[v].volume] = 1.0;
+        for (std::size_t j = 0; j < at.shape[v].x.size(); ++j)
+            row[at.shape[v].x[j]] = -at.packing[v].component[c.problem.phases[v].support[j]] / at.packing[v].coefficient;
+        const auto error = std::max(norm, maximum_abs(c.classified_residuals(at, f)));
+        const bool corrected = error <= tolerance;
+        if (corrected) { f.assign(n, 0.0); f.back() = -1.0; }
+        else if (admitted_seed) return {};
+        auto direction = solve_implicit(c, at, f, nullptr, std::move(jac));
+        if (direction.empty()) return {};
+        if (corrected) {
+            if (check_topology(c, y).event != TopologyEvent::None
+                || std::abs(std::log(predicted[l] / at.volume[l])) > window
+                || std::abs(std::log(predicted[v] / at.volume[v])) > window) return {};
+            VaporWitness witness;
+            // Source admission already checked packing order and both mechanical slopes.
+            if (!admitted_seed && !density_branches_at(c, at, {}, true, scope, nullptr, nullptr, &witness).accepted && !witness.condition)
+                return {};
+            scope.probe("branch_end_sample", {y[c.loading_column()], at.pressure, chart_density(*c.model, at, v),
+                witness.slope, direction[c.loading_column()], direction[c.primal_size - 1], error});
+            return BubbleBranchSample{std::move(y), std::move(direction), at.pressure, lambda, witness.condition};
+        }
+        for (const double fraction : newton_damping) {
+            if (core::CalculationWork::stop_at("branch-end damping")) return {};
+            auto trial = y;
+            for (std::size_t i = 0; i < n; ++i) trial[i] += fraction * direction[i];
+            projected = 0;
+            if (!inside_domain(c, trial, projected, true) || projected || trial == y) continue;
+            try {
+                PhasePoint prepared;
+                auto rows = newton_trial_rows(c, trial, prepared, nullptr, [] { return true; });
+                rows.back() = density_row(prepared);
+                if (!(maximum_abs(rows) < norm)) continue;
+                at = std::move(prepared);
+                f = std::move(rows);
+                break;
+            } catch (const std::bad_alloc&) { throw; }
+            catch (const std::exception&) { continue; }
+        }
+        if (at.point == y) return {};
+        y = at.point;
+    }
+} catch (const std::bad_alloc&) { throw; }
+catch (const std::exception&) { return {}; }
+
+std::optional<BubbleBranchEnd> bubble_branch_end(
+    const CompiledSystem& source, const CompiledSystem& target, const EquilibriumResult& seed,
+    std::size_t component, core::Scope& scope) {
+    const auto q0 = source.n_feed[component], q1 = target.n_feed[component];
+    if (source.model->parameters().ideal_gas || !(q0 > 0)) return {};
+    auto request = source.problem;
+    const auto v = request.phases[0].kind == PhaseKind::Vapor ? 0u : 1u;
+    request.loading = AffineLoading{source.n_feed, std::vector<double>(source.n_feed.size()), q0, q1, q0, *seed.pressure};
+    request.loading->initial[component] = 0.0;
+    request.loading->direction[component] = 1.0;
+    const auto c = compile_problem(*source.model, request);
+    const auto column = c.loading_column();
+    auto y = seed.coordinates;
+    y.insert(y.begin() + column, q0);
+    auto left = correct_bubble_density(c, std::move(y), v, std::log(seed.molar_densities[v]), scope, true);
+    if (!left || left->tangent[column] == 0) return {};
+    const auto sign = std::copysign(1.0, left->tangent[column]);
+    const auto resolution = policy::DENSITY_ANCHOR_LOG_WINDOW.value / 4;
+    const double step = sign * 0.05; // r1 MEA trace spacing.
+    std::optional<double> upper;
+    while (!core::CalculationWork::stop_at("branch-end bracket")) {
+        const auto delta = upper ? (*upper - left->log_density) / 2 : step;
+        const auto lambda = left->log_density + delta;
+        if (lambda == left->log_density || (upper && lambda == *upper)) return {};
+        auto predicted = left->coordinates;
+        for (std::size_t i = 0; i < predicted.size(); ++i) predicted[i] += delta * left->tangent[i];
+        predicted[column] = std::clamp(predicted[column], q0, q1);
+        auto right = correct_bubble_density(c, std::move(predicted), v, lambda, scope);
+        const bool resolved = std::abs(delta) <= resolution;
+        if (!right || right->coordinates[column] >= q1 || swapped_pair(c, left->coordinates, right->coordinates)) {
+            if (resolved) return {};
+        } else {
+            const auto directed = sign * right->tangent[column];
+            if (!right->refusal && directed > 0) {
+                left = std::move(right);
+                continue;
+            }
+            if (resolved && directed != 0 && (!right->refusal || directed > 0)) {
+                const auto bracket = std::pair{left->coordinates[column], right->coordinates[column]};
+                const auto& estimate = !right->refusal && bracket.second > bracket.first ? *right : *left;
+                const auto variation = std::abs(delta) * (std::abs(left->tangent[column]) + std::abs(right->tangent[column]));
+                if (!right->refusal && !(estimate.coordinates[column] + variation < q1)) return {};
+                auto feed = source.n_feed;
+                feed[component] = estimate.coordinates[column];
+                return BubbleBranchEnd{right->refusal.value_or(BranchEndCondition::LoadingFold), bracket, std::move(feed), estimate.pressure};
+            }
+        }
+        upper = lambda;
+    }
+    return {};
+}
+
+}  // namespace
+
+EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope,
+    std::optional<std::size_t> branch_end_work_limit) {
     if (seed.model_identity != target.model || !seed.declaration || !seed.has_state()
         || !seed.requested_tolerance_met.value_or(false) || !supports_work_limit(*seed.declaration))
         throw std::invalid_argument("bubble source must be admitted on the target model");
@@ -1823,11 +1981,12 @@ EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const 
     if (seed.coordinates.size() != source.unknown_count())
         throw std::invalid_argument("bubble source coordinates differ from compiled layout");
     const auto& charge = target.model->parameters().charge_number;
-    std::size_t additions = 0;
+    std::size_t additions = 0, component = 0;
     for (std::size_t i = 0; i < target.n_feed.size(); ++i) {
         if (target.n_feed[i] == source.n_feed[i]) continue;
         if (target.n_feed[i] < source.n_feed[i] || (!charge.empty() && charge[i] != 0))
             throw std::invalid_argument("bubble source differs by more than a neutral feed addition");
+        component = i;
         ++additions;
     }
     if (additions != 1) throw std::invalid_argument("bubble source needs one increased neutral feed amount");
@@ -1846,9 +2005,31 @@ EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const 
         return sensitivity(source, seed.coordinates, path.lever(source), failure);
     }, 1.0, {}, DensityAdmission::Declared, scope, seed.optimizer_state);
     auto result = attempt.result ? std::move(*attempt.result) : structural_result(target, scope);
-    if (attempt.accepted) return refine_selected_endpoint(target, std::move(result), scope);
-    result.message = std::move(attempt.message);
-    core::retain_first(result.first_numerical_failure, attempt.observations.first_numerical_failure);
+    if (attempt.accepted) {
+        result = refine_selected_endpoint(target, std::move(result), scope);
+        if (!branch_end_work_limit || (result.has_state() && !core::CalculationWork::stopped()
+            && core::CalculationWork::current()->units() <= core::CalculationWork::active_limit()->units)) return result;
+    } else {
+        result.message = std::move(attempt.message);
+        core::retain_first(result.first_numerical_failure, attempt.observations.first_numerical_failure);
+    }
+    if (branch_end_work_limit && attempt.result && result.topology_event == TopologyEvent::None) {
+        scope.probe("branch_end_entry", static_cast<double>(core::CalculationWork::current()->units()));
+        core::CalculationWork::Limit limit{*branch_end_work_limit};
+        core::CalculationWork work(true, &limit);
+        try { result.branch_end = bubble_branch_end(source, target, seed, component, scope); }
+        catch (const std::bad_alloc&) { throw; } catch (const std::exception&) {}
+        if (work.units() > limit.units) core::CalculationWork::stop_at("branch-end return");
+        if (limit.boundary) result.branch_end.reset();
+        if (result.branch_end) {
+            result.topology_event = TopologyEvent::BranchEnd;
+            result.topology_phase = source.problem.phases[0].kind == PhaseKind::Vapor ? 0 : 1;
+            result.solver_status = "BRANCH_END";
+            result.message.insert(0, result.message.empty() ? "branch end" : "branch end; ");
+        }
+        scope.probe("branch_end_work", {static_cast<double>(work.units()), static_cast<double>(limit.units)}, 0,
+            limit.boundary ? limit.boundary : "");
+    }
     refuse(result);
     return result;
 }

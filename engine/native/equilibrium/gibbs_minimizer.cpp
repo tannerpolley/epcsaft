@@ -1425,7 +1425,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             // Best-point selection below protects the returned classified residual.
             std::uint32_t trial = 0;
             // Newton attempts and wide correction also try the fourth fraction.
-            for (const Base damping : {1.0, 0.5, 0.25, 0.125}) {
+            for (const Base damping : newton_damping) {
                 if constexpr (std::is_same_v<Base, double>) if (trial == 3 && !newton) break;
                 const Base alpha = std::min((trial_recovery ? trial_scale : Base(1)) * damping, trial_limit);
                 if (final_correction && alpha != 1.0) break;
@@ -1446,10 +1446,11 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 std::vector<Base> rows_after;
                 if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
                 try {
-                    at_candidate = compiled.prepare_values(candidate, true, &result.first_numerical_failure);
-                    ++polish_evaluations;
-                    if (expired()) { stop("elapsed budget"); return false; }
-                    rows_after = compiled.evaluate_at(at_candidate).values;
+                    rows_after = newton_trial_rows(compiled, candidate, at_candidate, &result.first_numerical_failure, [&] {
+                        ++polish_evaluations;
+                        return !expired();
+                    });
+                    if (rows_after.empty() && expired()) { stop("elapsed budget"); return false; }
                 } catch (const std::bad_alloc&) { throw; } catch (const std::exception& error) {
                     core::retain_failure(result.first_numerical_failure, error, "polish trial");
                     if (detailed) scope.probe("polish_trial", {double(correction), double(control), double(defect), double(classified_before),
@@ -2183,7 +2184,9 @@ static void observe_endpoint(const Model& model, const CompiledSystem* compiled,
 
 EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
                                     const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids,
-                                    std::optional<std::size_t> work_limit) {
+                                    std::optional<std::size_t> work_limit, std::optional<std::size_t> branch_end_work_limit) {
+    if (branch_end_work_limit && (!*branch_end_work_limit || !work_limit || !start))
+        throw std::invalid_argument("positive branch_end_work_limit requires work_limit and an admitted bubble start");
     if (!work_limit) {
         std::optional<CompiledSystem> compiled;
         return solve_equilibrium_retaining_compiled(model, request, compiled, start, component_ids);
@@ -2197,7 +2200,7 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
     EquilibriumAttemptReporting reporting;
     if (component_ids.size() == model.parameters().component_count()) reporting.composition_bound_species = &component_ids;
     auto result = core::CalculationWork::stop_at("after compilation") ? structural_result(compiled, scope)
-        : start ? solve_from_feed_increment(compiled, *start, scope)
+        : start ? solve_from_feed_increment(compiled, *start, scope, branch_end_work_limit)
                 : try_solve_compiled(compiled, {}, &scope, nullptr, {}, false, true, reporting);
     if (work.units() > *work_limit) core::CalculationWork::stop_at("return");
     // A work stop determines request availability even when the last classified rows converged.
