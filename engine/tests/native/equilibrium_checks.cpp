@@ -48,6 +48,7 @@ void check_physical_amount_work();
 void check_reaction_relaxed_split();
 void check_associating_isomer_gibbs();
 void check_mdea_full_stability();
+void check_piperazine_a12s_bubble_stability();
 void check_mdea_bubble_work_limit();
 void check_bubble_branch_end();
 void check_reaction_relaxed_search();
@@ -138,6 +139,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.associating-isomer-gibbs", "associating-isomer-gibbs", "Automatic_fast"}, check_associating_isomer_gibbs},
         {{"native.equilibrium.reaction-relaxed-split", "reaction-relaxed-split", "Automatic_fast"}, check_reaction_relaxed_split},
         {{"native.equilibrium.mdea-full-stability", "mdea-full-stability", "Automatic_fast"}, check_mdea_full_stability},
+        {{"native.equilibrium.piperazine-a12s-bubble-stability", "piperazine-a12s-bubble-stability", "Automatic_fast"}, check_piperazine_a12s_bubble_stability},
         {{"native.equilibrium.mdea-bubble-work-limit", "mdea-bubble-work-limit", "Automatic_fast"}, check_mdea_bubble_work_limit},
         {{"native.equilibrium.bubble-branch-end", "bubble-branch-end", "Automatic_fast"}, check_bubble_branch_end},
         {{"native.equilibrium.reaction-relaxed-search", "reaction-relaxed-search", "Automatic_fast"}, check_reaction_relaxed_search},
