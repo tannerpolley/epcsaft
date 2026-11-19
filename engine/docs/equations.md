@@ -2616,7 +2616,7 @@ $$
 - Status: Implementation convention
 - Source: Charge equality and common normalization
 - Description: Reconstruct finite positive supported u=exp(y). Ionic supports require both charge signs. Rescale charge groups and normalize; unsupported entries retain their input values. Liquid trials increase the largest opposite-sign entry to correct charge roundoff (ties by index), then normalize by common division. Charged Vapor trials use multiplicative log rescaling and omit the additive ionic correction to preserve trace coordinates.
-- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility. For $q=0$, use $v=w$ and the same common normalization. Stored fractions must remain finite and strictly positive; both absolute sum and charge defects must be at most $10^{-12}$. Overflow or underflow is not repaired.
+- Change note: Reject loss of positivity/support or domain. Neutral supports normalize directly; a singleton is exactly one. Reevaluate energy at v=c(T,w)/η. This is numerical admission, not exact-real feasibility. For $q=0$, use $v=w$ and the same common normalization. Stored fractions must remain finite and strictly positive; both absolute sum and charge defects must be at most $10^{-12}$. For a successful, converged optimized Liquid endpoint, use $\widehat u_i=u_i$ when the finite positive group scale would round a supported fraction to zero and both original defects $|\sum_{i\in S}u_i-1|$ and $|\sum_{i\in S}z_i u_i|$ are at most $10^{-12}$. Apply the same normalizations and opposite-sign pivot with $q$ evaluated on the normalized fractions.
 
 $$
 \begin{aligned}

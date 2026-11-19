@@ -1212,7 +1212,14 @@ void check_tangent_plane_admission() {
         0x1.c32c20f6c1dc0p-46, 0x1.fb7b5e721a2fbp-638, 0x1.231142a8bdf31p-801,
         0x1.cb0b445880391p-90, 0x1.cc5a6916e3290p-29, 0x1.b7e638a5bc3abp-296};
     const std::vector<int> charges{0, 0, -1, -2, 1, -1, 0, 1};
-    const auto repaired = reconstruct_trial_composition(trace_weights, {0, 1, 2, 3, 4, 5, 6, 7}, charges);
+    const auto legacy = [&](const std::vector<double>& weights, const std::vector<std::size_t>& support,
+                            const std::vector<int>& charge_numbers) {
+        bool pivot_only = false;
+        const auto result = reconstruct_trial_composition(weights, support, charge_numbers, PhaseKind::Liquid, &pivot_only);
+        CHECK(!pivot_only && result == reconstruct_trial_composition(weights, support, charge_numbers));
+        return result;
+    };
+    const auto repaired = legacy(trace_weights, {0, 1, 2, 3, 4, 5, 6, 7}, charges);
     double trace_sum = 0.0, trace_charge = 0.0;
     for (std::size_t i = 0; i < repaired.size(); ++i) {
         CHECK(std::isfinite(repaired[i]) && repaired[i] > 0.0);
@@ -1222,17 +1229,52 @@ void check_tangent_plane_admission() {
         recording_support::field("reconstructed", repaired)});
     tpd_compare("trace-ion/normalization", trace_sum, 1.0, epcsaft::policy::COMPOSITION_SUM_TOLERANCE.value, trace_inputs);
     tpd_compare("trace-ion/charge", trace_charge, 0.0, 0.0, trace_inputs);
-    const auto ion_only = reconstruct_trial_composition({1.0, 2.0, 3.0}, {0, 1, 2}, {1, -2, 3});
+    const auto ion_only = legacy({1.0, 2.0, 3.0}, {0, 1, 2}, {1, -2, 3});
     tpd_compare("ion-only/normalization", ion_only[0] + ion_only[1] + ion_only[2], 1.0, 1e-12);
     tpd_compare("ion-only/charge", ion_only[0] - 2.0 * ion_only[1] + 3.0 * ion_only[2], 0.0, 1e-12);
     const std::vector<double> raw{0.98, 0.0100000001, 0.0099999999};
     const auto rebuilt = reconstruct_trial_composition(raw, {0, 1, 2}, parameters.charge_number);
     auto off_normalized = raw; for (double& amount : off_normalized) amount *= 1.001;
-    const auto normalized = reconstruct_trial_composition(off_normalized, {0, 1, 2}, parameters.charge_number);
+    const auto normalized = legacy(off_normalized, {0, 1, 2}, parameters.charge_number);
     tpd_compare("witness/off-normalized-reconstruction", normalized[0] + normalized[1] + normalized[2], 1.0, 1e-12);
     const auto inputs = recording_support::fields({recording_support::field("raw", raw), recording_support::field("reconstructed", rebuilt)});
     tpd_compare("witness/reconstructed-charge", rebuilt[1] - rebuilt[2], 0.0, 1e-12, inputs);
     tpd_compare("witness/reconstructed-normalization", rebuilt[0] + rebuilt[1] + rebuilt[2], 1.0, 1e-12, inputs);
+    // Lawson Table VIII row 2, #95, optimized near-pure-0 Liquid trial.
+    const std::vector<double> dea_trial{0x1.f058cc2ffcd36p-1, 0x1.c11c49c2a709dp-30, 0x1.f4e6783f46d83p-6,
+        0x1.b02ac22ad22acp-344, 0x1.39ae13e6b7c52p-45, 0x1.9cfe52d83c611p-179,
+        0x1.0b8bffbb726e4p-933, 0x1.e6aae80dcc542p-706, 0x1.278e0210dad25p-224};
+    const std::vector<std::size_t> dea_support{0, 1, 2, 3, 4, 5, 6, 7, 8};
+    const std::vector<int> dea_charges{0, 0, 0, 1, -1, -1, -2, 1, -1};
+    bool pivot_only = false;
+    const auto dea_rebuilt = reconstruct_trial_composition(dea_trial, dea_support, dea_charges, PhaseKind::Liquid, &pivot_only);
+    CHECK(pivot_only);
+    double dea_sum = 0.0, dea_charge = 0.0, raw_charge = 0.0;
+    for (auto i : dea_support) {
+        CHECK(std::isfinite(dea_rebuilt[i]) && dea_rebuilt[i] > 0.0);
+        dea_sum += dea_rebuilt[i];
+        dea_charge += dea_charges[i] * dea_rebuilt[i];
+        raw_charge += dea_charges[i] * dea_trial[i];
+    }
+    const auto tolerance = epcsaft::policy::COMPOSITION_SUM_TOLERANCE.value;
+    tpd_compare("lawson-viii-2/normalization-defect", dea_sum - 1.0, 0.0, tolerance);
+    tpd_compare("lawson-viii-2/charge-defect", dea_charge, 0.0, tolerance);
+    const auto dea_inputs = recording_support::fields({recording_support::field("reconstructed", dea_rebuilt)});
+    tpd_compare("lawson-viii-2/carbonate-relative", dea_rebuilt[6] / 1.439375003141253e-281, 1.0, 1e-10, dea_inputs);
+    const double pivot = (dea_trial[3] - raw_charge) / (1.0 - raw_charge);
+    tpd_compare("lawson-viii-2/deah-relative", dea_rebuilt[3] / pivot, 1.0, 1e-10);
+    auto dea_off_sum = dea_trial;
+    for (double& weight : dea_off_sum) weight *= 1.001;
+    const auto support_refusal = [](const std::vector<double>& weights, const std::vector<std::size_t>& support,
+                                   const std::vector<int>& charge_numbers) {
+        bool pivot_only = false;
+        const auto refusal = recording_support::refusal([&] {
+            (void)reconstruct_trial_composition(weights, support, charge_numbers, PhaseKind::Liquid, &pivot_only);
+        });
+        CHECK(!pivot_only && refusal == "reconstruction destroys support");
+    };
+    support_refusal(dea_off_sum, dea_support, dea_charges);
+    support_refusal({0.9999999999995001, 1e-100, 1.0000000000000002e-12, 1e-300}, {0, 1, 2, 3}, {0, 1, -1, -1});
     // Reevaluate the same physical packing, with the spurious charge-plane term removed.
     auto phase = equilibrium_support::phase("L", PhaseKind::Liquid); phase.support = {0, 1, 2};
     std::vector<std::vector<double>> transform;

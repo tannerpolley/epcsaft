@@ -728,7 +728,7 @@ std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double
 
 // Charge repair increases the opposite-sign pivot before common normalization (ties by index).
 std::vector<double> reconstruct_trial_composition(std::vector<double> w,
-    const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind) {
+    const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind, bool* pivot_only) {
     if (support.empty() || z.size() != w.size()) throw std::invalid_argument("invalid reconstruction support");
     double positive = 0.0, negative = 0.0;
     std::optional<std::size_t> plus, minus;
@@ -745,7 +745,20 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
             for (auto i : support) if (z[i]) w[i] = std::exp(std::log(w[i]) + (z[i] > 0 ? shift : -shift));
         } else {
             const double ratio = std::sqrt(negative / positive);
-            for (auto i : support) { if (z[i] > 0) w[i] *= ratio; if (z[i] < 0) w[i] /= ratio; }
+            if (pivot_only && std::isfinite(ratio) && ratio > 0.0 &&
+                std::any_of(support.begin(), support.end(), [&](auto i) {
+                    return (z[i] > 0 && w[i] * ratio == 0.0) || (z[i] < 0 && w[i] / ratio == 0.0);
+                })) {
+                double sum = 0.0, charge = 0.0;
+                for (auto i : support) {
+                    sum += w[i];
+                    charge += z[i] * w[i];
+                }
+                *pivot_only = std::abs(sum - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value &&
+                              std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value;
+            }
+            if (!pivot_only || !*pivot_only)
+                for (auto i : support) { if (z[i] > 0) w[i] *= ratio; if (z[i] < 0) w[i] /= ratio; }
         }
     }
     double total = 0.0;
@@ -1029,7 +1042,7 @@ struct SuppliedPoint {
     PhaseEnergyPoint energy;
 };
 void advance_supplied(SuppliedPoint& point, SuppliedStage through, const HelmholtzModel& model,
-    double T, const PhaseSpec& phase, CompiledSystem* c, double eta, Quantities& work) {
+    double T, const PhaseSpec& phase, CompiledSystem* c, double eta, Quantities& work, bool* pivot_only = nullptr) {
     const auto& z = model.parameters().charge_number;
     while (point.next <= through) {
         if (!point.failure.empty()) throw std::invalid_argument(point.failure);
@@ -1054,7 +1067,7 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
                 for (auto& d : point.raw.derivative) std::vector<double>().swap(d.hessian);
                 break;
             case SuppliedStage::Composition:
-                point.composition = reconstruct_trial_composition(point.raw.composition[0], phase.support, z, phase.kind);
+                point.composition = reconstruct_trial_composition(point.raw.composition[0], phase.support, z, phase.kind, pivot_only);
                 ++work["reconstruction_evaluations"];
                 point.volume = model.packing_fraction_coefficient(T, point.composition) / point.raw.eta[0]; break;
             case SuppliedStage::State:
@@ -1261,8 +1274,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             auto start = slot ? slot->start : Start::ParentRestriction;  // in the first pass: the retry a refusal here gets
             bool searched = false;  // the start coincides with an already-searched original seed
             SuppliedPoint point = options.prepared_trials ? options.prepared_trials->points->entries[entry++] : SuppliedPoint{};
-            const auto advance = [&](SuppliedStage stage, CompiledSystem* c = nullptr, double eta = 0.0) {
-                advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work);
+            const auto advance = [&](SuppliedStage stage, CompiledSystem* c = nullptr, double eta = 0.0,
+                                     bool* pivot_only = nullptr) {
+                advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work, pivot_only);
             };
             try {
                 if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = point.seed; }
@@ -1334,7 +1348,10 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (options.evaluate_supplied_trials) { raw.pressure = at.pressure; raw.standard = *compiled.fixed_standard; }
                 if (!found) trial.raw_residuals = compiled.evaluate_at(raw).values;
                 if (!options.evaluate_supplied_trials) { point.raw = raw; point.next = SuppliedStage::Composition; }
-                advance(SuppliedStage::Composition);
+                const bool repair = !options.evaluate_supplied_trials && phase.kind == PhaseKind::Liquid &&
+                                    trial.optimizer.success &&
+                                    trial.optimizer.convergence.stop == core::Stop::converged;
+                advance(SuppliedStage::Composition, nullptr, 0.0, repair ? &trial.pivot_only : nullptr);
                 trial.composition = point.composition;
                 const double volume = point.volume;
                 if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
@@ -1569,6 +1586,10 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
         if (!same) out.event = "distinct stationary minima have overlapping value intervals";
     }
     if (!out.event.empty()) { out.cause = out.event; return out; }
+    if (std::any_of(out.minima.begin(), out.minima.end(), [&](auto j) { return out.report.trials[j].pivot_only; })) {
+        out.cause = "stationarity unavailable at reconstructed trial minimum";
+        return out;
+    }
     out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;
     out.available = true;
     return out;
