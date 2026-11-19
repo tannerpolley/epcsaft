@@ -257,6 +257,10 @@ bool state_dependent(const SolvedStateObservable& observable, const EquilibriumP
     return true;
 }
 
+bool moves_eos_parameters(const SolvedStateActionDirection& d) {
+    return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double v) { return v != 0.0; });
+}
+
 void validate_request(const CompiledSystem& compiled, const EquilibriumResult& central,
                       const SolvedStateActionRequest& request) {
     if (compiled.ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
@@ -337,8 +341,7 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     std::size_t eos_parameter_directions = 0;
     bool source_directions = false;
     for (const auto &d : request.directions) {
-        bool parameter = false;
-        for (double v : d.active_parameters) parameter |= v != 0.0;
+        bool parameter = moves_eos_parameters(d);
         eos_parameter_directions += std::size_t(parameter);
         // ln K^rho_s is compiled to second order in (T, theta); V_s (P - P0)/RT is exact.
         if (!problem.solids.empty() && request.directions.size() == 3 && (parameter || d.temperature_k != 0.0 || d.pressure_pa != 0.0))
@@ -960,7 +963,7 @@ static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
     const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {},
-    FirstCoefficients* first_coefficients = nullptr
+    FirstCoefficients* first_coefficients = nullptr, bool batch_parameters = false
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -991,7 +994,7 @@ static SolvedStateActionBatch evaluate_action(
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union);
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union, nullptr, batch_parameters);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
@@ -1060,6 +1063,7 @@ static SolvedStateActionBatch evaluate_action(
     if (!central.success || !central.has_state() || !all_numeric(central.coordinates)) return batch;
     const bool plane_uncertainty = std::any_of(request.observables.begin(), request.observables.end(),
         [](const auto& o) { return o.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane && o.plane_uncertainty; });
+    const auto parameter_directions = std::count_if(request.directions.begin(), request.directions.end(), moves_eos_parameters);
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
     if (shared && shared->preparation_failed) {
         batch.results = shared->central_results;
@@ -1102,7 +1106,8 @@ static SolvedStateActionBatch evaluate_action(
             if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases, true);
             else {
                 if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates, false, nullptr, {}, {}, true);
-                common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates, false, nullptr, {}, {}, !plane_uncertainty);
+                common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates, false, nullptr, {}, {},
+                    !plane_uncertainty || batch_parameters || parameter_directions != 0);
             }
         } catch (const AssociationJacobianFailure& error) {
             if (site_phases.empty()) throw;
@@ -1172,12 +1177,10 @@ static SolvedStateActionBatch evaluate_action(
     };
     const bool needs_calorics = std::any_of(request.observables.begin(), request.observables.end(), caloric);
     const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
-    const bool parameter_pairs = std::count_if(request.directions.begin(), request.directions.end(), [](const auto& d) {
-        return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double v) { return v != 0.0; }); }) > 1;
     if (reference_problem && needs_calorics) {
         const auto need = caloric_need(problem, request, zero, shared->caloric);
         std::vector<std::size_t> pairs;  // the coordinates the directions move, as row_series
-        for (std::size_t k = 0; parameter_pairs && !zero && k < model.active_parameters().size(); ++k)
+        for (std::size_t k = 0; parameter_directions > 1 && !zero && k < model.active_parameters().size(); ++k)
             if (std::any_of(request.directions.begin(), request.directions.end(), [k](const auto& d) { return d.active_parameters[k] != 0.0; }))
                 pairs.push_back(k);
         if (!shared->calorics || need != shared->caloric || pairs != shared->pairs) {
@@ -1414,7 +1417,7 @@ static SolvedStateActionBatch evaluate_action(
         }
         FirstCoefficient retained{};
         const bool retain = first_coefficients && !first && (order == 1 || key.find_first_not_of('\0') == std::string::npos);
-        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_pairs, parameter_union,
+        const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_directions > 1, parameter_union,
             first, retain ? &retained : nullptr);
         if (path.status != SolvedStateActionStatus::Available)
             return apply_state_gate(path.status, path.diagnostic_message);
@@ -1537,9 +1540,10 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
             for (const auto& d : directions)
                 if (auto& positions = parameters[group(d)]; d.active_parameters[a] != 0.0 && (positions.empty() || positions.back() != a))
                     positions.push_back(a);
+    const bool batch_parameters = std::any_of(directions.begin(), directions.end(), moves_eos_parameters);
     for (const auto& request : requests)
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
-            cover, nullptr, parameters[group(request.directions.front())]));
+            cover, nullptr, parameters[group(request.directions.front())], nullptr, batch_parameters));
     return batches;
 }
 

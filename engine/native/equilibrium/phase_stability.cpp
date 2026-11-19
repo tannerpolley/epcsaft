@@ -546,7 +546,7 @@ GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, cons
         auto actions = solved_state_first_actions(c, result, o, {zero}).front();
 
         for (auto &a : actions.results) {
-            if (!a.numerical_error) throw std::domain_error("parent row uncertainty unavailable");
+            if (!a.numerical_error) throw std::domain_error(a.diagnostic_message.value_or("parent row uncertainty unavailable"));
             out.row_errors.push_back(*a.numerical_error);
         }
 
@@ -1602,7 +1602,10 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
         zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
         const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
         for (const auto& action : actions.results) {
-            if (!action.numerical_error) { out.cause = "parent plane uncertainty unavailable"; return out; }
+            if (!action.numerical_error) {
+                out.cause = action.diagnostic_message.value_or("parent plane uncertainty unavailable");
+                return out;
+            }
             rows.push_back(*action.numerical_error);
         }
     }
