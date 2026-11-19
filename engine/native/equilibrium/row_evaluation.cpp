@@ -130,7 +130,7 @@ StandardTerm standard_term(
     const CompiledSystem& compiled, double temperature, double pressure, std::size_t order,
     bool pressure_jets, bool temperature_jets = false, const std::vector<std::size_t>& parameters = {},
     StandardTerm::NumericalError* error = nullptr, const std::vector<std::size_t>& pairs = {},
-    const std::vector<std::size_t>& parameter_union = {}
+    const std::vector<std::size_t>& parameter_union = {}, const StandardTerm* consumed_center = nullptr
 ) {
     const auto& problem = compiled.problem;
     const std::size_t components = compiled.model->parameters().component_count();
@@ -152,10 +152,11 @@ StandardTerm standard_term(
         auto gibbs = compiled.standard_gibbs;
         std::vector<std::vector<double>> inverse;
         // Fixed-T/P references do not change with phase coordinates or feed directions.
-        if (problem.pressure.free || pressure_jets || temperature_jets || !parameters.empty()) {
+        if (consumed_center || problem.pressure.free || pressure_jets || temperature_jets || !parameters.empty()) {
             jets.reference_order = !parameters.empty() && order > 1 && (temperature_jets || pressure_jets) ? 2 : 0;
             reactions = central_reference_reactions(
-                *compiled.model, problem, temperature, pressure, diagnostics, jets, &compiled.reference_diagnostics);
+                *compiled.model, problem, temperature, pressure, diagnostics, jets,
+                consumed_center ? &consumed_center->reference_diagnostics : &compiled.reference_diagnostics, consumed_center != nullptr);
             gibbs = standard_state_series(temperature, components, reactions, {}, 0, nullptr, error ? &inverse : nullptr).front();
         }
         StandardTerm result;
@@ -166,6 +167,7 @@ StandardTerm standard_term(
         const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
         for (std::size_t species = 0; species < components; ++species)
             result.derivative[0][species] = gibbs[species] / rt;
+        if (consumed_center) result.derivative[0] = consumed_center->derivative[0];
         // One slope of s_r = g_r/(RT) per row, mapped to species by the same linear minimum-norm
         // owner as s, factored once for every column. A referenced row has s_r = -ln K_rho, so its slope
         // is -(source slope + slope of C); an unadmitted slope of C refuses the direction. Only pure T
@@ -194,7 +196,7 @@ StandardTerm standard_term(
         // EqIDs: standard_state_transfer_temperature_(second_)derivative. Unreferenced rows keep
         // s' = (t' - t/T)/(RT) and s'' = t''/(RT) - 2 s'/T.
         std::vector<double> first(reactions.size(), 0.0), second(reactions.size(), 0.0);
-        const auto targets = thermal > 0 ? reaction_target_series(temperature, reactions, thermal)
+        const auto targets = thermal || error ? reaction_target_series(temperature, reactions, thermal)
                                          : std::vector<std::vector<double>>{};
         for (std::size_t row = 0; thermal > 0 && row < reactions.size(); ++row) {
             first[row] = (targets[1][row] - targets[0][row] / temperature) / rt;
@@ -237,7 +239,7 @@ StandardTerm standard_term(
                 n(r, i) = reactions[r].stoichiometry[i]; w(i, r) = inverse[i][r];
             }
             for (auto& diagnostic : diagnostics) {
-                reference_errors(*compiled.model, temperature, problem.reactions[diagnostic.reaction_index].stoichiometry, diagnostic);
+                reference_errors(*compiled.model, temperature, problem.reactions[diagnostic.reaction_index].stoichiometry, diagnostic, order > 0);
                 if (!diagnostic.numerical_error_cause.empty()) error->cause = diagnostic.numerical_error_cause;
             }
             for (std::size_t k = 0; k <= std::min(order, std::size_t(1)); ++k) {
@@ -569,7 +571,8 @@ CppAD::ADFun<double> record_geometry(
         feed_total += feed[i];
     }
     const std::vector<AD> theta(u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components), u.begin() + static_cast<std::ptrdiff_t>(n + 2 + components + theta_center.size()));
-    const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(), theta);
+    const auto tape_parameters = detail::make_tape_parameters(parameters, model.active_parameters(),
+        prepared.parameter_actions ? theta : std::vector<AD>{});
     const auto sigma = segment_sigma(T, tape_parameters);
     const auto diameter = segment_diameter(T, tape_parameters, sigma);
     const auto& charges = parameters.charge_number;
@@ -884,7 +887,7 @@ std::vector<double> critical_hessian(const CompiledSystem& compiled, const Phase
 std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel &model, const EquilibriumProblem &request, double temperature, double pressure,
     std::vector<NeutralReferenceReactionDiagnostic> &diagnostics, const ReferenceJets& jets,
-    const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure) {
+    const std::vector<NeutralReferenceReactionDiagnostic> *fixed_pressure, bool consumed_center) {
     if (!request.has_reaction_reference()) return request.reactions;
     if (!request.source_reference.has_value()) {
         throw ReferenceUnavailable("source reference declaration is missing");
@@ -901,7 +904,7 @@ std::vector<ReactionSpec> central_reference_reactions(
         // Fixed-pressure references depend only on the compiled model, temperature,
         // declaration and stoichiometry; rebuild only system-pressure traces.
         for (const auto& diagnostic : *fixed_pressure)
-            if (request.reactions[diagnostic.reaction_index].reference->reference_pressure_pa)
+            if (consumed_center || request.reactions[diagnostic.reaction_index].reference->reference_pressure_pa)
                 reused.push_back(diagnostic);
     }
     diagnostics.clear();
@@ -912,6 +915,9 @@ std::vector<ReactionSpec> central_reference_reactions(
     for (std::size_t row = 0; row < request.reactions.size(); ++row) {
         const auto& reaction = request.reactions[row];
         if (!reaction.reference.has_value()) continue;
+        if (consumed_center && std::none_of(reused.begin(), reused.end(),
+                [row](const auto& item) { return item.reaction_index == row; }))
+            throw unavailable(row, " consumed reference unavailable");
         if (std::any_of(reused.begin(), reused.end(),
                 [row](const auto& item) { return item.reaction_index == row; })) continue;
         if (reaction.affinity_j_per_mol.has_value()
@@ -922,7 +928,7 @@ std::vector<ReactionSpec> central_reference_reactions(
         references.push_back(*reaction.reference);
     }
     const auto solvent_anchor = fixed_pressure ? reference_solvent_anchor(*fixed_pressure) : std::nullopt;
-    const auto reference_results = reaction_references(
+    const auto reference_results = consumed_center ? std::vector<NeutralReferenceReactionDiagnostic>{} : reaction_references(
         model, temperature, pressure, *request.source_reference, stoichiometries, references, jets.pressure_order,
         solvent_anchor, jets.temperature_order, jets.parameters, jets.reference_order, nullptr, jets.pairs, jets.temperature_order > 1);
     std::vector<NeutralReferenceReactionDiagnostic> resolved = reused;
@@ -1296,14 +1302,14 @@ std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std
 }
 
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
-    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase, const std::vector<bool>& site_phases) const {
-    return prepare_values(point, state_only, first, chemical_phase, site_phases);
+    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase, const std::vector<bool>& site_phases, bool parameter_actions) const {
+    return prepare_values(point, state_only, first, chemical_phase, site_phases, parameter_actions);
 }
 
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
     std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase,
-    const std::vector<bool>& site_phases) const {
+    const std::vector<bool>& site_phases, bool parameter_actions) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1355,7 +1361,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         result.volume[phase] = result.packing[phase].coefficient / result.eta[phase];
         result.amount[phase] = layout.amount.has_value()
             ? point[*layout.amount] : phase_amount(problem.phases[phase]);
-        const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
+        const auto order = !state_only ? (parameter_actions ? DerivativeOrder::Hessian : DerivativeOrder::FixedParameterHessian) : problem.temperature.free
             ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
         if constexpr (std::is_same_v<Base, double>) {
         if (state_only && one_component_two_density_eligible(*this)) {
@@ -1369,6 +1375,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
                     static_cast<std::uint32_t>(phase));
         result.composition[phase] = std::move(values);
     }
+    result.parameter_actions = parameter_actions;
     result.standard = fixed_standard ? *fixed_standard : standard_term(
         *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
     if constexpr (std::is_same_v<Base, double>) if (anchored_calorics())
@@ -1376,8 +1383,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));
@@ -1515,16 +1522,16 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
     for (std::size_t p = 0; p < at.shape.size(); ++p) {
         std::vector<double> point{at.temperature, at.volume[p]};
         point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
-        const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
-        for (std::size_t j = 0; j < 2 + components; ++j) {
+        for (std::size_t j = 0; j < point.size(); ++j) {
             if (j >= 2 && at.composition[p][j - 2] == 0.0) { gradient_error[p][j] = NAN; continue; }
-            std::vector<double> unit(width, 0.0); unit[j] = 1.0;
+            std::vector<double> unit(point.size(), 0.0); unit[j] = 1.0;
             const auto error = model->residual_coefficient_errors({point, unit}, at.derivative[p].site_fractions);
             energy_error[p] = error[0]; gradient_error[p][j] = error[1];
         }
     }
     StandardTerm::NumericalError standard_error;
-    if (!reference_diagnostics.empty()) standard_term(*this, at.temperature, at.pressure, 1, false, true, {}, &standard_error);
+    if (!reference_diagnostics.empty())
+        standard_term(*this, at.temperature, at.pressure, 0, false, false, {}, &standard_error, {}, {}, &at.standard);
     if (!standard_error.cause.empty()) { out.cause = standard_error.cause; return out; }
     else if (!standard_error.absolute[0].empty()) for (auto& error : gradient_error)
         for (std::size_t j = 0; j < components; ++j) error[2 + j] += standard_error.absolute[0][j];
@@ -1929,7 +1936,7 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
     if (!reference_diagnostics.empty()) {
         throw ReferenceUnavailable("source reference T/P/parameter lever derivatives are not admitted");
     }
-    auto prepared = prepare(point);
+    auto prepared = prepare(point, false, nullptr, {}, {}, true);
     prepared.point.resize(std::max(prepared.point.size(), unknown_count()), 0.0);
     const std::size_t width = control_width();
     std::vector<double> result(rows.size() * width), control(width);
