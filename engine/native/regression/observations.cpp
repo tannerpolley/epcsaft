@@ -172,7 +172,11 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
         "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
     require(k != ObservationKind::PhaseBulkRelativePermittivity || model.parameters().permittivity_form.declared(),
         "bulk relative permittivity requires a declared permittivity form");
+    require(observation.site.has_value() == (k == ObservationKind::AssociationSiteFraction),
+        "association site selector is required for association site fraction only");
     require(std::isfinite(observation.observed), "observed value");
+    require(k != ObservationKind::AssociationSiteFraction || (observation.observed >= 0.0 && observation.observed <= 1.0),
+        "association site fraction target in [0, 1]");
     require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
@@ -279,6 +283,8 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
         return;
     }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
+    if (observation.kind == ObservationKind::AssociationSiteFraction)
+        equilibrium::validate_phase_site(model.parameters(), compiled.problem.phases[observation.phase], observation.site);
     if (observation.kind == ObservationKind::PhaseSolventActivity) {
         require(!compiled.problem.temperature.free && !compiled.problem.pressure.free, "solvent activity requires fixed T/P");
         require(compiled.problem.phases[observation.phase].kind == equilibrium::PhaseKind::Liquid, "liquid solvent activity");
@@ -761,6 +767,22 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         value = solved.amounts[phase] / total;
         break;
     }
+    case ObservationKind::AssociationSiteFraction: {
+        result.unit = "1";
+        try {
+            if (result.phase_site_fractions.find(phase) == result.phase_site_fractions.end()) {
+                auto evaluated = equilibrium::phase_site_values(model, solved, phase);
+                core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
+                result.phase_site_fractions.emplace(phase, std::move(evaluated.site_fractions));
+            }
+            value = result.phase_site_fractions.at(phase).at(*observation.site);
+        } catch (const core::ConvergenceFailure& failure) {
+            result.convergence = failure.record;
+            result = unavailable_solve(std::move(result), failure);
+            return;
+        }
+        break;
+    }
     case ObservationKind::PhaseBulkRelativePermittivity: {
         std::vector<std::vector<double>> composition;
         for (std::size_t i = 0; i < components; ++i) composition.push_back({fractions[i]});
@@ -1081,8 +1103,8 @@ std::vector<PredictionGradient> differentiate_group(
         const auto phase = observation.phase;
         const auto add = [&](const SolvedStateObservable& item) {
             const auto found = std::find_if(observables.begin(), observables.end(), [&](const auto& prior) {
-                return std::tie(prior.kind, prior.phase, prior.component, prior.property)
-                    == std::tie(item.kind, item.phase, item.component, item.property);
+                return std::tie(prior.kind, prior.phase, prior.component, prior.property, prior.site)
+                    == std::tie(item.kind, item.phase, item.component, item.property, item.site);
             });
             slots[row].push_back(static_cast<std::size_t>(found - observables.begin()));
             if (found == observables.end()) observables.push_back(item);
@@ -1117,6 +1139,7 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::PhaseBulkRelativePermittivity:
             add(observable(Kind::PhaseBulkRelativePermittivity, phase));
             break;
+        case ObservationKind::AssociationSiteFraction: add({Kind::AssociationSiteFraction, phase, 0, {}, observation.site}); break;
         case ObservationKind::PhaseDensity:
             add(observable(Kind::PhaseMolarDensity, phase));
             if (observation.mass_basis)
@@ -1169,6 +1192,7 @@ std::vector<PredictionGradient> differentiate_group(
                 if (item.status != equilibrium::SolvedStateActionStatus::Available || !item.action.has_value()) {
                     gradient.value.clear();
                     gradient.status = ObservationStatus::ActionUnavailable;
+                    if (observation.site && observations.size() == 1) gradient.central_value = prediction.value;
                     gradient.message = std::string(equilibrium::solved_state_status_name(item.status)) + ": " + item.diagnostic_message.value_or("");
                     break;
                 }

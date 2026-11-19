@@ -54,7 +54,7 @@ FIELDS(equilibrium::SolidSpec, a, b, c, d, e, f, g)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
-FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio)
+FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio, site)
 // Declaration validation refuses prepared trials before worker serialization.
 auto fields(equilibrium::StabilityOptions& item) {
     auto& [a, b, prepared, c, d, e, f, g] = item;
@@ -65,7 +65,7 @@ FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, seed, j, k, l, m,
 FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)
 FIELDS(equilibrium::StabilityMeasure, a, b, c, d, e, f, g, h, i)
 FIELDS(HydrationHold, a, b, c, d, e, f)
-FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure)
+FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure, central_value, convergence)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)

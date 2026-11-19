@@ -125,6 +125,8 @@ struct TrialFailure final {
     bool jacobian = false;
     std::vector<ResidualEnergyAction> parameter_actions{};
     std::optional<core::Convergence> first_numerical_failure;
+    std::optional<double> central_value{};
+    std::optional<core::Convergence> convergence{};
 };
 
 // (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.

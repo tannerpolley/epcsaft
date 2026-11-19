@@ -1296,11 +1296,14 @@ std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std
 }
 
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
-    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase) const { return prepare_values(point, state_only, first, chemical_phase); }
+    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase, const std::vector<bool>& site_phases) const {
+    return prepare_values(point, state_only, first, chemical_phase, site_phases);
+}
 
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
-    std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase) const {
+    std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase,
+    const std::vector<bool>& site_phases) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1359,7 +1362,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume[phase], total));
             result.derivative[phase] = result.pure.back().derivative;
         } else result.derivative[phase] = model->evaluate(result.temperature, result.volume[phase], values, order,
-            phase_calculation == PhaseCalculation::Declared);
+            phase_calculation == PhaseCalculation::Declared, !site_phases.empty() && site_phases[phase]);
         } else result.derivative[phase] = model->isothermal(result.temperature, result.volume[phase], values);
         if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative[phase].first_numerical_failure);
         scope.probe("gradient_floor", double(result.derivative[phase].gradient_floor),
@@ -1373,8 +1376,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));

@@ -1,4 +1,5 @@
 // P4, electrolyte coordinates and Issue10: property actions on parameter and state charts.
+#include "fixtures/association_stress.hpp"
 #include "properties_checks_shared.hpp"
 
 namespace properties_checks {
@@ -204,28 +205,6 @@ void electrolyte_parameter_actions() {
                     recording_support::field("x", x), recording_support::field("allowance", allowance)}));
         }
     }
-}
-
-epcsaft::Parameters p4_association_stress(std::size_t sites, double q) {
-    constexpr double temperature = 300.0;
-    constexpr double density = 1000.0;
-    auto parameters = properties_support::ethane();
-    parameters.site_component.assign(sites, 0);
-    parameters.site_multiplicity.assign(sites, 1);
-    parameters.association_active.assign(sites * sites, 0);
-    parameters.association_energy_over_k.assign(sites * sites, 0.0);
-    parameters.association_volume.assign(sites * sites, 0.0);
-    parameters.association_active[0] = 1;
-    parameters.association_volume[0] = 0.1;
-    parameters.association_energy_over_k[0] = temperature * std::log(2.0);
-    const auto sigma = epcsaft::segment_sigma(temperature, parameters);
-    const auto diameter = epcsaft::segment_diameter(temperature, parameters, sigma);
-    const double unit_delta = epcsaft::association_delta(
-        temperature, density, {1.0}, parameters, sigma, diameter)[0];
-    const double number_density = density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3;
-    parameters.association_energy_over_k[0] = temperature
-        * std::log1p(q / (number_density * unit_delta));
-    return parameters;
 }
 
 double p4_residual_enthalpy_reference(const epcsaft::Parameters& parameters) {
@@ -469,7 +448,7 @@ void properties_p4() {
               "association-ill-conditioned"},
              {128, 1.0e27, epcsaft::PropertyActionStatus::AssociationSingular,
               "association-singular"}}}) {
-        const auto parameters = p4_association_stress(site_count, q);
+        const auto parameters = properties_support::association_stress(site_count, q);
         const auto sigma = epcsaft::segment_sigma(300.0, parameters);
         const auto diameter = epcsaft::segment_diameter(300.0, parameters, sigma);
         const auto sites = epcsaft::solve_site_fractions(
@@ -521,7 +500,7 @@ void properties_p4() {
     }
     {
         // Unequal partners retain a real site pivot warning before endpoint factorization refuses.
-        auto parameters = p4_association_stress(3, 1e26);
+        auto parameters = properties_support::association_stress(3, 1e26);
         parameters.association_active[1] = parameters.association_active[3] = 1;
         parameters.association_energy_over_k[1] = parameters.association_energy_over_k[3]
             = parameters.association_energy_over_k[0];

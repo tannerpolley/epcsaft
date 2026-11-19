@@ -141,7 +141,7 @@ void properties::site_factorization(
         std::string message = "association Jacobian is singular";
         for (std::size_t site = 0; site < parameters.site_ids.size(); ++site)
             message += (site ? ", " : "; declared association sites: ") + parameters.site_ids[site];
-        throw std::runtime_error(message);
+        throw AssociationJacobianFailure(PropertyActionStatus::AssociationSingular, message);
     }
     if (!admitted_pivot_ratio(factorization)) {
         failure("association Jacobian is ill-conditioned");
@@ -149,7 +149,7 @@ void properties::site_factorization(
             *status = PropertyActionStatus::AssociationIllConditioned;
             return;
         }
-        throw std::runtime_error("association Jacobian is ill-conditioned");
+        throw AssociationJacobianFailure(PropertyActionStatus::AssociationIllConditioned, "association Jacobian is ill-conditioned");
     }
 }
 
@@ -1114,11 +1114,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
 ) const {
     require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian);
+    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity);
 }
 
 // Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one
@@ -1153,7 +1153,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
 ) const {
     core::AssociationObservations observations(true);
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
@@ -1342,6 +1342,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         result.gradient_floor = maximum * site_residual;
     }
+    if (retain_site_sensitivity) result.site_sensitivity = std::move(site_sensitivity);
     result.volume_second_derivative = result.hessian[1 * point_size + 1];
     if (order == DerivativeOrder::Hessian) scope.probe("hessian", result.hessian);
     scope.probe("volume_second_derivative", result.volume_second_derivative);

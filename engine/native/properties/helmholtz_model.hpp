@@ -59,6 +59,7 @@ struct HelmholtzDerivativeValues final {
     Base gradient_floor = 0.0;
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
+    Eigen::MatrixXd site_sensitivity;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent
@@ -122,6 +123,11 @@ enum class PropertyActionStatus {
     SupportChange, IonicInsertion, AssociationSingular, AssociationIllConditioned,
     AssociationResidual, DensityUnavailable, PressureSingular,
     CentralPropertyUnavailable, Nonfinite
+};
+struct EPC_EXCEPTION AssociationJacobianFailure final : std::runtime_error {
+    AssociationJacobianFailure(PropertyActionStatus status, const std::string& message)
+        : std::runtime_error(message), status(status) {}
+    PropertyActionStatus status;
 };
 struct DensityActionDirection final {
     double temperature = 0.0, molar_density = 0.0;
@@ -466,7 +472,7 @@ public:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
     ) const;
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
@@ -585,7 +591,7 @@ private:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
     ) const;
 
     const policy::SolverOptions solver_options_;

@@ -5,6 +5,7 @@
 #include "regression/coordinates.hpp"
 
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <string>
 #include <vector>
@@ -19,7 +20,7 @@ enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability,
-    PhaseBulkRelativePermittivity
+    PhaseBulkRelativePermittivity, AssociationSiteFraction
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -75,6 +76,7 @@ struct Observation final {
     equilibrium::StabilityOptions stability_options;
     std::optional<equilibrium::EquilibriumProblem> pressure_reference;
     double pressure_ratio = 1.0;
+    std::optional<std::size_t> site{};
 };
 
 struct HydrationHold final {
@@ -130,6 +132,7 @@ struct Prediction final {
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<Prediction> pressure_reference;
     std::vector<double> stability_raw_gradient;
+    std::map<std::size_t, std::vector<double>> phase_site_fractions;
 };
 
 // d(value)/d(theta) in EOS-row order, then the requested reaction-coordinate order;
@@ -141,6 +144,7 @@ struct PredictionGradient final {
     std::vector<ResidualEnergyAction> parameter_actions{};
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<double> raw_minimum;
+    std::optional<double> central_value{};
 };
 struct ObservationInputDirection final {
     equilibrium::SolvedStateActionDirection state;

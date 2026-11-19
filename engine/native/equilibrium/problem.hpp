@@ -479,10 +479,11 @@ struct CompiledSystem final {
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
     // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
     EPC_API PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
-        std::optional<core::Convergence>* first_numerical_failure = nullptr, std::optional<std::size_t> chemical_phase = std::nullopt) const;
+        std::optional<core::Convergence>* first_numerical_failure = nullptr, std::optional<std::size_t> chemical_phase = std::nullopt,
+        const std::vector<bool>& site_phases = {}) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
-        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt) const;
+        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt, const std::vector<bool>& site_phases = {}) const;
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
     template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;
@@ -1071,7 +1072,8 @@ enum class SolvedStateObservableKind {
     SolidAmount,  // `phase` is the solid ordinal
     SolidSaturationIndex,
     Loading,
-    PhaseBulkRelativePermittivity
+    PhaseBulkRelativePermittivity,
+    AssociationSiteFraction
 };
 
 struct SolvedStateObservable final {
@@ -1079,6 +1081,7 @@ struct SolvedStateObservable final {
     std::size_t phase = 0;
     std::size_t component = 0;
     PropertyObservable property = PropertyObservable::IdealEnthalpy;
+    std::optional<std::size_t> site{};
 };
 
 // Physical-unit external controls: a free T or P component must be zero.
@@ -1094,6 +1097,9 @@ struct SolvedStateActionDirection final {
     double internal_energy_j = 0.0;
     std::vector<double> solid_log_k;  // per declared solid: increment of its source ln K at the fixed T, or empty
 };
+
+EPC_API void validate_phase_site(const Parameters&, const PhaseSpec&, std::optional<std::size_t>);
+EPC_API HelmholtzDerivatives phase_site_values(const HelmholtzModel&, const EquilibriumResult&, std::size_t phase);
 
 struct SolvedStateActionRequest final {
     std::vector<SolvedStateObservable> observables;

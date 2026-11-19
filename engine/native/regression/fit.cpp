@@ -115,6 +115,8 @@ struct Failure final {
     std::string message;
     std::vector<ResidualEnergyAction> parameter_actions{};
     std::optional<core::Convergence> first_numerical_failure{};
+    std::optional<double> central_value{};
+    std::optional<core::Convergence> convergence{};
 };
 
 // One evaluated trial's disposition, decided once and only by ObservationEvaluator::Impl::evaluate. Evaluated: every
@@ -275,7 +277,7 @@ struct ObservationEvaluator::Impl final {
             if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
             auto& failure = verdict.failure;
             fail(failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
-                 std::move(failure.parameter_actions), out.first_numerical_failure);
+                 std::move(failure.parameter_actions), out.first_numerical_failure, failure.central_value, failure.convergence);
         } else verdict.disposition = publish(optimizer, jacobian, out, trial, fresh, same_point);
         return verdict.disposition == Disposition::Committed;
     }
@@ -404,10 +406,11 @@ struct ObservationEvaluator::Impl final {
     }
 
     bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
-              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}, std::optional<core::Convergence> first = {}) {
+              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}, std::optional<core::Convergence> first = {}, std::optional<double> central_value = {},
+              std::optional<core::Convergence> convergence = {}) {
         core::retain_failure(first, message, "fit evaluation");
         core::retain_first(result_.first_numerical_failure, first);
-        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions), first});
+        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions), first, central_value, std::move(convergence)});
         ++result_.trial_failures;
         return false;
     }
@@ -556,7 +559,7 @@ struct ObservationEvaluator::Impl final {
                 if (observation.kind == ObservationKind::Stability) out.stability_predictions[i] = prediction;
                 out.statuses[i] = prediction.status;
                 if (prediction.status != ObservationStatus::Available)
-                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure};
+                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure, prediction.value, prediction.convergence};
                 out.predictions[i] = *prediction.value;
                 out.residuals[i] = *prediction.residual;
                 if (request_.uncertainty) {
@@ -598,7 +601,8 @@ struct ObservationEvaluator::Impl final {
                 }
                 retain(gradient.first_numerical_failure);
                 if (gradient.status != ObservationStatus::Available)
-                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.first_numerical_failure};
+                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.first_numerical_failure, prediction.value,
+                        observation.site ? gradient.first_numerical_failure : std::nullopt};
                 std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
                 std::size_t local = width;
@@ -1131,6 +1135,9 @@ void validate_fit_request(const FitRequest& request, bool optimizing) {
     } catch (const std::domain_error& error) {
         throw std::invalid_argument("observation " + std::to_string(&observation - request.observations.data())
             + ": central_solve_unavailable: " + error.what());
+    } catch (const std::invalid_argument& error) {
+        if (observation.kind != ObservationKind::AssociationSiteFraction && !observation.site) throw;
+        throw std::invalid_argument("observation " + std::to_string(&observation - request.observations.data()) + ": " + error.what());
     }
     require(request.weights.empty() || request.weights.size() == n, "weights width");
     for (std::size_t i = 0; i < request.weights.size(); ++i) {

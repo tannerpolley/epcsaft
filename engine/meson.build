@@ -339,6 +339,14 @@ test('regression/Automatic_fast/stability-requirement', regression_checks, args:
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
 test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 
+regression_association_site_checks = executable(
+  'regression_association_site_checks',
+  'tests/native/regression_association_site_checks.cpp',
+  dependencies: [ipopt_dep, eigen_dep, ceres_dep, cppad_headers_dep] + quadmath_dep,
+  kwargs: check_kwargs,
+)
+test('regression/Explicit/association-site-fraction', regression_association_site_checks, timeout: 600)
+
 specification_checks = executable(
   'specification_checks',
   'tests/native/specification_checks.cpp',
