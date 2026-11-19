@@ -140,11 +140,13 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     return result;
 }
 
-bool same_stationary_trial(const StabilityTrial& a, const StabilityTrial& b, bool same_kind = true) {
-    return a.phase.support == b.phase.support && (!same_kind || a.phase.kind == b.phase.kind)
-        && largest_difference(a.composition, b.composition) <= policy::PHASE_COINCIDENCE_DISTANCE.value
+bool coincident_trial_point(const StabilityTrial& a, const StabilityTrial& b) {
+    return largest_difference(a.composition, b.composition) <= policy::PHASE_COINCIDENCE_DISTANCE.value
         && std::abs(std::log(a.quantities.at("volume_m3_per_mol") / b.quantities.at("volume_m3_per_mol")))
             <= policy::PHASE_COINCIDENCE_DISTANCE.value;
+}
+bool same_stationary_trial(const StabilityTrial& a, const StabilityTrial& b, bool same_kind = true) {
+    return a.phase.support == b.phase.support && (!same_kind || a.phase.kind == b.phase.kind) && coincident_trial_point(a, b);
 }
 
 // The density owner's stable root of w within the anchor window of v, else none (#423).
@@ -726,20 +728,26 @@ std::vector<double> tangent_plane_jacobian(const HelmholtzDerivatives& d, double
     return J;
 }
 
-// Charge repair increases the opposite-sign pivot before common normalization (ties by index).
+// Preserve the chemical rows of a fitting trial already within the charge tolerance.
 std::vector<double> reconstruct_trial_composition(std::vector<double> w,
-    const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind, bool* pivot_only) {
+    const std::vector<std::size_t>& support, const std::vector<int>& z, PhaseKind kind, bool* pivot_only, bool keep_charge) {
     if (support.empty() || z.size() != w.size()) throw std::invalid_argument("invalid reconstruction support");
-    double positive = 0.0, negative = 0.0;
+    double positive = 0.0, negative = 0.0, total = 0.0;
     std::optional<std::size_t> plus, minus;
     for (auto i : support) {
         if (i >= w.size() || !(std::isfinite(w[i]) && w[i] > 0.0))
             throw std::invalid_argument("nonpositive/nonfinite trial composition");
+        total += w[i];
         if (z[i] > 0.0) { positive += z[i] * w[i]; if (!plus || w[i] > w[*plus]) plus = i; }
         if (z[i] < 0.0) { negative -= z[i] * w[i]; if (!minus || w[i] > w[*minus]) minus = i; }
     }
     if (plus.has_value() != minus.has_value()) throw std::invalid_argument("one-sign trial support");
-    if (plus) {
+    if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
+    const double tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
+    const auto normalized_charge = [&](double charge, auto i) { return charge + z[i] * (w[i] / total); };
+    const bool close_charge = plus && (!keep_charge
+        || std::abs(std::accumulate(support.begin(), support.end(), 0.0, normalized_charge)) > tolerance);
+    if (close_charge) {
         if (kind == PhaseKind::Vapor) {
             const double shift = 0.5 * (std::log(negative) - std::log(positive));
             for (auto i : support) if (z[i]) w[i] = std::exp(std::log(w[i]) + (z[i] > 0 ? shift : -shift));
@@ -749,23 +757,19 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
                 std::any_of(support.begin(), support.end(), [&](auto i) {
                     return (z[i] > 0 && w[i] * ratio == 0.0) || (z[i] < 0 && w[i] / ratio == 0.0);
                 })) {
-                double sum = 0.0, charge = 0.0;
-                for (auto i : support) {
-                    sum += w[i];
-                    charge += z[i] * w[i];
-                }
-                *pivot_only = std::abs(sum - 1.0) <= policy::COMPOSITION_SUM_TOLERANCE.value &&
-                              std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value;
+                double charge = 0.0;
+                for (auto i : support) charge += z[i] * w[i];
+                *pivot_only = std::abs(total - 1.0) <= tolerance && std::abs(charge) <= tolerance;
             }
             if (!pivot_only || !*pivot_only)
                 for (auto i : support) { if (z[i] > 0) w[i] *= ratio; if (z[i] < 0) w[i] /= ratio; }
         }
+        total = 0.0;
+        for (auto i : support) total += w[i];
+        if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
     }
-    double total = 0.0;
-    for (auto i : support) total += w[i];
-    if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
     for (auto i : support) w[i] /= total;
-    if (plus && kind != PhaseKind::Vapor) {
+    if (close_charge && kind != PhaseKind::Vapor) {
         double charge = 0.0;
         for (auto i : support) charge += z[i] * w[i];
         if (charge > 0.0) w[*minus] += charge / (-z[*minus]);
@@ -783,7 +787,7 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
         if (!(std::isfinite(w[i]) && w[i] > 0.0)) throw std::invalid_argument("reconstruction destroys support");
         sum += w[i]; charge += z[i] * w[i];
     }
-    if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value)
+    if (std::abs(sum - 1.0) > tolerance || std::abs(charge) > tolerance)
         throw std::invalid_argument("trial reconstruction arithmetic residual");
     return w;
 }
@@ -1042,7 +1046,7 @@ struct SuppliedPoint {
     PhaseEnergyPoint energy;
 };
 void advance_supplied(SuppliedPoint& point, SuppliedStage through, const HelmholtzModel& model,
-    double T, const PhaseSpec& phase, CompiledSystem* c, double eta, Quantities& work, bool* pivot_only = nullptr) {
+    double T, const PhaseSpec& phase, CompiledSystem* c, double eta, Quantities& work, bool* pivot_only = nullptr, bool keep_charge = false) {
     const auto& z = model.parameters().charge_number;
     while (point.next <= through) {
         if (!point.failure.empty()) throw std::invalid_argument(point.failure);
@@ -1067,7 +1071,7 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
                 for (auto& d : point.raw.derivative) std::vector<double>().swap(d.hessian);
                 break;
             case SuppliedStage::Composition:
-                point.composition = reconstruct_trial_composition(point.raw.composition[0], phase.support, z, phase.kind, pivot_only);
+                point.composition = reconstruct_trial_composition(point.raw.composition[0], phase.support, z, phase.kind, pivot_only, keep_charge);
                 ++work["reconstruction_evaluations"];
                 point.volume = model.packing_fraction_coefficient(T, point.composition) / point.raw.eta[0]; break;
             case SuppliedStage::State:
@@ -1276,7 +1280,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             SuppliedPoint point = options.prepared_trials ? options.prepared_trials->points->entries[entry++] : SuppliedPoint{};
             const auto advance = [&](SuppliedStage stage, CompiledSystem* c = nullptr, double eta = 0.0,
                                      bool* pivot_only = nullptr) {
-                advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work, pivot_only);
+                advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work, pivot_only, reference != nullptr);
             };
             try {
                 if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = point.seed; }
@@ -1398,6 +1402,19 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         dual += trial.raw_coordinates[compiled.primal_size + k] * compiled.balance[k];
                     q["trial_dual_over_rt"] = dual; q["trial_identity_defect_over_rt"] = q["tpd_over_rt"] - dual;
                     if (!found) q["raw_objective_over_rt"] = trial.optimizer.objective;
+                    if (reference) {
+                        raw.volume = {volume};
+                        raw.derivative = {point.energy.derivative};
+                        double residual = std::abs(q.at("pressure_row"));
+                        for (auto i : phase.support) {
+                            const double w = trial.composition[i];
+                            const double chemical = found
+                                ? std::log(w / volume) + raw.derivative[0].gradient[2 + i] + shift[i] - dual
+                                : compiled.chemical_row(raw, 0, i, w);
+                            residual = w > 0.0 && std::isfinite(chemical) ? std::max(residual, std::abs(chemical)) : NAN;
+                        }
+                        q["reconstructed_stationarity_residual"] = residual;
+                    }
                 }
                 trial.evidence = "no_resolved_descent";
                 const bool negative = q["tpd_over_rt"] < 0.0, explicit_negative = diagnostics && negative && !options.evaluate_supplied_trials;
@@ -1518,6 +1535,34 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 }
 
 namespace {
+const char* omitted_species_cause(const CompiledSystem& c, const StabilityReport& report,
+    const StabilityTrial& smaller, const StabilityTrial& larger, const std::vector<double>& rows, double resolution) {
+    const auto& z = c.model->parameters().charge_number;
+    const auto& w = larger.composition;
+    std::vector<double> change(w.size());
+    double retained = 0.0, omitted = 0.0, omitted_charge = 0.0;
+    for (auto i : smaller.phase.support) { change[i] = w[i]; retained += w[i]; }
+    for (auto i : larger.phase.support) if (change[i] == 0.0) {
+        omitted += w[i]; omitted_charge += std::abs(z[i] * w[i]);
+    }
+    const double tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
+    double sum = -1.0, charge = 0.0, value = 0.0;
+    for (std::size_t i = 0; i < w.size(); ++i) {
+        const double projected = change[i] / retained;
+        sum += projected; charge += z[i] * projected;
+        change[i] = projected - w[i];
+        value += std::abs(change[i]) * (std::abs(report.standard_over_rt[i] - report.plane_over_rt[i]) + rows[i]
+            + std::numeric_limits<double>::epsilon() * std::abs(report.plane_over_rt[i]));
+    }
+    if (!(std::max({omitted, omitted_charge, std::abs(sum), std::abs(charge)}) <= tolerance))
+        return "omitted species projection exceeds composition or charge resolution";
+    for (const auto& row : c.B)
+        if (std::abs(std::inner_product(row.begin(), row.end(), change.begin(), 0.0))
+            > policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, maximum_abs(row)))
+            return "omitted species change a conserved moiety";
+    return value <= resolution ? nullptr : "omitted species exceed tangent-plane value resolution";
+}
+
 StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options,
     std::optional<GibbsDifferenceReference>& parent) {
     StabilityMeasure out;
@@ -1564,30 +1609,67 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             rows.push_back(*action.numerical_error);
         }
     }
-    std::vector<double> error(out.report.trials.size());
+    std::vector<double> error(out.report.trials.size()), numerical(error.size());
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
         auto& t = out.report.trials[j];
-        error[j] = energy_estimate(t.quantities);
+        numerical[j] = energy_estimate(t.quantities);
         for (std::size_t i = 0; i < t.composition.size(); ++i)
-            error[j] += t.composition[i] * (rows[i]
-                + (options.standard_uncertainty_over_rt.empty() ? 0.0 : options.standard_uncertainty_over_rt[i])
-                + std::numeric_limits<double>::epsilon() * std::abs(out.report.plane_over_rt[i]));
+            numerical[j] += t.composition[i] * (rows[i] + std::numeric_limits<double>::epsilon() * std::abs(out.report.plane_over_rt[i]));
         for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
-            if (t.quantities.count(name)) error[j] += std::abs(t.quantities.at(name));
+            if (t.quantities.count(name)) numerical[j] += std::abs(t.quantities.at(name));
+        error[j] = numerical[j];
+        if (!options.standard_uncertainty_over_rt.empty())
+            error[j] = std::inner_product(t.composition.begin(), t.composition.end(), options.standard_uncertainty_over_rt.begin(), error[j]);
         t.quantities["plane_value_error_estimate_over_rt"] = error[j];
     }
     const auto best = *out.minimizing_trial; out.uncertainty = error[best];
-    const auto& minimum = out.report.trials[best];
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
         const auto& t = out.report.trials[j];
         if (t.quantities.at("tpd_over_rt") - *out.raw_minimum > error[j] + error[best]) continue;
         out.minima.push_back(j);
-        const bool same = same_stationary_trial(t, minimum, false);
-        if (!same) out.event = "distinct stationary minima have overlapping value intervals";
+        out.coincident_supports |= t.phase.support != out.report.trials[best].phase.support;
     }
-    if (!out.event.empty()) { out.cause = out.event; return out; }
+    constexpr auto tie = "distinct stationary minima have overlapping value intervals";
+    constexpr auto stationarity = "stationarity unavailable at reconstructed trial minimum";
+    if (out.coincident_supports) {
+        for (auto j : out.minima) {
+            auto& t = out.report.trials[j];
+            auto& q = t.quantities;
+            const auto row = q.find("reconstructed_stationarity_residual");
+            const auto& stop = t.optimizer.convergence;
+            if (t.pivot_only || stop.stop != core::Stop::converged || !stop.criterion || row == q.end()
+                || core::classify(row->second, *stop.criterion, {}, {}, false) != core::Stop::converged
+                || !(std::abs(q.at("charge_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value
+                    && std::abs(q.at("normalization_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
+                out.cause = stationarity; return out;
+            }
+            if (!(std::abs(q.at("trial_identity_defect_over_rt")) <= numerical[j])) {
+                out.cause = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
+            }
+            if (q.at("root_density_side") == static_cast<double>(DensityBranch::Unspecified)) {
+                out.cause = density_refusal; return out;
+            }
+            q["numerical_plane_value_error_over_rt"] = numerical[j];
+        }
+        for (auto i : out.minima) for (auto j : out.minima) {
+            const auto& a = out.report.trials[i];
+            const auto& b = out.report.trials[j];
+            const auto& low = a.phase.support, &high = b.phase.support;
+            if (low.size() > high.size() || (low.size() == high.size() && j <= i)) continue;
+            if (a.quantities.at("root_density_side") != b.quantities.at("root_density_side") || !coincident_trial_point(a, b)
+                || std::abs(a.quantities.at("tpd_over_rt") - b.quantities.at("tpd_over_rt")) > error[i] + error[j]
+                || !std::includes(high.begin(), high.end(), low.begin(), low.end())) {
+                out.cause = out.event = tie; return out;
+            }
+            if (const auto cause = low == high ? nullptr : omitted_species_cause(c, out.report, a, b, rows, numerical[i] + numerical[j])) {
+                out.cause = out.event = cause; return out;
+            }
+        }
+    } else for (auto j : out.minima) if (!same_stationary_trial(out.report.trials[j], out.report.trials[best], false)) {
+        out.cause = out.event = tie; return out;
+    }
     if (std::any_of(out.minima.begin(), out.minima.end(), [&](auto j) { return out.report.trials[j].pivot_only; })) {
-        out.cause = "stationarity unavailable at reconstructed trial minimum";
+        out.cause = stationarity;
         return out;
     }
     out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;

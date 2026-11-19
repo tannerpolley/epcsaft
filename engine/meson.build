@@ -336,6 +336,7 @@ regression_checks = executable(
 # R1 falsifiers and the #86 density actions in the fast gate; the fitter's cases by explicit selector.
 test('regression', regression_checks, args: ['R1'])
 test('regression/Automatic_fast/stability-requirement', regression_checks, args: ['stability-requirement'])
+test('regression/Automatic_fast/nested-support-tangent-plane-action', regression_checks, args: ['nested-support-tangent-plane-action'])
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
 test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 

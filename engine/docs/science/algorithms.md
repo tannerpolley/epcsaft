@@ -1984,12 +1984,26 @@ trial energy, plane contraction roundoff, feasibility, declared standard
 uncertainty and donor/plane discrepancy remain numerical estimates in the reduced
 molar basis. Split errors retain their extensive basis.
 
-Repeated stationary trials use the existing composition/root coincidence rule.
-Distinct minima with overlapping value intervals are unresolved ties.
-After the coincidence check, any pivot-only endpoint in the minimum interval
-set makes the measure and its envelope actions unavailable because stationarity
-at the reconstructed point is unqualified. Retain the raw minimum, its
-uncertainty and any independently established descent witness. Current-point ties, support/root boundaries and unresolved resolution events refuse the local derivative. Between-evaluation changes retain both optimizer coordinate vectors, both minimizing trials, both classifications and the event kind in the fit result. Once the new Full search resolves a unique stationary branch at its own point, its exact local action is admitted; no derivative is formed across the interval between the points. The resolution transition
+Repeated stationary trials use the existing composition and volume coincidence
+rule. When plausible minima span different supports, every pair must coincide
+on a resolved anchored density side and have equal or nested supports.
+Each reconstructed endpoint must satisfy its existing chemical and pressure
+row criterion, with a separate primal–dual value check. Removing trace species
+and renormalizing must preserve composition, charge and compiled moieties at
+their arithmetic tolerances. The absolute contribution of this projection to
+the frozen standard-minus-plane term must fit within the paired numerical
+value estimates. Distinct minima with overlapping value intervals remain
+unresolved ties. Pivot-only reconstruction leaves stationarity unqualified.
+
+For a coincident group spanning different supports, the exact fixed-support
+actions must agree in every pair. Compare the linearized reduced-value gap
+over one optimizer unit, or over the supplied native input direction, with the
+sum of the two numerical value estimates, excluding declared standard
+uncertainty. A refused action leaves the independently admitted value
+available. The raw minimum, uncertainty and descent witnesses remain in the
+report. Between-evaluation changes retain both optimizer coordinate vectors,
+both minimizing trials, both classifications and the event kind in the fit
+result. Each admitted local action applies at its evaluated point. The resolution transition
 may jump from negative $\tau$ to zero at nonzero $\tau$; no smoothing is used.
 These are finite-search numerical requirements, without a global certificate
 or physical-validation claim.
@@ -2388,9 +2402,11 @@ For ordinary search, retain raw coordinates only from an actual nonfatal finite,
 optimizer attempt, including a nonconverged attempt. Failed initialization has
 no optimizer point. A Michelsen trial retains its converged primal chart [ln wᵢ, 1, ln η] as raw coordinates and has no raw
 residuals, basis or row transformation. Keep raw residuals separate from reconstructed composition,
-displacement and reevaluated energy. Normalize neutral trials; ionic rescaling
-and the Liquid charge-only increase of the largest opposite-sign pivot followed
-by common multiplicative normalization follow EqID:
+displacement and reevaluated energy. Normalize neutral trials. At the fitted
+stability measure's trial endpoint, use common normalization for ionic trials
+whose normalized charge defect is within the absolute $10^{-12}$ tolerance.
+The ionic rescaling and Liquid charge-only increase of the largest
+opposite-sign pivot followed by common multiplicative normalization follow EqID:
 `electroneutral_trial_reconstruction` with ties by index. For a successful,
 converged optimized Liquid trial, test the finite positive group rescale before
 writing the fractions. If it would round a supported fraction to zero and both

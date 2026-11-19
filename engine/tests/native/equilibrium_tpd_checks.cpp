@@ -2370,8 +2370,9 @@ void check_reaction_relaxed_search() {
     for (const bool uncertain : {false, true}) {
         options.standard_uncertainty_over_rt.assign(uncertain ? ns : 0, 1e-4);
         const auto measure = stability_measure(compiled, parent, options);
-        const double raw = -6.8379823972009035e-6;
-        CHECK(measure.raw_minimum && std::abs(*measure.raw_minimum - raw) <= std::max(1e-12, 1e-10 * std::abs(raw)));
+        // The prior charge-closed trial's value and estimated numerical error at the same point.
+        const double raw = -6.8379823972009035e-6, error = 5.9822236183808962e-10;
+        CHECK(measure.raw_minimum && std::abs(*measure.raw_minimum - raw) <= error);
         const auto& t = measure.report.trials.at(measure.minimizing_trial.value_or(0));
         CHECK(t.phase.kind == PhaseKind::Liquid && t.split_checks.size() == 1);
         const auto& q3 = t.quantities;
@@ -2471,9 +2472,18 @@ void check_reaction_relaxed_pz_row() {
     const auto parent = solve_compiled(compiled);
     CHECK(parent.success);
     const auto measure = stability_measure(compiled, parent);
-    CHECK(measure.report.completed && measure.report.trials.size() == 16 && !measure.available);
-    CHECK(measure.cause == "distinct stationary minima have overlapping value intervals");
+    if (!measure.available) std::cout << measure.cause << std::endl;
+    CHECK(measure.report.completed && measure.report.trials.size() == 16 && measure.available);
+    CHECK(measure.value && std::abs(*measure.value - (-0.276000003756792)) <= *measure.uncertainty + 6.39e-10);
     CHECK(measure.minima == (std::vector<std::size_t>{1, 6, 10, 11, 12, 13, 15}));
+    for (auto index : measure.minima) {
+        const auto& t = measure.report.trials[index];
+        const auto& quantities = t.quantities;
+        CHECK(quantities.at("root_density_side") == static_cast<double>(DensityBranch::Vapor));
+        CHECK(quantities.at("reconstructed_stationarity_residual") <= t.optimizer.convergence.criterion->value);
+        std::cout << std::setprecision(17) << "stationarity " << index << ' ' << quantities.at("reconstructed_stationarity_residual")
+            << ' ' << quantities.at("pressure_row") << ' ' << t.optimizer.convergence.criterion->value << '\n';
+    }
     double sum = 0.0, difference = 0.0;
     for (const auto& [index, D0] : {std::pair{1, -5.143629455678e-3}, std::pair{6, -5.143629455531e-3}}) {
         const auto& t = measure.report.trials.at(index);

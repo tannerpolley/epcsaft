@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "core/export.hpp"
 
 #include "equilibrium/problem.hpp"
@@ -180,7 +181,8 @@ EPC_API PredictionGradient differentiate(
 EPC_API std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction,
     const CoordinateSet& coordinates = {},
-    const std::vector<ObservationInputDirection>& inputs = {}
+    const std::vector<ObservationInputDirection>& inputs = {},
+    const std::function<void(const double*, double*)>& optimizer_action = {}
 );
 // r = (y - y_obs) / scale, or ln(y / y_obs) for positive y and y_obs; dr/dy = 1/scale or 1/y.
 EPC_API std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);

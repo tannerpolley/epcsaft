@@ -63,7 +63,7 @@ auto fields(equilibrium::StabilityOptions& item) {
 FIELDS(equilibrium::StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance)
 FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, seed, j, k, l, m, present_phase_comparisons, diagnostic_cause, n, o, pivot_only)
 FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)
-FIELDS(equilibrium::StabilityMeasure, a, b, c, d, e, f, g, h, i)
+FIELDS(equilibrium::StabilityMeasure, a, b, c, d, e, f, g, h, i, coincident_supports)
 FIELDS(HydrationHold, a, b, c, d, e, f)
 FIELDS(Failure, a, b, c, d, e, f, convergence)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
