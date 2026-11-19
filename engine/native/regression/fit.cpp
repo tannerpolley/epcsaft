@@ -107,14 +107,15 @@ struct Trial final {
 };
 
 // The serial sweep's first failure: `row` orders failures across worker processes; `observation` is
-// the reported index (the observation count for a refused trial).
+// the reported index (the observation count for a refused trial). Values and the trial's first
+// numerical diagnostic travel with the row evaluation.
 struct Failure final {
     std::size_t row = 0, observation = 0;
     ObservationStatus status = ObservationStatus::Nonfinite;
     bool jacobian = false;
     std::string message;
     std::vector<ResidualEnergyAction> parameter_actions{};
-    std::optional<core::Convergence> first_numerical_failure{};
+    std::optional<core::Convergence> convergence{};
 };
 
 // One evaluated trial's disposition, decided once and only by ObservationEvaluator::Impl::evaluate. Evaluated: every
@@ -273,9 +274,7 @@ struct ObservationEvaluator::Impl final {
         if (verdict.disposition == Disposition::Rejected) {
             if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
             if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
-            auto& failure = verdict.failure;
-            fail(failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
-                 std::move(failure.parameter_actions), out.first_numerical_failure);
+            fail(optimizer, std::move(verdict.failure), out);
         } else verdict.disposition = publish(optimizer, jacobian, out, trial, fresh, same_point);
         return verdict.disposition == Disposition::Committed;
     }
@@ -315,10 +314,6 @@ struct ObservationEvaluator::Impl final {
                 out.first_numerical_failure_observation = part.first_numerical_failure_observation;
             }
         }
-        if (out.first_numerical_failure && failure && out.first_numerical_failure_observation > failure->row)
-            out.first_numerical_failure.reset();
-        if (failure) core::retain_first(out.first_numerical_failure, failure->first_numerical_failure);
-        core::retain_first(result_.first_numerical_failure, out.first_numerical_failure);
         // The serial sweep stops at its first failure: later rows stay unevaluated.
         for (std::size_t i = failure ? failure->row + 1 : n; i < out.statuses.size(); ++i) {
             out.predictions[i] = out.residuals[i] = 0.0;
@@ -400,14 +395,20 @@ struct ObservationEvaluator::Impl final {
         const Eigen::Map<const Eigen::VectorXd> r(trial.weighted.data(), static_cast<Eigen::Index>(trial.weighted.size()));
         const Eigen::VectorXd gradient = j.transpose() * r;
         out.assign(gradient.data(), gradient.data() + gradient.size());
-        return all_finite(out) || fail(trial.weighted.size(), point, ObservationStatus::Nonfinite, "weighted objective gradient not finite", true);
+        return all_finite(out) || fail(point, {trial.weighted.size(), trial.weighted.size(), ObservationStatus::Nonfinite, true, "weighted objective gradient not finite"}, trial);
     }
 
-    bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
-              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}, std::optional<core::Convergence> first = {}) {
-        core::retain_failure(first, message, "fit evaluation");
+    bool fail(const std::vector<double>& optimizer, Failure failure, ObservationEvaluation& out) {
+        if (out.first_numerical_failure_observation > failure.row) out.first_numerical_failure.reset();
+        auto first = out.first_numerical_failure;
+        std::optional<double> central;
+        const auto i = failure.observation;
+        if (i < out.statuses.size() && out.statuses[i] != ObservationStatus::NotEvaluated && std::isfinite(out.predictions[i]))
+            central = out.predictions[i];
+        core::retain_failure(first, failure.message, "fit evaluation");
         core::retain_first(result_.first_numerical_failure, first);
-        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions), first});
+        result_.failures.push_back({trials_, failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
+            std::move(failure.parameter_actions), std::move(first), central, std::move(failure.convergence)});
         ++result_.trial_failures;
         return false;
     }
@@ -555,9 +556,9 @@ struct ObservationEvaluator::Impl final {
                 if (prediction.saturation) out.saturation_predictions[i] = prediction;
                 if (observation.kind == ObservationKind::Stability) out.stability_predictions[i] = prediction;
                 out.statuses[i] = prediction.status;
+                out.predictions[i] = prediction.value.value_or(NAN);
                 if (prediction.status != ObservationStatus::Available)
-                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure};
-                out.predictions[i] = *prediction.value;
+                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.refusal_convergence};
                 out.residuals[i] = *prediction.residual;
                 if (request_.uncertainty) {
                     if (prediction.activity) out.state_densities[i].push_back(prediction.activity->state.molar_density);
@@ -598,7 +599,7 @@ struct ObservationEvaluator::Impl final {
                 }
                 retain(gradient.first_numerical_failure);
                 if (gradient.status != ObservationStatus::Available)
-                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.first_numerical_failure};
+                    return Failure{i, i, gradient.status, true, gradient.message, gradient.parameter_actions, gradient.refusal_convergence};
                 std::copy_n(gradient.value.begin(), std::min(width, gradient.value.size()),
                           out.gradient.begin() + static_cast<std::ptrdiff_t>(i * width));
                 std::size_t local = width;
@@ -611,7 +612,10 @@ struct ObservationEvaluator::Impl final {
         } catch (const std::exception& error) {
             if (!out.first_numerical_failure) out.first_numerical_failure_observation = i;
             retain_density_failure(out.first_numerical_failure, error, "fit trial");
-            return Failure{i, n, ObservationStatus::InadmissibleTrial, jacobian, error.what(), {}, out.first_numerical_failure};
+            const auto* terminal = dynamic_cast<const core::ConvergenceFailure*>(&error);
+            const auto row = i < out.statuses.size() && out.statuses[i] == ObservationStatus::Available ? i : n;
+            return Failure{i, row, ObservationStatus::InadmissibleTrial, jacobian, error.what(), {},
+                terminal ? std::optional(terminal->record) : std::nullopt};
         }
     }
 
@@ -631,6 +635,7 @@ struct ObservationEvaluator::Impl final {
         trial.optimizer = optimizer;
         // A worker has no reuse path; a fit's own process keeps only its stability rows' transition fields.
         if (!process_) {
+            core::retain_first(result_.first_numerical_failure, out.first_numerical_failure);
             std::vector<std::optional<Prediction>> rows;
             if (interruptible_) rows.swap(out.stability_predictions);
             trial.evaluation = out;
@@ -1131,6 +1136,9 @@ void validate_fit_request(const FitRequest& request, bool optimizing) {
     } catch (const std::domain_error& error) {
         throw std::invalid_argument("observation " + std::to_string(&observation - request.observations.data())
             + ": central_solve_unavailable: " + error.what());
+    } catch (const std::invalid_argument& error) {
+        if (observation.kind != ObservationKind::AssociationSiteFraction && !observation.site) throw;
+        throw std::invalid_argument("observation " + std::to_string(&observation - request.observations.data()) + ": " + error.what());
     }
     require(request.weights.empty() || request.weights.size() == n, "weights width");
     for (std::size_t i = 0; i < request.weights.size(); ++i) {

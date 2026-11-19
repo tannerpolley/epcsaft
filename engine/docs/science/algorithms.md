@@ -3324,6 +3324,12 @@ row is eligible; recovered causes are selected in row and producer order.
 Across evaluations the fit retains the chronological first cause. A
 `TrialFailure` keeps its own evaluation's cause, row and optimizer point.
 Recovered causes on successful rows do not create rejected trials.
+A refused row keeps its available central prediction through residual
+evaluation, weighting and differentiation. The selected failure carries the
+blocking operation's convergence record when available. A failed central
+solve supplies its terminal numerical record or, in its absence, the driver's
+own convergence record. A successful solve's record describes that solve
+only.
 Measurement LLT refusal is infeasible, rather than necessarily rank deficient;
 whitening distinguishes nonfinite solved operands from overflowing cost.
 Hydration holds retain both caller criteria in detailed capture, the existing
@@ -3345,7 +3351,12 @@ The implemented fit (R1--R3) includes pressure-closed density and total molar
 isobaric heat capacity with fixed thermochemistry, driven-T/P or PH apparent equilibrium
 isobaric heat capacity, finite-addition enthalpy, the declared equilibrium
 observations including dimensionless bulk relative permittivity of a named
-fluid phase, and direct source-basis ln K observations. The solved-phase
+fluid phase, the dimensionless fraction of one explicit unbonded site type on
+a supported species in a named fluid phase, and direct source-basis ln K
+observations. The site fraction uses the [mass-action solution](../equations.md#association_mass_action)
+at the solved phase coordinates. Its first action contracts the retained site
+sensitivity with the equilibrium phase-point direction in the same Helmholtz
+chart, including temperature, volume, amounts and active parameters. The solved-phase
 permittivity row requires a declared permittivity form and a solid-free
 declared-phase problem. A numerical domain refusal during public observation
 admission or the central solve returns `central_solve_unavailable` with the

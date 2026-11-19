@@ -172,7 +172,11 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
         "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
     require(k != ObservationKind::PhaseBulkRelativePermittivity || model.parameters().permittivity_form.declared(),
         "bulk relative permittivity requires a declared permittivity form");
+    require(observation.site.has_value() == (k == ObservationKind::AssociationSiteFraction),
+        "association site selector is required for association site fraction only");
     require(std::isfinite(observation.observed), "observed value");
+    require(k != ObservationKind::AssociationSiteFraction || (observation.observed >= 0.0 && observation.observed <= 1.0),
+        "association site fraction target in [0, 1]");
     require(observation.form != ResidualForm::LogRatio || observation.observed > 0.0, "positive LogRatio observation");
     require(observation.form == ResidualForm::LogRatio
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
@@ -279,6 +283,8 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
         return;
     }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
+    if (observation.kind == ObservationKind::AssociationSiteFraction)
+        equilibrium::validate_phase_site(model.parameters(), compiled.problem.phases[observation.phase], observation.site);
     if (observation.kind == ObservationKind::PhaseSolventActivity) {
         require(!compiled.problem.temperature.free && !compiled.problem.pressure.free, "solvent activity requires fixed T/P");
         require(compiled.problem.phases[observation.phase].kind == equilibrium::PhaseKind::Liquid, "liquid solvent activity");
@@ -312,9 +318,12 @@ void validate(const Observation& observation, const HelmholtzModel& model, const
     validate_compiled(observation, model, prepared);
 }
 
-static Prediction unavailable_solve(Prediction result, const std::exception& failure) {
-    result.status = ObservationStatus::CentralSolveUnavailable;
-    retain_density_failure(result.first_numerical_failure, failure, "prediction solve");
+static Prediction unavailable_solve(Prediction result, const std::exception& failure,
+    ObservationStatus status = ObservationStatus::CentralSolveUnavailable, const char* operation = "prediction solve") {
+    result.status = status;
+    if (const auto* record = dynamic_cast<const core::ConvergenceFailure*>(&failure))
+        result.convergence = result.refusal_convergence = record->record;
+    retain_density_failure(result.first_numerical_failure, failure, operation);
     result.message = failure.what();
     return result;
 }
@@ -431,10 +440,8 @@ Prediction predict(
         } catch (const std::bad_alloc&) {
             throw;
         } catch (const std::exception& error) {
-            result.status = observation.kind == ObservationKind::BulkRelativePermittivity
-                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable;
-            retain_density_failure(result.first_numerical_failure, error, "prediction");
-            result.message = error.what();
+            return unavailable_solve(std::move(result), error, observation.kind == ObservationKind::BulkRelativePermittivity
+                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable, "prediction");
         }
         return result;
     }
@@ -523,11 +530,7 @@ Prediction predict(
         try {
             state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const std::runtime_error& failure) {
-            result.status = ObservationStatus::DensityUnavailable;
-            if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
-            retain_density_failure(result.first_numerical_failure, failure, "prediction density");
-            result.message = failure.what();
-            return result;
+            return unavailable_solve(std::move(result), failure, ObservationStatus::DensityUnavailable, "prediction density");
         }
         result.convergence = state.density_convergence;
         core::retain_first(result.first_numerical_failure, state.first_numerical_failure);
@@ -588,6 +591,8 @@ Prediction predict(
             if (!result.pressure_reference->value) {
                 result.status = ObservationStatus::CentralSolveUnavailable;
                 result.message = "pressure reference: " + result.pressure_reference->message;
+                result.refusal_convergence = result.pressure_reference->refusal_convergence;
+                core::retain_first(result.first_numerical_failure, result.pressure_reference->first_numerical_failure);
                 core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
             }
             problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
@@ -597,12 +602,12 @@ Prediction predict(
         solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const std::exception& failure) {
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
-        if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
         return unavailable_solve(std::move(result), failure);
     }
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
     if (!solved.success) core::retain_first(result.first_numerical_failure, solved.convergence);
+    if (!solved.success) result.refusal_convergence = solved.terminal_numerical_failure.value_or(solved.convergence);
     result.requested_tolerance_met = solved.requested_tolerance_met;
     result.message = solved.solver_status + ": " + solved.message;
     // The driver sets the topology fields before its acceptance gate, so a vanished or
@@ -721,6 +726,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
         if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
             result.status = ObservationStatus::ReferenceUnavailable; result.message = reference.solvent_cause;
+            result.refusal_convergence = reference.solvent_convergence;
             core::retain_first(result.first_numerical_failure, reference.solvent_convergence); return;
         }
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
@@ -759,6 +765,21 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         double total = 0.0;
         for (const auto amount : solved.amounts) total += amount;
         value = solved.amounts[phase] / total;
+        break;
+    }
+    case ObservationKind::AssociationSiteFraction: {
+        result.unit = "1";
+        try {
+            if (result.phase_site_fractions.find(phase) == result.phase_site_fractions.end()) {
+                auto evaluated = equilibrium::phase_site_values(model, solved, phase);
+                core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
+                result.phase_site_fractions.emplace(phase, std::move(evaluated.site_fractions));
+            }
+            value = result.phase_site_fractions.at(phase).at(*observation.site);
+        } catch (const core::ConvergenceFailure& failure) {
+            result = unavailable_solve(std::move(result), failure);
+            return;
+        }
         break;
     }
     case ObservationKind::PhaseBulkRelativePermittivity: {
@@ -878,17 +899,13 @@ PredictionGradient differentiate(
             ? std::optional<double>(center->molar_density) : std::nullopt;
         auto batch = model.pressure_actions(observation.temperature, observation.pressure,
             observation.composition, observation.branch, observables, directions, anchor);
-        const auto retain = [&] {
-            core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
-            if (batch.density_status != PropertyActionStatus::Available)
-                core::retain_first(gradient.first_numerical_failure, batch.density_convergence);
-        };
-        retain();
-        const auto cause = [&] {
+        core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
+        const auto density_unavailable = [&] {
+            gradient.refusal_convergence = batch.density_convergence;
             std::string name = equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status));
-            return batch.density_message.empty() ? name : name + ": " + batch.density_message;
+            return unavailable(batch.density_message.empty() ? name : name + ": " + batch.density_message);
         };
-        if (batch.density_structure_refused) return unavailable(cause());
+        if (batch.density_structure_refused) return density_unavailable();
         if (anchor && (batch.density_status != PropertyActionStatus::Available || !batch.molar_density
             || !properties::regular_density(*batch.molar_density, batch.diagnostics.pressure_density_derivative, batch.density_convergence))) {
             if (batch.density_convergence) scope.finish(*batch.density_convergence);
@@ -897,9 +914,9 @@ PredictionGradient differentiate(
                 : equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.density_status)));
             batch = model.pressure_actions(observation.temperature, observation.pressure,
                 observation.composition, observation.branch, observables, directions);
-            retain();
+            core::retain_first(gradient.first_numerical_failure, batch.diagnostics.first_numerical_failure);
         }
-        if (batch.density_status != PropertyActionStatus::Available) return unavailable(cause());
+        if (batch.density_status != PropertyActionStatus::Available) return density_unavailable();
         if (caloric && batch.results[0].status != PropertyActionStatus::Available)
             return unavailable(equilibrium::solved_state_status_name(equilibrium::solved_state_status(batch.results[0].status)));
         for (std::size_t k = 0; k < directions.size(); ++k)
@@ -951,7 +968,10 @@ std::vector<PredictionGradient> differentiate_group(
                             value += *batch.molar_density * std::inner_product(d.feed_amounts_mol.begin(), d.feed_amounts_mol.end(),
                                 model.parameters().molar_mass_kg_per_mol.begin(), 0.0);
                         }
-                    } else gradient.message = "pressure input action: " + batch.density_message;
+                    } else {
+                        gradient.refusal_convergence = batch.density_convergence;
+                        gradient.message = "pressure input action: " + batch.density_message;
+                    }
                 }
                 if (!std::isfinite(value)) { gradient.status = ObservationStatus::ActionUnavailable; gradient.value.clear(); break; }
                 gradient.value.push_back(value);
@@ -1081,8 +1101,8 @@ std::vector<PredictionGradient> differentiate_group(
         const auto phase = observation.phase;
         const auto add = [&](const SolvedStateObservable& item) {
             const auto found = std::find_if(observables.begin(), observables.end(), [&](const auto& prior) {
-                return std::tie(prior.kind, prior.phase, prior.component, prior.property)
-                    == std::tie(item.kind, item.phase, item.component, item.property);
+                return std::tie(prior.kind, prior.phase, prior.component, prior.property, prior.site)
+                    == std::tie(item.kind, item.phase, item.component, item.property, item.site);
             });
             slots[row].push_back(static_cast<std::size_t>(found - observables.begin()));
             if (found == observables.end()) observables.push_back(item);
@@ -1117,6 +1137,7 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::PhaseBulkRelativePermittivity:
             add(observable(Kind::PhaseBulkRelativePermittivity, phase));
             break;
+        case ObservationKind::AssociationSiteFraction: add({Kind::AssociationSiteFraction, phase, 0, {}, observation.site}); break;
         case ObservationKind::PhaseDensity:
             add(observable(Kind::PhaseMolarDensity, phase));
             if (observation.mass_basis)
@@ -1169,6 +1190,8 @@ std::vector<PredictionGradient> differentiate_group(
                 if (item.status != equilibrium::SolvedStateActionStatus::Available || !item.action.has_value()) {
                     gradient.value.clear();
                     gradient.status = ObservationStatus::ActionUnavailable;
+                    if (item.property_diagnostics) gradient.refusal_convergence = item.property_diagnostics->first_numerical_failure;
+                    if (observation.site && observations.size() == 1) gradient.central_value = prediction.value;
                     gradient.message = std::string(equilibrium::solved_state_status_name(item.status)) + ": " + item.diagnostic_message.value_or("");
                     break;
                 }

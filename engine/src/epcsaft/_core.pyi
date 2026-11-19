@@ -4415,6 +4415,8 @@ class ObservationKind:
     Stability: ObservationKind
 
     PhaseBulkRelativePermittivity: ObservationKind
+    AssociationSiteFraction: ObservationKind
+    """Unbonded fraction of one explicit site type in the named solved phase."""
 
     SaturationCappedAdditionEnthalpy: ObservationKind
 
@@ -4527,6 +4529,8 @@ class Observation:
     stability_options: StabilityOptions
     pressure_reference: Optional[EquilibriumProblem]
     pressure_ratio: float
+    site: Optional[int]
+    """Zero-based site ordinal, required for AssociationSiteFraction."""
 
     basis_amount: float
     loading_cap: float
@@ -4636,13 +4640,15 @@ class Prediction:
     """First producer refusal, including recovered causes."""
 
 class PredictionGradient:
-    parameter_actions: list[ResidualEnergyAction]
     """Exact first partials of one physical prediction.
 
     Notes
     -----
     These are prediction columns, not residual or weighted columns. A missing derivative is not a numerical zero.
     """
+    central_value: Optional[float]
+    """Central site fraction retained when its first action is unavailable."""
+    parameter_actions: list[ResidualEnergyAction]
     raw_minimum: list[float]
 
     value: list[float]
@@ -4830,8 +4836,13 @@ class FitControls:
         ...
 
 class TrialFailure:
-    parameter_actions: list[ResidualEnergyAction]
     """Retained refusal at one optimizer trial."""
+
+    parameter_actions: list[ResidualEnergyAction]
+    central_value: Optional[float]
+    """Available central value of the refused row."""
+    convergence: Optional[Convergence]
+    """Numerical record of the selected refusal, when available."""
     trial: int
     """Native trial counter."""
     observation: int

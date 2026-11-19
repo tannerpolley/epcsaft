@@ -710,6 +710,33 @@ void check_d86() {
               && batch.density_message.empty() && !batch.density_convergence.has_value()
               && std::isfinite(batch.diagnostics.pressure_residual),
           fields({field("message", absent.density_message), field("resolved_pressure_residual", batch.diagnostics.pressure_residual)}));
+    // Reuse the admitted state with a density-root tolerance below double precision for the action closure.
+    const auto row = density(T, P, {1.0}, DensityBranch::Liquid);
+    const auto prediction = predict_validated(model, row);
+    CHECK(prediction.status == ObservationStatus::Available && prediction.state && prediction.value);
+    policy::SolverOptions strict;
+    strict.values[policy::density] = 1e-30;
+    const HelmholtzModel parameter_model(model.parameters(), active, {}, strict);
+    const HelmholtzModel input_model(model.parameters(), {}, {}, strict);
+    ObservationInputDirection input;
+    input.state.pressure_pa = 1.0;
+    input.state.feed_amounts_mol = {0.0};
+    for (const bool measured : {false, true}) {
+        const auto expected = measured
+            ? input_model.pressure_actions(T, P, {1.0}, row.branch, {}, {{0.0, 1.0, {0.0}, {}}}, prediction.state->molar_density)
+            : parameter_model.pressure_actions(T, P, {1.0}, row.branch, {}, directions);
+        CHECK(expected.density_status == PropertyActionStatus::DensityUnavailable && expected.density_convergence
+            && expected.density_convergence->criterion && !expected.density_structure_refused);
+        const auto gradient = measured ? differentiate_group(input_model, {&row}, prediction, {}, {input}).front()
+                                       : differentiate(parameter_model, row, prediction);
+        const auto record = core::describe(*expected.density_convergence);
+        CHECK(truth(measured ? "d86/measured-input-refusal-record" : "d86/parameter-refusal-record",
+            gradient.status == ObservationStatus::ActionUnavailable && gradient.value.empty() && gradient.refusal_convergence
+            && core::describe(*gradient.refusal_convergence) == record
+            && gradient.refusal_convergence->evaluations == expected.density_convergence->evaluations,
+            fields({field("record", gradient.refusal_convergence ? core::describe(*gradient.refusal_convergence) : "absent"),
+                field("closure_record", record)})));
+    }
     const auto message = recording_support::refusal([&] { (void)model.density_actions(T, 1000.0, {1.0}, {}, {{0.0, 0.0, {0.0}, {}}}); });
     truth("d86/density_chart_rejected",
           message.find("observables") != std::string::npos, field("message", message));
