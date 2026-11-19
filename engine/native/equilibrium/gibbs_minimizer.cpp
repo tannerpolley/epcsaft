@@ -1242,7 +1242,15 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
         Base ratio = 1.0;
         bool trial_recovery = false;
         Base trial_scale = 1.0;
-        core::ResidualHistory damped;  // raw row maxima over consecutive damped recovery corrections
+        // Raw and classified row maxima over the same consecutive damped recovery corrections.
+        std::optional<std::array<core::ResidualHistory, 2>> damped;
+        const auto remember = [&](double raw, double classified) {
+            if (!std::isfinite(classified)) { damped.reset(); return; }
+            if (!damped) damped.emplace();
+            auto& [raw_history, classified_history] = *damped;
+            raw_history.push(raw);
+            classified_history.push(classified);
+        };
         const bool detailed = std::is_same_v<Base, double> && scope.diagnostics_on();
         std::size_t final_step = 0;
         bool stopped = false;
@@ -1276,12 +1284,15 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
             if (extension && defect <= row_tolerance && !final_correction) { stop("raw criterion"); break; }
             const Base classified_before = maximum_abs(classified_rows(at, rows_before));
             if ((!final_correction && !(defect > 0.0)) || !wide_math::isfinite(defect)) { stop("nonfinite/zero defect"); break; }
-            // Recovery stops when its damped contraction, carried over the corrections left under the cap, misses the criterion.
+            // Stop only when both forecasts over the corrections left under the cap miss the row criterion.
             if (trial_recovery) {
-                damped.push(static_cast<double>(defect));
-                const auto rate = damped.contraction();
-                if (rate && static_cast<double>(defect) * std::pow(*rate, policy::EQUILIBRIUM_MAX_ITERATIONS.value - double(step))
-                        > static_cast<double>(row_tolerance)) {
+                remember(double(defect), double(classified_before));
+                const auto misses = [&](const core::ResidualHistory& history, double residual) {
+                    const auto rate = history.contraction();
+                    return rate && residual * std::pow(*rate, policy::EQUILIBRIUM_MAX_ITERATIONS.value - double(step))
+                        > double(row_tolerance);
+                };
+                if (damped && misses((*damped)[0], double(defect)) && misses((*damped)[1], double(classified_before))) {
                     stop("recovery stalled"); break;
                 }
             }
@@ -1468,7 +1479,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                     continue;
                 }
                 if (trial_recovery) trial_scale = std::min(Base(1), 2.0 * alpha);
-                if (alpha == trial_limit) damped = {};
+                if (alpha == trial_limit) damped.reset();
                 if (!final_correction) ratio = after / defect;
                 full = std::move(candidate);
                 at = std::move(at_candidate);
@@ -1488,7 +1499,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                 if (trial_recovery) trial_scale *= 0.125;
                 else if (refine_trial && best_classified > row_tolerance) {
                     trial_recovery = true;
-                    damped.push(static_cast<double>(defect));
+                    remember(double(defect), double(classified_before));
                     scope.probe("trial_recovery_begin", {double(defect), double(classified_before)}, step);
                 } else {
                     // Another linear solver can leave the correction just above its criterion; the endpoint conditioning is still the factor's.
