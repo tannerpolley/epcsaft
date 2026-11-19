@@ -905,6 +905,7 @@ def solve_equilibrium(
     start: _core.EquilibriumResult | None = None,
     *,
     work_limit: int | None = None,
+    branch_end_work_limit: int | None = None,
 ) -> _core.EquilibriumResult:
     """Solve a declared phase/reaction problem in the native driver.
 
@@ -924,6 +925,11 @@ def solve_equilibrium(
         evaluations and equilibrium row and derivative entries. Numerical
         stages check the allowance at their boundaries and can overrun within
         a stage. A budget-exhausted result carries no pressure or state.
+    branch_end_work_limit : int, optional
+        Separate positive allowance to classify the branch end after a refused
+        target attempt, including work exhaustion. Requires work_limit and an
+        admitted bubble start. The branch-end estimate is separate from the
+        unavailable target state.
 
     Returns
     -------
@@ -947,10 +953,14 @@ def solve_equilibrium(
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
     if isinstance(model, IdealMoleFraction):
+        if branch_end_work_limit is not None:
+            raise ValueError("branch_end_work_limit requires a declared mixture bubble")
         if work_limit is not None:
             raise ValueError("work_limit requires a declared mixture bubble")
         return logged(_core.solve_equilibrium, model._model, native, start)
-    return logged(_core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit)
+    return logged(
+        _core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit, branch_end_work_limit=branch_end_work_limit
+    )
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:

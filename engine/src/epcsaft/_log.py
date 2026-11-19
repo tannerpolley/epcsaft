@@ -38,15 +38,15 @@ def _summary(result: Any) -> str:
     return ", ".join(fields) + (f": {message.split('; ')[0]}" if message else "")
 
 
-def logged(solve: Callable[..., R], *args: Any) -> R:
+def logged(solve: Callable[..., R], *args: Any, **kwargs: Any) -> R:
     """Run one public native solve and log it; returns the native result unchanged."""
     if not log.isEnabledFor(logging.INFO):
-        return solve(*args)
+        return solve(*args, **kwargs)
     name = solve.__name__
     debug = log.isEnabledFor(logging.DEBUG)
     begun = time.perf_counter()
     with _core.IpoptIterations() if debug else nullcontext() as collected:
-        result = solve(*args)
+        result = solve(*args, **kwargs)
     seconds = time.perf_counter() - begun
     for index, item in enumerate(result if isinstance(result, list) else [result]):
         label = f"{name} start {index}" if isinstance(result, list) else name

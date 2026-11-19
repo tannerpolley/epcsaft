@@ -58,6 +58,7 @@ InventoryBound = _core.InventoryBound
 
 EquilibriumResult = _core.EquilibriumResult
 TopologyEvent = _core.TopologyEvent
+BranchEndCondition = _core.BranchEndCondition
 ContinuationResult = _core.ContinuationResult
 ContinuationStop = _core.ContinuationStop
 SpinodalDeclaration = _core.SpinodalDeclaration
@@ -160,6 +161,7 @@ __all__ = (
     "SolvedStateObservable",
     "SolvedStateObservableKind",
     "TopologyEvent",
+    "BranchEndCondition",
     "tp_flash",
     "critical_point",
     "bubble_point",
