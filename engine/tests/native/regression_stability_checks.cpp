@@ -2,6 +2,51 @@
 #include "water_isobutanol.hpp"
 
 namespace regression_checks {
+void check_stability_pressure_reference() {
+    using namespace epcsaft::equilibrium;
+    constexpr double criterion = 1e-16;  // caller override from #85
+    EquilibriumProblem reference;
+    reference.temperature = FreeValue::fixed(584.75);
+    reference.pressure = FreeValue::variable(1e6);
+    reference.feed.kind = FeedKind::Amounts;
+    reference.feed.values = {0.5, 0.5};
+    reference.phases = {equilibrium_support::phase("L", PhaseKind::Liquid),
+        equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.0))};
+    reference.solver_options.values[policy::row] = criterion;
+
+    Observation parent;
+    parent.kind = ObservationKind::Stability;
+    parent.pressure_reference = reference;
+    parent.problem = reference;
+    parent.problem.pressure = FreeValue::fixed(1e7);
+    parent.problem.phases.resize(1);
+    parent.problem.solver_options = {};
+    parent.pressure_ratio = 1.05;
+    auto higher = parent;
+    higher.pressure_ratio = 3.0;
+
+    FitRequest request;
+    request.parameters = properties_support::associating_binary();
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 204.0438}};
+    request.observations = {parent, higher};
+    request.weights = {1.0, 1.0};
+    request.controls.maximum_iterations = 1;
+    request.controls.maximum_elapsed_time_seconds = 30.0;
+    request.controls.workers = 1;
+    const auto result = fit(request);
+    CHECK(result.acceptance == "pass");
+    const HelmholtzModel replay(result.parameters, {}, {}, request.controls.solver_options, true);
+    const auto cold = solve_compiled(compile_problem(replay, reference));
+    CHECK(cold.has_state() && cold.convergence.residual <= criterion);
+    for (std::size_t i = 0; i < request.observations.size(); ++i) {
+        const auto& prediction = result.stability_predictions.at(i).value();
+        CHECK(prediction.value == 0.0 && prediction.stability->report.completed);
+        CHECK(prediction.pressure_reference->value == cold.pressure);
+        CHECK(prediction.pressure_reference->convergence->residual <= criterion);
+        CHECK(prediction.solved->pressure == request.observations[i].pressure_ratio * *cold.pressure);
+    }
+}
+
 void check_stability_requirement() {
     using namespace epcsaft::equilibrium;
     HelmholtzModel model(water_isobutanol());

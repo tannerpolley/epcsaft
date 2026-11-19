@@ -144,7 +144,7 @@ std::vector<double> sensitivity(
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
     // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
     // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
-    const auto prepared = compiled.prepare(point);
+    const auto prepared = compiled.prepare(point, false, nullptr, std::nullopt, true);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);
     return solve_implicit(compiled, prepared, series.rows[1], failure);
@@ -937,7 +937,7 @@ static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
     const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {},
-    FirstCoefficients* first_coefficients = nullptr
+    FirstCoefficients* first_coefficients = nullptr, bool batch_parameter_actions = false
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -968,7 +968,8 @@ static SolvedStateActionBatch evaluate_action(
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union);
+        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union,
+            nullptr, batch_parameter_actions);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
@@ -1040,8 +1041,13 @@ static SolvedStateActionBatch evaluate_action(
         auto& common = *shared;
         common.caloric = covering;
         // A caller's point is the fresh preparation of this same system and state; each center works on its own copy.
-        if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates);
-        common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates);
+        const bool parameter_actions = prepared || batch_parameter_actions || std::any_of(request.directions.begin(),
+            request.directions.end(), [](const auto& d) {
+                return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double value) { return value != 0.0; });
+            });
+        if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates, false, nullptr, std::nullopt, parameter_actions);
+        common.center.prepared = prepared ? **prepared
+            : compiled.prepare(central.coordinates, false, nullptr, std::nullopt, parameter_actions);
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
         const auto evaluation = compiled.evaluate_at(common.center.prepared);
@@ -1455,9 +1461,12 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
             for (const auto& d : directions)
                 if (auto& positions = parameters[group(d)]; d.active_parameters[a] != 0.0 && (positions.empty() || positions.back() != a))
                     positions.push_back(a);
+    const bool parameter_actions = std::any_of(directions.begin(), directions.end(), [](const auto& d) {
+        return std::any_of(d.active_parameters.begin(), d.active_parameters.end(), [](double value) { return value != 0.0; });
+    });
     for (const auto& request : requests)
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
-            cover, nullptr, parameters[group(request.directions.front())]));
+            cover, nullptr, parameters[group(request.directions.front())], nullptr, parameter_actions));
     return batches;
 }
 
@@ -1525,7 +1534,8 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         const auto at = prepared ? *prepared : prepare(std::vector<Base>(result.coordinates.begin(), result.coordinates.end()), false);
         const auto evaluation = c.evaluate_at(at);
         const auto uncertainty = [&] {
-            if constexpr (std::is_same_v<Base, double>) if (replay) return c.row_uncertainty(at);
+            if constexpr (std::is_same_v<Base, double>)
+                if (replay || (c.model && c.model->taped_phase_derivatives())) return c.row_uncertainty(at);
             std::vector<std::vector<Base>> errors;
             for (const auto& d : at.derivative) errors.push_back(d.gradient_error.empty()
                 ? std::vector<Base>(d.gradient.size(), d.gradient_floor) : d.gradient_error);

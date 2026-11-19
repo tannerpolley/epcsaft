@@ -1974,7 +1974,10 @@ optimizer, or undetermined trial evidence makes the requirement unavailable.
 A retained descending witness does not waive these availability conditions.
 
 The original parent standards and conserved-plane multipliers precede supported
-amount repair. Their exact fitted-coordinate actions follow the defining-row
+amount repair. Fit objective and final stability replay prepare phase states on
+the same Helmholtz tape, with the fitted parameters held at their stored values.
+Terminal floors and plane row errors use state directions. Fitted-coordinate
+actions keep the full parameter chart and follow the defining-row
 recurrence and shared factorization of ALG-ACTIONS. Trial composition is held
 fixed for the envelope action; pressure stationarity cancels the trial-volume
 response. The EOS partial, actual standard/reference/source-law actions, parent

@@ -511,11 +511,11 @@ bool is_heat_capacity(PropertyObservable observable) {
 // The tape's independent point (T, V, n, theta).
 std::vector<double> action_point(
     const HelmholtzModel& model, double temperature, double volume,
-    const std::vector<double>& amounts
+    const std::vector<double>& amounts, bool fixed_parameters = false
 ) {
     std::vector<double> point = {temperature, volume};
     point.insert(point.end(), amounts.begin(), amounts.end());
-    for (const double value : model.active_parameter_values()) point.push_back(value);
+    if (!fixed_parameters) for (const double value : model.active_parameter_values()) point.push_back(value);
     return point;
 }
 
@@ -781,9 +781,9 @@ void validate_cation_mixing(const Parameters& p) {
 HelmholtzModel::HelmholtzModel(
     Parameters parameters,
     std::vector<detail::ActiveParameter> active,
-    std::optional<ThermochemistryRecord> thermochemistry, policy::SolverOptions solver_options
+    std::optional<ThermochemistryRecord> thermochemistry, policy::SolverOptions solver_options, bool taped_phase_derivatives
 )
-    : solver_options_(solver_options.resolved({})), parameters_(std::move(parameters)), active_(std::move(active)),
+    : taped_phase_derivatives_(taped_phase_derivatives), solver_options_(solver_options.resolved({})), parameters_(std::move(parameters)), active_(std::move(active)),
       thermochemistry_(std::move(thermochemistry)) {
     const std::size_t components = parameters_.component_count();
     const std::size_t sites = parameters_.site_count();
@@ -1164,13 +1164,17 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count();
     const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
-    isothermal_hessian = isothermal_hessian && !blocks && order == DerivativeOrder::IsothermalPhaseHessian
+    const bool phase_gradient = order == DerivativeOrder::IsothermalPhaseGradient;
+    const bool phase = phase_gradient || order == DerivativeOrder::PhaseHessian || order == DerivativeOrder::IsothermalPhaseHessian;
+    const bool fixed_parameters = order == DerivativeOrder::FixedParameterHessian || (phase && taped_phase_derivatives_);
+    isothermal_hessian = isothermal_hessian && !fixed_parameters && !blocks && order == DerivativeOrder::IsothermalPhaseHessian
         && components == 2 && active_.empty() && !parameters_.ideal_gas
         && parameters_.dipole_moment_debye.empty() && parameters_.quadrupole_moment_debye_angstrom.empty()
         && (parameters_.site_component.size() == 2 || parameters_.site_component.size() == 4)
         && std::all_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z == 0; })
         && std::all_of(amounts.begin(), amounts.end(), [](double n) { return n > 0.0; });
-    const std::size_t point_size = 2 + components + active_.size();
+    const std::size_t state_size = 2 + components, result_size = state_size + active_.size();
+    const std::size_t point_size = fixed_parameters ? state_size : result_size;
     double total = 0.0;
     for (double amount : amounts) total += amount;
     const double density = total / volume;
@@ -1202,7 +1206,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         scope.probe("declared_choices", declared_choices);
     });
-    const auto point = action_point(*this, temperature, volume, amounts);
+    const auto point = action_point(*this, temperature, volume, amounts, fixed_parameters);
     const auto signature = predicate_signature(temperature, composition);
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
@@ -1222,11 +1226,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const std::size_t sites_count = sites.size();
     const std::size_t input_count = point_size + sites_count;
     const std::size_t output_count = 1 + sites_count + (tape_->ideal_available ? 5 : 0);
-    if (sites_count == 0 && order == DerivativeOrder::Gradient) {
+    if (sites_count == 0 && (order == DerivativeOrder::Gradient || phase_gradient)) {
         std::vector<double> weights(output_count, 0.0);
         weights.front() = 1.0;
         result.gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
+        result.gradient.resize(result_size, 0.0);
         scope.probe("gradient", result.gradient);
         return finish(std::move(result));
     }
@@ -1235,7 +1240,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
     // Requested chart: phase Hessians drop fixed controls, absent species and active parameters.
     std::vector<std::size_t> coordinates;
-    if (order == DerivativeOrder::PhaseHessian || order == DerivativeOrder::IsothermalPhaseHessian) {
+    if (phase) {
         if (order == DerivativeOrder::PhaseHessian) coordinates.push_back(0);
         coordinates.push_back(1);
         for (std::size_t i = 0; i < components; ++i)
@@ -1250,7 +1255,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     weights.front() = 1.0;
     Eigen::MatrixXd site_sensitivity(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(width));
     Eigen::VectorXd multipliers;
-    result.gradient.assign(point_size, 0.0);
+    result.gradient.assign(result_size, 0.0);
     if (sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
@@ -1286,13 +1291,13 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                     * site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(local));
         }
         scope.probe("gradient", result.gradient);
-        if (order == DerivativeOrder::Gradient) return finish(std::move(result));
+        if (order == DerivativeOrder::Gradient || phase_gradient) return finish(std::move(result));
         multipliers = factorization.transpose().solve(
             Eigen::Map<const Eigen::VectorXd>(raw_gradient.data() + point_size, static_cast<Eigen::Index>(sites_count)));
         for (std::size_t site = 0; site < sites_count; ++site)
             weights[1 + site] = -multipliers(static_cast<Eigen::Index>(site));
     }
-    result.hessian.assign(point_size * point_size, 0.0);
+    result.hessian.assign(result_size * result_size, 0.0);
     if (isothermal_hessian) result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization).hessian;
     ++counters_.hessian_calls;
     std::vector<double> direction(input_count, 0.0);
@@ -1321,7 +1326,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             for (std::size_t site = 0; site < sites_count; ++site)
                 value += site_sensitivity(static_cast<Eigen::Index>(site), static_cast<Eigen::Index>(local))
                     * second[2 * (point_size + site) + 1];
-            result.hessian[row * point_size + column] = value;
+            result.hessian[row * result_size + column] = value;
         }
         if (sites_count == 0 && offset == 0) scope.probe("gradient", result.gradient);
     }
@@ -1342,8 +1347,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         result.gradient_floor = maximum * site_residual;
     }
-    result.volume_second_derivative = result.hessian[1 * point_size + 1];
-    if (order == DerivativeOrder::Hessian) scope.probe("hessian", result.hessian);
+    result.volume_second_derivative = result.hessian[result_size + 1];
+    if (order == DerivativeOrder::Hessian || order == DerivativeOrder::FixedParameterHessian) scope.probe("hessian", result.hessian);
     scope.probe("volume_second_derivative", result.volume_second_derivative);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
@@ -1459,13 +1464,13 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     const std::size_t width = regular.front().size();
     for (const auto& row : regular)
         if (row.size() != width || !all_finite(row)) throw std::invalid_argument("coefficient error path");
-    if (width != 2 + parameters_.component_count() + active_.size()) throw std::invalid_argument("coefficient error width");
+    const auto state_width = 2 + parameters_.component_count();
+    if (width != state_width && width != state_width + active_.size()) throw std::invalid_argument("coefficient error width");
     std::vector<double> errors(count, 0.0);
     if (ns == 0) return errors;
     std::lock_guard<std::mutex> lock(mutex_);
-    // The tape evaluates the row's active parameters, so the admission and the site system use them too.
-    const auto p = detail::make_tape_parameters<double>(parameters_, active_,
-        {regular[0].begin() + 2 + static_cast<std::ptrdiff_t>(parameters_.component_count()), regular[0].end()});
+    const auto p = width == state_width ? parameters_ : detail::make_tape_parameters<double>(
+        parameters_, active_, {regular[0].begin() + state_width, regular[0].end()});
     double total = std::accumulate(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count(), 0.0);
     std::vector<double> composition(regular[0].begin() + 2, regular[0].begin() + 2 + p.component_count());
     for (double& x : composition) x /= total;
@@ -1942,7 +1947,8 @@ bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::ve
     const detail::PredicateSignature& signature, const std::vector<IdealCorrelation>& correlations,
     double ideal_pressure, bool residual) const {
     const auto matches = [&](const auto& tape) {
-        return tape != nullptr && tape->predicates == signature && tape->residual_available == residual
+        return tape != nullptr && tape->regular_count == point.size()
+            && tape->predicates == signature && tape->residual_available == residual
             && tape->ideal_available == !correlations.empty();
     };
     if (matches(tape_)) return false;

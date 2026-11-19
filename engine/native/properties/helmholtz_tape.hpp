@@ -145,8 +145,9 @@ struct HelmholtzTape final {
         if (include_residual) {
             const std::vector<AD> sites(
                 independent.end() - static_cast<std::ptrdiff_t>(sites_count), independent.end());
+            const std::vector<ActiveParameter> fixed;
             const auto tape_parameters = make_tape_parameters(
-                parameters, model.active_parameters(),
+                parameters, point_size == 2 + components ? fixed : model.active_parameters(),
                 std::vector<AD>(
                     independent.begin() + 2 + static_cast<std::ptrdiff_t>(components),
                     independent.begin() + static_cast<std::ptrdiff_t>(point_size)));
@@ -210,7 +211,7 @@ struct HelmholtzTape final {
                 const auto evaluate = [&](const Parameters& mapped) {
                     return bulk_relative_permittivity(point[0], total / point[1], composition, mapped);
                 };
-                if (active.empty()) evaluate(parameters);
+                if (regular_count == 2 + parameters.component_count()) evaluate(parameters);
                 else evaluate(make_tape_parameters<double>(parameters, active, {end, point.begin() + regular_count}));
             }
             zero_point.clear();

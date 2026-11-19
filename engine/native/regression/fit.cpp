@@ -481,10 +481,13 @@ struct ObservationEvaluator::Impl final {
             auto observations = request_.observations;
             auto reaction_laws = request_.coordinates.apply(observations, parameter_point);
             measurement_.apply(request_, optimizer, observations);
+            const bool stability = std::any_of(observations.begin(), observations.end(),
+                [](const auto& row) { return row.kind == ObservationKind::Stability; });
             if (!same_point) {
                 trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, parameter_point, request_.holds, request_.thermochemistry, request_.controls.solver_options);
                 trial.chart.reaction_laws = std::move(reaction_laws);
-                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
+                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry,
+                    request_.controls.solver_options, stability);
                 trial.centers.assign(groups_.size(), Prediction{});
             }
             trial.observations = std::move(observations);
@@ -504,8 +507,7 @@ struct ObservationEvaluator::Impl final {
             const bool capped = std::any_of(trial.observations.begin(), trial.observations.end(),
                 [](const auto& o) { return o.kind == ObservationKind::SaturationCappedAdditionEnthalpy; });
             if (capped) out.saturation_predictions.resize(n);
-            if (std::any_of(trial.observations.begin(), trial.observations.end(),
-                [](const auto& o) { return o.kind == ObservationKind::Stability; })) out.stability_predictions.resize(n);
+            if (stability) out.stability_predictions.resize(n);
             out.residuals.assign(n, 0.0);
             out.statuses.assign(n, ObservationStatus::NotEvaluated);
             if (request_.uncertainty) { out.state_densities.resize(n); out.reference_values.resize(n); }
@@ -1301,7 +1303,7 @@ FitResult fit(const FitRequest& request) {
     owned.reset();  // the replay reads only the result: release the evaluator and its workers first
     if (!result.stability_predictions.empty()) {
         auto observations = request.observations; request.coordinates.apply(observations, result.optimizer);
-        const HelmholtzModel model(result.parameters, result.chart.active, request.thermochemistry, request.controls.solver_options);
+        const HelmholtzModel model(result.parameters, {}, request.thermochemistry, request.controls.solver_options, true);
         ReferenceCache references;
         for (std::size_t i = 0; i < observations.size(); ++i) if (observations[i].kind == ObservationKind::Stability) {
             auto fresh = predict(model, observations[i], {}, {}, &references);

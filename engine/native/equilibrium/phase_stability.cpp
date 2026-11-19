@@ -81,7 +81,8 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             core::retain_first(o.first_numerical_failure, root.first_numerical_failure); p.density = root.molar_density; }
         first = false;
         packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
-        const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::Gradient);
+        const auto d = model.evaluate(T, 1.0 / p.density, p.w,
+            model.taped_phase_derivatives() ? DerivativeOrder::IsothermalPhaseGradient : DerivativeOrder::Gradient);
         core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
         for (Eigen::Index a = 0; a < n; ++a)  // g_i = ln W_i + ln phi_i + ln(P/RT) + standard_i - plane_i
             p.g(a) = std::log(p.W(a)) + d.gradient[2 + S[a]] + std::log(p.density) + shift[S[a]];

@@ -1296,11 +1296,13 @@ std::vector<core::DifferenceCheck> CompiledSystem::jacobian_difference(const std
 }
 
 PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_only,
-    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase) const { return prepare_values(point, state_only, first, chemical_phase); }
+    std::optional<core::Convergence>* first, std::optional<std::size_t> chemical_phase, bool parameter_actions) const {
+    return prepare_values(point, state_only, first, chemical_phase, parameter_actions);
+}
 
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
-    std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase) const {
+    std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase, bool parameter_actions) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1352,8 +1354,9 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         result.volume[phase] = result.packing[phase].coefficient / result.eta[phase];
         result.amount[phase] = layout.amount.has_value()
             ? point[*layout.amount] : phase_amount(problem.phases[phase]);
-        const auto order = !state_only ? DerivativeOrder::Hessian : problem.temperature.free
-            ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
+        const auto order = state_only
+            ? (problem.temperature.free ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian)
+            : (model->taped_phase_derivatives() && !parameter_actions ? DerivativeOrder::FixedParameterHessian : DerivativeOrder::Hessian);
         if constexpr (std::is_same_v<Base, double>) {
         if (state_only && one_component_two_density_eligible(*this)) {
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume[phase], total));
@@ -1373,8 +1376,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, bool) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, bool) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));
@@ -1511,10 +1514,12 @@ RowUncertainty CompiledSystem::row_uncertainty(const PhasePoint& at) const {
     for (std::size_t p = 0; p < at.shape.size(); ++p) {
         std::vector<double> point{at.temperature, at.volume[p]};
         point.insert(point.end(), at.composition[p].begin(), at.composition[p].end());
-        const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+        if (!model->taped_phase_derivatives()) {
+            const auto active = model->active_parameter_values(); point.insert(point.end(), active.begin(), active.end());
+        }
         for (std::size_t j = 0; j < 2 + components; ++j) {
             if (j >= 2 && at.composition[p][j - 2] == 0.0) { gradient_error[p][j] = NAN; continue; }
-            std::vector<double> unit(width, 0.0); unit[j] = 1.0;
+            std::vector<double> unit(point.size(), 0.0); unit[j] = 1.0;
             const auto error = model->residual_coefficient_errors({point, unit}, at.derivative[p].site_fractions);
             energy_error[p] = error[0]; gradient_error[p][j] = error[1];
         }
@@ -1924,7 +1929,7 @@ std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& po
     if (!reference_diagnostics.empty()) {
         throw ReferenceUnavailable("source reference T/P/parameter lever derivatives are not admitted");
     }
-    auto prepared = prepare(point);
+    auto prepared = prepare(point, false, nullptr, std::nullopt, true);
     prepared.point.resize(std::max(prepared.point.size(), unknown_count()), 0.0);
     const std::size_t width = control_width();
     std::vector<double> result(rows.size() * width), control(width);

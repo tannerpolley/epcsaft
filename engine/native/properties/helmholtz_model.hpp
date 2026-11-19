@@ -39,7 +39,7 @@ using ActiveParameter = detail::ActiveParameter;
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
 // Dry cation-mixing transverse entries are defined zero storage, not physical insertion derivatives (full EOS 12).
 // StateHessian keeps the full gradient and T, V and active-parameter Hessian columns.
-enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian };
+enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian, FixedParameterHessian, IsothermalPhaseGradient };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
 
@@ -457,7 +457,7 @@ public:
         Parameters parameters,
         std::vector<ActiveParameter> active = {},
         std::optional<ThermochemistryRecord> thermochemistry = std::nullopt,
-        policy::SolverOptions solver_options = {}
+        policy::SolverOptions solver_options = {}, bool taped_phase_derivatives = false
     );
 
     EPC_API ~HelmholtzModel();
@@ -555,6 +555,7 @@ public:
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
         double temperature_direction, const std::vector<double>& composition_direction) const;
     const Parameters& parameters() const { return parameters_; }
+    bool taped_phase_derivatives() const { return taped_phase_derivatives_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     EPC_API std::vector<double> active_parameter_values() const;
     const std::optional<ThermochemistryRecord>& thermochemistry() const { return thermochemistry_; }
@@ -588,6 +589,7 @@ private:
         DerivativeOrder order, bool isothermal_hessian = false
     ) const;
 
+    const bool taped_phase_derivatives_;
     const policy::SolverOptions solver_options_;
     Parameters parameters_;
     std::vector<ActiveParameter> active_;
