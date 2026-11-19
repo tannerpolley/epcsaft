@@ -82,7 +82,7 @@ inline ParameterRecord<Scalar> make_tape_parameters(
         const auto target = family_values(result, item, source.second);
         for (std::size_t i = 0; i < source.second; ++i) target.first[i] = Scalar(source.first[i]);
     }
-    for (std::size_t i = 0; i < active.size(); ++i)
+    for (std::size_t i = 0; !coordinates.empty() && i < active.size(); ++i)
         for (const auto index : active[i].indices) family_values(result, active[i].family).first[index] = coordinates[i];
     static_cast<FixedParameters&>(result) = parameters;
     return result;
@@ -210,7 +210,7 @@ struct HelmholtzTape final {
                 const auto evaluate = [&](const Parameters& mapped) {
                     return bulk_relative_permittivity(point[0], total / point[1], composition, mapped);
                 };
-                if (active.empty()) evaluate(parameters);
+                if (regular_count == 2 + parameters.component_count()) evaluate(parameters);
                 else evaluate(make_tape_parameters<double>(parameters, active, {end, point.begin() + regular_count}));
             }
             zero_point.clear();

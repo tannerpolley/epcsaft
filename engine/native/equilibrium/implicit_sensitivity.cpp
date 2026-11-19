@@ -144,7 +144,7 @@ std::vector<double> sensitivity(
         throw std::invalid_argument("lever must contain T, P, feed, and active parameter weights");
     // F_theta * lever: the first row coefficient along the lever at a fixed state, the actions' directional
     // series, which carries source-reference T/P chains (the dense lever Jacobian does not).
-    const auto prepared = compiled.prepare(point);
+    const auto prepared = compiled.prepare(point, false, nullptr, {}, {}, true);
     const std::vector<std::vector<double>> state = {prepared.point, std::vector<double>(point.size(), 0.0)};
     const auto series = compiled.row_series(prepared, state, lever, 1);
     return solve_implicit(compiled, prepared, series.rows[1], failure);
@@ -1058,6 +1058,8 @@ static SolvedStateActionBatch evaluate_action(
     }
     // Every result starts CentralSolveUnavailable (the struct default).
     if (!central.success || !central.has_state() || !all_numeric(central.coordinates)) return batch;
+    const bool plane_uncertainty = std::any_of(request.observables.begin(), request.observables.end(),
+        [](const auto& o) { return o.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane && o.plane_uncertainty; });
     for (auto& item : batch.results) item.status = SolvedStateActionStatus::Available;
     if (shared && shared->preparation_failed) {
         batch.results = shared->central_results;
@@ -1097,10 +1099,10 @@ static SolvedStateActionBatch evaluate_action(
             return batch;
         };
         try {
-            if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases);
+            if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases, true);
             else {
-                if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates);
-                common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates);
+                if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates, false, nullptr, {}, {}, true);
+                common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates, false, nullptr, {}, {}, !plane_uncertainty);
             }
         } catch (const AssociationJacobianFailure& error) {
             if (site_phases.empty()) throw;
@@ -1363,7 +1365,7 @@ static SolvedStateActionBatch evaluate_action(
     };
     if (gate != SolvedStateActionStatus::Available)
         return apply_state_gate(gate);
-    if (plane) {
+    if (plane_uncertainty) {
         const auto n = central.coordinates.size();
         Eigen::MatrixXd projection = Eigen::MatrixXd::Zero(components, n);
         std::vector<double> unit(n), control(width);
@@ -1373,15 +1375,16 @@ static SolvedStateActionBatch evaluate_action(
             for (std::size_t i = 0; i < components; ++i) projection(i, j) = series.standard_minus_plane[i][1] * center.column[j];
             unit[j] = 0.0;
         }
-        const auto estimates = central.numerical_estimates ? *central.numerical_estimates
-            : equilibrium_numerical_estimates(compiled, central, &center.prepared);
-        if (estimates.row_floor.size() != n) return apply_state_gate(SolvedStateActionStatus::IllConditioned, "plane row estimates unavailable");
+        const auto estimates = equilibrium_numerical_estimates(compiled, central, &center.prepared, true, true);
+        if (estimates.row_floor.size() != n)
+            return apply_state_gate(SolvedStateActionStatus::IllConditioned,
+                estimates.cause.empty() ? "plane row estimates unavailable" : estimates.cause);
         const Eigen::VectorXd f = center.row.cwiseProduct(Eigen::Map<const Eigen::VectorXd>(central.residuals.data(), n));
         const Eigen::VectorXd floor = center.row.cwiseAbs().cwiseProduct(Eigen::Map<const Eigen::VectorXd>(estimates.row_floor.data(), n));
         const Eigen::VectorXd ones = Eigen::VectorXd::Ones(n);
         const auto error = core::linear_error(center.jacobian, f, projection, floor, ones, ones, &center.lu);
         if (!error.cause.empty()) return apply_state_gate(SolvedStateActionStatus::IllConditioned, error.cause);
-        for (auto& item : batch.results) if (item.observable.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane)
+        for (auto& item : batch.results) if (item.observable.kind == SolvedStateObservableKind::SpeciesStandardMinusPlane && item.observable.plane_uncertainty)
             item.numerical_error = error.radius[item.observable.component];
     }
     if (zero) {
@@ -1541,21 +1544,30 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
 }
 
 template <typename Base>
+static auto physical_scale(const CompiledSystem& c, const PhasePointValues<Base>& at) {
+    using Vector = typename PhysicalProjection<Base>::Vector;
+    Vector scale = Vector::Ones(at.point.size());
+    if (c.problem.pressure.free) scale[c.primal_size - 1] = pressure_scale(at.pressure);
+    if (c.problem.temperature.free) scale[c.primal_size - c.free_intensive_count] = std::max(wide_math::abs(at.temperature), Base(1));
+    for (const auto& solid : c.solids) if (solid.column) scale[*solid.column] = c.feed_total;
+    for (const auto& shape : at.shape) if (shape.amount) scale[*shape.amount] = c.feed_total;
+    return scale;
+}
+
+template <typename Base>
 PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const PhasePointValues<Base>& at) {
     const auto n = at.point.size(), components = c.n_feed.size(), per_phase = 3 + components;
     const auto outputs = 2 + at.amount.size() * per_phase + c.problem.loading.has_value();
     PhysicalProjection<Base> out;
     out.gradient = decltype(out.gradient)::Zero(outputs, n);
-    out.values = decltype(out.values)::Zero(outputs); out.scale = decltype(out.scale)::Ones(n);
+    out.values = decltype(out.values)::Zero(outputs); out.scale = physical_scale(c, at);
     const auto pressure = c.primal_size - 1, temperature = c.primal_size - c.free_intensive_count;
     out.values[0] = at.temperature; out.values[1] = at.pressure;
     if (c.problem.loading) { out.values[outputs - 1] = at.point[c.loading_column()]; out.gradient(outputs - 1, c.loading_column()) = 1; }
-    if (c.problem.pressure.free) { out.gradient(1, pressure) = 1; out.scale[pressure] = pressure_scale(at.pressure); }
-    if (c.problem.temperature.free) { out.gradient(0, temperature) = 1; out.scale[temperature] = std::max(wide_math::abs(at.temperature), Base(1)); }
-    for (const auto& solid : c.solids) if (solid.column) out.scale[*solid.column] = c.feed_total;
+    if (c.problem.pressure.free) out.gradient(1, pressure) = 1;
+    if (c.problem.temperature.free) out.gradient(0, temperature) = 1;
     for (std::size_t p = 0; p < at.shape.size(); ++p) {
         const auto& shape = at.shape[p]; const auto o = 2 + p * per_phase;
-        if (shape.amount) out.scale[*shape.amount] = c.feed_total;
         for (std::size_t j = 0; j < n; ++j) {
             PhaseSeriesValues<Base> path;
             path.point.assign(2, std::vector<Base>(2 + components, 0)); path.gradient = path.point;
@@ -1587,7 +1599,7 @@ template PhysicalProjection<double> physical_projection(const CompiledSystem&, c
 template PhysicalProjection<WiderScalar> physical_projection(const CompiledSystem&, const PhasePointValues<WiderScalar>&);
 
 template <typename Base>
-EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false) {
+EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false, bool plane_rows = false) {
     core::Capture isolated(false);
     core::CalculationWork excluded(counted);
     EquilibriumNumericalEstimates out;
@@ -1602,7 +1614,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
             return c.prepare_values(point, state_only);
         };
         const auto at = prepared ? *prepared : prepare(std::vector<Base>(result.coordinates.begin(), result.coordinates.end()), false);
-        const auto evaluation = c.evaluate_at(at);
+        const auto evaluation = plane_rows ? PointEvaluationValues<Base>{} : c.evaluate_at(at);
         const auto uncertainty = [&] {
             if constexpr (std::is_same_v<Base, double>) if (replay) return c.row_uncertainty(at);
             std::vector<std::vector<Base>> errors;
@@ -1636,7 +1648,8 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         }
         // Reuse the actions' exact physical map; no chart is reconstructed in a reader.
         std::vector<Base> mapped(outputs, 0.0);
-        if (c.ideal) {
+        if (plane_rows) h = physical_scale(c, at);
+        else if (c.ideal) {
             mapped[0] = at.temperature; mapped[1] = at.pressure; mapped[4] = at.amount[0];
             for (std::size_t i = 0; i < components; ++i) mapped[5 + i] = at.composition[0][i];
             for (std::size_t j = 0; j < n; ++j) {
@@ -1654,11 +1667,13 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
 
         const auto entries = c.jacobian_at(at);
         const Matrix j = Eigen::Map<const Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(entries.data(), n, n);
-        const Vector f = Eigen::Map<const Vector>(evaluation.values.data(), n);
+
         const Vector terms = Eigen::Map<const Vector>(uncertainty.terms.data(), n);
         const Vector inner = Eigen::Map<const Vector>(uncertainty.inner.data(), n);
         const Vector eta = core::canonical_row_floor(j, h, terms, inner);
         out.physical_scale = narrow_values(h.data(), h.data() + n); out.row_floor = narrow_values(eta.data(), eta.data() + n);
+        if (plane_rows) return out;
+        const Vector f = Eigen::Map<const Vector>(evaluation.values.data(), n);
         // Equilibrate J diag(h) before the rank decision; eta stays from the physical h.
         const auto [row, column] = power_of_two_equilibration(Matrix(j * h.asDiagonal()));
         const auto e = core::linear_error(j, f, g, eta, row, h.cwiseProduct(column));
@@ -1710,9 +1725,9 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
     return out;
 }
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted) {
-    if (result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
-    return numerical_estimates<double>(c, result, {}, prepared, !prepared, nullptr, counted);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows) {
+    if (!plane_rows && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
+    return numerical_estimates<double>(c, result, {}, prepared, plane_rows || !prepared, nullptr, counted, plane_rows);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
     return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits, core::CalculationWork::active_limit());

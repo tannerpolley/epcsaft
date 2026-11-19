@@ -39,7 +39,7 @@ using ActiveParameter = detail::ActiveParameter;
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
 // Dry cation-mixing transverse entries are defined zero storage, not physical insertion derivatives (full EOS 12).
 // StateHessian keeps the full gradient and T, V and active-parameter Hessian columns.
-enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian };
+enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian, FixedParameterHessian, FixedParameterGradient, FixedParameterStateHessian };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
 
@@ -512,7 +512,7 @@ public:
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt,
-        bool derived_properties = false
+        bool derived_properties = false, bool fixed_parameters = false
     ) const;
     EPC_API PropertyActionBatch density_actions(
         double, double, const std::vector<double>&,
@@ -570,7 +570,7 @@ public:
 private:
     // `composition_admitted`: the caller has already validated this composition.
     State state(double temperature, double molar_density, const std::vector<double>& mole_fractions,
-        bool derived_properties, bool composition_admitted) const;
+        bool derived_properties, bool composition_admitted, bool fixed_parameters = false) const;
     // Packing coefficient and density upper bound for an already validated temperature and composition.
     double admitted_packing_coefficient(double temperature, const std::vector<double>& mole_fractions) const;
     static double density_upper_bound(double packing_coefficient);
@@ -601,7 +601,7 @@ private:
     void reset_state_tapes() const;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
-    mutable std::unique_ptr<detail::HelmholtzTape> reference_tape_;
+    mutable std::array<std::unique_ptr<detail::HelmholtzTape>, 2> reference_tapes_;
     mutable SweepCounters counters_;
     mutable std::deque<std::pair<std::vector<double>, std::vector<NeutralReferenceReactionDiagnostic>>> references_;
     // reference_taylor central Hessians of this immutable model by exact (T, V, n): a short FIFO (#449).
@@ -640,7 +640,7 @@ EPC_API NeutralReferenceReactionDiagnostic reaction_reference(
     const ReactionReference& reference
 );
 
-void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&);
+void reference_errors(const HelmholtzModel&, double, const std::vector<double>&, NeutralReferenceReactionDiagnostic&, bool temperature_error = true);
 // Raw source-pressure partial; infinite_dilution selects the ion-free first-insertion limit.
 EPC_API ResidualEnergyAction reference_partial_from_state(const HelmholtzModel&, double temperature,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
@@ -822,7 +822,7 @@ DensityBranch density_side(DensityBranch branch, double density, std::optional<d
 std::optional<std::string> liquid_reference_refusal(const State& state);
 // Anchored closure, regularity-checked; a failed anchor is retried once cold on the same branch.
 State close_density(const HelmholtzModel& model, double temperature, double pressure,
-                    const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density);
+                    const std::vector<double>& composition, DensityBranch branch, std::optional<double> prior_density, bool fixed_parameters = false);
 }  // namespace properties
 
 }  // namespace epcsaft

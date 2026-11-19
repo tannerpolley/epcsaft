@@ -19,7 +19,7 @@ void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<boo
 std::vector<ReactionSpec> central_reference_reactions(
     const HelmholtzModel& model, const EquilibriumProblem& request, double temperature, double pressure,
     std::vector<NeutralReferenceReactionDiagnostic>& diagnostics, const ReferenceJets& jets,
-    const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr);
+    const std::vector<NeutralReferenceReactionDiagnostic>* fixed_pressure = nullptr, bool consumed_center = false);
 
 EPC_API std::vector<double> resolve_feed(
     const HelmholtzModel& model, const FeedSpec& feed
