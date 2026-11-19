@@ -1,5 +1,6 @@
 // #223: phase removal, tangent-plane and normalized reaction-affinity identities.
 #include "equilibrium_checks_shared.hpp"
+#include "core/linear_error.hpp"
 #include "surface/parameter_builder.hpp"
 
 #include <condition_variable>
@@ -1912,6 +1913,119 @@ void check_stability_inventory_face() {
     std::printf("inventory-face,explicit_trials=%zu,evidence=negative_plane_without_positive_donor\n", explicit_measure.report.trials.size());
 }
 
+void check_fixed_state_plane_uncertainty() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    using detail::ParameterFamily;
+    // Gross–Sadowski (2002), Figure 6, with the stored #101 fitted values.
+    auto parameters = properties_support::parameters(2);
+    parameters.segment_count = {2.7515, 2.3316};
+    parameters.sigma_constant = {3.6139, 3.7086};
+    parameters.dispersion_energy_over_k = {259.59, 222.88};
+    parameters.molar_mass_kg_per_mol = {0.074123, 0.058123};
+    parameters.k_ij = {0.0, 0.013315296093037322, 0.013315296093037322, 0.0};
+    parameters.site_component = {0, 0};
+    parameters.site_multiplicity = {1, 1};
+    parameters.association_active = {0, 1, 1, 0};
+    parameters.association_energy_over_k = {0.0, 2544.6, 2544.6, 0.0};
+    parameters.association_volume = {0.0, 0.010066190041574602, 0.010066190041574602, 0.0};
+    const HelmholtzModel empty(parameters), fitted(parameters,
+        {{ParameterFamily::Kij, {1, 2}}, {ParameterFamily::AssociationVolume, {1, 2}}});
+
+    for (const auto& [pressure, x_butane, reacting] : {std::tuple{1e5, 0.34, false},
+            std::tuple{1e3, 0.02, false}, std::tuple{1e5, 0.34, true}}) {
+        auto problem = equilibrium_support::flash(2);
+        problem.temperature = FreeValue::fixed(333.15);
+        problem.pressure = FreeValue::fixed(pressure);
+        problem.feed.values = {1.0 - x_butane, x_butane};
+        problem.phases = {equilibrium_support::phase("V", PhaseKind::Vapor)};
+        if (reacting) {
+            ReactionSpec reaction{"1-butanol to butane", {-1.0, 1.0}};
+            reaction.correlation = ReactionLogPolynomial{-1.25, 0.0, 0.0, 0.0, 333.15, 330.0, 340.0, "manufactured-reference"};
+            reaction.reference = ReactionReference{1e5, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+            problem.reactions = {reaction};
+            problem.source_reference = NeutralReferenceDeclaration{0, {0.0, 1.0}, 1.0, {}};
+        }
+        const auto empty_compiled = compile_problem(empty, problem);
+        const auto fitted_compiled = compile_problem(fitted, problem);
+        EquilibriumResult empty_parent;
+        StabilityMeasure empty_measure;
+        double empty_floor = 0.0;
+        for (const auto* compiled : {&empty_compiled, &fitted_compiled}) for (bool detailed : {false, true}) {
+            core::Capture capture(detailed);
+            const auto parent = solve_equilibrium(*compiled->model, problem);
+            CHECK(parent.success && parent.has_state() && parent.convergence.floor);
+            const auto measure = stability_measure(*compiled, parent);
+            const double floor = compiled->evaluate(parent.coordinates).floor;
+            std::printf("P=%.17g reacting=%d fitted=%d capture=%d residual=%.17g floor=%.17g point_floor=%.17g "
+                "minimum=%.17g uncertainty=%.17g cause=%s\n",
+                pressure, reacting, compiled == &fitted_compiled, detailed, parent.convergence.residual,
+                *parent.convergence.floor, floor, measure.raw_minimum.value_or(NAN),
+                measure.uncertainty.value_or(NAN), measure.cause.c_str());
+            CHECK(measure.available && measure.uncertainty && std::isfinite(*measure.uncertainty));
+            CHECK(std::isfinite(floor) && std::isfinite(*parent.convergence.floor));
+            if (compiled == &empty_compiled && !detailed) {
+                empty_parent = parent; empty_measure = measure; empty_floor = floor;
+                continue;
+            }
+            CHECK(parent.coordinates == empty_parent.coordinates);
+            CHECK(measure.report.trials.size() == empty_measure.report.trials.size());
+            for (std::size_t i = 0; i < measure.report.trials.size(); ++i) {
+                const auto& trial = measure.report.trials[i];
+                const auto& baseline = empty_measure.report.trials[i];
+                CHECK(trial.seed == baseline.seed && trial.composition == baseline.composition);
+                CHECK(trial.quantities.at("volume_m3_per_mol") == baseline.quantities.at("volume_m3_per_mol"));
+            }
+            CHECK(parent.convergence.floor == empty_parent.convergence.floor && floor == empty_floor);
+            CHECK(measure.uncertainty == empty_measure.uncertainty);
+            CHECK(measure.minima == empty_measure.minima && measure.event == empty_measure.event);
+            CHECK(measure.report.no_descent_in_trial_set == empty_measure.report.no_descent_in_trial_set);
+            for (std::size_t i = 0; i < measure.report.trials.size(); ++i) {
+                const auto& trial = measure.report.trials[i];
+                const auto& baseline = empty_measure.report.trials[i];
+                const double error = trial.quantities.at("plane_value_error_estimate_over_rt");
+                CHECK(std::isfinite(error) && error == baseline.quantities.at("plane_value_error_estimate_over_rt"));
+                CHECK(trial.resolved_descent == baseline.resolved_descent);
+            }
+        }
+
+        // Explicit defining-row floors at the consumed reference state. Project them onto
+        // each retained trial plane using the same linear error propagation.
+        empty_parent.numerical_estimates.reset();
+        empty_parent.prepared_endpoint.reset();
+        const auto estimates = equilibrium_numerical_estimates(empty_compiled, empty_parent);
+        const auto& point = empty_parent.coordinates;
+        const auto at = empty_compiled.prepare(point);
+        const auto n = point.size();
+        CHECK(estimates.row_floor.size() == n);
+        const auto entries = empty_compiled.jacobian_at(at);
+        const Eigen::MatrixXd jacobian = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(entries.data(), n, n);
+        const auto power = [](double x) { return x > 0.0 ? std::exp2(-std::round(std::log2(x))) : 1.0; };
+        const Eigen::VectorXd column = jacobian.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
+        const Eigen::VectorXd row = (jacobian * column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power);
+        Eigen::MatrixXd plane(2, n);
+        const std::vector<double> controls(empty_compiled.extended_control_width());
+        for (std::size_t j = 0; j < n; ++j) {
+            std::vector<double> unit(n); unit[j] = 1.0;
+            const auto series = empty_compiled.row_series(at, {point, unit}, controls, 1, true);
+            for (std::size_t i = 0; i < 2; ++i) plane(i, j) = series.standard_minus_plane[i][1];
+        }
+        const Eigen::Map<const Eigen::VectorXd> residual(empty_parent.residuals.data(), n), floor(estimates.row_floor.data(), n);
+        const auto error = core::linear_error(jacobian, residual, plane, floor, row, column);
+        CHECK(error.cause.empty());
+        for (const auto& trial : empty_measure.report.trials) {
+            const auto& q = trial.quantities;
+            double explicit_error = q.at("association_energy_estimate_over_rt") + q.at("euler_defect_over_rt") + q.at("summation_estimate_over_rt");
+            for (std::size_t i = 0; i < 2; ++i)
+                explicit_error += trial.composition[i] * (error.radius[i]
+                    + std::numeric_limits<double>::epsilon() * std::abs(empty_measure.report.plane_over_rt[i]));
+            for (const auto* term : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
+                if (q.count(term)) explicit_error += std::abs(q.at(term));
+            CHECK(explicit_error == q.at("plane_value_error_estimate_over_rt"));
+        }
+    }
+}
+
 // Manufactured A=B, K=1e-12 at 150 K: unresolved finite decrease must retain gas-root diagnostics.
 void check_stability_phase_comparison() {
     using namespace epcsaft;
@@ -2086,12 +2200,13 @@ void check_reference_parameter_coverage() {
         control[2 + compiled.n_feed.size() + position] = 1.0;
         return compiled.row_series(point, state, control, 1, false, false, coverage).rows[1];
     };
-    const auto first = slope(compiled.prepare(solved.coordinates), 0, {0});
-    const auto second = slope(compiled.prepare(solved.coordinates), 1, {0, 1});
-    const auto narrow_first = compiled.prepare(solved.coordinates);
+    const auto prepare = [&] { return compiled.prepare(solved.coordinates, false, nullptr, {}, {}, true); };
+    const auto first = slope(prepare(), 0, {0});
+    const auto second = slope(prepare(), 1, {0, 1});
+    const auto narrow_first = prepare();
     CHECK(slope(narrow_first, 0, {0}) == first);
     CHECK(slope(narrow_first, 1, {0, 1}) == second);
-    const auto wide_first = compiled.prepare(solved.coordinates);
+    const auto wide_first = prepare();
     CHECK(slope(wide_first, 1, {0, 1}) == second);
     CHECK(slope(wide_first, 0, {0}) == first);
 }
@@ -2646,7 +2761,15 @@ void check_associating_isomer_gibbs() {
     er.multipliers.assign(er.coordinates.begin() + sc.primal_size, er.coordinates.begin() + sc.primal_size + sc.rank);
     auto d = conserved_split_difference(c, reference, sc, er, 0, {});
 
-    double target = -.0001 * std::log1p(1e-8);
+    // At identical residual interactions, the pure-species Gibbs difference is the
+    // mixing term plus the attained A chemical and pressure closure defects.
+    std::array<double, 2> closure{};
+    for (std::size_t i = 0; i < c.rows.size(); ++i) {
+        const auto& row = c.rows[i];
+        if (row.kind == RowKind::Chemical && row.index == 0) closure[row.phase] += r.residuals[i];
+        if (row.kind == RowKind::Pressure) closure[row.phase] -= r.residuals[i];
+    }
+    const double target = .0001 * (-std::log1p(1e-8) + closure[1] - closure[0]);
     CHECK(d.status == GibbsDifferenceStatus::Decrease);
     const double value = d.quantities.at("gibbs_change_over_rt_mol"),
                  error = d.quantities.at("complete_error_over_rt_mol");

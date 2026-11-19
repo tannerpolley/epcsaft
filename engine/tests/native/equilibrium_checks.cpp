@@ -60,6 +60,7 @@ void check_mea_composition_bound_message();
 void check_condensed_trial_recovery();
 void check_solve_error_curvature();
 void check_stability_inventory_face();
+void check_fixed_state_plane_uncertainty();
 void check_stability_phase_comparison();
 void check_stability_amount_correction();
 void check_trial_refinement();
@@ -150,6 +151,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},
         {{"native.equilibrium.stability-inventory-face", "stability-inventory-face", "Automatic_fast"}, check_stability_inventory_face},
+        {{"native.equilibrium.fixed-state-plane-uncertainty", "fixed-state-plane-uncertainty", "Automatic_fast"}, check_fixed_state_plane_uncertainty},
         {{"native.equilibrium.stability-phase-comparison", "stability-phase-comparison", "Automatic_fast"}, check_stability_phase_comparison},
         {{"native.equilibrium.stability-amount-correction", "stability-amount-correction", "Automatic_fast"}, check_stability_amount_correction},
         {{"native.equilibrium.trial-refinement", "trial-refinement", "Automatic_fast"}, check_trial_refinement},

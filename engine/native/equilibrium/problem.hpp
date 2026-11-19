@@ -374,6 +374,7 @@ struct PhasePointValues final {
     std::vector<HelmholtzDerivativeValues<Base>> derivative;
     std::vector<PureIsothermalValues<Base>> pure;
     StandardTerm standard;
+    bool parameter_actions = false;
     // The referenced standard term for the parameter positions shared by a first-action batch.
     mutable std::optional<ParameterStandard> parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
@@ -477,13 +478,13 @@ struct CompiledSystem final {
     double solid_affinity(const PhasePoint& prepared, std::size_t solid) const;
 
     // State-only preparation differentiates V, support amounts and T when free (phase Hessians);
-    // fixed controls and active parameters are padding. Sensitivity and lever callers need full.
+    // fixed controls and active parameters are padding. Request parameter_actions for fitted row series.
     EPC_API PhasePoint prepare(const std::vector<double>& point, bool state_only = false,
         std::optional<core::Convergence>* first_numerical_failure = nullptr, std::optional<std::size_t> chemical_phase = std::nullopt,
-        const std::vector<bool>& site_phases = {}) const;
+        const std::vector<bool>& site_phases = {}, bool parameter_actions = false) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
-        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt, const std::vector<bool>& site_phases = {}) const;
+        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt, const std::vector<bool>& site_phases = {}, bool parameter_actions = false) const;
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
     template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;
@@ -876,7 +877,7 @@ struct CriticalSearch final {
 };
 
 // `counted`: the estimate's roots and energy evaluations count in the enclosing calculation work.
-EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false, bool plane_rows = false);
 struct DriverLimits;
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
@@ -1092,6 +1093,7 @@ struct SolvedStateObservable final {
     std::size_t component = 0;
     PropertyObservable property = PropertyObservable::IdealEnthalpy;
     std::optional<std::size_t> site{};
+    bool plane_uncertainty = false;
 };
 
 // Physical-unit external controls: a free T or P component must be zero.
