@@ -275,9 +275,7 @@ struct ObservationEvaluator::Impl final {
         if (verdict.disposition == Disposition::Rejected) {
             if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
             if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
-            auto& failure = verdict.failure;
-            fail(failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
-                 std::move(failure.parameter_actions), out.first_numerical_failure, failure.central_value, failure.convergence);
+            fail(optimizer, std::move(verdict.failure), out.first_numerical_failure);
         } else verdict.disposition = publish(optimizer, jacobian, out, trial, fresh, same_point);
         return verdict.disposition == Disposition::Committed;
     }
@@ -368,7 +366,7 @@ struct ObservationEvaluator::Impl final {
                     * out.input_gradient[i * latent + c] * measurement_.sigma[c];
             if (!Eigen::Map<const Eigen::VectorXd>(out.optimizer_gradient.data() + i * columns,
                 static_cast<Eigen::Index>(columns)).allFinite())
-                return {Disposition::Rejected, {i, i, ObservationStatus::Nonfinite, true, "optimizer Jacobian not finite"}};
+                return {Disposition::Rejected, {i, i, ObservationStatus::Nonfinite, true, "optimizer Jacobian not finite", {}, {}, out.predictions[i]}};
         }
         if (request_.uncertainty) if (const char* cause = measurement_.reconcile(out, optimizer, parameters, jacobian))
             return {Disposition::Rejected, {n, n, ObservationStatus::Nonfinite, jacobian, cause}};
@@ -402,15 +400,14 @@ struct ObservationEvaluator::Impl final {
         const Eigen::Map<const Eigen::VectorXd> r(trial.weighted.data(), static_cast<Eigen::Index>(trial.weighted.size()));
         const Eigen::VectorXd gradient = j.transpose() * r;
         out.assign(gradient.data(), gradient.data() + gradient.size());
-        return all_finite(out) || fail(trial.weighted.size(), point, ObservationStatus::Nonfinite, "weighted objective gradient not finite", true);
+        return all_finite(out) || fail(point, {0, trial.weighted.size(), ObservationStatus::Nonfinite, true, "weighted objective gradient not finite"});
     }
 
-    bool fail(std::size_t observation, const std::vector<double>& optimizer, ObservationStatus status,
-              std::string message, bool jacobian, std::vector<ResidualEnergyAction> actions = {}, std::optional<core::Convergence> first = {}, std::optional<double> central_value = {},
-              std::optional<core::Convergence> convergence = {}) {
-        core::retain_failure(first, message, "fit evaluation");
+    bool fail(const std::vector<double>& optimizer, Failure failure, std::optional<core::Convergence> first = {}) {
+        core::retain_failure(first, failure.message, "fit evaluation");
         core::retain_first(result_.first_numerical_failure, first);
-        result_.failures.push_back({trials_, observation, optimizer, status, std::move(message), jacobian, std::move(actions), first, central_value, std::move(convergence)});
+        result_.failures.push_back({trials_, failure.observation, optimizer, failure.status, std::move(failure.message), failure.jacobian,
+            std::move(failure.parameter_actions), std::move(first), failure.central_value, std::move(failure.convergence)});
         ++result_.trial_failures;
         return false;
     }
@@ -559,7 +556,7 @@ struct ObservationEvaluator::Impl final {
                 if (observation.kind == ObservationKind::Stability) out.stability_predictions[i] = prediction;
                 out.statuses[i] = prediction.status;
                 if (prediction.status != ObservationStatus::Available)
-                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure, prediction.value, prediction.convergence};
+                    return Failure{i, i, prediction.status, jacobian, prediction.message, {}, prediction.first_numerical_failure, prediction.value, prediction.refusal_convergence};
                 out.predictions[i] = *prediction.value;
                 out.residuals[i] = *prediction.residual;
                 if (request_.uncertainty) {

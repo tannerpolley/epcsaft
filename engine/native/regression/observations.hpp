@@ -116,7 +116,7 @@ struct Prediction final {
     ObservationStatus status = ObservationStatus::Nonfinite;
     std::string message;
     std::optional<double> residual;  // the declared form, unweighted
-    std::optional<core::Convergence> convergence;
+    std::optional<core::Convergence> convergence, refusal_convergence;  // the latter belongs to a blocking operation
     std::optional<core::Convergence> first_numerical_failure;
     // Pressure closure: the branch the closure resolved (Unspecified when one stable root exists) and the count.
     std::optional<DensityBranch> branch;

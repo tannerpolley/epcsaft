@@ -318,9 +318,12 @@ void validate(const Observation& observation, const HelmholtzModel& model, const
     validate_compiled(observation, model, prepared);
 }
 
-static Prediction unavailable_solve(Prediction result, const std::exception& failure) {
-    result.status = ObservationStatus::CentralSolveUnavailable;
-    retain_density_failure(result.first_numerical_failure, failure, "prediction solve");
+static Prediction unavailable_solve(Prediction result, const std::exception& failure,
+    ObservationStatus status = ObservationStatus::CentralSolveUnavailable) {
+    result.status = status;
+    if (const auto* record = dynamic_cast<const core::ConvergenceFailure*>(&failure))
+        result.convergence = result.refusal_convergence = record->record;
+    retain_density_failure(result.first_numerical_failure, failure, status == ObservationStatus::DensityUnavailable ? "prediction density" : "prediction solve");
     result.message = failure.what();
     return result;
 }
@@ -529,11 +532,7 @@ Prediction predict(
         try {
             state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const std::runtime_error& failure) {
-            result.status = ObservationStatus::DensityUnavailable;
-            if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
-            retain_density_failure(result.first_numerical_failure, failure, "prediction density");
-            result.message = failure.what();
-            return result;
+            return unavailable_solve(std::move(result), failure, ObservationStatus::DensityUnavailable);
         }
         result.convergence = state.density_convergence;
         core::retain_first(result.first_numerical_failure, state.first_numerical_failure);
@@ -603,12 +602,12 @@ Prediction predict(
         solved = equilibrium::solve_compiled(*result.compiled, start);
     } catch (const std::exception& failure) {
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
-        if (const auto* nonconverged = dynamic_cast<const core::ConvergenceFailure*>(&failure)) result.convergence = nonconverged->record;
         return unavailable_solve(std::move(result), failure);
     }
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
     if (!solved.success) core::retain_first(result.first_numerical_failure, solved.convergence);
+    if (!solved.success) result.refusal_convergence = solved.terminal_numerical_failure;
     result.requested_tolerance_met = solved.requested_tolerance_met;
     result.message = solved.solver_status + ": " + solved.message;
     // The driver sets the topology fields before its acceptance gate, so a vanished or
@@ -777,7 +776,6 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
             }
             value = result.phase_site_fractions.at(phase).at(*observation.site);
         } catch (const core::ConvergenceFailure& failure) {
-            result.convergence = failure.record;
             result = unavailable_solve(std::move(result), failure);
             return;
         }

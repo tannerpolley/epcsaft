@@ -366,21 +366,48 @@ void fit_failure_records() {
                 field("terminal", terminal), field("optimizer", failure.optimizer)})));
     }
 
-    // A finite site value can survive even when the scaled residual requested with
-    // the initial Jacobian overflows. The worker must reply with that row's value.
-    row.observed = 1.;
+    // A subnormal scale distinguishes a refusal during projection from one after column mapping.
     row.form = ResidualForm::Difference;
     row.scale = std::numeric_limits<double>::min() / 16.;
-    request.observations[1] = row;
+    row.observed = 1.;
+    auto density = solved(ObservationKind::PhaseDensity, cell);
+    density.form = row.form;
+    density.scale = row.scale;
     for (const int workers : {1, 2}) {
         request.controls.workers = workers;
+        for (const auto& observation : {density, row}) {
+            const auto prediction = predict_validated(model, observation);
+            CHECK(prediction.solved && prediction.solved->success && prediction.convergence && prediction.value
+                && !prediction.residual && prediction.status == ObservationStatus::Nonfinite);
+            request.observations[1] = observation;
+            const auto result = fit(request);
+            CHECK(result.status == "initial_evaluation_failed" && result.failures.size() == 1);
+            const auto& failure = result.failures.front();
+            CHECK(truth("fit-failure/residual-record", failure.observation == 1 && failure.jacobian
+                && failure.status == ObservationStatus::Nonfinite && failure.message == "the residual is not finite"
+                && failure.central_value == prediction.value && !failure.convergence,
+                fields({field("workers", workers), field("site_row", observation.site.has_value()),
+                    field("row", failure.observation), field("convergence", failure.convergence ? core::describe(*failure.convergence) : "absent")})));
+        }
+
+        auto jacobian_row = row;
+        jacobian_row.observed = *initial.value;
+        const auto prediction = predict_validated(model, jacobian_row);
+        CHECK(prediction.value == initial.value && prediction.residual == 0.);
+        const auto action = differentiate(model, jacobian_row, prediction);
+        CHECK(action.status == ObservationStatus::Available && action.value.size() == 1
+            && std::isfinite(action.value.front()) && action.value.front() != 0.);
+        request.observations[1] = jacobian_row;
         const auto result = fit(request);
         CHECK(result.status == "initial_evaluation_failed" && result.failures.size() == 1);
         const auto& failure = result.failures.front();
-        CHECK(truth("fit-failure/central-value", failure.observation == 1 && failure.jacobian
-            && failure.status == ObservationStatus::Nonfinite && failure.central_value == initial.value
+        CHECK(truth("fit-failure/optimizer-jacobian", failure.observation == 1 && failure.jacobian
+            && failure.status == ObservationStatus::Nonfinite && failure.message == "optimizer Jacobian not finite"
+            && failure.central_value == prediction.value && !failure.convergence
             && result.residuals.empty() && result.optimizer_jacobian.empty(),
-            fields({field("workers", workers), field("row", failure.observation), field("site_fraction", *initial.value)})));
+            fields({field("workers", workers), field("row", failure.observation), field("cause", failure.message),
+                field("residual", *prediction.residual), field("site_fraction", *prediction.value),
+                field("first_action", action.value.front())})));
     }
 }
 
