@@ -1135,6 +1135,28 @@ std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const Helm
     report_work(set->work, work); return set;
 }
 namespace {
+// ALG-STABILITY: supports arrive sorted by native species index, so strict comparisons keep the first tie.
+void dominant_charge_pair_midpoint(std::vector<double>& x, const std::vector<std::size_t>& support,
+                                  const std::vector<int>& z) {
+    std::size_t positive = support.front(), negative = support.front();
+    double largest_positive = 0.0, largest_negative = 0.0;
+    for (auto i : support) {
+        const double charge = z[i] * x[i];
+        if (charge > largest_positive) {
+            largest_positive = charge;
+            positive = i;
+        }
+        if (charge < largest_negative) {
+            largest_negative = charge;
+            negative = i;
+        }
+        x[i] *= 0.5;
+    }
+    const double difference = static_cast<double>(z[positive]) - z[negative];
+    x[positive] -= 0.5 * z[negative] / difference;
+    x[negative] += 0.5 * z[positive] / difference;
+}
+
 StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& requested, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false,
@@ -1213,8 +1235,15 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         if (refusal) ++report.work["recovery_guard_refusals"];
         return refusal;
     };
-    for (std::size_t visit = 0, k = 0; visit < 2 * supports.size(); k = ++visit % supports.size()) {
-        const bool retry = visit >= supports.size();
+    const std::size_t before_retry = supports.size() *
+        (options.mode == DiscoveryMode::Full && !options.evaluate_supplied_trials && !limits ? 2 : 1);
+    const auto trial_budget_exhausted = [&] {
+        return options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget;
+    };
+    for (std::size_t visit = 0, k = 0; visit < before_retry + supports.size(); k = ++visit % supports.size()) {
+        if (stopped && !fast) break;
+        const bool retry = visit >= before_retry;
+        const bool midpoint = visit >= supports.size() && !retry;
         const auto& phase = supports[k];
         if (retry && (!recovery || slots.empty())) break;
         if (retry) limits = recovery, recovery->admit = guard;
@@ -1225,7 +1254,19 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             && std::any_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] != 0; });
         std::vector<std::pair<std::string, std::vector<double>>> seeds;
         std::vector<const Slot*> sources;
-        if (options.evaluate_supplied_trials) seeds.emplace_back("supplied-composition", phase.composition_guess);
+        if (midpoint) {
+            if (phase.kind != PhaseKind::Liquid
+                || std::none_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] > 0; })
+                || std::none_of(phase.support.begin(), phase.support.end(), [&](auto i) { return z[i] == 0; })) continue;
+            for (std::size_t p = 0; p < at.amount.size(); ++p) {
+                if (c.problem.phases[p].kind != PhaseKind::Liquid || !(at.amount[p] > 0.0)
+                    || !std::all_of(phase.support.begin(), phase.support.end(), [&](auto i) { return at.composition[p][i] > 0.0; })) continue;
+                std::vector<double> restriction(z.size(), 0.0);
+                for (auto i : phase.support) restriction[i] = at.composition[p][i];
+                seeds.emplace_back("dominant-charge-pair-midpoint", std::move(restriction));
+                break;
+            }
+        } else if (options.evaluate_supplied_trials) seeds.emplace_back("supplied-composition", phase.composition_guess);
         else {
             std::vector<double> base(z.size(), 0.0), remainder;
             for (auto i : phase.support) base[i] = 1.0;
@@ -1274,6 +1315,10 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         for (auto& [seed_name, seed] : seeds) {
             const Slot* slot = retry ? sources[visited++] : nullptr;
             if (stopped) { unsearched->push_back(identity + "/" + seed_name); continue; }
+            if (midpoint && trial_budget_exhausted()) {
+                stopped = true;
+                break;
+            }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             auto start = slot ? slot->start : Start::ParentRestriction;  // in the first pass: the retry a refusal here gets
             bool searched = false;  // the start coincides with an already-searched original seed
@@ -1284,8 +1329,15 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             };
             try {
                 if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = point.seed; }
-                else if (!slot) { seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
-                    ++report.work["reconstruction_evaluations"]; }  // a second-pass start is reconstructed already
+                else if (!slot) {
+                    seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
+                    ++report.work["reconstruction_evaluations"];
+                    if (midpoint) {
+                        dominant_charge_pair_midpoint(seed, phase.support, z);
+                        seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
+                        ++report.work["reconstruction_evaluations"];
+                    }
+                }
                 double eta, seed_density = 0.0;
                 if (options.evaluate_supplied_trials && phase.packing_guess) eta = *phase.packing_guess;
                 else {
@@ -1310,7 +1362,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (!slot && searched) continue;
                 if (!slot) rooted.emplace_back(seed, eta);
                 const bool spent = limits && limits->expired();  // #987: the trials so far stand
-                if (spent || (options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget)) {
+                if (spent || trial_budget_exhausted()) {
                     if (slot) throw BudgetExhausted(spent ? "recovery allowance exhausted" : "trial budget exhausted");
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
                     if (!fast) { report_work(report.work, work); return report; }
@@ -1473,7 +1525,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             } catch (const std::exception& error) {
                 trial.message += "; " + std::string(error.what());
                 trial.evidence = "unresolved";
-                if (recovery && !retry && !quotient && dynamic_cast<const CondensedRefusal*>(&error))
+                if (recovery && !retry && !midpoint && !quotient && dynamic_cast<const CondensedRefusal*>(&error))
                     slots.push_back({report.trials.size(), start, seed});
             }
             if (slot) {  // only a determined optimized retry replaces the original slot; its message keeps the refusal
@@ -1491,9 +1543,14 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             }
             report.trials.push_back(std::move(trial));
             if (fast && report.trials.back().resolved_descent) stopped = true;
+            if (midpoint && !slots.empty() && trial_budget_exhausted()) {
+                stopped = true;
+                break;
+            }
         }
     }
     report.completed = !stopped;
+    if (stopped && !fast) report.message = "search-incomplete: trial budget exhausted";
     // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
     // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
     const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) {

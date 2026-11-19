@@ -2332,7 +2332,7 @@ continuation, fitting and ASL are unaffected.
 
 Second pass (#21). Only on request (`StabilityOptions.retry_condensed_refusals`,
 default off), after the public Full optimized `stability_test` completes its
-original schedule, each charged Liquid slot refused by this admission under a
+starts, each ordinary charged Liquid start refused by this admission under a
 density-independent form gets at most one guarded shared-driver retry, all funded
 by one `DriverLimits::recovery_allowance` (`EQUILIBRIUM_RECOVERY_WORK`) and any
 remaining caller trial budget. A slot refused before optimization starts from the
@@ -2355,9 +2355,8 @@ already-searched seed or the result
 a present phase; such a result is no independent coverage. Otherwise the slot stays
 unresolved with both causes. A seed root solved during admission is solved again
 rather than reused (an accepted work reduction left out).
-Determined original verdicts are never changed. Fitting's `stability_measure`,
-discovery, recovery and vanished-phase searches and supplied evaluations keep the
-original schedule alone.
+Determined original verdicts are never changed. Only the explicit optimized
+`stability_test` can request this guarded pass.
 
 For ordinary search, for every admitted pair enumerate a positive charge-neutral base from equal
 supported weights with ionic group rescaling. A compatible candidate's strictly
@@ -2372,6 +2371,20 @@ compositions on identical admitted support/label pairs. Reconstruct every seed
 using EqID: `electroneutral_trial_reconstruction`. Density-owner Liquid/Vapor
 roots supply packing starts; deduplicate identical seed/root pairs within
 `DENSITY_ANCHOR_LOG_WINDOW`. Retain failed roots as unresolved trials.
+
+After the ordinary starts on all supports, an optimized Full search without an
+internal work limit visits eligible Liquid supports in their existing order.
+Each support with neutral species and ions of both signs gets one midpoint
+start when the first positive-amount Liquid parent covering that support is
+available. Reconstruct its restricted composition $x$ and choose the positive
+and negative ions $p,m$ with the largest $z_p x_p$ and $-z_m x_m$, breaking
+ties by native species index. The normalized charge-neutral pair $s$ has
+$s_p=-z_m/(z_p-z_m)$ and $s_m=z_p/(z_p-z_m)$, with zeros elsewhere. The
+start $(x+s)/2$ uses the same reconstruction, root admission, deduplication
+and finite withdrawal checks as the ordinary starts. The shared caller trial
+budget is checked before its seed root solve. This start receives no guarded
+retry. If it takes the last slot and guarded retries are pending, the search
+reports trial-budget exhaustion and keeps the completed trials.
 
 For systems whose fed-plus-participant species are all neutral and that declare no reactions, minimize each
 enumerated distinct start natively with Michelsen's modified tangent-plane objective (EqID:

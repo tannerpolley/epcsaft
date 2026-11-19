@@ -2031,7 +2031,7 @@ void check_mea_census_state_3() {
     StabilityOptions options;
     options.trials = std::vector<PhaseSpec>{liquid, vapor};
     const auto report = stability_test(compiled, parent, options);
-    CHECK(report.completed && report.trials.size() == 9);
+    CHECK(report.completed && report.trials.size() == 10);
     const auto found = std::find_if(report.trials.begin(), report.trials.end(), [&](const auto& trial) {
         return trial.phase.kind == PhaseKind::Liquid && trial.phase.support == liquid.support && trial.seed == "near-pure-0";
     });
@@ -2395,6 +2395,80 @@ void check_reaction_relaxed_search() {
     }
 }
 
+void check_piperazine_a12s_bubble_stability() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/piperazine-a12s-bubbles.inc"
+    struct Bubble {
+        int row;
+        double temperature_k, pressure_guess_pa, water_mol, carbon_dioxide_mol;
+        double tpd_over_rt;
+    };
+    // Hilliard D.5 feeds on the basis of one mole of piperazine.
+    const Bubble bubbles[] = {
+        {55, 313.179, 15710.0, 11.191204322204262, 0.818, -0.03090973},
+        {56, 313.20099999999996, 16990.0, 11.05744490799465, 0.826, -0.04372674},
+        {62, 333.21099999999996, 61400.0, 11.191204322204262, 0.834, -0.00627883},
+    };
+    const double row_tolerance = problem.solver_options.values.at(policy::row).value();
+    const double composition_tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
+    StabilityOptions options;
+    vapor.composition_guess.clear();
+    options.trials = std::vector<PhaseSpec>{liquid, vapor};
+    bool all_witnesses = true;
+    for (const auto& bubble : bubbles) {
+        problem.temperature = FreeValue::fixed(bubble.temperature_k);
+        problem.pressure = FreeValue::variable(bubble.pressure_guess_pa);
+        problem.feed.values = {bubble.carbon_dioxide_mol, bubble.water_mol, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0};
+        const auto compiled = compile_problem(model, problem);
+        const auto parent = solve_equilibrium(model, problem);
+        CHECK(parent.has_state() && parent.requested_tolerance_met.value_or(false));
+        CHECK(parent.convergence.residual <= row_tolerance && parent.amounts.at(1) == 0.0);
+        const auto report = stability_test(compiled, parent, options);
+        const double inventory_tolerance = policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, compiled.feed_total);
+        CHECK(report.completed);
+        double lowest_tpd = std::numeric_limits<double>::infinity();
+        bool witnessed = false;
+        for (const auto& trial : report.trials) {
+            const auto& q = trial.quantities;
+            if (const auto tpd = q.find("tpd_over_rt"); tpd != q.end()) lowest_tpd = std::min(lowest_tpd, tpd->second);
+            std::printf("row=%d seed=%s evidence=%s iterations=%zu evaluations=%zu hessian_calls=%zu\n", bubble.row,
+                trial.seed.c_str(), trial.evidence.c_str(), trial.optimizer.iterations, trial.optimizer.evaluations,
+                trial.optimizer.hessian_calls);
+            if (!trial.resolved_descent || trial.phase.kind != PhaseKind::Liquid
+                || std::lround(q.at("tpd_over_rt") * 1e8) != std::lround(bubble.tpd_over_rt * 1e8)) continue;
+            CHECK(trial.optimizer.success && trial.optimizer.convergence.residual <= row_tolerance);
+            CHECK(q.at("root_density_side") == static_cast<double>(DensityBranch::Liquid));
+            CHECK(std::abs(q.at("normalization_residual")) <= composition_tolerance);
+            CHECK(std::abs(q.at("charge_residual")) <= composition_tolerance);
+            const double beta = q.at("split_beta_mol");
+            CHECK(beta > 0 && beta < q.at("donor_capacity_mol"));
+            const auto split = std::find_if(trial.split_checks.begin(), trial.split_checks.end(), [&](const auto& s) {
+                return s.at("admitted") == 1 && s.at("beta_mol") == beta;
+            });
+            CHECK(split != trial.split_checks.end());
+            CHECK(std::abs(split->at("charge_residual")) <= composition_tolerance);
+            CHECK(std::abs(split->at("normalization_residual")) <= composition_tolerance);
+            CHECK(split->at("component_error_mol") <= inventory_tolerance);
+            CHECK(split->at("moiety_error_mol") <= inventory_tolerance);
+            CHECK(split->at("delta_g_over_rt") + split->at("error_estimate_over_rt") < 0.0);
+            std::printf("row=%d witness=%s tpd=%.15g density=%.12g trial_residual=%.6g charge=%.6g normalization=%.6g"
+                        " capacity=%.12g beta=%.12g D=%.12g E=%.12g component_error=%.6g moiety_error=%.6g\n",
+                bubble.row, trial.seed.c_str(), q.at("tpd_over_rt"), 1.0 / q.at("volume_m3_per_mol"),
+                trial.optimizer.convergence.residual, q.at("charge_residual"), q.at("normalization_residual"),
+                q.at("donor_capacity_mol"), beta, split->at("delta_g_over_rt"), split->at("error_estimate_over_rt"),
+                split->at("component_error_mol"), split->at("moiety_error_mol"));
+            witnessed |= bubble.row != 62 || trial.seed == "near-pure-1";
+        }
+        std::printf("row=%d witness_found=%d P_Pa=%.15g parent_residual=%.6g lowest_tpd=%.15g report=\"%s\"", bubble.row,
+            witnessed, *parent.pressure, parent.convergence.residual, lowest_tpd, report.message.c_str());
+        for (const auto& [name, count] : report.work) std::printf(" %s=%.0f", name.c_str(), count);
+        std::printf("\n");
+        all_witnesses &= witnessed;
+    }
+    CHECK(all_witnesses);
+}
+
 void check_mdea_full_stability() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
@@ -2473,7 +2547,7 @@ void check_reaction_relaxed_pz_row() {
     CHECK(parent.success);
     const auto measure = stability_measure(compiled, parent);
     if (!measure.available) std::cout << measure.cause << std::endl;
-    CHECK(measure.report.completed && measure.report.trials.size() == 16 && measure.available);
+    CHECK(measure.report.completed && measure.report.trials.size() == 17 && measure.available);
     CHECK(measure.value && std::abs(*measure.value - (-0.276000003756792)) <= *measure.uncertainty + 6.39e-10);
     CHECK(measure.minima == (std::vector<std::size_t>{1, 6, 10, 11, 12, 13, 15}));
     for (auto index : measure.minima) {
@@ -2625,7 +2699,7 @@ void check_condensed_trial_recovery() {
             CHECK(slot(plain, seed).evidence == "unresolved" && !second_pass(slot(plain, seed)));
         options.retry_condensed_refusals = true;
         const auto report = stability_test(compiled, parent, options);
-        CHECK(report.completed && report.trials.size() == 9);
+        CHECK(report.completed && report.trials.size() == 10);
         const auto recovered = slot(report, "near-pure-0");
         const auto& q = recovered.quantities;
         CHECK(recovered.optimizer.success && recovered.evidence == "no_resolved_descent" && second_pass(recovered));
@@ -2646,14 +2720,21 @@ void check_condensed_trial_recovery() {
     const auto none = recovered_stability_test(compiled, parent, options, DriverLimits::recovery_allowance(forever, 0));
     const auto spent = recovered_stability_test(compiled, parent, options, DriverLimits::recovery_allowance(forever, 2));
     const auto full = stability_test(compiled, parent, options);
-    CHECK(none.work.at("trial_driver_invocations") == 8 && spent.work.at("trial_driver_invocations") == 9);
+    CHECK(none.work.at("trial_driver_invocations") == 9 && spent.work.at("trial_driver_invocations") == 10);
     CHECK(spent.work.at("iterations") - none.work.at("iterations") == 2);
+    auto capped_options = options;
+    capped_options.trial_budget = static_cast<std::size_t>(none.work.at("trial_invocations"));
+    const auto capped = stability_test(compiled, parent, capped_options);
+    CHECK(!capped.completed && capped.message.find("trial budget exhausted") != std::string::npos);
+    CHECK(!capped.work.count("recovery_density_credits"));
+    CHECK(capped.work.at("trial_invocations") == *capped_options.trial_budget);
+    CHECK(capped.trials.back().seed == "dominant-charge-pair-midpoint" && capped.trials.back().optimizer.evaluations > 0);
     for (const auto* report : {&none, &spent}) {
         const auto refused = slot(*report, "near-pure-0");
         CHECK(refused.evidence == "unresolved" && second_pass(refused) && refused.message.find("exhausted") != std::string::npos);
     }
     for (const auto* seed : {"positive-neutral-base", "near-pure-1", "near-pure-2"})
-        for (const auto* report : {&spent, &full}) {
+        for (const auto* report : {&spent, &full, &capped}) {
             const auto a = slot(none, seed), b = slot(*report, seed);
             CHECK(a.resolved_descent && b.resolved_descent && a.evidence == b.evidence);
             CHECK(a.quantities.at("tpd_over_rt") == b.quantities.at("tpd_over_rt"));
