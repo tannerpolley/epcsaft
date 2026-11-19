@@ -448,8 +448,9 @@ void register_equilibrium(nb::module_& module) {
         return result;
     }, nb::arg("compiled"), nb::arg("point"), nb::arg("lever"));
     module.def("solve_equilibrium", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&,
-        const std::optional<EquilibriumResult>&, const std::vector<std::string>&>(&solve_equilibrium),
-        nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{});
+        const std::optional<EquilibriumResult>&, const std::vector<std::string>&, std::optional<std::size_t>>(&solve_equilibrium),
+        nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
+        nb::arg("work_limit") = std::nullopt);
     module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::keep_alive<0, 1>());
 }

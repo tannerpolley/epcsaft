@@ -48,6 +48,7 @@ void check_physical_amount_work();
 void check_reaction_relaxed_split();
 void check_associating_isomer_gibbs();
 void check_mdea_full_stability();
+void check_mdea_bubble_work_limit();
 void check_reaction_relaxed_search();
 void check_reaction_relaxed_pz_row();
 void check_mea_census_state_3();
@@ -135,6 +136,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.associating-isomer-gibbs", "associating-isomer-gibbs", "Automatic_fast"}, check_associating_isomer_gibbs},
         {{"native.equilibrium.reaction-relaxed-split", "reaction-relaxed-split", "Automatic_fast"}, check_reaction_relaxed_split},
         {{"native.equilibrium.mdea-full-stability", "mdea-full-stability", "Automatic_fast"}, check_mdea_full_stability},
+        {{"native.equilibrium.mdea-bubble-work-limit", "mdea-bubble-work-limit", "Automatic_fast"}, check_mdea_bubble_work_limit},
         {{"native.equilibrium.reaction-relaxed-search", "reaction-relaxed-search", "Automatic_fast"}, check_reaction_relaxed_search},
         {{"native.equilibrium.reaction-relaxed-pz-row", "reaction-relaxed-pz-row", "Automatic_fast"}, check_reaction_relaxed_pz_row},
         {{"native.equilibrium.mea-census-state-3", "mea-census-state-3", "Automatic_fast"}, check_mea_census_state_3},

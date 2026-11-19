@@ -61,10 +61,16 @@ public:
         std::size_t root_evaluations = 0;
         std::size_t energy_evaluations = 0;
         std::size_t density_depth = 0;
+        std::size_t equilibrium_entries = 0;
     };
     static EPC_API CalculationWork*& current() noexcept;
-    explicit CalculationWork(bool enabled = true)
-        : previous_(current()), counts_(previous_ ? previous_->counts_ : &owned_), begin_(*counts_) {
+    struct Limit final {
+        std::size_t units;
+        const char* boundary = nullptr;
+    };
+    explicit CalculationWork(bool enabled = true, Limit* limit = nullptr)
+        : previous_(current()), counts_(previous_ && !limit ? previous_->counts_ : &owned_), begin_(*counts_),
+          limit_(limit ? limit : previous_ ? previous_->limit_ : nullptr) {
         current() = enabled ? this : nullptr;
     }
     ~CalculationWork() { current() = previous_; }
@@ -73,6 +79,17 @@ public:
     Counts counts() const {
         return {counts_->root_calls - begin_.root_calls, counts_->root_evaluations - begin_.root_evaluations,
             counts_->energy_evaluations - begin_.energy_evaluations};
+    }
+    std::size_t units() const { return counts_->energy_evaluations + counts_->equilibrium_entries; }
+    static Limit* active_limit() { return current() ? current()->limit_ : nullptr; }
+    static bool stopped() { return active_limit() && active_limit()->boundary; }
+    static bool stop_at(const char* boundary) {
+        auto* limit = active_limit();
+        if (limit && !limit->boundary && current()->units() >= limit->units) limit->boundary = boundary;
+        return limit && limit->boundary;
+    }
+    static void equilibrium_entry() {
+        if (auto* work = current(); work && work->limit_) ++work->counts_->equilibrium_entries;
     }
     static void energy_evaluation() {
         if (auto* work = current()) {
@@ -96,6 +113,7 @@ private:
     CalculationWork* previous_;
     Counts* counts_;
     Counts begin_;
+    Limit* limit_;
 };
 
 inline void retain_first(std::optional<Convergence>& first, const std::optional<Convergence>& next, bool earlier = false) {

@@ -903,6 +903,8 @@ def solve_equilibrium(
     model: _Model | IdealMoleFraction,
     problem: Problem | _core.EquilibriumProblem,
     start: _core.EquilibriumResult | None = None,
+    *,
+    work_limit: int | None = None,
 ) -> _core.EquilibriumResult:
     """Solve a declared phase/reaction problem in the native driver.
 
@@ -915,6 +917,13 @@ def solve_equilibrium(
     start : EquilibriumResult, optional
         Prior native result supplying a start; branch/layout admission remains
         native and is not bypassed by a supplied result.
+    work_limit : int, optional
+        Positive native work allowance for a declared mixture bubble point at
+        fixed temperature. A supplied start must have the same declaration
+        with one lower neutral feed amount. The allowance counts Helmholtz
+        evaluations and equilibrium row and derivative entries. Numerical
+        stages check the allowance at their boundaries and can overrun within
+        a stage. A budget-exhausted result carries no pressure or state.
 
     Returns
     -------
@@ -938,8 +947,10 @@ def solve_equilibrium(
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
     if isinstance(model, IdealMoleFraction):
+        if work_limit is not None:
+            raise ValueError("work_limit requires a declared mixture bubble")
         return logged(_core.solve_equilibrium, model._model, native, start)
-    return logged(_core.solve_equilibrium, model._model, native, start, model.component_ids)
+    return logged(_core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit)
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:

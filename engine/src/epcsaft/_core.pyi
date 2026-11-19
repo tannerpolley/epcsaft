@@ -4118,6 +4118,7 @@ def solve_equilibrium(
     problem: EquilibriumProblem,
     start: Optional[EquilibriumResult] = ...,
     component_ids: Sequence[str] = ...,
+    work_limit: int | None = None,
 ) -> EquilibriumResult:
     """Solve the declared equilibrium problem natively.
 

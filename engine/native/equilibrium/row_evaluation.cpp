@@ -1401,6 +1401,7 @@ template double CompiledSystem::chemical_row(const PhasePointValues<double>&, st
 
 template <typename Base>
 PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<Base>& prepared, std::optional<std::size_t> chemical_phase) const {
+    core::CalculationWork::equilibrium_entry();
     core::Scope scope("equilibrium_evaluate");
     if constexpr (std::is_same_v<Base, double>) if (ideal) return {ideal_rows(*this, prepared).Forward(0, prepared.point), 0.0, 0.0};
     const auto& point = prepared.point;
@@ -1780,6 +1781,7 @@ std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& at) const { re
 
 template <typename Base>
 std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prepared) const {
+    core::CalculationWork::equilibrium_entry();
     core::Scope scope("equilibrium_jacobian");
     if constexpr (std::is_same_v<Base, double>) {
     if (problem.loading) {
@@ -2006,6 +2008,7 @@ std::vector<double> CompiledSystem::hessian(
 std::vector<double> CompiledSystem::hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
+    core::CalculationWork::equilibrium_entry();
     core::Scope scope("equilibrium_hessian");
     const auto& point = prepared.point;
     const std::size_t n = point.size();
@@ -2084,6 +2087,7 @@ RowSeries CompiledSystem::row_series(
     const PhasePoint& prepared, const std::vector<std::vector<double>>& state,
     const std::vector<double>& control, std::size_t order, bool plane, bool parameter_pairs, const std::vector<std::size_t>& parameter_union
 ) const {
+    core::CalculationWork::equilibrium_entry();
     core::Scope scope("equilibrium_row_series");
     if (ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const std::size_t n = prepared.point.size();
@@ -2372,6 +2376,7 @@ RowSeries CompiledSystem::row_series(
 std::vector<double> CompiledSystem::constraint_hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
+    core::CalculationWork::equilibrium_entry();
     if (ideal) {
         if (!constraint_multipliers.empty() && constraint_multipliers.size() != rows.size())
             throw std::invalid_argument("constraint multiplier count");

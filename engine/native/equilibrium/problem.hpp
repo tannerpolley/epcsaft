@@ -970,7 +970,8 @@ struct EquilibriumAttemptReporting final {
 EPC_API EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,
     const EquilibriumProblem& problem,
-    const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {}
+    const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {},
+    std::optional<std::size_t> work_limit = std::nullopt
 );
 EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
     std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,

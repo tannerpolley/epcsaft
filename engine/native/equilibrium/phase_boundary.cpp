@@ -689,7 +689,8 @@ BoundaryAttempt admit_result(
     const auto refuse = [&](ContinuationStop stop, std::string message) {
         outcome.stop = stop;
         outcome.message = std::move(message);
-        core::retain_failure(result.first_numerical_failure, outcome.message, "continuation admission");
+        if (!core::CalculationWork::stopped())
+            core::retain_failure(result.first_numerical_failure, outcome.message, "continuation admission");
         outcome.observations.observe(result);
         outcome.result = std::move(result);
         return std::move(outcome);
@@ -708,18 +709,17 @@ BoundaryAttempt admit_result(
         result.topology_pair = topology.pair;
         return refuse(stop_of(result, outcome.terminal), "supplied state fails the candidate topology predicate");
     }
-    BranchCheck branches;
-    try { branches = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
+    BranchCheck branch;
+    try { branch = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
     catch (const std::exception& error) {
         if (compiled.problem.spinodal && compiled.spinodal_search && !std::isfinite(compiled.spinodal_search->seed))
             result = spinodal_search_failure(compiled, std::move(result), error.what());
-        branches.message = error.what();
+        branch.message = error.what();
     }
-    if (!branches.accepted) branches.message += "; driver: " + result.message;
-    outcome.accepted = branches.accepted;
-    outcome.terminal = branches.terminal;
-    outcome.message = branches.message;
-    if (!branches.accepted) return refuse(ContinuationStop::branch_lost, branches.message);
+    outcome.terminal = branch.terminal;
+    if (!branch.accepted) return refuse(ContinuationStop::branch_lost, branch.message + "; driver: " + result.message);
+    outcome.accepted = true;
+    outcome.message = branch.message;
     outcome.observations.observe(result);
     outcome.result = std::move(result);
     return outcome;
@@ -747,12 +747,13 @@ void reject(ContinuationResult& result, const BoundaryAttempt& attempt, double q
 
 // One predictor-corrector attempt shared by the straight path and the envelope: generated layout and
 // rank, the Euler predictor over `delta` along the implicit tangent at the accepted state, the admitted
-// domain and the same-driver corrector. `predict_anchors`: the previous accepted density or else the density at
-// the predicted coordinates witnesses each phase's branch (the envelope passes its own Euler-predicted densities).
+// domain and the same-driver corrector. Continuation uses the previous or predicted density as a branch witness.
+// A declared target independently selects its density roots.
+enum class DensityAdmission { Previous, Predicted, Declared };
 BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& current,
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
-                std::vector<double> anchors, bool predict_anchors, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
+                std::vector<double> anchors, DensityAdmission admission, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
                 const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
     BoundaryAttempt attempt;
     attempt.terminal = true;
@@ -795,7 +796,8 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
                 }
             }
             auto solved = unless_failed(solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm)), observations);
-            if (!predict_anchors || compiled.mode_count) return admit_result(compiled, std::move(solved), anchors, false, scope);
+            if (admission != DensityAdmission::Predicted || compiled.mode_count)
+                return admit_result(compiled, std::move(solved), anchors, admission == DensityAdmission::Declared, scope);
             auto previous = admit_result(compiled, solved, anchors, false, scope);
             if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
             const auto at = compiled.prepare(predicted, true);
@@ -986,7 +988,7 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
         core::Scope attempt_scope("equilibrium_envelope_attempt");
         attempt_scope.probe("path_value", s_try);
         CompiledSystem compiled = compile_problem(model, problem);
-        auto attempt = advance(start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, false, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
+        auto attempt = advance(start, current, y, compiled, problem, [&](auto*) { return tangent; }, s_try - s, expected, DensityAdmission::Previous, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, nullptr, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted) {
             const auto pair = swapped_pair(compiled, y, attempt.result->coordinates);
@@ -1537,6 +1539,7 @@ BranchCheck check_density_branches(
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
     const PhasePoint* supplied
 ) {
+    if (core::CalculationWork::stop_at("density admission")) return {false, false, "work allowance exhausted"};
     const auto& model = *compiled.model;
     if (limits) limits->check();
     // The driver's published point serves when it is this result's point: admission reads only its
@@ -1733,7 +1736,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
             auto tangent = sensitivity(current, y_current, path.lever(current), failure);
             w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
             return tangent;
-        }, q_try - q, anchors, parameter_path, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
+        }, q_try - q, anchors, parameter_path ? DensityAdmission::Predicted : DensityAdmission::Previous, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
         observations.observe(attempt.observations);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
@@ -1794,6 +1797,60 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
     core::Scope scope("continue_equilibrium");
     return continue_path(model, request, nullptr, {});
+}
+
+bool supports_work_limit(const EquilibriumProblem& p) {
+    if (p.phase_calculation != PhaseCalculation::Declared || p.phases.size() != 2 || p.temperature.free || !p.pressure.free || p.feed.kind != FeedKind::Amounts
+        || p.discovery || p.critical || p.spinodal || p.envelope || p.azeotrope || p.loading
+        || !p.solids.empty() || p.volume_m3 || p.internal_energy_j || p.enthalpy_j || p.entropy_j_per_k)
+        return false;
+    const auto& liquid = p.phases[p.phases[0].kind == PhaseKind::Liquid ? 0 : 1];
+    const auto& vapor = p.phases[p.phases[0].kind == PhaseKind::Liquid ? 1 : 0];
+    return liquid.kind == PhaseKind::Liquid && liquid.is_free() && vapor.kind == PhaseKind::Vapor && vapor.is_zero_pinned();
+}
+
+EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope) {
+    if (seed.model_identity != target.model || !seed.declaration || !seed.has_state()
+        || !seed.requested_tolerance_met.value_or(false) || !supports_work_limit(*seed.declaration))
+        throw std::invalid_argument("bubble source must be admitted on the target model");
+    if (const auto difference = declaration_difference(*seed.declaration, target.problem, true); !difference.empty())
+        throw std::invalid_argument("bubble source: " + difference);
+    if (seed.declaration->temperature.value != target.problem.temperature.value)
+        throw std::invalid_argument("bubble source temperature differs");
+    const auto source = compile_problem(*target.model, *seed.declaration);
+    if (const auto difference = layout_difference(source, target); !difference.empty())
+        throw std::invalid_argument("bubble source: " + difference);
+    if (seed.coordinates.size() != source.unknown_count())
+        throw std::invalid_argument("bubble source coordinates differ from compiled layout");
+    const auto& charge = target.model->parameters().charge_number;
+    std::size_t additions = 0;
+    for (std::size_t i = 0; i < target.n_feed.size(); ++i) {
+        if (target.n_feed[i] == source.n_feed[i]) continue;
+        if (target.n_feed[i] < source.n_feed[i] || (!charge.empty() && charge[i] != 0))
+            throw std::invalid_argument("bubble source differs by more than a neutral feed addition");
+        ++additions;
+    }
+    if (additions != 1) throw std::invalid_argument("bubble source needs one increased neutral feed amount");
+    if (core::CalculationWork::stop_at("source admission")) return structural_result(target, scope);
+    const auto admitted = admit_result(source, seed, {}, true, scope, true);
+    if (!admitted.accepted) {
+        auto result = structural_result(target, scope);
+        result.message = "bubble source: " + admitted.message;
+        result.first_numerical_failure = admitted.observations.first_numerical_failure;
+        return result;
+    }
+    if (core::CalculationWork::stop_at("feed prediction")) return structural_result(target, scope);
+    Path path{source.problem, source.n_feed, target.n_feed, {}, {}};
+    path.t1 = target.problem.temperature.value;
+    auto attempt = advance(source, source, seed.coordinates, target, target.problem, [&](auto* failure) {
+        return sensitivity(source, seed.coordinates, path.lever(source), failure);
+    }, 1.0, {}, DensityAdmission::Declared, scope, seed.optimizer_state);
+    auto result = attempt.result ? std::move(*attempt.result) : structural_result(target, scope);
+    if (attempt.accepted) return refine_selected_endpoint(target, std::move(result), scope);
+    result.message = std::move(attempt.message);
+    core::retain_first(result.first_numerical_failure, attempt.observations.first_numerical_failure);
+    refuse(result);
+    return result;
 }
 
 // ALG-EQUILIBRIUM: pure saturation uses four neighboring sources and direct target transport; mixtures use
