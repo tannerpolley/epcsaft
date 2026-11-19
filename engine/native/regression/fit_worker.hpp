@@ -65,7 +65,7 @@ FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, seed, j, k, l, m,
 FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)
 FIELDS(equilibrium::StabilityMeasure, a, b, c, d, e, f, g, h, i)
 FIELDS(HydrationHold, a, b, c, d, e, f)
-FIELDS(Failure, a, b, c, d, e, f, first_numerical_failure, central_value, convergence)
+FIELDS(Failure, a, b, c, d, e, f, convergence)
 FIELDS(MeasuredInput, a, b, c, d, e, f)
 FIELDS(MeasurementGroup, a, b, c, d)
 FIELDS(MeasurementUncertainty, a, b, c, d)

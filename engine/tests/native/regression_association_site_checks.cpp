@@ -329,85 +329,122 @@ void fit_failure_records() {
     // This test-only target below the rounding floor retains the bubble's
     // recovered density-scan diagnostic. The normal association target is unchanged.
     request.controls.solver_options.values[policy::association] = 2e-16;
-    const HelmholtzModel model(parameters, request.coordinates.active_parameters(), {}, request.controls.solver_options);
+    auto solver_options = request.controls.solver_options;
+    solver_options.nested_solve = true;
+    const auto active = request.coordinates.active_parameters();
+    const HelmholtzModel model(parameters, active, {}, solver_options);
     auto first = solved(ObservationKind::EquilibriumPressure, equilibrium_support::bubble_at(330.));
     const auto reference = predict_validated(model, first);
     CHECK(reference.value && reference.first_numerical_failure
         && reference.first_numerical_failure->stop == core::Stop::converged_to_floor);
     first.observed = *reference.value;
+    request.weights = {1., 1.};
+
     auto cell = equilibrium_support::flash(2);
     cell.temperature = FreeValue::fixed(329.);
     cell.pressure = FreeValue::fixed(1e4);
-    auto row = site_row(cell, 0, 0);
-    row.observed = 1e-250;
-    const auto initial = predict_validated(model, row);
-    CHECK(initial.value);
-    request.observations = {first, row};
-    for (const int workers : {1, 2}) {
-        request.controls.workers = workers;
-        const auto result = fit(request);
-        CHECK(result.optimizer == std::vector<double>{0.} && result.predictions.at(1) == *initial.value);
-        CHECK(result.first_numerical_failure && !result.failures.empty());
-        const auto& failure = result.failures.front();
-        const HelmholtzModel trial(request.coordinates.apply(parameters, failure.optimizer), request.coordinates.active_parameters(),
-            {}, request.controls.solver_options);
-        const auto refused = predict(trial, row);
-        CHECK(!refused.value && !refused.residual && refused.convergence && refused.convergence->criterion);
-        CHECK(std::string_view(refused.convergence->criterion->name) == policy::ASSOCIATION_RESIDUAL.name
-            && refused.convergence->stop == core::Stop::nonfinite);
-        const auto earlier = core::describe(*reference.first_numerical_failure);
-        const auto terminal = core::describe(*refused.convergence);
-        CHECK(truth("fit-failure/records", failure.observation == 1 && !failure.jacobian && !failure.central_value
-            && failure.status == refused.status && failure.message == refused.message && failure.convergence
-            && core::describe(*failure.convergence) == terminal
-            && failure.first_numerical_failure && core::describe(*failure.first_numerical_failure) == earlier
-            && core::describe(*result.first_numerical_failure) == earlier && earlier != terminal,
-            fields({field("workers", workers), field("row", failure.observation), field("first", earlier),
-                field("terminal", terminal), field("optimizer", failure.optimizer)})));
-    }
+    const auto coalesced = equilibrium_support::bubble_at(700.);
+    const auto failed_solve = solve_equilibrium(model, coalesced);
+    CHECK(!failed_solve.success && !failed_solve.terminal_numerical_failure
+        && failed_solve.convergence.stop == core::Stop::infeasible
+        && failed_solve.convergence.cause == "phases_coalesced");
 
-    // A subnormal scale distinguishes a refusal during projection from one after column mapping.
-    row.form = ResidualForm::Difference;
-    row.scale = std::numeric_limits<double>::min() / 16.;
-    row.observed = 1.;
-    auto density = solved(ObservationKind::PhaseDensity, cell);
-    density.form = row.form;
-    density.scale = row.scale;
-    for (const int workers : {1, 2}) {
-        request.controls.workers = workers;
-        for (const auto& observation : {density, row}) {
-            const auto prediction = predict_validated(model, observation);
-            CHECK(prediction.solved && prediction.solved->success && prediction.convergence && prediction.value
-                && !prediction.residual && prediction.status == ObservationStatus::Nonfinite);
-            request.observations[1] = observation;
-            const auto result = fit(request);
-            CHECK(result.status == "initial_evaluation_failed" && result.failures.size() == 1);
-            const auto& failure = result.failures.front();
-            CHECK(truth("fit-failure/residual-record", failure.observation == 1 && failure.jacobian
-                && failure.status == ObservationStatus::Nonfinite && failure.message == "the residual is not finite"
-                && failure.central_value == prediction.value && !failure.convergence,
-                fields({field("workers", workers), field("site_row", observation.site.has_value()),
-                    field("row", failure.observation), field("convergence", failure.convergence ? core::describe(*failure.convergence) : "absent")})));
-        }
-
-        auto jacobian_row = row;
-        jacobian_row.observed = *initial.value;
-        const auto prediction = predict_validated(model, jacobian_row);
-        CHECK(prediction.value == initial.value && prediction.residual == 0.);
-        const auto action = differentiate(model, jacobian_row, prediction);
+    struct Refusal {
+        const char* stage;
+        Observation row;
+        ObservationStatus status;
+        std::string message;
+        std::optional<double> value;
+        std::string record;
+        bool initial_trial = true;
+        double weight = 1.;
+    };
+    const auto describe = [](const std::optional<core::Convergence>& record) {
+        return record ? core::describe(*record) : "absent";
+    };
+    const auto subnormal_scale = std::numeric_limits<double>::min() / 16.;
+    auto large_mass = parameters;
+    large_mass.molar_mass_kg_per_mol[0] = 1e308;
+    const HelmholtzModel mass_model(large_mass, active, {}, solver_options);
+    const auto terminal_parameters = request.coordinates.apply(parameters, {-1000.});
+    const HelmholtzModel terminal_model(terminal_parameters, active, {}, solver_options);
+    for (auto row : {solved(ObservationKind::PhaseDensity, cell), site_row(cell, 0, 0)}) {
+        const bool site = row.site.has_value();
+        const auto prediction = predict_validated(model, row);
+        CHECK(prediction.value && prediction.solved && prediction.solved->success && prediction.convergence);
+        const auto action = differentiate(model, row, prediction);
         CHECK(action.status == ObservationStatus::Available && action.value.size() == 1
             && std::isfinite(action.value.front()) && action.value.front() != 0.);
-        request.observations[1] = jacobian_row;
-        const auto result = fit(request);
-        CHECK(result.status == "initial_evaluation_failed" && result.failures.size() == 1);
-        const auto& failure = result.failures.front();
-        CHECK(truth("fit-failure/optimizer-jacobian", failure.observation == 1 && failure.jacobian
-            && failure.status == ObservationStatus::Nonfinite && failure.message == "optimizer Jacobian not finite"
-            && failure.central_value == prediction.value && !failure.convergence
-            && result.residuals.empty() && result.optimizer_jacobian.empty(),
-            fields({field("workers", workers), field("row", failure.observation), field("cause", failure.message),
-                field("residual", *prediction.residual), field("site_fraction", *prediction.value),
-                field("first_action", action.value.front())})));
+
+        auto terminal = row;
+        terminal.observed = site ? 1e-250 : 1e250;
+        const auto terminal_prediction = predict(terminal_model, terminal);
+        CHECK(!terminal_prediction.value && terminal_prediction.convergence && terminal_prediction.convergence->criterion
+            && terminal_prediction.convergence->stop == core::Stop::nonfinite
+            && std::string_view(terminal_prediction.convergence->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
+        auto driver = row;
+        driver.problem = coalesced;
+        const auto driver_prediction = predict_validated(model, driver);
+        CHECK(!driver_prediction.value && driver_prediction.status == ObservationStatus::TopologyEvent);
+
+        auto cost = row;
+        cost.form = ResidualForm::Difference;
+        cost.scale = 1e-160;
+        cost.observed = 1.;
+        const auto cost_prediction = predict_validated(model, cost);
+        CHECK(cost_prediction.residual && std::isfinite(*cost_prediction.residual)
+            && !std::isfinite(*cost_prediction.residual * *cost_prediction.residual));
+        auto residual = cost;
+        residual.scale = subnormal_scale;
+        const auto residual_prediction = predict_validated(model, residual);
+        CHECK(residual_prediction.value == prediction.value && !residual_prediction.residual);
+        auto jacobian = residual;
+        jacobian.observed = *prediction.value;
+        CHECK(predict_validated(model, jacobian).residual == 0.);
+
+        const double large_weight = std::numeric_limits<double>::max();
+        CHECK(!std::isfinite(std::sqrt(large_weight) * *cost_prediction.residual));
+        std::vector<Refusal> cases{
+            {"driver", driver, ObservationStatus::TopologyEvent, driver_prediction.message, {}, core::describe(failed_solve.convergence)},
+            {"residual", residual, ObservationStatus::Nonfinite, "the residual is not finite", prediction.value, "absent"},
+            {"weighted-residual", cost, ObservationStatus::Nonfinite, "weighted residual not finite", prediction.value, "absent", true, large_weight},
+            {"weighted-cost", cost, ObservationStatus::Nonfinite, "accumulated weighted cost not finite", prediction.value, "absent"},
+            {"optimizer-jacobian", jacobian, ObservationStatus::Nonfinite, "optimizer Jacobian not finite", prediction.value, "absent"},
+            {"terminal", terminal, terminal_prediction.status, terminal_prediction.message, {}, describe(terminal_prediction.convergence), false},
+        };
+        if (!site) {
+            auto mass = row;
+            mass.mass_basis = true;
+            const auto projection = predict_validated(mass_model, mass);
+            CHECK(projection.solved && projection.solved->success && !projection.value && !projection.residual);
+            cases.push_back({"projection", mass, ObservationStatus::Nonfinite, "the predicted value is not finite", {}, "absent"});
+        }
+
+        const auto earlier = describe(reference.first_numerical_failure);
+        for (const auto& item : cases) for (const int workers : {1, 2}) {
+            auto trial = request;
+            if (item.row.mass_basis) trial.parameters = large_mass;
+            trial.controls.workers = workers;
+            trial.observations = {first, item.row};
+            trial.weights[1] = item.weight;
+            const auto result = fit(trial);
+            CHECK(!result.failures.empty());
+            const auto& failure = result.failures.front();
+            CHECK(truth(std::string("fit-failure/") + item.stage, failure.observation == 1
+                && failure.status == item.status && failure.message == item.message && failure.central_value == item.value
+                && describe(failure.convergence) == item.record && describe(failure.first_numerical_failure) == earlier
+                && describe(result.first_numerical_failure) == earlier
+                && (item.initial_trial ? failure.jacobian && result.status == "initial_evaluation_failed"
+                    && result.residuals.empty() && result.optimizer_jacobian.empty()
+                    : !failure.jacobian && failure.optimizer == std::vector<double>{-1000.}
+                    && result.optimizer == std::vector<double>{0.} && result.predictions.at(1) == *prediction.value),
+                fields({field("workers", workers), field("site_row", site), field("row", failure.observation),
+                    field("cause", failure.message), field("first", describe(result.first_numerical_failure)),
+                    field("record", describe(failure.convergence)), field("expected_record", item.record),
+                    (failure.central_value ? field("central", *failure.central_value) : field("central", "absent")),
+                    field("weighted_cost_residual", *cost_prediction.residual), field("first_action", action.value.front()),
+                    field("optimizer", failure.optimizer)})));
+        }
     }
 }
 

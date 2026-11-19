@@ -142,7 +142,7 @@ struct PredictionGradient final {
     ObservationStatus status = ObservationStatus::ActionUnavailable;
     std::string message;
     std::vector<ResidualEnergyAction> parameter_actions{};
-    std::optional<core::Convergence> first_numerical_failure;
+    std::optional<core::Convergence> first_numerical_failure, refusal_convergence;
     std::vector<double> raw_minimum;
     std::optional<double> central_value{};
 };

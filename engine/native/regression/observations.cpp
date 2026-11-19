@@ -319,11 +319,11 @@ void validate(const Observation& observation, const HelmholtzModel& model, const
 }
 
 static Prediction unavailable_solve(Prediction result, const std::exception& failure,
-    ObservationStatus status = ObservationStatus::CentralSolveUnavailable) {
+    ObservationStatus status = ObservationStatus::CentralSolveUnavailable, const char* operation = "prediction solve") {
     result.status = status;
     if (const auto* record = dynamic_cast<const core::ConvergenceFailure*>(&failure))
         result.convergence = result.refusal_convergence = record->record;
-    retain_density_failure(result.first_numerical_failure, failure, status == ObservationStatus::DensityUnavailable ? "prediction density" : "prediction solve");
+    retain_density_failure(result.first_numerical_failure, failure, operation);
     result.message = failure.what();
     return result;
 }
@@ -440,10 +440,8 @@ Prediction predict(
         } catch (const std::bad_alloc&) {
             throw;
         } catch (const std::exception& error) {
-            result.status = observation.kind == ObservationKind::BulkRelativePermittivity
-                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable;
-            retain_density_failure(result.first_numerical_failure, error, "prediction");
-            result.message = error.what();
+            return unavailable_solve(std::move(result), error, observation.kind == ObservationKind::BulkRelativePermittivity
+                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable, "prediction");
         }
         return result;
     }
@@ -532,7 +530,7 @@ Prediction predict(
         try {
             state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const std::runtime_error& failure) {
-            return unavailable_solve(std::move(result), failure, ObservationStatus::DensityUnavailable);
+            return unavailable_solve(std::move(result), failure, ObservationStatus::DensityUnavailable, "prediction density");
         }
         result.convergence = state.density_convergence;
         core::retain_first(result.first_numerical_failure, state.first_numerical_failure);
@@ -593,6 +591,7 @@ Prediction predict(
             if (!result.pressure_reference->value) {
                 result.status = ObservationStatus::CentralSolveUnavailable;
                 result.message = "pressure reference: " + result.pressure_reference->message;
+                result.refusal_convergence = result.pressure_reference->refusal_convergence;
                 core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
             }
             problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
@@ -607,7 +606,7 @@ Prediction predict(
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
     if (!solved.success) core::retain_first(result.first_numerical_failure, solved.convergence);
-    if (!solved.success) result.refusal_convergence = solved.terminal_numerical_failure;
+    if (!solved.success) result.refusal_convergence = solved.terminal_numerical_failure.value_or(solved.convergence);
     result.requested_tolerance_met = solved.requested_tolerance_met;
     result.message = solved.solver_status + ": " + solved.message;
     // The driver sets the topology fields before its acceptance gate, so a vanished or
@@ -726,6 +725,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
         if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
             result.status = ObservationStatus::ReferenceUnavailable; result.message = reference.solvent_cause;
+            result.refusal_convergence = reference.solvent_convergence;
             core::retain_first(result.first_numerical_failure, reference.solvent_convergence); return;
         }
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
@@ -1190,6 +1190,7 @@ std::vector<PredictionGradient> differentiate_group(
                 if (item.status != equilibrium::SolvedStateActionStatus::Available || !item.action.has_value()) {
                     gradient.value.clear();
                     gradient.status = ObservationStatus::ActionUnavailable;
+                    if (item.property_diagnostics) gradient.refusal_convergence = item.property_diagnostics->first_numerical_failure;
                     if (observation.site && observations.size() == 1) gradient.central_value = prediction.value;
                     gradient.message = std::string(equilibrium::solved_state_status_name(item.status)) + ": " + item.diagnostic_message.value_or("");
                     break;

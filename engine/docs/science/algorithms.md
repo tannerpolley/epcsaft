@@ -3316,8 +3316,12 @@ row is eligible; recovered causes are selected in row and producer order.
 Across evaluations the fit retains the chronological first cause. A
 `TrialFailure` keeps its own evaluation's cause, row and optimizer point.
 Recovered causes on successful rows do not create rejected trials.
-For a refused association site row, the selected failure also carries the
-row's convergence record and any available central site fraction.
+A refused row keeps its available central prediction through residual
+evaluation, weighting and differentiation. The selected failure carries the
+blocking operation's convergence record when available. A failed central
+solve supplies its terminal numerical record or, in its absence, the driver's
+own convergence record. A successful solve's record describes that solve
+only.
 Measurement LLT refusal is infeasible, rather than necessarily rank deficient;
 whitening distinguishes nonfinite solved operands from overflowing cost.
 Hydration holds retain both caller criteria in detailed capture, the existing
