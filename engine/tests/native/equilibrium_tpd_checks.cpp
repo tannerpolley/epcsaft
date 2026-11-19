@@ -2352,6 +2352,19 @@ void check_reaction_relaxed_search() {
     }
 }
 
+void check_mdea_full_stability() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mdea-373-stability.inc"
+    const auto prediction = regression::predict_validated(model, observation);
+    CHECK(prediction.status == regression::ObservationStatus::Available && prediction.stability);
+    const auto& report = prediction.stability->report;
+    CHECK(report.no_descent_in_trial_set && report.trials.size() > 1);
+    const auto& trial = report.trials.at(1);
+    CHECK(trial.phase.kind == PhaseKind::Liquid && trial.phase.support == liquid.support);
+    CHECK(trial.optimizer.convergence.residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+}
+
 // PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and refine to 128 panels.
 void check_reaction_relaxed_pz_row() {
     using namespace epcsaft;
