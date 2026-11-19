@@ -2407,6 +2407,61 @@ void check_mdea_full_stability() {
     CHECK(trial.optimizer.convergence.residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
 }
 
+void check_mdea_bubble_work_limit() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const auto run = [](std::optional<std::size_t> allowance, std::string_view boundary) {
+        // Replay the same cold preparations on a fresh model for each allowance.
+#include "fixtures/mdea-313-bubble.inc"
+        auto source = bubble;
+        source.feed.values.front() = 0.875;
+        std::size_t cold_work;
+        {
+            core::CalculationWork::Limit unbounded{std::numeric_limits<std::size_t>::max()};
+            core::CalculationWork meter(true, &unbounded);
+            const auto cold = solve_equilibrium(model, source);
+            CHECK(cold.has_state() && cold.requested_tolerance_met.value_or(false));
+            cold_work = meter.units();
+        }
+        source.feed.values.front() = 0.88;
+        const auto seed = solve_equilibrium(model, source);
+        CHECK(seed.has_state() && seed.requested_tolerance_met.value_or(false));
+
+        core::Capture capture(false);
+        const auto result = solve_equilibrium(model, bubble, seed, {}, allowance.value_or(cold_work));
+        const auto& trace = capture.trace();
+        const auto work = std::find_if(trace.events.begin(), trace.events.end(),
+            [](const auto& e) { return std::string_view(e.name) == "bubble_work"; });
+        CHECK(work != trace.events.end() && work->reason == boundary);
+        const auto spent = static_cast<std::size_t>(work->values.at(0));
+        if (boundary.empty()) {
+            constexpr double reference_pressure = 27204273.833506774;  // Pa, retained r4 admission replay
+            CHECK(result.has_state() && result.pressure);
+            CHECK(std::abs(*result.pressure - reference_pressure) <= 1e-10 * reference_pressure);
+            CHECK(result.requested_tolerance_met.value_or(false));
+            CHECK(result.convergence.residual <= bubble.solver_options.value(policy::row));
+            CHECK(spent > 0 && spent <= allowance.value_or(cold_work));
+        } else {
+            CHECK(result.convergence.stop == core::Stop::budget_exhausted);
+            CHECK(!result.pressure && !result.has_state() && result.coordinates.empty());
+            CHECK(!result.first_numerical_failure);
+            CHECK(std::count_if(trace.events.begin(), trace.events.end(),
+                [](const auto& e) { return std::string_view(e.name) == "ipopt_iteration" && e.iteration == 0; }) == 1);
+            CHECK(std::none_of(trace.spans.begin(), trace.spans.end(), [](const auto& span) {
+                return std::string_view(span.name) == "equilibrium_cold_fallback"
+                    || std::string_view(span.name) == "reacting_physical_amount_retry";
+            }));
+        }
+        return spent;
+    };
+
+    const auto completed = run(std::nullopt, "");
+    CHECK(run(completed, "") == completed);
+    CHECK(run(completed - 1, "return") == completed);
+    // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
+    CHECK(run(2298, "density admission") == 2298);
+}
+
 // PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and refine to 128 panels.
 void check_reaction_relaxed_pz_row() {
     using namespace epcsaft;
