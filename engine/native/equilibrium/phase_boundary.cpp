@@ -689,7 +689,8 @@ BoundaryAttempt admit_result(
     const auto refuse = [&](ContinuationStop stop, std::string message) {
         outcome.stop = stop;
         outcome.message = std::move(message);
-        core::retain_failure(result.first_numerical_failure, outcome.message, "continuation admission");
+        if (!core::CalculationWork::stopped())
+            core::retain_failure(result.first_numerical_failure, outcome.message, "continuation admission");
         outcome.observations.observe(result);
         outcome.result = std::move(result);
         return std::move(outcome);
@@ -708,18 +709,17 @@ BoundaryAttempt admit_result(
         result.topology_pair = topology.pair;
         return refuse(stop_of(result, outcome.terminal), "supplied state fails the candidate topology predicate");
     }
-    BranchCheck branches;
-    try { branches = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
+    BranchCheck branch;
+    try { branch = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
     catch (const std::exception& error) {
         if (compiled.problem.spinodal && compiled.spinodal_search && !std::isfinite(compiled.spinodal_search->seed))
             result = spinodal_search_failure(compiled, std::move(result), error.what());
-        branches.message = error.what();
+        branch.message = error.what();
     }
-    if (!branches.accepted) branches.message += "; driver: " + result.message;
-    outcome.accepted = branches.accepted;
-    outcome.terminal = branches.terminal;
-    outcome.message = branches.message;
-    if (!branches.accepted) return refuse(ContinuationStop::branch_lost, branches.message);
+    outcome.terminal = branch.terminal;
+    if (!branch.accepted) return refuse(ContinuationStop::branch_lost, branch.message + "; driver: " + result.message);
+    outcome.accepted = true;
+    outcome.message = branch.message;
     outcome.observations.observe(result);
     outcome.result = std::move(result);
     return outcome;
@@ -1846,12 +1846,11 @@ EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const 
         return sensitivity(source, seed.coordinates, path.lever(source), failure);
     }, 1.0, {}, DensityAdmission::Declared, scope, seed.optimizer_state);
     auto result = attempt.result ? std::move(*attempt.result) : structural_result(target, scope);
-    if (!attempt.accepted) {
-        result.message = std::move(attempt.message);
-        core::retain_first(result.first_numerical_failure, attempt.observations.first_numerical_failure);
-        refuse(result);
-    }
-    return attempt.accepted ? refine_selected_endpoint(target, std::move(result), scope) : std::move(result);
+    if (attempt.accepted) return refine_selected_endpoint(target, std::move(result), scope);
+    result.message = std::move(attempt.message);
+    core::retain_first(result.first_numerical_failure, attempt.observations.first_numerical_failure);
+    refuse(result);
+    return result;
 }
 
 // ALG-EQUILIBRIUM: pure saturation uses four neighboring sources and direct target transport; mixtures use

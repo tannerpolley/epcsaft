@@ -81,12 +81,12 @@ public:
             counts_->energy_evaluations - begin_.energy_evaluations};
     }
     std::size_t units() const { return counts_->energy_evaluations + counts_->equilibrium_entries; }
-    static bool limited() { return current() && current()->limit_; }
+    static Limit* active_limit() { return current() ? current()->limit_ : nullptr; }
+    static bool stopped() { return active_limit() && active_limit()->boundary; }
     static bool stop_at(const char* boundary) {
-        auto* work = current();
-        if (!work || !work->limit_ || work->units() < work->limit_->units) return false;
-        if (!work->limit_->boundary) work->limit_->boundary = boundary;
-        return true;
+        auto* limit = active_limit();
+        if (limit && !limit->boundary && current()->units() >= limit->units) limit->boundary = boundary;
+        return limit && limit->boundary;
     }
     static void equilibrium_entry() {
         if (auto* work = current(); work && work->limit_) ++work->counts_->equilibrium_entries;

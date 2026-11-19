@@ -1546,7 +1546,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
     if (!limits) limits = &defaults;
     const auto evaluated_before = limits->evaluations;
     core::Scope span("mixture_precision");
-    result.numerical_estimates = equilibrium_numerical_estimates(compiled, result, result.prepared_endpoint.get(), core::CalculationWork::limited());
+    result.numerical_estimates = equilibrium_numerical_estimates(compiled, result, result.prepared_endpoint.get(), core::CalculationWork::active_limit());
     const auto& error = *result.numerical_estimates;
     const double radius = error.physical_radius;
     scope.probe("mixture_precision_decision", {*result.temperature, radius}, 0, error.cause.c_str());
@@ -1602,7 +1602,8 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
     }
     refined.evaluations += limits->evaluations - evaluated_before;
     if (!accepted) {
-        core::retain_failure(refined.first_numerical_failure, refined.message, "mixture refinement");
+        if (!core::CalculationWork::stopped())
+            core::retain_failure(refined.first_numerical_failure, refined.message, "mixture refinement");
         StageWork::publish_observations(refined, result);
         result.iterations = refined.iterations; result.evaluations = refined.evaluations;
         diagnostic.reason = "refinement refused: " + refined.message; return association_result(std::move(result), observations);
@@ -1701,13 +1702,12 @@ static EquilibriumResult run_driver_once(
         : "; OptimizeTNLP returned ") + application_return_name(returned);
     const std::string ipopt_failure = fatal ? "; Ipopt " + result.solver_status : "";
     record.solver_status = result.solver_status;
-    const auto limited_result = [&](const char* cause = "elapsed work budget exhausted") {
+    const auto limited_result = [&] {
         observations.merge(result.rank_records); StageWork::publish_observations(result, record);
-        auto limited = failed(cause);
+        auto limited = failed(core::CalculationWork::stopped() ? "" : "elapsed work budget exhausted");
         reject_elapsed(limited, scope); return limited;
     };
-    if (expired()) return limited_result();
-    if (core::CalculationWork::stop_at("optimizer endpoint")) return limited_result("work allowance exhausted");
+    if (expired() || core::CalculationWork::stop_at("optimizer endpoint")) return limited_result();
     std::vector<double> point = nlp->solution();
     if (point.empty()) point = limits || newton ? std::move(fallback) : declared.ideal ? declared.generic_point() : boundary_start(declared);
     const auto& cached = nlp->last_prepared();
@@ -1791,9 +1791,9 @@ static EquilibriumResult run_driver_once(
             non_error, inside_box, trial_branch, solid_violations, polish_evaluations, corrected, capped, initial_branch_stop);
     };
     const auto end_point = refine_trial && !newton && status == Ipopt::SUCCESS ? full : std::vector<double>{};
-    if (core::CalculationWork::stop_at("endpoint polish")) return limited_result("work allowance exhausted");
+    if (core::CalculationWork::stop_at("endpoint polish")) return limited_result();
     if (!polish(full)) return limited_result();
-    if (core::CalculationWork::stop_at("endpoint publication")) return limited_result("work allowance exhausted");
+    if (core::CalculationWork::stop_at("endpoint publication")) return limited_result();
     if (expired()) return limited_result();
     if (newton) {
         if (!free_amount_newton) {
@@ -1970,7 +1970,8 @@ EquilibriumResult recover_physical_amounts(
         cause = error.what();
     }
     if (cause) {
-        core::retain_failure(retried.first_numerical_failure, *cause, "physical amount retry");
+        if (!core::CalculationWork::stopped())
+            core::retain_failure(retried.first_numerical_failure, *cause, "physical amount retry");
         retried.message = std::string(stage) + " failed: " + *cause + "; driver: " + retried.message;
         refuse(retried);
     }
@@ -2277,7 +2278,8 @@ EquilibriumResult newton_attempt(const CompiledSystem& compiled, const std::vect
         fast = run_driver(compiled, initial, structural, scope, &coordinates, limits, Attempt::Newton);
         const auto branch = fast.success ? check_density_branches(compiled, fast, {}, true, scope, limits) : BranchCheck{};
         const bool accepted = fast.success && branch.accepted;
-        if (fast.success && !accepted) core::retain_failure(fast.first_numerical_failure, branch.message, "Newton admission");
+        if (fast.success && !accepted && !core::CalculationWork::stopped())
+            core::retain_failure(fast.first_numerical_failure, branch.message, "Newton admission");
         scope.probe("newton_fast_path_outcome", {static_cast<double>(fast.evaluations)}, 0,
             accepted ? "accepted" : fast.success ? "admission" : fast.message.c_str());
         if (accepted) { if (attempt) *attempt = std::move(coordinates); return fast; }
