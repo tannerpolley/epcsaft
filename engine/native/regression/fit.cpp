@@ -1301,7 +1301,7 @@ FitResult fit(const FitRequest& request) {
     owned.reset();  // the replay reads only the result: release the evaluator and its workers first
     if (!result.stability_predictions.empty()) {
         auto observations = request.observations; request.coordinates.apply(observations, result.optimizer);
-        const HelmholtzModel model(result.parameters, {}, request.thermochemistry, request.controls.solver_options);
+        const HelmholtzModel model(result.parameters, result.chart.active, request.thermochemistry, request.controls.solver_options);
         ReferenceCache references;
         for (std::size_t i = 0; i < observations.size(); ++i) if (observations[i].kind == ObservationKind::Stability) {
             auto fresh = predict(model, observations[i], {}, {}, &references);
