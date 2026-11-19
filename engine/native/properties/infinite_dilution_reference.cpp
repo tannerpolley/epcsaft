@@ -1101,9 +1101,10 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, dou
                              const std::vector<std::size_t>& consumed) {
         const auto batch = model.pressure_actions(temperature, pressure, x, DensityBranch::Liquid,
             {PropertyObservable::LogFugacityCoefficient}, {d}, state.molar_density);
-        result.diagnostics.push_back(batch.diagnostics);
+        core::retain_first(result.first_numerical_failure, batch.diagnostics.first_numerical_failure);
         std::vector<double> columns(count, 0.0);
         if (batch.density_status != PropertyActionStatus::Available) {
+            result.refusal_convergence = batch.density_convergence;
             result.status = batch.density_status; result.message = batch.density_message; return std::vector<double>{};
         }
         for (const auto i : consumed) {
@@ -1125,7 +1126,7 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, dou
             std::vector<double> insertion(count, 0.0); insertion[ions[i]] = 1.0;
             const auto series = model.reference_taylor(temperature, 1.0 / reference.solvent_state->molar_density,
                 solvent, insertion, d, 1, true);
-            result.diagnostics.push_back(series.diagnostics);
+            core::retain_first(result.first_numerical_failure, series.diagnostics.first_numerical_failure);
             if (series.status != PropertyActionStatus::Available) {
                 result.status = series.status; result.message = "reference input action unavailable"; return result;
             }
@@ -1135,7 +1136,7 @@ ElectrolyteInputAction electrolyte_input_action(const HelmholtzModel& model, dou
         std::vector<double> insertion(count, 0.0); insertion[sidx] = 1.0;
         const auto pure = model.reference_taylor(temperature, 1.0 / reference.pure_solvent_state->molar_density,
             solvent, insertion, d, 1, true);
-        result.diagnostics.push_back(pure.diagnostics);
+        core::retain_first(result.first_numerical_failure, pure.diagnostics.first_numerical_failure);
         if (pure.status != PropertyActionStatus::Available) {
             result.status = pure.status; result.message = "pure solvent input action unavailable"; return result;
         }

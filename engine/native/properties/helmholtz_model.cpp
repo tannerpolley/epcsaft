@@ -2014,6 +2014,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     core::AssociationObservations observations(true);
     PropertyActionBatch result;
     std::optional<core::Convergence> first;
+    std::optional<core::Convergence> association_refusal;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, strength;
     const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
@@ -2026,6 +2027,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
                 geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
+            association_refusal = error.record;
             need_residual = false;
             association_status = PropertyActionStatus::CentralPropertyUnavailable;
         }
@@ -2066,7 +2068,10 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         result = evaluate_actions(context, ids, observables, plan, result_support,
             ideal_status, association_status, endpoint, temperature_action,
             root != nullptr, root != nullptr ? root->pressure_density_derivative : 0.0);
-        if (pressure_chain) result.density_status = association_status;
+        if (pressure_chain) {
+            result.density_status = association_status;
+            result.density_convergence = std::move(association_refusal);
+        }
     } else {
         const double inverse_pressure_slope = 1.0 / root->pressure_density_derivative;
         std::size_t pressure_solves = 0;

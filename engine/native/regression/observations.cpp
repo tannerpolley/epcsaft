@@ -952,6 +952,8 @@ std::vector<PredictionGradient> differentiate_group(
                     auto action = electrolyte_input_action(model, row->temperature, row->pressure, row->composition,
                         row->ion_indices, row->stoichiometry, row->molality, *prediction.reference, *prediction.activity,
                         {d.temperature_k, d.pressure_pa, inputs[j].molality});
+                    core::retain_first(gradient.first_numerical_failure, action.first_numerical_failure);
+                    gradient.refusal_convergence = std::move(action.refusal_convergence);
                     value = row->kind == ObservationKind::MeanIonicActivityCoefficient ? action.mean_ionic : action.osmotic;
                     if (action.status != PropertyActionStatus::Available) gradient.message = action.message;
                 } else {

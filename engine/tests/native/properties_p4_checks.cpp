@@ -525,6 +525,42 @@ void properties_p4() {
         std::cout << "directional factorization refusal: T=300 rho=1000 self=1e26 cross=1e6 first="
             << rank->first_conditioning_warning->basis << " latest=" << rank->observation.basis << '\n';
     }
+    {
+        using namespace epcsaft;
+        // The density series uses the analytic pair start. The action uses the unbonded start.
+        auto parameters = properties_support::association_stress(2, 0.3);
+        const double energy = parameters.association_energy_over_k[0];
+        parameters.association_active = {0, 1, 1, 0};
+        parameters.association_energy_over_k = {0.0, energy, energy, 0.0};
+        parameters.association_volume = {0.0, 0.1, 0.1, 0.0};
+        parameters.site_multiplicity = {2, 1};
+        policy::SolverOptions options;
+        options.set(policy::association, 5e-17);
+        const HelmholtzModel paired(parameters, {}, {}, options);
+        const double T = 300.0, rho = 1100.0;
+        const std::vector<double> x{1.0};
+        double floor;
+        const auto series = properties::density_volume_taylor(paired, T, rho, x, floor);
+        const double P = GAS_CONSTANT_J_PER_MOL_K * T * (rho - series.c[1]);
+        const auto root = solve_density(paired, T, P, x, DensityBranch::Vapor, rho);
+        std::optional<core::Convergence> expected;
+        try {
+            (void)paired.evaluate(T, 1.0 / root.molar_density, x, DerivativeOrder::Value);
+        } catch (const core::ConvergenceFailure& error) {
+            expected = error.record;
+        }
+        CHECK(expected && expected->criterion && expected->criterion->value == options.value(policy::association));
+        const auto batch = paired.pressure_actions(T, P, x, DensityBranch::Vapor, {}, {{0.0, 1.0, {0.0}, {}}}, rho);
+        const auto record = core::describe(*expected);
+        const bool matches = batch.density_status == PropertyActionStatus::CentralPropertyUnavailable
+            && batch.density_convergence && core::describe(*batch.density_convergence) == record
+            && batch.density_convergence->evaluations == expected->evaluations;
+        recording_support::compare_custom("mass-action-preparation/refusal-record", "record_matches", "bool",
+            matches, true, "same convergence record", matches, "independent Helmholtz evaluation",
+            recording_support::fields({recording_support::field("record",
+                batch.density_convergence ? core::describe(*batch.density_convergence) : "absent"),
+                recording_support::field("association_record", record)}));
+    }
     const auto missing_thermochemistry = ethane_model.density_actions(
         300.0, 1000.0, {1.0},
         {epcsaft::PropertyObservable::IdealEnthalpy},

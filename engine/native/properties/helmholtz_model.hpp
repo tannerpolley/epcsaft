@@ -177,7 +177,7 @@ struct PropertyActionBatch final {
     std::vector<PropertyActionResult> results;
     std::size_t maximum_energy_order = 0;
     PropertyActionDiagnostics diagnostics;
-    // Pressure chart: root, first-order density derivatives per direction, status, and the root search's failure message and record.
+    // Pressure chart: root, density derivatives per direction, status, and the blocking operation's message and record.
     std::optional<double> molar_density;
     std::vector<double> density_action;
     std::optional<double> density_mixed_action;  // d^k rho over all k >= 2 directions, when observables are requested
@@ -749,7 +749,7 @@ struct ElectrolyteInputAction final {
     policy::SolverOptions solver_options;
     double mean_ionic = NAN, osmotic = NAN;
     std::array<double, 2> reference_column{};  // analytic limit column
-    std::vector<PropertyActionDiagnostics> diagnostics;
+    std::optional<core::Convergence> refusal_convergence, first_numerical_failure;
     PropertyActionStatus status = PropertyActionStatus::Nonfinite;
     std::string message;
 };

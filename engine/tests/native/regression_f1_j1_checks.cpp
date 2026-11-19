@@ -737,6 +737,33 @@ void check_d86() {
             fields({field("record", gradient.refusal_convergence ? core::describe(*gradient.refusal_convergence) : "absent"),
                 field("closure_record", record)})));
     }
+    {
+        // The unanchored prediction succeeds at this tolerance, but the measured-input anchor stalls at the floor.
+        policy::SolverOptions options;
+        options.set(policy::density, 5e-15);
+        const HelmholtzModel electrolyte(properties_support::aqueous_electrolyte(), {}, {}, options);
+        auto gamma = density(325.0, 2e5, {1.0, 0.0, 0.0}, DensityBranch::Liquid);
+        gamma.kind = ObservationKind::MeanIonicActivityCoefficient;
+        gamma.molality = 5.0; gamma.ion_indices = {1, 2}; gamma.stoichiometry = {1, 1};
+        const auto center = predict(electrolyte, gamma);
+        CHECK(center.status == ObservationStatus::Available && center.activity && center.value);
+        const auto x = formula_composition(gamma.composition, electrolyte.parameters(), gamma.ion_indices,
+            gamma.stoichiometry, gamma.molality);
+        const auto expected = electrolyte.pressure_actions(gamma.temperature, gamma.pressure, x, gamma.branch,
+            {PropertyObservable::LogFugacityCoefficient}, {{0.0, 1.0, {0.0, 0.0, 0.0}, {}}}, center.activity->state.molar_density);
+        CHECK(expected.density_status == PropertyActionStatus::DensityUnavailable && expected.density_convergence
+            && expected.diagnostics.first_numerical_failure);
+        const auto gradient = differentiate_group(electrolyte, {&gamma}, center, {}, {input}).front();
+        const auto record = core::describe(*expected.density_convergence);
+        CHECK(truth("d86/electrolyte-measured-input-refusal-record",
+            gradient.status == ObservationStatus::ActionUnavailable && gradient.value.empty() && gradient.refusal_convergence
+            && core::describe(*gradient.refusal_convergence) == record
+            && gradient.refusal_convergence->evaluations == expected.density_convergence->evaluations
+            && gradient.first_numerical_failure
+            && core::describe(*gradient.first_numerical_failure) == core::describe(*expected.diagnostics.first_numerical_failure),
+            fields({field("record", gradient.refusal_convergence ? core::describe(*gradient.refusal_convergence) : "absent"),
+                field("closure_record", record)})));
+    }
     const auto message = recording_support::refusal([&] { (void)model.density_actions(T, 1000.0, {1.0}, {}, {{0.0, 0.0, {0.0}, {}}}); });
     truth("d86/density_chart_rejected",
           message.find("observables") != std::string::npos, field("message", message));
