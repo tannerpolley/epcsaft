@@ -1147,12 +1147,16 @@ $$
 
 - Section: Equilibrium
 - Status: Exact derivation
-- Source: Consequence of chemical_potential_stationarity
+- Source: Consequence of chemical_potential_stationarity. See [Nikolaidis et al. (2022)](https://doi.org/10.1016/j.fluid.2022.113441) for the relation between charge multipliers and electric potential.
 - Description: Equal chemical potential for neutral species and equal electrochemical potential for ions in two supports.
-- Change note: Not imposed a second time.
+- Change note: Subtracting the two chemical stationarity rows cancels the common balance term. Equality of $\mu_i+z_iF\psi$ then identifies $\varphi_p=-F\psi_p$ up to a common gauge. The solver divides stationarity by $RT$ and stores $\hat{\varphi}_p=\varphi_p/(RT)$. The omitted charge row fixes its phase multiplier to zero. For the first liquid $a$ and second liquid $b$, $RT/F$ is in volts, with $R$ the molar gas constant, $T$ the solved temperature in kelvin, and $F=N_A e$ the Faraday constant in coulombs per mole. The readout uses the existing multipliers and is unavailable without a mobile ion on both supports.
 
 $$
-\mu_{p,i}-\mu_{q,i}=z_i\,(\varphi_p-\varphi_q).
+\begin{aligned}
+\mu_{p,i}-\mu_{q,i}&=z_i\,(\varphi_p-\varphi_q),\\
+\Delta\psi &= \psi_b-\psi_a = \frac{RT}{F}(\hat{\varphi}_a-\hat{\varphi}_b),\\
+\mu_{a,i}-\mu_{b,i}&= z_i F\Delta\psi.
+\end{aligned}
 $$
 
 ## `ion_suppressed_bulk_permittivity`

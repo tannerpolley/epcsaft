@@ -276,6 +276,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         .def_ro("branch_end", &EquilibriumResult::branch_end)
+        .def_ro("electric_potential_difference_v", &EquilibriumResult::electric_potential_difference_v)
         EPCSAFT_READONLY(EquilibriumResult, terminal_numerical_failure, last_full_evaluation, phase_pressures, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
             // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.

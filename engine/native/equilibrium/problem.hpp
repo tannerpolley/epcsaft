@@ -820,6 +820,7 @@ struct EquilibriumResult final {
     std::optional<double> temperature;
     std::optional<double> pressure;
     std::vector<double> amounts;
+    std::optional<double> electric_potential_difference_v;  // second liquid minus first
     std::vector<double> mole_fractions;
     std::vector<double> molar_densities;
     std::vector<double> packing_fractions;

@@ -15,6 +15,7 @@ inline constexpr double ELEMENTARY_CHARGE_C = 1.602176634e-19;
 inline constexpr double VACUUM_PERMITTIVITY_F_PER_M = 8.8541878128e-12;
 inline constexpr double BOLTZMANN_J_PER_K = 1.380649e-23;
 inline constexpr double AVOGADRO_PER_MOL = 6.02214076e23;
+inline constexpr double FARADAY_C_PER_MOL = AVOGADRO_PER_MOL * ELEMENTARY_CHARGE_C;
 inline constexpr double GAS_CONSTANT_J_PER_MOL_K =
     AVOGADRO_PER_MOL * BOLTZMANN_J_PER_K;
 inline constexpr double SPEED_OF_LIGHT_M_PER_S = 299792458.0;

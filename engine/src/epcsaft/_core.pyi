@@ -3426,6 +3426,8 @@ class EquilibriumResult:
     """Length p of dimensionless packing fractions, empty without a state."""
     multipliers: list[float]
     """Dimensionless conserved-moiety and electrical multipliers in compiled order."""
+    electric_potential_difference_v: float | None
+    """Second liquid potential minus first, in volts, when a shared ion determines it."""
     constraint_multipliers: list[float]
     """Gibbs cells: reconstructed extensive-objective multipliers for rows excluding Chemical, Pressure and SolidAffinity, preserving rows order. Material and charge values are -feed_total*lambda and -phase_amount*phi; other retained rows are zero. Feasibility cells: raw Ipopt constraint multipliers, or zeros for a Newton result.
     """

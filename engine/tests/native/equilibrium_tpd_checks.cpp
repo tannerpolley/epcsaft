@@ -1592,6 +1592,7 @@ void check_reacting_liquid_split() {
         problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
         const auto result = discover_phases(model, problem);
         CHECK(result.success); CHECK(result.phase_count == 2); CHECK(result.convergence.residual <= 1e-10);
+        CHECK(!result.electric_potential_difference_v.has_value());
         tpd_compare(id + "/g", result.objective, item.g_two, 1e-10 * std::max(1.0, std::abs(item.g_two)), {}, "mol");
         tpd_compare(id + "/minor-amount", std::min(result.amounts[0], result.amounts[1]), item.minor, 1e-10, {}, "mol");
         double distance = 0.0;
@@ -2238,13 +2239,95 @@ void check_mea_composition_bound_message() {
         "PHASE_DISAPPEARANCE_AMOUNT of the feed; the declared split was rejected");
 }
 
+static epcsaft::equilibrium::EquilibriumProblem mea_liquid_split(epcsaft::equilibrium::EquilibriumProblem problem) {
+    using epcsaft::equilibrium::FreeValue;
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.pressure = FreeValue::fixed(1e5);
+    problem.feed.values[0] = 0.01625 * problem.feed.values[1];
+    auto second = problem.phases.front();
+    second.name = "L2";
+    second.support = {2, 3, 4, 5, 6, 7, 8};
+    second.composition_guess = {8.22e-5, 0.514, 0.455, 1.83e-3, 0.0289, 1.84e-6, 2.01e-8};
+    problem.phases.push_back(std::move(second));
+    return problem;
+}
+
+static void check_electrochemical_identity(const epcsaft::equilibrium::CompiledSystem& compiled,
+    const epcsaft::equilibrium::EquilibriumResult& split, const std::string& id) {
+    using namespace epcsaft;
+    CHECK(split.has_state() && split.requested_tolerance_met.value_or(false) && split.convergence.criterion);
+    const auto& model = *compiled.model;
+    const double voltage = split.electric_potential_difference_v.value();
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * split.temperature.value();
+    const auto& z = model.parameters().charge_number;
+    const auto first = split.mole_fractions.begin();
+    const std::vector<double> a(first, first + z.size()), b(first + z.size(), split.mole_fractions.end());
+    const auto state_a = model.state(*split.temperature, split.molar_densities[0], a);
+    const auto state_b = model.state(*split.temperature, split.molar_densities[1], b);
+    const double row_tolerance = split.convergence.criterion->value;
+    const auto inputs = recording_support::fields({recording_support::field("T_K", *split.temperature),
+        recording_support::field("P_Pa", *split.pressure)});
+    double smallest_bound = std::numeric_limits<double>::infinity();
+    double potential_term_at_smallest_bound = 0.0;
+    for (std::size_t i = 0; i < z.size(); ++i) {
+        if (z[i] == 0 || a[i] == 0.0 || b[i] == 0.0) continue;
+        // The common species standard cancels in the density-basis potential difference.
+        const double delta_mu_over_rt = std::log(a[i] * state_a.molar_density / (b[i] * state_b.molar_density))
+            + state_a.residual_chemical_potential_over_rt[i].value()
+            - state_b.residual_chemical_potential_over_rt[i].value();
+        const double potential_term = z[i] * FARADAY_C_PER_MOL * voltage / rt;
+        const double error = std::abs(delta_mu_over_rt - potential_term);
+        const double weight_a = split.amounts[0] * a[i] / compiled.feed_total;
+        const double weight_b = split.amounts[1] * b[i] / compiled.feed_total;
+        // Each classified chemical row bounds its unweighted error by the row tolerance divided by its weight.
+        const double bound = row_tolerance * (1.0 / weight_a + 1.0 / weight_b);
+        const auto ion_inputs = recording_support::fields({inputs, recording_support::field("z", z[i]),
+            recording_support::field("weight_a", weight_a), recording_support::field("weight_b", weight_b)});
+        tpd_compare(id + "/ion-" + std::to_string(i), error, 0.0, bound, ion_inputs, "RT");
+        if (bound < smallest_bound) {
+            smallest_bound = bound;
+            potential_term_at_smallest_bound = std::abs(potential_term);
+        }
+    }
+    CHECK(smallest_bound < potential_term_at_smallest_bound);
+    const auto charge = [&](const std::vector<double>& x) {
+        return std::inner_product(z.begin(), z.end(), x.begin(), 0.0);
+    };
+    tpd_compare(id + "/charge-a", charge(a), 0.0, row_tolerance);
+    tpd_compare(id + "/charge-b", charge(b), 0.0, row_tolerance);
+    recording_support::observe(id + "/voltage", "electric potential difference", "V",
+        voltage, std::nullopt, "second liquid minus first", inputs);
+}
+
+void check_electric_potential_difference() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    const auto compiled = compile_problem(model, mea_liquid_split(std::move(problem)));
+    check_electrochemical_identity(compiled, solve_compiled(compiled), "electric-potential-difference/forward");
+}
+
+void check_electric_potential_difference_phase_order() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    problem = mea_liquid_split(std::move(problem));
+    const auto forward = solve_compiled(compile_problem(model, problem));
+    std::swap(problem.phases[0], problem.phases[1]);
+    const auto compiled = compile_problem(model, problem);
+    const auto reverse = solve_compiled(compiled);
+    CHECK(forward.has_state() && reverse.has_state());
+    const double forward_v = forward.electric_potential_difference_v.value();
+    const double reverse_v = reverse.electric_potential_difference_v.value();
+    CHECK(forward_v * reverse_v < 0.0);
+    check_electrochemical_identity(compiled, reverse, "electric-potential-difference/reverse");
+}
+
 void check_mea_discovery_omitted_species() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
 #include "fixtures/mea-nominally-unloaded.inc"
-    problem.temperature = FreeValue::fixed(298.15);
-    problem.pressure = FreeValue::fixed(1e5);
-    problem.feed.values[0] = 0.01625 * problem.feed.values[1];
+    problem = mea_liquid_split(std::move(problem));
     auto discovery = problem;
     discovery.phases.clear();
     discovery.topology_declared = false;
@@ -2253,10 +2336,9 @@ void check_mea_discovery_omitted_species() {
     std::printf("C1 success=%d phases=%zu residual=%.17g message=%s\n",
         result.success, result.phase_count, result.convergence.residual, result.message.c_str());
     CHECK(result.success && result.phase_count == 2);
-    const std::vector<std::size_t> retained{2, 3, 4, 5, 6, 7, 8};
     const auto& phases = result.declaration->phases;
     CHECK(phases[0].kind == PhaseKind::Liquid && phases[1].kind == PhaseKind::Liquid);
-    CHECK(phases[0].support == liquid.support && phases[1].support == retained);
+    CHECK(phases[0].support == liquid.support && phases[1].support == problem.phases[1].support);
     CHECK(result.convergence.residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
     const auto& first = result.discovery->rounds.front();
     const auto& last = result.discovery->rounds.back();
@@ -2272,11 +2354,6 @@ void check_mea_discovery_omitted_species() {
         std::printf("C1 species=%s zero_row_log_fraction=%.17g log_bound=%.17g\n", species, estimate, lower);
     }
 
-    PhaseSpec second = liquid;
-    second.name = "L2";
-    second.support = retained;
-    second.composition_guess = {8.22e-5, 0.514, 0.455, 1.83e-3, 0.0289, 1.84e-6, 2.01e-8};
-    problem.phases.push_back(second);
     const auto compiled = compile_problem(model, problem);
     const auto declared = solve_compiled(compiled);
     CHECK(declared.success);
