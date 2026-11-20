@@ -71,8 +71,8 @@ struct ReducedCorrection final {
     }
 };
 
-template <typename Base>
-LinearSolveDiagnostics diagnostics(const Reduction<Base>& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
+template <typename Point, typename Base>
+LinearSolveDiagnostics diagnostics(const Point& at, const ReducedCorrection<Base>& step, Base displacement = 0) {
     const Base norm = std::max(wide_math::abs(at.rows[0]), wide_math::abs(at.rows[1]));
     return {"one_component_two_density_reduction", "", double(norm), double(at.floor), double(step.inverse), double(step.condition),
         double((step.inverse * (norm + at.floor) + displacement)), std::numeric_limits<Base>::digits, 0, "last_linearization"};
@@ -101,20 +101,20 @@ bool one_component_two_density_eligible(const CompiledSystem& c) {
 }
 
 // EqID one_component_two_density: eliminate normalization, feed, P and the common chemical multiplier.
-OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u, std::optional<core::Convergence>* first, const PhasePoint* layout, double log_coefficient) {
+OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem& c, const std::vector<double>& u, std::optional<core::Convergence>* first, const PhasePoint* layout, std::optional<double> log_coefficient) {
     if (u.size() != 2 || !std::all_of(u.begin(), u.end(), [](double v) { return std::isfinite(v); }))
         throw std::invalid_argument("nonfinite pure log densities");
     const auto liquid = c.problem.phases[0].kind == PhaseKind::Liquid ? 0U : 1U, vapor = 1U - liquid;
     if (!(u[liquid] > u[vapor])) throw std::domain_error("one-component two-density density ordering");
+    if (!log_coefficient) log_coefficient = std::log(c.model->packing_fraction_coefficient(c.problem.temperature.value, {1.0}));
     OneComponentTwoDensityPoint out;
     if (!layout) {
         const auto offsets = c.phase_offsets();
         auto point = c.generic_point();
-        const double coefficient = c.model->packing_fraction_coefficient(c.problem.temperature.value, {1.0});
         for (std::size_t p = 0; p < 2; ++p) {
             point[offsets[p]] = 0.0;
             if (c.problem.phases[p].is_free()) point[offsets[p] + 1] = c.feed_total;
-            point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] = std::log(coefficient) + u[p];
+            point[offsets[p] + 1 + (c.problem.phases[p].is_free() ? 1 : 0)] = *log_coefficient + u[p];
         }
         out.phase = c.prepare(point, true, first);
     } else {
@@ -123,11 +123,13 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
         at.parameter_standard = {}; at.energy_actions.clear();
         for (std::size_t p = 0; p < 2; ++p) {
             core::AssociationObservations phase_observations(p);
-            at.point[at.shape[p].volume] = log_coefficient + u[p];
+            at.point[at.shape[p].volume] = *log_coefficient + u[p];
             at.eta[p] = std::exp(at.point[at.shape[p].volume]);
             if (c.log_packing_unbounded() && !admitted_packing_fraction(at.eta[p]))
                 throw std::invalid_argument("packing fraction outside the fluid domain");
             at.volume[p] = at.packing[p].coefficient / at.eta[p];
+            // The layout belongs to this attempt at fixed model, temperature and unit amount.
+            if (at.volume[p] == layout->volume[p] && c.model->parameters().site_component.empty()) continue;
             at.pure[p] = c.model->pure_isothermal(at.temperature, at.volume[p]);
             if (first) core::retain_first(*first, at.pure[p].derivative.first_numerical_failure);
             at.derivative[p] = at.pure[p].derivative;
@@ -135,8 +137,8 @@ OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem
     }
     auto& at = out.phase;
     const auto& v = at.pure[vapor];
-    const auto reduced = reduction(at.pure, at.volume, u, liquid, at.temperature);
-    out.rows = reduced.rows; out.jacobian = reduced.jacobian;
+    auto reduced = reduction(at.pure, at.volume, u, liquid, at.temperature);
+    out.rows = std::move(reduced.rows); out.jacobian = std::move(reduced.jacobian); out.floor = reduced.floor;
     at.pressure = at.point[c.primal_size - 1] = v.pressure;
     at.point[c.primal_size] = v.chemical_potential_over_rt + at.standard.derivative[0][0];
     return out;
@@ -238,16 +240,15 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             if (!accepted) throw std::runtime_error(cause);
             if (!final) continue;
             std::size_t liquid = c.problem.phases[0].kind == PhaseKind::Liquid ? 0 : 1;
-            const auto reduced = reduction(at.phase.pure, at.phase.volume, u, liquid, at.phase.temperature);
             const ReducedCorrection<double> estimate(at.jacobian, at.rows, result.last_rank, u);
-            result.linear_solve_diagnostics = diagnostics(reduced, estimate);
+            result.linear_solve_diagnostics = diagnostics(at, estimate);
             observe_diagnostics(result, *result.linear_solve_diagnostics, u);
-            scope.probe("one_component_two_density_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, reduced.floor});
+            scope.probe("one_component_two_density_error", {estimate.inverse, result.linear_solve_diagnostics->forward_error_estimate, at.floor});
             const double achieved = maximum_abs(at.rows);
             const bool contracting = achieved < polish_residual;
             polish_residual = achieved;
             if (estimate.delta.lpNorm<Eigen::Infinity>() > policy::EQUILIBRIUM_POLISH_CORRECTION.value
-                && achieved > reduced.floor && contracting) continue;
+                && achieved > at.floor && contracting) continue;
             if (result.linear_solve_diagnostics->forward_error_estimate > policy::TWO_DENSITY_FORWARD_ERROR.value
                 || estimate.delta.lpNorm<Eigen::Infinity>() > policy::TWO_DENSITY_FORWARD_ERROR.value) {
                 if constexpr (std::numeric_limits<WiderScalar>::digits <= std::numeric_limits<double>::digits) {
@@ -346,8 +347,13 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             if (result.has_state()) {
                 result.linear_solve_diagnostics->point_kind = "endpoint";
                 for (auto& r : result.rank_records) if (r.basis == "log_density") r.observation.point_kind = "endpoint";
-                for (const auto density : result.molar_densities) {
-                    const auto pure = c.model->pure_isothermal(*result.temperature, 1.0 / density);
+                for (std::size_t p = 0; p < result.molar_densities.size(); ++p) {
+                    const double volume = 1.0 / result.molar_densities[p];
+                    if (volume == at.phase.volume[p] && c.model->parameters().site_component.empty()) {
+                        result.phase_pressures.push_back(at.phase.pure[p].pressure);
+                        continue;
+                    }
+                    const auto pure = c.model->pure_isothermal(*result.temperature, volume);
                     core::retain_first(result.first_numerical_failure, pure.derivative.first_numerical_failure);
                     result.phase_pressures.push_back(pure.pressure);
                 }
