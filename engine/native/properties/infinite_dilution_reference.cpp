@@ -1028,6 +1028,7 @@ ElectrolyteActivity electrolyte_activity(
     }
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
+    result.reference_solvent_fractions = reference.solvent_fractions;
     result.state = properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, finite_density);
     if (const auto cause = properties::liquid_reference_refusal(result.state)) throw std::runtime_error(*cause);
     const auto& state = result.state;

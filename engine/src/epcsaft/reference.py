@@ -110,14 +110,20 @@ class Reference:
         """Read ``pure_solvent_log_fugacity``, documented in the ``Reference`` Attributes section."""
         return self._native.pure_solvent_log_fugacity
 
-    def activity(self, molality: float) -> Activity:
-        """Evaluate electrolyte activities along this reference's formula dilution path.
+    def activity(self, molality: float, *, solute_molalities: Sequence[float] | None = None) -> Activity:
+        """Evaluate the selected formula's electrolyte activity coefficients.
 
         Parameters
         ----------
         molality : float
-            Finite, strictly positive formula molality in mol/kg solvent at the
-            stored T (K) and P (Pa). Zero molality raises ParameterError.
+            Finite, strictly positive formula molality in mol/kg solvent for a
+            single salt. With a full solute vector, use the total cation molality
+            divided by its count in the selected formula. The cation must be first.
+        solute_molalities : sequence of float or None
+            Full species molalities in component order, including a zero entry
+            for the one pure reference solvent. The vector must be finite,
+            nonnegative and electroneutral, with both selected ions present.
+            Omit it for a single salt along the reference's formula path.
 
         Returns
         -------
@@ -139,7 +145,8 @@ class Reference:
         only neutral combinations are convention-invariant (ALG-REFERENCE).
         """
         return _core.electrolyte_activity(
-            self._model, self.T, self.P, self.solvent_fractions, self.ion_indices, self.stoichiometry, molality, self._native
+            self._model, self.T, self.P, self.solvent_fractions, self.ion_indices, self.stoichiometry, molality, self._native,
+            solute_molalities,
         )
 
     def solvent_activity(self, *, x: Sequence[float]) -> SolventActivity:

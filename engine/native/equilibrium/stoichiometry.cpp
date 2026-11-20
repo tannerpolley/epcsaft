@@ -313,6 +313,31 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
     return results;
 }
 
+std::vector<double> salt_solute_molalities(
+    const HelmholtzModel& model, std::size_t solvent, const SaltMolalities& salts) {
+    const auto& z = model.parameters().charge_number;
+    if (solvent >= z.size() || z[solvent] != 0)
+        throw std::invalid_argument("salt recipe requires a declared neutral solvent");
+    const std::vector<double> charges(z.begin(), z.end());
+    std::vector<double> values(z.size(), 0.0);
+    for (const auto& [name, salt] : salts) {
+        const auto& [formula, molality] = salt;
+        if (!std::isfinite(molality) || molality < 0.0)
+            throw std::invalid_argument(name + " requires finite nonnegative formula molality");
+        if (formula.empty()) throw std::invalid_argument(name + " requires an ion formula");
+        std::vector<double> counts(z.size(), 0.0);
+        for (const auto& [ion, count] : formula) {
+            if (ion >= z.size() || z[ion] == 0 || count <= 0)
+                throw std::invalid_argument(name + " requires positive integer counts of declared ions");
+            counts[ion] = count;
+        }
+        if (!exact_zero_dot(counts, charges))
+            throw std::invalid_argument(name + " formula unit must be electroneutral");
+        for (const auto& [ion, count] : formula) values[ion] += count * molality;
+    }
+    return values;
+}
+
 std::vector<double> resolve_feed(const HelmholtzModel& model, const FeedSpec& feed) {
     const std::size_t components = model.parameters().component_count();
     if (feed.values.size() != components) {

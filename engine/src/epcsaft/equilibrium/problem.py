@@ -365,6 +365,22 @@ class Molalities(Feed):
         """Declare the feed; units and admission are documented by ``Molalities``."""
         super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
 
+    @classmethod
+    def from_salts(
+        cls, model: Mixture, salts: Mapping[str, tuple[Mapping[str, int], float]], *, solvent: str, solvent_mass_kg: float
+    ) -> Molalities:
+        """Expand named (ion counts, formula mol/kg) pairs into species molalities for one solvent.
+
+        Use the same species and charges as ``model`` when solving the resulting feed.
+        The native molality feed conversion sets the extensive amounts from the solvent mass.
+        """
+        indexed = {
+            name: ({_index(model.component_ids, ion): count for ion, count in formula.items()}, m)
+            for name, (formula, m) in salts.items()
+        }
+        values = _core.salt_solute_molalities(model._model, _index(model.component_ids, solvent), indexed)
+        return cls(dict(zip(model.component_ids, values, strict=True)), solvent=(solvent,), solvent_mass_kg=solvent_mass_kg)
+
 
 class NeutralReference:
     """Declare a pure neutral solvent and a charge-neutral molality dilution path.

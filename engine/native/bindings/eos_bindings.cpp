@@ -349,10 +349,11 @@ void register_eos(nb::module_& module) {
         const std::vector<double>& x, const epcsaft::InfiniteDilutionReference& reference) {
         return epcsaft::solvent_activity(model, T, P, x, reference);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("reference"));
-    nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "One salt at molality m (mol/kg solvent), infinite-dilution convention; mean_ionic_molality_scale is the molality-scale gamma+-.")
+    nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "Selected salt coefficients on the declared solvent infinite-dilution reference; mean_ionic_molality_scale is the molality-scale gamma+-.")
         EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
-            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative)
+            mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative,
+            reference_solvent_fractions)
         EPCSAFT_REPR(ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion");
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
@@ -361,8 +362,10 @@ void register_eos(nb::module_& module) {
        nb::arg("stoichiometry"));
     module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
-        double molality, const epcsaft::InfiniteDilutionReference& reference) {
-        return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference);
+        double molality, const epcsaft::InfiniteDilutionReference& reference,
+        const std::optional<std::vector<double>>& solute_molalities) {
+        return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference,
+            std::nullopt, solute_molalities);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
-       nb::arg("stoichiometry"), nb::arg("molality"), nb::arg("reference"));
+       nb::arg("stoichiometry"), nb::arg("molality"), nb::arg("reference"), nb::arg("solute_molalities") = nb::none());
 }

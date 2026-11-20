@@ -724,6 +724,64 @@ establish current public availability. Mixed-solvent MIAC does not imply a
 unique scalar osmotic coefficient. Multi-salt paths require a separately
 specified reference convention.
 
+### Salt recipes and mean ionic activity coefficients in mixed brines
+
+For one declared neutral solvent of mass $W$ (kg) and molar mass $M_s$
+(kg/mol), let $b_k$ be the analytical molality of salt $k$ in mol of formula
+units per kg of solvent. With positive integer ion counts $\nu_{ik}$ and ion
+charges $z_i$, the species feed is
+
+$$
+\sum_i z_i\nu_{ik}=0\quad\text{for each }k,\qquad
+m_i=\sum_k\nu_{ik}b_k,\qquad n_i=Wm_i,\qquad n_s=W/M_s.
+$$
+
+Common ions accumulate in the same species inventory. The amounts enter the
+ordinary equilibrium balances as free species. Recipe expansion proceeds in
+the feed direction only. The ionic-species formulation for fully dissociated
+electrolytes is described in [Nikolaidis et al. (2022), sections 2 and 4](https://doi.org/10.1016/j.fluid.2022.113441).
+
+For a selected cation–anion formula, the Engine's molality-scale result is
+
+$$
+\ln\gamma_{\pm,k}^{(m)} =
+\frac{\sum_i\nu_{ik}\left[\ln\phi_i(T,P,\mathbf{x})-
+\ln\phi_i^{\infty,k}(T,P)\right]}{\sum_i\nu_{ik}}
+-\ln\left(1+M_s\sum_{j\ne s} m_j\right).
+$$
+
+The finite liquid state uses the full solute composition. The reference is
+infinite dilution of the selected neutral formula in the declared pure
+solvent at the same temperature and pressure, on the mol/kg-solvent scale.
+The normalization includes every solute species. This uses EqIDs
+`mean_ionic_activity_coefficient` and `molality_activity_conversion`, with
+the molal convention of [Hamer and Wu (1972), section 1](https://doi.org/10.1063/1.3253108).
+
+In Python, use `equilibrium.Molalities.from_salts(model, salts, solvent=...,
+solvent_mass_kg=...)`, where each dictionary entry is the salt name and an
+`(ion_counts, formula_molality)` pair. Use the returned feed in
+`equilibrium.Problem`. To report a selected salt, call `model.reference` with
+that formula's ions (cation first), counts and pure-solvent fractions. Pass
+the resulting `Reference.activity` the complete species molalities in model
+component order, filling absent species and the solvent with zero:
+
+```python
+solute_molalities = [feed.values.get(species, 0.0) for species in model.component_ids]
+activity = reference.activity(
+    feed.values[cation] / cation_count, solute_molalities=solute_molalities
+)
+gamma = activity.mean_ionic_molality_scale
+solvent_reference = activity.reference_solvent_fractions
+```
+
+The native evaluator requires one pure neutral solvent, both selected ions
+present, nonnegative finite solute molalities and overall neutrality. Its
+formula molality argument must match the **total** cation molality divided by
+its formula count, including any contributions from other salts sharing the
+cation. Activity reporting covers the declared liquid composition. For a
+reacting or multiphase equilibrium, use the species molalities of the liquid
+phase of interest.
+
 Properties supplies the raw lower reference partials C_T, C_TT, C_theta,
 C_Ttheta and C_TP and the bounded higher-order reference columns in EqID:
 `reference_mixed_temperature_pressure_derivatives`, using EqID:

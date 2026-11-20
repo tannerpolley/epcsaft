@@ -4076,6 +4076,10 @@ def linear_solver() -> str:
         Linear solver name; a result.linear_solver separately records an actual solve.
     """
     ...
+def salt_solute_molalities(model: HelmholtzModel, solvent: int, salts: Mapping[str, tuple[Mapping[int, int], float]]) -> list[float]:
+    """Expand named neutral ion formulas to species molalities in component order."""
+    ...
+
 def compile_problem(model: HelmholtzModel | IdealMoleFraction, problem: EquilibriumProblem) -> CompiledSystem:
     """Admit and compile the physical equilibrium declaration.
 
@@ -4356,6 +4360,8 @@ class ElectrolyteActivity:
     """Natural logarithm of the mean ionic molality-scale activity coefficient, dimensionless."""
     mean_ionic_molality_scale: float
     """Mean ionic activity coefficient on the mol/kg-solvent scale, dimensionless."""
+    reference_solvent_fractions: list[float]
+    """Solvent-only mole fractions in component order at the infinite-dilution reference."""
     osmotic_coefficient: Optional[Union[float, Stop]]
     """Dimensionless practical molality osmotic coefficient; None without an admitted solvent
     reference, or Stop.converged_to_floor when unresolved below the declared precision floor.
@@ -4389,7 +4395,7 @@ def infinite_dilution_reference(model: HelmholtzModel, temperature: float, press
     The retained molality is finite and source-convention specific; terminal agreement is numerical evidence, not a universal limit-error bound. See ALG-REFERENCE.
     """
     ...
-def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference) -> ElectrolyteActivity:
+def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: float, solvent_fractions: Sequence[float], ion_indices: tuple[int, int], stoichiometry: tuple[int, int], molality: float, reference: InfiniteDilutionReference, solute_molalities: Sequence[float] | None = ...) -> ElectrolyteActivity:
     """Evaluate salt activity at a declared formula molality.
 
     Parameters
@@ -4410,6 +4416,9 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
         Finite positive formula-unit concentration in mol/kg declared solvent; zero is rejected.
     reference : InfiniteDilutionReference
         Infinite-dilution reference for the same model, T/P, solvent, ions and stoichiometry.
+    solute_molalities : Sequence[float] or None
+        Full species molalities in component order, including zero for the pure reference solvent.
+        When supplied, molality times the cation count must match the cation's entry.
 
     Returns
     -------

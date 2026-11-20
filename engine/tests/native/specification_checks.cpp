@@ -1090,6 +1090,58 @@ void check_feed() {
     CHECK(rejects("s1-f5/builder-unconsumed", unconsumed, "unconsumed"));
 }
 
+void check_salt_molalities() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::li_mg_cl_water());
+    const double mass = model.parameters().molar_mass_kg_per_mol[0], water_kg = 2.0;
+    const double T = 298.15, P = 1e5;
+    const SaltMolalities salts{{"LiCl", {{{1, 1}, {3, 1}}, 0.5}}, {"MgCl2", {{{2, 1}, {3, 2}}, 0.25}}};
+    const auto molalities = salt_solute_molalities(model, 0, salts);
+    EquilibriumProblem recipe;
+    recipe.temperature = FreeValue::fixed(T);
+    recipe.pressure = FreeValue::fixed(P);
+    recipe.phases = {{"aqueous", PhaseKind::Liquid}};
+    recipe.feed = {FeedKind::Molalities, molalities, {0}, water_kg};
+    auto direct = recipe;
+    direct.feed = {FeedKind::Amounts, {water_kg / mass, 1.0, 0.5, 2.0}};
+    const auto amounts = compile_problem(model, recipe).n_feed;
+    const double charge = amounts[1] + 2 * amounts[2] - amounts[3];
+    CHECK(amounts == direct.feed.values);
+    CHECK(amounts[0] * mass == water_kg && charge == 0.0);
+    const auto a = solve_equilibrium(model, recipe), b = solve_equilibrium(model, direct);
+    CHECK(a.has_state() && b.has_state());
+    CHECK(a.amounts == b.amounts && a.mole_fractions == b.mole_fractions && a.molar_densities == b.molar_densities);
+    std::printf("salt feed mol (water,Li,Mg,Cl) = %.17g, %.17g, %.17g, %.17g; water kg = %.17g; charge mol = %.17g\n",
+        amounts[0], amounts[1], amounts[2], amounts[3], amounts[0] * mass, charge);
+    std::printf("rho mol/m^3 = %.17g; recipe minus direct: delta_n = %.17g, max_abs_delta_x = 0, delta_rho = %.17g\n",
+        a.molar_densities[0], a.amounts[0] - b.amounts[0], a.molar_densities[0] - b.molar_densities[0]);
+    CHECK(recording_support::refusal([&] {
+        (void)salt_solute_molalities(model, 0, {{"MgCl", {{{2, 1}, {3, 1}}, 0.25}}});
+    }).find("MgCl formula unit must be electroneutral") != std::string::npos);
+
+    const std::vector<double> water{1, 0, 0, 0};
+    const auto li = infinite_dilution_reference(model, T, P, water, {1, 3}, {1, 1});
+    const auto mg = infinite_dilution_reference(model, T, P, water, {2, 3}, {1, 2});
+    const auto mixed_li = electrolyte_activity(model, T, P, water, {1, 3}, {1, 1}, 0.5, li, std::nullopt, molalities);
+    const auto mixed_mg = electrolyte_activity(model, T, P, water, {2, 3}, {1, 2}, 0.25, mg, std::nullopt, molalities);
+    CHECK(mixed_li.reference_solvent_fractions == water && mixed_mg.reference_solvent_fractions == water);
+    CHECK(mixed_li.state.molar_density == mixed_mg.state.molar_density);
+    CHECK(std::abs(mixed_li.state.molar_density - a.molar_densities[0]) <= 1e-10 * a.molar_densities[0]);
+    CHECK(recording_support::refusal([&] {
+        (void)electrolyte_activity(model, T, P, water, {1, 3}, {1, 1}, 1.0, li, std::nullopt, molalities);
+    }).find("match the selected formula cation molality") != std::string::npos);
+    const auto binary = electrolyte_activity(model, T, P, water, {1, 3}, {1, 1}, 0.5, li,
+        std::nullopt, std::vector<double>{0, 0.5, 0, 0.5});
+    const auto single = electrolyte_activity(model, T, P, water, {1, 3}, {1, 1}, 0.5, li);
+    const double error = std::abs(binary.mean_ionic_molality_scale - single.mean_ionic_molality_scale);
+    // CODING_STANDARDS.md numerical equivalence criterion for the two composition routes.
+    CHECK(error <= 1e-10 * std::abs(single.mean_ionic_molality_scale));
+    std::printf("mixed molal gamma (LiCl,MgCl2) = %.17g, %.17g; binary LiCl (full,single) = %.17g, %.17g; error = %.17g\n",
+        mixed_li.mean_ionic_molality_scale, mixed_mg.mean_ionic_molality_scale, binary.mean_ionic_molality_scale,
+        single.mean_ionic_molality_scale, error);
+}
+
 }  // namespace s1
 
 // S2 (#52): source-to-native reaction reference mapping. Manufactured coefficients only: no
@@ -1722,6 +1774,7 @@ int main(int argc, char** argv) {
         {{"native.specification.e2-charge", "E2-4"}, check_e2_charge},
         {{"native.specification.s1-document", "S1-document"}, s1::check_document},
         {{"native.specification.s1-feed", "S1-feed"}, s1::check_feed},
+        {{"native.specification.salt-molalities", "salt-molalities"}, s1::check_salt_molalities},
         {{"native.specification.s2-reference", "S2-reference"}, s2::check_reference_mapping},
     });
 }
