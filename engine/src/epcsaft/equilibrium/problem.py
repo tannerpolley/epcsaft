@@ -848,12 +848,9 @@ def _feed_from_mapping(value: object) -> Feed:
     record = _record(value, "feed")
     values = cast(Mapping[str, float], record.get("values"))
     basis = record.get("basis")
-    if basis == "mole_fractions":
-        return MoleFractions(values)
-    if basis == "amounts":
-        return Amounts(values)
-    if basis == "mass_fractions":
-        return MassFractions(values)
+    constructors = {"mole_fractions": MoleFractions, "amounts": Amounts, "mass_fractions": MassFractions}
+    if isinstance(basis, str) and basis in constructors:
+        return constructors[basis](values)
     if basis == "molalities":
         if "solvent_mass_kg" not in record:
             raise _core.ParameterError("missing solvent_mass_kg")
