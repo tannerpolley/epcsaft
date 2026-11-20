@@ -87,8 +87,9 @@ EPC_API std::vector<double> boundary_start(const CompiledSystem& compiled, bool 
 struct OneComponentTwoDensityPoint final {
     PhasePoint phase;
     std::vector<double> rows, jacobian;
+    double floor;
 };
-EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, double log_coefficient = 0.0);
+EPC_API OneComponentTwoDensityPoint one_component_two_density_point(const CompiledSystem&, const std::vector<double>&, std::optional<core::Convergence>* = nullptr, const PhasePoint* = nullptr, std::optional<double> log_coefficient = std::nullopt);
 EPC_API EquilibriumResult one_component_two_density_attempt(const CompiledSystem&, const std::vector<double>&,
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
 EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
