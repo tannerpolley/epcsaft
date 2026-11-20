@@ -264,6 +264,10 @@ Parameters build_parameters(const ParameterDocument& document) {
         result.electrolyte_form = ElectrolyteForm::DebyeHuckel;
     } else if (document.electrolyte_choice == "born") {
         result.electrolyte_form = ElectrolyteForm::DebyeHuckelBorn;
+    } else if (document.electrolyte_choice == "msa") {
+        result.electrolyte_form = ElectrolyteForm::Msa;
+    } else if (document.electrolyte_choice == "msa-born") {
+        result.electrolyte_form = ElectrolyteForm::MsaBorn;
     } else if (document.electrolyte_choice != "none") {
         reject("unknown electrolyte choice " + document.electrolyte_choice);
     }
@@ -369,7 +373,7 @@ Parameters build_parameters(const ParameterDocument& document) {
                  || entry.field == "born_c_dielectric"
                  || entry.field == "born_diameter"
                  || entry.field == "solvation_factor")
-                && document.electrolyte_choice != "born")) {
+                && !born_charging(result.electrolyte_form))) {
             reject("unconsumed " + where(entry));
         }
         // A law [law, a, b] or volume correction owns its quantity's (a, b) value: one of value or law.
@@ -602,12 +606,12 @@ Parameters build_parameters(const ParameterDocument& document) {
         if (component_fields.find({"segment_count", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_count");
         if (component_fields.find({"sigma_constant", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/segment_diameter");
         if (component_fields.find({"dispersion_energy_over_k", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/dispersion_energy_over_k");
-        if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && component_fields.find({"solvation_factor", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/solvation_factor");
+        if (born_charging(result.electrolyte_form) && component_fields.find({"solvation_factor", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/solvation_factor");
         if (result.molecular_ion[i] && result.charge_number[i] == 0) reject("unconsumed component/" + document.component_ids[i] + "/charged_molecule_ion");
         const bool packing = component_fields.find({"packing_diameter", i}) != component_fields.end();
         if (result.charge_number[i] != 0 && packing == bool(result.molecular_ion[i])) reject((packing ? "unconsumed component/" : "missing component/") + document.component_ids[i] + "/packing_diameter");
-        if (result.charge_number[i] != 0 && component_fields.find({"debye_huckel_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/debye_huckel_diameter");
-        if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
+        if (result.charge_number[i] != 0 && !msa_screening(result.electrolyte_form) && component_fields.find({"debye_huckel_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/debye_huckel_diameter");
+        if (born_charging(result.electrolyte_form) && result.charge_number[i] != 0 && component_fields.find({"born_diameter", i}) == component_fields.end()) reject("missing component/" + document.component_ids[i] + "/born_diameter");
         // Schreckenberg records belong to every neutral solvent only; Rueben records to every component.
         for (const char* field : {"dielectric_volume", "dielectric_temperature"}) {
             const bool present = component_fields.find({field, i}) != component_fields.end();
@@ -639,7 +643,7 @@ Parameters build_parameters(const ParameterDocument& document) {
         }
         if (result.k_ij_reciprocal_temperature_slope[i * components + j] != 0.0 && result.k_ij_reference_temperature_k[i * components + j] == 0.0) reject("missing pair reference temperature/" + document.component_ids[i] + "/" + document.component_ids[j]);
     }
-    if (result.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn))
+    if (born_charging(result.electrolyte_form))
         for (const char* field : {"ionic_region_relative_permittivity", "born_c_shell", "born_c_dielectric"})
             if (!scalar_fields.count(field)) reject(std::string("missing ") + field);
     if (document.permittivity_choice == "ion-fraction-suppression") {

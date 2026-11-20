@@ -313,7 +313,7 @@ public:
                 const auto diameter = segment_diameter(temperature, parameters_, sigma);
                 const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_);
                 return extensive_residual_helmholtz(total, residual_helmholtz(temperature, rho, x, parameters_, sigma,
-                    diameter, site_series, products), electro.first.debye_huckel, electro.second, parameters_);
+                    diameter, site_series, products), electro.first.screening, electro.second, parameters_);
             } else {
                 const auto electrostatics = [&] {
                     if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
@@ -326,7 +326,7 @@ public:
                         std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
                         site_series, products);
                 }();
-                return extensive_residual_helmholtz(total, terms, electrostatics.first.debye_huckel, electrostatics.second,
+                return extensive_residual_helmholtz(total, terms, electrostatics.first.screening, electrostatics.second,
                     parameters_);
             }
         }();

@@ -705,9 +705,9 @@ HelmholtzResult<Scalar> residual_helmholtz(
 // N a_res in one addition order, shared by the tape, the density series and the wider replay so they agree to the
 // last bit; the electrostatic terms come from supported_electrostatics. Cation mixing enters only when declared.
 template <typename Total, typename Scalar, typename ParameterSet>
-auto extensive_residual_helmholtz(const Total& total, const HelmholtzResult<Scalar>& terms, const Scalar& debye_huckel,
+auto extensive_residual_helmholtz(const Total& total, const HelmholtzResult<Scalar>& terms, const Scalar& screening,
     const Scalar& born, const ParameterSet& parameters) {
-    auto result = total * (terms.hard_chain + terms.dispersion + debye_huckel + born + terms.association + terms.dipolar);
+    auto result = total * (terms.hard_chain + terms.dispersion + screening + born + terms.association + terms.dipolar);
     if (!parameters.cation_mixing.empty()) result += total * terms.cation_mixing;
     return result;
 }

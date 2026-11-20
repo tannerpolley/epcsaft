@@ -228,6 +228,7 @@ struct State final {
     double dispersion = 0.0;
     double association = 0.0;
     double debye_huckel = 0.0;
+    double msa = 0.0;
     double born = 0.0;
     double dipolar = 0.0;
     double cation_mixing = 0.0;
@@ -279,7 +280,7 @@ struct State final {
 
 // d(n a_k)/dn_i at constant T, V and n_j for each residual Helmholtz term k; ln phi_i is their sum minus ln Z.
 struct LogFugacityTerms final {
-    std::vector<std::optional<double>> hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing;
+    std::vector<std::optional<double>> hard_chain, dispersion, association, debye_huckel, msa, born, dipolar, cation_mixing;
     double log_compressibility_factor = 0.0;
 };
 

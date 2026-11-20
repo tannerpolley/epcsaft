@@ -554,8 +554,7 @@ All three records are required for every selected component. The equation gives
 ### 6.5 Common electrostatic owner
 
 The selected `epsilon_r,bulk` is evaluated once by the scalar-generic native
-owner and is consumed unchanged by both Debye--Huckel and the selected Born
-equation. Temperature, density, composition, and parameter dependence therefore
+owner and is consumed by the selected screening and Born equations. Temperature, density, composition, and parameter dependence therefore
 remain inside the common CppAD tape. The parameter record identifies the generic
 bundle-defined formulation, and `State.bulk_relative_permittivity` reports the evaluated
 state value.
@@ -594,6 +593,35 @@ without evaluating `chi_i`; this is the exact neutral limit. The fitted Born
 diameter is used only in the Born term. CppAD differentiates the defining
 relations above on the positive-ionic-strength branch; the lab
 `dkappa/dx_i` catalogue entry is not a production owner.
+
+### 6.6 Primitive-model mean spherical approximation
+
+In `model_families`, the `electrolyte` choice `msa` selects screening alone
+and `msa-born` includes the existing Born term. The `fully-dissociated-debye-huckel`
+and `born` choices select DH screening. The separate permittivity and ionic
+dispersion declarations still supply their respective terms.
+
+MSA uses the segment size $\sigma_i$ as the additive contact diameter, including
+a declared temperature correlation. Its packing sum includes only ions. It
+describes charged hard spheres in the resolved dielectric continuum while
+PC-SAFT supplies the reference fluid. DH uses its declared contact length.
+A switch from the Figiel DH choice changes both the screening relation and
+the contact length. To compare the equations at the same core sizes, declare
+matched contacts.
+
+The [auxiliary quantities](../equations.md#primitive_msa_auxiliaries) enter the
+[screening equation](../equations.md#primitive_msa_screening) and the
+[electrostatic Helmholtz energy](../equations.md#primitive_msa_helmholtz).
+For a charged state the native solve brackets $\Gamma$ between zero and
+$\sqrt{\pi\ell_B Q(0)}$. It starts from $\kappa/2$ clipped to that bracket and
+bisects when a Newton step leaves it. The scalar residual satisfies
+$R_\Gamma\ge1$, so its magnitude bounds root displacement. The energy is
+stationary at the root and its root-induced error is bounded by
+$\tfrac12\sup |F''|\,|R|^2$ for $F=\beta A_{\rm MSA}/V$ between the root and
+the calculated value. Pressure, chemical potentials and higher derivatives
+are verified independently. The root's implicit coefficients feed the
+existing Taylor and CppAD derivatives. On ion-free support the screening value
+and first ionic insertion are zero.
 
 ## 7. Canonical Born source reconciliation
 
@@ -923,7 +951,7 @@ while preserving valid residual properties. These are required semantics;
 class names and installed availability belong to the public interface and the
 [limits page](https://tannerpolley.github.io/epcsaft/limits.html), not this mathematical specification.
 
-On an ion-free support, Born and DH are identically zero before reciprocal
+On an ion-free support, Born and screening are identically zero before reciprocal
 permittivity, solvation mixing or screening operations are evaluated. Their
 supported temperature, density, neutral-composition and parameter actions,
 including mixed actions, are exactly zero. Pure CO₂ has no dielectric solvent
@@ -931,9 +959,9 @@ in this model: its zero bulk-permittivity diagnostic supplies no ionic-insertion
 limit. The empty electrostatic sums require no replacement permittivity or floor.
 
 With finite positive limiting solvent permittivity, a dilute ionic path has a
-linear Born leading term and a DH leading term proportional to ionic strength
-to the power 3/2. Born's insertion first derivative is generally nonzero; DH's
-insertion second derivative diverges. Neutral-restriction derivatives therefore
+linear Born leading term and a screening leading term proportional to ionic
+strength to the power 3/2. Born's first insertion derivative is generally
+nonzero. The screening second insertion derivative diverges. Neutral-restriction derivatives therefore
 do not establish unrestricted composition derivatives. Absent charged ordinary
 chemical-potential/fugacity slots and their parameter columns are unavailable
 with `IonicInsertion`; present neutral slots and regular scalar calorics remain

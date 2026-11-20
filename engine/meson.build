@@ -255,6 +255,7 @@ properties_checks = executable(
         'tests/native/properties_m4_c2_checks.cpp',
         'tests/native/properties_p2_checks.cpp',
         'tests/native/properties_p3_f9_checks.cpp',
+        'tests/native/properties_msa_checks.cpp',
         'tests/native/properties_p4_checks.cpp',
         'tests/native/properties_log_fugacity_checks.cpp',
         'tests/native/properties_temperature_law_checks.cpp',

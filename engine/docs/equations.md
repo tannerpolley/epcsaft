@@ -638,6 +638,51 @@ $$
 a^{DH}=-\frac{\kappa e^2}{12\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT}\sum_{i\in\mathcal I}x_i z_i^2\chi(\kappa d_i^{DH}).
 $$
 
+## `primitive_msa_auxiliaries`
+
+- Section: Electrolyte screening
+- Status: Source equation
+- Source: [Blum and Høye 1977](https://doi.org/10.1021/j100528a019), Eqs. (2.13)–(2.18)
+- Description: Unequal-diameter auxiliary quantities of the unrestricted primitive model for an electroneutral mixture of additive charged hard spheres.
+- Change note: The sums include only ions, with particle number densities $n_i=N_A\rho x_i$. Use consistent length units for $n_i$, $D_i=\sigma_i$ and $\Gamma$. The model requires $\Delta>0$.
+
+$$
+h_i=1+\Gamma D_i,\quad
+\Delta=1-\frac{\pi}{6}\sum_i n_iD_i^3,\quad
+b=\frac{\pi}{2\Delta},\quad
+\Omega=1+b\sum_i\frac{n_iD_i^3}{h_i},\quad
+P_n=\frac{1}{\Omega}\sum_i\frac{n_i z_i D_i}{h_i}.
+$$
+
+## `primitive_msa_screening`
+
+- Section: Electrolyte screening
+- Status: Source equation
+- Source: [Blum and Høye 1977](https://doi.org/10.1021/j100528a019), Eqs. (2.19), (2.22)
+- Description: Positive MSA screening parameter for the declared bulk permittivity.
+- Change note: $R=\Gamma-\sqrt{\pi\ell_BQ(\Gamma)}$ increases with $R_\Gamma\ge1$. The certified upper endpoint uses $Q(0)$. The equal-diameter neutral case gives $P_n=0$ and $\Gamma=\kappa/(1+\sqrt{1+2\kappa D})$.
+
+$$
+\ell_B=\frac{e^2}{4\pi\epsilon_0\epsilon_{r,\mathrm{bulk}}k_BT},\qquad
+Q(\Gamma)=\sum_i n_i\left(\frac{z_i-bP_nD_i^2}{h_i}\right)^2,\qquad
+4\Gamma^2=4\pi\ell_B Q(\Gamma).
+$$
+
+## `primitive_msa_helmholtz`
+
+- Section: Electrolyte screening
+- Status: Source equation
+- Source: [Blum and Høye 1977](https://doi.org/10.1021/j100528a019), Eqs. (3.1), (3.4)
+- Description: Energy-route electrostatic excess Helmholtz contribution, excluding the hard-sphere reference and Born charging.
+- Change note: The first term is $\beta U_{\rm el}/V$ at fixed primitive-model inputs. Positive-strength derivatives use implicit differentiation of the screening equation. The ion-free support has zero screening energy and zero first insertion. Along fixed-ratio dilute paths the leading energy density is $-\kappa^3/(12\pi)$ in units of $k_BT$ and the second insertion is singular.
+
+$$
+\frac{\beta A_{\rm MSA}}{V}
+=-\ell_B\left[\Gamma\sum_i\frac{n_i z_i^2}{h_i}+b\Omega P_n^2\right]
++\frac{\Gamma^3}{3\pi},\qquad
+a^{\rm MSA}=\frac{\beta A_{\rm MSA}/V}{N_A\rho}.
+$$
+
 ## `debye_screening_parameter`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
@@ -1328,7 +1373,7 @@ $$
 
 $$
 \ln\phi_i=\sum_k\frac{\partial\left(n\,a_k\right)}{\partial n_i}\bigg|_{T,V,n_{j\ne i}}-\ln Z,\qquad
-k\in\{hc,disp,assoc,DH,Born,dd,mix\}.
+k\in\{hc,disp,assoc,\mathrm{screening},Born,dd,mix\}.
 $$
 
 ## `log_fugacity_density_derivative`
@@ -2453,10 +2498,10 @@ $$
 - Status: Implementation convention
 - Source: [Gross2001], PC-SAFT residual decomposition extended by admitted electrolyte terms
 - Description: Sum of every active residual Helmholtz contribution; $a^{dd}$ only when the optional polar family is declared, and $a^{mix}$ only with `cation_mixing`.
-- Change note: Mirrors the single EOS Helmholtz owner and its contribution result.
+- Change note: The screening contribution is either Debye–Hückel or primitive-model MSA.
 
 $$
-a^r=a^{hc}+a^{disp}+a^{assoc}+a^{DH}+a^{Born}+a^{dd}+a^{mix}.
+a^r=a^{hc}+a^{disp}+a^{assoc}+a^{\mathrm{screening}}+a^{Born}+a^{dd}+a^{mix}.
 $$
 
 ## `residual_internal_energy`

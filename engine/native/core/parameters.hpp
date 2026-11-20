@@ -46,7 +46,17 @@ inline bool density_temperature_permittivity(core::Declared<PermittivityForm> fo
 enum class ElectrolyteForm {
     DebyeHuckel = 1,
     DebyeHuckelBorn = 2,
+    Msa,
+    MsaBorn,
 };
+
+inline bool msa_screening(core::Declared<ElectrolyteForm> form) {
+    return form.is(ElectrolyteForm::Msa) || form.is(ElectrolyteForm::MsaBorn);
+}
+
+inline bool born_charging(core::Declared<ElectrolyteForm> form) {
+    return form.is(ElectrolyteForm::DebyeHuckelBorn) || form.is(ElectrolyteForm::MsaBorn);
+}
 
 // The registered case split same_sign_ionic_dispersion. Declared by the parameter
 // source, never defaulted: a set with a charged component and no declaration is

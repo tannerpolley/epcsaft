@@ -339,7 +339,7 @@ inline ReferenceTensor reference_tensor(
         density, composition, tape_parameters, sites, delta
     );
     AD value = total * (association_only ? terms.association : (
-        terms.hard_chain + terms.dispersion + electrolyte.debye_huckel
+        terms.hard_chain + terms.dispersion + electrolyte.screening
         + born + terms.association
     ));
     std::vector<AD> dependents = {value};

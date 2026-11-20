@@ -597,7 +597,7 @@ void inactive_terms_contribute_nothing() {
     const auto electrolyte = epcsaft::electrolyte_contribution(
         300.0, 1.2e4, x, {0.4, 0.6}, p
     );
-    recording_support::compare("debye-huckel", "debye_huckel", "1", electrolyte.debye_huckel, 0.0,
+    recording_support::compare("debye-huckel", "debye_huckel", "1", electrolyte.screening, 0.0,
         recording_support::Rule::ReferenceOrOne, 0.0, 0.0, "inactive-term", inputs);
 }
 
@@ -941,7 +941,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         * epcsaft::ELEMENTARY_CHARGE_C * weighted_chi
         / (12.0 * epcsaft::PI * epcsaft::VACUUM_PERMITTIVITY_F_PER_M
            * expected_ion_suppression * epcsaft::BOLTZMANN_J_PER_K * temperature);
-    record("dh-finite-multivalent", "debye_huckel", "1", electrolyte.debye_huckel,
+    record("dh-finite-multivalent", "debye_huckel", "1", electrolyte.screening,
            expected_dh, inputs(p, density, x, recording_support::fields({
                "case:multivalent-unequal-dh-diameter",
                recording_support::field("chi_cation_argument", chi_cation_argument),
@@ -961,7 +961,7 @@ void electrolyte_born_and_dielectric_match_independent_equations() {
         const auto dilute = epcsaft::electrolyte_contribution(
             temperature, rho, x, x, p
         );
-        const double coefficient = dilute.debye_huckel / std::sqrt(rho);
+        const double coefficient = dilute.screening / std::sqrt(rho);
         record((std::string("dh-dilute-") + recording_support::number(rho)).c_str(),
                "debye_huckel_coefficient_ratio", "1", coefficient / dilute_coefficient, 1.0,
                inputs(p, rho, x, recording_support::fields({

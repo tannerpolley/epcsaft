@@ -24,6 +24,7 @@ void properties_p4();
 void cache_invariance();
 void modular_permittivity_actions();
 void solvent_mixture_permittivity();
+void primitive_msa();
 void density_correlated_ion_suppression();
 void pressure_closed_ion_suppression_fit();
 void electrolyte_parameter_actions();
@@ -62,6 +63,7 @@ int main(int argc, char** argv) {
         {{"native.properties.p4", "P4"}, properties_p4, "P4"},
         {{"native.properties.m9", "M9"}, cache_invariance},
         {{"native.properties.issue26", "Issue26"}, modular_permittivity_actions},
+        {{"native.properties.primitive-msa", "PrimitiveMSA"}, primitive_msa},
         {{"native.properties.solvent-mixture-permittivity", "SolventMixturePermittivity"}, solvent_mixture_permittivity},
         {{"native.properties.density-correlated-ion-suppression", "DensityCorrelatedIonSuppression"}, density_correlated_ion_suppression},
         {{"native.properties.pressure-closed-ion-suppression-fit", "PressureClosedIonSuppressionFit"}, pressure_closed_ion_suppression_fit},

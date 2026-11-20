@@ -165,7 +165,7 @@ struct HelmholtzTape final {
             const auto products = association_products(density, composition, tape_parameters, sites, delta);
             const auto& residuals = products.second;
             dependent.push_back(extensive_residual_helmholtz(total, residual_helmholtz(independent[0], density, composition,
-                tape_parameters, sigma, diameter, sites, products), electrolyte.debye_huckel, born, parameters));
+                tape_parameters, sigma, diameter, sites, products), electrolyte.screening, born, parameters));
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
         if (!ideal_correlations.empty()) {

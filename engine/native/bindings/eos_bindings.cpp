@@ -194,7 +194,7 @@ void register_eos(nb::module_& module) {
     nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
     nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms")
-        EPCSAFT_READONLY(epcsaft::LogFugacityTerms, hard_chain, dispersion, association, debye_huckel, born, dipolar,
+        EPCSAFT_READONLY(epcsaft::LogFugacityTerms, hard_chain, dispersion, association, debye_huckel, msa, born, dipolar,
             cation_mixing, log_compressibility_factor);
     nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions")
         EPCSAFT_READONLY(epcsaft::VirialCoefficientActions, second, third, second_action, third_action);
@@ -224,7 +224,7 @@ void register_eos(nb::module_& module) {
         for (const auto& row : v.rows) result.append(row ? epcsaft::bindings::solver_options_view(row->solver_options, PROPERTY_SCOPE) : nb::none());
         return result;
     });
-        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing,
+        EPCSAFT_EACH(STATE_FIELD, epcsaft::State, hard_chain, dispersion, association, debye_huckel, msa, born, dipolar, cation_mixing,
             bulk_relative_permittivity, residual_helmholtz, compressibility_factor, pressure,
             // None for a charged component on an ion-free support; see component_property_status (IonicInsertion).
             residual_chemical_potential_over_rt, component_property_status,

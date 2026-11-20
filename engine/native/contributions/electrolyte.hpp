@@ -4,6 +4,8 @@
 #include "core/parameters.hpp"
 #include "core/physical_constants.hpp"
 #include "core/scalar.hpp"
+#include "contributions/helmholtz.hpp"
+#include "contributions/msa_tape.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -74,7 +76,7 @@ std::vector<Scalar> component_relative_permittivities(
 template <typename Scalar>
 struct ElectrolyteResult final {
     Scalar bulk_relative_permittivity;
-    Scalar debye_huckel;
+    Scalar screening;
 };
 
 struct EPC_EXCEPTION BulkPermittivityDomainError final : std::domain_error {
@@ -348,6 +350,25 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         if (charge_square_sum == 0.0) {
             return {bulk_permittivity, Scalar(0.0)};
         }
+    }
+
+    if (msa_screening(parameters.electrolyte_form)) {
+        const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
+        if (permittivity_primal(scalar_lead(number_density)) == 0.0)
+            return {bulk_permittivity, Scalar(0.0)};
+        const auto sigma = segment_sigma(temperature, parameters);
+        const Scalar bjerrum_length = Scalar(ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+            / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * ANGSTROM_M))
+            / (bulk_permittivity * temperature);
+        std::vector<Scalar> inputs{bjerrum_length};
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
+            if (parameters.charge_number[i] == 0) continue;
+            inputs.push_back(number_density * mole_fractions[i]);
+            inputs.emplace_back(sigma[i]);
+            inputs.emplace_back(static_cast<double>(parameters.charge_number[i]));
+        }
+        const Scalar gamma = msa_gamma(inputs);
+        return {bulk_permittivity, msa_helmholtz_density(gamma, inputs) / number_density};
     }
 
     // EqID: debye_screening_parameter
