@@ -658,8 +658,9 @@ Its package tests are the import, `pip check` and `run_test.py`. The win-64
 qualification is a manual double-check: the `qualification` workflow runs
 `qualification/recipe.py`, which derives `qualification-recipe.yaml` from the recipe.
 
-The `linux-64` packages were built and passed these tests for CPython 3.12,
-3.13, and 3.14. Dependency resolution was verified for `win-64`, `osx-64`,
+The `tannerwpolley` channel publishes epcsaft 1.3.1 for `linux-64` with CPython
+3.12, 3.13 and 3.14, and for `win-64` with CPython 3.13 only. No macOS package
+is published. Dependency resolution was verified for `win-64`, `osx-64`,
 and `osx-arm64`.
 
 Corresponding source is available from the distributor as a source-set download
