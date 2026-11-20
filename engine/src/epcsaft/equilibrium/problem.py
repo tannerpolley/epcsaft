@@ -331,6 +331,9 @@ class MassFractions(Feed):
         super().__init__(_core.FeedKind.MassFractions, values, solvent_mass_kg=None)
 
 
+type _SaltMolalities = Mapping[str, tuple[Mapping[str, int], float]]
+
+
 class Molalities(Feed):
     """Declare solute molalities and a solvent mass basis.
 
@@ -366,9 +369,7 @@ class Molalities(Feed):
         super().__init__(_core.FeedKind.Molalities, values, solvent=solvent, solvent_mass_kg=solvent_mass_kg)
 
     @classmethod
-    def from_salts(
-        cls, model: Mixture, salts: Mapping[str, tuple[Mapping[str, int], float]], *, solvent: str, solvent_mass_kg: float
-    ) -> Molalities:
+    def from_salts(cls, model: Mixture, salts: _SaltMolalities, *, solvent: str, solvent_mass_kg: float) -> Molalities:
         """Expand named (ion counts, formula mol/kg) pairs into species molalities for one solvent.
 
         Use the same species and charges as ``model`` when solving the resulting feed.
@@ -864,9 +865,12 @@ def _feed_from_mapping(value: object) -> Feed:
     record = _record(value, "feed")
     values = cast(Mapping[str, float], record.get("values"))
     basis = record.get("basis")
-    constructors = {"mole_fractions": MoleFractions, "amounts": Amounts, "mass_fractions": MassFractions}
-    if isinstance(basis, str) and basis in constructors:
-        return constructors[basis](values)
+    if basis == "mole_fractions":
+        return MoleFractions(values)
+    if basis == "amounts":
+        return Amounts(values)
+    if basis == "mass_fractions":
+        return MassFractions(values)
     if basis == "molalities":
         if "solvent_mass_kg" not in record:
             raise _core.ParameterError("missing solvent_mass_kg")
