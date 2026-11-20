@@ -1,10 +1,11 @@
 """Verify the prescribed liquid through the native declaration and snapshot bindings."""
 
 import json
+from collections.abc import Sequence
 from dataclasses import replace
 from math import log
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, equilibrium as eq
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, State, _core, equilibrium as eq
 from tests.packets import parameters_json
 
 SPECIES = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
@@ -21,7 +22,9 @@ PHASES = (
 )
 
 
-def flash(model, feed, pressure=P, phases=PHASES):
+def flash(
+    model: Mixture, feed: Sequence[float], pressure: float = P, phases: Sequence[eq.Phase] = PHASES,
+) -> tuple[_core.EquilibriumResult, _core.EquilibriumNumericalEstimates]:
     problem = eq.Problem(T=T, P=pressure, feed=eq.Amounts(dict(zip(SPECIES, feed, strict=True))),
                          phases=phases, row_tolerance=ROW)
     compiled = eq.compile_problem(model, problem)
@@ -30,14 +33,19 @@ def flash(model, feed, pressure=P, phases=PHASES):
     return result, estimates(compiled, result)
 
 
-def estimates(compiled, result, input_errors=()):
+def estimates(
+    compiled: _core.CompiledSystem, result: _core.EquilibriumResult, input_errors: Sequence[float] = (),
+) -> _core.EquilibriumNumericalEstimates:
+    assert result.temperature is not None and result.pressure is not None
     return compiled.numerical_estimates(
         result.coordinates, result.temperature, result.pressure, result.amounts, result.mole_fractions,
         result.molar_densities, result.packing_fractions, input_errors,
     )
 
 
-def endpoint(model, reference):
+def endpoint(
+    model: Mixture, reference: _core.EquilibriumResult,
+) -> tuple[eq.Problem, _core.CompiledSystem, _core.EquilibriumResult]:
     b = reference.phase_mole_fractions(1)
     b[0] += 1e-3
     b[2] -= 1e-3
@@ -51,25 +59,35 @@ def endpoint(model, reference):
     return problem, compiled, result
 
 
-def fugacity_evidence(model, result, errors):
+def value(number: float | None) -> float:
+    assert number is not None
+    return number
+
+
+def fugacity_evidence(
+    model: Mixture, result: _core.EquilibriumResult, errors: _core.EquilibriumNumericalEstimates,
+) -> tuple[list[list[float]], list[State], list[float]]:
     x = [result.phase_mole_fractions(p) for p in range(2)]
     states = [model.state(T, rho=result.molar_densities[p], x=x[p], derived_properties=True) for p in range(2)]
     charge = max(abs(side[3] - side[4]) for side in x)
     norm = max(abs(sum(side) - 1.0) for side in x)
-    pressure = max(abs(state.pressure - result.pressure) / (rho * R * T)
+    pressure = max(abs(state.pressure - value(result.pressure)) / (rho * R * T)
                    for state, rho in zip(states, result.molar_densities, strict=True))
     assert charge <= STATE and norm <= STATE and pressure <= ROW
+    phi = [state.log_fugacity_coefficient for state in states]
+    phi_a, phi_b = phi
+    assert phi_a is not None and phi_b is not None
     drop = [log(x[0][i] * states[0].pressure / (x[1][i] * states[1].pressure))
-            + states[0].log_fugacity_coefficient[i] - states[1].log_fugacity_coefficient[i]
+            + value(phi_a[i]) - value(phi_b[i])
             for i in range(len(SPECIES))]
     row_floors = [[floor for row, floor in zip(result.rows, errors.row_floor, strict=True)
-                   if row.kind.name == "Chemical" and row.phase == p] for p in range(2)]
+                   if row.kind == _core.RowKind.Chemical and row.phase == p] for p in range(2)]
     weights = result.amounts or (1.0, 1.0)
     allowance = [
         sum((ROW if not result.amounts else ROW / (weights[p] * x[p][i])) + row_floors[p][i] for p in range(2))
         for i in range(len(SPECIES))
     ]
-    voltage = result.electric_potential_difference_v
+    voltage = value(result.electric_potential_difference_v)
     mismatch = [abs(d - z * F * voltage / (R * T)) for d, z in zip(drop, CHARGES, strict=True)]
     assert all(value <= limit for value, limit in zip(mismatch, allowance, strict=True))
     print(f"charge={charge:.17g} norm={norm:.17g} pressure_row={pressure:.17g} "
@@ -77,7 +95,7 @@ def fugacity_evidence(model, result, errors):
     return x, states, allowance
 
 
-def test_prescribed_liquid_nonzero_voltage_and_midpoint():
+def test_prescribed_liquid_nonzero_voltage_and_midpoint() -> None:
     model = Mixture(Parameters.from_json(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=SPECIES))
     reference, reference_errors = flash(model, FEED)
     problem, compiled, result = endpoint(model, reference)
@@ -87,19 +105,23 @@ def test_prescribed_liquid_nonzero_voltage_and_midpoint():
     x, states, allowance = fugacity_evidence(model, result, estimated)
     pin = max(abs(a - b) for a, b in zip(x[0], reference.phase_mole_fractions(0), strict=True))
     assert pin <= STATE
-    assert abs(result.electric_potential_difference_v) > min(allowance[3:]) * R * T / F
-    info = sum(y * v for y, v in zip(x[1], states[0].partial_molar_volume, strict=True)) - 1.0 / states[1].molar_density
-    print(f"pin={pin:.17g} P={result.pressure:.17g} interval=[{result.pressure-radius:.17g}, "
-          f"{result.pressure+radius:.17g}] radius={radius:.17g} D={info:.17g} rank={estimated.rank} condition={estimated.condition:.17g}")
+    voltage = value(result.electric_potential_difference_v)
+    pressure = value(result.pressure)
+    assert abs(voltage) > min(allowance[3:]) * R * T / F
+    partial_volumes = states[0].partial_molar_volume
+    assert partial_volumes is not None
+    info = sum(y * value(v) for y, v in zip(x[1], partial_volumes, strict=True)) - 1.0 / states[1].molar_density
+    print(f"pin={pin:.17g} P={pressure:.17g} interval=[{pressure-radius:.17g}, "
+          f"{pressure+radius:.17g}] radius={radius:.17g} D={info:.17g} rank={estimated.rank} condition={estimated.condition:.17g}")
     assert estimated.rank == estimated.dimension == 3 * len(SPECIES) + 4
-    assert estimated.pressure.resolved and abs(result.pressure - P) <= radius <= 1_000, "pressure unresolved"
+    assert estimated.pressure.resolved and abs(pressure - P) <= radius <= 1_000, "pressure unresolved"
 
     midpoint = [(a + b) / 2 for a, b in zip(*x, strict=True)]
     split_phases = tuple(replace(phase, composition_guess=tuple(guess)) for phase, guess in zip(PHASES, x, strict=True))
-    split, split_error = flash(model, midpoint, result.pressure, split_phases)
+    split, split_error = flash(model, midpoint, pressure, split_phases)
     back, _, split_allowance = fugacity_evidence(model, split, split_error)
     discrepancy = max(abs(a - b) for a, b in zip((*x[0], *x[1]), (*back[0], *back[1]), strict=True))
-    voltage_error = abs(split.electric_potential_difference_v - result.electric_potential_difference_v)
+    voltage_error = abs(value(split.electric_potential_difference_v) - voltage)
     voltage_allowance = min(a + b for a, b in zip(allowance[3:], split_allowance[3:], strict=True)) * R * T / F
     print(f"midpoint amounts={split.amounts} radii={[e.absolute for e in split_error.amounts]} "
           f"composition_delta={discrepancy:.17g} voltage_delta={voltage_error:.17g} voltage_allowance={voltage_allowance:.17g}")
@@ -112,7 +134,7 @@ def test_prescribed_liquid_nonzero_voltage_and_midpoint():
     assert max(abs(a - b) for a, b in zip(warm.mole_fractions, result.mole_fractions, strict=True)) <= STATE
 
 
-def test_distinct_symmetric_ions_return_zero_voltage():
+def test_distinct_symmetric_ions_return_zero_voltage() -> None:
     mapping = json.loads(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7).read_text())
     components = {c["component_id"]: c for c in mapping["components"]}
     cation, anion = SPECIES[-2:]
@@ -139,4 +161,4 @@ def test_distinct_symmetric_ions_return_zero_voltage():
     print(f"symmetric separation={difference:.17g} separation_error={separation_error:.17g} "
           f"voltage={result.electric_potential_difference_v:.17g} allowance={voltage_allowance:.17g}")
     assert difference > max(1e-6, separation_error)
-    assert abs(result.electric_potential_difference_v) <= voltage_allowance
+    assert abs(value(result.electric_potential_difference_v)) <= voltage_allowance

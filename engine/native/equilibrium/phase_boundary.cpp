@@ -1818,9 +1818,9 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
 }
 
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
+    core::Scope scope("continue_equilibrium");
     if (request.start_problem.prescribed_liquid_composition || request.target_problem.prescribed_liquid_composition)
         throw std::invalid_argument("continuation unavailable for prescribed liquid composition");
-    core::Scope scope("continue_equilibrium");
     return continue_path(model, request, nullptr, {});
 }
 
