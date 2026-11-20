@@ -7,12 +7,17 @@ on:
       platform:
         type: choice
         options: [win-64, osx-64, osx-arm64]
+      python:
+        type: choice
+        options: ['3.12', '3.13', '3.14']
+        default: '3.13'
 jobs:
   qualification:
     runs-on: ${{ fromJSON('{"win-64":"windows-2022","osx-64":"macos-15-intel","osx-arm64":"macos-15"}')[inputs.platform] }}
     timeout-minutes: 150
     env:
       IPOPT_PROBE_EVIDENCE: ${{ github.workspace }}${{ inputs.platform == 'win-64' && '\' || '/' }}evidence
+      PYTHON_VARIANT: ${{ fromJSON('{"3.12":"3.12.* *_cpython","3.13":"3.13.* *_cp313","3.14":"3.14.* *_cp314"}')[inputs.python] }}
     steps:
       - uses: actions/checkout@v4
       - name: Restore non-commercial test packets
@@ -25,23 +30,23 @@ jobs:
           Invoke-WebRequest https://github.com/prefix-dev/rattler-build/releases/download/v0.79.0/rattler-build-x86_64-pc-windows-msvc.exe -OutFile rattler-build.exe
           python packaging/conda-forge/qualification/recipe.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          ./rattler-build.exe build --recipe packaging/conda-forge/qualification-recipe.yaml --target-platform win-64 --variant-config packaging/conda-forge/variants-win-64.yaml -c conda-forge --output-dir out
+          ./rattler-build.exe build --recipe packaging/conda-forge/qualification-recipe.yaml --target-platform win-64 --variant-config packaging/conda-forge/variants-win-64.yaml --variant "python=$env:PYTHON_VARIANT" -c conda-forge --output-dir out
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build and qualify
         if: inputs.platform != 'win-64'
         shell: bash
         run: |
           set -o pipefail
-          curl -fsSL -o rattler-build https://github.com/prefix-dev/rattler-build/releases/download/v0.79.0/rattler-build-$(uname -m | sed s/arm64/aarch64/)-apple-darwin
+          curl -fsSL -o rattler-build "https://github.com/prefix-dev/rattler-build/releases/download/v0.79.0/rattler-build-$(uname -m | sed s/arm64/aarch64/)-apple-darwin"
           chmod +x rattler-build
           python3 packaging/conda-forge/qualification/recipe.py
           mkdir -p evidence
           ./rattler-build build --recipe packaging/conda-forge/qualification-recipe.yaml --target-platform ${{ inputs.platform }} \
-            --variant-config packaging/conda-forge/variants-${{ inputs.platform }}.yaml -c conda-forge --output-dir out 2>&1 | tee evidence/build.log
+            --variant-config packaging/conda-forge/variants-${{ inputs.platform }}.yaml --variant "python=$PYTHON_VARIANT" -c conda-forge --output-dir out 2>&1 | tee evidence/build.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: qualification-${{ inputs.platform }}
+          name: qualification-${{ inputs.platform }}-py${{ inputs.python }}
           path: |
             evidence
             out/**/*.conda
