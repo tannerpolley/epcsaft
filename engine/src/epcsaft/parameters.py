@@ -580,9 +580,9 @@ class Parameters:
         permittivity = _choice(families, "permittivity")
         if permittivity == "solvent-volume-weighting":
             record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
-            for quantity in ("temperature", "pressure"):
-                field = f"solvent_volume_reference_{quantity}"
-                value = _mapping(record.get(f"reference_{quantity}"), field)
+            for reference_quantity in ("temperature", "pressure"):
+                field = f"solvent_volume_reference_{reference_quantity}"
+                value = _mapping(record.get(f"reference_{reference_quantity}"), field)
                 entries.add(f"permittivity/{field}", field, (), value, "permittivity")
         elif permittivity == "solvent-mole-weighting":
             record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
