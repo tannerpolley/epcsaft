@@ -735,6 +735,7 @@ EPC_API SolventActivity solvent_activity(const HelmholtzModel&, double, double, 
 
 struct ElectrolyteActivity final {
     policy::SolverOptions solver_options;
+    std::vector<double> reference_solvent_fractions;
     std::array<double, 2> single_ion{};
     double mean_ionic_mole_fraction_scale = 0.0;
     double mean_ionic_log_molality_scale = 0.0;
