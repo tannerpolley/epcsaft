@@ -578,8 +578,10 @@ class Problem:
         Fixed temperature in K or a free temperature declaration with K guess.
     P : float or Free
         Fixed pressure in Pa or a free pressure declaration with Pa guess.
-    feed : Feed
-        Species inventory with explicit amounts/fractions/molality basis.
+    feed : Feed or None
+        Species inventory with explicit basis. Omit for prescribed liquid composition.
+    prescribed_liquid_composition : mapping or None
+        Model species and mole fractions of the first of two declared liquids at fixed T and free P.
     reactions : sequence of Reaction
         Stoichiometric reaction declarations, empty for nonreacting fluids.
     standard_gibbs_j_per_mol : sequence of float
@@ -635,7 +637,8 @@ class Problem:
     phases: Sequence[Phase] | Discover = ()
     T: float | Free
     P: float | Free
-    feed: Feed
+    feed: Feed | None = None
+    prescribed_liquid_composition: Mapping[str, float] | None = None
     reactions: Sequence[Reaction] = ()
     standard_gibbs_j_per_mol: Sequence[float] = ()
     topology_declared: bool | None = True
@@ -663,11 +666,14 @@ class Problem:
     def _native(self, model: _Species) -> _core.EquilibriumProblem:
         native = _core.EquilibriumProblem()
         native.topology_declared = bool(self.topology_declared)
-        native.feed.kind = self.feed.basis
-        native.feed.values = _vector(self.feed.values, model.component_ids)
-        native.feed.solvent = [_index(model.component_ids, name) for name in self.feed.solvent]
-        if self.feed.solvent_mass_kg is not None:
-            native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
+        if self.feed is not None:
+            native.feed.kind = self.feed.basis
+            native.feed.values = _vector(self.feed.values, model.component_ids)
+            native.feed.solvent = [_index(model.component_ids, name) for name in self.feed.solvent]
+            if self.feed.solvent_mass_kg is not None:
+                native.feed.solvent_mass_kg = self.feed.solvent_mass_kg
+        if self.prescribed_liquid_composition is not None:
+            native.prescribed_liquid_composition = _vector(self.prescribed_liquid_composition, model.component_ids)
         native.standard_gibbs_j_per_mol = list(self.standard_gibbs_j_per_mol)
         native.enthalpy_j = self.enthalpy_j
         native.entropy_j_per_k = self.entropy_j_per_k
@@ -757,7 +763,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
     constraints are checked when the declaration is compiled with a model.
     """
     allowed = {
-        "phases", "T", "P", "feed", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
+        "phases", "T", "P", "feed", "prescribed_liquid_composition", "reactions", "standard_gibbs_j_per_mol", "topology_declared",
         "row_tolerance", "neutral_reference", "enthalpy_j", "entropy_j_per_k", "volume_m3", "internal_energy_j",
     }
     if unknown := set(mapping) - allowed:
@@ -769,7 +775,8 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         phases = Discover()
     else:
         phases = tuple(_phase_from_mapping(item) for item in _records(phases_value, "phases"))
-    feed = _feed_from_mapping(mapping.get("feed"))
+    prescribed = mapping.get("prescribed_liquid_composition")
+    feed = _feed_from_mapping(mapping.get("feed")) if prescribed is None or mapping.get("feed") is not None else None
     reactions = tuple(
         _reaction_from_mapping(item) for item in _records(mapping.get("reactions", ()), "reactions")
     )
@@ -781,6 +788,7 @@ def problem_from_mapping(mapping: Mapping[str, object]) -> Problem:
         T=_intensive_from_mapping(mapping.get("T"), "T"),
         P=_intensive_from_mapping(mapping.get("P"), "P"),
         feed=feed,
+        prescribed_liquid_composition=cast(Mapping[str, float], _record(prescribed, "prescribed_liquid_composition")) if prescribed is not None else None,
         reactions=reactions,
         standard_gibbs_j_per_mol=tuple(cast(Sequence[float], mapping.get("standard_gibbs_j_per_mol", ()))),
         topology_declared=topology,

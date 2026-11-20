@@ -201,6 +201,7 @@ struct EquilibriumProblem final {
     FreeValue temperature;
     FreeValue pressure;
     FeedSpec feed;
+    std::optional<std::vector<double>> prescribed_liquid_composition;
     std::vector<ReactionSpec> reactions;
     std::vector<double> standard_gibbs_j_per_mol;
     std::optional<NeutralReferenceDeclaration> source_reference;
@@ -226,7 +227,7 @@ struct EquilibriumProblem final {
 };
 
 enum class RowKind {
-    Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, InternalEnergy, Volume, ReactionMassAction,
+    Chemical, Pressure, Moiety, Electro, Normalization, PrescribedComposition, Enthalpy, Entropy, InternalEnergy, Volume, ReactionMassAction,
     CriticalMode, CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMolarity, SaturationPressure
 };
 
@@ -250,6 +251,7 @@ inline const char* row_kind_name(RowKind kind) noexcept {
     case RowKind::Moiety: return "material_balance";
     case RowKind::Electro: return "phase_electroneutrality";
     case RowKind::Normalization: return "phase_normalization";
+    case RowKind::PrescribedComposition: return "prescribed_liquid_composition";
     case RowKind::Enthalpy: return "extensive_enthalpy_specification";
     case RowKind::Entropy: return "extensive_entropy_specification";
     case RowKind::CriticalMode: case RowKind::CriticalNormalization: case RowKind::CriticalCubic:
@@ -557,6 +559,15 @@ struct CompiledSystem final {
         return std::accumulate(feed.begin(), feed.end(), 0.0);
     }
 
+    std::size_t component_count() const noexcept { return model ? model->parameters().component_count() : n_feed.size(); }
+
+    template <class Base>
+    void pin_liquid_composition(std::vector<Base>& point) const {
+        if (!problem.prescribed_liquid_composition) return;
+        for (std::size_t i = 0; i < shape[0].x.size(); ++i)
+            point[shape[0].x[i]] = Base(std::log((*problem.prescribed_liquid_composition)[problem.phases[0].support[i]]));
+    }
+
     std::size_t unknown_count() const noexcept {
         return ideal ? primal_size : primal_size + rank + charge_row_count;
     }
@@ -739,7 +750,7 @@ template <typename Base, typename Vector>
 Base physical_radius(const CompiledSystem& c, const PhasePointValues<Base>& at, const Vector& error) {
     Base radius = error[1] / pressure_scale(at.pressure);
     for (Eigen::Index i = 2; i < error.size(); ++i)
-        radius = std::max(radius, error[i] / ((i - 2) % (3 + c.n_feed.size()) == 2 ? Base(c.feed_total) : Base(1)));
+        radius = std::max(radius, error[i] / ((i - 2) % (3 + c.component_count()) == 2 ? Base(c.feed_total) : Base(1)));
     return radius;
 }
 template <typename Base, typename Jacobian, typename Factor, typename Correction>
@@ -861,7 +872,10 @@ struct EquilibriumResult final {
 
     bool has_state() const noexcept {
         return success && temperature && pressure
-            && !amounts.empty() && !mole_fractions.empty();
+            && !mole_fractions.empty() && (!amounts.empty()
+                || (declaration && declaration->prescribed_liquid_composition
+                    && molar_densities.size() == 2
+                    && mole_fractions.size() == 2 * declaration->prescribed_liquid_composition->size()));
     }
 
     double residual_norm() const noexcept { return maximum_abs(residuals); }
@@ -878,7 +892,8 @@ struct CriticalSearch final {
 };
 
 // `counted`: the estimate's roots and energy evaluations count in the enclosing calculation work.
-EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false, bool plane_rows = false);
+EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false, bool plane_rows = false,
+    const std::vector<double>& prescribed_errors = {});
 struct DriverLimits;
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);

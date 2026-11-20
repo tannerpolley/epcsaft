@@ -2307,6 +2307,44 @@ void check_electric_potential_difference() {
     check_electrochemical_identity(compiled, solve_compiled(compiled), "electric-potential-difference/forward");
 }
 
+void check_prescribed_liquid_coincidence() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::aqueous_electrolyte());
+    EquilibriumProblem problem;
+    problem.temperature = FreeValue::fixed(298.15);
+    problem.pressure = FreeValue::variable(1e5);
+    const std::vector<double> x{0.98, 0.01, 0.01};
+    problem.prescribed_liquid_composition = x;
+    PhaseSpec phase;
+    phase.kind = PhaseKind::Liquid;
+    phase.composition_guess = x;
+    phase.name = "a";
+    problem.phases.push_back(phase);
+    phase.name = "b";
+    problem.phases.push_back(phase);
+    const auto compiled = compile_problem(model, problem);
+    CHECK(compiled.feasible && compiled.rows.size() == 13 && compiled.unknown_count() == 13);
+    const auto state = model.state_at_pressure(problem.temperature.value, problem.pressure.value, x, DensityBranch::Liquid);
+    auto point = compiled.generic_point();
+    for (const auto& phase_layout : compiled.shape) {
+        for (std::size_t i = 0; i < x.size(); ++i) point[phase_layout.x[i]] = std::log(x[i]);
+        point[phase_layout.volume] = std::log(model.packing_fraction_coefficient(problem.temperature.value, x) * state.molar_density);
+    }
+    for (std::size_t i = 0; i < x.size(); ++i)
+        point[compiled.primal_size + i] = std::log(x[i] * state.molar_density) + *state.residual_chemical_potential_over_rt[i];
+    const double residual = maximum_abs(compiled.evaluate(point).values);
+    CHECK(residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    std::printf("identical state with zero charge multiplier: residual=%.17g, allowance=%.17g\n",
+        residual, policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    const auto r = solve_compiled(compiled);
+    std::printf("identical-liquid: %s, state=%d, voltage=%d\n", r.message.c_str(), r.has_state(),
+        r.electric_potential_difference_v.has_value());
+    CHECK(!r.has_state() && !r.electric_potential_difference_v);
+    CHECK(r.topology_event == TopologyEvent::PhasesCoalesced);
+    CHECK(r.message.find("unresolved separation") != std::string::npos);
+}
+
 void check_electric_potential_difference_phase_order() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;

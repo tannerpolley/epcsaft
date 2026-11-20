@@ -2862,6 +2862,8 @@ class EquilibriumProblem:
     """Fluid phase declarations in the order used by every phase array."""
     temperature: FreeValue
     """Fixed or free absolute temperature, K."""
+    prescribed_liquid_composition: list[float] | None
+    """Model-order mole fractions of the first liquid in a feed-free declaration."""
     pressure: FreeValue
     """Fixed or free system pressure, Pa."""
     feed: FeedSpec
@@ -3013,6 +3015,8 @@ class RowKind:
     """Per-phase electroneutrality, dimensionless charge-number contraction."""
     Normalization: RowKind
     """Phase mole-fraction normalization, dimensionless."""
+    PrescribedComposition: RowKind
+    """Affine pin of one log mole fraction of the first liquid."""
     Enthalpy: RowKind
     """Extensive enthalpy specification in its native dimensionless normalization."""
     InternalEnergy: RowKind
@@ -3109,8 +3113,12 @@ class CompiledSystem:
         ...
     def numerical_estimates(self, coordinates: Sequence[float], temperature: float, pressure: float,
                             amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
-                            packing: Sequence[float]) -> EquilibriumNumericalEstimates:
-        """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
+                            packing: Sequence[float], prescribed_errors: Sequence[float] = ()) -> EquilibriumNumericalEstimates:
+        """Estimate a frozen endpoint in this declaration.
+
+        For a prescribed liquid, pass empty amounts. Optional prescribed_errors
+        are model-order absolute errors in the supplied liquid mole fractions.
+        """
         ...
     def coordinate_labels(self) -> list[str]:
         """Quantity and basis of each solved-chart coordinate, in coordinate order."""

@@ -70,6 +70,28 @@ it meets the requested tolerance. A declared solve performs no unrequested
 tangent-plane trials. Explicit tests belong to
 [stability and discovery](stability-and-discovery.md).
 
+## Liquid–liquid boundary from one composition
+
+For two nonreacting liquids sharing the same mobile species, declare fixed
+`T`, free `P` and `prescribed_liquid_composition` in mole fractions by species
+name. Supply two liquid phases in order and an electroneutral composition
+guess near the intended conjugate liquid. Omit `feed` and leave the phase
+amounts unspecified.
+
+The returned state contains both compositions and molar densities, the
+common pressure in Pa, and `electric_potential_difference_v` in volts, second
+liquid minus first. The amounts array is empty. An unresolved separation
+leaves the state unavailable. Accepted results can seed a nearby declaration
+on the same model and ordered support. Solved-state actions, continuation
+and the equilibrium AMPL Solver Library interface are unavailable for this
+specification.
+
+A fixed-temperature, fixed-pressure feed split uses inventory and the lever
+rule to determine phase amounts. This declaration fixes one endpoint and
+determines pressure. A membrane with impermeant charge has selective
+transport and a fixed-charge contribution to electroneutrality, and may
+support unequal pressures.
+
 ## Warm starts for ordered states
 
 For nearby feeds, temperatures or pressures on the same declared phase branch,
