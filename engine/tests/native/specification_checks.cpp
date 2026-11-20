@@ -1128,6 +1128,30 @@ void check_salt_molalities() {
     CHECK(mixed_li.reference_solvent_fractions == water && mixed_mg.reference_solvent_fractions == water);
     CHECK(mixed_li.state.molar_density == mixed_mg.state.molar_density);
     CHECK(std::abs(mixed_li.state.molar_density - a.molar_densities[0]) <= 1e-10 * a.molar_densities[0]);
+    const auto state = model.state(T, b.molar_densities[0], b.mole_fractions);
+    const double x_s = b.mole_fractions[0];
+    const auto compare_activity = [&](const char* salt, const InfiniteDilutionReference& reference,
+                                      const std::array<int, 2>& counts, const ElectrolyteActivity& activity) {
+        double contracted = 0.0;
+        for (std::size_t k = 0; k < counts.size(); ++k) {
+            const auto ion = reference.ion_indices.value()[k];
+            const double m_i = direct.feed.values[ion] / water_kg;
+            // Form f_i/x_s and the infinite-dilution fugacity per unit molality, then restore x_s.
+            const double log_f = state.log_fugacity_coefficient.value()[ion].value()
+                + std::log(state.pressure * b.mole_fractions[ion] / x_s);
+            const double log_standard = reference.log_fugacity[k] + std::log(P * mass);
+            contracted += counts[k] * (log_f - log_standard - std::log(m_i));
+        }
+        const double expected = contracted / (counts[0] + counts[1]) + std::log(x_s);
+        const double actual = activity.mean_ionic_log_molality_scale;
+        const double difference = actual - expected;
+        std::printf("%s mixed ln gamma (activity,direct) = %.17g, %.17g; difference = %.17g; gamma (activity,direct) = %.17g, %.17g\n",
+            salt, actual, expected, difference, activity.mean_ionic_molality_scale, std::exp(expected));
+        // CODING_STANDARDS.md equivalence criterion, expressed as a log ratio.
+        CHECK(std::abs(difference) <= 1e-10);
+    };
+    compare_activity("LiCl", li, {1, 1}, mixed_li);
+    compare_activity("MgCl2", mg, {1, 2}, mixed_mg);
     CHECK(recording_support::refusal([&] {
         (void)electrolyte_activity(model, T, P, water, {1, 3}, {1, 1}, 1.0, li, std::nullopt, molalities);
     }).find("match the selected formula cation molality") != std::string::npos);

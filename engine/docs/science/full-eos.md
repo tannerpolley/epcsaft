@@ -799,7 +799,7 @@ In Python, use `equilibrium.Molalities.from_salts(model, salts, solvent=...,
 solvent_mass_kg=...)`, where each dictionary entry is the salt name and an
 `(ion_counts, formula_molality)` pair. Use the returned feed in
 `equilibrium.Problem`. To report a selected salt, call `model.reference` with
-that formula's ions (cation first), counts and pure-solvent fractions. Pass
+that formula's ions in either order, counts in the same order and pure-solvent fractions. Pass
 the resulting `Reference.activity` the complete species molalities in model
 component order, filling absent species and the solvent with zero:
 
@@ -812,8 +812,10 @@ gamma = activity.mean_ionic_molality_scale
 solvent_reference = activity.reference_solvent_fractions
 ```
 
-The native evaluator requires one pure neutral solvent, both selected ions
-present, nonnegative finite solute molalities and overall neutrality. Its
+The reference requires a neutral solvent fraction of exactly one and zero
+for every other species. The native evaluator requires the same ordered
+ion indices as the reference, both selected ions present, nonnegative finite
+solute molalities and overall neutrality. Its
 formula molality argument must match the **total** cation molality divided by
 its formula count, including any contributions from other salts sharing the
 cation. Activity reporting covers the declared liquid composition. For a

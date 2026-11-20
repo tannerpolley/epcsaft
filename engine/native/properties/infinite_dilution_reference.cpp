@@ -484,44 +484,44 @@ std::vector<double> formula_composition(
         || std::abs(solvent_charge) > policy::COMPOSITION_SUM_TOLERANCE.value) {
         throw std::invalid_argument("invalid reference solvent composition or molar mass");
     }
-    if (declared_solute_ratio) *declared_solute_ratio = solvent_mass * molality * (static_cast<double>(stoichiometry[0]) + stoichiometry[1]);
-    const double solvent_moles = 1.0 / solvent_mass;
-    const double total_moles = solvent_moles
-        + molality * (static_cast<double>(stoichiometry[0]) + stoichiometry[1]);
     std::vector<double> composition(solvent_fractions.size(), 0.0);
-    for (std::size_t component = 0; component < composition.size(); ++component) {
-        composition[component] = solvent_fractions[component] * solvent_moles / total_moles;
+    if (!finite_solute_molalities) {
+        const double formula_ions = static_cast<double>(stoichiometry[0]) + stoichiometry[1];
+        if (declared_solute_ratio) *declared_solute_ratio = solvent_mass * molality * formula_ions;
+        const double solvent_moles = 1.0 / solvent_mass, total_moles = solvent_moles + molality * formula_ions;
+        for (std::size_t i = 0; i < composition.size(); ++i)
+            composition[i] = solvent_fractions[i] * solvent_moles / total_moles;
+        composition[ion_indices[0]] = stoichiometry[0] * molality / total_moles;
+        composition[ion_indices[1]] = stoichiometry[1] * molality / total_moles;
+        return composition;
     }
-    composition[ion_indices[0]] = stoichiometry[0] * molality / total_moles;
-    composition[ion_indices[1]] = stoichiometry[1] * molality / total_moles;
-    if (finite_solute_molalities) {
-        const auto& m = *finite_solute_molalities;
-        if (m.size() != composition.size()
-            || std::count(solvent_fractions.begin(), solvent_fractions.end(), 1.0) != 1)
-            throw std::invalid_argument("full solute molalities require one pure solvent and one entry per component");
-        const auto solvent = std::size_t(std::max_element(solvent_fractions.begin(), solvent_fractions.end()) - solvent_fractions.begin());
-        if (parameters.charge_number[solvent] != 0 || m[solvent] != 0.0)
-            throw std::invalid_argument("full solute molalities require an uncharged solvent with zero solute molality");
-        double total = 0.0, charge = 0.0;
-        for (std::size_t i = 0; i < m.size(); ++i) {
-            if (!std::isfinite(m[i]) || m[i] < 0.0)
-                throw std::invalid_argument("full solute molalities must be finite and nonnegative");
-            total += m[i];
-            charge += m[i] * parameters.charge_number[i];
-        }
-        const double mass = parameters.molar_mass_kg_per_mol[solvent];
-        if (declared_solute_ratio) *declared_solute_ratio = mass * total;
-        const double denominator = 1.0 + mass * total;
-        if (!std::isfinite(denominator) || !std::isfinite(charge)
-            || m[ion_indices[0]] <= 0.0 || m[ion_indices[1]] <= 0.0
-            || std::abs(mass * charge / denominator) > policy::COMPOSITION_SUM_TOLERANCE.value
-            || std::abs(mass * (m[ion_indices[0]] - stoichiometry[0] * molality) / denominator)
-                > policy::COMPOSITION_SUM_TOLERANCE.value)
-            throw std::invalid_argument("full solute molalities must be neutral and match the selected formula cation molality");
-        composition[solvent] = 1.0 / denominator;
-        for (std::size_t i = 0; i < m.size(); ++i)
-            if (i != solvent) composition[i] = mass * m[i] / denominator;
+    const auto& m = *finite_solute_molalities;
+    const auto pure = std::find(solvent_fractions.begin(), solvent_fractions.end(), 1.0);
+    if (m.size() != composition.size() || pure == solvent_fractions.end()
+        || std::count_if(solvent_fractions.begin(), solvent_fractions.end(), [](double x) { return x != 0.0; }) != 1)
+        throw std::invalid_argument("full solute molalities require one pure solvent and one entry per component");
+    const auto solvent = static_cast<std::size_t>(pure - solvent_fractions.begin());
+    if (charges[solvent] != 0 || m[solvent] != 0.0)
+        throw std::invalid_argument("full solute molalities require an uncharged solvent with zero solute molality");
+    double total = 0.0, charge = 0.0;
+    for (std::size_t i = 0; i < m.size(); ++i) {
+        if (!std::isfinite(m[i]) || m[i] < 0.0)
+            throw std::invalid_argument("full solute molalities must be finite and nonnegative");
+        total += m[i];
+        charge += m[i] * charges[i];
     }
+    const double solute_ratio = solvent_mass * total, denominator = 1.0 + solute_ratio;
+    const std::size_t cation = charges[ion_indices[0]] > 0 ? 0 : 1;
+    if (!std::isfinite(denominator) || !std::isfinite(charge)
+        || m[ion_indices[0]] <= 0.0 || m[ion_indices[1]] <= 0.0
+        || std::abs(solvent_mass * charge / denominator) > policy::COMPOSITION_SUM_TOLERANCE.value
+        || std::abs(solvent_mass * (m[ion_indices[cation]] - stoichiometry[cation] * molality) / denominator)
+            > policy::COMPOSITION_SUM_TOLERANCE.value)
+        throw std::invalid_argument("full solute molalities must be neutral and match the selected formula cation molality");
+    if (declared_solute_ratio) *declared_solute_ratio = solute_ratio;
+    composition[solvent] = 1.0 / denominator;
+    for (std::size_t i = 0; i < m.size(); ++i)
+        if (i != solvent) composition[i] = solvent_mass * m[i] / denominator;
     return composition;
 }
 
@@ -1011,6 +1011,8 @@ ElectrolyteActivity electrolyte_activity(
 ) {
     core::Scope scope("electrolyte_activity");
     if (!reference.ion_indices) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
+    if (*reference.ion_indices != ion_indices)
+        throw std::invalid_argument("electrolyte activity ordered ion indices do not match the reference");
     if (!(reference.solver_options == model.solver_options()))
         throw std::invalid_argument("electrolyte reference solver options do not match the model");
     double solute_ratio = 0.0;

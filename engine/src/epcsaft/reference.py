@@ -118,11 +118,12 @@ class Reference:
         molality : float
             Finite, strictly positive formula molality in mol/kg solvent for a
             single salt. With a full solute vector, use the total cation molality
-            divided by its count in the selected formula. The cation must be first.
+            divided by its count in the selected formula, in either ion order.
         solute_molalities : sequence of float or None
             Full species molalities in component order, including a zero entry
-            for the one pure reference solvent. The vector must be finite,
-            nonnegative and electroneutral, with both selected ions present.
+            for the one pure reference solvent. Reference solvent fractions
+            must be exactly one for the solvent and zero elsewhere. The vector
+            must be finite, nonnegative and electroneutral, with both ions present.
             Omit it for a single salt along the reference's formula path.
 
         Returns

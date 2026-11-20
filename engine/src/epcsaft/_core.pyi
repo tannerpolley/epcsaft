@@ -4351,7 +4351,7 @@ class ElectrolyteActivity:
     solver_options: list[dict[str, Any]]
     """Effective numerical settings for the calculation."""
     single_ion: tuple[float, float]
-    """Two dimensionless mole-fraction-scale coefficients in (cation, anion) order; their
+    """Two dimensionless mole-fraction-scale coefficients in the submitted ion order; their
     convention is the supplied reference, not independently measurable single-ion activities.
     """
     mean_ionic_mole_fraction_scale: float
@@ -4381,14 +4381,14 @@ def infinite_dilution_reference(model: HelmholtzModel, temperature: float, press
     solvent_fractions : Sequence[float]
         Length n of normalized, charge-neutral solvent mole fractions in component_ids order; no formula ions are inserted here.
     ion_indices : tuple[int, int]
-        Two component indices in (cation, anion) order.
+        Cation and anion component indices in either order.
     stoichiometry : tuple[int, int]
-        Two positive formula-unit ion counts in (cation, anion) order; the resulting formula must be charge neutral.
+        Two positive formula-unit counts in ion order; the resulting formula must be charge neutral.
 
     Returns
     -------
     InfiniteDilutionReference
-        InfiniteDilutionReference in (cation, anion) order, including terminal change and per-parameter availability.
+        InfiniteDilutionReference in the submitted ion order.
 
     Notes
     -----
@@ -4409,15 +4409,15 @@ def electrolyte_activity(model: HelmholtzModel, temperature: float, pressure: fl
     solvent_fractions : Sequence[float]
         Length n of normalized, charge-neutral solvent mole fractions in component_ids order; no formula ions are inserted here.
     ion_indices : tuple[int, int]
-        Two component indices in (cation, anion) order.
+        Cation and anion component indices in the reference's ion order.
     stoichiometry : tuple[int, int]
-        Two positive formula-unit ion counts in (cation, anion) order; the resulting formula must be charge neutral.
+        Two positive formula-unit counts in ion order; the resulting formula must be charge neutral.
     molality : float
         Finite positive formula-unit concentration in mol/kg declared solvent; zero is rejected.
     reference : InfiniteDilutionReference
         Infinite-dilution reference for the same model, T/P, solvent, ions and stoichiometry.
     solute_molalities : Sequence[float] or None
-        Full species molalities in component order, including zero for the pure reference solvent.
+        Full species molalities in component order, including zero for the exactly pure reference solvent.
         When supplied, molality times the cation count must match the cation's entry.
 
     Returns
