@@ -1,0 +1,10 @@
+--- a/engine/pyproject.toml
++++ b/engine/pyproject.toml
+@@ -7,6 +7,6 @@
+ dynamic = ["version"]
+ description = "Unified ePC-SAFT engine for EOS, equilibrium, and regression"
+ # No readme: engine/README.md stays out of METADATA so a docs edit keeps the wheel SHA-256 (#355).
+-requires-python = ">=3.13"
++requires-python = ">=3.12"
+ license = { file = "LICENSE" } # GPLv3 with the Ipopt section 7 permission
+ dependencies = []

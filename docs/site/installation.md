@@ -10,6 +10,9 @@ an installation with a native pressure closure.
 
 ## Conda package
 
+The conda recipe supports CPython 3.12, 3.13, and 3.14 on `linux-64`,
+`win-64`, `osx-64`, and `osx-arm64`.
+
 Install release 1.3.1 for Linux (linux-64) and Windows (win-64) from the
 `tannerwpolley` conda channel:
 
