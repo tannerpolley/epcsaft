@@ -85,9 +85,42 @@ records for every consuming species. Reacting problems, charged or neutral and
 with or without a source reference, may leave species without records when the
 reactions and the remaining records determine every neutral combination; only the ionic charge gauge may
 stay free. Such a problem, or one with a source reference, admits at most one EOS-parameter direction and no
-reaction-law direction in its solved-state actions. UV is deferred. These limits follow the
+reaction-law direction in its solved-state actions. These limits follow the
 [caloric formulation](../theory/equilibrium.md) and are collected in
 [limits](../limits.md); the TP notebook does not qualify caloric specifications.
+
+### Fixed internal energy and volume (UV)
+
+Set `internal_energy_j` to the finite total internal energy in J and
+`volume_m3` to the positive total volume in m³ for the declared component
+amounts in mol. Use the model's thermochemical reference for the energy
+target. Declare temperature and pressure with `Free(guess)`, using K and Pa
+for their initial guesses. The solve returns temperature, pressure and phase
+amounts in K, Pa and mol, respectively.
+
+UV supports neutral, nonreacting systems with one or two declared fluid phases
+whose amounts are free. It requires complete
+[ideal-gas thermochemistry](states-and-properties.md#supply-ideal-thermal-records)
+for the participating species, with temperatures strictly inside the
+applicable intervals. The phase list is supplied by the caller.
+
+For a methane/ethane model with ideal-gas records for both species, supply
+`U_total` and `V_total` for the one-mole inventory below. This declaration
+solves for liquid and vapor amounts.
+
+```python
+from epcsaft.equilibrium import Amounts, Free, Phase, Problem, solve_equilibrium
+
+problem = Problem(
+    feed=Amounts({"methane": 0.5, "ethane": 0.5}),
+    phases=[Phase("L", kind="liquid"), Phase("V", kind="vapor")],
+    T=Free(185.0),
+    P=Free(1_050_000.0),
+    internal_energy_j=U_total,
+    volume_m3=V_total,
+)
+result = solve_equilibrium(model, problem)
+```
 
 ## Pure stoichiometric solids
 
