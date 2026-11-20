@@ -1868,7 +1868,7 @@ $$
 - Change note: The supplied composition satisfies normalization and electroneutrality at admission. During final polish, the prescribed coordinates are substituted exactly.
 
 $$
-ln x_{a,i}-ln x^*_{a,i}=0,quad iin S_a.
+\ln x_{a,i}-\ln x^*_{a,i}=0,\quad i\in S_a.
 $$
 
 ## `pure_active_parameter_mapping`

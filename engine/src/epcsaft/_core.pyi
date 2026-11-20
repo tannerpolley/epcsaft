@@ -3058,7 +3058,7 @@ class PointEvaluation:
     values: list[float]
     """Length m of defining-row residuals in CompiledSystem.rows order. Most rows are dimensionless; an absent free-solid row is its amount in mol."""
     objective: float
-    """EOS physical potential in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero. A value alone does not establish equilibrium."""
+    """EOS physical potential in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Unavailable (NaN) for a prescribed liquid composition. Ideal activity models return zero. A value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
 
@@ -3460,7 +3460,7 @@ class EquilibriumResult:
     hessian_calls: int
     """Exact Hessian evaluation count."""
     objective: float
-    """EOS physical potential at the retained candidate, in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero."""
+    """EOS physical potential at the retained candidate, in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Unavailable (NaN) for a prescribed liquid composition. Ideal activity models return zero."""
     reduced_hessian_minimum: float
     """Minimum eigenvalue of the native reduced Hessian; local curvature evidence, not a global
     certificate.

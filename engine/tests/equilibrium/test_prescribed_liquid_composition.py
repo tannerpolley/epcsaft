@@ -3,9 +3,11 @@
 import json
 from collections.abc import Sequence
 from dataclasses import replace
-from math import log
+from math import isnan, log, ulp
 
-from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, State, _core, equilibrium as eq
+import pytest
+
+from epcsaft import GAS_CONSTANT_J_PER_MOL_K as R, Mixture, Parameters, State, _core, equilibrium as eq, trace
 from tests.packets import parameters_json
 
 SPECIES = ("water", "ethanol", "isobutanol", "sodium-cation", "chloride-anion")
@@ -20,6 +22,11 @@ PHASES = (
     eq.Phase("water-rich", kind="liquid", composition_guess=(0.8, 0.05, 0.05, 0.05, 0.05)),
     eq.Phase("organic-rich", kind="liquid", composition_guess=(0.2, 0.1, 0.6998, 0.0001, 0.0001)),
 )
+
+
+@pytest.fixture(scope="module")
+def khudaida_model() -> Mixture:
+    return Mixture(Parameters.from_json(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=SPECIES))
 
 
 def flash(
@@ -95,10 +102,11 @@ def fugacity_evidence(
     return x, states, allowance
 
 
-def test_prescribed_liquid_nonzero_voltage_and_midpoint() -> None:
-    model = Mixture(Parameters.from_json(parameters_json("khudaida-2026-figure-2-electrolyte-lle", 7), components=SPECIES))
+def test_prescribed_liquid_nonzero_voltage_and_midpoint(khudaida_model: Mixture) -> None:
+    model = khudaida_model
     reference, reference_errors = flash(model, FEED)
     problem, compiled, result = endpoint(model, reference)
+    assert isnan(result.objective) and isnan(compiled.evaluate(result.coordinates).objective)
     assert all(e.resolved for e in reference_errors.composition[:len(SPECIES)])
     estimated = estimates(compiled, result, [e.absolute for e in reference_errors.composition[:len(SPECIES)]])
     radius = estimated.pressure.absolute
@@ -126,12 +134,63 @@ def test_prescribed_liquid_nonzero_voltage_and_midpoint() -> None:
     print(f"midpoint amounts={split.amounts} radii={[e.absolute for e in split_error.amounts]} "
           f"composition_delta={discrepancy:.17g} voltage_delta={voltage_error:.17g} voltage_allowance={voltage_allowance:.17g}")
     assert discrepancy <= 1e-9 and voltage_error <= voltage_allowance
-    # Both-phase composition and amount estimates are from the independent flash.
-    assert all(abs(a - 0.5) <= e.absolute for a, e in zip(split.amounts, split_error.amounts, strict=True))
+    contrast = [abs(a - b) for a, b in zip(*x, strict=True)]
+    i = max(range(len(contrast)), key=contrast.__getitem__)
+    rounding = [ulp(n) / 2 for n in midpoint]
+    # Propagate feed rounding to each amount using the most separated species' lever rule.
+    for p, (a, e) in enumerate(zip(split.amounts, split_error.amounts, strict=True)):
+        midpoint_error = (rounding[i] + x[1 - p][i] * sum(rounding)) / contrast[i]
+        assert abs(a - 0.5) <= e.absolute + midpoint_error
 
     warm = eq.solve_equilibrium(model, problem, start=result)
     assert warm.success and warm.amounts == [], warm.message
     assert max(abs(a - b) for a, b in zip(warm.mole_fractions, result.mole_fractions, strict=True)) <= STATE
+
+
+def test_previous_prescribed_liquid_in_declared_starts(khudaida_model: Mixture) -> None:
+    reference, _ = flash(khudaida_model, FEED)
+    problem, _, result = endpoint(khudaida_model, reference)
+    starts = eq.solve_equilibrium_starts(
+        khudaida_model, problem, [eq.EquilibriumStart(previous=result)], eq.EquilibriumWorkLimits(),
+    )
+    assert starts.selected == 0, starts.causes
+    warm = starts.results[0]
+    assert warm is not None and warm.amounts == []
+    assert max(abs(a - b) for a, b in zip(warm.mole_fractions, result.mole_fractions, strict=True)) <= STATE
+
+
+def test_prescribed_liquid_seeds_feed_split(khudaida_model: Mixture) -> None:
+    reference, _ = flash(khudaida_model, FEED)
+    _, _, result = endpoint(khudaida_model, reference)
+    x = [result.phase_mole_fractions(p) for p in range(2)]
+    midpoint = {species: (a + b) / 2 for species, a, b in zip(SPECIES, *x, strict=True)}
+    problem = eq.Problem(T=T, P=value(result.pressure), feed=eq.Amounts(midpoint), phases=PHASES, row_tolerance=ROW)
+    with trace(diagnostics=True) as captured:
+        split = eq.solve_equilibrium(khudaida_model, problem, start=result)
+    assert split.success and split.requested_tolerance_met, split.message
+    events, spans = captured.events, captured.spans
+    initial = next(e.values for e in events if e.name == "row_values"
+                   and (parent := spans[e.span].parent) is not None and spans[parent].name == "ipopt_eval_g")
+    for row, residual in zip(split.rows, initial, strict=True):
+        if row.kind == _core.RowKind.Moiety:
+            # Without previous amounts the default is the feed total per phase.
+            i = row.index
+            assert abs(residual - (x[0][i] + x[1][i] - midpoint[SPECIES[i]] / sum(midpoint.values()))) <= ROW
+        if row.kind == _core.RowKind.Pressure:
+            assert abs(residual) <= ROW
+    assert split.amounts == pytest.approx([0.5, 0.5], rel=0, abs=STATE)
+
+
+def test_prescribed_uncertainty_cannot_change_support(khudaida_model: Mixture) -> None:
+    phases = (
+        replace(PHASES[0], composition_guess=(0.85, 0.0, 0.05, 0.05, 0.05)),
+        replace(PHASES[1], composition_guess=(0.2, 0.0, 0.7998, 0.0001, 0.0001)),
+    )
+    reference, _ = flash(khudaida_model, [*FEED[:1], 0.0, *FEED[2:]], phases=phases)
+    _, compiled, result = endpoint(khudaida_model, reference)
+    assert estimates(compiled, result, [0.0] * len(SPECIES)).pressure.resolved
+    errors = estimates(compiled, result, [0.0, STATE, 0.0, 0.0, 0.0])
+    assert not errors.pressure.resolved and "support" in errors.cause
 
 
 def test_distinct_symmetric_ions_return_zero_voltage() -> None:

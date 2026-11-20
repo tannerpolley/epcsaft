@@ -1466,6 +1466,10 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         result.values.push_back(value);
     }
     if constexpr (std::is_same_v<Base, double>) scope.probe("row_values", result.values);
+    if (problem.prescribed_liquid_composition) {
+        result.objective = NAN;
+        return result;
+    }
     if (chemical_phase) return result;
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         const auto& derivative = prepared.derivative[phase];

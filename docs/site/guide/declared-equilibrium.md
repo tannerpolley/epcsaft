@@ -74,13 +74,21 @@ tangent-plane trials. Explicit tests belong to
 
 For two nonreacting liquids sharing the same mobile species, declare fixed
 `T`, free `P` and `prescribed_liquid_composition` in mole fractions by species
-name. Supply two liquid phases in order and an electroneutral composition
-guess near the intended conjugate liquid. Omit `feed` and leave the phase
-amounts unspecified.
+name. Supply two liquid phases in order and an electroneutral estimate for
+the conjugate composition. Omit `feed` and leave the phase amounts
+unspecified.
+
+The solve locally refines a nearby estimate. At the water/ethanol/isobutanol
+and sodium chloride test point at 293.15 K, the tested transfers of up to
+0.001 mole fraction between water and isobutanol in the conjugate guess
+converged from both 100 and 101 kPa. At 0.01 mole fraction, both starts returned
+`unresolved separation` with no pressure. A failed start is refused and
+returns no boundary state.
 
 The returned state contains both compositions and molar densities, the
 common pressure in Pa, and `electric_potential_difference_v` in volts, second
-liquid minus first. The amounts array is empty. An unresolved separation
+liquid minus first. The amounts array is empty and the extensive objective
+is unavailable (NaN). An unresolved separation
 leaves the state unavailable. Accepted results can seed a nearby declaration
 on the same model and ordered support. Solved-state actions, continuation
 and the equilibrium AMPL Solver Library interface are unavailable for this

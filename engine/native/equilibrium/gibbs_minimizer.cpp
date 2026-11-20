@@ -198,8 +198,8 @@ void copy_previous_phase(
             phase * compiled.model->parameters().component_count() + spec.support[i]]);
     }
     std::size_t cursor = offsets[phase] + spec.support.size();
-    if (spec.amount.kind == AmountKind::Free && start.amounts.size() == start.phase_count) {
-        if (std::isfinite(start.amounts[phase]) && start.amounts[phase] > 0.0) {
+    if (spec.is_free()) {
+        if (start.amounts.size() == start.phase_count && std::isfinite(start.amounts[phase]) && start.amounts[phase] > 0.0) {
             point[cursor] = start.amounts[phase];
         }
         ++cursor;
@@ -889,14 +889,19 @@ void reject_elapsed(EquilibriumResult& result, core::Scope& scope) {
 
 }  // namespace
 
+static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
+    auto declaration = compiled.problem;
+    if (declaration.prescribed_liquid_composition)
+        for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
+    return declaration;
+}
+
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
     result.model_identity = compiled.model;
     result.ideal_identity = compiled.ideal;
-    auto declaration = compiled.problem;
-    if (declaration.prescribed_liquid_composition)
-        for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
-    result.declaration = std::make_shared<const EquilibriumProblem>(std::move(declaration));
+    result.declaration = std::make_shared<const EquilibriumProblem>(public_declaration(compiled));
+    if (compiled.problem.prescribed_liquid_composition) result.objective = NAN;
     result.rows = compiled.rows;
     result.reference_diagnostics = compiled.reference_diagnostics;
     result.phase_count = compiled.problem.phases.size();
@@ -1920,7 +1925,7 @@ static EquilibriumResult run_driver_once(
     if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
     result.residuals = evaluation.values;
     result.classified_residuals = compiled.classified_residuals(prepared, evaluation.values);
-    if (!declared.problem.prescribed_liquid_composition) result.objective = evaluation.objective;
+    result.objective = evaluation.objective;
     if (expired()) return limited_result();
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
     scope.probe("prepared_points", static_cast<double>(nlp->prepared_points()));
@@ -2702,11 +2707,12 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     std::optional<CompiledSystem> retained;
     if (!exhausted()) {
         auto& compiled = retained.emplace(compile_problem(model, problem));
+        const auto declaration = public_declaration(compiled);
         for (const auto& seed : starts) if (seed.previous) {
             const auto& old = *seed.previous;
             if (!old.declaration || old.model_identity != &model)
                 throw std::invalid_argument("previous start model/parameters or declaration differs");
-            if (const auto difference = declared_state_difference(*old.declaration, compiled.problem); !difference.empty())
+            if (const auto difference = declared_state_difference(*old.declaration, declaration); !difference.empty())
                 throw std::invalid_argument("previous start: " + difference);
         }
         for (std::size_t i = 0; i < starts.size(); ++i) {

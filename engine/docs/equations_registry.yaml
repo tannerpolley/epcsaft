@@ -1263,7 +1263,7 @@ equations:
     status: "Implementation convention"
     description: "One affine logarithmic pin per supported species of the first liquid."
     change_note: "The supplied composition satisfies normalization and electroneutrality at admission. During final polish, the prescribed coordinates are substituted exactly."
-    math: "ln x_{a,i}-ln x^*_{a,i}=0,quad iin S_a."
+    math: "\\ln x_{a,i}-\\ln x^*_{a,i}=0,\\quad i\\in S_a."
   - eqid: "present_phase_tangent_plane_identity"
     section: "Equilibrium"
     subsection: "Tangent-plane testing"

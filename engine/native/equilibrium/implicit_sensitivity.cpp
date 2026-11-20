@@ -1679,6 +1679,9 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         if (!prescribed_errors.empty()) {
             if (!c.problem.prescribed_liquid_composition || prescribed_errors.size() != components)
                 throw std::invalid_argument("prescribed composition uncertainty shape");
+            for (std::size_t i = 0; i < components; ++i)
+                if ((*c.problem.prescribed_liquid_composition)[i] == 0.0 && prescribed_errors[i] != 0.0)
+                    throw std::invalid_argument("prescribed composition uncertainty changes support");
             for (std::size_t i = 0; i < c.rows.size(); ++i) {
                 if (c.rows[i].kind != RowKind::PrescribedComposition) continue;
                 const auto species = c.problem.phases[0].support[c.rows[i].index];

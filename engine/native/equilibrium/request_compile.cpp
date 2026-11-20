@@ -291,8 +291,6 @@ static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, con
     }
     for (std::size_t i = 0; i < support.size(); ++i) compiled.B[i][support[i]] = 1;
     compiled.primal_size = column + 1;
-    compiled.standard_gibbs = standard_state_series(compiled.seed_temperature(), x.size(), {},
-        request.standard_gibbs_j_per_mol, 0, model.thermochemistry() ? &*model.thermochemistry() : nullptr, nullptr, &compiled).front();
     inspect_generic_rank(compiled);
     return compiled;
 }

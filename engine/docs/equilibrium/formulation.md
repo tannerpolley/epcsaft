@@ -380,7 +380,7 @@ The prescribed composition supplies its charge condition. The second liquid
 retains normalization and electroneutrality. The phase stationarity rows
 share species multipliers and yield EqID: `interphase_potential_equality` on
 subtraction. With the first liquid's charge gauge set to zero,
-$Deltapsi=-RThatarphi_b/F$.
+$\Delta\psi=-RT\hat{\varphi}_b/F$.
 
 The feasibility calculation uses a unit molar basis internally for each liquid.
 The returned state is intensive. Admission requires liquid density branches

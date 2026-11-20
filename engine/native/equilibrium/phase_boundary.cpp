@@ -1385,6 +1385,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
 // seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
 // support_declared and topology_declared flags) are not compared.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
+    if (a.prescribed_liquid_composition != b.prescribed_liquid_composition) return "prescribed liquid composition differs";
     if (a.critical.has_value() != b.critical.has_value() || a.spinodal.has_value() != b.spinodal.has_value())
         return "null-mode declaration differs";
     if (a.spinodal && (a.spinodal->density_nodes != b.spinodal->density_nodes
