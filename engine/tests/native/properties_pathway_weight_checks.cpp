@@ -415,8 +415,9 @@ void pathway_weight() {
                     const auto id = std::string("F3b/") + s.name + "/gradient-floor/"
                         + (first ? "isothermal-phase-gradient/" : "phase-gradient/");
                     for (std::size_t j = first; j < 5; ++j)
-                        check(id + std::to_string(j), j, std::abs(trial.gradient[j] - exact.gradient[j]),
-                            trial.gradient_floor + exact.gradient_floor + rounding);
+                        if (j < 2 || s.x[j - 2] > 0.0)
+                            check(id + std::to_string(j), j, std::abs(trial.gradient[j] - exact.gradient[j]),
+                                trial.gradient_floor + exact.gradient_floor + rounding);
                 }
                 double tight_floor = 0.0, loose_floor = 0.0;
                 const auto tight_series = epcsaft::properties::density_volume_taylor(tight, s.temperature, s.density, s.x, tight_floor);

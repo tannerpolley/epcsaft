@@ -1378,7 +1378,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     }
     result.parameter_actions = parameter_actions;
     result.standard = fixed_standard ? *fixed_standard : standard_term(
-        *this, double(result.temperature), double(result.pressure), gradient_only ? 0 : 2, problem.pressure.free, problem.temperature.free);
+        *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
     if constexpr (std::is_same_v<Base, double>) if (anchored_calorics())
         result.calorics = caloric_reference(*this, result.temperature, result.pressure);
     return result;

@@ -2649,7 +2649,7 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(completed, "") == completed);
     CHECK(run(completed - 1, "return") == completed);
     // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
-    CHECK(run(2298, "density admission") == 2298);
+    CHECK(run(2314, "density admission") == 2314);
 }
 
 void check_bubble_branch_end() {
