@@ -10,7 +10,7 @@ an installation with a native pressure closure.
 
 ## Conda package
 
-Install release 1.3.1 from the `tannerwpolley` conda channel. Linux (linux-64)
+Install release 1.3.2 from the `tannerwpolley` conda channel. Linux (linux-64)
 supports Python 3.12, 3.13 and 3.14; Windows (win-64) supports Python 3.13 only.
 There is no published macOS package.
 
@@ -18,7 +18,7 @@ On Linux, replace `python=3.13` below with `python=3.12` or `python=3.14` to
 choose another supported version:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.1
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.2
 conda activate epcsaft
 python -c 'import epcsaft; print(epcsaft.__file__)'
 ```

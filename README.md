@@ -86,7 +86,7 @@ unless they say they compare with measurements.
 
 ## Installation
 
-Install release 1.3.1 from the `tannerwpolley` conda channel. Linux (linux-64)
+Install release 1.3.2 from the `tannerwpolley` conda channel. Linux (linux-64)
 supports Python 3.12, 3.13 and 3.14; Windows (win-64) supports Python 3.13 only.
 There is no published macOS package.
 
@@ -94,7 +94,7 @@ On Linux, replace `python=3.13` below with `python=3.12` or `python=3.14` to
 choose another supported version:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.1
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.2
 ```
 
 Try [first saturation and flash](https://tannerpolley.github.io/epcsaft/quickstart.html#first-saturation-and-flash)
