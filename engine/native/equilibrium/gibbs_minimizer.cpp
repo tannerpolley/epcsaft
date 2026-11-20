@@ -307,6 +307,7 @@ static void clear_state(EquilibriumResult& result) {
     result.prepared_endpoint.reset();
     result.temperature.reset();
     result.pressure.reset();
+    result.electric_potential_difference_v.reset();
     result.amounts.clear();
     result.mole_fractions.clear();
     result.molar_densities.clear();
@@ -1182,6 +1183,19 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     }
     require_solution_shape(result, compiled.problem.phases.size(),
                            compiled.n_feed.size());
+    const auto& phases = compiled.problem.phases;
+    if (phases.size() == 2 && phases[0].kind == PhaseKind::Liquid && phases[1].kind == PhaseKind::Liquid
+        && compiled.charge_row_count == 1) {
+        const auto& charges = model->parameters().charge_number;
+        for (std::size_t i = 0; i < charges.size(); ++i) {
+            if (charges[i] == 0 || compositions[0][i] <= 0.0 || compositions[1][i] <= 0.0) continue;
+            // EqID interphase_potential_equality: the omitted charge row fixes its multiplier to zero.
+            const double phi = result.multipliers[compiled.rank];
+            result.electric_potential_difference_v = GAS_CONSTANT_J_PER_MOL_K * temperature / FARADAY_C_PER_MOL
+                * (compiled.charge_row[0] ? phi : -phi);
+            break;
+        }
+    }
     return result;
 }
 
