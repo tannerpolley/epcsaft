@@ -133,6 +133,7 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
             }
             check(prior.has_value(), "unmatched name");
         } else {
+            for (const auto& target : coordinate.targets) detail::validate_active_screening_coordinate(parameters, target.family);
             const auto& initial = coordinate.targets.front();
             require(initial.indices.front() < family_values(parameters, initial.family).second, "slot index");
             first = family_values(parameters, initial.family).first[initial.indices.front()] / initial.coefficient;

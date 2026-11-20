@@ -59,12 +59,24 @@ SegmentGeometry<Fixed> admitted_segment_geometry(const Fixed& temperature, const
     return result;
 }
 
+// EqID: density_upper_bound
+inline double density_upper_bound(double coefficient, const std::vector<double>& composition,
+    const std::vector<double>& sigma, const Parameters& parameters) {
+    if (!(std::isfinite(coefficient) && coefficient > 0.0)) throw std::invalid_argument("invalid packing coefficient");
+    const double pcsaft = policy::CLOSE_PACKING_FRACTION.value / coefficient;
+    if (!msa_screening(parameters.electrolyte_form)) return pcsaft;
+    double packing = 0.0;
+    for (std::size_t i = 0; i < composition.size(); ++i)
+        if (parameters.charge_number[i] != 0) packing += msa_ion_volume(composition[i], sigma[i]);
+    return packing > 0.0 ? std::min(pcsaft, (6.0 / PI) / (packing * NUMBER_DENSITY_PER_ANGSTROM3)) : pcsaft;
+}
+
 template <typename Scalar, class ParameterSet, typename Fixed>
 std::pair<ElectrolyteResult<Scalar>, Scalar> supported_electrostatics(const Fixed& temperature,
     const Scalar& density,
     const std::vector<Fixed>& composition, const std::vector<double>& reference,
-    const ParameterSet& parameters) {
-    const auto electrolyte = electrolyte_contribution(temperature, density, composition, reference, parameters);
+    const ParameterSet& parameters, const std::vector<Fixed>* sigma = nullptr) {
+    const auto electrolyte = electrolyte_contribution(temperature, density, composition, reference, parameters, sigma);
     return {electrolyte, charged_support(reference, parameters)
         ? born_contribution(temperature, composition, parameters, electrolyte.bulk_relative_permittivity) : Scalar(0)};
 }
@@ -154,7 +166,7 @@ struct HelmholtzTape final {
             const auto diameter = segment_diameter(independent[0], tape_parameters, sigma);
             auto [electrolyte, born] = supported_electrostatics(
                 independent[0], density,
-                composition, reference_composition, tape_parameters);
+                composition, reference_composition, tape_parameters, &sigma);
             // EqIDs born_residual_helmholtz, reference_single_insertion_taylor: DH is zero;
             // retain the Born first insertion only on the separate ion-free reference tape.
             if (reference_insertion) born = born_contribution(independent[0], composition,
@@ -165,7 +177,7 @@ struct HelmholtzTape final {
             const auto products = association_products(density, composition, tape_parameters, sites, delta);
             const auto& residuals = products.second;
             dependent.push_back(extensive_residual_helmholtz(total, residual_helmholtz(independent[0], density, composition,
-                tape_parameters, sigma, diameter, sites, products), electrolyte.debye_huckel, born, parameters));
+                tape_parameters, sigma, diameter, sites, products), electrolyte.screening, born, parameters));
             dependent.insert(dependent.end(), residuals.begin(), residuals.end());
         }
         if (!ideal_correlations.empty()) {

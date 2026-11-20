@@ -1,5 +1,7 @@
 #pragma once
 
+#include "core/parameters.hpp"
+
 #include <cstddef>
 #include <stdexcept>
 #include <type_traits>
@@ -25,6 +27,11 @@ enum class ParameterFamily {
     PathwayWeight,  // b_0, b_alpha, b_T of the declared pathway_weight
 };
 constexpr std::size_t PARAMETER_FAMILY_COUNT = static_cast<std::size_t>(ParameterFamily::PathwayWeight) + 1;
+
+inline void validate_active_screening_coordinate(const Parameters& parameters, ParameterFamily family) {
+    if (family == ParameterFamily::DebyeHuckelDiameter && msa_screening(parameters.electrolyte_form))
+        throw std::invalid_argument("debye_huckel_diameter cannot be an active coordinate with MSA screening");
+}
 
 // The one family -> (pointer, size) storage view, for double and AD alike.
 template <class ParameterSet>

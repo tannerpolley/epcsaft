@@ -38,7 +38,7 @@ Scalar born_contribution(
     const Fixed& temperature, const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters, const Scalar& bulk_relative_permittivity
 ) {
-    if (!parameters.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) return Scalar(0.0);
+    if (!born_charging(parameters.electrolyte_form)) return Scalar(0.0);
 
     Fixed fraction_sum = Fixed(0.0);
     Fixed weighted_solvation = Fixed(0.0);

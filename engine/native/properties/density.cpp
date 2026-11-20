@@ -311,12 +311,12 @@ public:
                 const std::vector<Series> x(composition_.begin(), composition_.end());
                 const auto sigma = segment_sigma(temperature, parameters_);
                 const auto diameter = segment_diameter(temperature, parameters_, sigma);
-                const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_);
+                const auto electro = detail::supported_electrostatics(temperature, rho, x, composition_, parameters_, &sigma);
                 return extensive_residual_helmholtz(total, residual_helmholtz(temperature, rho, x, parameters_, sigma,
-                    diameter, site_series, products), electro.first.debye_huckel, electro.second, parameters_);
+                    diameter, site_series, products), electro.first.screening, electro.second, parameters_);
             } else {
                 const auto electrostatics = [&] {
-                    if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_);
+                    if constexpr (std::is_same_v<Base, double> && !Composition) return detail::supported_electrostatics(temperature_, rho, composition_, composition_, parameters_, &sigma_);
                     else return detail::supported_electrostatics(Series(temperature_), rho, composition, narrow_values(composition_.begin(), composition_.end()), parameters_);
                 }();
                 const auto terms = [&] {
@@ -326,7 +326,7 @@ public:
                         std::vector<Series>(sigma_.begin(), sigma_.end()), std::vector<Series>(diameter_.begin(), diameter_.end()),
                         site_series, products);
                 }();
-                return extensive_residual_helmholtz(total, terms, electrostatics.first.debye_huckel, electrostatics.second,
+                return extensive_residual_helmholtz(total, terms, electrostatics.first.screening, electrostatics.second,
                     parameters_);
             }
         }();
@@ -342,6 +342,7 @@ public:
     }
 
     const std::vector<Base>& diameter() const { return diameter_; }
+    const std::vector<Base>& sigma() const { return sigma_; }
 
 private:
     // The packing moments prepared once per isotherm, when this series holds them.
@@ -1135,7 +1136,7 @@ double grid_witness(Isotherm& iso) {
     return node(lo);
 }
 
-// The density at packing fraction eta (the upper bound sits at DENSITY_UPPER_FRACTION of the close-packing density).
+// Scale the original close-packing starts to the admitted isotherm.
 double structured_start(const Isotherm& iso, double eta) {
     return eta / policy::CLOSE_PACKING_FRACTION.value * iso.upper() / policy::DENSITY_UPPER_FRACTION.value;
 }
@@ -1306,10 +1307,10 @@ DensityRoot anchor(
 
 }  // namespace
 
-std::array<double, 2> properties::density_search_domain(double temperature, double pressure, double coefficient) {
+std::array<double, 2> properties::density_search_domain(double temperature, double pressure, double cap) {
     // EqID: ideal_gas_density; EqID: density_upper_bound
     return {pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature) * policy::DENSITY_LOWER_FRACTION.value,
-            policy::CLOSE_PACKING_FRACTION.value / coefficient * policy::DENSITY_UPPER_FRACTION.value};
+            cap * policy::DENSITY_UPPER_FRACTION.value};
 }
 
 std::vector<double> properties::log_nodes(double log_lower, double log_upper, std::size_t intervals) {
@@ -1330,13 +1331,10 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(double temperature, doubl
     DensityDiagnostics result;
     result.solver_options = solver_options();
     result.evaluation_order = request.evaluation_order;
-    // Composition and temperature are admitted above: the coefficient is computed once for the cap and every row.
-    const double coefficient = [&] {
-        core::Scope cap("molar_density_upper_bound");
-        const double value = admitted_packing_coefficient(temperature, composition);
-        result.geometric_cap = density_upper_bound(value);
-        return value;
-    }();
+    const PressureSeries<> series(*this, temperature, composition);
+    const double coefficient = parameters_.ideal_gas ? 0.0
+        : packing_fraction_from_geometry(1.0, composition, parameters_, series.diameter());
+    result.geometric_cap = detail::density_upper_bound(coefficient, composition, series.sigma(), parameters_);
     // The default geometric grid is set by the density diagnostic policies.
     auto nodes = request.nodes;
     if (nodes.empty()) for (std::size_t k = 0; k < static_cast<std::size_t>(policy::DENSITY_DIAGNOSTIC_NODES.value); ++k)
@@ -1352,7 +1350,6 @@ DensityDiagnostics HelmholtzModel::density_diagnostics(double temperature, doubl
         && request.evaluation_order != DerivativeOrder::Hessian)
         throw std::invalid_argument("finite-domain evaluation requires Gradient, PressureSlope or Hessian");
     const auto started = std::chrono::steady_clock::now();
-    const PressureSeries<> series(*this, temperature, composition);
     // An exhausted budget ends the scan before the next evaluation; it is never one point's cause.
     auto budget = [&] {
         if (result.evaluations >= request.max_evaluations || (request.max_seconds
@@ -1715,8 +1712,8 @@ DensityRoot solve_density(
     try {
     // The packing coefficient from the series' admitted diameter.
     const double coefficient = packing_fraction_from_geometry(1.0, mole_fractions, model.parameters(), series.diameter());
-    if (!(std::isfinite(coefficient) && coefficient > 0.0)) throw std::invalid_argument("invalid packing coefficient");
-    const auto [lower, upper] = properties::density_search_domain(temperature, pressure, coefficient);
+    const double cap = detail::density_upper_bound(coefficient, mole_fractions, series.sigma(), model.parameters());
+    const auto [lower, upper] = properties::density_search_domain(temperature, pressure, cap);
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;

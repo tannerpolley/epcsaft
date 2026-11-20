@@ -1328,6 +1328,7 @@ class LogFugacityTerms:
     dispersion: list[Optional[float]]
     association: list[Optional[float]]
     debye_huckel: list[Optional[float]]
+    msa: list[Optional[float]]
     born: list[Optional[float]]
     dipolar: list[Optional[float]]
     cation_mixing: list[Optional[float]]
@@ -1359,6 +1360,7 @@ class State:
     association: float
     """Association contribution to A_res/(nRT), dimensionless."""
     debye_huckel: float
+    msa: float
     """Debye-Huckel contribution to A_res/(nRT), dimensionless."""
     born: float
     """Born contribution to A_res/(nRT), dimensionless."""
@@ -1665,6 +1667,7 @@ class StateBatch:
     dispersion: list[Optional[float]]
     association: list[Optional[float]]
     debye_huckel: list[Optional[float]]
+    msa: list[Optional[float]]
     born: list[Optional[float]]
     cation_mixing: list[Optional[float]]
     dipolar: list[Optional[float]]

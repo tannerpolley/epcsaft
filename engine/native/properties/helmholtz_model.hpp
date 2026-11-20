@@ -228,6 +228,7 @@ struct State final {
     double dispersion = 0.0;
     double association = 0.0;
     double debye_huckel = 0.0;
+    double msa = 0.0;
     double born = 0.0;
     double dipolar = 0.0;
     double cation_mixing = 0.0;
@@ -279,7 +280,7 @@ struct State final {
 
 // d(n a_k)/dn_i at constant T, V and n_j for each residual Helmholtz term k; ln phi_i is their sum minus ln Z.
 struct LogFugacityTerms final {
-    std::vector<std::optional<double>> hard_chain, dispersion, association, debye_huckel, born, dipolar, cation_mixing;
+    std::vector<std::optional<double>> hard_chain, dispersion, association, debye_huckel, msa, born, dipolar, cation_mixing;
     double log_compressibility_factor = 0.0;
 };
 
@@ -573,9 +574,8 @@ private:
     // `composition_admitted`: the caller has already validated this composition.
     State state(double temperature, double molar_density, const std::vector<double>& mole_fractions,
         bool derived_properties, bool composition_admitted, bool fixed_parameters = false) const;
-    // Packing coefficient and density upper bound for an already validated temperature and composition.
+    // Packing coefficient for an already validated temperature and composition.
     double admitted_packing_coefficient(double temperature, const std::vector<double>& mole_fractions) const;
-    static double density_upper_bound(double packing_coefficient);
     void validate_point(
         double temperature,
         double volume,
@@ -816,8 +816,8 @@ void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const 
     const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
 // ALG-DENSITY search domain in mol/m3: DENSITY_LOWER_FRACTION of P/RT to DENSITY_UPPER_FRACTION of the
-// close-packing density for packing coefficient `coefficient`; log_nodes spaces `intervals` cells geometrically.
-std::array<double, 2> density_search_domain(double temperature, double pressure, double coefficient);
+// admitted density cap; log_nodes spaces `intervals` cells geometrically.
+std::array<double, 2> density_search_domain(double temperature, double pressure, double cap);
 std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t intervals);
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
 // liquid-side; explicit labels and roots without a sample are kept. liquid_reference_refusal names a vapor-side root.

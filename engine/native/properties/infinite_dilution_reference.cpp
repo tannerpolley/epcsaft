@@ -282,7 +282,7 @@ NeutralReferenceTraceResult build_neutral_reference_trace(
                         // loop. The ALG-DENSITY solve grid finds the folds; a stable root is already sided
                         // against an unrefined fold sign bracket, so no refinement or time budget is requested.
                         const auto [lower, upper] = properties::density_search_domain(temperature, pressure,
-                            model.packing_fraction_coefficient(temperature, composition));
+                            model.molar_density_upper_bound(temperature, composition));
                         DensityDiagnosticRequest request;
                         request.nodes = properties::log_nodes(std::log(lower), std::log(upper),
                             static_cast<std::size_t>(policy::DENSITY_BRACKET_INTERVALS.value));

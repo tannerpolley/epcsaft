@@ -609,7 +609,7 @@ class Parameters:
         association = _choice(families, "association")
         polar = _choice(families, "polar", "none")  # optional family (ADR 0011)
         electrolyte_record = next(_mapping(item, "electrolyte family") for item in families if _mapping(item, "electrolyte family").get("kind") == "electrolyte")
-        if electrolyte == "born":
+        if electrolyte in ("born", "msa-born"):
             for name, field in (("c_shell", "born_c_shell"), ("c_dielectric", "born_c_dielectric")):
                 if name not in electrolyte_record:
                     raise _core.ParameterError(f"missing electrolyte/{name}")

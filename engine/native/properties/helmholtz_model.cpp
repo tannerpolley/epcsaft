@@ -56,6 +56,7 @@ const bool cppad_initialized = [] {
     static std::once_flag once;
     std::call_once(once, [] {
         cppad_thread_num();
+        (void)epcsaft::msa_screening_atomic();
         CppAD::thread_alloc::parallel_setup(
             CPPAD_MAX_NUM_THREADS, cppad_in_parallel, cppad_thread_num);
         CppAD::parallel_ad<double>();
@@ -524,6 +525,7 @@ void validate_parameter_coordinate(
     const std::vector<std::size_t>& indices, bool active
 ) {
     const auto& parameters = model.parameters();
+    if (active) detail::validate_active_screening_coordinate(parameters, family);
     const auto& values = detail::family_values(parameters, family);
     require(!indices.empty(), "parameter indices");
     for (const auto index : indices) require(index < values.second, "parameter index");
@@ -932,14 +934,14 @@ HelmholtzModel::HelmholtzModel(
         }
         require(molecular_ion(parameters_, component) || parameters_.packing_diameter_angstrom[component] > 0.0,
                 "packing_diameter");
-        require(parameters_.debye_huckel_diameter_angstrom[component] > 0.0,
+        require(msa_screening(parameters_.electrolyte_form) || parameters_.debye_huckel_diameter_angstrom[component] > 0.0,
                 "debye_huckel_diameter");
-        if (parameters_.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
+        if (born_charging(parameters_.electrolyte_form)) {
             require(parameters_.born_diameter_angstrom[component] > 0.0,
                     "born_diameter");
         }
     }
-    if (parameters_.electrolyte_form.is(ElectrolyteForm::DebyeHuckelBorn)) {
+    if (born_charging(parameters_.electrolyte_form)) {
         require(parameters_.ionic_region_relative_permittivity > 0.0,
                 "ionic_region_relative_permittivity");
     }
@@ -1660,10 +1662,10 @@ static Taylor<D, WiderScalar> reference_coefficients(const Parameters& p, const 
     const auto sigma = segment_sigma(q[0], mapped), diameter = segment_diameter(q[0], mapped, sigma);
     const auto delta = p.ideal_gas ? std::vector<S>{} : association_delta(q[0], rho, x, mapped, sigma, diameter);
     std::vector<double> reference(path[0].begin() + 2, path[0].begin() + 2 + nc);
-    auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped);
+    auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped, &sigma);
     born = born_contribution(q[0], x, mapped, electro.bulk_relative_permittivity);
     return extensive_residual_helmholtz(total, residual_helmholtz(q[0], rho, x, mapped, sigma, diameter, xs,
-        association_products(rho, x, mapped, xs, delta)), electro.debye_huckel, born, p);
+        association_products(rho, x, mapped, xs, delta)), electro.screening, born, p);
 }
 
 static double precision_estimate(double center, WiderScalar wide, WiderScalar scale, std::size_t count) {
@@ -2560,7 +2562,7 @@ State HelmholtzModel::state(
         const auto diameter = segment_diameter(temperature, parameters_, sigma);
         const auto [electro, born] = detail::supported_electrostatics(
             temperature, molar_density,
-            mole_fractions, mole_fractions, parameters_
+            mole_fractions, mole_fractions, parameters_, &sigma
         );
         const auto terms = residual_helmholtz(
             temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
@@ -2590,7 +2592,8 @@ State HelmholtzModel::state(
     result.hard_chain = terms.hard_chain;
     result.dispersion = terms.dispersion;
     result.association = terms.association;
-    result.debye_huckel = electro.debye_huckel;
+    if (msa_screening(parameters_.electrolyte_form)) result.msa = electro.screening;
+    else result.debye_huckel = electro.screening;
     result.born = born;
     result.dipolar = terms.dipolar;
     result.cation_mixing = terms.cation_mixing;
@@ -2721,6 +2724,7 @@ State HelmholtzModel::state(
         {"dispersion", result.dispersion},
         {"association", result.association},
         {"debye_huckel", result.debye_huckel},
+        {"msa", result.msa},
         {"born", result.born},
         {"dipolar", result.dipolar},
         {"cation_mixing", result.cation_mixing},
@@ -2847,14 +2851,14 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     for (std::size_t i = 1; i < input.size(); ++i) composition.push_back(input[i] / total);
     const auto sigma_ad = segment_sigma(t, parameters);
     const auto diameter_ad = segment_diameter(t, parameters, sigma_ad);
-    const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters);
+    const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters, &sigma_ad);
     const std::vector<AD> site(sites.begin(), sites.end());
     const auto delta = parameters_.ideal_gas ? std::vector<AD>{} : association_delta(t, density, composition,
         parameters, sigma_ad, diameter_ad);
     const auto a = residual_helmholtz(t, density, composition, parameters, sigma_ad, diameter_ad, site,
         association_products(density, composition, parameters, site, delta));
     CppAD::ADFun<double> function(input, std::vector<AD>{total * a.hard_chain, total * a.dispersion,
-        total * a.association, total * electrolyte.debye_huckel, total * born, total * a.dipolar, total * a.cation_mixing});
+        total * a.association, total * electrolyte.screening, total * born, total * a.dipolar, total * a.cation_mixing});
     recording.active = false;
     auto jacobian = function.Jacobian(point);
     const std::size_t width = point.size();
@@ -2870,8 +2874,14 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     LogFugacityTerms result;
     result.log_compressibility_factor = std::log(z);
     const bool charged = detail::charged_support(mole_fractions, parameters_);
+    const bool msa = msa_screening(parameters_.electrolyte_form);
+    auto& screening = msa ? result.msa : result.debye_huckel;
+    auto& inactive = msa ? result.debye_huckel : result.msa;
+    inactive.resize(mole_fractions.size());
+    for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+        if (!ionic_insertion_value(parameters_, mole_fractions, i, charged)) inactive[i] = 0.0;
     std::vector<std::optional<double>>* const fields[] = {&result.hard_chain, &result.dispersion,
-        &result.association, &result.debye_huckel, &result.born, &result.dipolar, &result.cation_mixing};
+        &result.association, &screening, &result.born, &result.dipolar, &result.cation_mixing};
     for (std::size_t k = 0; k < 7; ++k) {
         fields[k]->resize(mole_fractions.size());
         for (std::size_t i = 0; i < mole_fractions.size(); ++i)
@@ -2940,13 +2950,12 @@ double HelmholtzModel::molar_density_upper_bound(
     const std::vector<double>& mole_fractions
 ) const {
     core::Scope scope("molar_density_upper_bound");
-    return density_upper_bound(packing_fraction_coefficient(temperature, mole_fractions));
-}
-
-double HelmholtzModel::density_upper_bound(double coefficient) {
-    require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
-    // EqID: density_upper_bound
-    return policy::CLOSE_PACKING_FRACTION.value / coefficient;
+    validate_composition(mole_fractions);
+    require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
+    const double coefficient = parameters_.ideal_gas ? 0.0
+        : packing_fraction_from_geometry(1.0, mole_fractions, parameters_, geometry.diameter);
+    return detail::density_upper_bound(coefficient, mole_fractions, geometry.sigma, parameters_);
 }
 
 std::vector<double> HelmholtzModel::active_parameter_values() const {

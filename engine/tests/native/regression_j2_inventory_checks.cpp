@@ -1029,7 +1029,7 @@ void check_neutral_electrostatics() {
         const auto record = detail::make_tape_parameters(p, active, {variables[2]});
         const auto terms = detail::supported_electrostatics(variables[0], variables[1],
             std::vector<detail::AD>(x.begin(), x.end()), x, record);
-        CppAD::ADFun<double> tape(variables, std::vector<detail::AD>{terms.second, terms.first.debye_huckel});
+        CppAD::ADFun<double> tape(variables, std::vector<detail::AD>{terms.second, terms.first.screening});
         const auto values = tape.Forward(0, point), gradient = tape.Jacobian(point);
         const auto born_hessian = tape.Hessian(point, 0), dh_hessian = tape.Hessian(point, 1);
         const auto inputs = fields({field("salt_fraction", salt), field("T_K", point[0]), field("rho_mol_m3", point[1]),
