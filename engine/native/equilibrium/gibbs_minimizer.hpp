@@ -441,7 +441,6 @@ private:
 
     std::optional<PhasePoint> prepared_;
     std::optional<PointEvaluation> rows_;
-    std::optional<std::vector<double>> jacobian_;
     std::optional<std::vector<double>> objective_hessian_;
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;

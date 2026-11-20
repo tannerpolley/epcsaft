@@ -15,6 +15,7 @@
 #include <array>
 #include <cstddef>
 #include <deque>
+#include <functional>
 #include <mutex>
 #include <limits>
 #include <map>
@@ -60,6 +61,7 @@ struct HelmholtzDerivativeValues final {
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
     Eigen::MatrixXd site_sensitivity;
+    std::function<void(HelmholtzDerivativeValues&)> complete_hessian;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent

@@ -614,7 +614,6 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
         prepared_ = compiled_.prepare_values(candidate, true, &observations_.first_numerical_failure,
             std::nullopt, {}, false, !hessian && !compiled_.mode_count);
         rows_.reset();
-        jacobian_.reset();
         objective_hessian_.reset();
         constraint_hessian_.reset();
         ++prepared_points_;
@@ -622,8 +621,13 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
             prepared_.reset();
             throw std::domain_error(*refused);
         }
-    } else if (hessian && !compiled_.ideal && prepared_->derivative.front().hessian.empty())
-        prepared_ = compiled_.prepare(prepared_->point, true, &observations_.first_numerical_failure);
+    }
+    // Start at the last phase while its zeroth-order tape state is still live.
+    if (hessian) for (auto phase = prepared_->derivative.rbegin(); phase != prepared_->derivative.rend(); ++phase) {
+        if (!phase->complete_hessian) continue;
+        phase->complete_hessian(*phase);
+        phase->complete_hessian = {};
+    }
     if (limits_) limits_->check();
     return *prepared_;
 }
@@ -688,7 +692,6 @@ bool GibbsMinimizer::eval_jac_g(
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
     core::Scope callback("ipopt_eval_jac_g");
-    const auto& rows = constraint_rows_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < m; ++row) {
@@ -701,12 +704,11 @@ bool GibbsMinimizer::eval_jac_g(
     }
     try {
         if (!step_admitted(x)) return false;
-        const auto& point = prepared(n, x, true);
-        if (!jacobian_.has_value()) jacobian_ = compiled_.jacobian_at(point);
+        const auto jacobian = compiled_.jacobian_at(prepared(n, x, true));
         Ipopt::Index entry = 0;
-        for (const std::size_t row : rows) {
+        for (const std::size_t row : constraint_rows_) {
             for (Ipopt::Index column = 0; column < n; ++column) {
-                values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
+                values[entry++] = jacobian[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
             }
         }
         return entry == nele_jac;
