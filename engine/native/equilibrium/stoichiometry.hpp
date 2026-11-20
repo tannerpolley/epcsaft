@@ -4,9 +4,11 @@
 #include "equilibrium/problem.hpp"
 
 #include <cstddef>
+#include <map>
 #include <optional>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace epcsaft::equilibrium {
@@ -26,6 +28,10 @@ EPC_API std::vector<double> resolve_feed(
 );
 
 EPC_API std::vector<double> resolve_feed(const IdealMoleFraction& model, const FeedSpec& feed);
+
+using SaltMolalities = std::map<std::string, std::pair<std::map<std::size_t, int>, double>>;
+EPC_API std::vector<double> salt_solute_molalities(
+    const HelmholtzModel& model, std::size_t solvent, const SaltMolalities& salts);
 
 EPC_API std::vector<std::vector<double>> balance_basis(
     std::size_t components, const std::vector<ReactionSpec>& reactions, CompiledSystem* observations = nullptr

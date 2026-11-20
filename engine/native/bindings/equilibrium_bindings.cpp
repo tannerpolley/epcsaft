@@ -1,5 +1,6 @@
 #include "equilibrium/problem.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "equilibrium/stoichiometry.hpp"
 #include "equilibrium_record.hpp"
 
 #include "fields.hpp"
@@ -132,6 +133,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<FeedSpec>(module, "FeedSpec")
         .def(nb::init<>())
         EPCSAFT_READWRITE(FeedSpec, kind, values, solvent, solvent_mass_kg);
+    module.def("salt_solute_molalities", &salt_solute_molalities,
+        nb::arg("model"), nb::arg("solvent"), nb::arg("salts"));
     nb::enum_<SpeciesReference>(module, "SpeciesReference")
         EPCSAFT_VALUES(SpeciesReference, InfiniteDilution, PureLiquid, PureGas);
     nb::class_<NeutralReferenceDeclaration>(module, "NeutralReferenceDeclaration")
