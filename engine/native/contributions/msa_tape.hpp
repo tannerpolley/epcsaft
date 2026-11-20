@@ -77,7 +77,7 @@ public:
             using Series = Taylor<order>;
             const auto inputs = series<order>(x);
             const auto gamma = series<order>(y).front();
-            const auto m = msa_moments(gamma, inputs);
+            const auto m = msa_moments<MsaEvaluation::Slope>(gamma, inputs);
             const Series rhs = scalar_sqrt(PI * inputs[0]) * scalar_sqrt(m.q);
             // Transpose the Taylor convolution of -R_q/R_gamma with the input variations.
             const Series factor = PI / (2.0 * rhs - PI * inputs[0] * m.q_gamma);

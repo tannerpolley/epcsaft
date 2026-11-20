@@ -602,9 +602,11 @@ and `born` choices select DH screening. The separate permittivity and ionic
 dispersion declarations still supply their respective terms.
 
 MSA uses the segment size $\sigma_i$ as the additive contact diameter, including
-a declared temperature correlation. Its packing sum includes only ions. It
-describes charged hard spheres in the resolved dielectric continuum while
-PC-SAFT supplies the reference fluid. DH uses its declared contact length.
+a declared temperature correlation. It describes charged hard spheres in the
+resolved dielectric continuum while PC-SAFT supplies the reference fluid. Its
+packing sum includes only ions. The density search and diagnostic grid use the
+smaller of the PC-SAFT and MSA density limits. DH uses its declared contact
+length, which is inactive as a fit coordinate when MSA is selected.
 A switch from the Figiel DH choice changes both the screening relation and
 the contact length. To compare the equations at the same core sizes, declare
 matched contacts.

@@ -1,4 +1,5 @@
 #include "properties_checks_shared.hpp"
+#include "regression/observations.hpp"
 
 #include <cstring>
 #include <limits>
@@ -133,6 +134,56 @@ void dilute_limit() {
             "energy-minimum-and-DH-series-bound");
         compare("dilute/leading", "MSA / DH limit", "1", msa / leading, 1,
             ell * (size_bound + coupling_bound) / std::abs(leading) + roundoff, 0, "point-ion-DH-leading-coefficient");
+    }
+}
+
+void ion_only_density_closure() {
+    auto p = properties_support::parameters(2);
+    p.segment_count = {1, 1};
+    p.sigma_constant = {3, 3};
+    p.packing_diameter_angstrom = {0.88 * 3, 0.88 * 3};
+    p.dispersion_energy_over_k = {100, 100};
+    p.molar_mass_kg_per_mol = {0.02299, 0.03545};
+    p.charge_number = {1, -1};
+    p.relative_permittivity = {78, 78};
+    p.permittivity_form = PermittivityForm::FullSpeciesMoleWeighting;
+    p.ionic_dispersion = IonicDispersion::AllIonPairs;
+    p.electrolyte_form = ElectrolyteForm::Msa;
+    const HelmholtzModel model(p);
+    const std::vector<double> x{0.5, 0.5};
+    const double T = 500, density = 20;
+    const double cap = 6 / (PI * NUMBER_DENSITY_PER_ANGSTROM3 * 27);
+    const double old_upper = policy::CLOSE_PACKING_FRACTION.value
+        / model.packing_fraction_coefficient(T, x) * policy::DENSITY_UPPER_FRACTION.value;
+    CHECK(old_upper > cap);
+    const auto specified = model.state(T, density, x);
+    const auto solved = model.state_at_pressure(T, specified.pressure, x, DensityBranch::Vapor);
+    recording_support::observe("msa/ion-only/pressure", "target pressure", "Pa", specified.pressure,
+        std::nullopt, "fixed-density-state");
+    const double allowance = policy::DENSITY_ROOT_RESIDUAL.value * density * GAS_CONSTANT_J_PER_MOL_K * T
+        / specified.pressure_density_derivative;
+    compare("ion-only/density", "vapor density", "mol/m^3", solved.molar_density, density,
+        allowance, roundoff, "pressure-round-trip");
+    const auto grid = model.density_diagnostics(T, specified.pressure, x, {});
+    compare("ion-only/domain", "strict MSA density cap", "mol/m^3", grid.geometric_cap, cap,
+        0, roundoff, "Delta-zero-density");
+    CHECK(!grid.samples.empty() && !grid.pressure_roots.empty());
+    CHECK(std::all_of(grid.samples.begin(), grid.samples.end(), [&](const auto& sample) {
+        return sample.molar_density < cap && sample.cause.empty();
+    }));
+
+    auto born = properties_support::aqueous_electrolyte();
+    born.debye_huckel_diameter_angstrom[1] = 0.0;
+    const regression::CoordinateSet fit{{regression::Coordinate{
+        {{ParameterFamily::DebyeHuckelDiameter, {1}}}, 0.0, 1.0, 1.0, 5.0, std::nullopt,
+    }}};
+    const std::string refusal = "debye_huckel_diameter cannot be an active coordinate with MSA screening";
+    for (const auto form : {ElectrolyteForm::Msa, ElectrolyteForm::MsaBorn}) {
+        born.electrolyte_form = form;
+        CHECK(recording_support::refusal([&] {
+            (void)HelmholtzModel(born, {{ParameterFamily::DebyeHuckelDiameter, {1}}});
+        }) == refusal);
+        CHECK(recording_support::refusal([&] { (void)fit.start(born); }) == refusal);
     }
 }
 
@@ -285,6 +336,7 @@ void derivatives_and_neutral_support() {
 void primitive_msa() {
     primitive_values();
     dilute_limit();
+    ion_only_density_closure();
     derivatives_and_neutral_support();
 }
 

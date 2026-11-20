@@ -778,12 +778,12 @@ $$
 
 - Section: Density closure and mechanical domain
 - Status: Exact derivation
-- Source: Exact inversion of Eqs.~`packing_fraction_coefficient` and `close_packing_fraction`
-- Description: Model-specific density boundary implied by close packing.
-- Change note: Reuses the sole EOS packing geometry owner.
+- Source: Exact inversion of Eqs.~`packing_fraction_coefficient` and `close_packing_fraction` with the domain in `primitive_msa_auxiliaries`
+- Description: Density boundary implied by close packing and the selected screening domain.
+- Change note: For MSA use the smaller of the PC-SAFT cap and $\rho_{\Delta=0}=6/(\pi N_A\sum_{i\in\mathcal{I}}x_i\sigma_i^3)$ in SI. An empty ion sum leaves the PC-SAFT cap.
 
 $$
-\rho_{\max}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
+\rho_{\max}^{\rm PC-SAFT}=\frac{\eta_{\mathrm{cp}}}{c_\eta(T,\boldsymbol{x})}.
 $$
 
 ## `dipolar_correlation_integral`

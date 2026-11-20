@@ -277,7 +277,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
     const Scalar& molar_density,
     const std::vector<Fixed>& mole_fractions,
     const std::vector<double>& reference_mole_fractions,
-    const ParameterSet& parameters
+    const ParameterSet& parameters,
+    const std::vector<Fixed>* segment_sizes = nullptr
 ) {
     bool has_ion = false;
     for (int charge : parameters.charge_number) {
@@ -356,7 +357,8 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         const Scalar number_density = molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
         if (permittivity_primal(scalar_lead(number_density)) == 0.0)
             return {bulk_permittivity, Scalar(0.0)};
-        const auto sigma = segment_sigma(temperature, parameters);
+        const auto evaluated = segment_sizes ? std::vector<Fixed>{} : segment_sigma(temperature, parameters);
+        const auto& sigma = segment_sizes ? *segment_sizes : evaluated;
         const Scalar bjerrum_length = Scalar(ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
             / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * ANGSTROM_M))
             / (bulk_permittivity * temperature);

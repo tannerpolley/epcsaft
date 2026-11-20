@@ -525,6 +525,7 @@ void validate_parameter_coordinate(
     const std::vector<std::size_t>& indices, bool active
 ) {
     const auto& parameters = model.parameters();
+    if (active) detail::validate_active_screening_coordinate(parameters, family);
     const auto& values = detail::family_values(parameters, family);
     require(!indices.empty(), "parameter indices");
     for (const auto index : indices) require(index < values.second, "parameter index");
@@ -1661,7 +1662,7 @@ static Taylor<D, WiderScalar> reference_coefficients(const Parameters& p, const 
     const auto sigma = segment_sigma(q[0], mapped), diameter = segment_diameter(q[0], mapped, sigma);
     const auto delta = p.ideal_gas ? std::vector<S>{} : association_delta(q[0], rho, x, mapped, sigma, diameter);
     std::vector<double> reference(path[0].begin() + 2, path[0].begin() + 2 + nc);
-    auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped);
+    auto [electro, born] = detail::supported_electrostatics(q[0], rho, x, reference, mapped, &sigma);
     born = born_contribution(q[0], x, mapped, electro.bulk_relative_permittivity);
     return extensive_residual_helmholtz(total, residual_helmholtz(q[0], rho, x, mapped, sigma, diameter, xs,
         association_products(rho, x, mapped, xs, delta)), electro.screening, born, p);
@@ -2561,7 +2562,7 @@ State HelmholtzModel::state(
         const auto diameter = segment_diameter(temperature, parameters_, sigma);
         const auto [electro, born] = detail::supported_electrostatics(
             temperature, molar_density,
-            mole_fractions, mole_fractions, parameters_
+            mole_fractions, mole_fractions, parameters_, &sigma
         );
         const auto terms = residual_helmholtz(
             temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
@@ -2850,7 +2851,7 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     for (std::size_t i = 1; i < input.size(); ++i) composition.push_back(input[i] / total);
     const auto sigma_ad = segment_sigma(t, parameters);
     const auto diameter_ad = segment_diameter(t, parameters, sigma_ad);
-    const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters);
+    const auto [electrolyte, born] = detail::supported_electrostatics(t, density, composition, mole_fractions, parameters, &sigma_ad);
     const std::vector<AD> site(sites.begin(), sites.end());
     const auto delta = parameters_.ideal_gas ? std::vector<AD>{} : association_delta(t, density, composition,
         parameters, sigma_ad, diameter_ad);
@@ -2949,13 +2950,12 @@ double HelmholtzModel::molar_density_upper_bound(
     const std::vector<double>& mole_fractions
 ) const {
     core::Scope scope("molar_density_upper_bound");
-    return density_upper_bound(packing_fraction_coefficient(temperature, mole_fractions));
-}
-
-double HelmholtzModel::density_upper_bound(double coefficient) {
-    require(std::isfinite(coefficient) && coefficient > 0.0, "packing coefficient");
-    // EqID: density_upper_bound
-    return policy::CLOSE_PACKING_FRACTION.value / coefficient;
+    validate_composition(mole_fractions);
+    require(std::isfinite(temperature) && temperature > 0.0, "temperature");
+    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
+    const double coefficient = parameters_.ideal_gas ? 0.0
+        : packing_fraction_from_geometry(1.0, mole_fractions, parameters_, geometry.diameter);
+    return detail::density_upper_bound(coefficient, mole_fractions, geometry.sigma, parameters_);
 }
 
 std::vector<double> HelmholtzModel::active_parameter_values() const {
