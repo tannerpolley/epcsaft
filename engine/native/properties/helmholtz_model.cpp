@@ -947,7 +947,7 @@ HelmholtzModel::HelmholtzModel(
             "ionic_region_relative_permittivity");
     require(std::isfinite(parameters_.born_c_shell), "born_c_shell");
     require(std::isfinite(parameters_.born_c_dielectric), "born_c_dielectric");
-    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+    if (solvent_weighted_permittivity(parameters_.permittivity_form)) {
         require(parameters_.permittivity_solvent.size() == components, "permittivity solvent size");
         require(std::count(parameters_.permittivity_solvent.begin(), parameters_.permittivity_solvent.end(), 1) > 0, "permittivity solvent set");
         for (std::size_t i = 0; i < components; ++i) {
@@ -957,10 +957,16 @@ HelmholtzModel::HelmholtzModel(
                 || std::find(parameters_.permittivity_term_component.begin(), parameters_.permittivity_term_component.end(), i) != parameters_.permittivity_term_component.end())), "permittivity neutral solvent");
         }
     }
+    if (parameters_.permittivity_form.is(PermittivityForm::SolventVolumeWeighting)) {
+        const auto& volumes = parameters_.solvent_molar_volume_m3_per_mol;
+        require(volumes.size() == components && all_finite(volumes) && parameters_.permittivity_solvent_normalized, "permittivity solvent volumes");
+        for (std::size_t i = 0; i < components; ++i)
+            require(parameters_.permittivity_solvent[i] ? volumes[i] > 0.0 : volumes[i] == 0.0, "permittivity solvent volume");
+    }
     // ComponentMixing stays defined on ions alone (Bulow 2019 Eq. 7). IonSuppression and DensityTemperature
     // average neutral-solvent records; Rueben 2024 fit DipolarPerturbation ion records to water-salt mixtures.
     if (parameters_.permittivity_form.declared()
-        && !parameters_.permittivity_form.is(PermittivityForm::ComponentMixing)) {
+        && !ion_only_permittivity(parameters_.permittivity_form)) {
         require(std::any_of(
             parameters_.charge_number.begin(), parameters_.charge_number.end(),
             [&](int charge) { return charge == 0; }
@@ -1087,7 +1093,7 @@ void HelmholtzModel::validate_point(
     double total = 0.0;
     for (double amount : amounts) total += amount;
     require(std::isfinite(total) && total > 0.0, "total amount");
-    if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+    if (solvent_weighted_permittivity(parameters_.permittivity_form)
         && parameters_.permittivity_solvent_normalized && detail::charged_support(amounts, parameters_)) {
         double solvent = 0.0;
         for (std::size_t i = 0; i < amounts.size(); ++i)
@@ -1761,7 +1767,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     auto& reference_tape = reference_tapes_[width != 2 + components];
     if (infinite_dilution) {
         if (!reuse) {
-            if (parameters_.permittivity_form.is(PermittivityForm::SolventMoleWeighting)
+            if (solvent_weighted_permittivity(parameters_.permittivity_form)
                 && parameters_.permittivity_solvent_normalized)
                 (void)bulk_relative_permittivity(temperature, 1.0 / volume, composition, parameters_);
             const auto electro = electrolyte_contribution(temperature, 1.0 / volume, composition, composition, parameters_);

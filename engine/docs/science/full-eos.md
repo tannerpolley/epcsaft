@@ -408,13 +408,44 @@ resolution.
 
 The `solvent-mole-weighting` declaration selects neutral component identifiers
 in `solvents` and requires `normalization` equal to `unnormalized` or
-`solvent-normalized`. It consumes only their constant or existing polynomial
-relative-permittivity laws. Charged, missing, duplicate or unknown solvent
+`solvent-normalized`. It consumes the relative-permittivity laws of the
+declared solvents. Charged, missing, duplicate or unknown solvent
 identifiers and unconsumed dielectric laws are refused. An actually neutral-only
 component selection retains the removed-electrolyte convention.
 Defining relation: [EqID: `solvent_mole_weighted_bulk_permittivity`](../equations.md#solvent_mole_weighted_bulk_permittivity).
 Bülow2021a Eq. (19) supplies the unnormalized relation; normalization is the
 explicitly requested alternative. Existing mass and density rules retain their arithmetic.
+
+| Declaration | Equation | Source |
+| --- | --- | --- |
+| Component constant or temperature polynomial | [Component polynomial](../equations.md#component_permittivity_temperature_polynomial), with the sum empty for a constant | Engine component-correlation convention |
+| `solvent-mole-weighting`, either normalization | [Solvent mole weighting](../equations.md#solvent_mole_weighted_bulk_permittivity) | Bülow et al., Eq. (19), with solvent normalization as an Engine convention |
+| `solvent-only` | [Salt-free solvent mass weighting](../equations.md#salt_free_solvent_permittivity) | Figiel et al., Eq. (11) at zero suppression |
+| `ion-fraction-suppression` or `ion-specific-suppression` | [Common or species-specific suppression](../equations.md#ion_suppressed_bulk_permittivity) | Figiel et al., Eq. (11), or Zuber et al., Eqs. (8)–(10) |
+| `component-permittivity-mixing` | [Solvent-mass and ion-mole weighting](../equations.md#component_mixed_bulk_permittivity) | Ascani and Held, Eq. (13) |
+| `solvent-density-temperature` | [Separate parameter averages](../equations.md#density_correlation_mixed_parameters) in the [density law](../equations.md#density_correlated_bulk_permittivity) | Yang et al., Eqs. (1a), (2a), and (2b) |
+| `solvent-density-temperature-ion-specific-suppression` | [Density law divided by the suppression factor](../equations.md#ion_suppressed_density_correlated_bulk_permittivity) | Engine combination of Yang and Zuber relations |
+| `solvent-density-temperature-ion-specific-susceptibility-suppression` | [Susceptibility divided by the suppression factor](../equations.md#susceptibility_suppressed_density_correlated_bulk_permittivity) | Engine relation selected in #78 |
+| `dipolar-perturbation` | [Dipolar response](../equations.md#dipolar_perturbation_bulk_permittivity) | Rueben et al., Eqs. (4)–(6) |
+| `none` | Electrolyte contribution removed | Engine convention |
+
+`solvent-volume-weighting` uses the [Novak solvent-volume rule](../equations.md#solvent_volume_weighted_bulk_permittivity).
+Declare `solvent_molar_volume` component coefficients in `liter / mole` for exactly the neutral species
+with dielectric laws. The permittivity record requires a common
+`reference_temperature` in `kelvin` and `reference_pressure` in `pascal`, each a quantity with
+`magnitude` and `unit`. The component coefficients are pure-liquid molar volumes on this
+reference basis. The state evaluation uses the supplied volumes as constants and requires
+positive total selected solvent volume when evaluating the rule. The weights always use solvent normalization.
+
+`full-species-mole-weighting` uses the [linear species sum](../equations.md#full_species_mole_weighted_bulk_permittivity).
+Declare a relative-permittivity law for each neutral component and an explicit `relative_permittivity`
+value for each ion. All weights are total species mole fractions.
+
+The component correlation form `constant-plus-polynomial-and-reciprocal-in-temperature`
+accepts the polynomial fields and a `reciprocal_temperature_coefficient` with an `identity`
+and a `value` in `kelvin`. Its denominator is absolute temperature. The
+[reciprocal-temperature equation](../equations.md#component_permittivity_reciprocal_temperature)
+gives the water coefficients and the temperature interval for their use.
 
 ### 6.1 Figiel composition-only and Ascani mole-fraction topologies
 
@@ -445,7 +476,7 @@ suppression coefficient. Its water and 1-butanol source correlations are
 evaluated exactly at the bundle's sole admitted temperature, 298.15 K. CppAD
 differentiates the displayed composition rule in the common owner.
 
-With every species charged (an ionic liquid plus a salt), the solvent sum is empty and the rule is `epsilon_r,bulk = sum_i x_i epsilon_r,i` (Bulow2019 Eq. 7; Bulow2021 §2.3, Table 5); the Debye-Huckel term and the Born charging work from vacuum (Bulow2021 Eq. 24) need only this `epsilon_r,bulk > 0`. Only this form admits a parameter set without a neutral species: ion suppression and the density form average neutral-solvent records, and Rueben2024 fit the perturbation form's ion records to water-salt mixtures. Under this form, stability admits ionic trials only on the condensed side of their own composition's loop ([ALG-STABILITY](algorithms.md#supports-seeds-and-trial-solves)).
+With every species charged (an ionic liquid plus a salt), the solvent sum is empty and the rule is `epsilon_r,bulk = sum_i x_i epsilon_r,i` (Bulow2019 Eq. 7; Bulow2021 §2.3, Table 5). Both component mixing and full-species mole weighting admit this charge-only parameter set. The Debye-Huckel term and the Born charging work from vacuum (Bulow2021 Eq. 24) need `epsilon_r,bulk > 0`. Stability admits ionic trials for these forms on the condensed side of their own composition's loop ([ALG-STABILITY](algorithms.md#supports-seeds-and-trial-solves)).
 
 ### 6.2 Schreckenberg density topology
 
@@ -456,6 +487,13 @@ Schreckenberg/Uematsu--Frank topology, admitted as the permittivity choice
 neutral-solvent set,
 
 Defining relation: [EqID: `density_correlation_mixed_parameters`](../equations.md#density_correlation_mixed_parameters), [EqID: `density_correlated_bulk_permittivity`](../equations.md#density_correlated_bulk_permittivity).
+
+`solvent-density-temperature-arithmetic` consumes the same component records
+and uses the [Perdomo arithmetic rule](../equations.md#arithmetic_density_correlated_bulk_permittivity).
+It evaluates each solvent's temperature law before averaging the resulting coefficients
+on the salt-free solvent mole basis. The Engine multiplies the resulting average
+by its solvent partial density, the solvent moles per volume of salted solution.
+Both forms coincide for a single solvent.
 
 The source water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 `d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,
@@ -821,10 +859,8 @@ See the [Figiel and iodide input domain](#figiel-and-iodide-input-domain)
 for the source-specific selection and pressure restriction.
 
 Relative-permittivity behavior is selected by one source-neutral Model Family
-choice in the canonical Parameters document. The public builder admits
-ion-fraction suppression, component-permittivity mixing, ion-specific suppression,
-solvent-only, solvent-density-temperature (§6.2) and dipolar-perturbation (§6.4)
-permittivity, plus `none`. A choice consumes only its own records; any other
+choice in the canonical Parameters document. Section 6 lists its choices and
+equations. A choice consumes only its own records; any other
 permittivity record is rejected. Citations to the
 papers that support a choice and its coefficients remain in provenance; paper
 names do not select runtime implementations. `Parameters.from_mapping(...)`

@@ -19,7 +19,7 @@ inline bool dielectric_solvent_component(
     std::size_t component,
     const ParameterSet& parameters
 ) {
-    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting))
+    if (solvent_weighted_permittivity(parameters.permittivity_form))
         return parameters.permittivity_solvent[component] != 0;
     if (parameters.charge_number[component] != 0) {
         return false;
@@ -53,6 +53,11 @@ std::vector<Scalar> component_relative_permittivities(
         const std::size_t component = static_cast<std::size_t>(
             parameters.permittivity_term_component[term]
         );
+        if (parameters.permittivity_term_power[term] == -1) {
+            // EqID: component_permittivity_reciprocal_temperature
+            values[component] += Scalar(parameters.permittivity_term_coefficient[term]) / temperature;
+            continue;
+        }
         const Scalar delta = temperature
             - Scalar(parameters.permittivity_reference_temperature_k[component]);
         Scalar temperature_power = Scalar(1.0);
@@ -106,21 +111,42 @@ Scalar bulk_relative_permittivity(
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters
 ) {
+    const auto form = parameters.permittivity_form;
+    // EqID: arithmetic_density_correlated_bulk_permittivity
+    if (form.is(PermittivityForm::DensityTemperatureArithmetic)) {
+        Fixed coefficient = Fixed(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            if (parameters.charge_number[i] == 0)
+                coefficient += mole_fractions[i] * parameters.dielectric_volume_m3_per_mol[i]
+                    * (parameters.dielectric_temperature_k[i] / temperature - Fixed(1.0));
+        return Scalar(1.0) + molar_density * coefficient;
+    }
     const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
     // EqID: solvent_mole_weighted_bulk_permittivity
-    if (parameters.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+    if (solvent_weighted_permittivity(form)) {
+        // EqID: solvent_volume_weighted_bulk_permittivity
+        const bool volume_weighted = form.is(PermittivityForm::SolventVolumeWeighting);
         Fixed numerator = Fixed(0.0), denominator = Fixed(0.0);
         for (std::size_t i = 0; i < mole_fractions.size(); ++i) {
             if (!parameters.permittivity_solvent[i]) continue;
-            numerator += mole_fractions[i] * relative_permittivity[i];
-            denominator += mole_fractions[i];
+            const Fixed weight = volume_weighted
+                ? mole_fractions[i] * parameters.solvent_molar_volume_m3_per_mol[i] : mole_fractions[i];
+            numerator += weight * relative_permittivity[i];
+            denominator += weight;
         }
         if (parameters.permittivity_solvent_normalized) {
-            if constexpr (std::is_same_v<Fixed, double>)
-                if (!(denominator > 0.0)) throw std::invalid_argument("permittivity has no solvent denominator");
+            if (!(permittivity_primal(scalar_lead(denominator)) > 0.0))
+                throw std::invalid_argument("permittivity has no solvent denominator");
             return numerator / denominator;
         }
         return numerator;
+    }
+    // EqID: full_species_mole_weighted_bulk_permittivity
+    if (form.is(PermittivityForm::FullSpeciesMoleWeighting)) {
+        Fixed mixture = Fixed(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            mixture += mole_fractions[i] * relative_permittivity[i];
+        return mixture;
     }
     Fixed solvent_mass = Fixed(0.0);
     Fixed dielectric_mass = Fixed(0.0);
@@ -312,7 +338,7 @@ ElectrolyteResult<Scalar> electrolyte_contribution(
         parameters
     );
     if constexpr (std::is_same_v<Scalar, double>) {
-        if (!parameters.permittivity_form.is(PermittivityForm::ComponentMixing) &&
+        if (!ion_only_permittivity(parameters.permittivity_form) &&
             (!(solvent_mass > 0.0) || !std::isfinite(solvent_mass))) {
             throw std::invalid_argument("electrolyte state has no solvent mass");
         }
