@@ -2267,19 +2267,29 @@ static void check_electrochemical_identity(const epcsaft::equilibrium::CompiledS
     const double row_tolerance = split.convergence.criterion->value;
     const auto inputs = recording_support::fields({recording_support::field("T_K", *split.temperature),
         recording_support::field("P_Pa", *split.pressure)});
+    double smallest_bound = std::numeric_limits<double>::infinity();
+    double potential_term_at_smallest_bound = 0.0;
     for (std::size_t i = 0; i < z.size(); ++i) {
         if (z[i] == 0 || a[i] == 0.0 || b[i] == 0.0) continue;
         // The common species standard cancels in the density-basis potential difference.
         const double delta_mu_over_rt = std::log(a[i] * state_a.molar_density / (b[i] * state_b.molar_density))
             + state_a.residual_chemical_potential_over_rt[i].value()
             - state_b.residual_chemical_potential_over_rt[i].value();
-        const double error = std::abs(delta_mu_over_rt - z[i] * FARADAY_C_PER_MOL * voltage / rt);
+        const double potential_term = z[i] * FARADAY_C_PER_MOL * voltage / rt;
+        const double error = std::abs(delta_mu_over_rt - potential_term);
         const double weight_a = split.amounts[0] * a[i] / compiled.feed_total;
         const double weight_b = split.amounts[1] * b[i] / compiled.feed_total;
         // Each classified chemical row bounds its unweighted error by the row tolerance divided by its weight.
         const double bound = row_tolerance * (1.0 / weight_a + 1.0 / weight_b);
-        tpd_compare(id + "/ion-" + std::to_string(i), error, 0.0, bound, inputs, "RT");
+        const auto ion_inputs = recording_support::fields({inputs, recording_support::field("z", z[i]),
+            recording_support::field("weight_a", weight_a), recording_support::field("weight_b", weight_b)});
+        tpd_compare(id + "/ion-" + std::to_string(i), error, 0.0, bound, ion_inputs, "RT");
+        if (bound < smallest_bound) {
+            smallest_bound = bound;
+            potential_term_at_smallest_bound = std::abs(potential_term);
+        }
     }
+    CHECK(smallest_bound < potential_term_at_smallest_bound);
     const auto charge = [&](const std::vector<double>& x) {
         return std::inner_product(z.begin(), z.end(), x.begin(), 0.0);
     };
