@@ -408,6 +408,16 @@ void pathway_weight() {
                 for (std::size_t j = 0; j < 5; ++j)
                     check(std::string("F3b/") + s.name + "/gradient-floor/hessian/" + std::to_string(j), j,
                         std::abs(moved.gradient[j] - exact.gradient[j]), moved.gradient_floor + exact.gradient_floor + rounding);
+                using epcsaft::DerivativeOrder;
+                for (const auto order : {DerivativeOrder::IsothermalPhaseGradient, DerivativeOrder::PhaseGradient}) {
+                    const auto trial = loose.evaluate(s.temperature, volume, s.x, order);
+                    const std::size_t first = order == DerivativeOrder::IsothermalPhaseGradient ? 1 : 0;
+                    const auto id = std::string("F3b/") + s.name + "/gradient-floor/"
+                        + (first ? "isothermal-phase-gradient/" : "phase-gradient/");
+                    for (std::size_t j = first; j < 5; ++j)
+                        check(id + std::to_string(j), j, std::abs(trial.gradient[j] - exact.gradient[j]),
+                            trial.gradient_floor + exact.gradient_floor + rounding);
+                }
                 double tight_floor = 0.0, loose_floor = 0.0;
                 const auto tight_series = epcsaft::properties::density_volume_taylor(tight, s.temperature, s.density, s.x, tight_floor);
                 const auto loose_series = epcsaft::properties::density_volume_taylor(loose, s.temperature, s.density, s.x, loose_floor);

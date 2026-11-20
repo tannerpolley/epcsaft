@@ -1309,7 +1309,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
     std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase,
-    const std::vector<bool>& site_phases, bool parameter_actions) const {
+    const std::vector<bool>& site_phases, bool parameter_actions, bool gradient_only) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1361,8 +1361,9 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
         result.volume[phase] = result.packing[phase].coefficient / result.eta[phase];
         result.amount[phase] = layout.amount.has_value()
             ? point[*layout.amount] : phase_amount(problem.phases[phase]);
-        const auto order = !state_only ? (parameter_actions ? DerivativeOrder::Hessian : DerivativeOrder::FixedParameterHessian) : problem.temperature.free
-            ? DerivativeOrder::PhaseHessian : DerivativeOrder::IsothermalPhaseHessian;
+        const auto order = !state_only ? (parameter_actions ? DerivativeOrder::Hessian : DerivativeOrder::FixedParameterHessian)
+            : problem.temperature.free ? (gradient_only ? DerivativeOrder::PhaseGradient : DerivativeOrder::PhaseHessian)
+                                       : (gradient_only ? DerivativeOrder::IsothermalPhaseGradient : DerivativeOrder::IsothermalPhaseHessian);
         if constexpr (std::is_same_v<Base, double>) {
         if (state_only && one_component_two_density_eligible(*this)) {
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume[phase], total));
@@ -1377,14 +1378,14 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     }
     result.parameter_actions = parameter_actions;
     result.standard = fixed_standard ? *fixed_standard : standard_term(
-        *this, double(result.temperature), double(result.pressure), 2, problem.pressure.free, problem.temperature.free);
+        *this, double(result.temperature), double(result.pressure), gradient_only ? 0 : 2, problem.pressure.free, problem.temperature.free);
     if constexpr (std::is_same_v<Base, double>) if (anchored_calorics())
         result.calorics = caloric_reference(*this, result.temperature, result.pressure);
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));
