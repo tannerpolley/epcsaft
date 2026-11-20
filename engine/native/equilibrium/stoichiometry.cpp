@@ -315,6 +315,7 @@ std::vector<InventoryBound> inventory_bounds(const CompiledSystem& c,
 
 std::vector<double> salt_solute_molalities(
     const HelmholtzModel& model, std::size_t solvent, const SaltMolalities& salts) {
+    core::Scope scope("salt_solute_molalities");
     const auto& z = model.parameters().charge_number;
     if (solvent >= z.size() || z[solvent] != 0)
         throw std::invalid_argument("salt recipe requires a declared neutral solvent");
