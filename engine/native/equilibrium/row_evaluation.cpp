@@ -1445,6 +1445,8 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
             for (const auto& solid : solids)
                 if (solid.column) value += solid.balance[row.index] * point[*solid.column];
             value = (value - balance[row.index]) / feed_total;
+        } else if (row.kind == RowKind::PrescribedComposition) {
+            value = point[shape[0].x[row.index]] - Base(std::log((*problem.prescribed_liquid_composition)[problem.phases[0].support[row.index]]));
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t species = 0; species < components; ++species) value += z[species] * x[row.phase][species];
         } else if (row.kind == RowKind::SolidAffinity) {
@@ -1464,6 +1466,10 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
         result.values.push_back(value);
     }
     if constexpr (std::is_same_v<Base, double>) scope.probe("row_values", result.values);
+    if (problem.prescribed_liquid_composition) {
+        result.objective = NAN;
+        return result;
+    }
     if (chemical_phase) return result;
     for (std::size_t phase = 0; phase < shape.size(); ++phase) {
         const auto& derivative = prepared.derivative[phase];
@@ -1656,6 +1662,9 @@ RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointVa
                 for (std::size_t j = 0; j < components; ++j) terms += wide_math::abs(at.amount[a] * B[species][j] * at.composition[a][j]);
             for (const auto& solid : solids) if (solid.column) terms += wide_math::abs(solid.balance[species] * at.point[*solid.column]);
             terms /= feed_total;
+        } else if (row.kind == RowKind::PrescribedComposition) {
+            terms = wide_math::abs(at.point[shape[0].x[row.index]])
+                + std::abs(std::log((*problem.prescribed_liquid_composition)[problem.phases[0].support[row.index]]));
         } else if (row.kind == RowKind::Volume) {
             terms = 1.0;
             for (std::size_t a = 0; a < at.amount.size(); ++a)
@@ -1896,6 +1905,8 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
             const auto& solid = solids[row.index];
             if (!solid.present) at(row_index, *solid.column) = 1.0;
             for (std::size_t j = 0; solid.present && primal_size + j < n; ++j) at(row_index, primal_size + j) = -solid.balance[j];
+        } else if (row.kind == RowKind::PrescribedComposition) {
+            at(row_index, shape[0].x[row.index]) = 1;
         } else if (row.kind == RowKind::Electro) {
             for (std::size_t local = 0; local < problem.phases[row.phase].support.size(); ++local)
                 at(row_index, shape[row.phase].x[local]) =
@@ -1934,6 +1945,7 @@ template std::vector<WiderScalar> CompiledSystem::jacobian_at(const PhasePointVa
 
 std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& point) const {
     core::Scope scope("equilibrium_lever_jacobian");
+    if (problem.prescribed_liquid_composition) throw std::invalid_argument("feed actions unavailable for prescribed liquid composition");
     if (!reference_diagnostics.empty()) {
         throw ReferenceUnavailable("source reference T/P/parameter lever derivatives are not admitted");
     }

@@ -2862,6 +2862,8 @@ class EquilibriumProblem:
     """Fluid phase declarations in the order used by every phase array."""
     temperature: FreeValue
     """Fixed or free absolute temperature, K."""
+    prescribed_liquid_composition: list[float] | None
+    """Model-order mole fractions of the first liquid in a feed-free declaration."""
     pressure: FreeValue
     """Fixed or free system pressure, Pa."""
     feed: FeedSpec
@@ -3013,6 +3015,8 @@ class RowKind:
     """Per-phase electroneutrality, dimensionless charge-number contraction."""
     Normalization: RowKind
     """Phase mole-fraction normalization, dimensionless."""
+    PrescribedComposition: RowKind
+    """Affine pin of one log mole fraction of the first liquid."""
     Enthalpy: RowKind
     """Extensive enthalpy specification in its native dimensionless normalization."""
     InternalEnergy: RowKind
@@ -3054,7 +3058,7 @@ class PointEvaluation:
     values: list[float]
     """Length m of defining-row residuals in CompiledSystem.rows order. Most rows are dimensionless; an absent free-solid row is its amount in mol."""
     objective: float
-    """EOS physical potential in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero. A value alone does not establish equilibrium."""
+    """EOS physical potential in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Unavailable (NaN) for a prescribed liquid composition. Ideal activity models return zero. A value alone does not establish equilibrium."""
     floor: float
     """Dimensionless estimated residual floor at this point."""
 
@@ -3109,8 +3113,12 @@ class CompiledSystem:
         ...
     def numerical_estimates(self, coordinates: Sequence[float], temperature: float, pressure: float,
                             amounts: Sequence[float], composition: Sequence[float], densities: Sequence[float],
-                            packing: Sequence[float]) -> EquilibriumNumericalEstimates:
-        """Estimate a frozen endpoint in this declaration; admission remains the reader's original outcome."""
+                            packing: Sequence[float], prescribed_errors: Sequence[float] = ()) -> EquilibriumNumericalEstimates:
+        """Estimate a frozen endpoint in this declaration.
+
+        For a prescribed liquid, pass empty amounts. Optional prescribed_errors
+        are model-order absolute errors in the supplied liquid mole fractions.
+        """
         ...
     def coordinate_labels(self) -> list[str]:
         """Quantity and basis of each solved-chart coordinate, in coordinate order."""
@@ -3452,7 +3460,7 @@ class EquilibriumResult:
     hessian_calls: int
     """Exact Hessian evaluation count."""
     objective: float
-    """EOS physical potential at the retained candidate, in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Ideal activity models return zero."""
+    """EOS physical potential at the retained candidate, in mol on the absolute feed basis: A/(RT) for TV and G/(RT) otherwise. Unavailable (NaN) for a prescribed liquid composition. Ideal activity models return zero."""
     reduced_hessian_minimum: float
     """Minimum eigenvalue of the native reduced Hessian; local curvature evidence, not a global
     certificate.

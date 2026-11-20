@@ -262,6 +262,7 @@ bool moves_eos_parameters(const SolvedStateActionDirection& d) {
 
 void validate_request(const CompiledSystem& compiled, const EquilibriumResult& central,
                       const SolvedStateActionRequest& request) {
+    if (compiled.problem.prescribed_liquid_composition) throw std::invalid_argument("solved-state actions unavailable for prescribed liquid composition");
     if (compiled.ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const auto& problem = compiled.problem;
     if (central.has_state() && (!central.declaration ||
@@ -1559,7 +1560,7 @@ static auto physical_scale(const CompiledSystem& c, const PhasePointValues<Base>
 
 template <typename Base>
 PhysicalProjection<Base> physical_projection(const CompiledSystem& c, const PhasePointValues<Base>& at) {
-    const auto n = at.point.size(), components = c.n_feed.size(), per_phase = 3 + components;
+    const auto n = at.point.size(), components = c.component_count(), per_phase = 3 + components;
     const auto outputs = 2 + at.amount.size() * per_phase + c.problem.loading.has_value();
     PhysicalProjection<Base> out;
     out.gradient = decltype(out.gradient)::Zero(outputs, n);
@@ -1602,7 +1603,8 @@ template PhysicalProjection<double> physical_projection(const CompiledSystem&, c
 template PhysicalProjection<WiderScalar> physical_projection(const CompiledSystem&, const PhasePointValues<WiderScalar>&);
 
 template <typename Base>
-EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false, bool plane_rows = false) {
+EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false, bool plane_rows = false,
+    const std::vector<double>& prescribed_errors = {}) {
     core::Capture isolated(false);
     core::CalculationWork excluded(counted);
     EquilibriumNumericalEstimates out;
@@ -1634,7 +1636,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         if (!uncertainty.cause.empty()) {
             out.temperature.cause = out.pressure.cause = out.cause = uncertainty.cause; return out;
         }
-        const auto n = out.dimension, phases = at.amount.size(), components = c.n_feed.size();
+        const auto n = out.dimension, phases = at.amount.size(), components = c.component_count();
         const auto per_phase = 3 + components, outputs = 2 + phases * per_phase + c.problem.loading.has_value();
         Matrix g = Matrix::Zero(outputs, n);
         Vector values = Vector::Zero(outputs), h = Vector::Ones(n);
@@ -1646,7 +1648,7 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         for (std::size_t p = 0; p < phases; ++p) {
             const auto o = 2 + p * per_phase;
             if (!c.ideal) { values[o] = result.molar_densities[p]; values[o + 1] = result.packing_fractions[p]; }
-            values[o + 2] = result.amounts[p];
+            values[o + 2] = c.problem.prescribed_liquid_composition ? at.amount[p] : Base(result.amounts[p]);
             for (std::size_t j = 0; j < components; ++j) values[o + 3 + j] = result.mole_fractions[p * components + j];
         }
         // Reuse the actions' exact physical map; no chart is reconstructed in a reader.
@@ -1673,7 +1675,22 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
 
         const Vector terms = Eigen::Map<const Vector>(uncertainty.terms.data(), n);
         const Vector inner = Eigen::Map<const Vector>(uncertainty.inner.data(), n);
-        const Vector eta = core::canonical_row_floor(j, h, terms, inner);
+        Vector eta = core::canonical_row_floor(j, h, terms, inner);
+        if (!prescribed_errors.empty()) {
+            if (!c.problem.prescribed_liquid_composition || prescribed_errors.size() != components)
+                throw std::invalid_argument("prescribed composition uncertainty shape");
+            for (std::size_t i = 0; i < components; ++i)
+                if ((*c.problem.prescribed_liquid_composition)[i] == 0.0 && prescribed_errors[i] != 0.0)
+                    throw std::invalid_argument("prescribed composition uncertainty changes support");
+            for (std::size_t i = 0; i < c.rows.size(); ++i) {
+                if (c.rows[i].kind != RowKind::PrescribedComposition) continue;
+                const auto species = c.problem.phases[0].support[c.rows[i].index];
+                const double x = (*c.problem.prescribed_liquid_composition)[species];
+                const double u = prescribed_errors[species];
+                if (!(u >= 0 && u < x)) throw std::invalid_argument("prescribed composition uncertainty reaches support boundary");
+                eta[i] -= std::log1p(-u / x);
+            }
+        }
         out.physical_scale = narrow_values(h.data(), h.data() + n); out.row_floor = narrow_values(eta.data(), eta.data() + n);
         if (plane_rows) return out;
         const Vector f = Eigen::Map<const Vector>(evaluation.values.data(), n);
@@ -1702,8 +1719,10 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
         for (std::size_t p = 0; p < phases; ++p) {
             const auto o = 2 + p * per_phase;
             if (!c.ideal) { out.densities.push_back(project(o, true)); out.packing.push_back(project(o + 1, !c.model->parameters().ideal_gas)); }
-            out.amounts.push_back(project(o + 2, false));
-            domain = domain && values[o + 2] - out.amounts.back().absolute >= 0;
+            if (!c.problem.prescribed_liquid_composition) {
+                out.amounts.push_back(project(o + 2, false));
+                domain = domain && values[o + 2] - out.amounts.back().absolute >= 0;
+            }
             domain = domain && (c.ideal || c.model->parameters().ideal_gas || (values[o + 1] * wide_math::exp(-out.packing.back().chart) >= policy::PACKING_FRACTION_FLOOR.value
                 && values[o + 1] * wide_math::exp(out.packing.back().chart) <= policy::PACKING_FRACTION_CEILING.value));
             for (std::size_t i = 0; i < components; ++i) {
@@ -1728,9 +1747,10 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
     return out;
 }
 
-EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows) {
-    if (!plane_rows && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
-    return numerical_estimates<double>(c, result, {}, prepared, plane_rows || !prepared, nullptr, counted, plane_rows);
+EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows,
+    const std::vector<double>& prescribed_errors) {
+    if (prescribed_errors.empty() && !plane_rows && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
+    return numerical_estimates<double>(c, result, {}, prepared, plane_rows || !prepared, nullptr, counted, plane_rows, prescribed_errors);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
     return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits, core::CalculationWork::active_limit());

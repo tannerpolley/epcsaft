@@ -46,7 +46,7 @@ std::vector<double> seed_composition(const CompiledSystem& compiled, std::size_t
                       std::vector<double> composition,
                       std::vector<double>& point, std::size_t offset, bool declared = false) {
     const auto& spec = compiled.problem.phases[phase];
-    const bool guessed = declared && spec.declared_composition_guess;
+    const bool guessed = declared && spec.declared_composition_guess && !compiled.problem.prescribed_liquid_composition;
     double total = 0.0;
     for (std::size_t i = 0; i < spec.support.size(); ++i) {
         const std::size_t species = spec.support[i];
@@ -1312,6 +1312,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
         && problem.phases.size() == 2 && free_phases == 1;
     const double p = !start->densities.empty() ? start->pressure : fugacity_pressure_seed(compiled, point, phase_offsets, *start, scope, corrected, correct_dense, limits, stages);
     if (compiled.problem.pressure.free) point[compiled.primal_size - 1] = p;
+    compiled.pin_liquid_composition(point);
     for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
         if (limits) limits->check();
         std::size_t cursor = phase_offsets[phase] + compiled.problem.phases[phase].support.size();
@@ -1384,6 +1385,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
 // seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
 // support_declared and topology_declared flags) are not compared.
 std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
+    if (a.prescribed_liquid_composition != b.prescribed_liquid_composition) return "prescribed liquid composition differs";
     if (a.critical.has_value() != b.critical.has_value() || a.spinodal.has_value() != b.spinodal.has_value())
         return "null-mode declaration differs";
     if (a.spinodal && (a.spinodal->density_nodes != b.spinodal->density_nodes
@@ -1818,6 +1820,8 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
 
 ContinuationResult continue_equilibrium(const HelmholtzModel& model, const ContinuationRequest& request) {
     core::Scope scope("continue_equilibrium");
+    if (request.start_problem.prescribed_liquid_composition || request.target_problem.prescribed_liquid_composition)
+        throw std::invalid_argument("continuation unavailable for prescribed liquid composition");
     return continue_path(model, request, nullptr, {});
 }
 

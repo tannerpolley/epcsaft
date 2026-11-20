@@ -196,9 +196,9 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READWRITE(EquilibriumProblem, temperature, pressure, feed) EPCSAFT_COPIED(EquilibriumProblem, phases, reactions, solids)
         .def_rw("neutral_reference", &EquilibriumProblem::source_reference)
         EPCSAFT_READWRITE(EquilibriumProblem, standard_gibbs_j_per_mol, topology_declared, enthalpy_j,
-            entropy_j_per_k, volume_m3, internal_energy_j, critical, spinodal, envelope, azeotrope, discovery);
+            entropy_j_per_k, volume_m3, internal_energy_j, critical, spinodal, envelope, azeotrope, discovery, prescribed_liquid_composition);
     nb::enum_<RowKind>(module, "RowKind")
-        EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, Enthalpy, Entropy, InternalEnergy, Volume, CriticalMode,
+        EPCSAFT_VALUES(RowKind, Chemical, Pressure, Moiety, Electro, Normalization, PrescribedComposition, Enthalpy, Entropy, InternalEnergy, Volume, CriticalMode,
             CriticalNormalization, CriticalCubic, SpinodalMode, SpinodalNormalization, EnvelopeCondition, AzeotropeCondition, SolidAffinity, ReactionMassAction, ReactionMolarity, SaturationPressure);
     nb::class_<Row>(module, "Row")
         EPCSAFT_READONLY(Row, kind, phase, index)
@@ -218,10 +218,10 @@ void register_equilibrium(nb::module_& module) {
             nb::arg("tau"), nb::arg("kappa"))
         .def("numerical_estimates", [](const CompiledSystem& system, std::vector<double> coordinates,
                 double temperature, double pressure, std::vector<double> amounts, std::vector<double> composition,
-                std::vector<double> densities, std::vector<double> packing) {
-            const auto phases = system.problem.phases.size(), components = system.n_feed.size();
+                std::vector<double> densities, std::vector<double> packing, const std::vector<double>& prescribed_errors) {
+            const auto phases = system.problem.phases.size(), components = system.component_count();
             if (coordinates.size() != system.unknown_count()
-                || amounts.size() != phases || composition.size() != phases * components
+                || amounts.size() != (system.problem.prescribed_liquid_composition ? 0 : phases) || composition.size() != phases * components
                 || (!system.ideal && (densities.size() != phases || packing.size() != phases)))
                 throw std::invalid_argument("numerical estimate snapshot shape: coordinates " + std::to_string(coordinates.size())
                     + " of " + std::to_string(system.unknown_count()) + ", amounts " + std::to_string(amounts.size())
@@ -234,9 +234,10 @@ void register_equilibrium(nb::module_& module) {
             result.coordinates = std::move(coordinates); result.amounts = std::move(amounts);
             result.mole_fractions = std::move(composition); result.molar_densities = std::move(densities);
             result.packing_fractions = std::move(packing);
-            return equilibrium_numerical_estimates(system, result);
+            return equilibrium_numerical_estimates(system, result, nullptr, false, false, prescribed_errors);
         }, nb::arg("coordinates"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("amounts"),
-           nb::arg("composition"), nb::arg("densities"), nb::arg("packing"))
+           nb::arg("composition"), nb::arg("densities"), nb::arg("packing"),
+           nb::arg("prescribed_errors") = std::vector<double>{})
         .def("evaluate", [](const CompiledSystem& system, const std::vector<double>& point) {
             return system.evaluate(point); }, nb::arg("point"))
         .def("jacobian", [](const CompiledSystem& system, const std::vector<double>& point) {

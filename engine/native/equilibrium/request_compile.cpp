@@ -187,6 +187,114 @@ void admit_solids(CompiledSystem& compiled, const std::vector<bool>& covered) {
 }  // namespace
 
 
+static void append_phase_rows(CompiledSystem& compiled) {
+    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
+        for (const std::size_t index : compiled.problem.phases[phase].support)
+            compiled.rows.push_back({RowKind::Chemical, phase, index});
+        compiled.rows.push_back({RowKind::Pressure, phase, 0});
+    }
+}
+
+static void inspect_generic_rank(CompiledSystem& compiled) {
+    const auto point = compiled.generic_point();
+    const bool state_only = !compiled.problem.loading
+        && std::none_of(compiled.rows.begin(), compiled.rows.end(), [](const auto& row) { return condition_row(row.kind); });
+    const auto prepared = compiled.prepare(point, state_only);
+    if (!compiled.problem.temperature.free && !compiled.problem.pressure.free) compiled.fixed_standard = prepared.standard;
+    const auto jacobian = compiled.jacobian_at(prepared);
+    Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
+        jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
+    for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
+        const double norm = matrix.col(column).cwiseAbs().maxCoeff();
+        if (norm > 0.0) matrix.col(column) /= norm;
+    }
+    compiled.last_rank = core::numerical_rank(matrix.fullPivLu(), "column_scaled");
+    compiled.last_rank->observation.point_kind = "generic_point";
+    compiled.jacobian_rank = compiled.last_rank->rank;
+    compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
+    compiled.feasible = compiled.generic_nullity == 0;
+    // The compiled record is the sole source for both the driver and callers.
+}
+
+static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, const EquilibriumProblem& request) {
+    if (model.parameters().ideal_gas || !request.topology_declared || request.phases.size() != 2
+        || request.temperature.free || !request.pressure.free || !request.feed.values.empty()
+        || !request.feed.solvent.empty() || request.discovery || !request.reactions.empty() || !request.solids.empty()
+        || request.source_reference || request.enthalpy_j || request.entropy_j_per_k || request.internal_energy_j
+        || request.volume_m3 || request.spinodal || request.critical || request.envelope || request.loading || request.azeotrope)
+        throw std::invalid_argument("prescribed composition requires two nonreacting liquids at fixed T and free P without a feed");
+    validate_intensive_seed(request.temperature, "temperature");
+    validate_intensive_seed(request.pressure, "pressure");
+    const auto& x = *request.prescribed_liquid_composition;
+    model.validate_electroneutrality(x);
+    const auto& z = model.parameters().charge_number;
+    std::vector<std::size_t> support;
+    for (std::size_t i = 0; i < x.size(); ++i) if (x[i] > 0) {
+        support.push_back(i);
+    }
+    const auto sign_present = [&](bool positive) {
+        return std::any_of(support.begin(), support.end(), [&](auto i) { return positive ? z[i] > 0 : z[i] < 0; });
+    };
+    if (!sign_present(true) || !sign_present(false))
+        throw std::invalid_argument("prescribed liquid support must include ions of both signs");
+    CompiledSystem compiled;
+    compiled.model = &model;
+    compiled.problem = request;
+    compiled.phase_calculation = request.phase_calculation;
+    compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
+    compiled.declared_supports.resize(2, support);
+    for (auto& phase : compiled.problem.phases) {
+        if (phase.kind != PhaseKind::Liquid || !phase.is_free() || phase.packing_guess
+            || ((phase.support_declared || !phase.support.empty()) && phase.support != support))
+            throw std::invalid_argument("prescribed liquid requires two liquid phases with one common model-order support and no amount or packing pins");
+        phase.support = support;
+        phase.support_declared = true;
+        phase.amount = {AmountKind::Pinned, 1.0};
+    }
+    auto& a = compiled.problem.phases[0];
+    auto& b = compiled.problem.phases[1];
+    a.composition_guess.clear();
+    for (auto i : support) a.composition_guess.push_back(x[i]);
+    if (b.composition_guess.size() == x.size() && support.size() != x.size()) {
+        const auto full_guess = std::move(b.composition_guess);
+        for (std::size_t i = 0; i < x.size(); ++i) {
+            if (x[i] > 0) b.composition_guess.push_back(full_guess[i]);
+            else if (full_guess[i] != 0) throw std::invalid_argument("conjugate guess has nonzero fraction outside the common support");
+        }
+    }
+    if (b.composition_guess.size() != support.size()
+        || std::any_of(b.composition_guess.begin(), b.composition_guess.end(), [](double y) { return !(y > 0); }))
+        throw std::invalid_argument("prescribed liquid requires a positive conjugate composition guess on its support");
+    std::vector<double> guess(x.size());
+    for (std::size_t j = 0; j < support.size(); ++j) guess[support[j]] = b.composition_guess[j];
+    model.validate_electroneutrality(guess);
+    // The feasibility driver uses a unit molar evaluation basis, with no inventory.
+    compiled.feed_total = 1.0;
+    compiled.has_ions = true;
+    compiled.pinned_count = 2;
+    compiled.free_intensive_count = 1;
+    compiled.rank = support.size();
+    compiled.B.assign(compiled.rank, std::vector<double>(x.size()));
+    append_phase_rows(compiled);
+    compiled.rows.push_back({RowKind::Electro, 1, 0});
+    compiled.rows.push_back({RowKind::Normalization, 1, 0});
+    compiled.charge_row = {std::nullopt, 0};
+    compiled.charge_row_count = 1;
+    std::size_t column = 0;
+    for (std::size_t phase = 0; phase < 2; ++phase) {
+        auto& layout = compiled.shape.emplace_back();
+        for (std::size_t i = 0; i < support.size(); ++i) {
+            layout.x.push_back(column++);
+            if (phase == 0) compiled.rows.push_back({RowKind::PrescribedComposition, 0, i});
+        }
+        layout.volume = column++;
+    }
+    for (std::size_t i = 0; i < support.size(); ++i) compiled.B[i][support[i]] = 1;
+    compiled.primal_size = column + 1;
+    inspect_generic_rank(compiled);
+    return compiled;
+}
+
 static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
     const std::vector<std::vector<double>>* trial_basis
@@ -373,11 +481,7 @@ static CompiledSystem compile_with_basis(
             + "; pin a phase or free T or P"
         );
     }
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase) {
-        for (const std::size_t index : compiled.problem.phases[phase].support)
-            compiled.rows.push_back({RowKind::Chemical, phase, index});
-        compiled.rows.push_back({RowKind::Pressure, phase, 0});
-    }
+    append_phase_rows(compiled);
     // Every ion-bearing phase has a charge row except the first with a free or positive amount.
     bool rowless = false;
     for (std::size_t phase = 0; phase < phases.size(); ++phase) {
@@ -458,24 +562,7 @@ static CompiledSystem compile_with_basis(
         ++compiled.primal_size;
         compiled.rows.push_back({RowKind::SaturationPressure, 0, 0});
     }
-    const auto point = compiled.generic_point();
-    const bool state_only = !compiled.problem.loading
-        && std::none_of(compiled.rows.begin(), compiled.rows.end(), [](const auto& row) { return condition_row(row.kind); });
-    const auto prepared = compiled.prepare(point, state_only);
-    if (!compiled.problem.temperature.free && !compiled.problem.pressure.free) compiled.fixed_standard = prepared.standard;
-    const auto jacobian = compiled.jacobian_at(prepared);
-    Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
-        jacobian.data(), static_cast<Eigen::Index>(compiled.rows.size()), static_cast<Eigen::Index>(point.size()));
-    for (Eigen::Index column = 0; column < matrix.cols(); ++column) {
-        const double norm = matrix.col(column).cwiseAbs().maxCoeff();
-        if (norm > 0.0) matrix.col(column) /= norm;
-    }
-    compiled.last_rank = core::numerical_rank(matrix.fullPivLu(), "column_scaled");
-    compiled.last_rank->observation.point_kind = "generic_point";
-    compiled.jacobian_rank = compiled.last_rank->rank;
-    compiled.generic_nullity = point.size() - compiled.jacobian_rank;  // the rank is at most the column count
-    compiled.feasible = compiled.generic_nullity == 0;
-    // The compiled record is the sole source for both the driver and callers.
+    inspect_generic_rank(compiled);
     return compiled;
 }
 
@@ -514,6 +601,7 @@ IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<i
 }
 
 CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
+    if (request.prescribed_liquid_composition) throw std::invalid_argument("prescribed liquid requires a Helmholtz model");
     core::Scope scope("compile_problem");
     if (!request.topology_declared || request.discovery || request.phases.size() != 1
         || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
@@ -585,6 +673,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
 }
 
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
+    if (request.prescribed_liquid_composition) return compile_prescribed_liquid(model, request);
     core::Scope scope("compile_problem");
     return compile_with_basis(model, request, nullptr);
 }

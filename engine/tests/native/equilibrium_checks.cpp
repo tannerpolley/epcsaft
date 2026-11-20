@@ -58,6 +58,7 @@ void check_mea_trace_ion_discovery();
 void check_reference_parameter_coverage();
 void check_mea_discovery_omitted_species();
 void check_electric_potential_difference();
+void check_prescribed_liquid_coincidence();
 void check_electric_potential_difference_phase_order();
 void check_mea_composition_bound_message();
 void check_condensed_trial_recovery();
@@ -150,6 +151,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.mea-trace-ion-discovery", "mea-trace-ion-discovery", "Automatic_fast"}, check_mea_trace_ion_discovery},
         {{"native.equilibrium.reference-parameter-coverage", "reference-parameter-coverage", "Automatic_fast"}, check_reference_parameter_coverage},
         {{"native.equilibrium.mea-discovery-omitted-species", "mea-discovery-omitted-species", "Automatic_fast"}, check_mea_discovery_omitted_species},
+        {{"native.equilibrium.prescribed-liquid-coincidence", "prescribed-liquid-coincidence", "Automatic_fast"}, check_prescribed_liquid_coincidence},
         {{"native.equilibrium.electric-potential-difference", "electric-potential-difference", "Automatic_fast"}, check_electric_potential_difference},
         {{"native.equilibrium.electric-potential-difference-phase-order", "electric-potential-difference-phase-order", "Automatic_fast"}, check_electric_potential_difference_phase_order},
         {{"native.equilibrium.mea-composition-bound-message", "mea-composition-bound-message", "Automatic_fast"}, check_mea_composition_bound_message},

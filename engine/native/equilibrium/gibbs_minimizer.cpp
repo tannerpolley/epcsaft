@@ -198,8 +198,8 @@ void copy_previous_phase(
             phase * compiled.model->parameters().component_count() + spec.support[i]]);
     }
     std::size_t cursor = offsets[phase] + spec.support.size();
-    if (spec.amount.kind == AmountKind::Free && start.amounts.size() == start.phase_count) {
-        if (std::isfinite(start.amounts[phase]) && start.amounts[phase] > 0.0) {
+    if (spec.is_free()) {
+        if (start.amounts.size() == start.phase_count && std::isfinite(start.amounts[phase]) && start.amounts[phase] > 0.0) {
             point[cursor] = start.amounts[phase];
         }
         ++cursor;
@@ -224,6 +224,22 @@ std::vector<double> start_point(
 ) {
     const std::size_t components = compiled.model->parameters().component_count();
     if (start.phase_count != compiled.problem.phases.size()) return point;
+    if (compiled.problem.prescribed_liquid_composition) {
+        compiled.pin_liquid_composition(point);
+        const auto components = compiled.component_count();
+        const std::vector<double> b(start.mole_fractions.begin() + components, start.mole_fractions.end());
+        const auto& support = compiled.problem.phases[1].support;
+        for (std::size_t i = 0; i < support.size(); ++i) point[compiled.shape[1].x[i]] = std::log(b[support[i]]);
+        for (std::size_t p = 0; p < 2; ++p) {
+            const auto& x = p == 0 ? *compiled.problem.prescribed_liquid_composition : b;
+            point[compiled.shape[p].volume] = std::log(compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), x)
+                * start.molar_densities[p]);
+        }
+        point[compiled.primal_size - 1] = *start.pressure;
+        if (start.multipliers.size() == compiled.rank + 1)
+            std::copy(start.multipliers.begin(), start.multipliers.end(), point.begin() + compiled.primal_size);
+        return point;
+    }
     const auto offsets = compiled.phase_offsets();
     for (std::size_t phase = 0; phase < start.phase_count; ++phase) {
         if (valid_previous_phase(start, phase, components)) {
@@ -240,6 +256,18 @@ std::vector<double> start_point(
 }
 
 bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start) {
+    if (compiled.problem.prescribed_liquid_composition) {
+        if (!start.has_state() || start.model_identity != compiled.model || !start.declaration
+            || !start.declaration->prescribed_liquid_composition || start.declaration->phases.size() != 2
+            || !start.amounts.empty() || !(*start.pressure > 0) || !std::isfinite(*start.pressure)) return false;
+        for (std::size_t p = 0; p < 2; ++p) {
+            if (start.declaration->phases[p].support != compiled.problem.phases[p].support
+                || !valid_previous_phase(start, p, compiled.component_count())) return false;
+            for (auto i : compiled.problem.phases[p].support)
+                if (!(start.mole_fractions[p * compiled.component_count() + i] > 0)) return false;
+        }
+        return all_numeric(start.multipliers);
+    }
     if (!supports_split_seed(compiled) || !start.success
         || start.phase_count != compiled.problem.phases.size()
         || start.amounts.size() != start.phase_count) return false;
@@ -465,6 +493,8 @@ GibbsMinimizer::GibbsMinimizer(
     // ALG-EQUILIBRIUM: Ipopt measures each free amount in its start amount, floored at the disappearance cutoff.
     const bool cell = compiled_.feasibility_cell();
     chart_.assign(cell ? compiled_.unknown_count() : compiled_.primal_size, 1.0);
+    if (compiled_.problem.prescribed_liquid_composition)
+        chart_[compiled_.primal_size - 1] = pressure_scale(start_[compiled_.primal_size - 1]);
     if (!cell && !physical_amounts) for (const auto i : amount_columns_)
         chart_[i] = std::max(start_[i], policy::PHASE_DISAPPEARANCE_AMOUNT.value * compiled_.feed_total);
     if (scope_) scope_->probe("amount_chart", {}, 0, physical_amounts ? "physical_mol" : cell ? "physical_cell" : "start_amount");
@@ -484,7 +514,7 @@ bool GibbsMinimizer::get_nlp_info(
 
 std::vector<double> composition_box(const CompiledSystem& compiled) {
     const bool feasibility = compiled.feasibility_cell();
-    std::vector<double> box(compiled.n_feed.size(), feasibility ? std::numeric_limits<double>::min() : policy::EQUILIBRIUM_BOX_FLOOR.value);
+    std::vector<double> box(compiled.component_count(), feasibility ? std::numeric_limits<double>::min() : policy::EQUILIBRIUM_BOX_FLOOR.value);
     if (!feasibility)
         for (std::size_t i = 0; i < box.size(); ++i)
             if (!(compiled.reaction_relaxed_split && compiled.model->parameters().charge_number[i] != 0.0))
@@ -542,7 +572,7 @@ bool GibbsMinimizer::get_bounds_info(
     offset += compiled_.problem.loading.has_value();
     offset += compiled_.mode_count;  // the critical mode u is unbounded
     if (compiled_.problem.temperature.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
-    if (compiled_.problem.pressure.free) x_l[offset++] = std::numeric_limits<double>::epsilon();
+    if (compiled_.problem.pressure.free) x_l[offset] = std::numeric_limits<double>::epsilon() / chart_[offset];
     std::fill(g_l, g_l + m, 0.0);
     std::fill(g_u, g_u + m, 0.0);
     return true;
@@ -859,11 +889,19 @@ void reject_elapsed(EquilibriumResult& result, core::Scope& scope) {
 
 }  // namespace
 
+static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
+    auto declaration = compiled.problem;
+    if (declaration.prescribed_liquid_composition)
+        for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
+    return declaration;
+}
+
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
     result.model_identity = compiled.model;
     result.ideal_identity = compiled.ideal;
-    result.declaration = std::make_shared<const EquilibriumProblem>(compiled.problem);
+    result.declaration = std::make_shared<const EquilibriumProblem>(public_declaration(compiled));
+    if (compiled.problem.prescribed_liquid_composition) result.objective = NAN;
     result.rows = compiled.rows;
     result.reference_diagnostics = compiled.reference_diagnostics;
     result.phase_count = compiled.problem.phases.size();
@@ -1033,7 +1071,8 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!accepted) {
         if (!topology_ok) {
             infeasible(cause.c_str());
-            result.message = cause == "phases_coalesced" ? topology_sentence(compiled, topology) + "; " + topology_failure
+            result.message = cause == "phases_coalesced" && compiled.problem.prescribed_liquid_composition ? "unresolved separation: " + topology_failure
+                : cause == "phases_coalesced" ? topology_sentence(compiled, topology) + "; " + topology_failure
                 : cause == "phase_disappeared" ? topology_sentence(compiled, topology) : topology_failure;
         }
         refuse(result, disposition);
@@ -1050,7 +1089,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!prepared.standard.reference_diagnostics.empty()) {
         result.reference_diagnostics = prepared.standard.reference_diagnostics;
     }
-    result.amounts = amounts;
+    if (!compiled.problem.prescribed_liquid_composition) result.amounts = amounts;
     result.molar_densities.reserve(volumes.size());
     result.packing_fractions.reserve(volumes.size());
     for (std::size_t phase = 0; phase < volumes.size(); ++phase) {
@@ -1181,8 +1220,45 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!all_numeric(result.residuals) || result.rows.empty()) {
         throw std::runtime_error("equilibrium result has invalid residuals");
     }
-    require_solution_shape(result, compiled.problem.phases.size(),
-                           compiled.n_feed.size());
+    require_solution_shape(result, compiled.problem.phases.size(), compiled.component_count());
+    if (const auto& prescribed = compiled.problem.prescribed_liquid_composition) {
+        const auto reject = [&](const char* cause) {
+            infeasible(cause);
+            result.message = cause;
+            refuse(result);
+        };
+        const double tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
+        for (const auto& x : compositions) {
+            const auto& charges = model->parameters().charge_number;
+            if (std::abs(std::inner_product(x.begin(), x.end(), charges.begin(), 0.0)) > tolerance) {
+                reject("prescribed liquid state charge unresolved");
+                return result;
+            }
+        }
+        if (largest_difference(*prescribed, compositions[0]) > tolerance) {
+            reject("prescribed liquid composition unresolved");
+            return result;
+        }
+        const auto error = equilibrium_numerical_estimates(compiled, result, &prepared, true);
+        if (error.rank != full.size()) {
+            reject("prescribed liquid endpoint Jacobian unresolved");
+            return result;
+        }
+        const auto c = compiled.component_count();
+        const double resolution = policy::PHASE_COINCIDENCE_DISTANCE.value;
+        bool separated = false;
+        if (error.cause.empty()) {
+            separated = std::abs(topology.log_packing[0] - topology.log_packing[1])
+                > std::max(resolution, error.packing[0].chart + error.packing[1].chart);
+            for (std::size_t i = 0; i < c; ++i)
+                separated = separated || std::abs(compositions[0][i] - compositions[1][i])
+                    > std::max(resolution, error.composition[i].absolute + error.composition[c + i].absolute);
+        }
+        if (!separated) {
+            reject("unresolved separation: phase distance does not exceed projected error");
+            return result;
+        }
+    }
     const auto& phases = compiled.problem.phases;
     if (phases.size() == 2 && phases[0].kind == PhaseKind::Liquid && phases[1].kind == PhaseKind::Liquid
         && compiled.charge_row_count == 1) {
@@ -1238,6 +1314,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     };
     using Vector = Eigen::Matrix<Base, Eigen::Dynamic, 1>;
     using Matrix = Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic>;
+    compiled.pin_liquid_composition(full);
     std::size_t polish_round = 0;
     while (non_error && !expired()) {
         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
@@ -1447,6 +1524,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
                         static_cast<double>(trial_index)}, step, reason);
                 };
                 auto candidate = coordinates(alpha);
+                compiled.pin_liquid_composition(candidate);
                 const bool moved = candidate != full;
                 representable |= moved;
                 if (!moved && (trial_recovery || !std::is_same_v<Base, double>)) return NewtonTrial::Refused;
@@ -2227,12 +2305,13 @@ EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel& mod
     const std::vector<std::string>& component_ids) {
     core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     EquilibriumAttemptReporting reporting;
-    if (!request.discovery) {
+    if (!request.discovery || request.prescribed_liquid_composition) {
         compiled = compile_problem(model, request);
         if (component_ids.size() == model.parameters().component_count()) reporting.composition_bound_species = &component_ids;
     }
     auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope, nullptr,
-        start && start->success && start->requested_tolerance_met.value_or(false) ? start->optimizer_state : nullptr, !start, true, reporting);
+        !request.prescribed_liquid_composition && start && start->success && start->requested_tolerance_met.value_or(false)
+            ? start->optimizer_state : nullptr, !start, true, reporting);
     if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
         observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
     return result;
@@ -2339,7 +2418,9 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         if ((!select_endpoint && !recover) || scope.nested("solve_equilibrium")) return endpoint;
         return refine_selected_endpoint(compiled, std::move(endpoint), scope, remaining);
     };
+    const bool prescribed = compiled.problem.prescribed_liquid_composition.has_value();
     auto seeded = start.has_value() || original ? std::nullopt : speciated_start(compiled, limits, stages, true);
+    if (prescribed && use_start) seeded = start_point(compiled, *start, compiled.generic_point());
     EquilibriumResult result;
     bool admission_refused = false;
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
@@ -2350,7 +2431,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         else if (attempt == 0) {
             initial = std::move(*seeded);
         } else {
-            try { initial = use_start ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages); }
+            try { initial = use_start && !prescribed ? compiled.generic_point() : boundary_start(cold ? *cold : compiled, !copied, limits, &stages); }
             catch (const std::bad_alloc&) { throw; }
             catch (const std::exception& error) {
                 core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
@@ -2364,7 +2445,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
                 result.failure = std::current_exception();
                 return result;
             }
-            if (start.has_value()) initial = start_point(compiled, *start, std::move(initial));
+            if (start.has_value() && !prescribed) initial = start_point(compiled, *start, std::move(initial));
             if (pure_source) {
                 const double shift = std::log(model.packing_fraction_coefficient(compiled.seed_temperature(), {1.0})
                     / model.packing_fraction_coefficient(*start->temperature, {1.0}));
@@ -2626,11 +2707,12 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     std::optional<CompiledSystem> retained;
     if (!exhausted()) {
         auto& compiled = retained.emplace(compile_problem(model, problem));
+        const auto declaration = public_declaration(compiled);
         for (const auto& seed : starts) if (seed.previous) {
             const auto& old = *seed.previous;
             if (!old.declaration || old.model_identity != &model)
                 throw std::invalid_argument("previous start model/parameters or declaration differs");
-            if (const auto difference = declared_state_difference(*old.declaration, compiled.problem); !difference.empty())
+            if (const auto difference = declared_state_difference(*old.declaration, declaration); !difference.empty())
                 throw std::invalid_argument("previous start: " + difference);
         }
         for (std::size_t i = 0; i < starts.size(); ++i) {

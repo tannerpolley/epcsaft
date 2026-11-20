@@ -1859,6 +1859,18 @@ $$
 -\frac{\partial A_p}{\partial V_p}=P.
 $$
 
+## `prescribed_liquid_composition`
+
+- Section: Equilibrium
+- Status: Implementation convention
+- Source: Fixed tie-line endpoint composition in the declared equilibrium formulation
+- Description: One affine logarithmic pin per supported species of the first liquid.
+- Change note: The supplied composition satisfies normalization and electroneutrality at admission. During final polish, the prescribed coordinates are substituted exactly.
+
+$$
+\ln x_{a,i}-\ln x^*_{a,i}=0,\quad i\in S_a.
+$$
+
 ## `pure_active_parameter_mapping`
 
 - Section: Native phase coordinates

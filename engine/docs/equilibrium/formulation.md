@@ -165,7 +165,7 @@ At each phase use EqID: `chemical_potential_stationarity`, EqID: `pressure_equal
 EqID: `phase_normalization`, EqID: `phase_support`, EqID: `phase_electroneutrality`
 and EqID: `material_balance`.
 
-One charge row can be omitted only for an ion-containing phase of nonzero
+For inventory-based specifications, one charge row can be omitted only for an ion-containing phase of nonzero
 amount when neutral feed, charge-conserving reactions and balances imply it.
 An explicit charged Vapor declaration that would select Vapor as the
 omitted-charge phase is refused with `charged vapor cannot be the omitted-charge phase`.
@@ -370,6 +370,25 @@ A single declared phase and one-component coexistence are ordinary cells of
 the same specification. Admission and numerical qualification must cover
 phase/support, reaction, charge, pin and free-intensive combinations explicitly;
 structural acceptance of a cell is not evidence that it solves.
+
+### Liquid–liquid equilibrium from a prescribed composition
+
+At fixed $T$ and $x_a^*$, both densities, the conjugate composition and common
+pressure are unknown. EqID: `prescribed_liquid_composition` fixes the first
+liquid’s log coordinates in place of inventory balances and its normalization.
+The prescribed composition supplies its charge condition. The second liquid
+retains normalization and electroneutrality. The phase stationarity rows
+share species multipliers and yield EqID: `interphase_potential_equality` on
+subtraction. With the first liquid's charge gauge set to zero,
+$\Delta\psi=-RT\hat{\varphi}_b/F$.
+
+The feasibility calculation uses a unit molar basis internally for each liquid.
+The returned state is intensive. Admission requires liquid density branches
+and separation in composition or log packing greater than the declared
+resolution and the projected numerical error. The pressure estimate projects
+the assembled row errors through the exact endpoint Jacobian in the same
+local branch. A supplied composition error can enter the projection through
+the log pins.
 
 ### Pure stoichiometric solids
 
