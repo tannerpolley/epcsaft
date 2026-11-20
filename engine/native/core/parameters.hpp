@@ -24,13 +24,23 @@ enum class PermittivityForm {
     DipolarPerturbation = 4, // dipolar density perturbation
     DensityTemperatureIonSuppression = 6,
     DensityTemperatureSusceptibilitySuppression = 7,
+    SolventVolumeWeighting,
+    DensityTemperatureArithmetic,
+    FullSpeciesMoleWeighting,
 };
 
+inline bool solvent_weighted_permittivity(core::Declared<PermittivityForm> form) {
+    return form.is(PermittivityForm::SolventMoleWeighting) || form.is(PermittivityForm::SolventVolumeWeighting);
+}
+inline bool ion_only_permittivity(core::Declared<PermittivityForm> form) {
+    return form.is(PermittivityForm::ComponentMixing) || form.is(PermittivityForm::FullSpeciesMoleWeighting);
+}
 inline bool density_temperature_ion_suppression(core::Declared<PermittivityForm> form) {
     return form.is(PermittivityForm::DensityTemperatureIonSuppression) || form.is(PermittivityForm::DensityTemperatureSusceptibilitySuppression);
 }
 inline bool density_temperature_permittivity(core::Declared<PermittivityForm> form) {
-    return form.is(PermittivityForm::DensityTemperature) || density_temperature_ion_suppression(form);
+    return form.is(PermittivityForm::DensityTemperature) || form.is(PermittivityForm::DensityTemperatureArithmetic)
+        || density_temperature_ion_suppression(form);
 }
 
 enum class ElectrolyteForm {
@@ -102,6 +112,7 @@ struct FixedParameters {
     core::Declared<PermittivityForm> permittivity_form;
     std::vector<int> permittivity_solvent;
     bool permittivity_solvent_normalized = false;
+    std::vector<double> solvent_molar_volume_m3_per_mol;
     std::vector<double> relative_permittivity;
     std::vector<int> permittivity_term_component;
     std::vector<double> permittivity_term_coefficient;
@@ -122,7 +133,7 @@ struct FixedParameters {
                 ionic_dispersion.declared() ? static_cast<int>(ionic_dispersion.require("dispersion")) : 0,
                 permittivity_form.declared() ? static_cast<int>(permittivity_form.require("permittivity")) : 0};
         for (const auto& record : cation_mixing) result.insert(result.end(), record.begin(), record.end());
-        if (permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
+        if (solvent_weighted_permittivity(permittivity_form)) {
             result.push_back(permittivity_solvent_normalized);
             result.insert(result.end(), permittivity_solvent.begin(), permittivity_solvent.end());
         }

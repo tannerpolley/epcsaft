@@ -399,6 +399,169 @@ void properties_thermochemistry_p3() {
 }
 
 
+void solvent_mixture_permittivity() {
+    const auto document = [](const char* choice, double mass_a, double mass_b) {
+        epcsaft::ParameterDocument doc;
+        doc.component_ids = {"solvent-a", "solvent-b", "Na+", "Cl-"};
+        doc.base_choice = "pc-saft";
+        doc.association_choice = "none";
+        doc.electrolyte_choice = "fully-dissociated-debye-huckel";
+        doc.ionic_dispersion_choice = "all-ion-pairs";
+        doc.permittivity_choice = choice;
+        const std::array<double, 4> charge{0., 0., 1., -1.};
+        for (std::size_t i = 0; i < charge.size(); ++i) {
+            doc.entries.push_back({"charge", "charge_number", {i}, charge[i], "elementary-charge"});
+            doc.entries.push_back({"segments", "segment_count", {i}, 1., "dimensionless"});
+            doc.entries.push_back({"diameter", "sigma_constant", {i}, 3., "angstrom"});
+            doc.entries.push_back({"dispersion", "dispersion_energy_over_k", {i}, 200., "kelvin"});
+            if (charge[i] != 0.) {
+                doc.entries.push_back({"packing", "packing_diameter", {i}, 3., "angstrom"});
+                doc.entries.push_back({"screening", "debye_huckel_diameter", {i}, 3., "angstrom"});
+            }
+            for (std::size_t j = 0; j < i; ++j)
+                doc.entries.push_back({"kij", "k_ij", {j, i}, 0., "dimensionless"});
+        }
+        doc.entries.push_back({"mass", "molar_mass", {0}, mass_a, "gram / mole"});
+        doc.entries.push_back({"mass", "molar_mass", {1}, mass_b, "gram / mole"});
+        return doc;
+    };
+    constexpr double temperature = 298.15, density = 9000.;
+    constexpr double fraction = 0.65, dx = 1.e-5, dT = 1.e-3;
+    // Absolute allowances for double-precision evaluation and the central-difference truncation and roundoff.
+    constexpr double value_allowance = 1.e-12, slope_allowance = 1.e-8;
+    const auto check = [&](const char* id, const char* unit, double actual, double expected,
+                           const char* reference, double allowance, double T) {
+        recording_support::compare(id, id, unit, actual, expected, recording_support::Rule::Absolute,
+            allowance, 0., reference, recording_support::field("temperature_K", T));
+    };
+    const auto value = [&](const epcsaft::HelmholtzModel& model, double T, double x) {
+        return model.state(T, density, {x, 1. - x, 0., 0.}).bulk_relative_permittivity;
+    };
+    const auto derivative = [&](const epcsaft::HelmholtzModel& model, double T, double x, double T_step, double x_step) {
+        return model.bulk_relative_permittivity_series({T, T_step}, {density, 0.},
+            {{x, x_step}, {1. - x, -x_step}, {0., 0.}, {0., 0.}})[1];
+    };
+    const auto composition_difference = [&](const epcsaft::HelmholtzModel& model) {
+        return (value(model, temperature, fraction + dx) - value(model, temperature, fraction - dx)) / (2. * dx);
+    };
+
+    // Novak et al., Eq. (1) and Table 3. Rounded test volumes in L/mol at 298.15 K, 1 bar.
+    const double methanol = std::pow(10., 1.514), butanol = 17.58;
+    constexpr double v_a = 0.0407, v_b = 0.0920;
+    auto volume_doc = document("solvent-volume-weighting", 32.04186, 74.1216);
+    volume_doc.entries.insert(volume_doc.entries.end(), {
+        {"methanol", "relative_permittivity", {0}, methanol, "dimensionless"},
+        {"1-butanol", "relative_permittivity", {1}, butanol, "dimensionless"},
+        {"methanol", "solvent_molar_volume", {0}, v_a, "liter / mole"},
+        {"1-butanol", "solvent_molar_volume", {1}, v_b, "liter / mole"},
+        {"volume T", "solvent_volume_reference_temperature", {}, temperature, "kelvin"},
+        {"volume P", "solvent_volume_reference_pressure", {}, 1.e5, "pascal"},
+    });
+    const epcsaft::HelmholtzModel volume(epcsaft::build_parameters(volume_doc));
+    const double phi = 1. / (1. + (1. - fraction) / fraction * v_b / v_a);
+    const double volume_reference = butanol + phi * (methanol - butanol);
+    check("solvent-volume/value", "1", value(volume, temperature, fraction), volume_reference,
+        "Novak Eq. 1, Table 3", value_allowance, temperature);
+    check("solvent-volume/composition", "1", derivative(volume, temperature, fraction, 0., 1.),
+        composition_difference(volume), "central difference h=1e-5", slope_allowance, temperature);
+    constexpr double s = 0.8, ion = (1. - s) / 2.;
+    const std::vector<double> salted{s * fraction, s * (1. - fraction), ion, ion};
+    std::vector<std::vector<double>> salted_series;
+    for (double x : salted) salted_series.push_back({x, 0.});
+    const double denominator = salted[0] * v_a + salted[1] * v_b;
+    const std::array<double, 4> partials{
+        v_a * (methanol - volume_reference) / denominator,
+        v_b * (butanol - volume_reference) / denominator, 0., 0.};
+    const std::array<const char*, 4> names{"solvent-volume/partial-methanol", "solvent-volume/partial-butanol",
+        "solvent-volume/partial-cation", "solvent-volume/partial-anion"};
+    for (std::size_t i = 0; i < salted.size(); ++i) {
+        salted_series[i][1] = 1.;
+        const auto series = volume.bulk_relative_permittivity_series({temperature, 0.}, {density, 0.}, salted_series);
+        check(names[i], "1", series[1], partials[i], "analytical partial of Novak Eq. 1", value_allowance, temperature);
+        salted_series[i][1] = 0.;
+    }
+    for (std::size_t order : {1U, 2U}) {
+        const auto message = recording_support::refusal([&] {
+            const std::vector<std::vector<double>> ions_only{{0., 1.}, {0., -1.}, {0.5, 0.}, {0.5, 0.}};
+            volume.bulk_relative_permittivity_series(std::vector<double>(order, temperature),
+                std::vector<double>(order, density), ions_only);
+        });
+        CHECK(message.find("permittivity has no solvent denominator") != std::string::npos);
+    }
+
+    // Perdomo et al., Eqs. (75)-(77), Table 2. Acetone and acetic acid on the Engine solvent partial-density basis.
+    auto arithmetic_doc = document("solvent-density-temperature-arithmetic", 58.0791, 60.0520);
+    arithmetic_doc.entries.insert(arithmetic_doc.entries.end(), {
+        {"acetone", "dielectric_volume", {0}, 0.2391, "liter / mole"},
+        {"acetone", "dielectric_temperature", {0}, 2221.700, "kelvin"},
+        {"acetic acid", "dielectric_volume", {1}, -0.7275, "liter / mole"},
+        {"acetic acid", "dielectric_temperature", {1}, 177.4429, "kelvin"},
+    });
+    const epcsaft::HelmholtzModel arithmetic(epcsaft::build_parameters(arithmetic_doc));
+    arithmetic_doc.permittivity_choice = "solvent-density-temperature";
+    const epcsaft::HelmholtzModel separate(epcsaft::build_parameters(arithmetic_doc));
+    const double d_a = 0.2391 * (2221.700 / temperature - 1.), d_b = -0.7275 * (177.4429 / temperature - 1.);
+    const double d_ab = (d_a + d_b) / 2., other = 1. - fraction;
+    const double pair_mix = fraction * fraction * d_a + 2. * fraction * other * d_ab + other * other * d_b;
+    check("arithmetic-density/pure", "1", value(arithmetic, temperature, 1.), value(separate, temperature, 1.),
+        "Perdomo Eq. 74, pure limit of both forms", value_allowance, temperature);
+    check("arithmetic-density/binary", "1", value(arithmetic, temperature, fraction), 1. + density / 1000. * pair_mix,
+        "Perdomo Eqs. 75-77, Table 2", value_allowance, temperature);
+    check("arithmetic-density/salted-value", "1", arithmetic.state(temperature, density, salted).bulk_relative_permittivity,
+        1. + density * s / 1000. * pair_mix, "Perdomo pair mean at Engine solvent partial density", value_allowance, temperature);
+    const double slope_salted = -density / (1000. * temperature * temperature)
+        * (salted[0] * 0.2391 * 2221.700 - salted[1] * 0.7275 * 177.4429);
+    check("arithmetic-density/salted-temperature", "1/K",
+        arithmetic.bulk_relative_permittivity_series({temperature, 1.}, {density, 0.}, salted_series)[1],
+        slope_salted, "analytical fixed-density derivative", value_allowance, temperature);
+    check("arithmetic-density/temperature", "1/K", derivative(arithmetic, temperature, fraction, 1., 0.),
+        (value(arithmetic, temperature + dT, fraction) - value(arithmetic, temperature - dT, fraction)) / (2. * dT),
+        "central difference h=1e-3 K", slope_allowance, temperature);
+    check("arithmetic-density/composition", "1", derivative(arithmetic, temperature, fraction, 0., 1.),
+        composition_difference(arithmetic), "central difference h=1e-5", slope_allowance, temperature);
+
+    // Zuo and Furst water correlation as reproduced in Novak et al., Table 3.
+    auto water_doc = document("solvent-only", 18.01528, 32.04186);
+    water_doc.entries.insert(water_doc.entries.end(), {
+        {"water", "relative_permittivity", {0}, -19.2905, "dimensionless"},
+        {"water", "permittivity_reference_temperature", {0}, 0., "kelvin"},
+        {"water/T", "permittivity_reciprocal_temperature_coefficient", {0, 0}, 29814.5, "kelvin"},
+        {"water*T", "permittivity_term_coefficient", {1, 0, 1}, -0.019678, "1 / kelvin"},
+        {"water*T^2", "permittivity_term_coefficient", {2, 0, 2}, 1.3189e-4, "1 / kelvin ** 2"},
+        {"water*T^3", "permittivity_term_coefficient", {3, 0, 3}, -3.1144e-7, "1 / kelvin ** 3"},
+    });
+    const epcsaft::HelmholtzModel water(epcsaft::build_parameters(water_doc));
+    for (double T : {288.15, 323.15, 403.15}) {
+        const double source = 29814.5 / T - 19.2905 + T * (-0.019678 + T * (1.3189e-4 - 3.1144e-7 * T));
+        const double slope = -29814.5 / (T * T) - 0.019678 + T * (2.6378e-4 - 9.3432e-7 * T);
+        check("reciprocal-temperature/value", "1", value(water, T, 1.), source,
+            "Novak Table 3", value_allowance, T);
+        check("reciprocal-temperature/slope", "1/K", derivative(water, T, 1., 1., 0.), slope,
+            "analytical derivative of Novak Table 3", value_allowance, T);
+    }
+
+    // Bulow et al., section 2.3 and Table 5. Methanol + ethanol + NaCl with explicit ionic values.
+    auto mole_doc = document("full-species-mole-weighting", 32.04186, 46.06844);
+    const double e_meoh = 90.09 - 0.192 * temperature, e_etoh = 68.47 - 0.146 * temperature;
+    mole_doc.entries.insert(mole_doc.entries.end(), {
+        {"methanol", "relative_permittivity", {0}, e_meoh, "dimensionless"},
+        {"ethanol", "relative_permittivity", {1}, e_etoh, "dimensionless"},
+        {"Na+", "relative_permittivity", {2}, 8., "dimensionless"},
+        {"Cl-", "relative_permittivity", {3}, 8., "dimensionless"},
+    });
+    const epcsaft::HelmholtzModel mole(epcsaft::build_parameters(mole_doc));
+    const std::vector<double> salt{0.55, 0.25, 0.1, 0.1};
+    const double actual = mole.state(temperature, density, salt).bulk_relative_permittivity;
+    check("full-species-mole/value", "1", actual, 0.55 * e_meoh + 0.25 * e_etoh + 1.6,
+        "Bulow section 2.3, Table 5", value_allowance, temperature);
+    mole_doc.permittivity_choice = "component-permittivity-mixing";
+    const epcsaft::HelmholtzModel mass(epcsaft::build_parameters(mole_doc));
+    const double solvent_mole = 0.55 * e_meoh + 0.25 * e_etoh;
+    CHECK(std::abs(actual - mass.state(temperature, density, salt).bulk_relative_permittivity) > value_allowance);
+    CHECK(std::abs(actual - solvent_mole) > value_allowance);
+    CHECK(std::abs(actual - solvent_mole / 0.8) > value_allowance);
+}
+
 // The aqueous 2B-water Na+/Cl- liquid under the component-mixing, density-temperature and dipolar permittivity forms.
 std::array<epcsaft::Parameters, 3> permittivity_variants() {
     auto component_mixing = properties_support::aqueous_electrolyte();

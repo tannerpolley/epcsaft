@@ -407,6 +407,43 @@ N=\sum_{s\in S}x_s\epsilon_{r,s}(T),\qquad D=\sum_{s\in S}x_s,
 N/D&\text{solvent-normalized},\ D>0.\end{cases}
 $$
 
+## `solvent_volume_weighted_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Source equation
+- Source: Novak, Kontogeorgis, Castier, and Economou (2023), DOI 10.1021/acs.iecr.3c00717, Eq. (1)
+- Description: Relative permittivity weighted by the additive volumes of the declared neutral solvents.
+- Change note: Each $v_j$ is the pure-liquid molar volume at a common declared reference temperature and pressure. Volumes remain fixed during state evaluation. The denominator must be positive. The paper treats salt effects separately in Eq. (2).
+
+$$
+\phi_j=\frac{x_j v_j}{\sum_{k\in S}x_k v_k},\qquad
+\epsilon_{r,\mathrm{bulk}}=\sum_{j\in S}\phi_j e_j(T).
+$$
+
+## `full_species_mole_weighted_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Source equation
+- Source: Bülow, Ascani, and Held (2021), DOI 10.1016/j.fluid.2021.112989, §2.3 and Table 5; Clapeyron.jl v0.6.30 LinMixRSP
+- Description: Linear permittivity sum across all species on the total mole-fraction basis.
+- Change note: Every ion has an explicit component value. Bülow et al. used an effective value of 8 for the salts in their study. Transferring an ionic value to other solvent or salt systems requires evidence.
+
+$$
+\epsilon_{r,\mathrm{bulk}}=\sum_i x_i e_i(T).
+$$
+
+## `component_permittivity_reciprocal_temperature`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Bounded empirical relation
+- Source: Zuo and Fürst (1997), DOI 10.1016/S0378-3812(97)00145-3, as reproduced by Novak et al. (2023), DOI 10.1021/acs.iecr.3c00717, Table 3, and Zhou et al., DOI 10.1016/j.fluid.2026.114878, Eq. (6) and fit interval
+- Description: A declared reciprocal-temperature term augments a component's existing temperature polynomial.
+- Change note: For Zuo and Fürst's liquid-water fit, $T_0=0$ K and the coefficients are $c_0=-19.2905$, $b=29814.5$ K, $c_1=-0.019678$ K⁻¹, $c_2=1.3189\times10^{-4}$ K⁻² and $c_3=-3.1144\times10^{-7}$ K⁻³. The fit interval is 288.15–403.15 K. A mixture requires a separate bulk rule.
+
+$$
+e_j(T)=c_{0j}+\sum_{p\ge1}c_{pj}(T-T_{0j})^p+\frac{b_j}{T}.
+$$
+
 ## `component_permittivity_temperature_polynomial`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
@@ -649,6 +686,19 @@ $$
 \epsilon_{r,\mathrm{bulk}}=
 1+\rho_m x_{\mathrm{solv}}d_{V,\mathrm{mix}}
 \left(\frac{d_{T,\mathrm{mix}}}{T}-1\right).
+$$
+
+## `arithmetic_density_correlated_bulk_permittivity`
+
+- Section: Electrolyte dielectric and Debye--Huckel relations
+- Status: Implementation convention
+- Source: Perdomo, Jackson, Mitsos, Galindo, and Adjiman (2025), DOI 10.1016/j.compchemeng.2024.108977, Eqs. (75)–(77) for the coefficient and its mixing rule
+- Description: Arithmetic mixing of each neutral solvent's temperature-dependent dielectric density coefficient.
+- Change note: Summing the pair means $(d_i+d_j)/2$ with weights $y_i y_j$ gives $\sum_j y_jd_j$, where $y_j=x_j/s$ and $s=\sum_{j\in S}x_j$. The Engine uses $\rho_{\mathrm{solv}}=\rho_m s$, solvent moles per volume of the salted solution. This density basis is the Engine convention shared with the separate-averaging rule. Perdomo et al. supply the coefficient and the solvent mole-fraction average.
+
+$$
+d_j(T)=d_{Vj}\left(\frac{d_{Tj}}{T}-1\right),\qquad
+\epsilon_{r,\mathrm{bulk}}=1+\rho_m\sum_{j\in S}x_j d_j(T).
 $$
 
 ## `density_correlation_mixed_parameters`
