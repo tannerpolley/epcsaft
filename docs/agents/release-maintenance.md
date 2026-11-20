@@ -3,7 +3,10 @@
 `tools/refresh-main-wheel` distributes private development wheels and requires
 a private repository. Public source releases do not use that tool.
 
-The public repository is the release source. Commit the candidate, then use
+The public repository is the release source. Update the version in
+`pyproject.toml`, `engine/meson.build`, `CITATION.cff`, `.zenodo.json`,
+`packaging/conda-forge/recipe.yaml`, the install lines in `README.md` and
+`docs/site/installation.md`, and `uv.lock`. Commit the candidate, then use
 `git archive --format=tar --prefix=epcsaft-<version>/ <commit>` with an explicit
 list of tracked paths, excluding all `AGENTS.md` and `CLAUDE.md` files,
 `.agents/`, `.claude/`, `.serena/`, `analyses/`, `validation/`, `build/` and
