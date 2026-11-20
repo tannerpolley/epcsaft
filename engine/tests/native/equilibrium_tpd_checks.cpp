@@ -2252,13 +2252,11 @@ static epcsaft::equilibrium::EquilibriumProblem mea_liquid_split(epcsaft::equili
     return problem;
 }
 
-void check_electric_potential_difference() {
+static void check_electrochemical_identity(const epcsaft::equilibrium::CompiledSystem& compiled,
+    const epcsaft::equilibrium::EquilibriumResult& split, const std::string& id) {
     using namespace epcsaft;
-    using namespace epcsaft::equilibrium;
-#include "fixtures/mea-nominally-unloaded.inc"
-    problem = mea_liquid_split(std::move(problem));
-    const auto split = solve_equilibrium(model, problem);
-    CHECK(split.has_state());
+    CHECK(split.has_state() && split.requested_tolerance_met.value_or(false) && split.convergence.criterion);
+    const auto& model = *compiled.model;
     const double voltage = split.electric_potential_difference_v.value();
     const double rt = GAS_CONSTANT_J_PER_MOL_K * split.temperature.value();
     const auto& z = model.parameters().charge_number;
@@ -2266,8 +2264,9 @@ void check_electric_potential_difference() {
     const std::vector<double> a(first, first + z.size()), b(first + z.size(), split.mole_fractions.end());
     const auto state_a = model.state(*split.temperature, split.molar_densities[0], a);
     const auto state_b = model.state(*split.temperature, split.molar_densities[1], b);
-    const double row_tolerance = problem.solver_options.value(policy::row);
-    double largest = 0.0;
+    const double row_tolerance = split.convergence.criterion->value;
+    const auto inputs = recording_support::fields({recording_support::field("T_K", *split.temperature),
+        recording_support::field("P_Pa", *split.pressure)});
     for (std::size_t i = 0; i < z.size(); ++i) {
         if (z[i] == 0 || a[i] == 0.0 || b[i] == 0.0) continue;
         // The common species standard cancels in the density-basis potential difference.
@@ -2275,19 +2274,27 @@ void check_electric_potential_difference() {
             + state_a.residual_chemical_potential_over_rt[i].value()
             - state_b.residual_chemical_potential_over_rt[i].value();
         const double error = std::abs(delta_mu_over_rt - z[i] * FARADAY_C_PER_MOL * voltage / rt);
-        CHECK(error <= 2.0 * row_tolerance);  // Difference of two chemical stationarity rows.
-        largest = std::max(largest, error);
+        const double weight_a = split.amounts[0] * a[i] / compiled.feed_total;
+        const double weight_b = split.amounts[1] * b[i] / compiled.feed_total;
+        // Each classified chemical row bounds its unweighted error by the row tolerance divided by its weight.
+        const double bound = row_tolerance * (1.0 / weight_a + 1.0 / weight_b);
+        tpd_compare(id + "/ion-" + std::to_string(i), error, 0.0, bound, inputs, "RT");
     }
     const auto charge = [&](const std::vector<double>& x) {
         return std::inner_product(z.begin(), z.end(), x.begin(), 0.0);
     };
-    tpd_compare("electric-potential-difference/charge-a", charge(a), 0.0, row_tolerance);
-    tpd_compare("electric-potential-difference/charge-b", charge(b), 0.0, row_tolerance);
-    const auto inputs = recording_support::fields({recording_support::field("T_K", *split.temperature),
-        recording_support::field("P_Pa", *split.pressure)});
-    recording_support::observe("electric-potential-difference/voltage", "electric potential difference", "V",
+    tpd_compare(id + "/charge-a", charge(a), 0.0, row_tolerance);
+    tpd_compare(id + "/charge-b", charge(b), 0.0, row_tolerance);
+    recording_support::observe(id + "/voltage", "electric potential difference", "V",
         voltage, std::nullopt, "second liquid minus first", inputs);
-    tpd_compare("electric-potential-difference/electrochemical-error", largest, 0.0, 2.0 * row_tolerance, inputs, "RT");
+}
+
+void check_electric_potential_difference() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    const auto compiled = compile_problem(model, mea_liquid_split(std::move(problem)));
+    check_electrochemical_identity(compiled, solve_compiled(compiled), "electric-potential-difference/forward");
 }
 
 void check_electric_potential_difference_phase_order() {
@@ -2295,17 +2302,15 @@ void check_electric_potential_difference_phase_order() {
     using namespace epcsaft::equilibrium;
 #include "fixtures/mea-nominally-unloaded.inc"
     problem = mea_liquid_split(std::move(problem));
-    const auto forward = solve_equilibrium(model, problem);
+    const auto forward = solve_compiled(compile_problem(model, problem));
     std::swap(problem.phases[0], problem.phases[1]);
-    const auto reverse = solve_equilibrium(model, problem);
+    const auto compiled = compile_problem(model, problem);
+    const auto reverse = solve_compiled(compiled);
     CHECK(forward.has_state() && reverse.has_state());
     const double forward_v = forward.electric_potential_difference_v.value();
     const double reverse_v = reverse.electric_potential_difference_v.value();
     CHECK(forward_v * reverse_v < 0.0);
-    // Two chemical rows in each solve, converted to volts for a monovalent ion.
-    const double tolerance_v = 4.0 * problem.solver_options.value(policy::row)
-        * GAS_CONSTANT_J_PER_MOL_K * forward.temperature.value() / FARADAY_C_PER_MOL;
-    tpd_compare("electric-potential-difference/reversed", reverse_v, -forward_v, tolerance_v, {}, "V");
+    check_electrochemical_identity(compiled, reverse, "electric-potential-difference/reverse");
 }
 
 void check_mea_discovery_omitted_species() {
