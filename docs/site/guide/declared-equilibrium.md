@@ -70,6 +70,55 @@ it meets the requested tolerance. A declared solve performs no unrequested
 tangent-plane trials. Explicit tests belong to
 [stability and discovery](stability-and-discovery.md).
 
+## Warm starts for ordered states
+
+For nearby feeds, temperatures or pressures on the same declared phase branch,
+pass the previous accepted `EquilibriumResult` as `start` to
+`solve_equilibrium`. The native driver still checks start and layout admission.
+Keep the original phase guesses for a cold fallback. Before accepting either
+result, check convergence, component and phase balances, charge balance and
+phase identity; check derivative admission too if derivatives are needed. A
+successful solve alone does not establish phase stability. See
+[diagnostics](diagnostics.md) for the returned records.
+
+For example, given `model` and an ordered `feeds` series of amount mappings for
+water, ethanol, isobutanol, Na⁺ and Cl⁻, the following two-liquid declarations
+use the preceding accepted result. `acceptable` represents the caller's checks
+above, including its phase-identity criterion; do not replace it with `success`
+alone.
+
+```python
+from epcsaft.equilibrium import Amounts, Phase, Problem, solve_equilibrium
+
+previous = None
+for feed in feeds:
+    problem = Problem(
+        T=293.15, P=1e5, feed=Amounts(feed), row_tolerance=1e-10,
+        phases=[
+            Phase("phase-0", kind="liquid", support=model.component_ids,
+                  composition_guess=(.8, .05, .05, .05, .05)),
+            Phase("phase-1", kind="liquid", support=model.component_ids,
+                  composition_guess=(.2, .1, .6998, .0001, .0001)),
+        ],
+    )
+    result = solve_equilibrium(model, problem, start=previous)
+    if previous is not None and not acceptable(result, feed):
+        result = solve_equilibrium(model, problem)  # cold fallback
+    if not acceptable(result, feed):
+        raise ValueError("Neither start produced an acceptable equilibrium")
+    previous = result
+```
+
+The model component order for these guesses is water, ethanol, isobutanol,
+Na⁺, Cl⁻. In the measured eight one-mole feed series at 293.15 K and 100 kPa,
+with unchanged row and site tolerances, this reuse reduced equilibrium
+evaluations from 464 to 77 compared with independent cold starts. This is a
+case-specific work count, not a guarantee for another series. The published
+independent-start timing remains a separate operation.
+
+Parameter-fitting trials must not inherit a start that silently selects a
+different branch. Check the intended branch for each trial.
+
 ## Continuation and caloric specifications
 
 `continue_equilibrium` traces from a starting declaration toward a target,
