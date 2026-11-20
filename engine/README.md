@@ -658,6 +658,10 @@ Its package tests are the import, `pip check` and `run_test.py`. The win-64
 qualification is a manual double-check: the `qualification` workflow runs
 `qualification/recipe.py`, which derives `qualification-recipe.yaml` from the recipe.
 
+The `linux-64` packages were built and passed these tests for CPython 3.12,
+3.13, and 3.14. Dependency resolution was verified for `win-64`, `osx-64`,
+and `osx-arm64`.
+
 Corresponding source is available from the distributor as a source-set download
 alongside the matching version at
 https://github.com/tannerpolley/epcsaft/releases: exact Engine and Ipopt sources,

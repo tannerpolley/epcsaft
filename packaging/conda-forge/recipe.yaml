@@ -3,6 +3,7 @@ schema_version: 1
 context:
   version: 1.3.1
   release_sha256: d79622c02f94964930b33f4631f8eaa33634a6fadd5dee6a1129c13965ca725e
+  source_sha256: ${{ release_sha256 }}
 
 package:
   name: epcsaft
@@ -10,9 +11,11 @@ package:
 
 source:
   - url: https://github.com/tannerpolley/epcsaft/releases/download/v${{ version }}/epcsaft-${{ version }}.tar.gz
-    sha256: ${{ release_sha256 }}
+    sha256: ${{ source_sha256 }}
     patches:
-      - python-requires.patch
+      # Drop this patch at the next release.
+      - if: source_sha256 == release_sha256
+        then: python-requires.patch
   - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
     sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
     target_directory: ipopt-source
@@ -37,7 +40,7 @@ build:
   script:
     env:
       EPCSAFT_SOURCE_REVISION: v${{ version }}
-      EPCSAFT_SOURCE_SHA256: ${{ release_sha256 }}
+      EPCSAFT_SOURCE_SHA256: ${{ source_sha256 }}
     file: ${{ "build.bat" if win else "build.sh" }}
 
 requirements:

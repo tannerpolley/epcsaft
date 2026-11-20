@@ -15,8 +15,7 @@ candidate = []
 if len(sys.argv) == 3:
     archive, revision = Path(sys.argv[1]).resolve(), sys.argv[2]
     sha256 = hashlib.sha256(archive.read_bytes()).hexdigest()
-    release = next(line for line in text.splitlines() if line.startswith('  release_sha256: '))
-    candidate = [(release + '\n', f'  release_sha256: {sha256}\n'),
+    candidate = [('  source_sha256: ${{ release_sha256 }}\n', f'  source_sha256: {sha256}\n'),
                  ('  - url: https://github.com/tannerpolley/epcsaft/releases/download/v${{ version }}/epcsaft-${{ version }}.tar.gz\n',
                   f'  - path: {archive}\n'),
                  ('EPCSAFT_SOURCE_REVISION: v${{ version }}\n', f'EPCSAFT_SOURCE_REVISION: {revision}\n')]

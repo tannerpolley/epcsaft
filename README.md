@@ -86,9 +86,6 @@ unless they say they compare with measurements.
 
 ## Installation
 
-The conda recipe supports CPython 3.12, 3.13, and 3.14 for Linux and Windows
-x86-64 and macOS x86-64 and arm64.
-
 Install release 1.3.1 for Linux and Windows (x86-64) from the
 `tannerwpolley` conda channel:
 
