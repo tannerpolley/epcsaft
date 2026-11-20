@@ -463,7 +463,7 @@ class Parameters:
         # Document families keep their native field name unless renamed here.
         renamed = {"segment_diameter": "sigma_constant", "ion_specific_suppression_coefficient": "ion_suppression_coefficient"}
         coefficient_families = {"segment_count", "dispersion_energy_over_k", "packing_diameter", "debye_huckel_diameter", "born_diameter",
-                                "solvation_factor", "relative_permittivity", "dielectric_volume", "dielectric_temperature", "dipole_scaling",
+                                "solvation_factor", "relative_permittivity", "solvent_molar_volume", "dielectric_volume", "dielectric_temperature", "dipole_scaling",
                                 "polarizability_scaling", "correlation_integral_parameter", "dipole_moment", "dipole_count",
                                 "quadrupole_moment", "quadrupole_count", *renamed}
         for component_id in selected_ids:
@@ -502,11 +502,12 @@ class Parameters:
             family = family_value
             form = form_value
             correlation_position = (positions[component_id],)
-            if family not in {"segment_diameter", "relative_permittivity"} or form not in {"constant", "constant-plus-sum-of-exponentials", "constant-plus-polynomial-in-temperature"}:
+            polynomial = form in {"constant-plus-polynomial-in-temperature", "constant-plus-polynomial-and-reciprocal-in-temperature"}
+            if family not in {"segment_diameter", "relative_permittivity"} or not (polynomial or form in {"constant", "constant-plus-sum-of-exponentials"}):
                 raise _core.ParameterError(f"unknown correlation {correlation_id}: family {family}, form {form}")
             if form == "constant-plus-sum-of-exponentials" and family != "segment_diameter":
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
-            if form == "constant-plus-polynomial-in-temperature" and family != "relative_permittivity":
+            if polynomial and family != "relative_permittivity":
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
             base = "sigma_constant" if family == "segment_diameter" else "relative_permittivity"
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
@@ -520,7 +521,7 @@ class Parameters:
                     entries.add(amplitude.get("identity"), "sigma_term_amplitude", (sigma_term, positions[component_id]), amplitude["value"], cast(str, correlation_id))
                     entries.add(exponent.get("identity"), "sigma_term_exponent", (sigma_term, positions[component_id]), exponent["value"], cast(str, correlation_id))
                     sigma_term += 1
-            elif form == "constant-plus-polynomial-in-temperature":
+            elif polynomial:
                 reference = _mapping(item.get("reference_temperature"), "permittivity reference")
                 entries.add(f"{correlation_id}/reference_temperature", "permittivity_reference_temperature", correlation_position, reference, cast(str, correlation_id))
                 terms = _array(item.get("terms", ()), f"{correlation_id} terms")
@@ -531,6 +532,11 @@ class Parameters:
                         raise _core.ParameterError(f"invalid polynomial power for {correlation_id}")
                     coefficient = _mapping(term_map.get("coefficient"), "permittivity coefficient")
                     entries.add(coefficient.get("identity"), "permittivity_term_coefficient", (permittivity_term, positions[component_id], power), coefficient["value"], cast(str, correlation_id))
+                    permittivity_term += 1
+                if form == "constant-plus-polynomial-and-reciprocal-in-temperature":
+                    reciprocal = _mapping(item.get("reciprocal_temperature_coefficient"), "permittivity reciprocal-temperature coefficient")
+                    entries.add(reciprocal.get("identity"), "permittivity_reciprocal_temperature_coefficient",
+                                (permittivity_term, positions[component_id]), reciprocal["value"], cast(str, correlation_id))
                     permittivity_term += 1
 
         raw_pairs = _array(document.get("pairs", ()), "pairs")
@@ -572,7 +578,13 @@ class Parameters:
                 raise _core.ParameterError(f"unknown model family kind {kind}")
         electrolyte = _choice(families, "electrolyte")
         permittivity = _choice(families, "permittivity")
-        if permittivity == "solvent-mole-weighting":
+        if permittivity == "solvent-volume-weighting":
+            record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
+            for quantity in ("temperature", "pressure"):
+                field = f"solvent_volume_reference_{quantity}"
+                value = _mapping(record.get(f"reference_{quantity}"), field)
+                entries.add(f"permittivity/{field}", field, (), value, "permittivity")
+        elif permittivity == "solvent-mole-weighting":
             record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
             solvents = _array(record.get("solvents"), "permittivity solvents")
             mode = record.get("normalization")

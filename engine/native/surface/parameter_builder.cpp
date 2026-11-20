@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstring>
+#include <limits>
 #include <map>
 #include <optional>
 #include <numeric>
@@ -43,13 +44,14 @@ struct Field final {
     std::vector<double> Parameters::* values;
     std::optional<Family> family;
 };
-const std::array<Field, 31> FIELDS = {{
+const std::array<Field, 32> FIELDS = {{
     {"molar_mass", Kind::Component, "molar mass", &Parameters::molar_mass_kg_per_mol, std::nullopt},
     {"segment_count", Kind::Component, "dimensionless", &Parameters::segment_count, Family::SegmentCount},
     {"sigma_constant", Kind::Component, "length", &Parameters::sigma_constant, Family::SigmaConstant},
     {"dispersion_energy_over_k", Kind::Component, "kelvin", &Parameters::dispersion_energy_over_k, Family::DispersionEnergyOverK},
     {"solvation_factor", Kind::Component, "dimensionless", &Parameters::solvation_factor, std::nullopt},
     {"relative_permittivity", Kind::Component, "dimensionless", &Parameters::relative_permittivity, std::nullopt},
+    {"solvent_molar_volume", Kind::Component, "molar volume", &Parameters::solvent_molar_volume_m3_per_mol, std::nullopt},
     {"packing_diameter", Kind::Component, "length", &Parameters::packing_diameter_angstrom, Family::PackingDiameter},
     {"debye_huckel_diameter", Kind::Component, "length", &Parameters::debye_huckel_diameter_angstrom, Family::DebyeHuckelDiameter},
     {"born_diameter", Kind::Component, "length", &Parameters::born_diameter_angstrom, Family::BornDiameter},
@@ -111,7 +113,8 @@ double unit_factor(const ParameterEntry& entry, const std::string& expected) {
         }
     } else if (expected == "dimensionless" && entry.unit == "dimensionless") {
         return 1.0;
-    } else if ((expected == "kelvin" && entry.unit == "kelvin") || (expected == "length" && entry.unit == "angstrom")) {
+    } else if ((expected == "kelvin" && entry.unit == "kelvin") || (expected == "length" && entry.unit == "angstrom")
+               || (expected == "pascal" && entry.unit == "pascal")) {
         return 1.0;
     } else if (expected == "charge" && entry.unit == "elementary-charge") {
         return 1.0;
@@ -285,10 +288,19 @@ Parameters build_parameters(const ParameterDocument& document) {
     } else if (document.permittivity_choice == "solvent-mole-weighting") {
         result.permittivity_form = PermittivityForm::SolventMoleWeighting;
         result.permittivity_solvent.assign(components, 0);
+    } else if (document.permittivity_choice == "solvent-volume-weighting") {
+        result.permittivity_form = PermittivityForm::SolventVolumeWeighting;
+        result.permittivity_solvent.assign(components, 0);
+        result.permittivity_solvent_normalized = true;
+        result.solvent_molar_volume_m3_per_mol.assign(components, 0.0);
+    } else if (document.permittivity_choice == "full-species-mole-weighting") {
+        result.permittivity_form = PermittivityForm::FullSpeciesMoleWeighting;
     } else if (document.permittivity_choice == "component-permittivity-mixing") {
         result.permittivity_form = PermittivityForm::ComponentMixing;
     } else if (document.permittivity_choice == "solvent-density-temperature") {
         result.permittivity_form = PermittivityForm::DensityTemperature;
+    } else if (document.permittivity_choice == "solvent-density-temperature-arithmetic") {
+        result.permittivity_form = PermittivityForm::DensityTemperatureArithmetic;
     } else if (document.permittivity_choice == "solvent-density-temperature-ion-specific-suppression") {
         result.permittivity_form = PermittivityForm::DensityTemperatureIonSuppression;
     } else if (document.permittivity_choice == "solvent-density-temperature-ion-specific-susceptibility-suppression") {
@@ -337,7 +349,9 @@ Parameters build_parameters(const ParameterDocument& document) {
     const bool density_temperature = density_temperature_permittivity(result.permittivity_form);
     const bool quotient = density_temperature_ion_suppression(result.permittivity_form);
     const bool dipolar = document.permittivity_choice == "dipolar-perturbation";
+    const bool volume_weighted = result.permittivity_form.is(PermittivityForm::SolventVolumeWeighting);
     for (const auto& entry : document.entries) {
+        const bool reciprocal = entry.field == "permittivity_reciprocal_temperature_coefficient";
         const bool dipolar_field = entry.field == "dipole_scaling" || entry.field == "polarizability_scaling"
             || entry.field == "correlation_integral_parameter";
         const bool density_field = entry.field == "dielectric_volume" || entry.field == "dielectric_temperature";
@@ -347,7 +361,8 @@ Parameters build_parameters(const ParameterDocument& document) {
              && document.permittivity_choice != "ion-fraction-suppression"
              && (quotient ? entry.index.empty() : document.permittivity_choice != "ion-specific-suppression"))
             || (dipolar_field && !dipolar) || (density_field && !density_temperature) || (dipole_field && !polar) || (quadrupole_field && !quadrupolar)
-            || ((entry.field == "relative_permittivity" || entry.field == "permittivity_term_coefficient"
+            || (entry.field == "solvent_molar_volume" && !volume_weighted)
+            || ((entry.field == "relative_permittivity" || entry.field == "permittivity_term_coefficient" || reciprocal
                  || entry.field == "permittivity_reference_temperature") && (dipolar || density_temperature))
             || ((entry.field == "ionic_region_relative_permittivity"
                  || entry.field == "born_c_shell"
@@ -408,6 +423,12 @@ Parameters build_parameters(const ParameterDocument& document) {
                 reject("charge " + where(entry) + " is not integral");
             }
             result.charge_number[i] = static_cast<int>(entry.magnitude * factor);
+        } else if (entry.field == "solvent_volume_reference_temperature" || entry.field == "solvent_volume_reference_pressure") {
+            if (!volume_weighted) reject("unconsumed " + where(entry));
+            require_index(entry, 0, "solvent volume reference state");
+            const double value = entry.magnitude * unit_factor(entry, entry.field == "solvent_volume_reference_temperature" ? "kelvin" : "pascal");
+            if (!(value > 0.0) || !std::isfinite(value)) reject("invalid " + where(entry));
+            scalar_fields.insert(entry.field);
         } else if (entry.field == "permittivity_solvent" || entry.field == "permittivity_normalization") {
             if (!result.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) reject("unconsumed " + where(entry));
             const double value = entry.magnitude * unit_factor(entry, "dimensionless");
@@ -431,12 +452,15 @@ Parameters build_parameters(const ParameterDocument& document) {
                 reject("sigma term index out of range for " + where(entry));
             }
             sigma_term_components[entry.index[0]] = entry.index[1];  // units are converted in the term pass below
-        } else if (entry.field == "permittivity_term_coefficient") {
-            require_index(entry, 3, "permittivity term index");
+        } else if (entry.field == "permittivity_term_coefficient" || reciprocal) {
+            require_index(entry, reciprocal ? 2 : 3, "permittivity term index");
             if (entry.index[0] >= permittivity_term_components.size() + 1 || entry.index[1] >= components) {
                 reject("permittivity term index out of range for " + where(entry));
             }
-            permittivity_term_components[entry.index[0]] = entry.index[1];
+            if (!reciprocal && entry.index[2] > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+                reject("permittivity polynomial power out of range for " + where(entry));
+            if (!permittivity_term_components.emplace(entry.index[0], entry.index[1]).second)
+                reject("duplicate permittivity term index for " + where(entry));
         } else if (entry.field == "association_combining_rule") {
             if (entry.identity != "arithmetic-energy-geometric-volume" && entry.identity != "wolbach-sandler") reject("unknown association rule " + entry.identity);
             require_index(entry, 6, "combining rule index");
@@ -518,11 +542,12 @@ Parameters build_parameters(const ParameterDocument& document) {
             if (entry.field == "sigma_term_amplitude") {
                 result.sigma_term_amplitude[term] = value; sigma_amplitude.insert(term);
             } else { result.sigma_term_exponent[term] = value; sigma_exponent.insert(term); }
-        } else if (entry.field == "permittivity_term_coefficient") {
+        } else if (entry.field == "permittivity_term_coefficient" || entry.field == "permittivity_reciprocal_temperature_coefficient") {
             const auto term = entry.index[0];
+            const int power = entry.index.size() == 2 ? -1 : static_cast<int>(entry.index[2]);
             result.permittivity_term_component[term] = static_cast<int>(entry.index[1]);
-            result.permittivity_term_power[term] = static_cast<int>(entry.index[2]);
-            result.permittivity_term_coefficient[term] = entry.magnitude * unit_factor(entry, -static_cast<int>(entry.index[2]));
+            result.permittivity_term_power[term] = power;
+            result.permittivity_term_coefficient[term] = entry.magnitude * unit_factor(entry, -power);
             permittivity_coefficients.insert(term);
         } else if (entry.field == "temperature_law_coefficient" || entry.field == "temperature_law_reciprocal_slope"
                    || (entry.field == "association_volume_correction" && !intercepts.count(entry.index[0]))) {
@@ -553,12 +578,20 @@ Parameters build_parameters(const ParameterDocument& document) {
     if (sigma_amplitude != sigma_exponent || sigma_amplitude.size() != sigma_terms) reject("incomplete sigma term");
     if (permittivity_coefficients.size() != permittivity_terms) reject("incomplete permittivity term");
 
-    if (result.permittivity_form.is(PermittivityForm::SolventMoleWeighting)) {
-        if (!scalar_fields.count("permittivity_normalization")) reject("missing permittivity normalization");
+    const bool full_species = result.permittivity_form.is(PermittivityForm::FullSpeciesMoleWeighting);
+    if (solvent_weighted_permittivity(result.permittivity_form) || full_species) {
+        if (volume_weighted) {
+            for (const auto* field : {"solvent_volume_reference_temperature", "solvent_volume_reference_pressure"})
+                if (!scalar_fields.count(field)) reject(std::string("missing ") + field);
+        } else if (!full_species && !scalar_fields.count("permittivity_normalization")) reject("missing permittivity normalization");
         for (std::size_t i = 0; i < components; ++i) {
-            const bool law = component_fields.count({"relative_permittivity", i})
+            const bool constant = component_fields.count({"relative_permittivity", i});
+            const bool law = constant
                 || std::find(result.permittivity_term_component.begin(), result.permittivity_term_component.end(), i) != result.permittivity_term_component.end();
-            if (law != bool(result.permittivity_solvent[i])) reject("missing or unconsumed solvent dielectric law");
+            if (volume_weighted) result.permittivity_solvent[i] = component_fields.count({"solvent_molar_volume", i});
+            if (full_species) {
+                if (!(result.charge_number[i] == 0 ? law : constant)) reject("missing component/" + document.component_ids[i] + "/relative_permittivity");
+            } else if (law != bool(result.permittivity_solvent[i])) reject("missing or unconsumed solvent dielectric law");
         }
     }
     for (std::size_t i = 0; i < components; ++i) {
