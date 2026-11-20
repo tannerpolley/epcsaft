@@ -61,6 +61,7 @@ guide/index
 Examples <examples/index>
 api/index
 theory/index
+cross-code-checks
 limits
 contributing
 ```
