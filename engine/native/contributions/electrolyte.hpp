@@ -111,9 +111,18 @@ Scalar bulk_relative_permittivity(
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters
 ) {
+    const auto form = parameters.permittivity_form;
+    // EqID: arithmetic_density_correlated_bulk_permittivity
+    if (form.is(PermittivityForm::DensityTemperatureArithmetic)) {
+        Fixed coefficient = Fixed(0.0);
+        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
+            if (parameters.charge_number[i] == 0)
+                coefficient += mole_fractions[i] * parameters.dielectric_volume_m3_per_mol[i]
+                    * (parameters.dielectric_temperature_k[i] / temperature - Fixed(1.0));
+        return Scalar(1.0) + molar_density * coefficient;
+    }
     const auto relative_permittivity = component_relative_permittivities(temperature, parameters);
     // EqID: solvent_mole_weighted_bulk_permittivity
-    const auto form = parameters.permittivity_form;
     if (solvent_weighted_permittivity(form)) {
         // EqID: solvent_volume_weighted_bulk_permittivity
         const bool volume_weighted = form.is(PermittivityForm::SolventVolumeWeighting);
@@ -126,8 +135,8 @@ Scalar bulk_relative_permittivity(
             denominator += weight;
         }
         if (parameters.permittivity_solvent_normalized) {
-            if constexpr (std::is_same_v<Fixed, double>)
-                if (!(denominator > 0.0)) throw std::invalid_argument("permittivity has no solvent denominator");
+            if (!(permittivity_primal(scalar_lead(denominator)) > 0.0))
+                throw std::invalid_argument("permittivity has no solvent denominator");
             return numerator / denominator;
         }
         return numerator;
@@ -138,15 +147,6 @@ Scalar bulk_relative_permittivity(
         for (std::size_t i = 0; i < mole_fractions.size(); ++i)
             mixture += mole_fractions[i] * relative_permittivity[i];
         return mixture;
-    }
-    // EqID: arithmetic_density_correlated_bulk_permittivity
-    if (form.is(PermittivityForm::DensityTemperatureArithmetic)) {
-        Fixed coefficient = Fixed(0.0);
-        for (std::size_t i = 0; i < mole_fractions.size(); ++i)
-            if (parameters.charge_number[i] == 0)
-                coefficient += mole_fractions[i] * parameters.dielectric_volume_m3_per_mol[i]
-                    * (parameters.dielectric_temperature_k[i] / temperature - Fixed(1.0));
-        return Scalar(1.0) + molar_density * coefficient;
     }
     Fixed solvent_mass = Fixed(0.0);
     Fixed dielectric_mass = Fixed(0.0);

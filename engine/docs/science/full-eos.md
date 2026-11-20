@@ -435,7 +435,7 @@ with dielectric laws. The permittivity record requires a common
 `reference_temperature` in `kelvin` and `reference_pressure` in `pascal`, each a quantity with
 `magnitude` and `unit`. The component coefficients are pure-liquid molar volumes on this
 reference basis. The state evaluation uses the supplied volumes as constants and requires
-positive total selected solvent volume when screening ions.
+positive total selected solvent volume when evaluating the rule. The weights always use solvent normalization.
 
 `full-species-mole-weighting` uses the [linear species sum](../equations.md#full_species_mole_weighted_bulk_permittivity).
 Declare a relative-permittivity law for each neutral component and an explicit `relative_permittivity`
@@ -491,7 +491,9 @@ Defining relation: [EqID: `density_correlation_mixed_parameters`](../equations.m
 `solvent-density-temperature-arithmetic` consumes the same component records
 and uses the [Perdomo arithmetic rule](../equations.md#arithmetic_density_correlated_bulk_permittivity).
 It evaluates each solvent's temperature law before averaging the resulting coefficients
-on the salt-free solvent mole basis. Both forms coincide for a single solvent.
+on the salt-free solvent mole basis. The Engine multiplies the resulting average
+by its solvent partial density, the solvent moles per volume of salted solution.
+Both forms coincide for a single solvent.
 
 The source water comparison uses `d_V = 0.3777 dm3 mol^-1` and
 `d_T = 1403 K` from Yang2024. Because solvent partial density is explicit,

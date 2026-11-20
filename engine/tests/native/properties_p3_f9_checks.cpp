@@ -447,23 +447,49 @@ void solvent_mixture_permittivity() {
 
     // Novak et al., Eq. (1) and Table 3. Rounded test volumes in L/mol at 298.15 K, 1 bar.
     const double methanol = std::pow(10., 1.514), butanol = 17.58;
+    constexpr double v_a = 0.0407, v_b = 0.0920;
     auto volume_doc = document("solvent-volume-weighting", 32.04186, 74.1216);
     volume_doc.entries.insert(volume_doc.entries.end(), {
         {"methanol", "relative_permittivity", {0}, methanol, "dimensionless"},
         {"1-butanol", "relative_permittivity", {1}, butanol, "dimensionless"},
-        {"methanol", "solvent_molar_volume", {0}, 0.0407, "liter / mole"},
-        {"1-butanol", "solvent_molar_volume", {1}, 0.0920, "liter / mole"},
+        {"methanol", "solvent_molar_volume", {0}, v_a, "liter / mole"},
+        {"1-butanol", "solvent_molar_volume", {1}, v_b, "liter / mole"},
         {"volume T", "solvent_volume_reference_temperature", {}, temperature, "kelvin"},
         {"volume P", "solvent_volume_reference_pressure", {}, 1.e5, "pascal"},
     });
     const epcsaft::HelmholtzModel volume(epcsaft::build_parameters(volume_doc));
-    const double phi = 1. / (1. + (1. - fraction) / fraction * 0.0920 / 0.0407);
-    check("solvent-volume/value", "1", value(volume, temperature, fraction), butanol + phi * (methanol - butanol),
+    const double phi = 1. / (1. + (1. - fraction) / fraction * v_b / v_a);
+    const double volume_reference = butanol + phi * (methanol - butanol);
+    check("solvent-volume/value", "1", value(volume, temperature, fraction), volume_reference,
         "Novak Eq. 1, Table 3", value_allowance, temperature);
     check("solvent-volume/composition", "1", derivative(volume, temperature, fraction, 0., 1.),
         composition_difference(volume), "central difference h=1e-5", slope_allowance, temperature);
+    constexpr double s = 0.8, ion = (1. - s) / 2.;
+    const std::vector<double> salted{s * fraction, s * (1. - fraction), ion, ion};
+    std::vector<std::vector<double>> salted_series;
+    for (double x : salted) salted_series.push_back({x, 0.});
+    const double denominator = salted[0] * v_a + salted[1] * v_b;
+    const std::array<double, 4> partials{
+        v_a * (methanol - volume_reference) / denominator,
+        v_b * (butanol - volume_reference) / denominator, 0., 0.};
+    const std::array<const char*, 4> names{"solvent-volume/partial-methanol", "solvent-volume/partial-butanol",
+        "solvent-volume/partial-cation", "solvent-volume/partial-anion"};
+    for (std::size_t i = 0; i < salted.size(); ++i) {
+        salted_series[i][1] = 1.;
+        const auto series = volume.bulk_relative_permittivity_series({temperature, 0.}, {density, 0.}, salted_series);
+        check(names[i], "1", series[1], partials[i], "analytical partial of Novak Eq. 1", value_allowance, temperature);
+        salted_series[i][1] = 0.;
+    }
+    for (std::size_t order : {1U, 2U}) {
+        const auto message = recording_support::refusal([&] {
+            const std::vector<std::vector<double>> ions_only{{0., 1.}, {0., -1.}, {0.5, 0.}, {0.5, 0.}};
+            volume.bulk_relative_permittivity_series(std::vector<double>(order, temperature),
+                std::vector<double>(order, density), ions_only);
+        });
+        CHECK(message.find("permittivity has no solvent denominator") != std::string::npos);
+    }
 
-    // Perdomo et al., Eqs. (73)-(77), Table 2. Acetone and acetic acid.
+    // Perdomo et al., Eqs. (75)-(77), Table 2. Acetone and acetic acid on the Engine solvent partial-density basis.
     auto arithmetic_doc = document("solvent-density-temperature-arithmetic", 58.0791, 60.0520);
     arithmetic_doc.entries.insert(arithmetic_doc.entries.end(), {
         {"acetone", "dielectric_volume", {0}, 0.2391, "liter / mole"},
@@ -480,7 +506,14 @@ void solvent_mixture_permittivity() {
     check("arithmetic-density/pure", "1", value(arithmetic, temperature, 1.), value(separate, temperature, 1.),
         "Perdomo Eq. 74, pure limit of both forms", value_allowance, temperature);
     check("arithmetic-density/binary", "1", value(arithmetic, temperature, fraction), 1. + density / 1000. * pair_mix,
-        "Perdomo Eqs. 73-77, Table 2", value_allowance, temperature);
+        "Perdomo Eqs. 75-77, Table 2", value_allowance, temperature);
+    check("arithmetic-density/salted-value", "1", arithmetic.state(temperature, density, salted).bulk_relative_permittivity,
+        1. + density * s / 1000. * pair_mix, "Perdomo pair mean at Engine solvent partial density", value_allowance, temperature);
+    const double slope_salted = -density / (1000. * temperature * temperature)
+        * (salted[0] * 0.2391 * 2221.700 - salted[1] * 0.7275 * 177.4429);
+    check("arithmetic-density/salted-temperature", "1/K",
+        arithmetic.bulk_relative_permittivity_series({temperature, 1.}, {density, 0.}, salted_series)[1],
+        slope_salted, "analytical fixed-density derivative", value_allowance, temperature);
     check("arithmetic-density/temperature", "1/K", derivative(arithmetic, temperature, fraction, 1., 0.),
         (value(arithmetic, temperature + dT, fraction) - value(arithmetic, temperature - dT, fraction)) / (2. * dT),
         "central difference h=1e-3 K", slope_allowance, temperature);

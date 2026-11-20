@@ -105,7 +105,8 @@ def _choice(families: Sequence[object], kind: str, default: str | None = None) -
 
 
 # The model_families fields from_mapping reads.
-_FAMILY_FIELDS = ("choice", "ionic_dispersion", "c_shell", "c_dielectric", "solvents", "normalization")
+_FAMILY_FIELDS = ("choice", "ionic_dispersion", "c_shell", "c_dielectric", "solvents", "normalization",
+                  "reference_temperature", "reference_pressure")
 
 
 def _named(record: Mapping[str, Any]) -> set[str]:
@@ -509,6 +510,8 @@ class Parameters:
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
             if polynomial and family != "relative_permittivity":
                 raise _core.ParameterError(f"unknown correlation form {correlation_id}")
+            if "reciprocal_temperature_coefficient" in item and form != "constant-plus-polynomial-and-reciprocal-in-temperature":
+                raise ParameterError(f"{correlation_id}: reciprocal_temperature_coefficient requires constant-plus-polynomial-and-reciprocal-in-temperature")
             base = "sigma_constant" if family == "segment_diameter" else "relative_permittivity"
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
             entries.add(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id))
@@ -580,6 +583,8 @@ class Parameters:
         permittivity = _choice(families, "permittivity")
         if permittivity == "solvent-volume-weighting":
             record = next(_mapping(item, "permittivity") for item in families if _mapping(item, "permittivity").get("kind") == "permittivity")
+            if record.get("normalization", "solvent-normalized") != "solvent-normalized":
+                raise ParameterError("solvent-volume-weighting requires solvent-normalized weighting")
             for reference_quantity in ("temperature", "pressure"):
                 field = f"solvent_volume_reference_{reference_quantity}"
                 value = _mapping(record.get(f"reference_{reference_quantity}"), field)

@@ -691,10 +691,10 @@ $$
 ## `arithmetic_density_correlated_bulk_permittivity`
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
-- Status: Exact derivation
-- Source: Perdomo, Jackson, Mitsos, Galindo, and Adjiman (2025), DOI 10.1016/j.compchemeng.2024.108977, Eqs. (73)–(77)
+- Status: Implementation convention
+- Source: Perdomo, Jackson, Mitsos, Galindo, and Adjiman (2025), DOI 10.1016/j.compchemeng.2024.108977, Eqs. (75)–(77) for the coefficient and its mixing rule
 - Description: Arithmetic mixing of each neutral solvent's temperature-dependent dielectric density coefficient.
-- Change note: Summing the pair means $(d_i+d_j)/2$ with weights $y_i y_j$ gives $\sum_j y_jd_j$. Substitution of the solvent partial density $\rho_m s$ yields the total-species mole-fraction sum below.
+- Change note: Summing the pair means $(d_i+d_j)/2$ with weights $y_i y_j$ gives $\sum_j y_jd_j$, where $y_j=x_j/s$ and $s=\sum_{j\in S}x_j$. The Engine uses $\rho_{\mathrm{solv}}=\rho_m s$, solvent moles per volume of the salted solution. This density basis is the Engine convention shared with the separate-averaging rule. Perdomo et al. supply the coefficient and the solvent mole-fraction average.
 
 $$
 d_j(T)=d_{Vj}\left(\frac{d_{Tj}}{T}-1\right),\qquad
