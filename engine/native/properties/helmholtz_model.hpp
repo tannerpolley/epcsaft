@@ -15,6 +15,7 @@
 #include <array>
 #include <cstddef>
 #include <deque>
+#include <functional>
 #include <mutex>
 #include <limits>
 #include <map>
@@ -39,7 +40,7 @@ using ActiveParameter = detail::ActiveParameter;
 // gradient/Hessian entries and the floor's coordinates are uncomputed padding, not physical zeros.
 // Dry cation-mixing transverse entries are defined zero storage, not physical insertion derivatives (full EOS 12).
 // StateHessian keeps the full gradient and T, V and active-parameter Hessian columns.
-enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian, FixedParameterHessian, FixedParameterGradient, FixedParameterStateHessian };
+enum class DerivativeOrder { Value, Gradient, PressureSlope, Hessian, PhaseHessian, IsothermalPhaseHessian, StateHessian, FixedParameterHessian, FixedParameterGradient, FixedParameterStateHessian, PhaseGradient, IsothermalPhaseGradient };
 
 enum class NeutralProperty { ResidualHelmholtz, Pressure };
 
@@ -60,6 +61,7 @@ struct HelmholtzDerivativeValues final {
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
     Eigen::MatrixXd site_sensitivity;
+    std::function<void(HelmholtzDerivativeValues&)> complete_hessian;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent

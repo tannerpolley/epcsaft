@@ -484,7 +484,7 @@ struct CompiledSystem final {
         const std::vector<bool>& site_phases = {}, bool parameter_actions = false) const;
     template <typename Base>
     PhasePointValues<Base> prepare_values(const std::vector<Base>&, bool,
-        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt, const std::vector<bool>& site_phases = {}, bool parameter_actions = false) const;
+        std::optional<core::Convergence>* = nullptr, std::optional<std::size_t> = std::nullopt, const std::vector<bool>& site_phases = {}, bool parameter_actions = false, bool gradient_only = false) const;
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
     template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;

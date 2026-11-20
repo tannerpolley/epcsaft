@@ -432,7 +432,7 @@ private:
         core::retain_failure(observations_.first_numerical_failure, error, operation);
     }
     bool step_admitted(const Ipopt::Number* x);
-    const PhasePoint& prepared(Ipopt::Index n, const Ipopt::Number* x);
+    const PhasePoint& prepared(Ipopt::Index n, const Ipopt::Number* x, bool hessian = false);
     const PointEvaluation& rows_at(Ipopt::Index n, const Ipopt::Number* x);
 
     const CompiledSystem& compiled_;
@@ -442,8 +442,6 @@ private:
 
     std::optional<PhasePoint> prepared_;
     std::optional<PointEvaluation> rows_;
-    std::optional<std::vector<double>> jacobian_;
-    std::optional<std::vector<double>> gradient_;
     std::optional<std::vector<double>> objective_hessian_;
     std::optional<std::vector<double>> constraint_hessian_;
     std::vector<double> constraint_hessian_multipliers_;

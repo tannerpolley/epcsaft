@@ -605,15 +605,15 @@ bool GibbsMinimizer::step_admitted(const Ipopt::Number* x) {
     return true;
 }
 
-const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x) {
+const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x, bool hessian) {
     if (!prepared_.has_value() || !std::equal(x, x + n, prepared_->point.begin(), prepared_->point.end(),
         [&, i = std::size_t{0}](double value, double stored) mutable { return value * chart_[i++] == stored; })) {
         std::vector<double> candidate(x, x + n);
         for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
-        prepared_ = compiled_.prepare(candidate, true, &observations_.first_numerical_failure);
+        // Critical and spinodal mode rows consume curvature even at value order.
+        prepared_ = compiled_.prepare_values(candidate, true, &observations_.first_numerical_failure,
+            std::nullopt, {}, false, !hessian && !compiled_.mode_count);
         rows_.reset();
-        jacobian_.reset();
-        gradient_.reset();
         objective_hessian_.reset();
         constraint_hessian_.reset();
         ++prepared_points_;
@@ -621,6 +621,12 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
             prepared_.reset();
             throw std::domain_error(*refused);
         }
+    }
+    // Start at the last phase while its zeroth-order tape state is still live.
+    if (hessian) for (auto phase = prepared_->derivative.rbegin(); phase != prepared_->derivative.rend(); ++phase) {
+        if (!phase->complete_hessian) continue;
+        phase->complete_hessian(*phase);
+        phase->complete_hessian = {};
     }
     if (limits_) limits_->check();
     return *prepared_;
@@ -654,9 +660,8 @@ bool GibbsMinimizer::eval_grad_f(
     core::Scope callback("ipopt_eval_grad_f");
     try {
         if (!step_admitted(x)) return false;
-        const auto& point = prepared(n, x);
-        if (!gradient_.has_value()) gradient_ = compiled_.objective_gradient_at(point);
-        for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = (*gradient_)[i] * chart_[i];
+        const auto gradient = compiled_.objective_gradient_at(prepared(n, x));
+        for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = gradient[i] * chart_[i];
         return true;
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_grad_f");
@@ -687,7 +692,6 @@ bool GibbsMinimizer::eval_jac_g(
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
     core::Scope callback("ipopt_eval_jac_g");
-    const auto& rows = constraint_rows_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < m; ++row) {
@@ -700,12 +704,11 @@ bool GibbsMinimizer::eval_jac_g(
     }
     try {
         if (!step_admitted(x)) return false;
-        const auto& point = prepared(n, x);
-        if (!jacobian_.has_value()) jacobian_ = compiled_.jacobian_at(point);
+        const auto jacobian = compiled_.jacobian_at(prepared(n, x, true));
         Ipopt::Index entry = 0;
-        for (const std::size_t row : rows) {
+        for (const std::size_t row : constraint_rows_) {
             for (Ipopt::Index column = 0; column < n; ++column) {
-                values[entry++] = (*jacobian_)[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
+                values[entry++] = jacobian[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
             }
         }
         return entry == nele_jac;
@@ -734,10 +737,9 @@ bool GibbsMinimizer::eval_h(
         }
         return entry == nele_hess;
     }
-    std::fill(values, values + nele_hess, 0.0);
     try {
         if (!step_admitted(x)) return false;
-        const auto& point = prepared(n, x);
+        const auto& point = prepared(n, x, true);
         // Objective curvature is multiplier independent; the weighted constraint curvature is
         // recombined whenever the optimizer multipliers change at the same point.
         if (!objective_hessian_.has_value()) objective_hessian_ = compiled_.hessian_at(point, {});

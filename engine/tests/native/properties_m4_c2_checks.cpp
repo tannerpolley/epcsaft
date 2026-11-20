@@ -608,6 +608,13 @@ void cache_invariance() {
     const auto fresh_b = epcsaft::HelmholtzModel(
         properties_support::aqueous_electrolyte()).evaluate(
             315.15, 1.25e-3, {1.25, 0.0, 0.0}, epcsaft::DerivativeOrder::Hessian);
+    auto deferred = model.evaluate(323.15, 1.5e-3, {1.35, 0.12, 0.03}, epcsaft::DerivativeOrder::PhaseGradient);
+    (void)model.evaluate(298.15, 1.0e-3, {0.98, 0.01, 0.01}, epcsaft::DerivativeOrder::PhaseGradient);
+    CHECK(deferred.hessian.empty() && deferred.complete_hessian);
+    deferred.complete_hessian(deferred);
+    CHECK(deferred.hessian.size() == fresh_a.hessian.size());
+    for (std::size_t i = 0; i < fresh_a.hessian.size(); ++i)
+        CHECK(close(deferred.hessian[i], fresh_a.hessian[i], 1e-10));
     const std::array<const epcsaft::HelmholtzDerivatives*, 2> retained = {
         &a_again, &b_again};
     const std::array<const epcsaft::HelmholtzDerivatives*, 2> fresh = {
