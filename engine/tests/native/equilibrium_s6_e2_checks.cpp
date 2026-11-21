@@ -1560,6 +1560,16 @@ void check_species_thermochemistry() {
     problem.reactions = {{"N2O4=2NO2",nu,{},{},{},{}}}; problem.solver_options.values[policy::row] = 1e-10;
     HelmholtzModel model(p,{},r); const auto c = compile_problem(model,problem); const auto solved = solve_equilibrium(model,problem);
     CHECK(solved.success); CHECK(!solved.residuals.empty());
+    const std::vector<std::string> species{"N2O4", "NO2"};
+    const auto retained = compile_problem(model, problem, species);
+    auto warmer = problem;
+    warmer.temperature = FreeValue::fixed(510.0);
+    const auto fresh = solve_equilibrium(model, warmer, {}, species);
+    const auto refreshed = solve_equilibrium(model, warmer, {}, species, retained);
+    CHECK(fresh.success && refreshed.success);
+    CHECK(fresh.mole_fractions[1] != solved.mole_fractions[1]);
+    CHECK(refreshed.mole_fractions == fresh.mole_fractions);
+    CHECK(refreshed.classified_residuals == fresh.classified_residuals);
     for(auto v:solved.residuals) CHECK(std::abs(v)<=1e-10);
     CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[0]-0.0013392705057121423)<=2e-9);
     CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[1]-1.9973214589885757)<=2e-9);
