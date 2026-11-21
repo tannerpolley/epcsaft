@@ -527,10 +527,11 @@ void properties_p4() {
     }
     {
         using namespace epcsaft;
-        // The density series uses the analytic pair start. The action uses the unbonded start.
+        // The zero-strength self edge keeps the Newton path. The density series uses its
+        // analytic start, while the action uses the unbonded start.
         auto parameters = properties_support::association_stress(2, 0.3);
         const double energy = parameters.association_energy_over_k[0];
-        parameters.association_active = {0, 1, 1, 0};
+        parameters.association_active = {1, 1, 1, 0};
         parameters.association_energy_over_k = {0.0, energy, energy, 0.0};
         parameters.association_volume = {0.0, 0.1, 0.1, 0.0};
         parameters.site_multiplicity = {2, 1};
