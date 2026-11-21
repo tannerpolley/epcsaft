@@ -2302,19 +2302,25 @@ EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const Equilibri
 
 EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel& model, const EquilibriumProblem& request,
     std::optional<CompiledSystem>& compiled, const std::optional<EquilibriumResult>& start,
-    const std::vector<std::string>& component_ids) {
+    const std::vector<std::string>& component_ids, const CompiledSystem* prepared) {
     core::Scope scope("solve_equilibrium");  // compilation belongs to the solve's span
     EquilibriumAttemptReporting reporting;
     if (!request.discovery || request.prescribed_liquid_composition) {
-        compiled = compile_problem(model, request);
+        compiled = prepared ? refresh_problem(model, request, component_ids, *prepared) : compile_problem(model, request);
         if (component_ids.size() == model.parameters().component_count()) reporting.composition_bound_species = &component_ids;
     }
     auto result = request.discovery ? discover_phases(model, request) : solve_compiled(*compiled, start, &scope, nullptr,
         !request.prescribed_liquid_composition && start && start->success && start->requested_tolerance_met.value_or(false)
             ? start->optimizer_state : nullptr, !start, true, reporting);
     if (scope.diagnostics_on() && !scope.nested("solve_equilibrium"))
-        observe_endpoint(model, compiled ? &*compiled : nullptr, result, scope);
+        observe_endpoint(model, (!request.discovery || request.prescribed_liquid_composition) && compiled ? &*compiled : nullptr, result, scope);
     return result;
+}
+
+EquilibriumResult solve_equilibrium(const HelmholtzModel& model, const EquilibriumProblem& request,
+    const std::optional<EquilibriumResult>& start, const std::vector<std::string>& component_ids, const CompiledSystem& prepared) {
+    std::optional<CompiledSystem> compiled;
+    return solve_equilibrium_retaining_compiled(model, request, compiled, start, component_ids, &prepared);
 }
 
 EquilibriumResult solve_equilibrium(const IdealMoleFraction& model, const EquilibriumProblem& request,

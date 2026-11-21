@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cstring>
 #include <cmath>
 #include <Eigen/Dense>
 #include <limits>
@@ -16,6 +17,82 @@
 #include <string>
 
 namespace epcsaft::equilibrium {
+
+struct CompiledSystem::Declaration final {
+    EquilibriumProblem request;
+    std::vector<std::string> species;
+    CompiledSystem compiled;
+};
+
+namespace {
+
+// Structured bindings make an added declaration field require an identity decision.
+#define INPUT_FIELDS(Type, ...) auto input_fields(const Type& item) { const auto& [__VA_ARGS__] = item; return std::tie(__VA_ARGS__); }
+INPUT_FIELDS(ReactionLogPolynomial, a, b, c, d, reference_temperature, temperature_min, temperature_max, standard_state, e, f)
+INPUT_FIELDS(ReactionReference, reference_pressure, source_basis)
+INPUT_FIELDS(ReactionSpec, name, stoichiometry, equilibrium_constant, affinity, correlation, reference)
+INPUT_FIELDS(AmountSpec, kind, fraction)
+INPUT_FIELDS(SolidSpec, name, stoichiometry, equilibrium_constant, correlation, reference, molar_volume, amount)
+INPUT_FIELDS(NeutralReferenceDeclaration, solvent, molality_ratios, standard_molality, species_reference)
+INPUT_FIELDS(CriticalDeclaration, density_guess, mode_guess)
+INPUT_FIELDS(AffineLoading, initial, direction, lower, upper, seed, pressure)
+#undef INPUT_FIELDS
+
+auto input_fields(const PhaseSpec& p) {
+    return std::make_tuple(p.kind, std::cref(p.name), std::cref(p.support), p.support_declared, p.declared_composition_guess,
+        p.composition_guess.size(), bool(p.packing_guess), std::cref(p.amount));
+}
+auto input_fields(const SpinodalDeclaration& x) { return std::tuple_cat(input_fields(static_cast<const CriticalDeclaration&>(x)),
+    std::tie(x.density_nodes)); }
+
+struct InputEquality final {
+    static bool same(double a, double b) { return std::memcmp(&a, &b, sizeof(a)) == 0; }
+    static bool same(const std::string& a, const std::string& b) { return a == b; }
+    static bool same(const std::shared_ptr<const policy::Tolerance>& a, const std::shared_ptr<const policy::Tolerance>& b) { return a == b; }
+    template<class T> static std::enable_if_t<std::is_enum_v<T> || std::is_integral_v<T>, bool> same(T a, T b) { return a == b; }
+    template<class T> static auto same(const T& a, const T& b) -> decltype(input_fields(a), bool()) {
+        return same(input_fields(a), input_fields(b));
+    }
+    template<class T> static bool same(const std::optional<T>& a, const std::optional<T>& b) {
+        return bool(a) == bool(b) && (!a || same(*a, *b));
+    }
+    template<class T> static auto same(const T& a, const T& b) -> decltype(a.begin(), bool()) {
+        return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](const auto& x, const auto& y) { return same(x, y); });
+    }
+    template<class... T> static bool same(const std::tuple<T...>& a, const std::tuple<T...>& b) {
+        return same_tuple(a, b, std::index_sequence_for<T...>{});
+    }
+    template<class T, std::size_t... I> static bool same_tuple(const T& a, const T& b, std::index_sequence<I...>) {
+        return (same(std::get<I>(a), std::get<I>(b)) && ...);
+    }
+};
+
+bool same_declaration(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    const auto fields = [](const EquilibriumProblem& x) {
+        return std::make_tuple(x.phase_calculation, x.topology_declared, x.azeotrope, x.temperature.free, x.temperature.absent,
+            x.pressure.free, x.pressure.absent, x.feed.kind, x.feed.values.size(), std::cref(x.feed.solvent),
+            x.feed.solvent_mass_kg, x.prescribed_liquid_composition ? x.prescribed_liquid_composition->size() + 1 : 0,
+            std::cref(x.reactions), std::cref(x.standard_gibbs_j_per_mol), std::cref(x.source_reference), bool(x.enthalpy_j),
+            bool(x.entropy_j_per_k), bool(x.volume_m3), bool(x.internal_energy_j), std::cref(x.spinodal), std::cref(x.critical),
+            x.envelope ? std::optional(std::tuple(x.envelope->kind, x.envelope->component)) : std::nullopt,
+            std::cref(x.loading), x.solver_options.nested_solve, std::cref(x.solver_options.values),
+            std::cref(x.solver_options.owners), std::cref(x.solids));
+    };
+    return InputEquality::same(a.phases, b.phases) && InputEquality::same(fields(a), fields(b));
+}
+
+bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    const auto values = [](const EquilibriumProblem& x) {
+        return std::make_tuple(x.temperature.value, x.pressure.value, std::cref(x.feed.values), std::cref(x.prescribed_liquid_composition),
+            x.enthalpy_j, x.entropy_j_per_k, x.volume_m3, x.internal_energy_j, x.envelope ? x.envelope->target : 0.0);
+    };
+    return InputEquality::same(values(a), values(b)) && std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(),
+        [](const PhaseSpec& x, const PhaseSpec& y) {
+            return InputEquality::same(std::tie(x.composition_guess, x.packing_guess), std::tie(y.composition_guess, y.packing_guess));
+        });
+}
+
+}  // namespace
 std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& c = *this;
     if (c.ideal) throw std::invalid_argument("ideal optimizer state unavailable");
@@ -216,7 +293,17 @@ static void inspect_generic_rank(CompiledSystem& compiled) {
     // The compiled record is the sole source for both the driver and callers.
 }
 
-static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, const EquilibriumProblem& request) {
+static void reuse_layout(CompiledSystem& compiled, const CompiledSystem& prepared) {
+    compiled.rows = prepared.rows;
+    compiled.shape = prepared.shape;
+    compiled.charge_row = prepared.charge_row;
+    compiled.charge_row_count = prepared.charge_row_count;
+    compiled.log_charge_rows = prepared.log_charge_rows;
+    compiled.primal_size = prepared.primal_size;
+}
+
+static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, const EquilibriumProblem& request,
+                                                const CompiledSystem* prepared = nullptr) {
     if (model.parameters().ideal_gas || !request.topology_declared || request.phases.size() != 2
         || request.temperature.free || !request.pressure.free || !request.feed.values.empty()
         || !request.feed.solvent.empty() || request.discovery || !request.reactions.empty() || !request.solids.empty()
@@ -237,6 +324,7 @@ static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, con
     };
     if (!sign_present(true) || !sign_present(false))
         throw std::invalid_argument("prescribed liquid support must include ions of both signs");
+    if (prepared && support != prepared->declared_supports.front()) return compile_problem(model, request);
     CompiledSystem compiled;
     compiled.model = &model;
     compiled.problem = request;
@@ -274,30 +362,35 @@ static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, con
     compiled.pinned_count = 2;
     compiled.free_intensive_count = 1;
     compiled.rank = support.size();
-    compiled.B.assign(compiled.rank, std::vector<double>(x.size()));
-    append_phase_rows(compiled);
-    compiled.rows.push_back({RowKind::Electro, 1, 0});
-    compiled.rows.push_back({RowKind::Normalization, 1, 0});
-    compiled.charge_row = {std::nullopt, 0};
-    compiled.charge_row_count = 1;
-    std::size_t column = 0;
-    for (std::size_t phase = 0; phase < 2; ++phase) {
-        auto& layout = compiled.shape.emplace_back();
-        for (std::size_t i = 0; i < support.size(); ++i) {
-            layout.x.push_back(column++);
-            if (phase == 0) compiled.rows.push_back({RowKind::PrescribedComposition, 0, i});
+    if (prepared) {
+        compiled.B = prepared->B;
+        reuse_layout(compiled, *prepared);
+    } else {
+        compiled.B.assign(compiled.rank, std::vector<double>(x.size()));
+        append_phase_rows(compiled);
+        compiled.rows.push_back({RowKind::Electro, 1, 0});
+        compiled.rows.push_back({RowKind::Normalization, 1, 0});
+        compiled.charge_row = {std::nullopt, 0};
+        compiled.charge_row_count = 1;
+        std::size_t column = 0;
+        for (std::size_t phase = 0; phase < 2; ++phase) {
+            auto& layout = compiled.shape.emplace_back();
+            for (std::size_t i = 0; i < support.size(); ++i) {
+                layout.x.push_back(column++);
+                if (phase == 0) compiled.rows.push_back({RowKind::PrescribedComposition, 0, i});
+            }
+            layout.volume = column++;
         }
-        layout.volume = column++;
+        for (std::size_t i = 0; i < support.size(); ++i) compiled.B[i][support[i]] = 1;
+        compiled.primal_size = column + 1;
     }
-    for (std::size_t i = 0; i < support.size(); ++i) compiled.B[i][support[i]] = 1;
-    compiled.primal_size = column + 1;
     inspect_generic_rank(compiled);
     return compiled;
 }
 
 static CompiledSystem compile_with_basis(
     const HelmholtzModel& model, const EquilibriumProblem& request,
-    const std::vector<std::vector<double>>* trial_basis
+    const std::vector<std::vector<double>>* trial_basis, const CompiledSystem* prepared = nullptr
 ) {
     if (model.parameters().ideal_gas && (request.phases.size() != 1 || request.phases[0].kind != PhaseKind::Vapor
         || request.temperature.free || request.pressure.free || !request.solids.empty() || request.discovery
@@ -341,13 +434,16 @@ static CompiledSystem compile_with_basis(
     // full declared width for supplied guesses and starts.
     std::vector<std::size_t> all(components);
     std::iota(all.begin(), all.end(), 0);
+    const bool reuse_support = prepared && prepared->removed_species.empty();
     for (auto& phase : compiled.problem.phases) {
         const bool omitted = phase.support.empty() && !phase.support_declared;
-        phase.support = resolve_support(phase, all, z, &model.parameters());
+        phase.support = reuse_support ? prepared->problem.phases[compiled.declared_supports.size()].support
+                                     : resolve_support(phase, all, z, &model.parameters());
         compiled.declared_supports.push_back(omitted ? all : phase.support);
         if (omitted && phase.composition_guess.size() == components) restrict_composition_guess(phase, all);
     }
-    compiled.B = trial_basis ? *trial_basis : balance_basis(components, request.reactions, &compiled);
+    compiled.B = trial_basis ? *trial_basis : reuse_support && request.reactions.empty() ? prepared->B
+        : balance_basis(components, request.reactions, &compiled);
     // An azeotrope cell's B' = T B makes the last row the total amount, the only balance row it keeps.
     if (request.azeotrope && request.reactions.empty()) compiled.B.back().assign(components, 1.0);
     compiled.rank = compiled.B.size();
@@ -445,6 +541,9 @@ static CompiledSystem compile_with_basis(
         }
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
+    const auto same_support = [](const auto& a, const auto& b) { return a.support == b.support; };
+    if (prepared && (compiled.rank != prepared->rank || !std::equal(compiled.problem.phases.begin(), compiled.problem.phases.end(), prepared->problem.phases.begin(), same_support)))
+        return compile_problem(model, request);
     admit_pins(compiled);
     if (!request.solids.empty() && (request.temperature.free || request.pressure.free))
         throw std::invalid_argument("solids require fixed T and P");
@@ -481,10 +580,10 @@ static CompiledSystem compile_with_basis(
             + "; pin a phase or free T or P"
         );
     }
-    append_phase_rows(compiled);
+    if (!prepared) append_phase_rows(compiled);
     // Every ion-bearing phase has a charge row except the first with a free or positive amount.
     bool rowless = false;
-    for (std::size_t phase = 0; phase < phases.size(); ++phase) {
+    for (std::size_t phase = 0; !prepared && phase < phases.size(); ++phase) {
         const auto& spec = phases[phase];
         if (std::none_of(spec.support.begin(), spec.support.end(), [&](std::size_t i) { return z[i] != 0; })) continue;
         if (!rowless && (spec.is_free() || spec.amount.fraction > 0.0)) {
@@ -503,40 +602,46 @@ static CompiledSystem compile_with_basis(
     // central_reference_reactions refuses supplied standard Gibbs with a source reference.
     compiled.standard_gibbs = standard_state_series(temperature_guess, components, central_reactions, request.standard_gibbs_j_per_mol, 0, model.thermochemistry() ? &*model.thermochemistry() : nullptr, nullptr, &compiled).front();
     admit_solids(compiled, covered);
-    for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
-        compiled.rows.push_back({RowKind::Moiety, 0, row});
-    for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
-        compiled.rows.push_back({RowKind::Normalization, phase, 0});
-    for (std::size_t s = 0; s < request.solids.size(); ++s)
-        if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
-    if (request.volume_m3) compiled.rows.push_back({RowKind::Volume, 0, 0});
-    if (caloric_count) compiled.rows.push_back({request.internal_energy_j ? RowKind::InternalEnergy : request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
-    // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
-    compiled.mode_count = (request.critical || request.spinodal) ? components : 0;
-    for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.spinodal.has_value() + request.envelope.has_value(); ++i) {
-        const auto kind = request.envelope ? RowKind::EnvelopeCondition : i < components ? RowKind::CriticalMode
-            : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
-        compiled.rows.push_back({request.spinodal ? (i < components ? RowKind::SpinodalMode : RowKind::SpinodalNormalization) : kind, 0, i});
+    if (prepared) {
+        reuse_layout(compiled, *prepared);
+        compiled.mode_count = prepared->mode_count;
+        for (std::size_t s = 0; s < compiled.solids.size(); ++s) compiled.solids[s].column = prepared->solids[s].column;
+    } else {
+        for (std::size_t row = request.azeotrope ? compiled.B.size() - 1 : 0; row < compiled.B.size(); ++row)
+            compiled.rows.push_back({RowKind::Moiety, 0, row});
+        for (std::size_t phase = 0; phase < compiled.problem.phases.size(); ++phase)
+            compiled.rows.push_back({RowKind::Normalization, phase, 0});
+        for (std::size_t s = 0; s < request.solids.size(); ++s)
+            if (request.solids[s].amount.kind == AmountKind::Free) compiled.rows.push_back({RowKind::SolidAffinity, 0, s});
+        if (request.volume_m3) compiled.rows.push_back({RowKind::Volume, 0, 0});
+        if (caloric_count) compiled.rows.push_back({request.internal_energy_j ? RowKind::InternalEnergy : request.enthalpy_j ? RowKind::Enthalpy : RowKind::Entropy, 0, 0});
+        // Critical rows M u (C), u'u - 1 and c; or one envelope row. Their positions are the last rows.
+        compiled.mode_count = (request.critical || request.spinodal) ? components : 0;
+        for (std::size_t i = 0; i < compiled.mode_count + 2 * request.critical.has_value() + request.spinodal.has_value() + request.envelope.has_value(); ++i) {
+            const auto kind = request.envelope ? RowKind::EnvelopeCondition : i < components ? RowKind::CriticalMode
+                : i == components ? RowKind::CriticalNormalization : RowKind::CriticalCubic;
+            compiled.rows.push_back({request.spinodal ? (i < components ? RowKind::SpinodalMode : RowKind::SpinodalNormalization) : kind, 0, i});
+        }
+        for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
+        if (trial_basis && phases[0].kind == PhaseKind::Vapor && compiled.has_ions)
+            for (std::size_t row = 0; row < compiled.rows.size(); ++row)
+                if (compiled.rows[row].kind == RowKind::Moiety && compiled.rows[row].index == 1)
+                    compiled.log_charge_rows.emplace_back(row, 0);
+        std::size_t offset = 0, charge = 0;
+        for (const auto& phase : compiled.problem.phases) {
+            auto& item = compiled.shape.emplace_back();
+            for (std::size_t i = 0; i < phase.support.size(); ++i) item.x.push_back(offset++);
+            if (phase.amount.kind == AmountKind::Free) item.amount = offset++;
+            item.volume = offset++;
+        }
+        compiled.primal_size = offset;
+        compiled.charge_row.resize(compiled.problem.phases.size());
+        for (const auto& row : compiled.rows)
+            if (row.kind == RowKind::Electro) compiled.charge_row[row.phase] = charge++;
+        for (std::size_t s = 0; s < compiled.solids.size(); ++s)  // free solid amounts follow the phase coordinates
+            if (request.solids[s].amount.kind == AmountKind::Free) compiled.solids[s].column = compiled.primal_size++;
+        compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     }
-    for (std::size_t i = 0; request.azeotrope && i + 1 < components; ++i) compiled.rows.push_back({RowKind::AzeotropeCondition, 0, i});
-    if (trial_basis && phases[0].kind == PhaseKind::Vapor && compiled.has_ions)
-        for (std::size_t row = 0; row < compiled.rows.size(); ++row)
-            if (compiled.rows[row].kind == RowKind::Moiety && compiled.rows[row].index == 1)
-                compiled.log_charge_rows.emplace_back(row, 0);
-    std::size_t offset = 0, charge = 0;
-    for (const auto& phase : compiled.problem.phases) {
-        auto& item = compiled.shape.emplace_back();
-        for (std::size_t i = 0; i < phase.support.size(); ++i) item.x.push_back(offset++);
-        if (phase.amount.kind == AmountKind::Free) item.amount = offset++;
-        item.volume = offset++;
-    }
-    compiled.primal_size = offset;
-    compiled.charge_row.resize(compiled.problem.phases.size());
-    for (const auto& row : compiled.rows)
-        if (row.kind == RowKind::Electro) compiled.charge_row[row.phase] = charge++;
-    for (std::size_t s = 0; s < compiled.solids.size(); ++s)  // free solid amounts follow the phase coordinates
-        if (request.solids[s].amount.kind == AmountKind::Free) compiled.solids[s].column = compiled.primal_size++;
-    compiled.primal_size += compiled.mode_count + compiled.free_intensive_count;
     if (request.loading) {
         const auto& a = *request.loading;
         if (request.temperature.free || !request.pressure.free || !request.solids.empty() || request.critical
@@ -559,8 +664,10 @@ static CompiledSystem compile_with_basis(
                 throw std::invalid_argument("affine saturation feed seed mismatch");
         if (!exact_zero_dot(std::vector<double>(z.begin(), z.end()), a.direction) || sum(a.direction) <= 0)
             throw std::invalid_argument("affine saturation requires neutral positive addition");
-        ++compiled.primal_size;
-        compiled.rows.push_back({RowKind::SaturationPressure, 0, 0});
+        if (!prepared) {
+            ++compiled.primal_size;
+            compiled.rows.push_back({RowKind::SaturationPressure, 0, 0});
+        }
     }
     inspect_generic_rank(compiled);
     return compiled;
@@ -676,6 +783,25 @@ CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumPro
     if (request.prescribed_liquid_composition) return compile_prescribed_liquid(model, request);
     core::Scope scope("compile_problem");
     return compile_with_basis(model, request, nullptr);
+}
+
+CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request,
+                               const std::vector<std::string>& species) {
+    auto compiled = compile_problem(model, request);
+    if (!request.discovery) compiled.original = std::make_shared<const CompiledSystem::Declaration>(
+        CompiledSystem::Declaration{request, species, compiled});
+    return compiled;
+}
+
+CompiledSystem refresh_problem(const HelmholtzModel& model, const EquilibriumProblem& request,
+                               const std::vector<std::string>& species, const CompiledSystem& prepared) {
+    const auto& original = prepared.original;
+    if (request.discovery || !original || original->compiled.model != &model || original->species != species
+        || !same_declaration(original->request, request)) return compile_problem(model, request);
+    if (same_state_values(original->request, request)) return original->compiled;
+    core::Scope scope("refresh_problem");
+    return request.prescribed_liquid_composition ? compile_prescribed_liquid(model, request, &original->compiled)
+        : compile_with_basis(model, request, nullptr, &original->compiled);
 }
 
 // The reduced trial space is internal: the public no-reaction compiler retains species balances.

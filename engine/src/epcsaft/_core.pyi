@@ -4091,7 +4091,11 @@ def salt_solute_molalities(model: HelmholtzModel, solvent: int, salts: Mapping[s
     """Expand named neutral ion formulas to species molalities in component order."""
     ...
 
-def compile_problem(model: HelmholtzModel | IdealMoleFraction, problem: EquilibriumProblem) -> CompiledSystem:
+@overload
+def compile_problem(model: IdealMoleFraction, problem: EquilibriumProblem) -> CompiledSystem: ...
+
+@overload
+def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem, component_ids: Sequence[str] = ...) -> CompiledSystem:
     """Admit and compile the physical equilibrium declaration.
 
     Parameters
@@ -4152,6 +4156,7 @@ def solve_equilibrium(
     work_limit: int | None = None,
     *,
     branch_end_work_limit: int | None = None,
+    prepared: CompiledSystem | None = None,
 ) -> EquilibriumResult:
     """Solve the declared equilibrium problem natively.
 

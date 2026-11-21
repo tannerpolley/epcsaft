@@ -447,8 +447,8 @@ void register_equilibrium(nb::module_& module) {
     }, nb::arg("document"), nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
        nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
-    module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&>(&compile_problem), nb::arg("model"),
-        nb::arg("problem"), nb::keep_alive<0, 1>());
+    module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&>(&compile_problem),
+        nb::arg("model"), nb::arg("problem"), nb::arg("component_ids") = std::vector<std::string>{}, nb::keep_alive<0, 1>());
     module.def("compile_problem", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&>(&compile_problem), nb::arg("model"),
         nb::arg("problem"), nb::keep_alive<0, 1>());
     module.def("sensitivity", [](const CompiledSystem& compiled, const std::vector<double>& point, const std::vector<double>& lever) {
@@ -457,10 +457,15 @@ void register_equilibrium(nb::module_& module) {
         if (failure) throw core::ConvergenceFailure(*failure);
         return result;
     }, nb::arg("compiled"), nb::arg("point"), nb::arg("lever"));
-    module.def("solve_equilibrium", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&,
-        const std::optional<EquilibriumResult>&, const std::vector<std::string>&, std::optional<std::size_t>, std::optional<std::size_t>>(&solve_equilibrium),
+    module.def("solve_equilibrium", [](const HelmholtzModel& model, const EquilibriumProblem& problem,
+        const std::optional<EquilibriumResult>& start, const std::vector<std::string>& ids,
+        std::optional<std::size_t> work_limit, std::optional<std::size_t> branch_end_work_limit, const CompiledSystem* prepared) {
+        if (prepared && !work_limit && !branch_end_work_limit) return solve_equilibrium(model, problem, start, ids, *prepared);
+        return solve_equilibrium(model, problem, start, ids, work_limit, branch_end_work_limit);
+    },
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
-        nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt);
+        nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt,
+        nb::arg("prepared").none() = nb::none());
     module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::keep_alive<0, 1>());
 }

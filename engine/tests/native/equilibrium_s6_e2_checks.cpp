@@ -1149,8 +1149,45 @@ void check_pure_saturation() {
     }
 }
 
+static void check_prepared_species_order() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    // C2 from the cross-code profile: equimolar ethanol/n-butane bubble at 373.15 K.
+    auto p = properties_support::parameters(2);
+    p.segment_count = {2.3827, 2.3316};
+    p.sigma_constant = {3.1771, 3.7086};
+    p.dispersion_energy_over_k = {198.24, 222.88};
+    p.molar_mass_kg_per_mol = {0.04606844, 0.0581222};
+    p.k_ij = {0, 0.028, 0.028, 0};
+    p.site_component = {0, 0};
+    p.site_ids = {"ethanol/a", "ethanol/b"};
+    p.site_multiplicity = {1, 1};
+    p.association_active = {0, 1, 1, 0};
+    p.association_energy_over_k = {0, 2653.4, 2653.4, 0};
+    p.association_volume = {0, 0.032384, 0.032384, 0};
+    const HelmholtzModel model(p);
+    auto request = equilibrium_support::bubble_at(373.15);
+    request.feed.kind = FeedKind::MoleFractions;
+    request.pressure = FreeValue::variable();
+    request.solver_options.set(policy::row, 1e-12);
+    const std::vector<std::string> species{"ethanol", "butane"};
+    const auto prepared = compile_problem(model, request, species);
+
+    const auto full_compiles = [&](const std::vector<std::string>& ids) {
+        core::Capture capture(false);
+        CHECK(solve_equilibrium(model, request, {}, ids, prepared).success);
+        const auto& spans = capture.trace().spans;
+        return std::count_if(spans.begin(), spans.end(), [](const auto& span) {
+            return std::strcmp(span.name, "compile_problem") == 0;
+        });
+    };
+    CHECK(full_compiles(species) == 0);
+    CHECK(full_compiles({"butane", "ethanol"}) == 1);
+}
+
 void check_e2_solve() {
     check_pure_saturation();
+    check_prepared_species_order();
     using namespace e2;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto one = equilibrium_support::flash(2);
@@ -1560,6 +1597,16 @@ void check_species_thermochemistry() {
     problem.reactions = {{"N2O4=2NO2",nu,{},{},{},{}}}; problem.solver_options.values[policy::row] = 1e-10;
     HelmholtzModel model(p,{},r); const auto c = compile_problem(model,problem); const auto solved = solve_equilibrium(model,problem);
     CHECK(solved.success); CHECK(!solved.residuals.empty());
+    const std::vector<std::string> species{"N2O4", "NO2"};
+    const auto retained = compile_problem(model, problem, species);
+    auto warmer = problem;
+    warmer.temperature = FreeValue::fixed(510.0);
+    const auto fresh = solve_equilibrium(model, warmer, {}, species);
+    const auto refreshed = solve_equilibrium(model, warmer, {}, species, retained);
+    CHECK(fresh.success && refreshed.success);
+    CHECK(fresh.mole_fractions[1] != solved.mole_fractions[1]);
+    CHECK(refreshed.mole_fractions == fresh.mole_fractions);
+    CHECK(refreshed.classified_residuals == fresh.classified_residuals);
     for(auto v:solved.residuals) CHECK(std::abs(v)<=1e-10);
     CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[0]-0.0013392705057121423)<=2e-9);
     CHECK(std::abs(solved.amounts[0]*solved.mole_fractions[1]-1.9973214589885757)<=2e-9);
