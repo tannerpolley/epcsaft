@@ -153,12 +153,16 @@ public:
         const Series rho = total / v;
         if (const auto* packing = held_packing()) (void)packing_fraction_from_geometry(rho0, (*packing)[3]);  // before any density term
         else (void)packing_fraction_from_geometry(rho0, composition_, parameters_, diameter_);
-        // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
-        static thread_local std::vector<Series> delta, site_series, residuals;
-        static thread_local std::vector<double> strength;
-        static thread_local Eigen::VectorXd rows, coefficient, cross, unit;
-        delta.clear(); strength.clear(); site_series.clear(); residuals.clear();
+        floor = 0.0;
+        const std::vector<Series> empty_sites;
+        const auto* series = &empty_sites;
+        std::pair<std::vector<Series>, std::vector<Series>> products;
         if (!parameters_.site_component.empty()) {
+            // Per-thread scratch: the closure evaluates in a tight loop, so its small buffers are reused.
+            static thread_local std::vector<Series> delta, site_series, residuals;
+            static thread_local std::vector<double> strength;
+            static thread_local Eigen::VectorXd rows, coefficient, cross, unit;
+            strength.clear(); residuals.clear();
             if constexpr (std::is_same_v<Base, double> && !Composition)
                 delta = association_delta(temperature_, rho, composition_, parameters_, sigma_, diameter_, held_packing());
             else delta = association_delta(Series(temperature_), rho, composition, parameters_,
@@ -168,143 +172,144 @@ public:
                     if (!(d.c[0] >= 0) || !wide_math::isfinite(d.c[0])) throw std::invalid_argument("invalid extended association strength");
                 strength.push_back(static_cast<double>(d.c[0]));
             }
-        }
-        core::Convergence record;
-        const auto sites = [&]() -> std::vector<double> { try {
-            if (prepared) return *start;
-            if (strength.empty()) return std::vector<double>{};
-            if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
-            if (!association_) association_ = std::make_unique<AssociationWorkspace>();
-            const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
-            if constexpr (std::is_same_v<Base, double>)
-                return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure,
-                    held_packing(), association_.get());
-            else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
-                narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
-                narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure, nullptr, association_.get());
-        } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
-        }();
-        site_series.clear();
-        for (double site : sites) site_series.emplace_back(Base(site));
-        for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
-        floor = 0.0;
-        const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
-        if (!sites.empty()) {
-            static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
-            if (!prepared) {
-            if constexpr (std::is_same_v<Base, double>)
-                properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength, nullptr, association_.get());
-            else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
-                static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength, nullptr, association_.get());
-            }
-            const auto& lu = prepared ? *prepared : factorization;
-            const auto count = static_cast<Eigen::Index>(sites.size());
-            rows.resize(count); cross.resize(count);
-            if constexpr (!std::is_same_v<Base, double>) {
-                if (central_sites_.empty()) { central_sites_.assign(sites.begin(), sites.end()); used_ = record.iterations; }
-                const auto stop = [&](core::Stop how, const char* cause, Base residual) {
-                    refinement.emplace();
-                    refinement->residual = static_cast<double>(residual), refinement->stop = how, refinement->cause = cause;
-                };
-                for (std::size_t k = 0; k <= N; ++k) {
-                    // Each order's refinement has the declared budget; order 0 continues the site solve's count.
-                    std::size_t used = k == 0 ? used_ : 0;
-                    Base normalization = 1.0;
-                    for (std::size_t j = 0; direction.empty() && j < k; ++j) normalization *= volume;
-                    Base previous = std::numeric_limits<Base>::infinity();
-                    for (bool moved = true;;) {
-                        residuals = association_residuals(rho, composition, parameters_, site_series, delta);
-                        Base norm = 0.0, scale = 1.0;
-                        for (Eigen::Index i = 0; i < count; ++i) {
-                            const auto site = static_cast<std::size_t>(i);
-                            norm = std::max(norm, wide_math::abs(residuals[site].c[k] * normalization));
-                            scale = std::max(scale, wide_math::abs(site_series[site].c[k] * normalization / site_series[site].c[0]));
-                            rows(i) = static_cast<double>(-residuals[site].c[k]);
-                        }
-                        entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
-                        if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
-                        if (!moved || used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value)) {
-                            // Where refinement would refuse, a residual within the evaluation's rounding bound that
-                            // failed to halve on the last update has stagnated at that floor: accept and name it.
-                            if (!(norm > Base(count) * std::numeric_limits<Base>::epsilon() * scale || norm <= previous / 2)) {
-                                stop(core::Stop::converged_to_floor, "stagnated at rounding floor", norm);
-                                break;
+            core::Convergence record;
+            const auto sites = [&]() -> std::vector<double> { try {
+                if (prepared) return *start;
+                if (strength.empty()) return std::vector<double>{};
+                if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
+                if (!association_) association_ = std::make_unique<AssociationWorkspace>();
+                const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
+                if constexpr (std::is_same_v<Base, double>)
+                    return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure,
+                        held_packing(), association_.get());
+                else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
+                    narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
+                    narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure, nullptr, association_.get());
+            } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
+            }();
+            site_series.clear();
+            for (double site : sites) site_series.emplace_back(Base(site));
+            for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
+            const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
+            if (!sites.empty()) {
+                static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+                if (!prepared) {
+                if constexpr (std::is_same_v<Base, double>)
+                    properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength, nullptr, association_.get());
+                else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
+                    static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength, nullptr, association_.get());
+                }
+                const auto& lu = prepared ? *prepared : factorization;
+                const auto count = static_cast<Eigen::Index>(sites.size());
+                rows.resize(count); cross.resize(count);
+                if constexpr (!std::is_same_v<Base, double>) {
+                    if (central_sites_.empty()) { central_sites_.assign(sites.begin(), sites.end()); used_ = record.iterations; }
+                    const auto stop = [&](core::Stop how, const char* cause, Base residual) {
+                        refinement.emplace();
+                        refinement->residual = static_cast<double>(residual), refinement->stop = how, refinement->cause = cause;
+                    };
+                    for (std::size_t k = 0; k <= N; ++k) {
+                        // Each order's refinement has the declared budget; order 0 continues the site solve's count.
+                        std::size_t used = k == 0 ? used_ : 0;
+                        Base normalization = 1.0;
+                        for (std::size_t j = 0; direction.empty() && j < k; ++j) normalization *= volume;
+                        Base previous = std::numeric_limits<Base>::infinity();
+                        for (bool moved = true;;) {
+                            residuals = association_residuals(rho, composition, parameters_, site_series, delta);
+                            Base norm = 0.0, scale = 1.0;
+                            for (Eigen::Index i = 0; i < count; ++i) {
+                                const auto site = static_cast<std::size_t>(i);
+                                norm = std::max(norm, wide_math::abs(residuals[site].c[k] * normalization));
+                                scale = std::max(scale, wide_math::abs(site_series[site].c[k] * normalization / site_series[site].c[0]));
+                                rows(i) = static_cast<double>(-residuals[site].c[k]);
                             }
-                            throw std::runtime_error(moved ? "extended association residual/implicit-coefficient floor unresolved"
-                                                           : "extended association residual cannot be refined");
-                        }
-                        previous = norm;
-                        coefficient = lu.solve(rows);
-                        moved = false;
-                        for (Eigen::Index i = 0; i < count; ++i) {
-                            auto& x = site_series[static_cast<std::size_t>(i)].c[k];
-                            const Base next = x + Base(coefficient(i));
-                            if (!wide_math::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
-                                throw std::runtime_error("extended association site domain");
-                            moved = moved || next != x; x = next;
+                            entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
+                            if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
+                            if (!moved || used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value)) {
+                                // Where refinement would refuse, a residual within the evaluation's rounding bound that
+                                // failed to halve on the last update has stagnated at that floor: accept and name it.
+                                if (!(norm > Base(count) * std::numeric_limits<Base>::epsilon() * scale || norm <= previous / 2)) {
+                                    stop(core::Stop::converged_to_floor, "stagnated at rounding floor", norm);
+                                    break;
+                                }
+                                throw std::runtime_error(moved ? "extended association residual/implicit-coefficient floor unresolved"
+                                                               : "extended association residual cannot be refined");
+                            }
+                            previous = norm;
+                            coefficient = lu.solve(rows);
+                            moved = false;
+                            for (Eigen::Index i = 0; i < count; ++i) {
+                                auto& x = site_series[static_cast<std::size_t>(i)].c[k];
+                                const Base next = x + Base(coefficient(i));
+                                if (!wide_math::isfinite(next) || (k == 0 && !(next > 0.0 && next <= 1.0)))
+                                    throw std::runtime_error("extended association site domain");
+                                moved = moved || next != x; x = next;
+                            }
                         }
                     }
-                }
-                if (!refinement) stop(core::Stop::converged, "converged", 0);
-            } else {
-            // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order. Declared
-            // pathway blocks are not stationary in X, so their order-N energy coefficient needs X_N too.
-            for (std::size_t k = 1; k < N + (blocks ? 1 : 0); ++k) {
-                residuals = association_residuals(rho, composition, parameters_, site_series, delta);
-                for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
-                coefficient = lu.solve(rows);
-                for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
-                if (k > 1 || prepared || blocks) continue;
-                for (Eigen::Index s = 0; s < count; ++s) {
-                    const auto site = static_cast<std::size_t>(s);
-                    cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
-                        * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
-                }
-                unit = lu.solve(Eigen::VectorXd::Ones(count));
-                floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
-            }
-            }
-            if (!std::is_same_v<Base, double> || (blocks && !prepared)) {
-                // Coupled achieved site defects J0 e_k = -r_k - sum_{l=1}^k J_l e_{k-l}.
-                residuals = association_residuals(rho, composition, parameters_, site_series, delta);
-                const auto bonded = bonded_densities(composition, parameters_, site_series, delta);
-                std::vector<Series> error(sites.size()), jac(sites.size() * sites.size());
-                for (std::size_t a = 0; a < sites.size(); ++a) for (std::size_t b = 0; b < sites.size(); ++b) {
-                    jac[a * sites.size() + b] = site_series[a] * rho * Base(NUMBER_DENSITY_PER_ANGSTROM3)
-                        * composition[parameters_.site_component[b]] * Base(parameters_.site_multiplicity[b]) * delta[a * sites.size() + b];
-                    if (a == b) jac[a * sites.size() + b] += Series(1) + rho * Base(NUMBER_DENSITY_PER_ANGSTROM3) * bonded[a];
-                }
-                for (std::size_t k = 0; k <= N; ++k) {
-                    for (std::size_t a = 0; a < sites.size(); ++a) {
-                        Base r = residuals[a].c[k];
-                        for (std::size_t l = 1; l <= k; ++l) for (std::size_t b = 0; b < sites.size(); ++b)
-                            r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
-                        rows(static_cast<Eigen::Index>(a)) = static_cast<double>(-r);
-                    }
+                    if (!refinement) stop(core::Stop::converged, "converged", 0);
+                } else {
+                // Order k of F(V(t), X(t)) = 0 is F_X X_k + (the residual with X_k = 0): one solve per order. Declared
+                // pathway blocks are not stationary in X, so their order-N energy coefficient needs X_N too.
+                for (std::size_t k = 1; k < N + (blocks ? 1 : 0); ++k) {
+                    residuals = association_residuals(rho, composition, parameters_, site_series, delta);
+                    for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
                     coefficient = lu.solve(rows);
-                    for (Eigen::Index i = 0; i < count; ++i) error[static_cast<std::size_t>(i)].c[k] = Base(coefficient(i));
-                    Base defect = 0;
-                    for (std::size_t a = 0; a < sites.size(); ++a) {
-                        Base r = residuals[a].c[k];
-                        for (std::size_t l = 0; l <= k; ++l) for (std::size_t b = 0; b < sites.size(); ++b)
-                            r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
-                        defect = std::max(defect, wide_math::abs(r));
+                    for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
+                    if (k > 1 || prepared || blocks) continue;
+                    for (Eigen::Index s = 0; s < count; ++s) {
+                        const auto site = static_cast<std::size_t>(s);
+                        cross(s) = -total_ * composition_[static_cast<std::size_t>(parameters_.site_component[site])]
+                            * parameters_.site_multiplicity[site] / sites[site] * residuals[site].c[1];
                     }
-                    entry.probe("association_linear_defect", {double(k), double(defect)});
+                    unit = lu.solve(Eigen::VectorXd::Ones(count));
+                    floor = wide_math::abs(cross.dot(unit)) * std::max(record.residual, record.floor.value_or(0.0));
                 }
-                // Signed energy site gradient g = -beta b + N h of declared blocks; b alone otherwise (its sign is immaterial).
-                using Fraction = std::decay_t<decltype(composition.front())>;
-                const auto gradient = blocks ? association_site_gradient(Series(total), rho, composition, parameters_, site_series, delta,
-                    parameters_.pathway_weight.empty() ? std::array<Fraction, 2>{} : pathway_weights(Fraction(temperature_), composition, parameters_))
-                    : std::vector<Series>{};
-                for (std::size_t a = 0; a < sites.size(); ++a) {
-                    if constexpr (!std::is_same_v<Base, double>) central_sites_[a] = site_series[a].c[0];
-                    const auto b = blocks ? gradient[a] : total * composition[parameters_.site_component[a]] * Base(parameters_.site_multiplicity[a]) * residuals[a] / site_series[a];
-                    floor += wide_math::abs(b.c[1] * error[a].c[0]) + wide_math::abs(b.c[0] * error[a].c[1]);
+                }
+                if (!std::is_same_v<Base, double> || (blocks && !prepared)) {
+                    // Coupled achieved site defects J0 e_k = -r_k - sum_{l=1}^k J_l e_{k-l}.
+                    residuals = association_residuals(rho, composition, parameters_, site_series, delta);
+                    const auto bonded = bonded_densities(composition, parameters_, site_series, delta);
+                    std::vector<Series> error(sites.size()), jac(sites.size() * sites.size());
+                    for (std::size_t a = 0; a < sites.size(); ++a) for (std::size_t b = 0; b < sites.size(); ++b) {
+                        jac[a * sites.size() + b] = site_series[a] * rho * Base(NUMBER_DENSITY_PER_ANGSTROM3)
+                            * composition[parameters_.site_component[b]] * Base(parameters_.site_multiplicity[b]) * delta[a * sites.size() + b];
+                        if (a == b) jac[a * sites.size() + b] += Series(1) + rho * Base(NUMBER_DENSITY_PER_ANGSTROM3) * bonded[a];
+                    }
+                    for (std::size_t k = 0; k <= N; ++k) {
+                        for (std::size_t a = 0; a < sites.size(); ++a) {
+                            Base r = residuals[a].c[k];
+                            for (std::size_t l = 1; l <= k; ++l) for (std::size_t b = 0; b < sites.size(); ++b)
+                                r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
+                            rows(static_cast<Eigen::Index>(a)) = static_cast<double>(-r);
+                        }
+                        coefficient = lu.solve(rows);
+                        for (Eigen::Index i = 0; i < count; ++i) error[static_cast<std::size_t>(i)].c[k] = Base(coefficient(i));
+                        Base defect = 0;
+                        for (std::size_t a = 0; a < sites.size(); ++a) {
+                            Base r = residuals[a].c[k];
+                            for (std::size_t l = 0; l <= k; ++l) for (std::size_t b = 0; b < sites.size(); ++b)
+                                r += jac[a * sites.size() + b].c[l] * error[b].c[k - l];
+                            defect = std::max(defect, wide_math::abs(r));
+                        }
+                        entry.probe("association_linear_defect", {double(k), double(defect)});
+                    }
+                    // Signed energy site gradient g = -beta b + N h of declared blocks; b alone otherwise (its sign is immaterial).
+                    using Fraction = std::decay_t<decltype(composition.front())>;
+                    const auto gradient = blocks ? association_site_gradient(Series(total), rho, composition, parameters_, site_series, delta,
+                        parameters_.pathway_weight.empty() ? std::array<Fraction, 2>{} : pathway_weights(Fraction(temperature_), composition, parameters_))
+                        : std::vector<Series>{};
+                    for (std::size_t a = 0; a < sites.size(); ++a) {
+                        if constexpr (!std::is_same_v<Base, double>) central_sites_[a] = site_series[a].c[0];
+                        const auto b = blocks ? gradient[a] : total * composition[parameters_.site_component[a]] * Base(parameters_.site_multiplicity[a]) * residuals[a] / site_series[a];
+                        floor += wide_math::abs(b.c[1] * error[a].c[0]) + wide_math::abs(b.c[0] * error[a].c[1]);
+                    }
                 }
             }
+            products = association_products(rho, composition, parameters_, site_series, delta);
+            series = &site_series;
         }
-        const auto products = association_products(rho, composition, parameters_, site_series, delta);
+        const auto& site_series = *series;
         const auto result = [&] {
             if constexpr (Thermal) {
                 // The pure nonassociating thermal request differentiates geometry and pair laws too.

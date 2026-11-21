@@ -592,6 +592,7 @@ template <typename Scalar, typename ParameterSet, typename Fixed>
 std::pair<std::vector<Scalar>, std::vector<Scalar>> association_products(const Scalar& density,
     const std::vector<Fixed>& x, const ParameterSet& p, const std::vector<Scalar>& sites,
     const std::vector<Scalar>& delta, std::pair<std::vector<Scalar>, std::vector<Scalar>> products = {}) {
+    if (p.site_component.empty()) return {};
     auto& [q, residuals] = products;
     q = bonded_densities(x, p, sites, delta, std::move(q));
     residuals.resize(q.size());
