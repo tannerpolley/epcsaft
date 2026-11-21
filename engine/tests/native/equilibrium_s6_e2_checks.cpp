@@ -1149,8 +1149,45 @@ void check_pure_saturation() {
     }
 }
 
+static void check_prepared_species_order() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    // C2 from the cross-code profile: equimolar ethanol/n-butane bubble at 373.15 K.
+    auto p = properties_support::parameters(2);
+    p.segment_count = {2.3827, 2.3316};
+    p.sigma_constant = {3.1771, 3.7086};
+    p.dispersion_energy_over_k = {198.24, 222.88};
+    p.molar_mass_kg_per_mol = {0.04606844, 0.0581222};
+    p.k_ij = {0, 0.028, 0.028, 0};
+    p.site_component = {0, 0};
+    p.site_ids = {"ethanol/a", "ethanol/b"};
+    p.site_multiplicity = {1, 1};
+    p.association_active = {0, 1, 1, 0};
+    p.association_energy_over_k = {0, 2653.4, 2653.4, 0};
+    p.association_volume = {0, 0.032384, 0.032384, 0};
+    const HelmholtzModel model(p);
+    auto request = equilibrium_support::bubble_at(373.15);
+    request.feed.kind = FeedKind::MoleFractions;
+    request.pressure = FreeValue::variable();
+    request.solver_options.set(policy::row, 1e-12);
+    const std::vector<std::string> species{"ethanol", "butane"};
+    const auto prepared = compile_problem(model, request, species);
+
+    const auto full_compiles = [&](const std::vector<std::string>& ids) {
+        core::Capture capture(false);
+        CHECK(solve_equilibrium(model, request, {}, ids, prepared).success);
+        const auto& spans = capture.trace().spans;
+        return std::count_if(spans.begin(), spans.end(), [](const auto& span) {
+            return std::strcmp(span.name, "compile_problem") == 0;
+        });
+    };
+    CHECK(full_compiles(species) == 0);
+    CHECK(full_compiles({"butane", "ethanol"}) == 1);
+}
+
 void check_e2_solve() {
     check_pure_saturation();
+    check_prepared_species_order();
     using namespace e2;
     epcsaft::HelmholtzModel model(properties_support::neutral_binary());
     auto one = equilibrium_support::flash(2);
