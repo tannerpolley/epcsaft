@@ -78,6 +78,17 @@ struct ReferenceTaylorPreparation final {
     double norm = 1.0;
 };
 
+struct detail::HelmholtzEvaluation final {
+    AssociationWorkspace association;
+    SegmentGeometry<double> geometry;
+    Eigen::FullPivLU<Eigen::MatrixXd> derivative;
+    Eigen::MatrixXd sensitivity, partials;
+    Eigen::VectorXd site_vector;
+    std::vector<double> composition, point, weights, direction, site_weights;
+    PredicateSignature signature;
+    std::vector<std::size_t> coordinates;
+};
+
 HelmholtzModel::~HelmholtzModel() = default;
 namespace {
 
@@ -115,12 +126,17 @@ void properties::site_factorization(
     const Parameters& parameters,
     double number_density,
     const std::vector<double>& delta,
-    PropertyActionStatus* status
+    PropertyActionStatus* status, AssociationWorkspace* scratch
 ) {
     const std::size_t sites_count = sites.size();
     if (sites_count == 0) { factorization = {}; return; }  // no association sites: no mass-action system to factor
-    factorization.compute(mass_action_jacobian(composition, parameters, sites,
-        number_density, delta, bonded_densities(composition, parameters, sites, delta)));
+    Eigen::MatrixXd local_jacobian;
+    std::vector<double> local_bonded;
+    auto& jacobian = scratch ? scratch->jacobian : local_jacobian;
+    auto& bonded = scratch ? scratch->products.first : local_bonded;
+    bonded = bonded_densities(composition, parameters, sites, delta, std::move(bonded));
+    jacobian = mass_action_jacobian(composition, parameters, sites, number_density, delta, bonded, std::move(jacobian));
+    factorization.compute(jacobian);
     factorization.setThreshold(policy::ASSOCIATION_JACOBIAN_RANK.value * sites_count);
     auto scope = core::Scope::detailed("association_derivative");
     const auto failure = [&](const char* reason) {
@@ -163,9 +179,11 @@ template<class Result> Result association_result(Result result, const core::Asso
 
 // association_delta at a central state, or none for a model without sites.
 std::vector<double> central_strength(const Parameters& parameters, double temperature, double density,
-    const std::vector<double>& composition, const detail::SegmentGeometry<double>& geometry) {
+    const std::vector<double>& composition, const detail::SegmentGeometry<double>& geometry,
+    std::vector<double> delta = {}, AssociationStrengthWorkspace<double>* scratch = nullptr) {
     return parameters.site_component.empty() ? std::vector<double>{}
-        : association_delta(temperature, density, composition, parameters, geometry.sigma, geometry.diameter);
+        : association_delta(temperature, density, composition, parameters, geometry.sigma, geometry.diameter,
+            static_cast<const std::array<double, 4>*>(nullptr), std::move(delta), scratch);
 }
 std::vector<double> central_strength(const Parameters& parameters, double temperature, double density,
     const std::vector<double>& composition) {
@@ -205,8 +223,10 @@ void require_molar_density(double molar_density) {
 }
 
 // Each law slot in double: tape replay skips the domain refusal (thermal-rule volumes: the double site solve).
-void require_law_domain(double T, const Parameters& parameters) {
-    const auto laws = temperature_law_values(T, parameters);
+void require_law_domain(double T, const Parameters& parameters, std::vector<double>* scratch = nullptr) {
+    std::vector<double> local;
+    auto& laws = scratch ? *scratch : local;
+    laws = temperature_law_values(T, parameters, std::move(laws));
     const std::size_t sites = parameters.site_component.size(), components = parameters.segment_count.size();
     for (const auto& [kind, slot, law] : parameters.temperature_law_slot)  // kinds 3, 4 own site-pair slots
         temperature_law_value(T, parameters, laws, TemperatureLaw(kind), slot, kind > 2 ? sites : components);
@@ -509,14 +529,19 @@ bool is_heat_capacity(PropertyObservable observable) {
     const auto index = property_index(observable);
     return !is_fugacity(observable) && (index == 3 || index == 4);
 }
+void append_active_parameter_values(const HelmholtzModel& model, std::vector<double>& values) {
+    for (const auto& item : model.active_parameters())
+        values.push_back(detail::family_values(model.parameters(), item.family).first[item.indices.front()]);
+}
+
 // The tape's independent point (T, V, n, theta).
 std::vector<double> action_point(
     const HelmholtzModel& model, double temperature, double volume,
-    const std::vector<double>& amounts, bool fixed_parameters = false
+    const std::vector<double>& amounts, bool fixed_parameters = false, std::vector<double> point = {}
 ) {
-    std::vector<double> point = {temperature, volume};
+    point.assign({temperature, volume});
     point.insert(point.end(), amounts.begin(), amounts.end());
-    if (!fixed_parameters) for (const double value : model.active_parameter_values()) point.push_back(value);
+    if (!fixed_parameters) append_active_parameter_values(model, point);
     return point;
 }
 
@@ -1105,9 +1130,9 @@ void HelmholtzModel::validate_point(
 }
 
 detail::PredicateSignature HelmholtzModel::predicate_signature(
-    double temperature, const std::vector<double>& composition, bool ideal
+    double temperature, const std::vector<double>& composition, bool ideal, detail::PredicateSignature result
 ) const {
-    detail::PredicateSignature result;
+    result.clear();
     for (const auto fraction : composition) result.push_back(fraction > 0.0);
     if (ideal && thermochemistry_.has_value()) {
         for (const auto& intervals : thermochemistry_->component_intervals) {
@@ -1183,16 +1208,22 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     double total = 0.0;
     for (double amount : amounts) total += amount;
     const double density = total / volume;
-    std::vector<double> composition;
-    composition.reserve(components);
+    if (!evaluation_) evaluation_ = std::make_unique<detail::HelmholtzEvaluation>();
+    auto& scratch = *evaluation_;
+    auto& composition = scratch.composition;
+    composition.clear();
     for (double amount : amounts) composition.push_back(amount / total);
-    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
-    require_law_domain(temperature, parameters_);
+    auto& geometry = scratch.geometry;
+    geometry = detail::admitted_segment_geometry(temperature, parameters_, std::move(geometry));
+    require_law_domain(temperature, parameters_, &scratch.association.strength.laws);
     core::Convergence site_record;
     std::optional<core::Convergence> first;
-    const auto delta = central_strength(parameters_, temperature, density, composition, geometry);
-    const auto sites = solve_site_fractions(temperature, density, composition, parameters_, geometry.sigma, geometry.diameter,
-        &site_record, nullptr, delta.empty() ? nullptr : &delta, false, solver_options_, &first);
+    auto& delta = scratch.association.delta;
+    delta = central_strength(parameters_, temperature, density, composition, geometry, std::move(delta), &scratch.association.strength);
+    result.site_fractions = solve_site_fractions(temperature, density,
+        composition, parameters_, geometry.sigma, geometry.diameter,
+        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association);
+    const auto& sites = result.site_fractions;
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
     scope.observe([&] {
@@ -1211,17 +1242,18 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         }
         scope.probe("declared_choices", declared_choices);
     });
-    auto point = action_point(*this, temperature, volume, amounts, fixed_parameters);
-    auto signature = predicate_signature(temperature, composition);
+    auto& point = scratch.point;
+    point = action_point(*this, temperature, volume, amounts, fixed_parameters, std::move(point));
+    auto& signature = scratch.signature;
+    signature = predicate_signature(temperature, composition, false, std::move(signature));
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
     });
     if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
     point.insert(point.end(), sites.begin(), sites.end());
-    auto values = tape_->forward_zero(point, &counters_.forward);
+    const auto& values = tape_->forward_zero(point, &counters_.forward);
     tape_->site_values = sites;
     core::retain_first(result.first_numerical_failure, first);
-    result.site_fractions = sites;
     result.value = values.front();
     if (!std::isfinite(result.value)) throw std::runtime_error("nonfinite residual Helmholtz value" + state_coordinates(temperature, density));
     scope.probe("residual_helmholtz_extensive", result.value);
@@ -1229,11 +1261,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
 
     const std::size_t sites_count = sites.size();
     const std::size_t output_count = 1 + sites_count + (tape_->ideal_available ? 5 : 0);
-    Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+    auto& factorization = scratch.derivative;
     properties::site_factorization(factorization,
-        sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta);
+        sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta, nullptr, &scratch.association);
     // Requested chart: phase Hessians drop fixed controls, absent species and active parameters.
-    std::vector<std::size_t> coordinates;
+    auto& coordinates = scratch.coordinates;
+    coordinates.clear();
     if (phase) {
         if (order == DerivativeOrder::PhaseHessian || order == DerivativeOrder::PhaseGradient) coordinates.push_back(0);
         coordinates.push_back(1);
@@ -1244,17 +1277,21 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         std::iota(coordinates.begin(), coordinates.end(), std::size_t{0});
     }
     const std::size_t width = coordinates.size();
-    std::vector<double> weights(output_count, 0.0);
+    auto& weights = scratch.weights;
+    weights.assign(output_count, 0.0);
     weights.front() = 1.0;
-    Eigen::MatrixXd site_sensitivity(static_cast<Eigen::Index>(sites_count), static_cast<Eigen::Index>(width));
+    auto& site_sensitivity = scratch.sensitivity;
+    site_sensitivity.resize(sites_count, width);
     result.gradient.assign(result_size, 0.0);
     if (gradient || phase_gradient || sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
-        Eigen::MatrixXd partials(sites_count, width);
+        auto& partials = scratch.partials;
+        partials.resize(sites_count, width);
         if (width <= sites_count) {
-            std::vector<double> direction(point.size());
+            auto& direction = scratch.direction;
+            direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < width; ++k) {
                 direction[coordinates[k]] = 1.0;
                 const auto first = tape_->function.Forward(1, direction);
@@ -1262,8 +1299,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 ++counters_.forward;
                 for (std::size_t site = 0; site < sites_count; ++site) partials(site, k) = first[1 + site];
             }
-        } else {
-            std::vector<double> site_weight(output_count);
+        } else if (sites_count) {
+            auto& site_weight = scratch.site_weights;
+            site_weight.assign(output_count, 0.0);
             for (std::size_t site = 0; site < sites_count; ++site) {
                 site_weight[1 + site] = 1.0;
                 const auto partial = tape_->function.Reverse(1, site_weight);
@@ -1282,39 +1320,34 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("gradient", result.gradient);
         if (gradient) return finish(std::move(result));
         if (sites_count != 0) {
-            const Eigen::VectorXd adjoint = factorization.transpose().solve(
+            auto& adjoint = scratch.site_vector;
+            adjoint = factorization.transpose().solve(
                 Eigen::Map<const Eigen::VectorXd>(raw_gradient.data() + point_size, static_cast<Eigen::Index>(sites_count)));
             for (std::size_t site = 0; site < sites_count; ++site) weights[1 + site] = -adjoint(static_cast<Eigen::Index>(site));
         }
     }
     if (sites_count != 0 && !blocks) {
         // Floor over the requested chart only: it bounds exactly the gradient entries computed here.
-        Eigen::VectorXd diagonal(sites_count);
+        auto& diagonal = scratch.site_vector;
+        diagonal.resize(sites_count);
         for (std::size_t site = 0; site < sites_count; ++site)
             diagonal(site) = total * composition[parameters_.site_component[site]] * parameters_.site_multiplicity[site] / sites[site];
         result.gradient_floor = (diagonal.asDiagonal() * site_sensitivity).cwiseAbs().colwise().sum().maxCoeff() * site_residual;
     }
     if (retain_site_sensitivity) result.site_sensitivity = site_sensitivity;
-    const bool defer = phase_gradient && !blocks;
-    auto complete = [this, defer, order, isothermal_hessian, coordinates = std::move(coordinates),
-        point = std::move(point), signature = std::move(signature), weights = std::move(weights), site_sensitivity = std::move(site_sensitivity),
-        factorization = (blocks && sites_count) || isothermal_hessian ? std::optional{std::move(factorization)} : std::nullopt, values = std::move(values), blocks, site_residual](HelmholtzDerivatives& out) {
-        std::unique_lock lock(mutex_, std::defer_lock);
+    const auto complete = [this, order, isothermal_hessian, blocks, site_residual](
+        HelmholtzDerivatives& out, bool defer, const auto& coordinates, const auto& point, const auto& weights,
+        const auto& site_sensitivity, const Eigen::FullPivLU<Eigen::MatrixXd>* factorization) {
         const auto& sites = out.site_fractions;
         const std::size_t site_count = sites.size(), point_size = point.size() - site_count, size = out.gradient.size();
-        if (defer) {
-            lock.lock();
-            ensure_tape({point.begin(), point.begin() + point_size}, sites, signature, {}, 0.0, true);
-            tape_->forward_zero(point, &counters_.forward);
-            tape_->site_values = sites;
-        }
         core::Scope scope("helmholtz_hessian");
         ++counters_.hessian_calls;
         if (isothermal_hessian) {
-            out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, &*factorization).hessian;
+            out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization).hessian;
         } else {
             out.hessian.assign(size * size, 0.0);
-            std::vector<double> direction(point.size());
+            auto& direction = evaluation_->direction;
+            direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < coordinates.size(); ++k) {
                 const auto column = coordinates[k];
                 const bool skipped = (order == DerivativeOrder::StateHessian || order == DerivativeOrder::FixedParameterStateHessian) && column >= 2 && column < 2 + parameters_.component_count();
@@ -1326,7 +1359,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 const auto second = tape_->function.Reverse(2, weights);
                 ++counters_.reverse;
                 if (blocks && site_count)
-                    out.gradient_floor = std::max(out.gradient_floor, coupled_site_floor(values, tangent, second, weights, *factorization, point_size, site_residual));
+                    out.gradient_floor = std::max(out.gradient_floor, coupled_site_floor(tape_->zero_value, tangent, second, weights, *factorization, point_size, site_residual));
                 if (!skipped) for (std::size_t r = 0; r < coordinates.size(); ++r) {
                     const auto row = coordinates[r];
                     if (!defer && !site_count && k == 0) out.gradient[row] = second[2 * row];
@@ -1341,8 +1374,18 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         if (order == DerivativeOrder::Hessian || order == DerivativeOrder::FixedParameterHessian) scope.probe("hessian", out.hessian);
         scope.probe("volume_second_derivative", out.volume_second_derivative);
     };
-    if (defer) result.complete_hessian = std::move(complete);
-    else complete(result);
+    if (phase_gradient && !blocks) {
+        result.complete_hessian = [this, complete, coordinates, point, signature, weights, site_sensitivity,
+            factorization = isothermal_hessian ? std::optional{factorization} : std::nullopt](HelmholtzDerivatives& out) {
+            std::lock_guard lock(mutex_);
+            auto& regular = evaluation_->point;
+            regular.assign(point.begin(), point.end() - out.site_fractions.size());
+            ensure_tape(regular, out.site_fractions, signature, {}, 0.0, true);
+            tape_->forward_zero(point, &counters_.forward);
+            tape_->site_values = out.site_fractions;
+            complete(out, true, coordinates, point, weights, site_sensitivity, factorization ? &*factorization : nullptr);
+        };
+    } else complete(result, false, coordinates, point, weights, site_sensitivity, &factorization);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
     return finish(std::move(result));
@@ -2960,7 +3003,7 @@ double HelmholtzModel::molar_density_upper_bound(
 
 std::vector<double> HelmholtzModel::active_parameter_values() const {
     std::vector<double> result;
-    for (const auto& item : active_) result.push_back(detail::family_values(parameters_, item.family).first[item.indices.front()]);
+    append_active_parameter_values(*this, result);
     return result;
 }
 

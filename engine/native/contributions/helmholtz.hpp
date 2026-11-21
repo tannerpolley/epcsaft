@@ -166,11 +166,9 @@ template <typename Scalar, typename ParameterSet>
 // EqID: segment_sigma_correlation
 std::vector<Scalar> segment_sigma(
     const Scalar& temperature,
-    const ParameterSet& parameters
+    const ParameterSet& parameters, std::vector<Scalar> sigma = {}
 ) {
-    std::vector<Scalar> sigma(
-        parameters.sigma_constant.begin(), parameters.sigma_constant.end()
-    );
+    sigma.assign(parameters.sigma_constant.begin(), parameters.sigma_constant.end());
     for (std::size_t term = 0; term < parameters.sigma_term_component.size(); ++term) {
         const std::size_t component =
             static_cast<std::size_t>(parameters.sigma_term_component[term]);
@@ -192,9 +190,9 @@ template <typename Scalar, typename ParameterSet>
 std::vector<Scalar> segment_diameter(
     const Scalar& temperature,
     const ParameterSet& parameters,
-    const std::vector<Scalar>& sigma
+    const std::vector<Scalar>& sigma, std::vector<Scalar> diameter = {}
 ) {
-    std::vector<Scalar> diameter(sigma.size());
+    diameter.resize(sigma.size());
     for (std::size_t component = 0; component < sigma.size(); ++component) {
         diameter[component] = gross_diameter(parameters, component)
             ? sigma[component] *
@@ -414,8 +412,8 @@ Scalar multipole_helmholtz(
 // EqID: pair_parameter_temperature_law
 // q(T) = a_0 + a_1 (T - T_r) + a_2 (T - T_r)^2 + a_3 (T - T_r)^3 + s (1/T - 1/T_r) of every declared law.
 template <typename Fixed, typename ParameterSet>
-std::vector<Fixed> temperature_law_values(const Fixed& temperature, const ParameterSet& parameters) {
-    std::vector<Fixed> values(parameters.temperature_law_reference_k.size(), Fixed(0.0));
+std::vector<Fixed> temperature_law_values(const Fixed& temperature, const ParameterSet& parameters, std::vector<Fixed> values = {}) {
+    values.assign(parameters.temperature_law_reference_k.size(), Fixed(0.0));
     for (std::size_t term = 0; term < parameters.temperature_law_term_law.size(); ++term) {
         const auto law = static_cast<std::size_t>(parameters.temperature_law_term_law[term]);
         const double reference = parameters.temperature_law_reference_k[law];
@@ -579,10 +577,10 @@ std::vector<Scalar> bonded_densities(
     const std::vector<Fixed>& mole_fractions,
     const ParameterSet& parameters,
     const std::vector<Scalar>& site_fractions,
-    const std::vector<Scalar>& delta
+    const std::vector<Scalar>& delta, std::vector<Scalar> bonded = {}
 ) {
     const std::size_t sites = parameters.site_component.size();
-    std::vector<Scalar> bonded(sites, Scalar(0.0));
+    bonded.assign(sites, Scalar(0.0));
     for (std::size_t a = 0; a < sites; ++a)
         for (std::size_t b = 0; b < sites; ++b)
             bonded[a] += mole_fractions[static_cast<std::size_t>(parameters.site_component[b])]
@@ -593,14 +591,16 @@ std::vector<Scalar> bonded_densities(
 template <typename Scalar, typename ParameterSet, typename Fixed>
 std::pair<std::vector<Scalar>, std::vector<Scalar>> association_products(const Scalar& density,
     const std::vector<Fixed>& x, const ParameterSet& p, const std::vector<Scalar>& sites,
-    const std::vector<Scalar>& delta) {
-    auto q = bonded_densities(x, p, sites, delta);
-    std::vector<Scalar> residuals(q.size());
+    const std::vector<Scalar>& delta, std::pair<std::vector<Scalar>, std::vector<Scalar>> products = {}) {
+    if (p.site_component.empty()) return {};
+    auto& [q, residuals] = products;
+    q = bonded_densities(x, p, sites, delta, std::move(q));
+    residuals.resize(q.size());
     for (std::size_t a = 0; a < q.size(); ++a) {
         q[a] *= density * NUMBER_DENSITY_PER_ANGSTROM3;
         residuals[a] = sites[a] * (Scalar(1.0) + q[a]) - Scalar(1.0);
     }
-    return {q, residuals};
+    return products;
 }
 
 template <typename Scalar, typename ParameterSet, typename Fixed>

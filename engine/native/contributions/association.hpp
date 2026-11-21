@@ -22,6 +22,11 @@
 
 namespace epcsaft {
 
+template <typename Fixed>
+struct AssociationStrengthWorkspace {
+    std::vector<Fixed> laws, law_energy, law_volume;
+};
+
 template <typename Scalar, typename ParameterSet, typename Fixed>
 std::vector<Scalar> association_delta(
     const Fixed& temperature,
@@ -30,15 +35,17 @@ std::vector<Scalar> association_delta(
     const ParameterSet& parameters,
     const std::vector<Fixed>& sigma,
     const std::vector<Fixed>& diameter,
-    const std::array<Fixed, 4>* prepared = nullptr
+    const std::array<Fixed, 4>* prepared = nullptr, std::vector<Scalar> delta = {},
+    AssociationStrengthWorkspace<Fixed>* scratch = nullptr
 ) {
     const std::size_t sites = parameters.site_component.size();
     const auto zeta = packing_moments(molar_density, mole_fractions, parameters, diameter, prepared);
     // Declared laws, then thermal combining rules over their explicit self edges, give energy and
     // volume at this temperature; without them the stored values are read unchanged.
-    const auto laws = temperature_law_values(temperature, parameters);
+    AssociationStrengthWorkspace<Fixed> local;
+    auto& [laws, law_energy, law_volume] = scratch ? *scratch : local;
+    laws = temperature_law_values(temperature, parameters, std::move(laws));
     const bool thermal = !parameters.temperature_law_slot.empty() || !parameters.association_thermal_rule.empty();
-    std::vector<Fixed> law_energy, law_volume;
     if (thermal) {
         law_energy.assign(parameters.association_energy_over_k.begin(), parameters.association_energy_over_k.end());
         law_volume.assign(parameters.association_volume.begin(), parameters.association_volume.end());
@@ -62,7 +69,7 @@ std::vector<Scalar> association_delta(
             law_volume[slot] = law_volume[mirror] = volume;
         }
     }
-    std::vector<Scalar> delta(sites * sites, Scalar(0.0));
+    delta.assign(sites * sites, Scalar(0.0));
     for (std::size_t a = 0; a < sites; ++a) {
         const auto i = static_cast<std::size_t>(parameters.site_component[a]);
         for (std::size_t b = 0; b < sites; ++b) {
@@ -124,10 +131,10 @@ std::vector<Scalar> association_density_coefficients(const Scalar& density,
 inline Eigen::MatrixXd mass_action_jacobian(
     const std::vector<double>& mole_fractions, const Parameters& parameters,
     const std::vector<double>& site_fractions, double number_density,
-    const std::vector<double>& delta, const std::vector<double>& bonded
+    const std::vector<double>& delta, const std::vector<double>& bonded, Eigen::MatrixXd jacobian = {}
 ) {
     const auto sites = static_cast<Eigen::Index>(site_fractions.size());
-    Eigen::MatrixXd jacobian(sites, sites);
+    jacobian.resize(sites, sites);
     for (Eigen::Index a = 0; a < sites; ++a) {
         for (Eigen::Index b = 0; b < sites; ++b)
             jacobian(a, b) = site_fractions[a] * number_density
@@ -149,18 +156,15 @@ inline std::optional<double> admitted_pivot_ratio(const Eigen::FullPivLU<Eigen::
 }
 
 // EqExclude: numerical iteration mechanics
-// Dense and small: the site count is single digits, so the factorisation never
-// shows up next to the tape sweeps. A nearly singular Jacobian returns nothing,
-// the signal to fall back to substitution.
-inline std::optional<std::vector<double>> solve_linear(
-    const Eigen::MatrixXd& matrix,
-    const std::vector<double>& right_hand_side,
+// A refused Newton factorization signals a fallback to substitution.
+inline bool solve_linear(
+    const Eigen::FullPivLU<Eigen::MatrixXd>& factorization,
+    const std::vector<double>& right_hand_side, Eigen::VectorXd& solution,
     double* pivot_ratio = nullptr, std::optional<core::Convergence>* first = nullptr,
     std::optional<core::NumericalRank>* record = nullptr, const std::vector<double>& point = {}, std::size_t iteration = 0
 ) {
-    const Eigen::FullPivLU<Eigen::MatrixXd> factorization(matrix);
     const auto ratio = admitted_pivot_ratio(factorization);
-    if (!ratio || factorization.rank() != matrix.cols()) {
+    if (!ratio || factorization.rank() != factorization.cols()) {
         if (record && !*record) {
             auto rank = core::numerical_rank(factorization, "mass_action_site_fractions");
             core::ConditioningObservation warning{"association", "", "pivot", "rank/pivot", "association_pivot_refusal"};
@@ -178,15 +182,22 @@ inline std::optional<std::vector<double>> solve_linear(
                 + core::optional_number(policy::ASSOCIATION_JACOBIAN_CONDITION.value);
             return r;
         });
-        return std::nullopt;
+        return false;
     }
     if (pivot_ratio != nullptr) *pivot_ratio = *ratio;
-    const auto size = static_cast<Eigen::Index>(right_hand_side.size());
-    const Eigen::VectorXd solution = factorization.solve(
-        Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), size)
-    );
-    return std::vector<double>(solution.data(), solution.data() + size);
+    solution = factorization.solve(Eigen::Map<const Eigen::VectorXd>(right_hand_side.data(), right_hand_side.size()));
+    return true;
 }
+
+struct AssociationWorkspace {
+    AssociationStrengthWorkspace<double> strength;
+    std::vector<double> delta, next, negative_residual;
+    std::pair<std::vector<double>, std::vector<double>> products;
+    Eigen::MatrixXd jacobian;
+    Eigen::FullPivLU<Eigen::MatrixXd> newton;
+    Eigen::VectorXd step;
+    std::optional<core::ResidualHistory> history;
+};
 
 // EqExclude: numerical iteration mechanics
 // `start` replaces the unbonded start X = 1 (a neighbouring solution, inside (0, 1]); `strength` supplies
@@ -204,7 +215,7 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>* strength = nullptr,
     bool pair_start = false,
     const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr,
-    const std::array<double, 4>* prepared = nullptr
+    const std::array<double, 4>* prepared = nullptr, AssociationWorkspace* workspace = nullptr
 ) {
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
@@ -225,13 +236,17 @@ inline std::vector<double> solve_site_fractions(
         return {};
     }
     core::Scope scope("association_newton");
-    const auto computed = strength != nullptr ? std::vector<double>{}
-        : association_delta(temperature, molar_density, mole_fractions, parameters, sigma, diameter, prepared);
-    const auto& delta = strength != nullptr ? *strength : computed;
+    std::optional<AssociationWorkspace> local;
+    auto& scratch = workspace ? *workspace : local.emplace();
+    if (!strength) scratch.delta = association_delta(temperature, molar_density, mole_fractions,
+        parameters, sigma, diameter, prepared, std::move(scratch.delta), &scratch.strength);
+    const auto& delta = strength ? *strength : scratch.delta;
     const double number_density =
         molar_density * NUMBER_DENSITY_PER_ANGSTROM3;
     std::vector<double> fractions = start != nullptr ? *start : std::vector<double>(sites, 1.0);
-    core::ResidualHistory history;
+    if (!scratch.history) scratch.history.emplace();
+    auto& history = *scratch.history;
+    history.clear();
     std::size_t evaluations = 0;
     std::optional<double> last_pivot;
     std::optional<core::NumericalRank> conditioning;
@@ -266,16 +281,14 @@ inline std::vector<double> solve_site_fractions(
     // length inside the physical domain reduces the residual; otherwise the damped
     // substitution step is used. The converged point and the tolerance are
     // unchanged -- only the path to it.
-    auto substitution_step = [&](const std::vector<double>& current) {
-        auto step = bonded_densities(mole_fractions, parameters, current, delta);
-        for (std::size_t a = 0; a < sites; ++a)
-            step[a] = 0.5 * (current[a] + 1.0 / (1.0 + number_density * step[a]));
-        return step;
+    auto& next = scratch.next;
+    auto& bonded = scratch.products.first;
+    const auto residuals_at = [&](const std::vector<double>& point) -> const std::vector<double>& {
+        scratch.products = association_products(molar_density, mole_fractions, parameters, point, delta, std::move(scratch.products));
+        return scratch.products.second;
     };
     auto residual_infinity_norm = [&](const std::vector<double>& point) {
-        const auto values = association_residuals(
-            molar_density, mole_fractions, parameters, point, delta
-        );
+        const auto& values = residuals_at(point);
         ++evaluations;
         double norm = 0.0;
         for (const double value : values) {
@@ -297,16 +310,13 @@ inline std::vector<double> solve_site_fractions(
     };
 
     for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
-        std::vector<double> next;
+        next.clear();
         last_pivot.reset();
         double damping = 0.0;
         std::optional<std::string> method;
         const bool detailed = scope.diagnostics_on();
         {
-            const auto bonded = bonded_densities(mole_fractions, parameters, fractions, delta);
-            std::vector<double> negative_residual(sites, 0.0);
-            for (std::size_t a = 0; a < sites; ++a)
-                negative_residual[a] = 1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
+            bonded = bonded_densities(mole_fractions, parameters, fractions, delta, std::move(bonded));
             // Chapman1990 mass action: exact equivalent-partner pair, otherwise row quadratic.
             if (iteration == 0 && ((pair_start && start == nullptr) || number_density * *std::max_element(bonded.begin(), bonded.end())
                 > 1.0 / policy::ASSOCIATION_JACOBIAN_CONDITION.value)) {
@@ -331,14 +341,22 @@ inline std::vector<double> solve_site_fractions(
                 else if (detailed) scope.observe([&] { method.emplace("analytic association start"); });
             }
             double pivot_ratio = 0.0;
-            const auto solved = next.empty() ? solve_linear(mass_action_jacobian(mole_fractions, parameters, fractions,
-                number_density, delta, bonded), negative_residual, &pivot_ratio, &first, &conditioning, fractions, iteration)
-                : std::nullopt;
+            bool solved = false;
+            if (next.empty()) {
+                auto& rhs = scratch.negative_residual;
+                rhs.resize(sites);
+                for (std::size_t a = 0; a < sites; ++a)
+                    rhs[a] = 1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
+                scratch.jacobian = mass_action_jacobian(mole_fractions, parameters, fractions,
+                    number_density, delta, bonded, std::move(scratch.jacobian));
+                scratch.newton.compute(scratch.jacobian);
+                solved = solve_linear(scratch.newton, rhs, scratch.step, &pivot_ratio, &first, &conditioning, fractions, iteration);
+            }
             // singular or ill-conditioned: fall through to substitution
             if (next.empty() && !solved && detailed)
                 scope.observe([&] { method.emplace("association Jacobian is ill-conditioned"); });
             if (solved) {
-                const auto& step = *solved;
+                const auto& step = scratch.step;
                 // Damped Newton: cap the step inside (0, 1], then halve until the residual decreases.
                 double alpha = 1.0;
                 for (std::size_t a = 0; a < sites; ++a) {
@@ -349,23 +367,22 @@ inline std::vector<double> solve_site_fractions(
                 }
                 const double current = iteration == 0 ? residual_infinity_norm(fractions) : residual_norm;
                 for (; next.empty() && alpha > std::numeric_limits<double>::epsilon(); alpha *= 0.5) {
-                    std::vector<double> candidate(sites, 0.0);
-                    for (std::size_t a = 0; a < sites; ++a) candidate[a] = fractions[a] + alpha * step[a];
-                    if (in_domain(candidate) && residual_infinity_norm(candidate) < current) {
-                        next = std::move(candidate);
+                    next.resize(sites);
+                    for (std::size_t a = 0; a < sites; ++a) next[a] = fractions[a] + alpha * step[a];
+                    if (in_domain(next) && residual_infinity_norm(next) < current) {
                         last_pivot = pivot_ratio;
                         if (detailed) damping = alpha;
-                    }
+                    } else next.clear();
                 }
                 if (detailed && next.empty()) scope.observe([&] { method.emplace("Newton line search exhausted"); });
             }
         }
         if (next.empty()) {
-            next = substitution_step(fractions);
+            next = bonded_densities(mole_fractions, parameters, fractions, delta, std::move(next));
+            for (std::size_t a = 0; a < sites; ++a)
+                next[a] = 0.5 * (fractions[a] + 1.0 / (1.0 + number_density * next[a]));
         }
-        const auto residuals = association_residuals(
-            molar_density, mole_fractions, parameters, next, delta
-        );
+        const auto& residuals = residuals_at(next);
         const bool valid = in_domain(next);
         bool finite_residual = true;
         residual_norm = valid ? 0.0 : std::numeric_limits<double>::infinity();
@@ -402,7 +419,7 @@ inline std::vector<double> solve_site_fractions(
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
         }
-        fractions = std::move(next);
+        fractions.swap(next);
         if (residual_norm <= tolerance) {
             const auto convergence = make_record(
                 residual_norm, iteration + 1, core::Stop::converged, false
