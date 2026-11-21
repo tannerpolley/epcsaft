@@ -474,6 +474,8 @@ struct CompiledSystem final {
     std::vector<Layout> shape;  // per phase: its solved-chart columns
     std::vector<std::optional<std::size_t>> charge_row;  // per phase: ordinal of its charge row and multiplier, if any
     std::optional<StandardTerm> fixed_standard;  // the prepared standard term when T and P are both fixed
+    struct Declaration;
+    std::shared_ptr<const Declaration> original;
 
     // EqIDs solid_standard_gibbs and solid_saturation_index: g_s/RT and A_s/RT = lambda.B nu_s - g_s/RT.
     double solid_gibbs(const PhasePoint& prepared, std::size_t solid) const;
@@ -616,6 +618,8 @@ EPC_API CompiledSystem compile_problem(
     const HelmholtzModel& model, const EquilibriumProblem& problem
 );
 EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
+EPC_API CompiledSystem compile_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&);
+CompiledSystem refresh_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&, const CompiledSystem&);
 
 // Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
 void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
@@ -1000,7 +1004,9 @@ EPC_API EquilibriumResult solve_equilibrium(
 );
 EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
     std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,
-    const std::vector<std::string>& component_ids = {});
+    const std::vector<std::string>& component_ids = {}, const CompiledSystem* prepared = nullptr);
+EPC_API EquilibriumResult solve_equilibrium(const HelmholtzModel&, const EquilibriumProblem&,
+    const std::optional<EquilibriumResult>&, const std::vector<std::string>&, const CompiledSystem& prepared);
 EPC_API EquilibriumResult solve_equilibrium(const IdealMoleFraction&, const EquilibriumProblem&,
     const std::optional<EquilibriumResult>& start = std::nullopt);
 // The same solve of a compiled problem (its model must outlive it), inside the caller's open span if given.

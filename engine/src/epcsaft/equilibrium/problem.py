@@ -931,6 +931,7 @@ def solve_equilibrium(
     *,
     work_limit: int | None = None,
     branch_end_work_limit: int | None = None,
+    prepared: _core.CompiledSystem | None = None,
 ) -> _core.EquilibriumResult:
     """Solve a declared phase/reaction problem in the native driver.
 
@@ -955,6 +956,8 @@ def solve_equilibrium(
         target attempt, including work exhaustion. Requires work_limit and an
         admitted bubble start. The branch-end estimate is separate from the
         unavailable target state.
+    prepared : CompiledSystem, optional
+        Compilation from `compile_problem` for unbudgeted Helmholtz solves.
 
     Returns
     -------
@@ -984,7 +987,8 @@ def solve_equilibrium(
             raise ValueError("work_limit requires a declared mixture bubble")
         return logged(_core.solve_equilibrium, model._model, native, start)
     return logged(
-        _core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit, branch_end_work_limit=branch_end_work_limit
+        _core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit,
+        branch_end_work_limit=branch_end_work_limit, prepared=prepared,
     )
 
 
@@ -1018,7 +1022,9 @@ def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.
     (ALG-EQUILIBRIUM and ALG-STABILITY).
     """
     native = problem._native(model) if isinstance(problem, Problem) else problem
-    return _core.compile_problem(model._model, native)
+    if isinstance(model, IdealMoleFraction):
+        return _core.compile_problem(model._model, native)
+    return _core.compile_problem(model._model, native, model.component_ids)
 
 
 def asl_record(model: Mixture, problem: Problem, continuation: _core.ContinuationOptions, feed_offset: Sequence[float],
