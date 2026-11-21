@@ -174,13 +174,14 @@ public:
             if (prepared) return *start;
             if (strength.empty()) return std::vector<double>{};
             if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
+            if (!association_) association_ = std::make_unique<AssociationWorkspace>();
             const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
             if constexpr (std::is_same_v<Base, double>)
                 return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure,
-                    held_packing());
+                    held_packing(), association_.get());
             else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
                 narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
-                narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure);
+                narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure, nullptr, association_.get());
         } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
         }();
         site_series.clear();
@@ -192,9 +193,9 @@ public:
             static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
             if (!prepared) {
             if constexpr (std::is_same_v<Base, double>)
-                properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength);
+                properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength, nullptr, association_.get());
             else if (central_sites_.empty()) properties::site_factorization(factorization, sites, narrow_values(composition_.begin(), composition_.end()), model_.parameters(),
-                static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength);
+                static_cast<double>(rho0 * NUMBER_DENSITY_PER_ANGSTROM3), strength, nullptr, association_.get());
             }
             const auto& lu = prepared ? *prepared : factorization;
             const auto count = static_cast<Eigen::Index>(sites.size());
@@ -356,6 +357,7 @@ private:
     Base temperature_, total_ = 0.0;
     bool pairs_ = true;
     mutable std::vector<Base> central_sites_;
+    mutable std::unique_ptr<AssociationWorkspace> association_;
     mutable std::size_t used_ = 0;
     std::vector<Base> composition_, sigma_, diameter_, amounts_;
 };

@@ -1729,7 +1729,8 @@ void check_conditioning() {
         std::optional<core::NumericalRank> warning;
         std::optional<core::Convergence> first = refusal;
         Matrix singular = Matrix::Identity(2, 2); singular(1, 1) = 0;
-        CHECK(!solve_linear(singular, {0, 1}, nullptr, &first, &warning, {0.5, 0.5}, 3));
+        Eigen::VectorXd step;
+        CHECK(!solve_linear(Eigen::FullPivLU<Matrix>(singular), {0, 1}, step, nullptr, &first, &warning, {0.5, 0.5}, 3));
         if (!warning || !warning->first_conditioning_warning || warning->first_conditioning_warning->available
             || warning->first_conditioning_warning->coordinates != std::vector<double>({0.5, 0.5})
             || warning->first_conditioning_warning->iteration != 3 || core::describe(*first) != core::describe(refusal))

@@ -97,6 +97,8 @@ inline Stop classify(
 
 class ResidualHistory final {
 public:
+    void clear() { values_.clear(); }
+
     void push(double residual) {
         if (!std::isfinite(residual)) throw std::invalid_argument("nonfinite residual history");
         values_.push_back(residual);

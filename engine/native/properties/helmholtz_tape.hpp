@@ -44,17 +44,17 @@ struct SegmentGeometry final { std::vector<Fixed> sigma, diameter; };
 
 // Segment sigma and the temperature-dependent diameter, admitted finite and positive (series by their lead value).
 template <typename Fixed, class ParameterSet>
-SegmentGeometry<Fixed> admitted_segment_geometry(const Fixed& temperature, const ParameterSet& parameters) {
+SegmentGeometry<Fixed> admitted_segment_geometry(const Fixed& temperature, const ParameterSet& parameters,
+    SegmentGeometry<Fixed> result = {}) {
     const auto require_positive = [](const std::vector<Fixed>& values, const char* message) {
         if (!std::all_of(values.begin(), values.end(), [](const Fixed& value) {
                 const auto lead = scalar_lead(value);
                 return wide_math::isfinite(lead) && lead > 0.0; }))
             throw std::invalid_argument(message);
     };
-    SegmentGeometry<Fixed> result;
-    result.sigma = segment_sigma(temperature, parameters);
+    result.sigma = segment_sigma(temperature, parameters, std::move(result.sigma));
     require_positive(result.sigma, "invalid sigma correlation");
-    result.diameter = segment_diameter(temperature, parameters, result.sigma);
+    result.diameter = segment_diameter(temperature, parameters, result.sigma, std::move(result.diameter));
     require_positive(result.diameter, "invalid segment diameter");
     return result;
 }
@@ -209,7 +209,7 @@ struct HelmholtzTape final {
         return result;
     }
 
-    std::vector<double> forward_zero(const std::vector<double>& point, std::size_t* forward_count = nullptr) {
+    const std::vector<double>& forward_zero(const std::vector<double>& point, std::size_t* forward_count = nullptr) {
         if (zero_point.size() != point.size()
             || std::memcmp(zero_point.data(), point.data(), point.size() * sizeof(double)) != 0) {
             if (quotient_model) {

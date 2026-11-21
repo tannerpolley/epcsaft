@@ -29,7 +29,8 @@
 
 namespace epcsaft {
 
-namespace detail { struct HelmholtzTape; }
+struct AssociationWorkspace;
+namespace detail { struct HelmholtzTape; struct HelmholtzEvaluation; }
 
 EPC_API void density_conditioning(core::Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization");
 
@@ -582,7 +583,7 @@ private:
         const std::vector<double>& amounts
     ) const;
     detail::PredicateSignature predicate_signature(
-        double temperature, const std::vector<double>& composition, bool ideal = false
+        double temperature, const std::vector<double>& composition, bool ideal = false, detail::PredicateSignature result = {}
     ) const;
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
@@ -601,6 +602,7 @@ private:
     std::vector<ActiveParameter> active_;
     std::optional<ThermochemistryRecord> thermochemistry_;
     void reset_state_tapes() const;
+    mutable std::unique_ptr<detail::HelmholtzEvaluation> evaluation_;
     mutable std::unique_ptr<detail::HelmholtzTape> tape_;
     mutable std::unique_ptr<detail::HelmholtzTape> previous_tape_;
     mutable std::array<std::unique_ptr<detail::HelmholtzTape>, 2> reference_tapes_;
@@ -813,7 +815,7 @@ Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(const std::vector<double>& 
     const Parameters& parameters, double number_density, const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
 void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const std::vector<double>& sites,
     const std::vector<double>& composition, const Parameters& parameters, double number_density,
-    const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
+    const std::vector<double>& delta, PropertyActionStatus* status = nullptr, AssociationWorkspace* scratch = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
 // ALG-DENSITY search domain in mol/m3: DENSITY_LOWER_FRACTION of P/RT to DENSITY_UPPER_FRACTION of the
 // admitted density cap; log_nodes spaces `intervals` cells geometrically.
