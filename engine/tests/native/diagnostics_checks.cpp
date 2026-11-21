@@ -439,6 +439,7 @@ void producer_boundaries() {
     recovered.association_active.assign(9, 0); recovered.association_energy_over_k.assign(9, 0.0);
     recovered.association_volume.assign(9, 0.0);
     recovered.association_active[1] = recovered.association_active[3] = 1;
+    recovered.association_active[8] = 1;  // Declared additional edge at zero strength keeps the recovered Newton case.
     recovered.association_energy_over_k[1] = recovered.association_energy_over_k[3] = 3000.0;
     recovered.association_volume[1] = recovered.association_volume[3] = 953099165.27749503;
     const auto rs = epcsaft::segment_sigma(300.0, recovered);
@@ -457,6 +458,26 @@ void producer_boundaries() {
         recording_support::fields({recording_support::field("first_residual", first ? first->residual : NAN),
             recording_support::field("final_residual", final_sites.residual),
             recording_support::field("gradient_floor", derivative.gradient_floor)}));
+
+    // At the offered start J = [[2, 1e8], [0, 1]]. Row pivoting alone sees pivots 2 and 1.
+    auto scaled = parameters;
+    scaled.site_component = {0, 1};
+    scaled.site_multiplicity = {1, 1};
+    scaled.association_active = {1, 1, 1, 0};
+    const double density = 1.0e4, coupling = 1.0e8;
+    const double strength = coupling / (density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3);
+    const std::vector<double> start = {1.0, 1.0 / coupling}, strengths = {strength, strength, strength, 0.0};
+    std::optional<epcsaft::core::Convergence> scaled_first;
+    const auto scaled_sites = epcsaft::solve_site_fractions(300.0, density, {0.0, 1.0}, scaled, sigma, diameter,
+        nullptr, &start, &strengths, false, {}, &scaled_first);
+    CHECK(scaled_first && scaled_first->rank && scaled_first->rank->rank == 1);
+    recording_support::compare("association-scaled-pivot-refusal", "pivot_ratio", "1",
+        scaled_first->amplification.value_or(NAN), coupling * coupling / 2.0,
+        recording_support::Rule::ReferenceOrOne, 0.0, 1e-12, "full-pivoted-mass-action");
+    recording_support::compare("association-scaled-recovery", "site_fraction", "1",
+        scaled_sites[0], 1.0 / (1.0 + coupling), recording_support::Rule::Absolute,
+        epcsaft::policy::ASSOCIATION_RESIDUAL.value, 0.0, "mass-action");
+
     epcsaft::HelmholtzModel callback_model(properties_support::neutral_binary());
     const auto callback_system = epcsaft::equilibrium::compile_problem(callback_model, equilibrium_support::flash(2));
     const auto initial = epcsaft::equilibrium::boundary_start(callback_system);

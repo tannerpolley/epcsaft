@@ -145,9 +145,9 @@ inline Eigen::MatrixXd mass_action_jacobian(
     return jacobian;
 }
 
-// Full pivoting: a smallest pivot at or below ASSOCIATION_JACOBIAN_CONDITION times the
-// largest marks the Jacobian ill-conditioned. Returns largest/smallest when admitted.
-inline std::optional<double> admitted_pivot_ratio(const Eigen::FullPivLU<Eigen::MatrixXd>& factorization) {
+// A smallest pivot at or below ASSOCIATION_JACOBIAN_CONDITION times the largest refuses the factorization.
+template <class Factorization>
+std::optional<double> admitted_pivot_ratio(const Factorization& factorization) {
     const auto pivots = factorization.matrixLU().diagonal().cwiseAbs();
     const double largest = pivots.maxCoeff(), smallest = pivots.minCoeff();
     if (!std::isfinite(largest) || !(largest > 0.0)
@@ -195,6 +195,7 @@ struct AssociationWorkspace {
     std::pair<std::vector<double>, std::vector<double>> products;
     Eigen::MatrixXd jacobian;
     Eigen::FullPivLU<Eigen::MatrixXd> newton;
+    Eigen::PartialPivLU<Eigen::MatrixXd> partial;
     Eigen::VectorXd step;
     std::optional<core::ResidualHistory> history;
 };
@@ -309,6 +310,35 @@ inline std::vector<double> solve_site_fractions(
         return true;
     };
 
+    const auto& mask = parameters.association_active;
+    const auto active = [](int edge) { return edge != 0; };
+    if (mask.size() == sites * sites && std::count_if(mask.begin(), mask.end(), active) == 2) {
+        const std::size_t edge = std::find_if(mask.begin(), mask.end(), active) - mask.begin();
+        std::size_t a = edge / sites, b = edge % sites;
+        if (a != b && mask[b * sites + a]) {
+            const auto coupling = [&](std::size_t i, std::size_t j) {
+                return number_density * mole_fractions[parameters.site_component[j]]
+                    * parameters.site_multiplicity[j] * delta[i * sites + j];
+            };
+            double q = coupling(a, b), r = coupling(b, a);
+            if (q < r) { std::swap(a, b); std::swap(q, r); }
+            // Chapman et al. (1990), DOI 10.1021/ie00104a021, Eqs. 15 and 22.
+            // Avlund (2011), §2.2, gives the 2 (1:1) quadratic root.
+            const double c = 1.0 + (q - r);
+            next.assign(sites, 1.0);
+            next[a] = 1.0 / (0.5 * c + 0.5 * std::hypot(c, 2.0 * std::sqrt(r)));
+            next[b] = 1.0 / (1.0 + r * next[a]);
+            if (in_domain(next) && (residual_norm = residual_infinity_norm(next)) <= tolerance) {
+                const auto convergence = make_record(residual_norm, 0, core::Stop::converged, false);
+                if (record) *record = convergence;
+                scope.finish(convergence);
+                scope.probe("site_fractions", next);
+                fractions.swap(next);
+                return fractions;
+            }
+        }
+    }
+
     for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
         next.clear();
         last_pivot.reset();
@@ -349,8 +379,21 @@ inline std::vector<double> solve_site_fractions(
                     rhs[a] = 1.0 - fractions[a] * (1.0 + number_density * bonded[a]);
                 scratch.jacobian = mass_action_jacobian(mole_fractions, parameters, fractions,
                     number_density, delta, bonded, std::move(scratch.jacobian));
-                scratch.newton.compute(scratch.jacobian);
-                solved = solve_linear(scratch.newton, rhs, scratch.step, &pivot_ratio, &first, &conditioning, fractions, iteration);
+                // D^-1 J D (D = diag(X)) has row dominance margin >= 1. Every full pivot is
+                // >= min(X)/sites, and growth is bounded by 2^(sites-1). Allow a factor of two for rounding.
+                if (scratch.jacobian.allFinite() && scratch.jacobian.minCoeff() >= 0.0
+                    && std::ldexp(policy::ASSOCIATION_JACOBIAN_CONDITION.value * sites * scratch.jacobian.maxCoeff(),
+                        sites) < *std::min_element(fractions.begin(), fractions.end())) {
+                    scratch.partial.compute(scratch.jacobian);
+                    if (const auto ratio = admitted_pivot_ratio(scratch.partial)) {
+                        scratch.step = scratch.partial.solve(Eigen::Map<const Eigen::VectorXd>(rhs.data(), rhs.size()));
+                        if ((solved = scratch.step.allFinite())) pivot_ratio = *ratio;
+                    }
+                }
+                if (!solved) {
+                    scratch.newton.compute(scratch.jacobian);
+                    solved = solve_linear(scratch.newton, rhs, scratch.step, &pivot_ratio, &first, &conditioning, fractions, iteration);
+                }
             }
             // singular or ill-conditioned: fall through to substitution
             if (next.empty() && !solved && detailed)

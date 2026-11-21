@@ -243,6 +243,31 @@ step control that keeps site fractions in (0,1]. Accept only a finite residual
 meeting the declared criterion. Return nonconvergence, domain escape or a
 singular defining Jacobian explicitly; the last iterate is not success.
 
+When the declared mask contains one reciprocal off-diagonal edge $A$–$B$,
+let $q=\widehat\rho x_{i(B)}\nu_B\Delta_{AB}$ and
+$r=\widehat\rho x_{i(A)}\nu_A\Delta_{BA}$. Relabel the sites so $q\ge r$.
+Eliminating $X_B$ gives $rX_A^2+(1+q-r)X_A-1=0$. With $c=1+(q-r)$, the
+positive root is $X_A=2/(c+\operatorname{hypot}(c,2\sqrt r))$ and
+$X_B=1/(1+rX_A)$. Other sites have $X=1$. This is the two-population reduction
+of Chapman1990 Eqs. (15) and (22), with the symmetric 2 (1:1) root in
+[Avlund 2011, §2.2](https://orbit.dtu.dk/files/5455364/978-87-92481-35-1_Ane_S_gaard_Avlund_Onefile.pdf).
+Admit the rounded root at the existing site domain and residual criterion.
+If it fails either check, continue from the original Newton start. The
+implicit derivative equations use the admitted root.
+
+For a general Newton correction, let $J=F_X$ and $D=\operatorname{diag}(X)$.
+For nonnegative couplings, $D^{-1}JD$ is strictly row diagonally dominant
+with margin at least one. Hence $\|J^{-1}\|_\infty\le1/\min X$ on the site
+domain. A full-pivot Schur complement has its inverse in a submatrix of the
+permuted $J^{-1}$, which bounds its largest entry below by $\min X/n$ for
+$n$ sites. Growth bounds the largest full pivot above by
+$2^{n-1}\max_{ab}|J_{ab}|$. Try partial pivoting when the ratio of these
+bounds clears twice the existing relative pivot cutoff. This skips the
+column pivot search for well-scaled Newton systems. Full pivoting on the
+original matrix handles other systems, refused partial pivots, and
+nonfinite partial corrections. Endpoint derivatives retain their full-pivot
+admission and diagnostics.
+
 For the energy evaluation, use the shared bonded products
 $q_A=\widehat\rho\sum_B x_{i(B)}\nu_B X_B\Delta_{AB}$ and
 $F_A=X_A(1+q_A)-1$. The published association contribution is the
