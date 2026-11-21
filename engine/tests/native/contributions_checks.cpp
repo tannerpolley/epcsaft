@@ -582,8 +582,10 @@ void association_equations_match_closed_forms_and_limits() {
     const std::vector<double> one_sided = {0.0, 1.0};
     const auto one_sided_delta = epcsaft::association_delta(
         cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter);
+    epcsaft::core::Convergence one_sided_record;
     const auto one_sided_fractions = epcsaft::solve_site_fractions(
-        cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter);
+        cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter, &one_sided_record);
+    CHECK(one_sided_record.iterations == 0);
     const double q = rho_n * cross.site_multiplicity[1] * one_sided_delta[1];
     const auto one_sided_inputs = recording_support::fields({
         model_inputs(cross, cross_temperature, cross_density, one_sided),

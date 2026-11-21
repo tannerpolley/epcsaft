@@ -387,7 +387,11 @@ inline std::vector<double> solve_site_fractions(
                     scratch.partial.compute(scratch.jacobian);
                     if (const auto ratio = admitted_pivot_ratio(scratch.partial)) {
                         scratch.step = scratch.partial.solve(Eigen::Map<const Eigen::VectorXd>(rhs.data(), rhs.size()));
-                        if ((solved = scratch.step.allFinite())) pivot_ratio = *ratio;
+                        solved = scratch.step.allFinite();
+                        // Roundoff at X = 1 can block the entire Newton correction.
+                        for (std::size_t a = 0; solved && a < sites; ++a)
+                            if (fractions[a] == 1.0 && fractions[a] + scratch.step[a] > 1.0) solved = false;
+                        if (solved) pivot_ratio = *ratio;
                     }
                 }
                 if (!solved) {

@@ -478,6 +478,19 @@ void producer_boundaries() {
         scaled_sites[0], 1.0 / (1.0 + coupling), recording_support::Rule::Absolute,
         epcsaft::policy::ASSOCIATION_RESIDUAL.value, 0.0, "mass-action");
 
+    // Row pivoting can round the zero correction at X_A = 1 outward for J = [[1, 0], [5, 9]].
+    const double cross_strength = 8.0 / (density * epcsaft::NUMBER_DENSITY_PER_ANGSTROM3);
+    const std::vector<double> boundary_start = {1.0, 5.0 / 8.0};
+    const std::vector<double> cross_strengths = {0.0, cross_strength, cross_strength, 0.0};
+    epcsaft::core::Convergence boundary_record;
+    const auto boundary_sites = epcsaft::solve_site_fractions(300.0, density, {1.0, 0.0}, scaled, sigma, diameter,
+        &boundary_record, &boundary_start, &cross_strengths);
+    CHECK(boundary_record.iterations == 1 && boundary_record.stop == Stop::converged);
+    CHECK(boundary_sites[0] == 1.0);
+    recording_support::compare("association-boundary-pivot-retry", "site_fraction", "1",
+        boundary_sites[1], 1.0 / 9.0, recording_support::Rule::Absolute,
+        epcsaft::policy::ASSOCIATION_RESIDUAL.value, 0.0, "mass-action");
+
     epcsaft::HelmholtzModel callback_model(properties_support::neutral_binary());
     const auto callback_system = epcsaft::equilibrium::compile_problem(callback_model, equilibrium_support::flash(2));
     const auto initial = epcsaft::equilibrium::boundary_start(callback_system);

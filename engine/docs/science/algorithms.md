@@ -265,7 +265,8 @@ $2^{n-1}\max_{ab}|J_{ab}|$. Try partial pivoting when the ratio of these
 bounds clears twice the existing relative pivot cutoff. This skips the
 column pivot search for well-scaled Newton systems. Full pivoting on the
 original matrix handles other systems, refused partial pivots, and
-nonfinite partial corrections. Endpoint derivatives retain their full-pivot
+nonfinite partial corrections. It also retries a partial correction that
+would block the step at a site fraction of one. Endpoint derivatives retain their full-pivot
 admission and diagnostics.
 
 For the energy evaluation, use the shared bonded products
