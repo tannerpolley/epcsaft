@@ -29,7 +29,7 @@
 namespace {
 
 using epcsaft::HelmholtzModel;
-using epcsaft::detail::family_values;
+using epcsaft::equilibrium::model_at;
 
 thread_local std::string callback_error;
 
@@ -223,15 +223,6 @@ std::optional<EquilibriumFailure> central_failure(const EquilibriumContext& cont
     return std::nullopt;
 }
 
-// The model at theta, by the slot assignment of CoordinateSet::apply, in model.active_parameters() order.
-auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
-    auto parameters = model.parameters();
-    const auto& active = model.active_parameters();
-    for (std::size_t k = 0; k < theta.size(); ++k)
-        for (auto i : active[k].indices) family_values(parameters, active[k].family).first[i] = theta[k];
-    return std::make_unique<HelmholtzModel>(std::move(parameters), active, model.thermochemistry(), model.solver_options());
-}
-
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
     RecordReader reader(raw);
     epcsaft::ParameterDocument document;
@@ -414,7 +405,8 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         using Kind = eq::SolvedStateObservableKind;
         const Kind kinds[3] = {Kind::PhaseComponentAmount, Kind::SystemEnthalpy, Kind::SolidAmount};
         const int strings[3] = {3, 1, 2};  // the record, then the selectors
-        const int n = argument_count(arguments, strings[kind], 128, "equilibrium callback requires real q and the record");
+        const int n = argument_count(arguments, strings[kind], 2 + 2 * eq::asl_record_vector_limit,
+                                     "equilibrium callback requires real q and the record");
         const auto p = kind != 1 ? selector(arguments, n + 1, kind == 0 ? 2 : 64) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
         observable = eq::solved_state_observable_id({kinds[kind], p, c});
         const char* record = string_argument(arguments, n);

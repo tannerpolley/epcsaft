@@ -21,7 +21,7 @@ from pyomo.core.base.external import AMPLExternalFunction, _ARGLIST  # type: ign
 from pyomo.environ import Var, check_optimal_termination, log, value, units as u  # type: ignore[import-untyped]
 
 from . import _core
-from .eos import DensityBranch, PressureActionDirection, property_asl_record
+from .eos import DensityBranch, PressureActionDirection, _branch, property_asl_record
 
 
 class PropertyExternalFunction(AMPLExternalFunction):  # type: ignore[misc]
@@ -262,13 +262,14 @@ def check_state(state: Any, phase: str) -> Any:
     """Read native endpoint diagnostics; warn when the single root has no classified side."""
     pobj = state.params.get_phase(phase)
     model = pobj.config.equation_of_state_options["model"]
-    batch = model.pressure_actions(
+    batch = model._model.pressure_actions(
         value(state.temperature),
         value(state.pressure),
-        x=[value(state.mole_frac_phase_comp[phase, j]) for j in model.component_ids],
-        phase=phase,
+        mole_fractions=[value(state.mole_frac_phase_comp[phase, j]) for j in model.component_ids],
+        branch=_branch(phase),
         observables=[],
         directions=[PressureActionDirection(composition=[0.0] * len(model.component_ids))],
+        active_parameter_values=[value(v) for v in state.params.epcsaft_active_parameter.values()],
     )
     if batch.molar_density is None:
         raise RuntimeError(batch.density_message)

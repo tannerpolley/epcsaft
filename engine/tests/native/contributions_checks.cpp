@@ -639,8 +639,8 @@ void kraska_model_iv() {
         bond(0, 3, a / (density * x[0])); bond(1, 2, d / (density * x[1]));
         bond(0, 1, b / (density * x[1])); bond(2, 3, b / (density * x[1]));
         std::optional<AssociationAction> accepted;
-        const auto solve = [&](const AssociationPlan* strategy) {
-            return solve_site_fractions(t, rho, x, p, sigma, diameter, nullptr, &seed, &strength,
+        const auto solve = [&](const AssociationPlan* strategy, core::Convergence* work = nullptr) {
+            return solve_site_fractions(t, rho, x, p, sigma, diameter, work, &seed, &strength,
                 false, {}, nullptr, nullptr, nullptr, &accepted, strategy);
         };
         const auto general = solve(nullptr), reduced = solve(&plan);
@@ -659,8 +659,12 @@ void kraska_model_iv() {
         if (d == 8.0) {
             // Violate the supplied strength's declared symmetry to exercise the original-row check.
             strength[1] *= 1.1;
-            const auto expected = solve(nullptr), rejected = solve(&plan);
+            core::Convergence general_work, fallback_work;
+            const auto expected = solve(nullptr, &general_work), rejected = solve(&plan, &fallback_work);
             CHECK(!accepted);
+            std::cout << "rejected-root evaluations: general=" << general_work.evaluations
+                      << " fallback=" << fallback_work.evaluations << '\n';
+            CHECK(fallback_work.evaluations == general_work.evaluations + 1);
             for (std::size_t site = 0; site < seed.size(); ++site)
                 compare("rejected-root/" + std::to_string(site), rejected[site], expected[site], 0.0);
         }

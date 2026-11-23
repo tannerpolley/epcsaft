@@ -83,6 +83,16 @@ def callback_row(text: str, q: Any, row: int | None, components: int = 2, phases
     return [v, *g, *(h[i, j] for j in range(len(q)) for i in range(j + 1))]
 
 
+def test_callback_admits_maximum_real_argument_count() -> None:
+    text = record(water_isobutanol())
+    q = [*TP0, *G0, *THETA0]
+    # 2 state coordinates + 64 feed controls + 64 active parameters must reach record validation.
+    with pytest.raises(RuntimeError, match="control/observable dimension mismatch"):
+        fgh(text, q + [0.0] * (130 - len(q)), 0, 0)
+    with pytest.raises(RuntimeError, match="equilibrium callback requires real q and the record"):
+        fgh(text, q + [0.0] * (131 - len(q)), 0, 0)
+
+
 def test_record_equals_direct_engine() -> None:
     """F1: at theta0 (G0) and with no active parameters (G0, G1) every row's value, gradient and Hessian equal the direct
     Engine bitwise, and each order returns the same value; at theta* (G0, G1) they match the edited packet to 1e-12."""

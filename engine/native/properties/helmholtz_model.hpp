@@ -410,7 +410,6 @@ struct NeutralReferenceReactionDiagnostic final {
     std::optional<double> terminal_contraction;
     PropertyActionDiagnostics diagnostics;
     std::optional<core::Convergence> density_convergence;
-    std::optional<double> observed_terminal_change;
     // Pressure derivatives of the reference contraction, admitted like dC/dT at scales P and P^2;
     // explicit fixed-pressure sources carry exact zero system-pressure derivatives.
     std::optional<double> terminal_contraction_pressure_derivative;
@@ -709,7 +708,6 @@ struct HenryConstant final {
     std::size_t component_index = 0;
     std::optional<double> raw_log_reference;  // admitted limit of ln(rho/rho0) + mu_i^res/RT, rho0 = 1 mol/m3
     std::optional<double> henry_constant_px;  // Pa
-    std::optional<double> observed_terminal_change;
     NeutralReferenceStatus status = NeutralReferenceStatus::Nonfinite;
     std::string message;
 };

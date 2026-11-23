@@ -7,6 +7,8 @@
 #include <type_traits>
 
 namespace epcsaft::equilibrium {
+inline constexpr int asl_record_vector_limit = 64;
+
 // Explicit caller coordinates; no chemical identity selects a feed map or phase.
 struct AslFeedMap {
     std::vector<double> offset, anchor;
@@ -24,7 +26,8 @@ struct AslFeedMap {
         auto require = [](bool ok, const char* condition) {
             if (!ok) throw std::invalid_argument(std::string("invalid ASL affine feed/phase contract: ") + condition);
         };
-        require(n > 0 && n <= 64 && !anchor.empty() && anchor.size() <= 64, "1 to 64 components and 1 to 64 anchor controls");
+        require(n > 0 && n <= asl_record_vector_limit && !anchor.empty() && anchor.size() <= asl_record_vector_limit,
+                "1 to 64 components and 1 to 64 anchor controls");
         require(offset.size() == n && matrix.size() == n && problem.feed.values.size() == n, "feed offset, matrix and amounts have one row per component");
         require(!problem.temperature.free && !problem.pressure.free && problem.feed.kind == FeedKind::Amounts, "fixed T and P with an absolute amount feed");
         // Two fluid phases with an identity gap, or one liquid beside declared-present (Free) solids with neither.
@@ -97,7 +100,7 @@ public:
 
 // One field walk per record block serves both archives, so the writer and the reader cannot disagree on a field. The
 // writer walks a copy of its inputs; checks named for one archive test whether A is the writer.
-template <class A, class V, class Each> void list(A& a, V& values, Each each, std::size_t maximum = 64) {
+template <class A, class V, class Each> void list(A& a, V& values, Each each, std::size_t maximum = asl_record_vector_limit) {
     std::size_t n = values.size();
     a.count(n, maximum);
     if constexpr (std::is_same_v<V, std::vector<typename V::value_type>>) values.resize(n);
@@ -127,6 +130,16 @@ template <class A> void document(A& a, ParameterDocument& d) {
     list(a, d.entries, [&a](ParameterEntry& e) {
         a.text(e.identity); a.text(e.field); list(a, e.index, wholes(a)); a.number(e.magnitude); a.text(e.unit);
     }, 4096);
+}
+
+// The slot assignment of CoordinateSet::apply, in model.active_parameters() order.
+inline auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
+    auto parameters = model.parameters();
+    const auto& active = model.active_parameters();
+    if (theta.size() != active.size()) throw std::invalid_argument("active parameter dimension mismatch");
+    for (std::size_t k = 0; k < theta.size(); ++k)
+        for (auto i : active[k].indices) detail::family_values(parameters, active[k].family).first[i] = theta[k];
+    return std::make_unique<HelmholtzModel>(std::move(parameters), active, model.thermochemistry(), model.solver_options());
 }
 
 // The active parameters in model order; their values are the document's.

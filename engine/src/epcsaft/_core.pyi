@@ -1842,7 +1842,8 @@ class HelmholtzModel:
                          mole_fractions: Sequence[float], branch: DensityBranch,
                          observables: Sequence[PropertyObservable],
                          directions: Sequence[PressureActionDirection],
-                         anchor_density: Optional[float] = None) -> PropertyActionBatch:
+                         anchor_density: Optional[float] = None, *,
+                         active_parameter_values: Sequence[float] | None = None) -> PropertyActionBatch:
         """Contract exact property derivatives through pressure closure.
 
         Parameters
@@ -2277,7 +2278,6 @@ class NeutralReferenceReactionDiagnostic:
     """Dimensionless terminal reaction contraction used for standard-state transfer, or None when
     unavailable.
     """
-    observed_terminal_change: Optional[float]
     """Dimensionless change between consecutive terminal extrapolations, or None when unavailable;
     a local numerical estimate, not a universal error bound.
     """
@@ -4266,7 +4266,6 @@ class HenryConstant:
     """
     henry_constant_px: Optional[float]
     """H_i^px = lim(f_i/x_i) in Pa, or None unless the reference is available."""
-    observed_terminal_change: Optional[float]
     """Dimensionless change between the terminal reference extrapolations, or None without the
     comparison.
     """

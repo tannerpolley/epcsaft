@@ -329,6 +329,37 @@ def methane_ethane(theta: tuple[float, float] | None = None) -> Mixture:
     return Mixture(parameters, thermochemistry=record(form, form, lower=150.0, upper=350.0), active_parameters=active(parameters))
 
 
+def test_check_state_uses_current_active_parameters() -> None:
+    from idaes.core import FlowsheetBlock
+    from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock
+
+    from epcsaft.idaes import check_state, property_configuration
+
+    model, shifted = methane_ethane(), methane_ethane(THETA_STAR)
+    T, P = STATES["liquid"]
+    x = [0.3, 0.7]
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.props = GenericParameterBlock(**property_configuration(
+        model, phases=("liquid",), temperature_ref=T, pressure_ref=P,
+        state_bounds={"flow_mol": (0, 1, 10), "temperature": (150, T, 350), "pressure": (5e4, P, 1e7)},
+    ))
+    m.fs.sb = m.fs.props.build_state_block([0], defined_state=True)
+    sb = m.fs.sb[0]
+    sb.temperature.set_value(T)
+    sb.pressure.set_value(P)
+    for j, fraction in zip(model.component_ids, x, strict=True):
+        sb.mole_frac_phase_comp["liquid", j].set_value(fraction)
+    for var, fitted in zip(m.fs.props.epcsaft_active_parameter.values(), THETA_STAR, strict=True):
+        var.set_value(fitted)
+
+    expected = shifted.pressure_actions(T, P, x=x, phase="liquid", observables=[], directions=[])
+    actual = check_state(sb, "liquid")
+    assert expected.molar_density is not None
+    assert actual.molar_density == expected.molar_density
+    assert actual.diagnostics.returned_branch == expected.diagnostics.returned_branch
+
+
 def native_columns(model: Mixture, phase: str) -> tuple[list[float], list[list[float]], dict[tuple[int, int], list[float]]]:
     """Rows at x_methane 0.3: values, raw actions along (T, P, k_ij, eps/k) and their second actions, i <= j. As in
     the callback, the first call's exhaustive root search anchors every later direction."""
