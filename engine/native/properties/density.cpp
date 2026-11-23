@@ -204,13 +204,17 @@ public:
                 const auto count = static_cast<Eigen::Index>(sites.size());
                 rows.resize(count); cross.resize(count);
                 if constexpr (!std::is_same_v<Base, double>) {
-                    if (central_sites_.empty()) { central_sites_.assign(sites.begin(), sites.end()); used_ = record.iterations; }
+                    const auto budget = static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value);
+                    if (central_sites_.empty()) {
+                        central_sites_.assign(sites.begin(), sites.end());
+                        used_ = record.iterations > budget ? record.iterations - budget : record.iterations;
+                    }
                     const auto stop = [&](core::Stop how, const char* cause, Base residual) {
                         refinement.emplace();
                         refinement->residual = static_cast<double>(residual), refinement->stop = how, refinement->cause = cause;
                     };
                     for (std::size_t k = 0; k <= N; ++k) {
-                        // Each order's refinement has the declared budget; order 0 continues the site solve's count.
+                        // Order 0 continues the budget of the site's final attempt.
                         std::size_t used = k == 0 ? used_ : 0;
                         Base normalization = 1.0;
                         for (std::size_t j = 0; direction.empty() && j < k; ++j) normalization *= volume;
@@ -226,7 +230,7 @@ public:
                             }
                             entry.probe("association_refinement_residual", {static_cast<double>(k), static_cast<double>(norm), static_cast<double>(scale)}, used);
                             if (norm <= std::numeric_limits<Base>::epsilon() * scale) break;
-                            if (!moved || used++ >= static_cast<std::size_t>(policy::ASSOCIATION_MAX_ITERATIONS.value)) {
+                            if (!moved || used++ >= budget) {
                                 // Where refinement would refuse, a residual within the evaluation's rounding bound that
                                 // failed to halve on the last update has stagnated at that floor: accept and name it.
                                 if (!(norm > Base(count) * std::numeric_limits<Base>::epsilon() * scale || norm <= previous / 2)) {

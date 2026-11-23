@@ -342,12 +342,42 @@ void fit_failure_records() {
     const auto reference = predict_validated(model, first);
     CHECK(reference.value && reference.first_numerical_failure
         && reference.first_numerical_failure->stop == core::Stop::converged_to_floor);
+    CHECK(agree("bubble/recovered-pressure", "pressure", "Pa", *reference.value,
+        6023.3839326137504, 0., 1e-10, fields({field("T_K", 330.), field("feed", first.problem.feed.values)})));
     first.observed = *reference.value;
     request.weights = {1., 1.};
 
+    {
+        const HelmholtzModel retry_model(properties_support::associating_binary(), {}, {}, solver_options);
+        core::Capture capture(true);
+        const auto state = retry_model.state(330., 2918., {0.5, 0.5});
+        const auto& spans = capture.trace().spans;
+        const auto site_solve = std::find_if(spans.begin(), spans.end(),
+            [](const auto& span) { return std::string_view(span.name) == "association_newton"; });
+        CHECK(site_solve != spans.end() && site_solve->convergence
+            && site_solve->convergence->stop == core::Stop::converged && site_solve->convergence->iterations == 57);
+        CHECK(state.first_numerical_failure && state.first_numerical_failure->stop == core::Stop::converged_to_floor
+            && state.first_numerical_failure->iterations == 50);
+    }
+
+    auto partial_pivot_bubble = first;
+    partial_pivot_bubble.problem.feed.values = {0.25, 0.75};
+    CHECK(predict_validated(model, partial_pivot_bubble).value);
+
+    auto refused_bubble = first;
+    refused_bubble.problem.feed.values = {0.2, 0.8};
+    // The default pressure seed now recovers. A 10 kPa seed tests the terminal path.
+    refused_bubble.problem.pressure = FreeValue::variable(1e4);
+    const auto refused_reference = predict_validated(model, refused_bubble);
+    CHECK(!refused_reference.value && refused_reference.first_numerical_failure
+        && refused_reference.first_numerical_failure->stop == core::Stop::converged_to_floor
+        && refused_reference.first_numerical_failure->criterion
+        && std::string_view(refused_reference.first_numerical_failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
+
     auto cell = equilibrium_support::flash(2);
     cell.temperature = FreeValue::fixed(329.);
-    cell.pressure = FreeValue::fixed(1e4);
+    // The fit-order checks need a central prediction without a recovered site failure.
+    cell.pressure = FreeValue::fixed(9900.);
     const auto coalesced = equilibrium_support::bubble_at(700.);
     const auto failed_solve = solve_equilibrium(model, coalesced);
     CHECK(!failed_solve.success && !failed_solve.terminal_numerical_failure

@@ -1355,10 +1355,10 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             } catch (const std::exception& error) { if (stages) retain_density_failure(stages->first_numerical_failure, error, "boundary anchor"); root = unanchored(); }
             else root = unanchored();
         } catch (const std::runtime_error& error) {
-            if (stages) retain_density_failure(stages->first_numerical_failure, error, "boundary density");
-            throw std::runtime_error(
-                std::string("boundary seed has no density root: ") + error.what()
-            );
+            std::optional<core::Convergence> local_first;
+            auto& first = stages ? stages->first_numerical_failure : local_first;
+            retain_density_failure(first, error, "boundary density");
+            throw DensityStructureError(std::string("boundary seed has no density root: ") + error.what(), first);
         }
         if (stages) { core::retain_first(stages->first_numerical_failure, root.first_numerical_failure);
             for (const auto& rank : root.rank_records) core::retain_rank(stages->rank_records, rank); }

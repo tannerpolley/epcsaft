@@ -339,7 +339,9 @@ inline std::vector<double> solve_site_fractions(
         }
     }
 
-    for (std::size_t iteration = 0; iteration < max_iterations; ++iteration) {
+    bool full_pivot = false;
+    for (std::size_t iteration = 0;;) {
+        const auto ordinal = iteration + (full_pivot ? max_iterations : 0);
         next.clear();
         last_pivot.reset();
         double damping = 0.0;
@@ -381,7 +383,7 @@ inline std::vector<double> solve_site_fractions(
                     number_density, delta, bonded, std::move(scratch.jacobian));
                 // D^-1 J D (D = diag(X)) has row dominance margin >= 1. Every full pivot is
                 // >= min(X)/sites, and growth is bounded by 2^(sites-1). Allow a factor of two for rounding.
-                if (scratch.jacobian.allFinite() && scratch.jacobian.minCoeff() >= 0.0
+                if (!full_pivot && scratch.jacobian.allFinite() && scratch.jacobian.minCoeff() >= 0.0
                     && std::ldexp(policy::ASSOCIATION_JACOBIAN_CONDITION.value * sites * scratch.jacobian.maxCoeff(),
                         sites) < *std::min_element(fractions.begin(), fractions.end())) {
                     scratch.partial.compute(scratch.jacobian);
@@ -396,7 +398,7 @@ inline std::vector<double> solve_site_fractions(
                 }
                 if (!solved) {
                     scratch.newton.compute(scratch.jacobian);
-                    solved = solve_linear(scratch.newton, rhs, scratch.step, &pivot_ratio, &first, &conditioning, fractions, iteration);
+                    solved = solve_linear(scratch.newton, rhs, scratch.step, &pivot_ratio, &first, &conditioning, fractions, ordinal);
                 }
             }
             // singular or ill-conditioned: fall through to substitution
@@ -445,23 +447,23 @@ inline std::vector<double> solve_site_fractions(
         ++evaluations;
         if (detailed) scope.probe("association_iteration",
             {residual_norm, damping, last_pivot.value_or(std::numeric_limits<double>::quiet_NaN()),
-             last_pivot ? 1.0 : 0.0}, static_cast<std::uint32_t>(iteration),
+             last_pivot ? 1.0 : 0.0}, static_cast<std::uint32_t>(ordinal),
             last_pivot ? "Newton" : method ? method->c_str() : "");
         if (std::isfinite(residual_norm)) {
             history.push(residual_norm);
             if (!detailed) scope.probe("association_residual_norm", residual_norm,
-                        static_cast<std::uint32_t>(iteration));
+                        static_cast<std::uint32_t>(ordinal));
         }
         if (!valid) {
             const auto failure = make_record(
-                residual_norm, iteration + 1, core::Stop::left_domain, false
+                residual_norm, ordinal + 1, core::Stop::left_domain, false
             );
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
         }
         if (!finite_residual) {
             const auto failure = make_record(
-                residual_norm, iteration + 1, core::Stop::nonfinite, false
+                residual_norm, ordinal + 1, core::Stop::nonfinite, false
             );
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
@@ -469,7 +471,7 @@ inline std::vector<double> solve_site_fractions(
         fractions.swap(next);
         if (residual_norm <= tolerance) {
             const auto convergence = make_record(
-                residual_norm, iteration + 1, core::Stop::converged, false
+                residual_norm, ordinal + 1, core::Stop::converged, false
             );
             if (record != nullptr) {
                 *record = convergence;
@@ -482,12 +484,19 @@ inline std::vector<double> solve_site_fractions(
             scope.probe("site_fractions", fractions);
             return fractions;
         }
+        if (++iteration < max_iterations) continue;
+        const auto failure = make_record(residual_norm, ordinal + 1, core::Stop::budget_exhausted, true);
+        if (full_pivot || failure.stop != core::Stop::converged_to_floor) {
+            scope.finish(failure);
+            throw core::ConvergenceFailure(failure, first);
+        }
+        core::retain_first(first, failure);
+        fractions = start ? *start : std::vector<double>(sites, 1.0);
+        history.clear();
+        conditioning.reset();
+        full_pivot = true;
+        iteration = 0;
     }
-    const auto failure = make_record(
-        residual_norm, max_iterations, core::Stop::budget_exhausted, true
-    );
-    scope.finish(failure);
-    throw core::ConvergenceFailure(failure, first);
 }
 
 

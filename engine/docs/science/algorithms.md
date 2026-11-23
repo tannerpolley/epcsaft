@@ -268,6 +268,8 @@ original matrix handles other systems, refused partial pivots, and
 nonfinite partial corrections. It also retries a partial correction that
 would block the step at a site fraction of one. Endpoint derivatives retain their full-pivot
 admission and diagnostics.
+After a floor-limited solve, retry once with full pivoting from the original
+site fractions. The retry uses the same residual target and iteration budget.
 
 For the energy evaluation, use the shared bonded products
 $q_A=\widehat\rho\sum_B x_{i(B)}\nu_B X_B\Delta_{AB}$ and
