@@ -2531,6 +2531,16 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
     require(input.size() == 1 || input.size() == count, "state input array length");
     require(composition.size() == 1 || composition.size() == count, "composition array length");
     for (const auto& row : composition) require(row.size() == parameters_.component_count(), "composition row width");
+    const bool fixed_isotherm = at_pressure && count > 1
+        && std::any_of(parameters_.association_active.begin(), parameters_.association_active.end(),
+            [](int edge) { return edge != 0; })
+        && std::all_of(temperature.begin() + 1, temperature.end(), [&](const double& t) {
+            return std::memcmp(&t, temperature.data(), sizeof(double)) == 0;
+        }) && std::all_of(composition.begin() + 1, composition.end(), [&](const auto& x) {
+            return x.empty() || std::memcmp(x.data(), composition.front().data(), x.size() * sizeof(double)) == 0;
+        });
+    std::optional<DensityScanCache> scan = fixed_isotherm ? std::optional{DensityScanCache{}} : std::nullopt;
+    auto* scan_cache = scan ? &*scan : nullptr;
     StateBatch result;
     result.rows.resize(count); result.status.resize(count, StateStatus::Available); result.cause.resize(count);
     result.failure_record.resize(count); result.failure_first.resize(count);
@@ -2544,7 +2554,8 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
             const auto& x = composition[composition.size() == 1 ? 0 : k];
             validate_electroneutrality(x);
             const double value = input[input.size() == 1 ? 0 : k];
-            result.rows[k] = at_pressure ? state_at_pressure(temperature[k], value, x, branch, {}, derived)
+            result.rows[k] = at_pressure ? state_at_pressure(temperature[k], value, x, branch, {}, derived,
+                false, nullptr, scan_cache)
                 : state(temperature[k], value, x, derived, true);
         } catch (const core::DeclarationError& e) { fail(StateStatus::DeclarationError, e, e.record);
         } catch (const core::ConvergenceFailure& e) { fail(StateStatus::ConvergenceError, e, e.record, e.first_numerical_failure);
@@ -2961,11 +2972,11 @@ State HelmholtzModel::state_at_pressure(
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
     std::optional<double> anchor_density,
-    bool derived_properties, bool fixed_parameters, const State* feed_state
+    bool derived_properties, bool fixed_parameters, const State* feed_state, DensityScanCache* scan
 ) const {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
-        *this, temperature, pressure, mole_fractions, branch, anchor_density
+        *this, temperature, pressure, mole_fractions, branch, anchor_density, nullptr, scan
     );
     const bool reuse = feed_state && !scope.on() && !core::CalculationWork::current()
         && !core::AssociationObservations::current() && !derived_properties && !fixed_parameters
