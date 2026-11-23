@@ -80,7 +80,3 @@ inline std::string epcsaft_repr(nanobind::handle self, const char* name, std::in
     return result + ")";
 }
 #define EPCSAFT_REPR(T, ...) .def("__repr__", [](nanobind::handle self) { return epcsaft_repr(self, #T, {__VA_ARGS__}); })
-
-// Python result metadata is allocated only when a packet has admitted bounds.
-#define EPCSAFT_DOMAIN_VIOLATIONS .def_prop_ro("domain_violations", [](nanobind::handle result) { \
-    return nanobind::getattr(result, "_domain_violations", nanobind::none()); })

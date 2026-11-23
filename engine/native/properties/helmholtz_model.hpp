@@ -469,6 +469,7 @@ struct NeutralReferenceReactionDiagnostic final {
     }
 };
 
+struct DomainBounds;
 class HelmholtzModel final {
 public:
     EPC_API explicit HelmholtzModel(
@@ -477,6 +478,9 @@ public:
         std::optional<ThermochemistryRecord> thermochemistry = std::nullopt,
         policy::SolverOptions solver_options = {}
     );
+
+    // Bound by Surface at model construction, read only by the returned-result bindings.
+    std::shared_ptr<const DomainBounds> domains;
 
     EPC_API ~HelmholtzModel();
 

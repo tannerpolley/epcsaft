@@ -297,32 +297,29 @@ class DomainLimit:
 
 class DomainBound:
     """One declared parameter domain bound, indexed in native component order."""
-    packet: str
-    domain_id: str
-    solute: str
-    unit: str
-    quantity: DomainQuantity
-    limit: DomainLimit
-    solvent: int
-    solutes: list[int]
-    bound: float
     def __init__(self, packet: str, domain_id: str, solute: str, unit: str, quantity: DomainQuantity,
                  limit: DomainLimit, solvent: int, solutes: Sequence[int], bound: float) -> None: ...
 
-def admit_domains(parameters: Parameters, bounds: Sequence[DomainBound]) -> list[DomainBound]:
+class DomainBounds:
+    """Admitted bounds retained in their native units."""
+
+def admit_domains(parameters: Parameters, bounds: Sequence[DomainBound]) -> DomainBounds:
     """Admit indexed declarations and their units without evaluating a phase."""
     ...
 class OutsideDomain:
     """One exceeded parameter domain bound in SI units."""
-    declaration: DomainBound
     variable: str
     value: float
     bound: float
     side: str
     packet: str
     domain_id: str
+    unit: str
+    solute: str
+    row: int
+    phase: int
 
-def outside_domains(parameters: Parameters, bounds: Sequence[DomainBound], x: Sequence[float],
+def outside_domains(parameters: Parameters, bounds: DomainBounds | None, x: Sequence[float],
                     temperature: float | None = None, pressure: float | None = None) -> list[OutsideDomain]:
     """Report the declared bounds exceeded by a phase."""
 
@@ -1348,8 +1345,6 @@ class LogFugacityTerms:
     dipolar: list[Optional[float]]
     cation_mixing: list[Optional[float]]
     log_compressibility_factor: float
-def fugacity_terms_pressure(terms: LogFugacityTerms, temperature: float, density: float) -> float: ...
-
 class VirialCoefficientActions:
     """B and C with their derivatives along a (temperature, zero-sum composition) direction."""
     domain_violations: list[OutsideDomain] | None
@@ -1618,7 +1613,6 @@ class DensityDiagnosticRequest:
 
 class DensityDiagnostics:
     """Finite pressure-root and mechanical-loop search evidence."""
-    domain_violations: list[OutsideDomain] | None
     solver_options: list[dict[str, Any]]
     """Effective named numerical settings and provenance."""
     samples: list[DensityDiagnosticPoint]
@@ -1675,7 +1669,7 @@ class StateStatus:
     DomainError: StateStatus
 
 class StateBatch:
-    domain_violations: list[list[OutsideDomain]] | None
+    domain_violations: list[OutsideDomain] | None
     unavailable_properties: list[Optional[list[tuple[str, PropertyActionStatus]]]]
     """Ordered State rows and property columns, with scalar SI units and availability."""
     rows: list[Optional[State]]
@@ -1755,7 +1749,7 @@ class HelmholtzModel:
     active_parameter_values: list[float]
     """Active parameter values in active order, each in its family's native unit."""
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
-                 thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> None:
+                 thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None, domains: DomainBounds | None = None) -> None:
         """Initialize HelmholtzModel from the declared inputs.
 
         Parameters
@@ -3400,7 +3394,7 @@ class BubbleBranchEnd:
     limiting_pressure_pa: float
 
 class EquilibriumResult:
-    domain_violations: list[list[OutsideDomain]] | None
+    domain_violations: list[OutsideDomain] | None
     critical_search: CriticalSearch | None
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
     rejected_reduction: EquilibriumResult | None
@@ -3688,7 +3682,7 @@ class ContinuationRequest:
 
 class ContinuationResult:
     """Accepted states, work and terminal cause of a continuation."""
-    domain_violations: list[list[list[OutsideDomain]]] | None
+    domain_violations: list[OutsideDomain] | None
     success: bool
     """Whether the trace completed its declared success condition; inspect stop and retained
     states.
@@ -5975,7 +5969,7 @@ class EquilibriumWorkLimits:
 
 class EquilibriumStartsResult:
     """Ordered start outcomes and actual budget use."""
-    domain_violations: list[list[list[OutsideDomain]]] | None
+    domain_violations: list[OutsideDomain] | None
     selected: Optional[int]
     """Index of the first result with success=True and requested_tolerance_met=True, or None without such a result; a retained floor-admitted state need not be selected."""
     results: list[Optional[EquilibriumResult]]

@@ -168,10 +168,10 @@ declared parameter bound. Bounds are inclusive, including single-point bounds.
 Unknown domains contribute no bounds. The values returned by the calculation
 are unchanged.
 
-Read `result.domain_violations` for records with `variable`, `value`, `bound`,
+When a bound is exceeded, `result.domain_violations` holds records with `variable`, `value`, `bound`,
 `side`, `packet` and `domain_id`. Temperature is in kelvin, pressure in pascal
 and composition retains its declared basis. The report uses the pressure
-specified or evaluated by the call. Batch and equilibrium reports group
-records by row and phase respectively. For an explicit check, use
+specified or evaluated by the call. The fields `row` and `phase` give
+zero-based positions in batch and equilibrium results. For an explicit check, use
 `mixture.outside_domains(x, T=298.15, P=100000)`. To raise the warning as an
 exception, use `warnings.filterwarnings("error", category=epcsaft.DomainWarning)`.

@@ -3,6 +3,7 @@
 #include "equilibrium/stoichiometry.hpp"
 #include "equilibrium_record.hpp"
 
+#include "domain_reports.hpp"
 #include "fields.hpp"
 #include "solver_options.hpp"
 
@@ -44,6 +45,13 @@ bool IpoptIterations::exit(const nb::args&) {
     ipopt_iteration_log() = previous;
     state = State::closed;
     return false;
+}
+
+static void phase_domains(std::vector<OutsideDomain>& rows, const HelmholtzModel& model,
+                          const EquilibriumResult& result, std::size_t row = 0) {
+    if (result.has_state())
+        for (std::size_t i = 0; i < result.phase_count; ++i)
+            outside_domains(rows, model.parameters(), *model.domains, result.mole_fractions, result.temperature, result.pressure, row, i);
 }
 
 void register_equilibrium(nb::module_& module) {
@@ -384,9 +392,18 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(EquilibriumStartsResult, selected, results, causes, attempt_seconds, iterations, seconds,
             overrun_seconds, budget_exhausted);
-    module.def("solve_equilibrium_starts", &solve_equilibrium_starts, nb::arg("model"), nb::arg("problem"), nb::arg("starts"),
-        nb::arg("limits"));
-    module.def("continue_equilibrium", &continue_equilibrium, nb::arg("model"), nb::arg("request"));
+    module.def("solve_equilibrium_starts", [](const HelmholtzModel& model, const EquilibriumProblem& problem,
+        const std::vector<EquilibriumStart>& starts, const EquilibriumWorkLimits& limits) {
+        return bindings::domain_result(solve_equilibrium_starts(model, problem, starts, limits), model,
+            [&](auto& rows, const EquilibriumStartsResult& r) {
+                for (std::size_t i = 0; i < r.results.size(); ++i) if (r.results[i]) phase_domains(rows, model, *r.results[i], i);
+            });
+    }, nb::arg("model"), nb::arg("problem"), nb::arg("starts"), nb::arg("limits"));
+    module.def("continue_equilibrium", [](const HelmholtzModel& model, const ContinuationRequest& request) {
+        return bindings::domain_result(continue_equilibrium(model, request), model, [&](auto& rows, const ContinuationResult& r) {
+            for (std::size_t i = 0; i < r.states.size(); ++i) phase_domains(rows, model, r.states[i], i);
+        });
+    }, nb::arg("model"), nb::arg("request"));
     // Solved-state actions: the existing native records and owner, transported unchanged.
     nb::enum_<SolvedStateObservableKind>(module, "SolvedStateObservableKind")
         EPCSAFT_VALUES(SolvedStateObservableKind, Temperature, Pressure, PhaseAmount, PhaseComponentAmount,
@@ -462,9 +479,13 @@ void register_equilibrium(nb::module_& module) {
     }, nb::arg("compiled"), nb::arg("point"), nb::arg("lever"));
     module.def("solve_equilibrium", [](const HelmholtzModel& model, const EquilibriumProblem& problem,
         const std::optional<EquilibriumResult>& start, const std::vector<std::string>& ids,
-        std::optional<std::size_t> work_limit, std::optional<std::size_t> branch_end_work_limit, const CompiledSystem* prepared) {
-        if (prepared && !work_limit && !branch_end_work_limit) return solve_equilibrium(model, problem, start, ids, *prepared);
-        return solve_equilibrium(model, problem, start, ids, work_limit, branch_end_work_limit);
+        std::optional<std::size_t> work_limit, std::optional<std::size_t> branch_end_work_limit,
+        const CompiledSystem* prepared) {
+        auto result = prepared && !work_limit && !branch_end_work_limit
+            ? solve_equilibrium(model, problem, start, ids, *prepared)
+            : solve_equilibrium(model, problem, start, ids, work_limit, branch_end_work_limit);
+        return bindings::domain_result(std::move(result), model,
+            [&](auto& rows, const EquilibriumResult& r) { phase_domains(rows, model, r); });
     },
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
         nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt,

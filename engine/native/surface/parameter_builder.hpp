@@ -20,15 +20,19 @@ struct DomainBound final {
     std::vector<std::size_t> solutes;
     double bound;
 };
-struct EPC_API OutsideDomain final {
-    DomainBound declaration;
-    double value;
-    const char* variable() const;
-    const char* side() const;
+struct OutsideDomain final {
+    std::string packet, domain_id, variable, side, unit, solute;
+    double value, bound;
+    std::size_t row, phase;
 };
-EPC_API std::vector<DomainBound> admit_domains(const Parameters&, std::vector<DomainBound>);
-EPC_API std::vector<OutsideDomain> outside_domains(const Parameters&, const std::vector<DomainBound>&, const std::vector<double>&,
-    std::optional<double> temperature, std::optional<double> pressure);
+struct DomainBounds final {
+    std::vector<DomainBound> values;
+};
+
+EPC_API DomainBounds admit_domains(const Parameters&, std::vector<DomainBound>);
+EPC_API void outside_domains(std::vector<OutsideDomain>&, const Parameters&, const DomainBounds&, const std::vector<double>&,
+    std::optional<double> temperature, std::optional<double> pressure, std::size_t row = 0, std::size_t phase = 0,
+    bool validate_composition = false);
 
 struct ParameterEntry final {
     std::string identity;

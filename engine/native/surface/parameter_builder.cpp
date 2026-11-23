@@ -789,28 +789,11 @@ ParameterDocument fitted_document(const ParameterDocument& start, const Paramete
     return result;
 }
 
-const char* OutsideDomain::variable() const {
-    switch (declaration.quantity) {
-        case DomainQuantity::Temperature: return "temperature";
-        case DomainQuantity::Pressure: return "pressure";
-        case DomainQuantity::SoluteMolality: return "solute_molality";
-        case DomainQuantity::IonicStrength: return "ionic_strength";
-        case DomainQuantity::IonMoleFraction: return "ion_mole_fraction";
-    }
-    return "";
-}
-
-const char* OutsideDomain::side() const {
-    return declaration.limit == DomainLimit::Minimum ? "below" : "above";
-}
-
-std::vector<DomainBound> admit_domains(const Parameters& p, std::vector<DomainBound> bounds) {
+DomainBounds admit_domains(const Parameters& p, std::vector<DomainBound> bounds) {
     core::Scope scope("admit_domains");
     for (auto& b : bounds) {
-        if (b.quantity == DomainQuantity::Pressure) {
-            if (b.unit == "bar") b.bound *= 1e5;
-            else if (b.unit == "megapascal") b.bound *= 1e6;
-            else if (b.unit != "pascal") reject("invalid pressure bound unit");
+        if (b.quantity == DomainQuantity::Pressure && (b.unit == "bar" || b.unit == "megapascal")) {
+            b.bound *= b.unit == "bar" ? 1e5 : 1e6;
             b.unit = "pascal";
         }
     }
@@ -827,17 +810,20 @@ std::vector<DomainBound> admit_domains(const Parameters& p, std::vector<DomainBo
                 b.solutes == other.solutes && b.limit == DomainLimit::Minimum && other.limit == DomainLimit::Maximum && b.bound > other.bound)
                 reject("parameter domain minimum exceeds maximum");
     }
-    return bounds;
+    return {std::move(bounds)};
 }
 
-std::vector<OutsideDomain> outside_domains(const Parameters& p, const std::vector<DomainBound>& bounds, const std::vector<double>& x,
-    std::optional<double> temperature, std::optional<double> pressure) {
-    core::Scope scope("outside_domains");
-    if (x.size() != p.component_count() || std::any_of(x.begin(), x.end(), [](double v) { return !std::isfinite(v) || v < 0; }) ||
-        std::abs(std::accumulate(x.begin(), x.end(), 0.0) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value)
+void outside_domains(std::vector<OutsideDomain>& result, const Parameters& p, const DomainBounds& bounds,
+    const std::vector<double>& composition, std::optional<double> temperature, std::optional<double> pressure,
+    std::size_t row, std::size_t phase, bool validate_composition) {
+    const auto count = p.component_count();
+    if (validate_composition && (composition.size() != count ||
+        std::any_of(composition.begin(), composition.end(), [](double v) { return !std::isfinite(v) || v < 0; }) ||
+        std::abs(std::accumulate(composition.begin(), composition.end(), 0.0) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value))
         reject("outside_domains requires phase mole fractions summing to one");
-    std::vector<OutsideDomain> result;
-    for (const auto& b : bounds) {
+    static constexpr const char* variables[] = {"solute_molality", "ionic_strength", "ion_mole_fraction", "temperature", "pressure"};
+    const double* x = composition.data() + phase * count;
+    for (const auto& b : bounds.values) {
         std::optional<double> value;
         if (b.quantity == DomainQuantity::Temperature) value = temperature;
         else if (b.quantity == DomainQuantity::Pressure) value = pressure;
@@ -846,15 +832,17 @@ std::vector<OutsideDomain> outside_domains(const Parameters& p, const std::vecto
             if (!fraction && (x[b.solvent] <= 0 || std::none_of(b.solutes.begin(), b.solutes.end(), [&](auto i) { return x[i] > 0; }))) continue;
             double concentration = 0;
             if (b.quantity == DomainQuantity::SoluteMolality) concentration = x[b.solutes.front()];
-            else for (std::size_t i = 0; i < x.size(); ++i) {
+            else for (std::size_t i = 0; i < count; ++i) {
                 const double z = p.charge_number[i];
                 if (z != 0) concentration += x[i] * (fraction ? 1.0 : 0.5 * z * z);
             }
             value = fraction ? concentration : concentration / (x[b.solvent] * p.molar_mass_kg_per_mol[b.solvent]);
         }
-        if (value && (b.limit == DomainLimit::Minimum ? *value < b.bound : *value > b.bound)) result.push_back({b, *value});
+        const bool below = b.limit == DomainLimit::Minimum;
+        if (value && (below ? *value < b.bound : *value > b.bound))
+            result.push_back({b.packet, b.domain_id, variables[static_cast<std::size_t>(b.quantity)],
+                below ? "below" : "above", b.unit, b.solute, *value, b.bound, row, phase});
     }
-    return result;
 }
 
 }  // namespace epcsaft

@@ -26,14 +26,10 @@ class DomainWarning(UserWarning):
     """A returned calculation exceeds one or more declared parameter domain bounds."""
 
 
-def _warn_domains(violations: Sequence[OutsideDomain]) -> None:
-    if violations:
-        warnings.warn(
-            "; ".join(f"{r.packet}/{r.domain_id}: {r.variable}={r.value:g} {r.side} {r.bound:g} {r.declaration.unit}"
-                      for r in violations),
-            DomainWarning,
-            skip_file_prefixes=(str(Path(__file__).parent),),
-        )
+def _warn_domains(violations: list[OutsideDomain]) -> None:
+    message = "; ".join(f"{r.packet}/{r.domain_id}: {r.variable}={r.value:g} {r.side} {r.bound:g} {r.unit}"
+                        for r in violations)
+    warnings.warn(message, DomainWarning, skip_file_prefixes=(str(Path(__file__).parent),))
 
 
 # Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
@@ -138,8 +134,7 @@ def _selected_domains(document: Mapping[str, Any], components: set[str]) -> list
     if not any("temperature_min" in d or "temperature_max" in d or "pressure_min" in d or "pressure_max" in d
                for d in domains if d.get("kind") != "unknown"):
         return domains
-    referenced: set[str] = set()
-    selected: set[str] = set()
+    selected: dict[str, bool] = {}
 
     def visit(value: Any, included: bool) -> None:
         if isinstance(value, Mapping):
@@ -147,7 +142,7 @@ def _selected_domains(document: Mapping[str, Any], components: set[str]) -> list
             provenance = value.get("provenance", {})
             for source in provenance if isinstance(provenance, list) else [provenance]:
                 if isinstance(source, Mapping) and (domain := source.get("domain_id")):
-                    (selected if included else referenced).add(domain)
+                    selected[domain] = selected.get(domain, False) or included
             for key, item in value.items():
                 if key not in ("domains", "materialization", "model_families", "provenance"):
                     visit(item, included)
@@ -156,7 +151,7 @@ def _selected_domains(document: Mapping[str, Any], components: set[str]) -> list
                 visit(item, included)
 
     visit(document, True)
-    return [d for d in domains if d["domain_id"] not in referenced - selected]
+    return [d for d in domains if selected.get(d["domain_id"], True)]
 
 
 def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> list[dict[str, Any]]:
@@ -348,7 +343,7 @@ class Parameters:
         It retains no source document for later property/ASL serialization.
         """
         self._native = native
-        self._bounds: Sequence[_core.DomainBound] = ()
+        self._bounds: _core.DomainBounds | None = None
         self._document: _core.ParameterDocument | None = None
         self._document_refusal: str | None = None  # why a fit has no document
         self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
@@ -828,11 +823,9 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         bounds = []
-        bound_sources = cast(Any, document).get("materialization")
-        if bound_sources is None:
-            bound_sources = [{"packet": document.get("document_id", ""), "domains": _selected_domains(document, set(selected_ids)),
-                              "components": selected_ids}]
-        for bound_source in bound_sources:
+        for bound_source in cast(Any, document).get("materialization", [{
+            "packet": document.get("document_id", ""), "domains": _selected_domains(document, set(selected_ids)), "components": selected_ids,
+        }]):
             chosen = set(bound_source["components"]) & set(selected_ids)
             for domain in bound_source.get("domains", []):
                 if not chosen or domain.get("kind") == "unknown":

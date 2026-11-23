@@ -89,16 +89,12 @@ def test_entries_read_before_reassignment_stay_valid() -> None:
 
 def test_packet_composition_bounds() -> None:
     """Verify species molality, 2:1 ionic strength and all-ion fraction; no EOS validation claim."""
-    from epcsaft import _core
-
     def mixture(packet_id: str, names: list[str]) -> Mixture:
         return Mixture(Parameters.from_packets(PACKETS, [(packet_id, names)]))
 
     def fields(r: _core.OutsideDomain) -> dict[str, Any]:
-        b = r.declaration
-        return dict(packet=r.packet, domain_id=r.domain_id, quantity=b.quantity, limit=b.limit,
-                    variable=r.variable, side=r.side, bound=r.bound, value=r.value, unit=b.unit,
-                    **({"solute": b.solute} if b.solute else {}))
+        return dict(packet=r.packet, domain_id=r.domain_id, variable=r.variable, side=r.side,
+                    bound=r.bound, value=r.value, unit=r.unit, **({"solute": r.solute} if r.solute else {}))
 
     refit = "figiel-2025-chloride-mixture-refit/3"
     hcl = mixture(refit, ["water", "hydronium-cation", "chloride-anion"])
@@ -112,9 +108,9 @@ def test_packet_composition_bounds() -> None:
         else:
             assert len(records) == 1
             assert fields(records[0]) == {"packet": refit, "domain_id": "hydrogen-chloride-298-15-k",
-                "quantity": _core.DomainQuantity.SoluteMolality, "solute": "hydronium-cation",
+                "solute": "hydronium-cation",
                 "variable": "solute_molality", "side": "above",
-                "limit": _core.DomainLimit.Maximum, "bound": 7.0,
+                "bound": 7.0,
                 "value": pytest.approx(8.0, rel=1e-12), "unit": "mole / kilogram"}
 
     mgcl2 = mixture(refit, ["water", "magnesium-cation", "chloride-anion"])
@@ -127,18 +123,18 @@ def test_packet_composition_bounds() -> None:
         else:
             assert len(records) == 1
             assert fields(records[0]) == {"packet": refit, "domain_id": "issue-575-chloride-brine-298-15-k",
-                "quantity": _core.DomainQuantity.IonicStrength, "limit": _core.DomainLimit.Maximum,
+
                 "variable": "ionic_strength", "side": "above",
                 "bound": 9.9, "value": pytest.approx(10.2, rel=1e-12), "unit": "mole / kilogram"}
 
     nacl = mixture("figiel-yu-held-2025/4", ["water", "sodium-cation", "chloride-anion"])
     records = nacl.outside_domains([0.6, 0.2, 0.2])
     assert len(records) == 1
-    assert records[0].declaration.quantity == _core.DomainQuantity.IonMoleFraction
-    assert records[0].declaration.limit == _core.DomainLimit.Maximum
+    assert records[0].variable == "ion_mole_fraction"
+    assert records[0].side == "above"
     assert records[0].bound == 0.38
     assert records[0].value == pytest.approx(0.4, rel=1e-12)
-    assert records[0].declaration.unit == "dimensionless"
+    assert records[0].unit == "dimensionless"
 
     held = "held-2014-strategy2/2"
     nacl = mixture(held, ["water", "sodium-cation", "chloride-anion"])
@@ -147,8 +143,8 @@ def test_packet_composition_bounds() -> None:
     records = nacl.outside_domains([water_moles / total, 0.0005 / total, 0.0005 / total])
     assert len(records) == 1
     assert fields(records[0]) == {"packet": held, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
-        "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
-        "limit": _core.DomainLimit.Minimum, "bound": 0.001, "variable": "solute_molality", "side": "below",
+        "solute": "sodium-cation",
+        "bound": 0.001, "variable": "solute_molality", "side": "below",
         "value": pytest.approx(0.0005, rel=1e-12), "unit": "mole / kilogram"}
 
     # A's sodium bound must not apply when B supplies sodium, although sodium is in the final model.
@@ -164,8 +160,8 @@ def test_packet_composition_bounds() -> None:
     records = mixed.outside_domains([water_moles / total, 5.0 / total, 5.0 / total])
     assert len(records) == 1
     assert fields(records[0]) == {"packet": other, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
-        "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
-        "limit": _core.DomainLimit.Maximum, "bound": 4.5, "variable": "solute_molality", "side": "above",
+        "solute": "sodium-cation",
+        "bound": 4.5, "variable": "solute_molality", "side": "above",
         "value": pytest.approx(5.0, rel=1e-12), "unit": "mole / kilogram"}
 
 
@@ -177,7 +173,7 @@ def test_state_domain_warning() -> None:
     outside = [water / (water + 10), 5 / (water + 10), 5 / (water + 10)]
     with warnings.catch_warnings():
         warnings.simplefilter("error", DomainWarning)
-        assert model.state(298.15, P=100000, x=inside, phase="liquid").domain_violations == []
+        assert model.state(298.15, P=100000, x=inside, phase="liquid").domain_violations is None
         with pytest.raises(DomainWarning, match="temperature=300 above 298.15 kelvin"):
             model.state(300, P=100000, x=inside, phase="liquid")
 
@@ -198,7 +194,7 @@ def test_state_domain_warning() -> None:
         batch = model.states([298.15, 300, -1], P=100000, x=inside, phase="liquid")
     assert len(caught) == 1
     assert batch.domain_violations is not None
-    assert [[r.variable for r in row] for row in batch.domain_violations] == [[], ["temperature"], []]
+    assert [(r.row, r.variable) for r in batch.domain_violations] == [(1, "temperature")]
 
     with pytest.warns(DomainWarning, match="pressure=90000 below 100000 pascal"):
         actions = model.pressure_actions(298.15, 90000, x=inside, phase="liquid",
@@ -217,8 +213,8 @@ def test_domain_warning_equilibrium_phases() -> None:
     assert len(caught) == 1
     assert result.success and result.phase_count == 2
     assert result.domain_violations is not None
-    assert [[(r.variable, r.value, r.bound) for r in phase] for phase in result.domain_violations] == [
-        [("pressure", 1e6, 1e5)], [("pressure", 1e6, 1e5)]]
+    assert [(r.phase, r.variable, r.value, r.bound) for r in result.domain_violations] == [
+        (0, "pressure", 1e6, 1e5), (1, "pressure", 1e6, 1e5)]
 
 
 def test_unknown_domain_reports_nothing() -> None:
