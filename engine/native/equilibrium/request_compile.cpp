@@ -276,7 +276,8 @@ static void inspect_generic_rank(CompiledSystem& compiled) {
     const auto point = compiled.generic_point();
     const bool state_only = !compiled.problem.loading
         && std::none_of(compiled.rows.begin(), compiled.rows.end(), [](const auto& row) { return condition_row(row.kind); });
-    const auto prepared = compiled.prepare(point, state_only);
+    const auto prepared = compiled.prepare_values(point, state_only, nullptr, std::nullopt, {}, false, false,
+        state_only && !compiled.problem.temperature.free);
     if (!compiled.problem.temperature.free && !compiled.problem.pressure.free) compiled.fixed_standard = prepared.standard;
     const auto jacobian = compiled.jacobian_at(prepared);
     Eigen::MatrixXd matrix = Eigen::Map<const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>(
