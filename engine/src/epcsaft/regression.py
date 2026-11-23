@@ -880,7 +880,7 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         _core.fit,
         parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()), controls,
         list(holds or ()), list(checks or ()), None if baseline is None else baseline._native, bool(singular_vectors),
-        None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty, list(prediction_rows or ()))
+        None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty, () if prediction_rows is None else prediction_rows)
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
