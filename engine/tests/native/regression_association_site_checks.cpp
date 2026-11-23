@@ -345,6 +345,14 @@ void fit_failure_records() {
     first.observed = *reference.value;
     request.weights = {1., 1.};
 
+    auto refused_bubble = first;
+    refused_bubble.problem.feed.values = {0.2, 0.8};
+    const auto refused_reference = predict_validated(model, refused_bubble);
+    CHECK(!refused_reference.value && refused_reference.first_numerical_failure
+        && refused_reference.first_numerical_failure->stop == core::Stop::converged_to_floor
+        && refused_reference.first_numerical_failure->criterion
+        && std::string_view(refused_reference.first_numerical_failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
+
     auto cell = equilibrium_support::flash(2);
     cell.temperature = FreeValue::fixed(329.);
     cell.pressure = FreeValue::fixed(1e4);

@@ -252,6 +252,7 @@ inline std::vector<double> solve_site_fractions(
     std::optional<double> last_pivot;
     std::optional<core::NumericalRank> conditioning;
     double residual_norm = std::numeric_limits<double>::infinity();
+    const double residual_floor = std::numeric_limits<double>::epsilon() * sites;
     auto make_record = [&](double residual, std::size_t iterations,
                            core::Stop stop, bool classify) {
         core::Convergence result;
@@ -263,7 +264,7 @@ inline std::vector<double> solve_site_fractions(
             if (core::AssociationObservations::current()) core::AssociationObservations::publish(*result.rank);
         }
         core::stopping_criterion(result, options, policy::association);
-        result.floor = std::numeric_limits<double>::epsilon() * sites;
+        result.floor = residual_floor;
         result.amplification = last_pivot;
         result.contraction = history.contraction();
         result.iterations = iterations;
@@ -381,7 +382,8 @@ inline std::vector<double> solve_site_fractions(
                     number_density, delta, bonded, std::move(scratch.jacobian));
                 // D^-1 J D (D = diag(X)) has row dominance margin >= 1. Every full pivot is
                 // >= min(X)/sites, and growth is bounded by 2^(sites-1). Allow a factor of two for rounding.
-                if (scratch.jacobian.allFinite() && scratch.jacobian.minCoeff() >= 0.0
+                // Near the residual floor, use full pivoting from the first Newton step.
+                if (tolerance > residual_floor && scratch.jacobian.allFinite() && scratch.jacobian.minCoeff() >= 0.0
                     && std::ldexp(policy::ASSOCIATION_JACOBIAN_CONDITION.value * sites * scratch.jacobian.maxCoeff(),
                         sites) < *std::min_element(fractions.begin(), fractions.end())) {
                     scratch.partial.compute(scratch.jacobian);
