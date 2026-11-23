@@ -3,7 +3,8 @@ usage: replay_compare.py BEFORE_DIR AFTER_DIR OUT.json
 Work counts and equilibrium row residuals are reported, not compared; every result that reports
 requested_tolerance_met True must have its residuals within its retained criterion (ASL central states: the
 anchor's). Keys must be unique, sections nonempty, kinds equal and floats finite; every other text/int/bool
-row must be equal. Fitting residuals are observation residuals and compared as values."""
+row must be equal. Fitting residuals are observation residuals and compared as values.
+The section JSON records raw Hessian scales for comparing changed raw curvature minima."""
 import csv, json, math, re, sys
 from collections import defaultdict
 from pathlib import Path
@@ -16,6 +17,31 @@ DIAGNOSTIC = {'residuals', 'classified_residuals', 'residual', 'floor', 'amplifi
 
 def base(quantity):
     return re.sub(r'/\d+', '', quantity)
+
+
+def optional_work_key(section, quantity):
+    if section == 'fitting':
+        return re.fullmatch(r'iteration_costs/[0-9]+', quantity) is not None
+    return base(quantity) in WORK
+
+
+def inventory_rows(section, rows, *, work_reported=False):
+    if section == 'fitting' or work_reported:
+        return [r for r in rows if not optional_work_key(section, r['quantity'])]
+    return list(rows)
+
+
+def raw_curvature_errors(path):
+    if not path.exists():
+        return {}
+    curvature = json.loads(path.read_text()).get('raw_curvature', {})
+    errors = {}
+    for case, record in curvature.items():
+        n, norm = record['dimension'], record['hessian_frobenius_norm']
+        if type(n) is not int or n < 1 or not 0 <= norm < math.inf:
+            raise ValueError(f'invalid raw Hessian dimension or norm for {case} in {path}')
+        errors[case] = n * sys.float_info.epsilon * norm
+    return errors
 
 
 def load(path, failures):
@@ -56,6 +82,7 @@ def main():
     for section in ('declared', 'continuation', 'fitting', 'asl'):
         failures = []
         before, after = load(before_dir / f'{section}.csv', failures), load(after_dir / f'{section}.csv', failures)
+        raw_errors = [raw_curvature_errors(d / f'{section}.json') for d in (before_dir, after_dir)]
         unmet(before, 'before', failures)
         unmet(after, 'after', failures)
         totals = defaultdict(float)  # per case-state: feed total from the before amounts
@@ -69,7 +96,7 @@ def main():
                 failures.append(dict(key=key, reason='non-finite value', before=a and a['value'], after=b and b['value']))
                 continue
             if a is None or b is None:
-                if base(key[1]) in WORK:
+                if optional_work_key(section, key[1]):
                     work.append(dict(key=key, before=a and a['value'], after=b and b['value']))
                 else:
                     failures.append(dict(key=key, reason='row missing', before=a and a['value'], after=b and b['value']))
@@ -78,7 +105,7 @@ def main():
                 failures.append(dict(key=key, reason='kind changed', before=a['kind'], after=b['kind']))
                 continue
             if a['value'] == b['value']:
-                identical += 1
+                identical += section != 'fitting' or not optional_work_key(section, key[1])
                 continue
             case, q = key
             name = base(q).rsplit('/', 1)[-1]
@@ -105,14 +132,20 @@ def main():
             elif name == 'objective':
                 error, limit = abs(x - y) / N / max(1., abs(y) / N), 1e-10
             elif name == 'reduced_hessian_minimum':
-                error, limit = (0. if (x > 0) == (y > 0) else 1.), 0.5  # inertia/admission meaning, not a feed identity
+                # Admission is compared exactly via success and status above. This is the raw chart.
+                error = abs(x - y)
+                limit = sum(estimates.get(case, -math.inf) for estimates in raw_errors) if error else 0.0
+                if not 0 <= limit < math.inf:
+                    failures.append(dict(key=key, reason='missing or invalid raw Hessian rounding estimate', before=x, after=y))
+                    continue
             else:  # multipliers, coordinates, actions and fitting values: reference-or-one scale
                 error, limit = abs(x - y) / max(1., abs(x), abs(y)), 1e-9
             maxima[name] = max(maxima[name], error)
             if not (math.isfinite(error) and error <= limit):
                 failures.append(dict(key=key, reason=f'{name} {error:.3g} > {limit:.3g}', before=x, after=y))
-        report[section] = dict(rows=len(before), identical=identical, failures=failures, work=work, maxima=dict(maxima))
-        print(section, len(before), 'identical', identical, 'failures', len(failures), 'work rows changed', len(work))
+        rows = len(inventory_rows(section, before.values()))
+        report[section] = dict(rows=rows, identical=identical, failures=failures, work=work, maxima=dict(maxima))
+        print(section, rows, 'identical', identical, 'failures', len(failures), 'work rows changed', len(work))
         for f in failures[:20]:
             print('  ', f)
     Path(out).write_text(json.dumps(report, indent=2, default=str) + '\n')
