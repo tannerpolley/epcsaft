@@ -4,7 +4,6 @@ set -euo pipefail
 : "${LIBRARY_PREFIX:?}" "${SRC_DIR:?}" "${PREFIX:?}" "${BUILD_PREFIX:?}"
 [[ ${target_platform:?} == win-64 ]]
 declare -F patch_libtool >/dev/null
-export EPCSAFT_BUILD_JOBS=${EPCSAFT_BUILD_JOBS:-6}
 source_dir=$(cygpath -u "$SRC_DIR")/ipopt-source
 private_prefix=$(cygpath -m "$PREFIX")
 library_prefix=$(cygpath -m "$LIBRARY_PREFIX")
@@ -72,7 +71,8 @@ while IFS= read -r libtool; do
         sed -i '3s/; echo/ \&\& echo/; s/\$CC -o/\$CC -fuse-ld=lld -nostdlib -Xclang --dependent-lib=msvcrt -o/; s/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
     )
 done < <(find "$PWD" -name libtool -type f)
-nice -n 10 make -j"$EPCSAFT_BUILD_JOBS" 2>&1 | tee "$evidence/make.txt"
+JOBS=$("$BUILD_PREFIX/python.exe" "$RECIPE_DIR/build-jobs.py" ipopt)
+nice -n 10 make -j"$JOBS" 2>&1 | tee "$evidence/make.txt"
 # The MSYS pkg-config search path cannot contain a Windows drive colon.
 make install PKG_CONFIG="env PKG_CONFIG_PATH=$(cygpath -u "$private_prefix")/lib/pkgconfig pkg-config" 2>&1 | tee "$evidence/install.txt"
 mkdir -p "$private_prefix/lib/pkgconfig" "$private_prefix/bin"
@@ -83,7 +83,7 @@ implib="$PWD/Ipopt/src/Interfaces/.libs/libipopt.dll.lib"
 test -f "$implib"
 cp "$implib" "$private_prefix/lib/epcsaft_ipopt_3119.lib"
 cat > "$private_prefix/lib/pkgconfig/ipopt.pc" <<PC
-prefix=$private_prefix
+prefix=\${pcfiledir}/../..
 libdir=\${prefix}/lib
 includedir=\${prefix}/include/coin
 Name: Ipopt
