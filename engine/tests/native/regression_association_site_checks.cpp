@@ -361,7 +361,8 @@ void fit_failure_records() {
 
     auto cell = equilibrium_support::flash(2);
     cell.temperature = FreeValue::fixed(329.);
-    cell.pressure = FreeValue::fixed(1e4);
+    // The fit-order checks need a central prediction without a recovered site failure.
+    cell.pressure = FreeValue::fixed(9900.);
     const auto coalesced = equilibrium_support::bubble_at(700.);
     const auto failed_solve = solve_equilibrium(model, coalesced);
     CHECK(!failed_solve.success && !failed_solve.terminal_numerical_failure
