@@ -29,7 +29,7 @@
 namespace {
 
 using epcsaft::HelmholtzModel;
-using epcsaft::detail::family_values;
+using epcsaft::equilibrium::model_at;
 
 thread_local std::string callback_error;
 
@@ -61,7 +61,8 @@ const char* string_argument(arglist* arguments, int position) {
 }
 
 // Real arguments first, then `strings` string arguments, in declaration order; returns the real count.
-int argument_count(arglist* arguments, int strings, int maximum, const char* message) {
+int argument_count(arglist* arguments, int strings, const char* message) {
+    constexpr int maximum = 2 + 2 * epcsaft::equilibrium::asl_record_vector_limit;
     if (arguments == nullptr || arguments->nr < 1 || arguments->nr > maximum || arguments->n != arguments->nr + strings
         || arguments->at == nullptr || arguments->ra == nullptr || arguments->sa == nullptr)
         reject(message);
@@ -221,15 +222,6 @@ std::optional<EquilibriumFailure> central_failure(const EquilibriumContext& cont
             return EquilibriumFailure(ActionStatus::PhaseBoundaryNotDifferentiable, observable,
                                      "solid " + context.anchor.solids[s].name + " is absent at the solved state");
     return std::nullopt;
-}
-
-// The model at theta, by the slot assignment of CoordinateSet::apply, in model.active_parameters() order.
-auto model_at(const HelmholtzModel& model, const std::vector<double>& theta) {
-    auto parameters = model.parameters();
-    const auto& active = model.active_parameters();
-    for (std::size_t k = 0; k < theta.size(); ++k)
-        for (auto i : active[k].indices) family_values(parameters, active[k].family).first[i] = theta[k];
-    return std::make_unique<HelmholtzModel>(std::move(parameters), active, model.thermochemistry(), model.solver_options());
 }
 
 std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const std::string& observable) {
@@ -414,7 +406,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         using Kind = eq::SolvedStateObservableKind;
         const Kind kinds[3] = {Kind::PhaseComponentAmount, Kind::SystemEnthalpy, Kind::SolidAmount};
         const int strings[3] = {3, 1, 2};  // the record, then the selectors
-        const int n = argument_count(arguments, strings[kind], 128, "equilibrium callback requires real q and the record");
+        const int n = argument_count(arguments, strings[kind], "equilibrium callback requires real q and the record");
         const auto p = kind != 1 ? selector(arguments, n + 1, kind == 0 ? 2 : 64) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
         observable = eq::solved_state_observable_id({kinds[kind], p, c});
         const char* record = string_argument(arguments, n);
@@ -672,7 +664,7 @@ double pressure_property(arglist* arguments) {
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        const int n = argument_count(arguments, 3, 130, "property callback requires real arguments and three strings");
+        const int n = argument_count(arguments, 3, "property callback requires real arguments and three strings");
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "property", [&] { return prepare_property(record); });
         const std::size_t c = context.model->parameters().component_count();

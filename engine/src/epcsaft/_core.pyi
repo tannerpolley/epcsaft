@@ -1842,7 +1842,8 @@ class HelmholtzModel:
                          mole_fractions: Sequence[float], branch: DensityBranch,
                          observables: Sequence[PropertyObservable],
                          directions: Sequence[PressureActionDirection],
-                         anchor_density: Optional[float] = None) -> PropertyActionBatch:
+                         anchor_density: Optional[float] = None, *,
+                         active_parameter_values: Sequence[float] | None = None) -> PropertyActionBatch:
         """Contract exact property derivatives through pressure closure.
 
         Parameters
@@ -2265,7 +2266,6 @@ class NeutralReferenceStatus:
     """The reference path did not retain its declared density branch."""
     Nonfinite: NeutralReferenceStatus
     """A reference quantity is nonfinite."""
-    """Consecutive terminal reference estimates differ beyond the admitted criterion."""
 
 class NeutralReferenceReactionDiagnostic:
     """Reference transfer for one declared reaction."""
@@ -2276,10 +2276,6 @@ class NeutralReferenceReactionDiagnostic:
     terminal_contraction: Optional[float]
     """Dimensionless terminal reaction contraction used for standard-state transfer, or None when
     unavailable.
-    """
-    observed_terminal_change: Optional[float]
-    """Dimensionless change between consecutive terminal extrapolations, or None when unavailable;
-    a local numerical estimate, not a universal error bound.
     """
     terminal_contraction_pressure_derivative: Optional[float]
     """First partial of the contraction with respect to system pressure at fixed temperature, 1/Pa; exactly zero for a fixed source pressure, or None when the requested column is unavailable or was not evaluated.
@@ -4266,10 +4262,6 @@ class HenryConstant:
     """
     henry_constant_px: Optional[float]
     """H_i^px = lim(f_i/x_i) in Pa, or None unless the reference is available."""
-    observed_terminal_change: Optional[float]
-    """Dimensionless change between the terminal reference extrapolations, or None without the
-    comparison.
-    """
     status: NeutralReferenceStatus
     """Reference availability or refusal cause."""
     message: str

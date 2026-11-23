@@ -149,7 +149,7 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<NeutralReferenceReactionDiagnostic>(module, "NeutralReferenceReactionDiagnostic")
         EPCSAFT_SOLVER_OPTIONS(NeutralReferenceReactionDiagnostic, PROPERTY_SCOPE)
         EPCSAFT_READONLY(NeutralReferenceReactionDiagnostic, reaction_index, terminal_contraction,
-            observed_terminal_change, diagnostics, density_convergence, terminal_contraction_pressure_derivative,
+            diagnostics, density_convergence, terminal_contraction_pressure_derivative,
             terminal_contraction_pressure_second_derivative, reference_pressure_pa, status, message);
     nb::class_<ReactionReference>(module, "ReactionReference")
         .def("__init__", [](ReactionReference* self, ReferenceSourceBasis basis, std::optional<double> pressure) {
@@ -465,7 +465,7 @@ void register_equilibrium(nb::module_& module) {
     },
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
         nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt,
-        nb::arg("prepared").none() = nb::none());
+        nb::arg("prepared").none() = nb::none(), nb::keep_alive<0, 1>());
     module.def("solve_equilibrium", nb::overload_cast<const IdealMoleFraction&, const EquilibriumProblem&, const std::optional<EquilibriumResult>&>(&solve_equilibrium),
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::keep_alive<0, 1>());
 }

@@ -908,23 +908,29 @@ void thread_exit_hessian() {
     using namespace epcsaft;
     std::mutex mutex;
     std::condition_variable ready;
-    const auto evaluate = [] {
-        HelmholtzModel model(properties_support::neutral_binary());
-        const auto value = model.evaluate(190., .001, {.5, .5}, DerivativeOrder::Hessian);
-        if (!std::isfinite(value.value) || !std::all_of(value.hessian.begin(), value.hessian.end(),
-                [](double entry) { return std::isfinite(entry); }))
-            throw std::runtime_error("nonfinite thread-exit Hessian");
-        return value.value;
+    const auto parameters = properties_support::associating_binary();
+    const HelmholtzModel serial(parameters), shared(parameters);
+    const auto evaluate = [](const HelmholtzModel& model, std::size_t point) {
+        return model.evaluate(point == 0 ? 298.15 : 313.15, .001, {.5, .5}, DerivativeOrder::Hessian);
     };
-    const double reference = evaluate();
+    const std::array reference{evaluate(serial, 0), evaluate(serial, 1)};
+    for (const auto& state : reference) {
+        CHECK(std::isfinite(state.value) && std::all_of(state.hessian.begin(), state.hessian.end(),
+            [](double entry) { return std::isfinite(entry); }));
+    }
+    CHECK(!reference[0].hessian.empty() && reference[0].hessian != reference[1].hessian);
+    const auto compare = [&](const HelmholtzModel& model, std::size_t point) {
+        const auto actual = evaluate(model, point);
+        CHECK(actual.value == reference[point].value && actual.hessian == reference[point].hessian);
+    };
     struct Cleanup final {
         std::mutex& mutex;
         std::condition_variable& ready;
         bool& exiting;
         bool& other_ready;
         bool& go;
-        const decltype(evaluate)& run;
-        double reference;
+        const HelmholtzModel& shared;
+        const decltype(compare)& run;
         ~Cleanup() {
             {
                 std::unique_lock<std::mutex> lock(mutex);
@@ -935,22 +941,22 @@ void thread_exit_hessian() {
                 ready.notify_all();
             }
             for (int repeat = 0; repeat < 100; ++repeat)
-                if (run() != reference) std::abort();
+                run(shared, 0);
         }
     };
     {
         bool exiting = false, other_ready = false, go = false;
         std::thread first([&] {
-            thread_local Cleanup cleanup{mutex, ready, exiting, other_ready, go, evaluate, reference};
+            thread_local Cleanup cleanup{mutex, ready, exiting, other_ready, go, shared, compare};
             (void)cleanup;
-            if (evaluate() != reference) std::abort();
+            compare(HelmholtzModel(parameters), 0);
         });
         {
             std::unique_lock<std::mutex> lock(mutex);
             ready.wait(lock, [&] { return exiting; });
         }
         std::thread second([&] {
-            if (evaluate() != reference) std::abort();
+            compare(HelmholtzModel(parameters), 1);
             {
                 std::unique_lock<std::mutex> lock(mutex);
                 other_ready = true;
@@ -958,17 +964,17 @@ void thread_exit_hessian() {
                 ready.wait(lock, [&] { return go; });
             }
             for (int repeat = 0; repeat < 100; ++repeat)
-                if (evaluate() != reference) std::abort();
+                compare(shared, 1);
         });
         first.join();
         second.join();
     }
     // More than 48 successive callers also falsify process-lifetime slot retention.
     for (int caller = 0; caller < 50; ++caller) {
-        std::thread worker([&] { if (evaluate() != reference) std::abort(); });
+        std::thread worker([&] { compare(HelmholtzModel(parameters), 0); });
         worker.join();
     }
-    std::cout << "thread-exit: overlapping teardown and 50 recycled callers matched serial values\n";
+    std::cout << "thread-exit: overlapping teardown and 50 recycled callers matched serial Hessians\n";
 }
 
 }  // namespace properties_checks

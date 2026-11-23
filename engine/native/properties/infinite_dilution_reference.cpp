@@ -195,7 +195,6 @@ void reference_errors(const HelmholtzModel& model, double temperature, const std
             return refuse("reference consumed center unavailable");
         diagnostic.numerical_error[0] = static_cast<double>(diagnostic.numerical_error[0] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction) - replayed_sum[0]));
         if (temperature_error) diagnostic.numerical_error[1] = static_cast<double>(diagnostic.numerical_error[1] + wide_math::abs(static_cast<WiderScalar>(*diagnostic.terminal_contraction_temperature_derivative) - replayed_sum[1]));
-        if (diagnostic.observed_terminal_change) diagnostic.numerical_error[0] += wide_math::abs(*diagnostic.observed_terminal_change);
         if (temperature_error && diagnostic.observed_temperature_derivative_change) diagnostic.numerical_error[1] += wide_math::abs(*diagnostic.observed_temperature_derivative_change);
         for (double e : diagnostic.numerical_error) if (!wide_math::isfinite(e) || e < 0) return refuse("nonfinite reference error");
         diagnostic.numerical_error_cause.clear();
@@ -800,7 +799,6 @@ std::vector<HenryConstant> henry_constants(const HelmholtzModel& model, double t
         auto& henry = result[row];
         const auto& reference = references[row];
         henry.raw_log_reference = reference.terminal_contraction;
-        henry.observed_terminal_change = reference.observed_terminal_change;
         henry.status = reference.status;
         henry.message = reference.message;
         if (!reference.terminal_contraction) continue;

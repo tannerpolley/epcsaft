@@ -1,6 +1,7 @@
 #include "properties/helmholtz_model.hpp"
 #include "surface/parameter_builder.hpp"
 
+#include "equilibrium_record.hpp"
 #include "fields.hpp"
 #include "solver_options.hpp"
 
@@ -296,15 +297,19 @@ void register_eos(nb::module_& module) {
                                      epcsaft::DensityBranch branch,
                                      const std::vector<epcsaft::PropertyObservable>& observables,
                                      const std::vector<epcsaft::PressureActionDirection>& directions,
-                                     std::optional<double> anchor_density) {
+                                     std::optional<double> anchor_density,
+                                     const std::optional<std::vector<double>>& active_parameter_values) {
             epcsaft::core::Scope scope("pressure_actions");
-            model.validate_electroneutrality(composition);
-            return model.pressure_actions(temperature, pressure, composition, branch,
+            const auto shifted = active_parameter_values && *active_parameter_values != model.active_parameter_values()
+                ? epcsaft::equilibrium::model_at(model, *active_parameter_values) : nullptr;
+            const auto& current = shifted ? *shifted : model;
+            current.validate_electroneutrality(composition);
+            return current.pressure_actions(temperature, pressure, composition, branch,
                 observables, directions, anchor_density);
         },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("observables"), nb::arg("directions"),
-             nb::arg("anchor_density") = std::nullopt)
+             nb::arg("anchor_density") = std::nullopt, nb::kw_only(), nb::arg("active_parameter_values") = std::nullopt)
         .def("pressure_action_difference", &epcsaft::HelmholtzModel::pressure_action_difference, nb::arg("temperature"),
              nb::arg("pressure"), nb::arg("mole_fractions"), nb::arg("branch"), nb::arg("observables"), nb::arg("direction"),
              nb::arg("step"), nb::arg("tau"), nb::arg("kappa"))
@@ -338,8 +343,7 @@ void register_eos(nb::module_& module) {
             solvent_activity_parameter_derivative, osmotic_parameter_derivative, parameter_status, parameter_cause,
             status, cause, osmotic_cause, state);
     nb::class_<epcsaft::HenryConstant>(module, "HenryConstant")
-        EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px,
-            observed_terminal_change, status, message);
+        EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px, status, message);
     module.def("henry_constants", &epcsaft::henry_constants, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"),
         nb::arg("solvent_fractions"), nb::arg("solute_indices"));
     module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {

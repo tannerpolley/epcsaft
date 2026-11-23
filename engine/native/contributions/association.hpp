@@ -461,7 +461,6 @@ inline std::vector<double> solve_site_fractions(
             fractions.swap(next);
             return fractions;
         }
-        if (plan->strategy == AssociationPlan::BalancedBinary) evaluations = 0;
     }
 
     bool full_pivot = false;

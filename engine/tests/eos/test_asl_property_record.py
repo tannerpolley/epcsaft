@@ -203,6 +203,16 @@ def property_fgh(text: str, q: Any, row: int, fgh: int, phase: str = "liquid") -
     return float(v), np.array(g[:n]) if fgh else None, hessian
 
 
+def test_property_callback_admits_maximum_real_argument_count() -> None:
+    text = property_asl_record(charged("NaCl"))
+    q = [298.15, 1.0e5, *CHARGED["NaCl"][2]]
+    # 2 state coordinates + 64 component weights + 64 active parameters must reach record validation.
+    with pytest.raises(RuntimeError, match="argument count differs"):
+        property_fgh(text, q + [0.0] * (130 - len(q)), 0, 0)
+    with pytest.raises(RuntimeError, match="property callback requires real arguments and three strings"):
+        property_fgh(text, q + [0.0] * (131 - len(q)), 0, 0)
+
+
 @pytest.mark.parametrize("name", CHARGED)
 def test_charged_values_equal_engine(name: str) -> None:
     """F1: every row at every order, and the IDAES aqueous block (record order, not component_list order), equal the
@@ -327,6 +337,37 @@ def methane_ethane(theta: tuple[float, float] | None = None) -> Mixture:
     parameters = Parameters.from_mapping(mapping, components=("methane", "ethane"))
     form = IdealPolynomial([30.0, 0.0], 300.0, 1000.0, 50.0)
     return Mixture(parameters, thermochemistry=record(form, form, lower=150.0, upper=350.0), active_parameters=active(parameters))
+
+
+def test_check_state_uses_current_active_parameters() -> None:
+    from idaes.core import FlowsheetBlock
+    from idaes.models.properties.modular_properties.base.generic_property import GenericParameterBlock
+
+    from epcsaft.idaes import check_state, property_configuration
+
+    model, shifted = methane_ethane(), methane_ethane(THETA_STAR)
+    T, P = STATES["liquid"]
+    x = [0.3, 0.7]
+    m = ConcreteModel()
+    m.fs = FlowsheetBlock(dynamic=False)
+    m.fs.props = GenericParameterBlock(**property_configuration(
+        model, phases=("liquid",), temperature_ref=T, pressure_ref=P,
+        state_bounds={"flow_mol": (0, 1, 10), "temperature": (150, T, 350), "pressure": (5e4, P, 1e7)},
+    ))
+    m.fs.sb = m.fs.props.build_state_block([0], defined_state=True)
+    sb = m.fs.sb[0]
+    sb.temperature.set_value(T)
+    sb.pressure.set_value(P)
+    for j, fraction in zip(model.component_ids, x, strict=True):
+        sb.mole_frac_phase_comp["liquid", j].set_value(fraction)
+    for var, fitted in zip(m.fs.props.epcsaft_active_parameter.values(), THETA_STAR, strict=True):
+        var.set_value(fitted)
+
+    expected = shifted.pressure_actions(T, P, x=x, phase="liquid", observables=[], directions=[])
+    actual = check_state(sb, "liquid")
+    assert expected.molar_density is not None
+    assert actual.molar_density == expected.molar_density
+    assert actual.diagnostics.returned_branch == expected.diagnostics.returned_branch
 
 
 def native_columns(model: Mixture, phase: str) -> tuple[list[float], list[list[float]], dict[tuple[int, int], list[float]]]:

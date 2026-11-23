@@ -1373,7 +1373,22 @@ const auto p=build_parameters(d); for(bool nested : {false,true}) { policy::Solv
 { eq::PhaseSpec ph; ph.name="Lw"; ph.kind=eq::PhaseKind::Liquid; ph.composition_guess={0.98,0.01,0.01}; q.phases.push_back(ph); }
 { eq::PhaseSpec ph; ph.name="Lo"; ph.kind=eq::PhaseKind::Liquid; ph.composition_guess={0.5,0.03,0.47}; q.phases.push_back(ph); }
 { eq::PhaseSpec ph; ph.name="V"; ph.kind=eq::PhaseKind::Vapor; ph.composition_guess={0.713829,0.039282,0.246889}; q.phases.push_back(ph); }
-const auto r=eq::solve_equilibrium(model,q); CHECK(r.success); for(const auto& rank:r.rank_records) if(rank.basis=="numerical") { CHECK(rank.observation.available == !nested); CHECK(!(rank.observation.error >= policy::EQUILIBRIUM_POLISH_CORRECTION.value)); /* NaN: bound unevaluated when the correction stops above its criterion (MUMPS) */ if(!nested) CHECK(rank.observation.point_kind == "endpoint"); std::cout<<std::setprecision(17)<<"nested="<<nested<<" success="<<r.success<<" available="<<rank.observation.available<<" condition="<<rank.observation.condition<<" point="<<rank.observation.point_kind<<" iterations="<<r.iterations<<" evaluations="<<r.evaluations<<"\n"; }}}
+const auto r = eq::solve_equilibrium(model, q);
+CHECK(r.success);
+bool found_numerical_rank = false;
+for (const auto& rank : r.rank_records) if (rank.basis == "numerical") {
+    found_numerical_rank = true;
+    CHECK(rank.observation.available == !nested);
+    // MUMPS: the bound is unevaluated when the correction stops above its criterion.
+    CHECK(!(rank.observation.error >= policy::EQUILIBRIUM_POLISH_CORRECTION.value));
+    if (!nested) CHECK(rank.observation.point_kind == "endpoint");
+    std::cout << std::setprecision(17) << "nested=" << nested << " success=" << r.success
+              << " available=" << rank.observation.available << " condition=" << rank.observation.condition
+              << " point=" << rank.observation.point_kind << " iterations=" << r.iterations
+              << " evaluations=" << r.evaluations << '\n';
+}
+CHECK(found_numerical_rank);
+}}
 
 struct CountedConditionFactor : Eigen::FullPivLU<Eigen::MatrixXd> {
     using Eigen::FullPivLU<Eigen::MatrixXd>::FullPivLU;
