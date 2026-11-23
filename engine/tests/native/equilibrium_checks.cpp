@@ -12,6 +12,10 @@ void check_pressure_basis_quotient();
 void check_ideal_mole_fraction();
 void check_ideal_molarity();
 void check_s2();
+void check_reaction_quotient_pressure();
+void check_reaction_quotient_actions();
+void check_neutral_reference_permutations();
+void check_mixed_reference_work();
 void check_trace_reaction_balance();
 void check_s6();
 void check_s7();
@@ -194,6 +198,10 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "reactive-caloric-F6-N-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "reactive-caloric-F6-N-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
 #endif
+        {{"native.equilibrium.reaction-quotient-pressure", "reaction-quotient-pressure", "Automatic_fast"}, check_reaction_quotient_pressure},
+        {{"native.equilibrium.reaction-quotient-actions", "reaction-quotient-actions", "Automatic_fast"}, check_reaction_quotient_actions},
+        {{"native.equilibrium.neutral-reference-permutations", "neutral-reference-permutations", "Automatic_fast"}, check_neutral_reference_permutations},
+        {{"native.equilibrium.mixed-reference-work", "mixed-reference-work", "Automatic_fast"}, check_mixed_reference_work},
         {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
         {{"native.equilibrium.trace-reaction-balance", "trace-reaction-balance", "Automatic_fast"}, check_trace_reaction_balance},
         {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},

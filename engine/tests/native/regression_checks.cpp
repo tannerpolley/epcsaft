@@ -35,6 +35,7 @@ void check_reaction_enthalpy_shift();
 void check_reactive_cp();
 void check_cp_derivatives();
 void check_cp_recovery();
+void check_enthalpy_targets();
 void check_r3();
 void check_measurement_columns();
 void check_measurement_fit();
@@ -84,6 +85,7 @@ int main(int argc, char** argv) {
         {{"native.regression.reaction-rejections", "reaction-rejections"}, check_reaction_rejections, "R2"},
         {{"native.regression.reactive-cp", "reactive-cp"}, check_reactive_cp},
         {{"native.regression.cp-derivatives", "cp-derivatives"}, check_cp_derivatives, "R2"},
+        {{"native.regression.enthalpy-targets", "enthalpy-targets"}, check_enthalpy_targets, "R2"},
         {{"native.regression.cp-recovery", "cp-recovery"}, check_cp_recovery, "R2"},
         {{"native.regression.r3", "R3"}, check_r3, "R2"},
     });

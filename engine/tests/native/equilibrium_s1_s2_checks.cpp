@@ -187,6 +187,117 @@ const epcsaft::NeutralReferenceReactionDiagnostic::Derivative& temperature_param
     throw std::logic_error("missing C_Ttheta column");
 }
 
+void check_reaction_quotient_pressure() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto problem = equilibrium_support::flash(3);
+    problem.source_reference = NeutralReferenceDeclaration{0, {0, 1, 1}, 1};
+    problem.reactions = {{"A=2B", {-1, 2, 0}, 1.0, {}, {}, ReactionReference{}}};
+    EquilibriumResult state;
+    state.temperature = 300.0; state.pressure = 1e6; state.phase_count = 1;
+    state.amounts = {1}; state.mole_fractions = {0.5, 0.25, 0.25};
+    state.declaration = std::make_shared<const EquilibriumProblem>(problem);
+    ThermochemistryRecord record;
+    record.standard_pressure = 1e5;
+    record.component_intervals.resize(3);
+    for (bool declared : {true, false}) {
+        const HelmholtzModel model(properties_support::neutral_ternary(), {},
+            declared ? std::optional(record) : std::nullopt);
+        state.model_identity = &model;
+        const auto finite = model.state_at_pressure(*state.temperature, *state.pressure, state.mole_fractions, DensityBranch::Liquid);
+        state.molar_densities = {finite.molar_density};
+        const auto row = reaction_activities(model, state).front();
+        CHECK(row.reference_pressure_pa == 1e6);
+        if (declared) {
+            const double expected = 2 * finite.log_fugacity_coefficient.value()[1].value() - finite.log_fugacity_coefficient.value()[0].value()
+                + std::log(0.25 * 0.25 / 0.5 * 10);
+            recording_support::compare("reaction-quotient/standard-pressure", "ln_Q_P", "1",
+                row.log_pressure_quotient.value(), expected, recording_support::Rule::Absolute, 1e-12, 0.0, "pressure activity definition", "{}");
+            CHECK(row.standard_pressure_pa == 1e5);
+        } else CHECK(!row.log_pressure_quotient && !row.standard_pressure_pa && !row.pressure_cause.empty());
+    }
+}
+
+void check_reaction_quotient_actions() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::aqueous_electrolyte());
+    auto problem = equilibrium_support::flash(3);
+    problem.source_reference = NeutralReferenceDeclaration{0, {0, 1, 1}, 1};
+    problem.reactions = {{"A=B+C", {-1, 1, 1}, 1.0, {}, {}, ReactionReference{1e5}}};
+    EquilibriumResult state;
+    state.temperature = 300.0; state.pressure = 1e6; state.phase_count = 1;
+    state.amounts = {1}; state.mole_fractions = {0.98, 0.01, 0.01};
+    state.declaration = std::make_shared<const EquilibriumProblem>(problem);
+    state.model_identity = &model;
+    state.molar_densities = {model.state_at_pressure(*state.temperature, *state.pressure,
+        state.mole_fractions, DensityBranch::Liquid).molar_density};
+    const auto row = reaction_activities(model, state).front();
+    const auto& actions = row.log_pressure_quotient_actions;
+    CHECK(row.log_pressure_quotient && actions.size() == 5);
+    CHECK(std::isfinite(actions[0].value()) && std::isfinite(actions[1].value()) && std::isfinite(actions[2].value()));
+    CHECK(!actions[3] && !actions[4] && !row.pressure_cause.empty());
+}
+
+void check_neutral_reference_permutations() {
+    using namespace epcsaft;
+    auto p = properties_support::parameters(5);
+    p.segment_count = {1.2047, 1, 1, 1, 1};
+    p.sigma_constant = {2.7927, 2.8, 3, 2.756, 3.1};
+    p.dispersion_energy_over_k = {353.95, 230, 230, 170, 180};
+    p.molar_mass_kg_per_mol = {0.01801528, 0.00694, 0.02299, 0.035453, 0.0799};
+    p.charge_number = {0, 1, 1, -1, -1};
+    p.packing_diameter_angstrom = p.debye_huckel_diameter_angstrom = {0, 3, 3, 3, 3};
+    p.relative_permittivity = {78.09, 0, 0, 0, 0};
+    p.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    p.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    p.permittivity_form = PermittivityForm::IonSuppression;
+    const auto source = ReactionReference{};
+    const std::vector<double> fractional{0, 1, 0.1, 1, 0.1}, integral{0, 1, 1, 1, 1};
+    for (bool fractional_ratios : {true, false}) {
+        const auto& ratios = fractional_ratios ? fractional : integral;
+        auto nu = fractional_ratios ? integral : fractional;
+        nu[0] = -1;
+        // Cancellation is exact for this ordering even with sequential addition.
+        std::vector<std::size_t> order{0, 1, 2, 3, 4};
+        const std::vector<std::size_t> paired{0, 1, 3, 2, 4};
+        const auto reference = reaction_reference(HelmholtzModel(equilibrium_support::permute_parameters(p, paired)),
+            298.15, 1e5, {0, equilibrium_support::permute_vector(ratios, paired), 1},
+            equilibrium_support::permute_vector(nu, paired), source);
+        CHECK(reference.status == NeutralReferenceStatus::Available && reference.terminal_contraction);
+        do {
+            const auto solvent = std::find(order.begin(), order.end(), 0) - order.begin();
+            const auto row = reaction_reference(HelmholtzModel(equilibrium_support::permute_parameters(p, order)),
+                298.15, 1e5, {std::size_t(solvent), equilibrium_support::permute_vector(ratios, order), 1},
+                equilibrium_support::permute_vector(nu, order), source);
+            CHECK(row.status == reference.status && row.terminal_contraction);
+            CHECK(std::abs(*row.terminal_contraction - *reference.terminal_contraction)
+                <= 1e-12 * std::max(1.0, std::abs(*reference.terminal_contraction)));
+        } while (std::next_permutation(order.begin(), order.end()));
+    }
+}
+
+void check_mixed_reference_work() {
+    using namespace epcsaft;
+    const HelmholtzModel model(properties_support::identical_ethane_pair());
+    const NeutralReferenceDeclaration declaration{0, {0, 1}, 1, {SpeciesReference::InfiniteDilution, SpeciesReference::PureLiquid}};
+    const ReactionReference source{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
+    const auto read = [&](const std::vector<double>& nu) {
+        return reaction_references(model, 260, 5e6, declaration, {nu}, {source}, 1).front();
+    };
+    const auto mixed = read({-1, 1}), dilute = read({-1, 0});
+    CHECK(mixed.status == NeutralReferenceStatus::Available && dilute.status == mixed.status);
+    const auto pure = model.state_at_pressure(260, 5e6, {0, 1}, DensityBranch::Liquid);
+    PressureActionDirection pressure;
+    pressure.pressure = 5e6;
+    const auto pure_action = model.reference_taylor(260, 1 / pure.molar_density, {0, 1}, {0, 1}, pressure, 1, false);
+    CHECK(pure_action.status == PropertyActionStatus::Available && pure_action.diagnostics.pressure_solves > 0);
+    recording_support::compare("mixed-reference/pressure-solves", "pressure_solves", "1",
+        mixed.lower_derivatives.at(0).diagnostics.pressure_solves,
+        dilute.lower_derivatives.at(0).diagnostics.pressure_solves + pure_action.diagnostics.pressure_solves,
+        recording_support::Rule::Absolute, 0.0, 0.0, "sum of independent reference work");
+}
+
 void check_s2() {
     epcsaft::HelmholtzModel model(properties_support::neutral_ternary());
     auto binary = equilibrium_support::flash(3);
