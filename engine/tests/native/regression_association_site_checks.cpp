@@ -342,8 +342,23 @@ void fit_failure_records() {
     const auto reference = predict_validated(model, first);
     CHECK(reference.value && reference.first_numerical_failure
         && reference.first_numerical_failure->stop == core::Stop::converged_to_floor);
+    CHECK(agree("bubble/recovered-pressure", "pressure", "Pa", *reference.value,
+        6023.3839326137504, 0., 1e-10, fields({field("T_K", 330.), field("feed", first.problem.feed.values)})));
     first.observed = *reference.value;
     request.weights = {1., 1.};
+
+    {
+        const HelmholtzModel retry_model(properties_support::associating_binary(), {}, {}, solver_options);
+        core::Capture capture(true);
+        const auto state = retry_model.state(330., 2918., {0.5, 0.5});
+        const auto& spans = capture.trace().spans;
+        const auto site_solve = std::find_if(spans.begin(), spans.end(),
+            [](const auto& span) { return std::string_view(span.name) == "association_newton"; });
+        CHECK(site_solve != spans.end() && site_solve->convergence
+            && site_solve->convergence->stop == core::Stop::converged && site_solve->convergence->iterations == 57);
+        CHECK(state.first_numerical_failure && state.first_numerical_failure->stop == core::Stop::converged_to_floor
+            && state.first_numerical_failure->iterations == 50);
+    }
 
     auto partial_pivot_bubble = first;
     partial_pivot_bubble.problem.feed.values = {0.25, 0.75};

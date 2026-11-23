@@ -456,14 +456,14 @@ inline std::vector<double> solve_site_fractions(
         }
         if (!valid) {
             const auto failure = make_record(
-                residual_norm, iteration + 1, core::Stop::left_domain, false
+                residual_norm, ordinal + 1, core::Stop::left_domain, false
             );
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
         }
         if (!finite_residual) {
             const auto failure = make_record(
-                residual_norm, iteration + 1, core::Stop::nonfinite, false
+                residual_norm, ordinal + 1, core::Stop::nonfinite, false
             );
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
@@ -471,7 +471,7 @@ inline std::vector<double> solve_site_fractions(
         fractions.swap(next);
         if (residual_norm <= tolerance) {
             const auto convergence = make_record(
-                residual_norm, iteration + 1, core::Stop::converged, false
+                residual_norm, ordinal + 1, core::Stop::converged, false
             );
             if (record != nullptr) {
                 *record = convergence;
@@ -485,7 +485,7 @@ inline std::vector<double> solve_site_fractions(
             return fractions;
         }
         if (++iteration < max_iterations) continue;
-        const auto failure = make_record(residual_norm, iteration, core::Stop::budget_exhausted, true);
+        const auto failure = make_record(residual_norm, ordinal + 1, core::Stop::budget_exhausted, true);
         if (full_pivot || failure.stop != core::Stop::converged_to_floor) {
             scope.finish(failure);
             throw core::ConvergenceFailure(failure, first);
