@@ -1220,9 +1220,10 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::optional<core::Convergence> first;
     auto& delta = scratch.association.delta;
     delta = central_strength(parameters_, temperature, density, composition, geometry, std::move(delta), &scratch.association.strength);
+    std::optional<AssociationPair> pair;
     result.site_fractions = solve_site_fractions(temperature, density,
         composition, parameters_, geometry.sigma, geometry.diameter,
-        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association);
+        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association, &pair);
     const auto& sites = result.site_fractions;
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1298,10 +1299,46 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (gradient || phase_gradient || sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
+        const bool pair_sensitivity = [&] {
+            if (!pair || blocks || point_size != 2 + components
+                || std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
+                return false;
+            using D = Taylor<1>;
+            const auto [a, b, r, discriminant] = *pair;
+            const std::vector<D> sigma(geometry.sigma.begin(), geometry.sigma.end());
+            const std::vector<D> diameter(geometry.diameter.begin(), geometry.diameter.end());
+            std::vector<D> x(components);
+            site_sensitivity.setZero();  // Isolated sites remain unbonded.
+            for (std::size_t k = 0; k < width; ++k) {
+                const auto coordinate = coordinates[k];
+                D t(temperature), v(volume), n(total);
+                t.c[1] = coordinate == 0;
+                v.c[1] = coordinate == 1;
+                n.c[1] = coordinate >= 2;
+                const D rho = n / v;
+                for (std::size_t i = 0; i < components; ++i) {
+                    D ni(amounts[i]);
+                    ni.c[1] = coordinate == 2 + i;
+                    x[i] = ni / n;
+                }
+                const auto sig = coordinate == 0 ? segment_sigma(t, parameters_) : sigma;
+                const auto diam = coordinate == 0 ? segment_diameter(t, parameters_, sig) : diameter;
+                const auto strength = association_delta(t, rho, x, parameters_, sig, diam);
+                const auto coupling = [&](std::size_t i, std::size_t j) {
+                    return (rho * NUMBER_DENSITY_PER_ANGSTROM3 * x[parameters_.site_component[j]]
+                        * parameters_.site_multiplicity[j] * strength[i * sites_count + j]).c[1];
+                };
+                // Differentiate the accepted reciprocal-pair polynomial in its original orientation.
+                const double dq = coupling(a, b), dr = coupling(b, a);
+                site_sensitivity(a, k) = -sites[a] * ((dq - dr) + sites[a] * dr) / discriminant;
+                site_sensitivity(b, k) = -sites[b] * sites[b] * (sites[a] * dr + r * site_sensitivity(a, k));
+            }
+            return site_sensitivity.allFinite();
+        }();
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
         auto& partials = scratch.partials;
         partials.resize(sites_count, width);
-        if (width > 1 && width <= sites_count) {
+        if (!pair_sensitivity && width > 1 && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size() * width, 0.0);
             for (std::size_t k = 0; k < width; ++k) direction[coordinates[k] * width + k] = 1.0;
@@ -1309,7 +1346,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             ++counters_.forward;
             for (std::size_t site = 0; site < sites_count; ++site)
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = first[(1 + site) * width + k];
-        } else if (width <= sites_count) {
+        } else if (!pair_sensitivity && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < width; ++k) {
@@ -1319,7 +1356,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 ++counters_.forward;
                 for (std::size_t site = 0; site < sites_count; ++site) partials(site, k) = first[1 + site];
             }
-        } else if (sites_count) {
+        } else if (!pair_sensitivity && sites_count) {
             auto& site_weight = scratch.site_weights;
             site_weight.assign(output_count, 0.0);
             for (std::size_t site = 0; site < sites_count; ++site) {
@@ -1330,7 +1367,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = partial[coordinates[k]];
             }
         }
-        if (sites_count != 0) site_sensitivity = factorization.solve(-partials);
+        if (!pair_sensitivity && sites_count != 0) site_sensitivity = factorization.solve(-partials);
         for (std::size_t k = 0; k < width; ++k) {
             auto& derivative = result.gradient[coordinates[k]];
             derivative = raw_gradient[coordinates[k]];
