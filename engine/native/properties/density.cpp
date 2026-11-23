@@ -1628,17 +1628,18 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
     const auto count = amounts.size() + 1, width = count + 1 + active_.size();
     out.gradient.assign(width, 0); out.hessian.assign(width * width, 0); out.gradient_error.assign(width, 0);
     std::vector<Base> diagonal(count), scales(count, 1), direction(count, 0); scales[0] = volume;
+    constexpr std::size_t order = 2;
     std::vector<Base> coefficients;
     const auto along = [&](std::size_t i, std::size_t j, Base& floor, std::vector<Base>* sites_out = nullptr) {
         std::fill(direction.begin(), direction.end(), 0); direction[i] = scales[i];
         if (j < count) direction[j] = scales[j];
-        return series.template residual<2>(1 / volume, floor, sites, sites_out, direction, Base(0), prepared);
+        return series.template residual<order>(1 / volume, floor, sites, sites_out, direction, Base(0), prepared);
     };
     for (std::size_t i = 0; i < count; ++i) {
         const bool retain = site_sensitivity && i < static_cast<std::size_t>(site_sensitivity->cols());
         Base floor = 0; const auto energy = along(i, count, floor, retain ? &coefficients : nullptr);
         if (retain) for (Eigen::Index s = 0; s < site_sensitivity->rows(); ++s)
-            (*site_sensitivity)(s, i) = static_cast<double>(coefficients[3 * s + 1] / scales[i]);
+            (*site_sensitivity)(s, i) = static_cast<double>(coefficients[order * s + 1] / scales[i]);
         out.value = energy.c[0]; out.gradient[i + 1] = energy.c[1] / scales[i];
         out.gradient_error[i + 1] = floor / scales[i];
         out.gradient_floor = std::max(out.gradient_floor, out.gradient_error[i + 1]);
