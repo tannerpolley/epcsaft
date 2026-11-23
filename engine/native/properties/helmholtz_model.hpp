@@ -7,6 +7,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/parameters.hpp"
 #include "core/scalar.hpp"
+#include "contributions/association_plan.hpp"
 #include "properties/parameter_families.hpp"
 #include "properties/thermochemistry.hpp"
 
@@ -571,14 +572,13 @@ public:
     template <typename Base>
     HelmholtzDerivativeValues<Base> isothermal(Base temperature, Base volume,
         const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
-        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr) const;
+        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr,
+        const AssociationAction* association = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
         double temperature_direction, const std::vector<double>& composition_direction) const;
-    bool has_association() const {
-        const auto& edges = parameters_.association_active;
-        return std::any_of(edges.begin(), edges.end(), [](int edge) { return edge != 0; });
-    }
+    bool has_association() const { return association_plan_.has_edges; }
+    const AssociationPlan& association_plan() const { return association_plan_; }
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     EPC_API std::vector<double> active_parameter_values() const;
@@ -615,6 +615,7 @@ private:
 
     const policy::SolverOptions solver_options_;
     Parameters parameters_;
+    AssociationPlan association_plan_;
     std::vector<ActiveParameter> active_;
     std::optional<ThermochemistryRecord> thermochemistry_;
     void reset_state_tapes() const;

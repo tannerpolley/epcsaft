@@ -388,6 +388,41 @@ void derivatives_and_limits() {
     CHECK(std::isfinite(near_cap.value));
 }
 
+void association_volume_tangent() {
+    using namespace epcsaft;
+    auto p = properties_support::associating_binary();
+    p.site_multiplicity.assign(4, 1);
+    constexpr double t = 300.0, rho = 10000.0;
+    const std::vector<double> x{0.4, 0.6};
+    const HelmholtzModel symmetric(p, {{ParameterFamily::AssociationVolume, {1, 4}}});
+    const HelmholtzModel asymmetric(p, {{ParameterFamily::AssociationVolume, {3, 12}}});
+    const auto sigma = segment_sigma(t, p), diameter = segment_diameter(t, p, sigma);
+    const auto strength = association_delta(t, rho, x, p, sigma, diameter);
+    std::optional<AssociationAction> accepted;
+    const auto sites = solve_site_fractions(t, rho, x, p, sigma, diameter, nullptr, nullptr, &strength,
+        false, {}, nullptr, nullptr, nullptr, &accepted, &symmetric.association_plan());
+    CHECK(accepted && accepted->strategy == AssociationPlan::BalancedBinary);
+    const auto bonded = bonded_densities(x, p, sites, strength);
+    const Eigen::FullPivLU<Eigen::MatrixXd> full(mass_action_jacobian(
+        x, p, sites, rho * NUMBER_DENSITY_PER_ANGSTROM3, strength, bonded));
+    for (const auto* model : {&symmetric, &asymmetric}) {
+        const bool broken = model == &asymmetric;
+        const std::vector<double> point{t, 1.0/rho, x[0], x[1], model->active_parameter_values()[0]};
+        auto tape = detail::HelmholtzTape::record(*model, point, sites, {});
+        const std::vector<std::vector<double>> path{point, {0, 0, 0, 0, 1}};
+        std::vector<double> actual, reference, right;
+        std::size_t solves = 0;
+        tape->implicit_taylor(path, 1, &full, nullptr, nullptr, nullptr, nullptr, &reference);
+        tape->implicit_taylor(path, 1, &full, &solves, nullptr, nullptr, nullptr, &actual, &right, &*accepted);
+        CHECK((right[4] != right[5] || right[6] != right[7]) == broken);
+        CHECK(solves == (broken ? 1 : 0));
+        for (std::size_t i = 4; i < actual.size(); ++i)
+            recording_support::compare(broken ? "cross-association-volume" : "self-association-volume",
+                "site_volume_tangent", "1", actual[i], reference[i],
+                recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "full implicit mass action");
+    }
+}
+
 void finite_difference_gradient() {
     epcsaft::HelmholtzModel model(
         properties_support::associating_binary(),
@@ -449,6 +484,7 @@ void finite_difference_gradient() {
                                        recording_support::field("plus_n", plus),
                                        recording_support::field("minus_n", minus)}));
     }
+    association_volume_tangent();
 }
 
 }  // namespace properties_checks

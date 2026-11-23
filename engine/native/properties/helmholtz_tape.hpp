@@ -241,7 +241,8 @@ struct HelmholtzTape final {
         std::size_t* forward_count = nullptr,
         double* coefficient_residual = nullptr,
         std::vector<std::vector<double>>* output_prefix = nullptr,
-        std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr
+        std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr,
+        const AssociationAction* association = nullptr
     ) {
         core::CalculationWork::energy_evaluation();
         core::Scope scope("implicit_taylor"), evaluation("evaluate");
@@ -265,7 +266,10 @@ struct HelmholtzTape final {
             }
             const auto known = function.Forward(current, input);
             if (forward_count != nullptr) ++*forward_count;
-            if (site_count && factorization != nullptr) {
+            if (site_count && factorization != nullptr
+                && !(current == 1 && association && association->tangent(
+                    [&](std::size_t site) { return -known[1 + site]; },
+                    [&](std::size_t site, double dx) { input[regular_count + site] = dx; }))) {
                 std::vector<double> rhs(site_count);
                 for (std::size_t site = 0; site < site_count; ++site)
                     rhs[site] = -known[1 + site];

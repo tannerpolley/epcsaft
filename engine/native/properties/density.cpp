@@ -101,11 +101,6 @@ public:
             moments_ = {packing, dispersion_coefficients(packing[0]), composition_moments(temperature_, composition_, parameters_, sigma_)};
         }
         if (!core::AssociationObservations::current()) observations_.emplace();
-        // With one partner per site the mass action's pair step is its exact solution at every density.
-        const std::size_t sites = parameters_.site_component.size();
-        for (std::size_t a = 0; a < sites; ++a)
-            pairs_ = pairs_ && std::count_if(parameters_.association_active.begin() + static_cast<std::ptrdiff_t>(a * sites),
-                parameters_.association_active.begin() + static_cast<std::ptrdiff_t>((a + 1) * sites), [](int v) { return v != 0; }) == 1;
     }
     mutable std::optional<DensityPartition> partition;
     mutable std::string permittivity_refusal;
@@ -115,7 +110,7 @@ public:
     std::optional<core::AssociationObservations> observations_;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
-    bool uses_site_start() const { return !pairs_; }
+    bool uses_site_start() const { return !model_.association_plan().one_partner_per_site; }
     bool thermal_chart_resolved(Base density) const {
         const auto zeta = packing_moments(density, composition_, parameters_, diameter_, held_packing());
         const Base cube = zeta[2] * zeta[2] * zeta[2], volume = 1.0 / density;
@@ -129,7 +124,8 @@ public:
     template <std::size_t N, bool Thermal = false>
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
                        std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0,
-                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const try {
+                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr,
+                       const AssociationAction* accepted = nullptr) const try {
         using Series = Taylor<N, Base>;
         core::CalculationWork::energy_evaluation();
         core::Scope entry("pressure_series_residual"), scope("evaluate");
@@ -174,18 +170,19 @@ public:
                 strength.push_back(static_cast<double>(d.c[0]));
             }
             core::Convergence record;
+            std::optional<AssociationAction> action;
             const auto sites = [&]() -> std::vector<double> { try {
                 if (prepared) return *start;
                 if (strength.empty()) return std::vector<double>{};
                 if constexpr (!std::is_same_v<Base, double>) if (!central_sites_.empty()) return narrow_values(central_sites_.begin(), central_sites_.end());
                 if (!association_) association_ = std::make_unique<AssociationWorkspace>();
-                const auto* seed = !pairs_ && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
+                const auto* seed = uses_site_start() && start != nullptr && start->size() == parameters_.site_component.size() ? start : nullptr;
                 if constexpr (std::is_same_v<Base, double>)
                     return solve_site_fractions(temperature_, rho0, composition_, parameters_, sigma_, diameter_, &record, seed, &strength, true, solver_options(), &first_numerical_failure,
-                        held_packing(), association_.get());
+                        held_packing(), association_.get(), &action, &model_.association_plan());
                 else return solve_site_fractions(static_cast<double>(temperature_), static_cast<double>(rho0),
                     narrow_values(composition_.begin(), composition_.end()), model_.parameters(), narrow_values(sigma_.begin(), sigma_.end()),
-                    narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure, nullptr, association_.get());
+                    narrow_values(diameter_.begin(), diameter_.end()), &record, seed, &strength, true, solver_options(), &first_numerical_failure, nullptr, association_.get(), nullptr, &model_.association_plan());
             } catch (const std::exception& error) { core::retain_failure(first_numerical_failure, error, "density association"); throw; }
             }();
             site_series.clear();
@@ -259,7 +256,10 @@ public:
                 for (std::size_t k = 1; k < N + (blocks ? 1 : 0); ++k) {
                     residuals = association_residuals(rho, composition, parameters_, site_series, delta);
                     for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
-                    coefficient = lu.solve(rows);
+                    const auto* association = accepted ? accepted : (action ? &*action : nullptr);
+                    coefficient.resize(count);
+                    if (k != 1 || !association || !association->tangent([&](std::size_t s) { return rows(s); },
+                        [&](std::size_t s, double dx) { coefficient(s) = dx; })) coefficient = lu.solve(rows);
                     for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
                     if (k > 1 || prepared || blocks) continue;
                     for (Eigen::Index s = 0; s < count; ++s) {
@@ -365,7 +365,6 @@ private:
     std::conditional_t<std::is_same_v<Base, double>, const Parameters&, ParameterRecord<Base>> parameters_;
     IsothermMoments<Base> moments_;
     Base temperature_, total_ = 0.0;
-    bool pairs_ = true;
     mutable std::vector<Base> central_sites_;
     mutable std::unique_ptr<AssociationWorkspace> association_;
     mutable std::size_t used_ = 0;
@@ -1622,7 +1621,8 @@ HelmholtzDerivatives HelmholtzModel::pure_state_derivatives(double temperature, 
 template <typename Base>
 HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Base volume,
     const std::vector<Base>& amounts, const std::vector<double>* sites,
-    const Eigen::FullPivLU<Eigen::MatrixXd>* prepared, Eigen::MatrixXd* site_sensitivity) const {
+    const Eigen::FullPivLU<Eigen::MatrixXd>* prepared, Eigen::MatrixXd* site_sensitivity,
+    const AssociationAction* association) const {
     std::vector<double> declared;
     for (const auto& amount : amounts) declared.push_back(static_cast<double>(amount));
     validate_point(double(temperature), double(volume), declared);
@@ -1636,7 +1636,7 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
     const auto along = [&](std::size_t i, std::size_t j, Base& floor, std::vector<Base>* sites_out = nullptr) {
         std::fill(direction.begin(), direction.end(), 0); direction[i] = scales[i];
         if (j < count) direction[j] = scales[j];
-        return series.template residual<order>(1 / volume, floor, sites, sites_out, direction, Base(0), prepared);
+        return series.template residual<order>(1 / volume, floor, sites, sites_out, direction, Base(0), prepared, association);
     };
     for (std::size_t i = 0; i < count; ++i) {
         const bool retain = site_sensitivity && i < static_cast<std::size_t>(site_sensitivity->cols());
@@ -1662,9 +1662,9 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
 }
 
 template HelmholtzDerivativeValues<double> HelmholtzModel::isothermal(double, double,
-    const std::vector<double>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*) const;
+    const std::vector<double>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*, const AssociationAction*) const;
 template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
-    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*) const;
+    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*, const AssociationAction*) const;
 
 template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 template PureIsothermalValues<WiderScalar> HelmholtzModel::pure_isothermal(WiderScalar, WiderScalar, WiderScalar) const;
