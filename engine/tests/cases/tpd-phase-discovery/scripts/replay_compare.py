@@ -19,9 +19,15 @@ def base(quantity):
     return re.sub(r'/\d+', '', quantity)
 
 
+def optional_work_key(section, quantity):
+    if section == 'fitting':
+        return re.fullmatch(r'iteration_costs/[0-9]+', quantity) is not None
+    return base(quantity) in WORK
+
+
 def inventory_rows(section, rows, *, work_reported=False):
     if section == 'fitting' or work_reported:
-        return [r for r in rows if base(r['quantity']) not in WORK]
+        return [r for r in rows if not optional_work_key(section, r['quantity'])]
     return list(rows)
 
 
@@ -90,7 +96,7 @@ def main():
                 failures.append(dict(key=key, reason='non-finite value', before=a and a['value'], after=b and b['value']))
                 continue
             if a is None or b is None:
-                if base(key[1]) in WORK:
+                if optional_work_key(section, key[1]):
                     work.append(dict(key=key, before=a and a['value'], after=b and b['value']))
                 else:
                     failures.append(dict(key=key, reason='row missing', before=a and a['value'], after=b and b['value']))
@@ -99,7 +105,7 @@ def main():
                 failures.append(dict(key=key, reason='kind changed', before=a['kind'], after=b['kind']))
                 continue
             if a['value'] == b['value']:
-                identical += section != 'fitting' or base(key[1]) not in WORK
+                identical += section != 'fitting' or not optional_work_key(section, key[1])
                 continue
             case, q = key
             name = base(q).rsplit('/', 1)[-1]

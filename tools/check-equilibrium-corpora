@@ -49,7 +49,7 @@ MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df
 # Accepted results at the #391 delivery, which both wheels must reproduce; a slice that changes one edits it
 # here. Gross failures are CSV line numbers of default-start-comparisons.csv; neutral successes are initial
 # pressures (Pa) by temperature (K); replay success and requested_tolerance_met count True rows, and keys
-# is the SHA-256 prefix of the sorted "case,quantity" lines. The fit inventory omits solver work.
+# is the SHA-256 prefix of the sorted "case,quantity" lines. The fit inventory omits iteration-cost samples.
 ACCEPTED = dict(
     cameretti=dict(states=1800, default_successes=1800, declared_all_succeeded=True),
     gross=dict(rows=724, failed_lines=[558, 722, 723]),
@@ -64,7 +64,7 @@ ACCEPTED = dict(
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
-                fitting=dict(rows=185, cases=3, success=0, requested_tolerance_met=0, keys='4f81bfcf199d5293'),
+                fitting=dict(rows=189, cases=3, success=0, requested_tolerance_met=0, keys='b048af3357743038'),
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 
