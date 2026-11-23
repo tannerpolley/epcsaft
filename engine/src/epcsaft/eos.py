@@ -16,7 +16,7 @@ from typing import TYPE_CHECKING, Any, cast
 
 from . import _core
 from .equilibrium.problem import _vector
-from .parameters import Parameters, _record_document
+from .parameters import Parameters, _record_document, _warn_domains
 from .reference import Reference
 
 if TYPE_CHECKING:
@@ -246,9 +246,15 @@ class Mixture:
         self.site_ids = parameters.site_ids
         self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
 
-    def outside_domains(self, x: Sequence[float]) -> list[dict[str, Any]]:
-        """Report declared composition bounds exceeded by one phase, in component order."""
-        return _core.outside_domains(self.parameters._native, self.parameters._bounds, x)
+    def outside_domains(self, x: Sequence[float], *, T: float | None = None,
+                        P: float | None = None) -> list[_core.OutsideDomain]:
+        """Report exceeded bounds at mole fractions x, temperature T in K and pressure P in Pa."""
+        return _core.outside_domains(self.parameters._native, self.parameters._bounds, x, T, P)
+
+    def _check_domains(self, result: Any, T: float, P: float | None, x: Sequence[float]) -> None:
+        violations = self.outside_domains(x, T=T, P=P)
+        setattr(result, "_domain_violations", violations)
+        _warn_domains(violations)
 
     def states(
         self, T: Sequence[float], *, rho: float | Sequence[float] | None = None,
@@ -300,7 +306,18 @@ class Mixture:
         values = cast(Sequence[float], value) if hasattr(value, "__iter__") else (cast(float, value),)
         matrix = x is not None and not isinstance(x, Mapping) and len(x) > 0 and hasattr(x[0], "__iter__")
         composition = cast(Sequence[Sequence[float]], x) if matrix else (self._composition(cast(Any, x)),)
-        return self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
+        result = self._model.states(T, values, composition, P is not None, branch, bool(derived_properties))
+        if self.parameters._bounds:
+            violations = [
+                [] if pressure is None else self.outside_domains(
+                    composition[0 if len(composition) == 1 else i],
+                    T=T[i], P=pressure if P is None else values[0 if len(values) == 1 else i],
+                )
+                for i, pressure in enumerate(result.pressure)
+            ]
+            setattr(result, "_domain_violations", violations)
+            _warn_domains([r for row in violations for r in row])
+        return result
 
     def virial_coefficients(self, T: float, x: Mapping[str, float] | Sequence[float] | None = None) -> VirialCoefficients:
         """Return exact neutral-model B (m³/mol) and C (m⁶/mol²) at T in K.
@@ -308,7 +325,11 @@ class Mixture:
         Composition follows component order or component identifiers. Charged
         declarations refuse even on an ion-free composition face.
         """
-        return self._model.virial_coefficients(T, self._composition(x))
+        composition = self._composition(x)
+        result = self._model.virial_coefficients(T, composition)
+        if self.parameters._bounds:
+            self._check_domains(result, T, None, composition)
+        return result
 
     def log_fugacity_terms(self, T: float, rho: float, x: Mapping[str, float] | Sequence[float] | None = None) -> LogFugacityTerms:
         """Return each residual Helmholtz term's share of ln phi_i at T (K), rho (mol/m³) and x.
@@ -317,7 +338,12 @@ class Mixture:
         minus ``log_compressibility_factor`` (ln Z, reported once). Charged components
         on an ion-free support are None, as in ``State.log_fugacity_coefficient``.
         """
-        return self._model.log_fugacity_terms(T, rho, self._composition(x))
+        composition = self._composition(x)
+        result = self._model.log_fugacity_terms(T, rho, composition)
+        if self.parameters._bounds:
+            self._check_domains(result, T, _core.fugacity_terms_pressure(result, T, rho), composition)
+        return result
+
     def virial_coefficient_actions(
         self, T: float, x: Mapping[str, float] | Sequence[float] | None = None, *, temperature_direction: float | None = None,
         composition_direction: Mapping[str, float] | Sequence[float] | None = None,
@@ -329,7 +355,11 @@ class Mixture:
         zero (fixed total) and `[1, -1]` gives d/dx of the first component of a binary.
         """
         direction = [] if composition_direction is None else self._composition(composition_direction)
-        return self._model.virial_coefficient_actions(T, self._composition(x), temperature_direction or 0.0, direction)
+        composition = self._composition(x)
+        result = self._model.virial_coefficient_actions(T, composition, temperature_direction or 0.0, direction)
+        if self.parameters._bounds:
+            self._check_domains(result, T, None, composition)
+        return result
 
     def state(
         self,
@@ -388,12 +418,17 @@ class Mixture:
         if (rho is None) == (P is None):
             raise ParameterError("exactly one of rho or P is required")
         branch = _branch(phase)
+        composition = self._composition(x)
         if rho is not None:
-            return self._model.state(T, rho, self._composition(x), bool(derived_properties))
-        assert P is not None
-        return self._model.state_at_pressure(
-            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
-        )
+            result = self._model.state(T, rho, composition, bool(derived_properties))
+        else:
+            assert P is not None
+            result = self._model.state_at_pressure(
+                T, P, composition, branch, anchor.molar_density if anchor else None, bool(derived_properties)
+            )
+        if self.parameters._bounds:
+            self._check_domains(result, T, P if P is not None else result.pressure, composition)
+        return result
 
     def reference(
         self,
@@ -510,7 +545,11 @@ class Mixture:
         """
         if len(self.component_ids) == 1:
             directions = [DensityActionDirection(d.temperature, d.molar_density, d.composition or (0.0,), d.parameter) for d in directions]
-        return self._model.density_actions(T, rho, self._composition(x), observables, directions)
+        composition = self._composition(x)
+        result = self._model.density_actions(T, rho, composition, observables, directions)
+        if self.parameters._bounds and any(row.value is not None for row in result.results):
+            self._check_domains(result, T, None, composition)
+        return result
 
     def pressure_actions(
         self,
@@ -570,10 +609,14 @@ class Mixture:
         """
         if len(self.component_ids) == 1:
             directions = [PressureActionDirection(d.temperature, d.pressure, d.composition or (0.0,), d.parameter) for d in directions]
-        return self._model.pressure_actions(
-            T, P, self._composition(x), _branch(phase), observables, directions,
+        composition = self._composition(x)
+        result = self._model.pressure_actions(
+            T, P, composition, _branch(phase), observables, directions,
             anchor.molar_density if anchor else None,
         )
+        if self.parameters._bounds and result.molar_density is not None:
+            self._check_domains(result, T, P, composition)
+        return result
 
     def pressure_action_difference(
         self, T: float, P: float, *, x: Sequence[float] | None = None, phase: str,
@@ -686,7 +729,11 @@ class Mixture:
         ).items():
             if value is not None:  # None keeps the native default
                 setattr(request, name, value)
-        return self._model.density_diagnostics(T, P, self._composition(x), request)
+        composition = self._composition(x)
+        result = self._model.density_diagnostics(T, P, composition, request)
+        if self.parameters._bounds:
+            self._check_domains(result, T, P, composition)
+        return result
 
     def molar_density_upper_bound(self, T: float, *, x: Sequence[float] | None = None) -> float:
         """Return the geometric packing limit for the declared composition.

@@ -15,7 +15,7 @@ from typing import TYPE_CHECKING, Any, Literal, Protocol, cast
 
 from .. import _core
 from .._log import logged
-from ..parameters import _record_document
+from ..parameters import Parameters, _record_document, _warn_domains
 
 if TYPE_CHECKING:
     from ..eos import Mixture
@@ -27,6 +27,9 @@ class _Species(Protocol):
 
 class _Model(_Species, Protocol):
     _model: _core.HelmholtzModel
+    parameters: Parameters
+
+    def outside_domains(self, x: Sequence[float], *, T: float | None = None, P: float | None = None) -> list[_core.OutsideDomain]: ...
 
 
 class IdealMoleFraction:
@@ -924,6 +927,13 @@ def _phase_kind(phase: Phase) -> _core.PhaseKind:
     raise _core.ParameterError(f"unknown phase kind {kind}; expected liquid or vapor")
 
 
+def _phase_domains(model: _Model, result: _core.EquilibriumResult | None) -> list[list[_core.OutsideDomain]]:
+    if result is None or not result.success or result.temperature is None or result.pressure is None or not result.mole_fractions:
+        return []
+    return [model.outside_domains(result.phase_mole_fractions(i), T=result.temperature, P=result.pressure)
+            for i in range(result.phase_count)]
+
+
 def solve_equilibrium(
     model: _Model | IdealMoleFraction,
     problem: Problem | _core.EquilibriumProblem,
@@ -986,10 +996,15 @@ def solve_equilibrium(
         if work_limit is not None:
             raise ValueError("work_limit requires a declared mixture bubble")
         return logged(_core.solve_equilibrium, model._model, native, start)
-    return logged(
+    result = logged(
         _core.solve_equilibrium, model._model, native, start, model.component_ids, work_limit,
         branch_end_work_limit=branch_end_work_limit, prepared=prepared,
     )
+    if model.parameters._bounds:
+        phases = _phase_domains(model, result)
+        setattr(result, "_domain_violations", phases)
+        _warn_domains([r for phase in phases for r in phase])
+    return result
 
 
 def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.EquilibriumProblem) -> _core.CompiledSystem:
@@ -1152,7 +1167,12 @@ def continue_equilibrium(
     request.start_result = start_result
     request.parameter_targets = () if parameter_targets is None else parameter_targets
     request.options = options
-    return logged(_core.continue_equilibrium, model._model, request)
+    result = logged(_core.continue_equilibrium, model._model, request)
+    if model.parameters._bounds:
+        states = [_phase_domains(model, state) for state in result.states]
+        setattr(result, "_domain_violations", states)
+        _warn_domains([r for phases in states for phase in phases for r in phase])
+    return result
 
 
 def bubble_point(*, liquid: Phase, T: float, feed: Feed, reactions: Sequence[Reaction] | None = None,
@@ -1263,7 +1283,12 @@ def solve_equilibrium_starts(model: _Model, problem: Problem, starts: Sequence[_
     The native owner enforces shared work limits and retains exhausted-budget
     causes rather than silently retrying without a bound (ALG-EQUILIBRIUM).
     """
-    return logged(_core.solve_equilibrium_starts, model._model, problem._native(model), list(starts), limits)
+    result = logged(_core.solve_equilibrium_starts, model._model, problem._native(model), list(starts), limits)
+    if model.parameters._bounds:
+        states = [_phase_domains(model, state) for state in result.results]
+        setattr(result, "_domain_violations", states)
+        _warn_domains([r for phases in states for phase in phases for r in phase])
+    return result
 
 
 def tp_flash(model: _Model, *, T: float, P: float, feed: Feed) -> _core.EquilibriumResult:

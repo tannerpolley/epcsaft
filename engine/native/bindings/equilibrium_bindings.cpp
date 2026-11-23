@@ -271,7 +271,8 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(BranchEndCondition, LoadingFold, VaporMechanicalLimit, VaporKindRefused);
     nb::class_<BubbleBranchEnd>(module, "BubbleBranchEnd")
         EPCSAFT_READONLY(BubbleBranchEnd, condition, feed_bracket_mol, limiting_feed_mol, limiting_pressure_pa);
-    nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.")
+    nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         .def_prop_ro("critical_search", [](const EquilibriumResult& r) { return r.critical_search ? nb::cast(*r.critical_search) : nb::none(); })
         .def_prop_ro("rejected_reduction", [](const EquilibriumResult& r) { return r.rejected_reduction ? nb::cast(*r.rejected_reduction) : nb::none(); })
         .def_prop_ro("recovery_stability", [](const EquilibriumResult& r) { return r.recovery_stability ? nb::cast(*r.recovery_stability) : nb::none(); })
@@ -351,7 +352,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<ContinuationRequest>(module, "ContinuationRequest")
         .def(nb::init<>())
         EPCSAFT_READWRITE(ContinuationRequest, start_problem, target_problem, start_result, options, parameter_targets);
-    nb::class_<ContinuationResult>(module, "ContinuationResult")
+    nb::class_<ContinuationResult>(module, "ContinuationResult", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         .def_prop_ro("first_numerical_failure", [](const ContinuationResult& r) { return r.observations.first_numerical_failure; })
         .def_prop_ro("rank_records", [](const ContinuationResult& r) { return r.observations.rank_records; })
         .def_prop_ro("ipopt_diagnostics", [](const ContinuationResult& r) { return r.observations.ipopt_diagnostics; })
@@ -378,7 +380,8 @@ void register_equilibrium(nb::module_& module) {
         }, nb::kw_only(), nb::arg("attempts") = nb::none(), nb::arg("iterations") = nb::none(),
             nb::arg("attempt_iterations") = nb::none(), nb::arg("seconds") = nb::none(), nb::arg("attempt_seconds") = nb::none())
         EPCSAFT_READWRITE(EquilibriumWorkLimits, attempts, iterations, attempt_iterations, seconds, attempt_seconds);
-    nb::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult")
+    nb::class_<EquilibriumStartsResult>(module, "EquilibriumStartsResult", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(EquilibriumStartsResult, selected, results, causes, attempt_seconds, iterations, seconds,
             overrun_seconds, budget_exhausted);
     module.def("solve_equilibrium_starts", &solve_equilibrium_starts, nb::arg("model"), nb::arg("problem"), nb::arg("starts"),

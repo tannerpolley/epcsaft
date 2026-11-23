@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import tomllib
+import warnings
 from copy import deepcopy
 from collections.abc import Mapping, Sequence
 from pathlib import Path
@@ -18,6 +19,23 @@ from typing import Any, cast
 from . import _core
 
 ParameterError = _core.ParameterError
+OutsideDomain = _core.OutsideDomain
+
+
+class DomainWarning(UserWarning):
+    """A returned calculation exceeds one or more declared parameter domain bounds."""
+
+
+def _warn_domains(violations: Sequence[OutsideDomain]) -> None:
+    if violations:
+        warnings.warn(
+            "; ".join(f"{r.packet}/{r.domain_id}: {r.variable}={r.value:g} {r.side} {r.bound:g} {r.declaration.unit}"
+                      for r in violations),
+            DomainWarning,
+            skip_file_prefixes=(str(Path(__file__).parent),),
+        )
+
+
 # Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
 _KEYS = {*"schema schema_version components correlations pairs model_families model_coefficients topology".split(),
          *"document_id document_version purpose sources domains materialization".split(),
@@ -113,6 +131,32 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     """The component ids one component, pair, correlation, site, edge or no-cross record names."""
     ends = [record[key] for key in ("endpoint_a", "endpoint_b") if key in record]
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
+
+
+def _selected_domains(document: Mapping[str, Any], components: set[str]) -> list[Any]:
+    domains = cast(list[Any], document.get("domains", []))
+    if not any("temperature_min" in d or "temperature_max" in d or "pressure_min" in d or "pressure_max" in d
+               for d in domains if d.get("kind") != "unknown"):
+        return domains
+    referenced: set[str] = set()
+    selected: set[str] = set()
+
+    def visit(value: Any, included: bool) -> None:
+        if isinstance(value, Mapping):
+            included = included and _named(value) <= components
+            provenance = value.get("provenance", {})
+            for source in provenance if isinstance(provenance, list) else [provenance]:
+                if isinstance(source, Mapping) and (domain := source.get("domain_id")):
+                    (selected if included else referenced).add(domain)
+            for key, item in value.items():
+                if key not in ("domains", "materialization", "model_families", "provenance"):
+                    visit(item, included)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item, included)
+
+    visit(document, True)
+    return [d for d in domains if d["domain_id"] not in referenced - selected]
 
 
 def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> list[dict[str, Any]]:
@@ -236,7 +280,7 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         if manifest.is_file():
             document["domains"] = tomllib.loads(manifest.read_text())["domains"]
         merged["materialization"].append({"packet": packet, "components": list(names)} | {
-            key: document.get(key, []) for key in ("sources", "domains")})
+            "sources": document.get("sources", []), "domains": _selected_domains(document, chosen)})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
         for (a, b), magnitude in values.items():
@@ -304,7 +348,7 @@ class Parameters:
         It retains no source document for later property/ASL serialization.
         """
         self._native = native
-        self._bounds: list[_core.CompositionBound] = []
+        self._bounds: Sequence[_core.DomainBound] = ()
         self._document: _core.ParameterDocument | None = None
         self._document_refusal: str | None = None  # why a fit has no document
         self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
@@ -784,31 +828,41 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         bounds = []
-        for bound_source in cast(Any, document).get("materialization", [{"domains": document.get("domains", []), "components": selected_ids}]):
+        bound_sources = cast(Any, document).get("materialization")
+        if bound_sources is None:
+            bound_sources = [{"packet": document.get("document_id", ""), "domains": _selected_domains(document, set(selected_ids)),
+                              "components": selected_ids}]
+        for bound_source in bound_sources:
             chosen = set(bound_source["components"]) & set(selected_ids)
             for domain in bound_source.get("domains", []):
-                for field, quantity in (("solute_molality", _core.DomainQuantity.SoluteMolality),
+                if not chosen or domain.get("kind") == "unknown":
+                    continue
+                for field, quantity in (("temperature", _core.DomainQuantity.Temperature),
+                                        ("pressure", _core.DomainQuantity.Pressure),
+                                        ("solute_molality", _core.DomainQuantity.SoluteMolality),
                                         ("ionic_strength", _core.DomainQuantity.IonicStrength),
                                         ("ion_mole_fraction", _core.DomainQuantity.IonMoleFraction)):
                     for suffix, limit in (("min", _core.DomainLimit.Minimum), ("max", _core.DomainLimit.Maximum)):
                         if (key := f"{field}_{suffix}") not in domain:
                             continue
                         fraction = field == "ion_mole_fraction"
-                        if not fraction and domain.get("solvent") not in selected_ids:
+                        intensive = field in ("temperature", "pressure")
+                        if not intensive and not fraction and domain.get("solvent") not in selected_ids:
                             continue
                         values = domain[key] if field == "solute_molality" else {"": domain[key]}
                         for solute, value in values.items():
-                            names = [solute] if solute else domain.get("ionic_strength_solutes", [])
+                            names = [] if intensive else [solute] if solute else domain.get("ionic_strength_solutes", [])
                             indices = [selected_ids.index(n) for n in names if n in chosen]
-                            if not fraction and not indices:
+                            if not intensive and not fraction and not indices:
                                 continue
                             unit = "dimensionless" if fraction else domain.get(f"{field}_unit", "")
                             if isinstance(value, Mapping):
                                 value, unit = value["magnitude"], value["unit"]
-                            bounds.append(_core.CompositionBound(bound_source.get("packet", ""), domain["domain_id"], solute,
+                            bounds.append(_core.DomainBound(bound_source.get("packet", ""), domain["domain_id"], solute,
                                 unit, quantity, limit,
-                                0 if fraction else selected_ids.index(domain["solvent"]), indices, value))
-        result._bounds = _core.admit_domains(result._native, bounds)
+                                0 if intensive or fraction else selected_ids.index(domain["solvent"]), indices, value))
+        if bounds:
+            result._bounds = _core.admit_domains(result._native, bounds)
         result._document = native_document
         result._source = (document, entries.values, entries.scalars)
         return result

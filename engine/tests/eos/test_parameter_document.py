@@ -1,11 +1,12 @@
 """#608: parameter documents built from several packets equal the hand-edited documents they replace.
 Input assembly only; no physical-validation claim."""
 import json
+import warnings
 from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, ParameterError, Parameters, _core
+from epcsaft import DomainWarning, Mixture, ParameterError, Parameters, Pure, _core
 from epcsaft import equilibrium as eq
 from tests.packets import PACKETS
 
@@ -93,6 +94,12 @@ def test_packet_composition_bounds() -> None:
     def mixture(packet_id: str, names: list[str]) -> Mixture:
         return Mixture(Parameters.from_packets(PACKETS, [(packet_id, names)]))
 
+    def fields(r: _core.OutsideDomain) -> dict[str, Any]:
+        b = r.declaration
+        return dict(packet=r.packet, domain_id=r.domain_id, quantity=b.quantity, limit=b.limit,
+                    variable=r.variable, side=r.side, bound=r.bound, value=r.value, unit=b.unit,
+                    **({"solute": b.solute} if b.solute else {}))
+
     refit = "figiel-2025-chloride-mixture-refit/3"
     hcl = mixture(refit, ["water", "hydronium-cation", "chloride-anion"])
     # One kilogram of solvent and stoichiometric ion amounts, normalized independently.
@@ -104,8 +111,9 @@ def test_packet_composition_bounds() -> None:
             assert records == []
         else:
             assert len(records) == 1
-            assert records[0] == {"packet": refit, "domain_id": "hydrogen-chloride-298-15-k",
+            assert fields(records[0]) == {"packet": refit, "domain_id": "hydrogen-chloride-298-15-k",
                 "quantity": _core.DomainQuantity.SoluteMolality, "solute": "hydronium-cation",
+                "variable": "solute_molality", "side": "above",
                 "limit": _core.DomainLimit.Maximum, "bound": 7.0,
                 "value": pytest.approx(8.0, rel=1e-12), "unit": "mole / kilogram"}
 
@@ -118,18 +126,19 @@ def test_packet_composition_bounds() -> None:
             assert records == []  # I = 9.6 must not trigger the absent lithium fit's 8.3 maximum.
         else:
             assert len(records) == 1
-            assert records[0] == {"packet": refit, "domain_id": "issue-575-chloride-brine-298-15-k",
+            assert fields(records[0]) == {"packet": refit, "domain_id": "issue-575-chloride-brine-298-15-k",
                 "quantity": _core.DomainQuantity.IonicStrength, "limit": _core.DomainLimit.Maximum,
+                "variable": "ionic_strength", "side": "above",
                 "bound": 9.9, "value": pytest.approx(10.2, rel=1e-12), "unit": "mole / kilogram"}
 
     nacl = mixture("figiel-yu-held-2025/4", ["water", "sodium-cation", "chloride-anion"])
     records = nacl.outside_domains([0.6, 0.2, 0.2])
     assert len(records) == 1
-    assert records[0]["quantity"] == _core.DomainQuantity.IonMoleFraction
-    assert records[0]["limit"] == _core.DomainLimit.Maximum
-    assert records[0]["bound"] == 0.38
-    assert records[0]["value"] == pytest.approx(0.4, rel=1e-12)
-    assert records[0]["unit"] == "dimensionless"
+    assert records[0].declaration.quantity == _core.DomainQuantity.IonMoleFraction
+    assert records[0].declaration.limit == _core.DomainLimit.Maximum
+    assert records[0].bound == 0.38
+    assert records[0].value == pytest.approx(0.4, rel=1e-12)
+    assert records[0].declaration.unit == "dimensionless"
 
     held = "held-2014-strategy2/2"
     nacl = mixture(held, ["water", "sodium-cation", "chloride-anion"])
@@ -137,9 +146,9 @@ def test_packet_composition_bounds() -> None:
     total = water_moles + 2 * 0.0005
     records = nacl.outside_domains([water_moles / total, 0.0005 / total, 0.0005 / total])
     assert len(records) == 1
-    assert records[0] == {"packet": held, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
+    assert fields(records[0]) == {"packet": held, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
         "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
-        "limit": _core.DomainLimit.Minimum, "bound": 0.001,
+        "limit": _core.DomainLimit.Minimum, "bound": 0.001, "variable": "solute_molality", "side": "below",
         "value": pytest.approx(0.0005, rel=1e-12), "unit": "mole / kilogram"}
 
     # A's sodium bound must not apply when B supplies sodium, although sodium is in the final model.
@@ -154,10 +163,75 @@ def test_packet_composition_bounds() -> None:
     total = water_moles + 2 * 5.0
     records = mixed.outside_domains([water_moles / total, 5.0 / total, 5.0 / total])
     assert len(records) == 1
-    assert records[0] == {"packet": other, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
+    assert fields(records[0]) == {"packet": other, "domain_id": "held-2014-chlorides-298-15-k-1-bar",
         "quantity": _core.DomainQuantity.SoluteMolality, "solute": "sodium-cation",
-        "limit": _core.DomainLimit.Maximum, "bound": 4.5,
+        "limit": _core.DomainLimit.Maximum, "bound": 4.5, "variable": "solute_molality", "side": "above",
         "value": pytest.approx(5.0, rel=1e-12), "unit": "mole / kilogram"}
+
+
+def test_state_domain_warning() -> None:
+    packet_id = "held-2014-strategy2/2"
+    model = Mixture(Parameters.from_packets(PACKETS, [(packet_id, ["water", "sodium-cation", "chloride-anion"])]))
+    water = 1 / model.parameters.molar_masses[0]
+    inside = [water / (water + 2), 1 / (water + 2), 1 / (water + 2)]
+    outside = [water / (water + 10), 5 / (water + 10), 5 / (water + 10)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.state(298.15, P=100000, x=inside, phase="liquid").domain_violations == []
+        with pytest.raises(DomainWarning, match="temperature=300 above 298.15 kelvin"):
+            model.state(300, P=100000, x=inside, phase="liquid")
+
+    with pytest.warns(DomainWarning) as caught:
+        state = model.state(300, P=90000, x=outside, phase="liquid")
+    assert len(caught) == 1
+    assert state.domain_violations is not None
+    by_variable = {r.variable: r for r in state.domain_violations}
+    assert by_variable.keys() == {"temperature", "pressure", "solute_molality"}
+    for key, value, bound, side in (("temperature", 300, 298.15, "above"), ("pressure", 90000, 100000, "below"),
+                                    ("solute_molality", 5, 4.5, "above")):
+        record = by_variable[key]
+        assert (record.bound, record.side, record.packet, record.domain_id) == (
+            bound, side, packet_id, "held-2014-chlorides-298-15-k-1-bar")
+        assert record.value == pytest.approx(value)
+
+    with pytest.warns(DomainWarning) as caught:
+        batch = model.states([298.15, 300, -1], P=100000, x=inside, phase="liquid")
+    assert len(caught) == 1
+    assert batch.domain_violations is not None
+    assert [[r.variable for r in row] for row in batch.domain_violations] == [[], ["temperature"], []]
+
+    with pytest.warns(DomainWarning, match="pressure=90000 below 100000 pascal"):
+        actions = model.pressure_actions(298.15, 90000, x=inside, phase="liquid",
+                                         observables=[_core.PropertyObservable.ResidualEnthalpy], directions=[])
+    assert actions.domain_violations is not None
+    assert [r.variable for r in actions.domain_violations] == ["pressure"]
+
+
+def test_domain_warning_equilibrium_phases() -> None:
+    document = packet("gross-sadowski-2001/3")
+    document["domains"].append({"domain_id": "pressure-test", "kind": "fit-range", "pressure_max": 1, "pressure_unit": "bar"})
+    model = Mixture(Parameters.from_mapping(document, components=["methane", "ethane"]))
+    feed = eq.Amounts({"methane": 0.5, "ethane": 0.5})
+    with pytest.warns(DomainWarning) as caught:
+        result = eq.tp_flash(model, T=190, P=1e6, feed=feed)
+    assert len(caught) == 1
+    assert result.success and result.phase_count == 2
+    assert result.domain_violations is not None
+    assert [[(r.variable, r.value, r.bound) for r in phase] for phase in result.domain_violations] == [
+        [("pressure", 1e6, 1e5)], [("pressure", 1e6, 1e5)]]
+
+
+def test_unknown_domain_reports_nothing() -> None:
+    document = packet("gross-2001-methane-ethane/3")
+    document["domains"] = [d for d in document["domains"] if d["kind"] == "unknown"]
+    model = Mixture(Parameters.from_mapping(document))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.state(330, P=1e5, x=[0.5, 0.5]).domain_violations is None
+
+    propane = Pure(Parameters.from_packets(PACKETS, [("gross-sadowski-2001/3", ["propane"])]))
+    assert propane.outside_domains([1], T=100) == []
+    assert [r.domain_id for r in propane.outside_domains([1], T=84)] == ["propane-fit-range"]
 
 
 def test_cation_pair_coordinate_round_trip_preserves_the_other_record() -> None:

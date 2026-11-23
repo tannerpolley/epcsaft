@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -99,25 +100,21 @@ void register_eos(nb::module_& module) {
     using namespace epcsaft;
     register_thermal_inputs(module);
     nb::enum_<DomainQuantity>(module, "DomainQuantity")
-        EPCSAFT_VALUES(DomainQuantity, SoluteMolality, IonicStrength, IonMoleFraction);
+        EPCSAFT_VALUES(DomainQuantity, SoluteMolality, IonicStrength, IonMoleFraction, Temperature, Pressure);
     nb::enum_<DomainLimit>(module, "DomainLimit") EPCSAFT_VALUES(DomainLimit, Minimum, Maximum);
-    nb::class_<CompositionBound>(module, "CompositionBound")
+    nb::class_<DomainBound>(module, "DomainBound")
         .def(nb::init<std::string, std::string, std::string, std::string, DomainQuantity, DomainLimit, std::size_t, std::vector<std::size_t>, double>())
-        EPCSAFT_READONLY(CompositionBound, packet, domain_id, solute, unit, quantity, limit, solvent, solutes, bound);
+        EPCSAFT_READONLY(DomainBound, packet, domain_id, solute, unit, quantity, limit, solvent, solutes, bound);
     module.def("admit_domains", &admit_domains, nb::arg("parameters"), nb::arg("bounds"));
-    module.def("outside_domains", [](const Parameters& p, const std::vector<CompositionBound>& bounds, const std::vector<double>& x) {
-        nb::list result;
-        for (const auto& row : outside_domains(p, bounds, x)) {
-            const auto& b = row.declaration;
-            nb::dict record;
-            record["packet"] = b.packet; record["domain_id"] = b.domain_id;
-            record["quantity"] = b.quantity; record["limit"] = b.limit;
-            if (b.quantity == DomainQuantity::SoluteMolality) record["solute"] = b.solute;
-            record["bound"] = b.bound; record["value"] = row.value; record["unit"] = b.unit;
-            result.append(record);
-        }
-        return result;
-    }, nb::arg("parameters"), nb::arg("bounds"), nb::arg("x"));
+    nb::class_<OutsideDomain>(module, "OutsideDomain")
+        EPCSAFT_READONLY(OutsideDomain, declaration, value)
+        .def_prop_ro("variable", &OutsideDomain::variable)
+        .def_prop_ro("side", &OutsideDomain::side)
+        .def_prop_ro("bound", [](const OutsideDomain& r) { return r.declaration.bound; })
+        .def_prop_ro("packet", [](const OutsideDomain& r) { return r.declaration.packet; })
+        .def_prop_ro("domain_id", [](const OutsideDomain& r) { return r.declaration.domain_id; });
+    module.def("outside_domains", &outside_domains, nb::arg("parameters"), nb::arg("bounds"), nb::arg("x"),
+        nb::arg("temperature") = std::nullopt, nb::arg("pressure") = std::nullopt);
     nb::class_<epcsaft::ParameterEntry>(module, "ParameterEntry")
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::ParameterEntry, identity, field, index, magnitude, unit);
@@ -181,7 +178,8 @@ void register_eos(nb::module_& module) {
             forward_sweeps, branch, returned_branch, stable_root_count, first_numerical_failure);
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
-    nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
+    nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
             density_action, density_mixed_action, density_message, density_convergence, density_status);
@@ -192,25 +190,31 @@ void register_eos(nb::module_& module) {
             k_pressure, k_density, gibbs_derivatives, status, cause);
     module.def("reaction_thermochemistry_density", &epcsaft::reaction_thermochemistry_density,
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
-    nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
+    nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
-    nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms")
+    nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::LogFugacityTerms, hard_chain, dispersion, association, debye_huckel, msa, born, dipolar,
             cation_mixing, log_compressibility_factor);
-    nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions")
+    module.def("fugacity_terms_pressure", [](const LogFugacityTerms& terms, double temperature, double density) {
+        return density * GAS_CONSTANT_J_PER_MOL_K * temperature * std::exp(terms.log_compressibility_factor);
+    }, nb::arg("terms"), nb::arg("temperature"), nb::arg("density"));
+    nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::VirialCoefficientActions, second, third, second_action, third_action);
     nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
         EPCSAFT_VALUES(epcsaft::StateStatus, Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError);
-    nb::class_<epcsaft::StateBatch> batch(module, "StateBatch");
-    batch EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, cause, failure_record)
+    nb::class_<epcsaft::StateBatch> batch(module, "StateBatch", nb::dynamic_attr());
+    batch EPCSAFT_DOMAIN_VIOLATIONS EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, cause, failure_record)
         .def_prop_ro("first_numerical_failure", [](const epcsaft::StateBatch& value) {
             std::vector<std::optional<epcsaft::core::Convergence>> result;
             for (std::size_t k = 0; k < value.rows.size(); ++k)
                 result.push_back(value.rows[k] ? value.rows[k]->first_numerical_failure : value.failure_first[k]);
             return result;
         });
-    nb::class_<epcsaft::State> state(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.");
-    state.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
+    nb::class_<epcsaft::State> state(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.", nb::dynamic_attr());
+    state EPCSAFT_DOMAIN_VIOLATIONS.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
         .def_prop_ro("density_branch_mismatch", &epcsaft::State::density_branch_mismatch)
         .def_ro("first_numerical_failure", &epcsaft::State::first_numerical_failure)
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, PROPERTY_SCOPE)
@@ -249,7 +253,8 @@ void register_eos(nb::module_& module) {
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::DensityDiagnosticRequest, nodes, density_tolerance, log_tolerance, finite_upper,
             max_evaluations, max_seconds, finite_anchor, refine, adaptive, evaluation_order);
-    nb::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics")
+    nb::class_<epcsaft::DensityDiagnostics>(module, "DensityDiagnostics", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::DensityDiagnostics, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::DensityDiagnostics, samples, pressure_roots, spinodals, declared_brackets, unresolved,
             evaluation_order, finite_domain, geometric_cap, declared_crossings, evaluations, stop, first_numerical_failure);
