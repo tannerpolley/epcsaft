@@ -144,6 +144,44 @@ void check_cp_derivatives() {
         field("message", absent.message));
 }
 
+void check_enthalpy_targets() {
+    FitRequest request;
+    request.parameters = properties_support::ethane();
+    request.thermochemistry = constant_cp(1);
+    request.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 0.0, 1.0}};
+    const HelmholtzModel model(request.parameters, {}, request.thermochemistry);
+    auto problem = equilibrium_support::flash(1);
+    problem.temperature = FreeValue::variable(330.0);
+    problem.pressure = FreeValue::fixed(5e6);
+    for (double T : {320.0, 340.0}) {
+        problem.enthalpy_j = model.state_at_pressure(T, 5e6, {1.0}, DensityBranch::Liquid).total_enthalpy.value();
+        auto row = solved(ObservationKind::EquilibriumTemperature, problem);
+        row.observed = T;
+        request.observations.push_back(row);
+    }
+    const auto evaluate = [](const FitRequest& fit, const std::vector<std::size_t>& indices) {
+        FitResult failures;
+        ObservationEvaluation rows;
+        CHECK(ObservationEvaluator(fit, failures, indices).evaluate(
+            fit.coordinates.start(fit.parameters, fit.observations, fit.thermochemistry), true, rows));
+        return rows;
+    };
+    auto single = request;
+    single.observations = {request.observations[0]};
+    const auto first = evaluate(single, {0});
+    single.observations = {request.observations[1]};
+    const auto second = evaluate(single, {0});
+    CHECK(first.predictions != second.predictions && first.gradient != second.gradient);
+    for (bool reversed : {false, true}) {
+        if (reversed) std::reverse(request.observations.begin(), request.observations.end());
+        const auto grouped = evaluate(request, {0, 1});
+        const auto& a = reversed ? second : first;
+        const auto& b = reversed ? first : second;
+        CHECK(grouped.predictions == std::vector<double>({a.predictions[0], b.predictions[0]}));
+        CHECK(grouped.gradient == std::vector<double>({a.gradient[0], b.gradient[0]}));
+    }
+}
+
 void check_cp_recovery() {
     FitRequest request;
     request.controls = budgeted_controls();

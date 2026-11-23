@@ -93,6 +93,11 @@ bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b)
 }
 
 }  // namespace
+
+bool same_problem_state(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    return !a.discovery && !b.discovery && same_declaration(a, b) && same_state_values(a, b);
+}
+
 std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& c = *this;
     if (c.ideal) throw std::invalid_argument("ideal optimizer state unavailable");
@@ -129,7 +134,7 @@ void admit_trial_feed(CompiledSystem& compiled) {
     }
     double cation = 0.0, anion = 0.0;
     for (std::size_t i = 0; i < components; ++i) (z[i] > 0.0 ? cation : anion) += std::abs(z[i]) * compiled.n_feed[i];
-    if (cation != anion)  // C = A, including an ion-free feed, is left untouched
+    if (cation != anion && !exact_zero_dot(std::vector<double>(z.begin(), z.end()), compiled.n_feed))
         for (std::size_t i = 0; i < components; ++i)
             if (z[i] != 0.0 && (z[i] > 0.0) == (cation > anion))
                 compiled.n_feed[i] *= std::min(cation, anion) / std::max(cation, anion);

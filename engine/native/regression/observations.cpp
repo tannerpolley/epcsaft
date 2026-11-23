@@ -2,6 +2,7 @@
 
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
+#include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
 #include <cmath>
@@ -127,30 +128,7 @@ bool same_state(const Observation& left, const Observation& right) {
         || addition(left.kind) || addition(right.kind)) return false;
     if (left.kind == ObservationKind::PhaseSolventActivity || right.kind == ObservationKind::PhaseSolventActivity)
         if (left.kind != right.kind || left.phase != right.phase || left.species != right.species) return false;
-    const auto& a = left.problem;
-    const auto& b = right.problem;
-    const auto intensive = [](const auto& v) { return std::tie(v.free, v.value, v.absent); };
-    const auto feed = [](const auto& v) { return std::tie(v.kind, v.values, v.solvent, v.solvent_mass_kg); };
-    const auto phase = [](const auto& v) {
-        return std::tie(v.name, v.kind, v.support, v.support_declared, v.amount.kind, v.amount.fraction,
-                        v.composition_guess, v.packing_guess);
-    };
-    if (intensive(a.temperature) != intensive(b.temperature) || intensive(a.pressure) != intensive(b.pressure)
-        || feed(a.feed) != feed(b.feed) || a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol
-        || a.topology_declared != b.topology_declared || a.solver_options.value(policy::row) != b.solver_options.value(policy::row)
-        || a.phases.size() != b.phases.size() || a.reactions.size() != b.reactions.size()
-        || !(a.source_reference == b.source_reference)) return false;
-    for (std::size_t i = 0; i < a.phases.size(); ++i)
-        if (phase(a.phases[i]) != phase(b.phases[i])) return false;
-    for (std::size_t i = 0; i < a.reactions.size(); ++i)
-        if (!same_reaction(a.reactions[i], b.reactions[i])) return false;
-    if (a.solids.size() != b.solids.size()) return false;
-    for (std::size_t i = 0; i < a.solids.size(); ++i) {
-        const auto &x = a.solids[i], &y = b.solids[i];
-        if (!same_reaction(equilibrium::solid_law(x), equilibrium::solid_law(y)) || x.molar_volume_m3_per_mol != y.molar_volume_m3_per_mol
-            || x.amount.kind != y.amount.kind || x.amount.fraction != y.amount.fraction) return false;
-    }
-    return true;
+    return equilibrium::same_problem_state(left.problem, right.problem);
 }
 
 bool validate_declaration(const Observation& observation, const HelmholtzModel& model) {

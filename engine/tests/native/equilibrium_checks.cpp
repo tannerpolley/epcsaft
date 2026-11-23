@@ -12,6 +12,10 @@ void check_pressure_basis_quotient();
 void check_ideal_mole_fraction();
 void check_ideal_molarity();
 void check_s2();
+void check_reaction_quotient_pressure();
+void check_reaction_quotient_actions();
+void check_neutral_reference_permutations();
+void check_mixed_reference_work();
 void check_trace_reaction_balance();
 void check_s6();
 void check_s7();
@@ -41,6 +45,9 @@ void check_rank_probe_permittivity_denominator();
 void check_ion_suppression_reacting_liquid_actions();
 void check_tangent_plane_admission();
 void check_prepared_supplied_trials();
+void check_feed_charge_permutation();
+void check_exact_zero_trace_dot();
+void check_liquid_trial_charge_permutation();
 void check_trace_ion_curvature();
 void check_candidate_publication();
 void check_budget_retry();
@@ -134,6 +141,9 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.rank-probe-permittivity-denominator", "RankProbePermittivityDenominator", "Automatic_fast"}, check_rank_probe_permittivity_denominator},
         {{"native.equilibrium.ion-suppression-reacting-actions", "IonSuppressionReactingActions", "Automatic_fast"}, check_ion_suppression_reacting_liquid_actions},
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
+        {{"native.equilibrium.exact-zero-trace-dot", "exact-zero-trace-dot", "Automatic_fast"}, check_exact_zero_trace_dot},
+        {{"native.equilibrium.feed-charge-permutation", "feed-charge-permutation", "Automatic_fast"}, check_feed_charge_permutation},
+        {{"native.equilibrium.liquid-trial-charge-permutation", "liquid-trial-charge-permutation", "Automatic_fast"}, check_liquid_trial_charge_permutation},
         {{"native.equilibrium.prepared-supplied-trials", "prepared-supplied-trials", "Automatic_fast"}, check_prepared_supplied_trials},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
@@ -194,6 +204,10 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.reactive-caloric-F6-N-P-sys", "reactive-caloric-F6-N-P-sys", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,false);}, "reactive-caloric"},
         {{"native.equilibrium.reactive-caloric-F6-N-P-fix", "reactive-caloric-F6-N-P-fix", "Explicit"}, [] {reactive_caloric_checks::boundary(true,false,true);}, "reactive-caloric"},
 #endif
+        {{"native.equilibrium.reaction-quotient-pressure", "reaction-quotient-pressure", "Automatic_fast"}, check_reaction_quotient_pressure},
+        {{"native.equilibrium.reaction-quotient-actions", "reaction-quotient-actions", "Automatic_fast"}, check_reaction_quotient_actions},
+        {{"native.equilibrium.neutral-reference-permutations", "neutral-reference-permutations", "Automatic_fast"}, check_neutral_reference_permutations},
+        {{"native.equilibrium.mixed-reference-work", "mixed-reference-work", "Automatic_fast"}, check_mixed_reference_work},
         {{"native.equilibrium.s2", "S2", "Automatic_fast"}, check_s2},
         {{"native.equilibrium.trace-reaction-balance", "trace-reaction-balance", "Automatic_fast"}, check_trace_reaction_balance},
         {{"native.equilibrium.s6", "S6", "Automatic_fast"}, check_s6},
