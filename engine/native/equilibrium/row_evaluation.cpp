@@ -1309,7 +1309,7 @@ PhasePoint CompiledSystem::prepare(const std::vector<double>& point, bool state_
 template <typename Base>
 PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& point, bool state_only,
     std::optional<core::Convergence>* first_numerical_failure, std::optional<std::size_t> chemical_phase,
-    const std::vector<bool>& site_phases, bool parameter_actions, bool gradient_only) const {
+    const std::vector<bool>& site_phases, bool parameter_actions, bool gradient_only, bool rank_only) const {
     core::Scope scope("equilibrium_prepare");
     if (point.size() < primal_size) {
         throw std::invalid_argument("equilibrium point is too short");
@@ -1338,6 +1338,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     result.temperature = problem.temperature.free ? point[offset++] : problem.temperature.value;
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     if constexpr (std::is_same_v<Base, double>) admit_calorics(*this, result.temperature);
+    if constexpr (std::is_same_v<Base, double>)
+        if (!state_only && !chemical_phase && !parameter_actions && model->active_parameters().empty()) result.state_model = model;
     result.composition.resize(result.shape.size()); result.packing.resize(result.shape.size());
     result.eta.resize(result.shape.size()); result.volume.resize(result.shape.size());
     result.amount.resize(result.shape.size()); result.derivative.resize(result.shape.size());
@@ -1369,7 +1371,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
             result.pure.push_back(model->pure_isothermal(result.temperature, result.volume[phase], total));
             result.derivative[phase] = result.pure.back().derivative;
         } else result.derivative[phase] = model->evaluate(result.temperature, result.volume[phase], values, order,
-            phase_calculation == PhaseCalculation::Declared, !site_phases.empty() && site_phases[phase]);
+            phase_calculation == PhaseCalculation::Declared, !site_phases.empty() && site_phases[phase], rank_only);
         } else result.derivative[phase] = model->isothermal(result.temperature, result.volume[phase], values);
         if (first_numerical_failure) core::retain_first(*first_numerical_failure, result.derivative[phase].first_numerical_failure);
         scope.probe("gradient_floor", double(result.derivative[phase].gradient_floor),
@@ -1384,8 +1386,8 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     return result;
 }
 
-template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool) const;
-template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool) const;
+template PhasePointValues<double> CompiledSystem::prepare_values(const std::vector<double>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool, bool) const;
+template PhasePointValues<WiderScalar> CompiledSystem::prepare_values(const std::vector<WiderScalar>&, bool, std::optional<core::Convergence>*, std::optional<std::size_t>, const std::vector<bool>&, bool, bool, bool) const;
 
 PointEvaluation CompiledSystem::evaluate(const std::vector<double>& point) const {
     return evaluate_at(prepare(point));

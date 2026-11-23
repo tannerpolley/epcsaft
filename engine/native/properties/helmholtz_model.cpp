@@ -1147,11 +1147,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity, bool rank_only, const HelmholtzDerivatives* completed
 ) const {
     require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity);
+    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity, rank_only, completed);
 }
 
 // Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one
@@ -1181,7 +1181,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity, bool rank_only, const HelmholtzDerivatives* completed
 ) const {
     core::AssociationObservations observations(true);
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
@@ -1249,12 +1249,17 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     scope.observe([&] {
         scope.probe("predicate_signature", std::vector<double>(signature.begin(), signature.end()));
     });
-    if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
-    point.insert(point.end(), sites.begin(), sites.end());
-    const auto& values = tape_->forward_zero(point, &counters_.forward);
-    tape_->site_values = sites;
+    const bool reuse = completed && !scope.on() && !completed->complete_hessian
+        && completed->site_fractions.size() == sites.size()
+        && (sites.empty() || std::memcmp(completed->site_fractions.data(), sites.data(), sites.size() * sizeof(double)) == 0);
+    if (reuse) result.value = completed->value;
+    else {
+        if (ensure_tape(point, sites, signature, {}, 0.0, true)) scope.probe("recording", 1.0);
+        point.insert(point.end(), sites.begin(), sites.end());
+        result.value = tape_->forward_zero(point, &counters_.forward).front();
+        tape_->site_values = sites;
+    }
     core::retain_first(result.first_numerical_failure, first);
-    result.value = values.front();
     if (!std::isfinite(result.value)) throw std::runtime_error("nonfinite residual Helmholtz value" + state_coordinates(temperature, density));
     scope.probe("residual_helmholtz_extensive", result.value);
     if (order == DerivativeOrder::Value) return finish(std::move(result));
@@ -1264,6 +1269,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     auto& factorization = scratch.derivative;
     properties::site_factorization(factorization,
         sites, composition, parameters_, density * NUMBER_DENSITY_PER_ANGSTROM3, delta, nullptr, &scratch.association);
+    if (reuse) {
+        result.gradient = completed->gradient;
+        result.hessian = completed->hessian;
+        return finish(std::move(result));
+    }
     // Requested chart: phase Hessians drop fixed controls, absent species and active parameters.
     auto& coordinates = scratch.coordinates;
     coordinates.clear();
@@ -1276,6 +1286,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         coordinates.resize(point_size);
         std::iota(coordinates.begin(), coordinates.end(), std::size_t{0});
     }
+    if (rank_only && !scope.on() && isothermal_hessian && coordinates.size() <= sites_count)
+        coordinates.resize(1);  // Rank reads the V gradient and the independently computed isothermal Hessian.
     const std::size_t width = coordinates.size();
     auto& weights = scratch.weights;
     weights.assign(output_count, 0.0);
@@ -2568,16 +2580,16 @@ State HelmholtzModel::state(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
-    bool derived_properties
+    bool derived_properties, const HelmholtzDerivatives* completed
 ) const {
-    return state(temperature, molar_density, mole_fractions, derived_properties, false);
+    return state(temperature, molar_density, mole_fractions, derived_properties, false, false, completed);
 }
 
 State HelmholtzModel::state(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
-    bool derived_properties, bool composition_admitted, bool fixed_parameters
+    bool derived_properties, bool composition_admitted, bool fixed_parameters, const HelmholtzDerivatives* completed
 ) const try {
     core::AssociationObservations observations(true);
     State result;
@@ -2595,7 +2607,8 @@ State HelmholtzModel::state(
         return evaluate(temperature, volume, mole_fractions,
             scope.diagnostics_on()
                 ? (fixed_parameters ? DerivativeOrder::FixedParameterHessian : DerivativeOrder::Hessian)
-                : (fixed_parameters ? DerivativeOrder::FixedParameterStateHessian : DerivativeOrder::StateHessian));
+                : (fixed_parameters ? DerivativeOrder::FixedParameterStateHessian : DerivativeOrder::StateHessian),
+            false, false, false, completed);
     }();
     const auto& sites = derivatives.site_fractions;
     const auto [electro, born, terms] = [&] {
@@ -2948,13 +2961,16 @@ State HelmholtzModel::state_at_pressure(
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
     std::optional<double> anchor_density,
-    bool derived_properties, bool fixed_parameters
+    bool derived_properties, bool fixed_parameters, const State* feed_state
 ) const {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density
     );
-    State result = state(temperature, root.molar_density, mole_fractions, derived_properties, true, fixed_parameters);
+    const bool reuse = feed_state && !scope.on() && !core::CalculationWork::current()
+        && !core::AssociationObservations::current() && !derived_properties && !fixed_parameters
+        && std::memcmp(&root.molar_density, &feed_state->molar_density, sizeof(double)) == 0;
+    State result = reuse ? *feed_state : state(temperature, root.molar_density, mole_fractions, derived_properties, true, fixed_parameters);
     if (result.log_fugacity_coefficient) {
         // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
         const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));

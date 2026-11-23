@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstring>
 #include <cstdlib>
 #include <functional>
 #include <limits>
@@ -280,7 +281,10 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
                 const auto& composition = x[side == 1 ? vapor : 1 - vapor];
                 states[side] = loop && pass == 0 && pressure == seed && composition == compiled.feed_composition && start.feed_states[side]
                     ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
-                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
+                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor, {}, false, false,
+                        start.feed_states[side] && composition.size() == compiled.feed_composition.size()
+                            && std::memcmp(composition.data(), compiled.feed_composition.data(), composition.size() * sizeof(double)) == 0
+                            ? &*start.feed_states[side] : nullptr);
             }
             if (correct_dense && states[1].stable_root_count == 1 && liquid_feed(states[1])) {
                 corrected = true;
@@ -1494,8 +1498,13 @@ BranchCheck density_branches_at(
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
         const double corrected = chart_density(model, prepared, phase);
         const auto branch = branch_of(spec.kind);
+        const double volume = 1.0 / corrected;
+        const auto* completed = prepared.state_model == &model
+            && std::memcmp(&volume, &prepared.volume[phase], sizeof(double)) == 0
+            && std::memcmp(x.data(), prepared.composition[phase].data(), x.size() * sizeof(double)) == 0
+            ? &prepared.derivative[phase] : nullptr;
         const double slope = pure ? prepared.pure[phase].pressure_density_derivative
-            : model.state(prepared.temperature, corrected, x).pressure_density_derivative;
+            : model.state(prepared.temperature, corrected, x, false, completed).pressure_density_derivative;
         if (limits) limits->check();
         if (witness && spec.kind == PhaseKind::Vapor && !(std::isfinite(slope) && slope > 0.0)) {
             if (std::isfinite(slope)) *witness = BranchEndCondition::VaporMechanicalLimit;

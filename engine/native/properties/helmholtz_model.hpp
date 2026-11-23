@@ -472,11 +472,13 @@ public:
 
     EPC_API ~HelmholtzModel();
 
+    // A completed request must own the covering derivatives at exactly these inputs on this model.
     EPC_API HelmholtzDerivatives evaluate(
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false,
+        const HelmholtzDerivatives* completed = nullptr
     ) const;
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
@@ -506,7 +508,7 @@ public:
         double temperature,
         double molar_density,
         const std::vector<double>& mole_fractions,
-        bool derived_properties = false
+        bool derived_properties = false, const HelmholtzDerivatives* completed = nullptr
     ) const;
     EPC_API LogFugacityTerms log_fugacity_terms(
         double temperature, double molar_density, const std::vector<double>& mole_fractions) const;
@@ -516,7 +518,7 @@ public:
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt,
-        bool derived_properties = false, bool fixed_parameters = false
+        bool derived_properties = false, bool fixed_parameters = false, const State* feed_state = nullptr
     ) const;
     EPC_API PropertyActionBatch density_actions(
         double, double, const std::vector<double>&,
@@ -574,7 +576,7 @@ public:
 private:
     // `composition_admitted`: the caller has already validated this composition.
     State state(double temperature, double molar_density, const std::vector<double>& mole_fractions,
-        bool derived_properties, bool composition_admitted, bool fixed_parameters = false) const;
+        bool derived_properties, bool composition_admitted, bool fixed_parameters = false, const HelmholtzDerivatives* completed = nullptr) const;
     // Packing coefficient for an already validated temperature and composition.
     double admitted_packing_coefficient(double temperature, const std::vector<double>& mole_fractions) const;
     void validate_point(
@@ -594,7 +596,8 @@ private:
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false,
+        const HelmholtzDerivatives* completed = nullptr
     ) const;
 
     const policy::SolverOptions solver_options_;
