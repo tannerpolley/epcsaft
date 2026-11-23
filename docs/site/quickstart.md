@@ -1,126 +1,117 @@
-# Quickstart
+# First calculations
 
-After [installation](installation.md), the first calculation below runs from any
-directory with the conda package. Later examples use the source archive's packets.
+[Install ePC-SAFT](installation.md) and start Python in an empty directory.
+The saturation and flash examples use the packets installed by conda.
+For a source installation, run from the extracted source root and use the
+packets already in `data/packets`. Skip the NaCl download in that case.
 
-## First saturation and flash
+## Pure propane saturation
 
-The conda package ships `feos-gross-sadowski-2001/1` and
-`feos-gross-sadowski-2002/1`. This example uses the first packet's pure propane,
-methane and ethane records. The second packet supplies associating fluids for
-other calculations. The illustrative binary interaction assumption is explicitly
-$k_{ij}=0$; it is not a fitted methane/ethane interaction.
-
-```python
-from pathlib import Path
-import epcsaft
-from epcsaft import Parameters, Pure, Mixture, equilibrium as eq
-
-packets = Path(epcsaft.__file__).parent / "data" / "packets"
-packet = "feos-gross-sadowski-2001/1"
-propane = Pure(Parameters.from_packets(packets, [(packet, ["propane"])]))
-saturation = eq.solve_equilibrium(propane, propane.saturation(300.0))  # K
-mixture = Mixture(Parameters.from_packets(
-    packets, [(packet, ["methane", "ethane"])],
-    k_ij={("methane", "ethane"): 0.0}))
-problem = eq.Problem(T=250.0, P=3_750_000.0,  # K, Pa
-    feed=eq.Amounts({"methane": 0.3, "ethane": 0.7}),  # mol
-    phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor")])
-flash = eq.solve_equilibrium(mixture, problem)
-assert saturation.success and flash.success
-assert abs(saturation.pressure / 998660.89574 - 1) < 1e-8
-assert abs(flash.amounts[1] - 0.1646593108) < 1e-8
-assert max(map(abs, saturation.classified_residuals)) <= 1e-10
-assert max(map(abs, flash.classified_residuals)) <= 1e-10
-print(saturation.pressure, flash.amounts)  # Pa, mol in L/V order
-```
-
-These are model predictions and numerical checks, with unquantified physical
-uncertainty. A declared liquid/vapor split performs no global stability search.
-On source installations without bundled packets, use the source archive inputs
-below. The equivalent shorter call for the flash is
-`eq.tp_flash(mixture, T=250.0, P=3_750_000.0, feed=problem.feed)`.
-
-## Parameters, model and state
-
-```python
-from epcsaft import Parameters, Pure
-
-parameters = Parameters.from_packets(
-    "data/packets", [("held-cameretti-sadowski-2008/4", ["water"])])
-water = Pure(parameters)
-state = water.state(298.15, P=100_000.0, phase="liquid")
-assert abs(state.pressure / 100_000.0 - 1.0) < 1e-10
-mass_density = state.molar_density * parameters.molar_masses[0]
-print(mass_density)  # kg/m³; mol/m³ times kg/mol
-```
-
-Temperature is in K, pressure in Pa and molar density in mol/m³. Specify
-exactly one of pressure `P` and molar density `rho`. A liquid branch declaration
-selects a density branch; it does not establish global phase stability.
-The [state guide](guide/states-and-properties.md) explains Ideal, Residual
-and Total quantities. This model has no ideal thermal record, so its total
-enthalpy is unavailable; residual enthalpy remains a separate quantity.
-
-```python
-assert state.total_enthalpy is None
-print(state.thermochemistry_status)
-```
-
-## Declare equilibrium
-
-For methane/ethane, declare both phases and the feed in mol. Here temperature
-and pressure are fixed; phase amounts and compositions are solved natively.
-See the [equilibrium notebook](examples/methane-ethane-phase-equilibrium.ipynb)
-and [equilibrium algorithm](theory/algorithms.md#alg-equilibrium) for the
-boundary and flash declarations and their numerical checks.
-
-```python
-from epcsaft import Mixture, equilibrium as eq
-
-parameters = Parameters.from_packets("data/packets", [
-    ("gross-2001-methane-ethane/3", ["methane", "ethane"])])
-mixture = Mixture(parameters)
-problem = eq.Problem(
-    phases=[eq.Phase("L", kind="liquid"), eq.Phase("V", kind="vapor")],
-    T=250.0, P=3_750_000.0,
-    feed=eq.Amounts({"methane": 0.3, "ethane": 0.7}))
-result = eq.solve_equilibrium(mixture, problem)
-assert result.temperature is not None and result.pressure is not None
-assert result.amounts and result.coordinates
-assert max(abs(v) for v in result.classified_residuals) < 1e-8
-print(result.temperature, result.pressure)  # K, Pa
-```
-
-Inspect the convergence record and component balances as the notebook does.
-A finite result and an optimizer termination message have different meanings;
-a declared solve does not perform an implicit stability search.
-
-## Read a rejected declaration
-
-A reaction accepts at most one explicit equilibrium target. Omitting it selects
-species thermochemistry; supplying two targets is an error.
-This small example runs as a documentation doctest and checks the declaration
-exception when the problem is compiled, before a thermodynamic solve:
+At 300 K, solve for the liquid–vapor saturation pressure in Pa. Check
+`success` before using the returned pressure.
 
 ```{doctest}
->>> from epcsaft import ParameterError
->>> from epcsaft import equilibrium as eq
->>> model = eq.IdealMoleFraction(["A", "B"], [0, 0])
->>> problem = eq.Problem(phases=[eq.Phase("L", kind="liquid")], T=300.0, P=1.0e5,
-...     feed=eq.Amounts({"A": 1.0, "B": 1.0}), reactions=[eq.Reaction(
-...         {"A": -1.0, "B": 1.0}, name="A=B", equilibrium_constant=1.0, affinity_j_per_mol=0.0)])
->>> try:
-...     eq.compile_problem(model, problem)
-... except ParameterError as error:
-...     print(error)
-inconsistent standard state: reaction A=B needs at most one target; a source reference requires a target
+>>> from pathlib import Path
+>>> import epcsaft
+>>> from epcsaft import Mixture, Parameters, Pure, equilibrium as eq
+>>> packets = Path(epcsaft.__file__).resolve().parent / "data" / "packets"
+>>> if not packets.is_dir():
+...     packets = Path("data/packets")  # source installation
+>>> packet = "feos-gross-sadowski-2001/1"
+>>> propane = Pure(Parameters.from_packets(packets, [(packet, ["propane"])]))
+>>> saturation = eq.solve_equilibrium(propane, propane.saturation(300.0))
+>>> assert saturation.success
+>>> print(f"{saturation.pressure:.2f} Pa")
+998660.90 Pa
 ```
 
-For failures after admission, retain the returned cause and residuals; see
-[diagnostics](guide/diagnostics.md) and
-[termination rules](theory/algorithms.md#alg-termination).
+At 300 K and 100 kPa, the same propane model has no ideal-gas thermal
+record. Total enthalpy is unavailable. See
+[caloric data availability](guide/parameters-and-models.md#caloric-data-availability).
 
-For signatures and result fields use the [model reference](api/eos.rst),
-[equilibrium declarations](api/equilibrium.rst) and
-[native equilibrium records](api/native/equilibrium.rst).
+```{doctest}
+>>> state = propane.state(300.0, P=100_000.0, phase="vapor")
+>>> print(state.total_enthalpy, state.thermochemistry_status.name)
+None MissingRecord
+```
+
+## Methane and ethane flash
+
+Use `eq.tp_flash` at fixed temperature and pressure. Here the feed is
+0.3 mol methane and 0.7 mol ethane at 250 K. The unlike interaction
+coefficient is assumed to be $k_{ij}=0$. Phase amounts are in mol, in
+liquid (`L`) then vapor (`V`) order.
+
+```{doctest}
+>>> components = ["methane", "ethane"]
+>>> mixture = Mixture(Parameters.from_packets(
+...     packets, [(packet, components)], k_ij={("methane", "ethane"): 0.0}))
+>>> feed = eq.Amounts({"methane": 0.3, "ethane": 0.7})
+>>> flash = eq.tp_flash(mixture, T=250.0, P=3_750_000.0, feed=feed)
+>>> assert flash.success
+>>> print(f"L: {flash.amounts[0]:.6f} mol, V: {flash.amounts[1]:.6f} mol")
+L: 0.835341 mol, V: 0.164659 mol
+```
+
+At 100 kPa the two declared phases coalesce. The final residuals meet the
+requested tolerance but the declared split is refused. Check `success`
+before reading amounts. A declared flash tests the specified phase pair.
+Use [phase discovery](guide/stability-and-discovery.md) to search other phase sets.
+
+```{doctest}
+>>> refused = eq.tp_flash(mixture, T=250.0, P=100_000.0, feed=feed)
+>>> print(refused.success, refused.topology_event.name, refused.amounts,
+...       refused.requested_tolerance_met)
+False PhasesCoalesced [] True
+```
+
+### Export a flash as JSON
+
+Select the fields to retain. Record the input conditions so they are
+available even when the split is refused. The phase names below follow
+`tp_flash`'s liquid/vapor declaration. The native message explains the refusal.
+
+```{doctest}
+>>> import json
+>>> def flash_json(result, *, component_ids, temperature_k, pressure_pa):
+...     return json.dumps({
+...         "components": list(component_ids),
+...         "phases": ["L", "V"],
+...         "temperature_k": temperature_k,
+...         "pressure_pa": pressure_pa,
+...         "amounts_mol": result.amounts if result.success else [],
+...         "success": result.success,
+...         "refusal_cause": None if result.success else result.message,
+...     }, allow_nan=False)
+>>> encoded = flash_json(flash, component_ids=mixture.component_ids,
+...                      temperature_k=250.0, pressure_pa=3_750_000.0)
+>>> accepted = json.loads(encoded)
+>>> print(accepted["components"], accepted["phases"], accepted["success"])
+['methane', 'ethane'] ['L', 'V'] True
+>>> assert accepted["amounts_mol"] == flash.amounts
+>>> assert accepted["refusal_cause"] is None
+>>> encoded = flash_json(refused, component_ids=mixture.component_ids,
+...                      temperature_k=250.0, pressure_pa=100_000.0)
+>>> rejected = json.loads(encoded)
+>>> print(rejected["success"], rejected["amounts_mol"])
+False []
+>>> assert rejected["refusal_cause"] == refused.message
+```
+
+## Aqueous NaCl activity
+
+```{include} ../../README.md
+:start-after: <!-- nacl-example-start -->
+:end-before: <!-- nacl-example-end -->
+```
+
+## Where to go next
+
+- [Units and independent quantities](guide/states-and-properties.md#choose-the-independent-quantities)
+  for temperature, pressure, density and composition.
+- [Equilibrium stopping criteria](theory/algorithms.md#alg-termination)
+  for interpreting residuals and `Problem(row_tolerance=...)`.
+- [Warm starts](guide/declared-equilibrium.md#warm-starts-for-ordered-states)
+  for `solve_equilibrium(..., start=...)`.
+- [Tracing](guide/diagnostics.md#observe-work-explicitly)
+  for `epcsaft.trace(diagnostics=True)`.

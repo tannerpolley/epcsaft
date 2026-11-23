@@ -5,6 +5,8 @@ epcsaft
 
 .. autoapifunction:: epcsaft.provenance
 
+.. autoapifunction:: epcsaft.installed_packet_root
+
 Re-exported names
 -----------------
 
