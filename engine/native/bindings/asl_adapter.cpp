@@ -61,7 +61,8 @@ const char* string_argument(arglist* arguments, int position) {
 }
 
 // Real arguments first, then `strings` string arguments, in declaration order; returns the real count.
-int argument_count(arglist* arguments, int strings, int maximum, const char* message) {
+int argument_count(arglist* arguments, int strings, const char* message) {
+    constexpr int maximum = 2 + 2 * epcsaft::equilibrium::asl_record_vector_limit;
     if (arguments == nullptr || arguments->nr < 1 || arguments->nr > maximum || arguments->n != arguments->nr + strings
         || arguments->at == nullptr || arguments->ra == nullptr || arguments->sa == nullptr)
         reject(message);
@@ -405,8 +406,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         using Kind = eq::SolvedStateObservableKind;
         const Kind kinds[3] = {Kind::PhaseComponentAmount, Kind::SystemEnthalpy, Kind::SolidAmount};
         const int strings[3] = {3, 1, 2};  // the record, then the selectors
-        const int n = argument_count(arguments, strings[kind], 2 + 2 * eq::asl_record_vector_limit,
-                                     "equilibrium callback requires real q and the record");
+        const int n = argument_count(arguments, strings[kind], "equilibrium callback requires real q and the record");
         const auto p = kind != 1 ? selector(arguments, n + 1, kind == 0 ? 2 : 64) : 0, c = kind == 0 ? selector(arguments, n + 2, 64) : 0;
         observable = eq::solved_state_observable_id({kinds[kind], p, c});
         const char* record = string_argument(arguments, n);
@@ -664,7 +664,7 @@ double pressure_property(arglist* arguments) {
     if (arguments != nullptr) arguments->Errmsg = nullptr;
     invalidate(arguments);
     try {
-        const int n = argument_count(arguments, 3, 130, "property callback requires real arguments and three strings");
+        const int n = argument_count(arguments, 3, "property callback requires real arguments and three strings");
         const char* record = string_argument(arguments, n);
         auto& context = prepared.find(record, "property", [&] { return prepare_property(record); });
         const std::size_t c = context.model->parameters().component_count();

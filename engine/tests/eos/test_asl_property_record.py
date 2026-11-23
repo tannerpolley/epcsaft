@@ -203,6 +203,16 @@ def property_fgh(text: str, q: Any, row: int, fgh: int, phase: str = "liquid") -
     return float(v), np.array(g[:n]) if fgh else None, hessian
 
 
+def test_property_callback_admits_maximum_real_argument_count() -> None:
+    text = property_asl_record(charged("NaCl"))
+    q = [298.15, 1.0e5, *CHARGED["NaCl"][2]]
+    # 2 state coordinates + 64 component weights + 64 active parameters must reach record validation.
+    with pytest.raises(RuntimeError, match="argument count differs"):
+        property_fgh(text, q + [0.0] * (130 - len(q)), 0, 0)
+    with pytest.raises(RuntimeError, match="property callback requires real arguments and three strings"):
+        property_fgh(text, q + [0.0] * (131 - len(q)), 0, 0)
+
+
 @pytest.mark.parametrize("name", CHARGED)
 def test_charged_values_equal_engine(name: str) -> None:
     """F1: every row at every order, and the IDAES aqueous block (record order, not component_list order), equal the
