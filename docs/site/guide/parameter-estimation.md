@@ -86,11 +86,12 @@ $J C J^\mathsf{T}$. A known absolute measurement model supplies $C$ directly.
 With relative weights, the Engine multiplies the unit-variance covariance by
 the fitted common variance factor once.
 
-Read each row's covariance `status` and `observation_status` alongside its
+Read each row's propagation `status` and `observation_status` alongside its
 optional variance. A rank-deficient fit, an empty covariance, or a missing
 common variance factor leaves the variance absent. The native property or
 derivative status carries its own cause, and a usable point value can survive
-a refusal. The rows use the fitted chart and solver options. Their targets,
+a refusal. Rows use the fitted chart and solver options. A scalar reaction
+constant admits only coefficient A. The prediction targets,
 residual forms and scales have no effect on fitting or reporting. Future
 measurement scatter and interval coverage factors require a separate error
 model for the intended prediction.

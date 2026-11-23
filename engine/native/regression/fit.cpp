@@ -1118,12 +1118,6 @@ void label(FitResult& result, const FitOutcome& outcome) {
     if (ipopt) result.message = "local constrained estimate; global feasibility and optimality unresolved";
     if (ceres && absent) result.message = "the final point could not be evaluated: " + result.message;
     result.usable = outcome.candidate == FitCandidate::Usable;
-    using C = FitCovarianceStatus;
-    const C c = outcome.covariance;
-    result.covariance.status = c == C::Available ? "available" : c == C::NotConverged ? "not_converged"
-        : c == C::RankDeficient ? "rank_deficient" : c == C::StabilityPenalty ? "stability_penalty"
-        : c == C::ActiveBound ? "active_bound" : c == C::Unavailable ? "unavailable"
-        : c == C::MinimaxUnavailable ? "minimax_unavailable" : "not_evaluated";
     const FitAcceptance a = outcome.acceptance;
     result.acceptance = a == FitAcceptance::Pass ? "pass" : a == FitAcceptance::Fail ? "fail"
         : a == FitAcceptance::Unavailable ? "unavailable" : "not_evaluated";
@@ -1298,7 +1292,7 @@ static FitResult fit_parameters(const FitRequest& request) {
     outcome.candidate = outcome.termination != T::Failure && outcome.termination != T::CallbackFailure
         && all_finite(result.physical) ? FitCandidate::Usable : FitCandidate::Values;
     if (outcome.candidate == FitCandidate::Usable) {
-        outcome.covariance = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
+        result.covariance.outcome = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
         if (request.uncertainty) {
             auto reconciled = request.observations;
             request.coordinates.apply(reconciled, result.optimizer);
@@ -1335,30 +1329,35 @@ static void predict_fit(const FitRequest& request, const std::vector<Observation
     const auto& covariance = result.covariance;
     // A published reconciliation is present for an absolute measurement model, including zero latent inputs.
     const auto scale = result.reconciliation ? std::optional{1.0} : covariance.variance_factor;
-    const auto status = covariance.status != "available" ? covariance.status
-        : covariance.optimizer.empty() ? "unavailable" : !scale ? "missing_variance_factor" : "available";
+    using C = FitCovarianceStatus;
+    const C outcome = covariance.outcome != C::Available ? covariance.outcome
+        : covariance.optimizer.empty() ? C::Unavailable : !scale ? C::MissingVarianceFactor : C::Available;
+    const C refused = outcome == C::Available ? C::Unavailable : outcome;
     FitRequest point{request.parameters, request.thermochemistry, request.coordinates, {}, {}, request.controls, request.holds};
     for (auto row : rows) {
-        auto& out = result.prediction_uncertainty.emplace_back(PredictionUncertainty{status});
+        auto& out = result.prediction_uncertainty.emplace_back(PredictionUncertainty{outcome});
         if (result.predictions.empty()) continue;
         row.observed = 0.0; row.scale = 1.0; row.form = ResidualForm::Difference;
         point.observations = {std::move(row)};
         FitResult failures; ObservationEvaluation evaluation;
         try {
+            auto declarations = request.observations;
+            declarations.push_back(point.observations.front());
+            (void)point.coordinates.start(point.parameters, declarations, point.thermochemistry);
             ObservationEvaluator evaluator(point, failures, {0});
-            if (evaluator.evaluate(result.optimizer, status == "available", evaluation)) {
-                out = {status, {}, evaluation.predictions.front(), {}, ObservationStatus::Available};
-                if (status != "available") continue;
+            if (evaluator.evaluate(result.optimizer, outcome == C::Available, evaluation)) {
+                out = {outcome, {}, evaluation.predictions.front(), {}, ObservationStatus::Available};
+                if (outcome != C::Available) continue;
                 const Eigen::Map<const Eigen::VectorXd> j(evaluation.optimizer_gradient.data(), result.optimizer.size());
                 const Eigen::Map<const Eigen::MatrixXd> c(covariance.optimizer.data(), j.size(), j.size());
                 if (const double v = *scale * j.dot(c * j); std::isfinite(v) && v >= 0.0) out.variance = v;
-                else out.status = "unavailable";
+                else out.outcome = C::Unavailable;
             } else {
                 const auto& failure = failures.failures.back();
-                out = {status, failure.message, failure.central_value, {}, failure.status};
+                out = {refused, failure.message, failure.central_value, {}, failure.status};
             }
         } catch (const std::logic_error& error) {
-            out = {status, error.what(), {}, {}, ObservationStatus::InadmissibleTrial};
+            out = {refused, error.what(), {}, {}, ObservationStatus::InadmissibleTrial};
         }
     }
 }

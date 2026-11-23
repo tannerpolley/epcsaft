@@ -125,7 +125,7 @@ void check_measurement_correlation() {
         const Eigen::Vector3d ey = e.head(3) / 0.02;
         const double cost = 0.5*e.dot(w*e), output_cost = 0.5*ey.dot(kac(3, rho, true)*ey);
         const auto result = fit(joint(rho, covariance));
-        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
+        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.outcome == FitCovarianceStatus::Available);
         CHECK(result.covariance.assumption.find("joint") != std::string::npos && !result.covariance.variance_factor);
         const auto& rec = *result.reconciliation;
         const double variance = information.inverse()(0, 0);
@@ -328,7 +328,7 @@ void check_measurement_fit() {
         request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-14;
         request.controls.solver_options.values[epcsaft::policy::parameter] = 1e-12;
         const auto result = fit(request);
-        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
+        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.outcome == FitCovarianceStatus::Available);
         const auto& rec = *result.reconciliation;
         const std::vector<double> temperatures = shared ? std::vector<double>{320, 320, 320} : std::vector<double>{300, 320, 340};
         const std::vector<double> y{1.52, 1.59, 1.72};
@@ -466,6 +466,23 @@ void check_measurement_reuse() {
 
 }
 
+void check_prediction_reaction_law() {
+    const auto request = linear_measurements();
+    auto polynomial = request.observations.front();
+    polynomial.problem.temperature = FreeValue::fixed(350);
+    auto scalar = polynomial;
+    scalar.problem.reactions[0].correlation.reset();
+    scalar.problem.reactions[0].equilibrium_constant = 1;
+    const auto result = fit(request, {scalar, polynomial});
+    CHECK(result.covariance.outcome == FitCovarianceStatus::Available && result.prediction_uncertainty.size() == 2);
+    const auto& refused = result.prediction_uncertainty[0];
+    CHECK(refused.outcome == FitCovarianceStatus::Unavailable && refused.observation_status == ObservationStatus::InadmissibleTrial);
+    CHECK(!refused.value && !refused.variance && refused.message.find("scalar K admits only A") != std::string::npos);
+    const auto& admitted = result.prediction_uncertainty[1];
+    CHECK(admitted.outcome == FitCovarianceStatus::Available && admitted.observation_status == ObservationStatus::Available
+        && admitted.value && admitted.variance && *admitted.variance > 0);
+}
+
 void check_measurement_admission() {
     FitRequest roundoff;
     roundoff.parameters = properties_support::neutral_ternary();
@@ -527,15 +544,15 @@ void check_measurement_admission() {
     const auto reports = fit(report); CHECK(reports.usable && reports.reconciliation && reports.reconciliation->corrections.size() == 2);
     CHECK(reports.statuses.back() == ObservationStatus::Available && std::isfinite(reports.predictions.back()));
     auto bound = request; bound.uncertainty->groups[0].inputs[0].upper = 300.1;
-    const auto active = fit(bound); CHECK(active.usable && active.covariance.status == "active_bound");
+    const auto active = fit(bound); CHECK(active.usable && active.covariance.outcome == FitCovarianceStatus::ActiveBound);
     auto deficient = request; deficient.observations.resize(1); deficient.uncertainty->groups.resize(1); deficient.uncertainty->output_sigma.resize(1);
     Coordinate intercept; intercept.reaction = ReactionCoordinate{"reaction_a", ReactionCoefficient::A};
     intercept.scale = 0.1; intercept.lower = -1; intercept.upper = 1;
     deficient.coordinates.coordinates.push_back(intercept);
-    const auto rank = fit(deficient, deficient.observations); CHECK(rank.usable && rank.covariance.status == "rank_deficient");
+    const auto rank = fit(deficient, deficient.observations); CHECK(rank.usable && rank.covariance.outcome == FitCovarianceStatus::RankDeficient);
     CHECK(rank.covariance.optimizer.empty() && rank.prediction_uncertainty.size() == 1);
     const auto& refusal = rank.prediction_uncertainty.front();
-    CHECK(refusal.status == "rank_deficient" && refusal.value && !refusal.variance);
+    CHECK(refusal.outcome == FitCovarianceStatus::RankDeficient && refusal.value && !refusal.variance);
 
     // ln K at fixed T is affine in the two optimizer coordinates A and D.
     auto linear = intercept_request({300, 320, 340}, {1.52, 1.59, 1.72}, {0.02, 0.02, 0.02});
@@ -554,10 +571,10 @@ void check_measurement_admission() {
         CHECK(fitted.optimizer_jacobian == training.optimizer_jacobian && fitted.final_cost == training.final_cost);
         CHECK(fitted.iterations == training.iterations && fitted.residual_evaluations == training.residual_evaluations
             && fitted.jacobian_evaluations == training.jacobian_evaluations);
-        CHECK(fitted.covariance.status == "available" && fitted.covariance.optimizer == training.covariance.optimizer);
+        CHECK(fitted.covariance.outcome == FitCovarianceStatus::Available && fitted.covariance.optimizer == training.covariance.optimizer);
         CHECK(fitted.prediction_uncertainty.size() == 1);
         const auto& propagated = fitted.prediction_uncertainty.front();
-        CHECK(propagated.status == "available" && propagated.observation_status == ObservationStatus::Available
+        CHECK(propagated.outcome == FitCovarianceStatus::Available && propagated.observation_status == ObservationStatus::Available
             && propagated.value && propagated.variance);
         const auto& covariance = fitted.covariance.optimizer;
         const double g = 350 * slope.scale;
@@ -587,8 +604,8 @@ void check_measurement_admission() {
     }
     linear.observations.resize(2);
     const auto no_scale = fit(linear, {prediction});
-    CHECK(no_scale.covariance.status == "available" && !no_scale.covariance.variance_factor);
-    CHECK(no_scale.prediction_uncertainty.front().status == "missing_variance_factor"
+    CHECK(no_scale.covariance.outcome == FitCovarianceStatus::Available && !no_scale.covariance.variance_factor);
+    CHECK(no_scale.prediction_uncertainty.front().outcome == FitCovarianceStatus::MissingVarianceFactor
         && no_scale.prediction_uncertainty.front().value && !no_scale.prediction_uncertainty.front().variance);
     std::cout << "MEASUREMENT_LIMITS zero_sigma_equal=1 empty_equal=1 report_latent=" << reports.reconciliation->corrections.size()
         << " active=" << active.covariance.active_bounds.size() << " deficient_rank=" << rank.covariance.rank << '\n';

@@ -10,7 +10,6 @@
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
-#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <numeric>
@@ -200,9 +199,9 @@ m._serve_fit(channel)
     nb::class_<TrialFailure>(module, "TrialFailure")
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure, central_value, convergence);
     nb::class_<FitCovariance>(module, "FitCovariance")
-        EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
+        EPCSAFT_READONLY(FitCovariance, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor)
-        EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
+        .def_prop_ro("status", &covariance_status<FitCovariance>) EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
     nb::enum_<MeasuredInputKind>(module, "MeasuredInputKind")
         EPCSAFT_VALUES(MeasuredInputKind, Temperature, Pressure, MoleFraction, Molality);
     nb::class_<MeasuredInput>(module, "MeasuredInput").def(nb::init<>())
@@ -228,7 +227,8 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(StabilityTransition, observation, previous_optimizer, optimizer, previous_trial, trial,
             previous_classification, classification, kind);
     nb::class_<PredictionUncertainty>(module, "PredictionUncertainty")
-        EPCSAFT_READONLY(PredictionUncertainty, value, variance, status, observation_status, message);
+        EPCSAFT_READONLY(PredictionUncertainty, value, variance, observation_status, message)
+        .def_prop_ro("status", &covariance_status<PredictionUncertainty>);
     nb::class_<FitResult>(module, "FitResult")
         EPCSAFT_SOLVER_OPTIONS(FitResult, ALL_SCOPE)
         EPCSAFT_READONLY(FitResult, stability_transitions, stability_predictions, data_cost, stability_cost, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
