@@ -115,6 +115,7 @@ public:
     std::optional<core::AssociationObservations> observations_;
     const policy::SolverOptions& solver_options() const { return model_.solver_options(); }
     const HelmholtzModel& model() const { return model_; }
+    bool uses_site_start() const { return !pairs_; }
     bool thermal_chart_resolved(Base density) const {
         const auto zeta = packing_moments(density, composition_, parameters_, diameter_, held_packing());
         const Base cube = zeta[2] * zeta[2] * zeta[2], volume = 1.0 / density;
@@ -799,9 +800,9 @@ struct StructureBroken final {};
 class Isotherm final {
 public:
     Isotherm(const PressureSeries<>& series, double temperature, double pressure, double lower, double upper,
-             std::size_t& evaluations, core::Scope& scope)
+             std::size_t& evaluations, core::Scope& scope, DensityScanCache* scan = nullptr)
         : series_(series), temperature_(temperature), pressure_(pressure), lower_(lower), upper_(upper),
-          evaluations_(evaluations), scope_(scope) {}
+          evaluations_(evaluations), scope_(scope), scan_(scan) {}
     // A broken structure is traced with its cause before the caller scans.
     [[noreturn]] void broken(const char* cause, double density) const {
         scope_.probe("structured_broken", {density}, 0, cause);
@@ -828,7 +829,10 @@ public:
                 start.push_back(x > 0.0 && x <= 1.0 ? x : nearest->sites[i]);
             }
         }
-        try { energy = series_.residual<3>(density, floor, start.empty() ? nullptr : &start, &sites); }
+        try {
+            if (scan_) cached_series(density, energy, floor, start, sites);
+            else energy = series_.residual<3>(density, floor, start.empty() ? nullptr : &start, &sites);
+        }
         catch (const std::exception& error) { broken(error.what(), density); }
         const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature_, scale = density * rt, squared = density * density;
         const double calculated = rt * (density - energy.c[1]), avv = 2.0 * energy.c[2], avvv = 6.0 * energy.c[3];
@@ -907,6 +911,24 @@ public:
     }
 
 private:
+    // Keep map access off the ordinary scan path. A site seed can change the returned series.
+    [[gnu::noinline]] void cached_series(double density, Taylor<3>& energy, double& floor,
+        const std::vector<double>& start, std::vector<double>& sites) const {
+        const bool reusable = series_.observations_ && (start.empty() || !series_.uses_site_start());
+        // A positive finite density has one representation.
+        const auto hit = reusable ? scan_->nodes.find(density) : scan_->nodes.end();
+        if (hit != scan_->nodes.end()) {
+            std::tie(energy, floor, sites) = hit->second;
+            return;
+        }
+        energy = series_.residual<3>(density, floor, start.empty() ? nullptr : &start, &sites);
+        if (reusable && !series_.first_numerical_failure && all_finite(energy.c) && std::isfinite(floor)) {
+            std::vector<core::NumericalRank> ranks;
+            series_.observations_->merge(ranks);
+            if (ranks.empty()) scan_->nodes.try_emplace(density, energy, floor, sites);
+        }
+    }
+
     [[noreturn]] void order_failure(const Sample& a, const Sample& b, double density, bool apart) const {
         const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature_, g = policy::DENSITY_STRUCTURE_ROUNDOFF.value;
         const auto radii = [&](const Sample& s) {
@@ -946,6 +968,7 @@ private:
     std::size_t& evaluations_;
     core::Scope& scope_;
     std::vector<Sample> samples_;
+    DensityScanCache* scan_;
 };
 
 struct SideRoot final {
@@ -1682,7 +1705,7 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
-    std::optional<double> anchor_density, DensityRoot* sibling_root
+    std::optional<double> anchor_density, DensityRoot* sibling_root, DensityScanCache* scan
 ) {
     core::CalculationWork::Density work;
     core::Scope scope("solve_density");
@@ -1740,7 +1763,7 @@ DensityRoot solve_density(
         result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
                         *anchor_density, evaluations);
     } else {
-        Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope);
+        Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope, scan);
         const auto structure = structured_roots(iso, branch, sibling_root != nullptr);
         std::vector<DensityRoot> stable;
         std::size_t count = 0;

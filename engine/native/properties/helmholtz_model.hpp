@@ -31,6 +31,13 @@ namespace epcsaft {
 
 struct AssociationWorkspace;
 namespace detail { struct HelmholtzTape; struct HelmholtzEvaluation; }
+// Successful third-order volume evaluations for one model, temperature and composition.
+class DensityScanCache final {
+    friend class HelmholtzModel;
+    explicit DensityScanCache() = default;
+public:
+    std::map<double, std::tuple<Taylor<3>, double, std::vector<double>>> nodes;
+};
 
 EPC_API void density_conditioning(core::Convergence& record, double density, double derivative, bool final = false, const char* point_kind = "last_linearization");
 
@@ -518,7 +525,8 @@ public:
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt,
-        bool derived_properties = false, bool fixed_parameters = false, const State* feed_state = nullptr
+        bool derived_properties = false, bool fixed_parameters = false, const State* feed_state = nullptr,
+        DensityScanCache* scan = nullptr
     ) const;
     EPC_API PropertyActionBatch density_actions(
         double, double, const std::vector<double>&,
@@ -629,7 +637,8 @@ EPC_API DensityRoot solve_density(
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
     std::optional<double> anchor_density,
-    DensityRoot* sibling_root = nullptr  // unanchored only: the opposite extreme stable root
+    DensityRoot* sibling_root = nullptr,  // unanchored only: the opposite extreme stable root
+    DensityScanCache* scan = nullptr
 );
 
 double reaction_reference_log_scale(
