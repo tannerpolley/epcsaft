@@ -810,10 +810,11 @@ DomainBounds admit_domains(const Parameters& p, std::vector<DomainBound> bounds)
                 b.solutes == other.solutes && b.limit == DomainLimit::Minimum && other.limit == DomainLimit::Maximum && b.bound > other.bound)
                 reject("parameter domain minimum exceeds maximum");
     }
-    return {std::move(bounds)};
+    const bool pressure = std::any_of(bounds.begin(), bounds.end(), [](const auto& b) { return b.quantity == DomainQuantity::Pressure; });
+    return {std::move(bounds), pressure};
 }
 
-void outside_domains(std::vector<OutsideDomain>& result, const Parameters& p, const DomainBounds& bounds,
+void outside_domains(std::vector<OutsideDomain>& result, const Parameters& p, const DomainBounds* bounds,
     const std::vector<double>& composition, std::optional<double> temperature, std::optional<double> pressure,
     std::size_t row, std::size_t phase, bool validate_composition) {
     const auto count = p.component_count();
@@ -821,9 +822,10 @@ void outside_domains(std::vector<OutsideDomain>& result, const Parameters& p, co
         std::any_of(composition.begin(), composition.end(), [](double v) { return !std::isfinite(v) || v < 0; }) ||
         std::abs(std::accumulate(composition.begin(), composition.end(), 0.0) - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value))
         reject("outside_domains requires phase mole fractions summing to one");
+    if (!bounds) return;
     static constexpr const char* variables[] = {"solute_molality", "ionic_strength", "ion_mole_fraction", "temperature", "pressure"};
     const double* x = composition.data() + phase * count;
-    for (const auto& b : bounds.values) {
+    for (const auto& b : bounds->values) {
         std::optional<double> value;
         if (b.quantity == DomainQuantity::Temperature) value = temperature;
         else if (b.quantity == DomainQuantity::Pressure) value = pressure;

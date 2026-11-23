@@ -172,6 +172,8 @@ When a bound is exceeded, `result.domain_violations` holds records with `variabl
 `side`, `packet` and `domain_id`. Temperature is in kelvin, pressure in pascal
 and composition retains its declared basis. The report uses the pressure
 specified or evaluated by the call. The fields `row` and `phase` give
-zero-based positions in batch and equilibrium results. For an explicit check, use
+zero-based positions in batch and equilibrium results. Continuation rows count
+accepted states first, then critical candidates and the last rejected state when present.
+For an explicit check, use
 `mixture.outside_domains(x, T=298.15, P=100000)`. To raise the warning as an
 exception, use `warnings.filterwarnings("error", category=epcsaft.DomainWarning)`.

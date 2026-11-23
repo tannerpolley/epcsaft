@@ -8,6 +8,7 @@ import pytest
 
 from epcsaft import DomainWarning, Mixture, ParameterError, Parameters, Pure, _core
 from epcsaft import equilibrium as eq
+from epcsaft.parameters import parameter_document
 from tests.packets import PACKETS
 
 
@@ -224,10 +225,86 @@ def test_unknown_domain_reports_nothing() -> None:
     with warnings.catch_warnings():
         warnings.simplefilter("error", DomainWarning)
         assert model.state(330, P=1e5, x=[0.5, 0.5]).domain_violations is None
+    with pytest.raises(ParameterError, match="phase mole fractions"):
+        model.outside_domains([1])
 
     propane = Pure(Parameters.from_packets(PACKETS, [("gross-sadowski-2001/3", ["propane"])]))
     assert propane.outside_domains([1], T=100) == []
     assert [r.domain_id for r in propane.outside_domains([1], T=84)] == ["propane-fit-range"]
+
+
+def test_materialized_domain_component_selection() -> None:
+    doc = parameter_document(PACKETS, [("gross-sadowski-2001/3", ["methane", "propane"])])
+    model = Pure(Parameters.from_mapping(doc, components=["propane"]))
+    assert model.outside_domains([1], T=89) == []
+    assert [r.domain_id for r in model.outside_domains([1], T=84)] == ["propane-fit-range"]
+
+
+def test_fixed_density_pressure_domain() -> None:
+    doc = packet("gross-2001-propane/3")
+    model = Pure(Parameters.from_mapping(doc))
+    temperature, density = 300, 1000
+    pressure = model.state(temperature, rho=density).pressure
+    doc["domains"].append({"domain_id": "pressure-test", "kind": "fit-range",
+                           "pressure_min": pressure, "pressure_max": pressure, "pressure_unit": "pascal"})
+    model = Pure(Parameters.from_mapping(doc))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.log_fugacity_terms(temperature, density).domain_violations is None
+    with pytest.warns(DomainWarning) as caught:
+        action = model.density_actions(temperature, 500, observables=[_core.PropertyObservable.ResidualEnthalpy],
+                                       directions=[])
+    assert len(caught) == 1 and action.domain_violations is not None
+    assert [(r.variable, r.bound, r.side) for r in action.domain_violations] == [("pressure", pressure, "below")]
+
+
+def test_compiled_saturation_pressure_domain() -> None:
+    doc = packet("gross-2001-propane/3")
+    doc["domains"].append({"domain_id": "pressure-test", "kind": "fit-range", "pressure_max": 1, "pressure_unit": "bar"})
+    model = Pure(Parameters.from_mapping(doc))
+    compiled = eq.compile_problem(model, model.saturation(300))
+    with pytest.warns(DomainWarning) as caught:
+        result = compiled.solve_saturation()
+    assert len(caught) == 1 and result.domain_violations is not None
+    assert [(r.phase, r.variable, r.value) for r in result.domain_violations] == [
+        (0, "pressure", result.pressure), (1, "pressure", result.pressure)]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        with pytest.raises(DomainWarning, match="pressure"):
+            compiled.solve()
+
+    request = eq.SolvedStateActionRequest([eq.SolvedStateObservable(eq.SolvedStateObservableKind.Pressure)],
+                                         [eq.SolvedStateActionDirection(1, 0, [0], [])])
+    with pytest.warns(DomainWarning) as caught:
+        actions = eq.solved_state_actions(compiled, result, request)
+    assert len(caught) == 1 and actions.domain_violations is not None
+    assert [r.phase for r in actions.domain_violations] == [0, 1]
+
+
+def test_reference_activity_domains() -> None:
+    ids = ["water", "sodium-cation", "chloride-anion"]
+    model = Mixture(Parameters.from_packets(PACKETS, [("held-2014-strategy2/2", ids)]))
+    reference = model.reference(300, 90000, solvent_fractions=[1, 0, 0], ions=(ids[1], ids[2]), stoichiometry=(1, 1))
+    water = 1 / model.parameters.molar_masses[0]
+    with pytest.warns(DomainWarning) as caught:
+        activity = reference.activity(5)
+    assert len(caught) == 1 and activity.domain_violations is not None
+    assert {r.variable for r in activity.domain_violations} == {"temperature", "pressure", "solute_molality"}
+    with pytest.warns(DomainWarning) as caught:
+        solvent = reference.solvent_activity(x=[water / (water + 10), 5 / (water + 10), 5 / (water + 10)])
+    assert len(caught) == 1 and solvent.domain_violations is not None
+    assert {r.variable for r in solvent.domain_violations} == {"temperature", "pressure", "solute_molality"}
+
+
+def test_henry_constant_pressure_domain() -> None:
+    doc = packet("gross-2001-methane-ethane/3")
+    doc["domains"].append({"domain_id": "pressure-test", "kind": "fit-range", "pressure_max": 1, "pressure_unit": "bar"})
+    model = Mixture(Parameters.from_mapping(doc, components=["methane", "ethane"]))
+    reference = model.reference(200, 1e6, solvent_fractions=[0, 1])
+    with pytest.warns(DomainWarning) as caught:
+        (henry,) = reference.henry_constants(solutes=["methane"])
+    assert len(caught) == 1 and henry.henry_constant_px is not None and henry.domain_violations is not None
+    assert [(r.variable, r.value, r.bound) for r in henry.domain_violations] == [("pressure", 1e6, 1e5)]
 
 
 def test_cation_pair_coordinate_round_trip_preserves_the_other_record() -> None:

@@ -51,7 +51,12 @@ static void phase_domains(std::vector<OutsideDomain>& rows, const HelmholtzModel
                           const EquilibriumResult& result, std::size_t row = 0) {
     if (result.has_state())
         for (std::size_t i = 0; i < result.phase_count; ++i)
-            outside_domains(rows, model.parameters(), *model.domains, result.mole_fractions, result.temperature, result.pressure, row, i);
+            outside_domains(rows, model.parameters(), model.domains.get(), result.mole_fractions, result.temperature, result.pressure, row, i);
+}
+
+static auto equilibrium_domains(EquilibriumResult&& result, const HelmholtzModel* model) {
+    return bindings::domain_result(std::move(result), model,
+        [&](auto& rows, const auto& r) { phase_domains(rows, *model, r); });
 }
 
 void register_equilibrium(nb::module_& module) {
@@ -218,8 +223,12 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("rows", [](const CompiledSystem& system) { return system.rows; })
         EPCSAFT_READONLY(CompiledSystem, rank_records, last_rank, pinned_count, free_intensive_count, rank, charge_row_count, primal_size,
             generic_nullity, feed_total, has_ions, has_reaction, conserves_total_moles, jacobian_rank, removed_species)
-        .def("solve", [](const CompiledSystem& system) { return solve_compiled(system); }, nb::keep_alive<0, 1>())
-        .def("solve_saturation", &solve_saturation, nb::keep_alive<0, 1>())
+        .def("solve", [](const CompiledSystem& system) {
+            return equilibrium_domains(solve_compiled(system), system.model);
+        }, nb::keep_alive<0, 1>())
+        .def("solve_saturation", [](const CompiledSystem& system) {
+            return equilibrium_domains(solve_saturation(system), system.model);
+        }, nb::keep_alive<0, 1>())
         .def("generic_point", &CompiledSystem::generic_point)
         .def("coordinate_labels", &CompiledSystem::coordinate_labels)
         .def("jacobian_difference", &CompiledSystem::jacobian_difference, nb::arg("point"), nb::arg("relative_step"),
@@ -394,14 +403,16 @@ void register_equilibrium(nb::module_& module) {
             overrun_seconds, budget_exhausted);
     module.def("solve_equilibrium_starts", [](const HelmholtzModel& model, const EquilibriumProblem& problem,
         const std::vector<EquilibriumStart>& starts, const EquilibriumWorkLimits& limits) {
-        return bindings::domain_result(solve_equilibrium_starts(model, problem, starts, limits), model,
+        return bindings::domain_result(solve_equilibrium_starts(model, problem, starts, limits), &model,
             [&](auto& rows, const EquilibriumStartsResult& r) {
                 for (std::size_t i = 0; i < r.results.size(); ++i) if (r.results[i]) phase_domains(rows, model, *r.results[i], i);
             });
     }, nb::arg("model"), nb::arg("problem"), nb::arg("starts"), nb::arg("limits"));
     module.def("continue_equilibrium", [](const HelmholtzModel& model, const ContinuationRequest& request) {
-        return bindings::domain_result(continue_equilibrium(model, request), model, [&](auto& rows, const ContinuationResult& r) {
+        return bindings::domain_result(continue_equilibrium(model, request), &model, [&](auto& rows, const ContinuationResult& r) {
             for (std::size_t i = 0; i < r.states.size(); ++i) phase_domains(rows, model, r.states[i], i);
+            for (std::size_t i = 0; i < r.critical_points.size(); ++i) phase_domains(rows, model, r.critical_points[i], r.states.size() + i);
+            if (r.last_result) phase_domains(rows, model, *r.last_result, r.states.size() + r.critical_points.size());
         });
     }, nb::arg("model"), nb::arg("request"));
     // Solved-state actions: the existing native records and owner, transported unchanged.
@@ -440,17 +451,25 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(SolvedStateActionDiagnostics, equation_count, state_dimension, maximum_energy_order,
             state_factorizations, linear_solves, rank, condition_estimate, maximum_linear_residual, central_residual,
             central_floor);
-    nb::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch")
+    nb::class_<SolvedStateActionBatch>(module, "SolvedStateActionBatch", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(SolvedStateActionBatch, results, diagnostics);
     module.def("solved_state_difference", &solved_state_difference, nb::arg("compiled"), nb::arg("central"),
         nb::arg("observables"), nb::arg("direction"), nb::arg("step"), nb::arg("tau"), nb::arg("kappa"));
-    module.def("solved_state_actions", &solved_state_actions,
+    module.def("solved_state_actions", [](const CompiledSystem& system, const EquilibriumResult& central,
+        const SolvedStateActionRequest& request) {
+        return bindings::domain_result(solved_state_actions(system, central, request), system.model,
+            [&](auto& rows, const auto&) { phase_domains(rows, *system.model, central); });
+    },
                nb::arg("compiled"), nb::arg("central"), nb::arg("request"),
                "Exact order 1-3 actions at `central`, the accepted solve of this same compiled problem.\n\n"
                "Directions carry K, Pa, absolute feed mol (component width) and active-parameter increments\n"
                "(active width, native units); a free T or P entry must be zero. No solve is repeated.");
-    module.def("solved_state_first_actions", &solved_state_first_actions, nb::arg("compiled"), nb::arg("central"),
-        nb::arg("observables"), nb::arg("directions"));
+    module.def("solved_state_first_actions", [](const CompiledSystem& system, const EquilibriumResult& central,
+        const std::vector<SolvedStateObservable>& observables, const std::vector<SolvedStateActionDirection>& directions) {
+        return bindings::domain_result(solved_state_first_actions(system, central, observables, directions), system.model,
+            [&](auto& rows, const auto& r) { if (!r.empty()) phase_domains(rows, *system.model, central); });
+    }, nb::arg("compiled"), nb::arg("central"), nb::arg("observables"), nb::arg("directions"));
     nb::class_<InventoryBound>(module, "InventoryBound")
         EPCSAFT_READONLY(InventoryBound, species, status, termination, maximum, feed_normalized_amount, log_fraction,
             balance_residual, normalization_residual, lower_bound_residual, witness, amounts_mol, finite_witness,
@@ -484,8 +503,7 @@ void register_equilibrium(nb::module_& module) {
         auto result = prepared && !work_limit && !branch_end_work_limit
             ? solve_equilibrium(model, problem, start, ids, *prepared)
             : solve_equilibrium(model, problem, start, ids, work_limit, branch_end_work_limit);
-        return bindings::domain_result(std::move(result), model,
-            [&](auto& rows, const EquilibriumResult& r) { phase_domains(rows, model, r); });
+        return equilibrium_domains(std::move(result), &model);
     },
         nb::arg("model"), nb::arg("problem"), nb::arg("start") = std::nullopt, nb::arg("component_ids") = std::vector<std::string>{},
         nb::arg("work_limit") = std::nullopt, nb::kw_only(), nb::arg("branch_end_work_limit") = std::nullopt,

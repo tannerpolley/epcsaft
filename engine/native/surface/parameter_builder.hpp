@@ -27,10 +27,11 @@ struct OutsideDomain final {
 };
 struct DomainBounds final {
     std::vector<DomainBound> values;
+    bool pressure = false;
 };
 
 EPC_API DomainBounds admit_domains(const Parameters&, std::vector<DomainBound>);
-EPC_API void outside_domains(std::vector<OutsideDomain>&, const Parameters&, const DomainBounds&, const std::vector<double>&,
+EPC_API void outside_domains(std::vector<OutsideDomain>&, const Parameters&, const DomainBounds*, const std::vector<double>&,
     std::optional<double> temperature, std::optional<double> pressure, std::size_t row = 0, std::size_t phase = 0,
     bool validate_composition = false);
 

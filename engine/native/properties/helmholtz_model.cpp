@@ -2660,6 +2660,34 @@ State HelmholtzModel::state(
     return state(temperature, molar_density, mole_fractions, derived_properties, false, false, completed);
 }
 
+HelmholtzDerivatives HelmholtzModel::state_derivatives(double temperature, double volume,
+    const std::vector<double>& mole_fractions, bool diagnostics, bool fixed_parameters, const HelmholtzDerivatives* completed) const {
+    if (parameters_.component_count() == 1 && mole_fractions[0] == 1.0 && !parameters_.ideal_gas
+        && parameters_.charge_number[0] == 0.0 && parameters_.site_component.empty() && (fixed_parameters || active_.empty())) {
+        validate_point(temperature, volume, mole_fractions);
+        require_law_domain(temperature, parameters_);
+        return pure_state_derivatives(temperature, volume);
+    }
+    return evaluate(temperature, volume, mole_fractions,
+        diagnostics ? (fixed_parameters ? DerivativeOrder::FixedParameterHessian : DerivativeOrder::Hessian)
+                    : (fixed_parameters ? DerivativeOrder::FixedParameterStateHessian : DerivativeOrder::StateHessian),
+        false, false, false, completed);
+}
+
+// EqID: pressure
+static double pressure_from_volume(double temperature, double volume, double phi_v) {
+    return GAS_CONSTANT_J_PER_MOL_K * temperature * (1.0 / volume - phi_v);
+}
+
+std::optional<double> HelmholtzModel::state_pressure(double temperature, double rho, const std::vector<double>& x) const try {
+    const double volume = 1.0 / rho;
+    return pressure_from_volume(temperature, volume, state_derivatives(temperature, volume, x, false, false, nullptr).gradient[1]);
+} catch (const std::runtime_error&) {
+    return std::nullopt;
+} catch (const std::invalid_argument&) {
+    return std::nullopt;
+}
+
 State HelmholtzModel::state(
     double temperature,
     double molar_density,
@@ -2672,19 +2700,7 @@ State HelmholtzModel::state(
     if (!composition_admitted) validate_composition(mole_fractions);
     require_molar_density(molar_density);
     const double volume = 1.0 / molar_density;
-    const auto derivatives = [&] {
-        if (parameters_.component_count() == 1 && mole_fractions[0] == 1.0 && !parameters_.ideal_gas
-            && parameters_.charge_number[0] == 0.0 && parameters_.site_component.empty() && (fixed_parameters || active_.empty())) {
-            validate_point(temperature, volume, mole_fractions);
-            require_law_domain(temperature, parameters_);
-            return pure_state_derivatives(temperature, volume);
-        }
-        return evaluate(temperature, volume, mole_fractions,
-            scope.diagnostics_on()
-                ? (fixed_parameters ? DerivativeOrder::FixedParameterHessian : DerivativeOrder::Hessian)
-                : (fixed_parameters ? DerivativeOrder::FixedParameterStateHessian : DerivativeOrder::StateHessian),
-            false, false, false, completed);
-    }();
+    const auto derivatives = state_derivatives(temperature, volume, mole_fractions, scope.diagnostics_on(), fixed_parameters, completed);
     const auto& sites = derivatives.site_fractions;
     const auto [electro, born, terms] = [&] {
         core::CalculationWork::energy_evaluation();
@@ -2707,9 +2723,7 @@ State HelmholtzModel::state(
     const double phi_tv = derivatives.hessian[1];
     // EqID: compressibility_factor
     const double z = 1.0 - volume * phi_v;
-    // EqID: pressure
-    const double pressure = GAS_CONSTANT_J_PER_MOL_K * temperature
-        * (1.0 / volume - phi_v);
+    const double pressure = pressure_from_volume(temperature, volume, phi_v);
     const double dpressure_dt = pressure / temperature
         - GAS_CONSTANT_J_PER_MOL_K * temperature * phi_tv;
     const double dpressure_dv = GAS_CONSTANT_J_PER_MOL_K * temperature

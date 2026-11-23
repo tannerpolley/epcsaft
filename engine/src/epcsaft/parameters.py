@@ -129,8 +129,7 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
 
 
-def _selected_domains(document: Mapping[str, Any], components: set[str]) -> list[Any]:
-    domains = cast(list[Any], document.get("domains", []))
+def _selected_domains(document: Mapping[str, Any], components: set[str], domains: list[Any]) -> list[Any]:
     if not any("temperature_min" in d or "temperature_max" in d or "pressure_min" in d or "pressure_max" in d
                for d in domains if d.get("kind") != "unknown"):
         return domains
@@ -275,7 +274,7 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         if manifest.is_file():
             document["domains"] = tomllib.loads(manifest.read_text())["domains"]
         merged["materialization"].append({"packet": packet, "components": list(names)} | {
-            "sources": document.get("sources", []), "domains": _selected_domains(document, chosen)})
+            "sources": document.get("sources", []), "domains": _selected_domains(document, chosen, document.get("domains", []))})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
         for (a, b), magnitude in values.items():
@@ -824,10 +823,13 @@ class Parameters:
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         bounds = []
         for bound_source in cast(Any, document).get("materialization", [{
-            "packet": document.get("document_id", ""), "domains": _selected_domains(document, set(selected_ids)), "components": selected_ids,
+            "packet": document.get("document_id", ""), "domains": document.get("domains", []),
+            "components": component_records,
         }]):
-            chosen = set(bound_source["components"]) & set(selected_ids)
-            for domain in bound_source.get("domains", []):
+            source = set(bound_source["components"])
+            chosen = source & set(selected_ids)
+            domains = bound_source.get("domains", [])
+            for domain in domains if source == chosen else _selected_domains(document, chosen, domains):
                 if not chosen or domain.get("kind") == "unknown":
                     continue
                 for field, quantity in (("temperature", _core.DomainQuantity.Temperature),

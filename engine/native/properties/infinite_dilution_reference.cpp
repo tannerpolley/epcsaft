@@ -1010,7 +1010,8 @@ ElectrolyteActivity electrolyte_activity(
     const std::array<int, 2>& stoichiometry,
     double molality,
     const InfiniteDilutionReference& reference, std::optional<double> finite_density,
-    const std::optional<std::vector<double>>& finite_solute_molalities
+    const std::optional<std::vector<double>>& finite_solute_molalities,
+    std::vector<double>* returned_composition
 ) {
     core::Scope scope("electrolyte_activity");
     if (!reference.ion_indices) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
@@ -1080,6 +1081,7 @@ ElectrolyteActivity electrolyte_activity(
         }
         result.mean_ionic_parameter_derivative.push_back(action);
     }
+    if (returned_composition) *returned_composition = std::move(composition);
     return result;
 }
 

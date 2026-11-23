@@ -4035,6 +4035,7 @@ class SolvedStateActionDiagnostics:
 
 class SolvedStateActionBatch:
     """Ordered solved-state actions sharing one prepared center."""
+    domain_violations: list[OutsideDomain] | None
     results: list[SolvedStateActionResult]
     """Per-observable results in request order, each with its own cause and units."""
     diagnostics: SolvedStateActionDiagnostics
@@ -4232,6 +4233,7 @@ class SolventActivity:
     -----
     The osmotic coefficient uses mol/kg solvent and the pure-solvent reference at the same T/P. Preserve None and the precision-floor Stop value rather than substituting zero; see practical_osmotic_coefficient in engine/docs/equations.md.
     """
+    domain_violations: list[OutsideDomain] | None
     solvent_activity: Optional[float]
     """Dimensionless solvent activity against the pure-solvent liquid reference, or None with
     status/cause.
@@ -4271,6 +4273,7 @@ class HenryConstant:
     -----
     H_i^px = R*T*rho0*exp(raw_log_reference), with rho0 = 1 mol/m^3. See henry_constant_px in engine/docs/equations.md.
     """
+    domain_violations: list[OutsideDomain] | None
     component_index: int
     """Solute component index in component_ids order."""
     raw_log_reference: Optional[float]
@@ -4366,6 +4369,7 @@ def solvent_activity(model: HelmholtzModel, temperature: float, pressure: float,
     ...
 
 class ElectrolyteActivity:
+    domain_violations: list[OutsideDomain] | None
     mean_ionic_parameter_derivative: list[ResidualEnergyAction]
     """One charge-neutral salt activity on an infinite-dilution convention.
 
