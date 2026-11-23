@@ -238,8 +238,10 @@ AssociationPlan classify_association(const Parameters& p, ActiveEdge active_edge
         std::array<int, 5> key{-1, -1, -1, -1, -1};
         for (const auto& [target, index, law] : p.temperature_law_slot)
             if ((target == int(TemperatureLaw::AssociationEnergyOverK) || target == int(TemperatureLaw::AssociationVolume))
-                && std::size_t(index) == slot(edge / n, edge % n))
-                key[target - int(TemperatureLaw::AssociationEnergyOverK)] = law;
+                && std::size_t(index) == slot(edge / n, edge % n)) {
+                auto& id = key[target - int(TemperatureLaw::AssociationEnergyOverK)];
+                if (id == -1) id = law;
+            }
         for (const auto& [out, reverse, first, second, correction] : p.association_thermal_rule)
             if (std::size_t(out) == edge || std::size_t(reverse) == edge)
                 key = {-1, -1, std::min(first, second), std::max(first, second), correction};
@@ -348,9 +350,9 @@ inline std::vector<double> solve_site_fractions(
     bool pair_start = false,
     const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr,
     const std::array<double, 4>* prepared = nullptr, AssociationWorkspace* workspace = nullptr,
-    AssociationAction* accepted = nullptr, const AssociationPlan* plan = nullptr
+    std::optional<AssociationAction>* accepted = nullptr, const AssociationPlan* plan = nullptr
 ) {
-    if (accepted) accepted->strategy = AssociationPlan::General;
+    if (accepted) accepted->reset();
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
     if (prepared) (void)packing_fraction_from_geometry(molar_density, (*prepared)[3]);

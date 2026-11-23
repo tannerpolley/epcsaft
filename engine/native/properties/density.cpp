@@ -170,7 +170,7 @@ public:
                 strength.push_back(static_cast<double>(d.c[0]));
             }
             core::Convergence record;
-            AssociationAction action;
+            std::optional<AssociationAction> action;
             const auto sites = [&]() -> std::vector<double> { try {
                 if (prepared) return *start;
                 if (strength.empty()) return std::vector<double>{};
@@ -256,9 +256,9 @@ public:
                 for (std::size_t k = 1; k < N + (blocks ? 1 : 0); ++k) {
                     residuals = association_residuals(rho, composition, parameters_, site_series, delta);
                     for (Eigen::Index s = 0; s < count; ++s) rows(s) = -residuals[static_cast<std::size_t>(s)].c[k];
-                    const auto& association = accepted ? *accepted : action;
+                    const auto* association = accepted ? accepted : (action ? &*action : nullptr);
                     coefficient.resize(count);
-                    if (k != 1 || !association.tangent([&](std::size_t s) { return rows(s); },
+                    if (k != 1 || !association || !association->tangent([&](std::size_t s) { return rows(s); },
                         [&](std::size_t s, double dx) { coefficient(s) = dx; })) coefficient = lu.solve(rows);
                     for (Eigen::Index s = 0; s < count; ++s) site_series[static_cast<std::size_t>(s)].c[k] = coefficient(s);
                     if (k > 1 || prepared || blocks) continue;

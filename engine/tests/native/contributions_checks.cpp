@@ -613,6 +613,14 @@ void kraska_model_iv() {
         return classify_association(copy, [](std::size_t) { return false; });
     };
     CHECK(mismatch(p).strategy == AssociationPlan::General);
+    auto duplicate = p;
+    const auto energy = static_cast<int>(TemperatureLaw::AssociationEnergyOverK);
+    duplicate.temperature_law_slot = {{energy, 1, 0}, {energy, 1, 1}, {energy, 11, 1}};
+    duplicate.temperature_law_reference_k = {300.0, 300.0};
+    duplicate.temperature_law_term_law = {0, 1};
+    duplicate.temperature_law_term_power = {0, 0};
+    duplicate.temperature_law_coefficient = {1100.0, 2100.0};
+    CHECK(classify_association(duplicate, [](std::size_t) { return false; }).strategy == AssociationPlan::General);
     constexpr double t = 300, rho = 10000;
     const double density = rho * NUMBER_DENSITY_PER_ANGSTROM3;
     const std::vector<double> seed{0.56, 0.31, 0.28, 0.52}, reference{0.5, 0.25, 0.25, 0.5};
@@ -630,13 +638,13 @@ void kraska_model_iv() {
         const auto bond = [&](int i, int j, double delta) { strength[4*i+j] = strength[4*j+i] = delta; };
         bond(0, 3, a / (density * x[0])); bond(1, 2, d / (density * x[1]));
         bond(0, 1, b / (density * x[1])); bond(2, 3, b / (density * x[1]));
-        AssociationAction accepted;
+        std::optional<AssociationAction> accepted;
         const auto solve = [&](const AssociationPlan* strategy) {
             return solve_site_fractions(t, rho, x, p, sigma, diameter, nullptr, &seed, &strength,
                 false, {}, nullptr, nullptr, nullptr, &accepted, strategy);
         };
         const auto general = solve(nullptr), reduced = solve(&plan);
-        CHECK(accepted.strategy == AssociationPlan::BalancedBinary);
+        CHECK(accepted && accepted->strategy == AssociationPlan::BalancedBinary);
         const auto rows = association_residuals(rho, x, p, reduced, strength);
         const std::string id = std::string(name) + "/";
         for (std::size_t site = 0; site < seed.size(); ++site) {
@@ -652,7 +660,7 @@ void kraska_model_iv() {
             // Violate the supplied strength's declared symmetry to exercise the original-row check.
             strength[1] *= 1.1;
             const auto expected = solve(nullptr), rejected = solve(&plan);
-            CHECK(accepted.strategy == AssociationPlan::General);
+            CHECK(!accepted);
             for (std::size_t site = 0; site < seed.size(); ++site)
                 compare("rejected-root/" + std::to_string(site), rejected[site], expected[site], 0.0);
         }
