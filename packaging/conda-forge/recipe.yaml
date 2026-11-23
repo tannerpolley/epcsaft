@@ -5,13 +5,15 @@ context:
   release_sha256: 8f31ebc490356460db13622b20cbb2243433abc6b619db4b1267c223106f7548
   source_sha256: ${{ release_sha256 }}
 
-package:
+recipe:
   name: epcsaft
   version: ${{ version }}
 
 source:
   - url: https://github.com/tannerpolley/epcsaft/releases/download/v${{ version }}/epcsaft-${{ version }}.tar.gz
     sha256: ${{ source_sha256 }}
+    patches:
+      - meson-native.patch
   - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
     sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
     target_directory: ipopt-source
@@ -30,82 +32,122 @@ source:
 
 build:
   number: 0
-  skip:
-    - target_platform not in ["linux-64", "win-64", "osx-64", "osx-arm64"]
-    - not match(python, ">=3.12,<3.15")
-  script:
-    env:
-      EPCSAFT_SOURCE_REVISION: v${{ version }}
-      EPCSAFT_SOURCE_SHA256: ${{ source_sha256 }}
-    file: ${{ "build.bat" if win else "build.sh" }}
 
-requirements:
-  ignore_run_exports:
-    by_name: [libflang]
-  build:
-    - ${{ compiler('c') }}
-    - ${{ compiler('cxx') }}
-    - ${{ compiler('fortran') }}
-    - ${{ stdlib('c') }}
-    - make
-    - cmake
-    - ninja
-    - pkgconf
-    - if: linux
-      then: patchelf
-    - if: osx
-      then: gnuconfig
-    - if: win
-      then:
-        - autotools_clang_conda
-        - python
-  host:
-    - python
-    - pip
-    - meson >=1.8
-    - meson-python >=0.18
-    - nanobind ==2.12.0
-    - eigen ==3.4.0
-    - ceres-solver >=2.2.0,<2.3.0 cpu*
-    - if: unix
-      then: mumps-seq ==5.8.2
-    - if: win or (osx and arm64)
-      then: libboost-headers ==1.89.0
-    - if: win
-      then:
-        - openblas * openmp_*
-        - mumps-seq ==5.8.2 flang_*
-    - if: linux
-      then: [libblas * *netlib, liblapack * *netlib]
-    - if: osx
-      then: [libblas, liblapack]
-    - if: win
-      then: [libblas * *openblas, liblapack * *openblas]
-  run:
-    - python
-    - ceres-solver >=2.2.0,<2.3.0 cpu*
-    - if: unix
-      then: mumps-seq >=5.8.2,<5.8.3.0a0
-    - if: win
-      then: mumps-seq ==5.8.2 flang_*
-    - if: unix
-      then: [libblas, liblapack]
-    - if: win
-      then: [libblas * *openblas, liblapack * *openblas]
-
-tests:
-  - python:
-      imports:
-        - epcsaft
-      pip_check: true
-  - if: linux
-    then:
+outputs:
+  - staging:
+      name: epcsaft-native
+    build:
       script:
-        file: check_blas.py
-      requirements:
-        run: [binutils]
-  - script:
-      file: run_test.py
+        env:
+          EPCSAFT_BUILD_JOBS: ${{ env.get("EPCSAFT_BUILD_JOBS", default="") }}
+        file: ${{ "build-native.bat" if win else "build-native.sh" }}
+    requirements:
+      ignore_run_exports:
+        by_name: [libflang]
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - ${{ stdlib('c') }}
+        - ${{ compiler('fortran') }}
+        - python 3.13.*
+        - meson >=1.8
+        - make
+        - cmake
+        - ninja
+        - pkgconf
+        - if: osx
+          then: gnuconfig
+        - if: win
+          then: autotools_clang_conda
+      host:
+        - eigen ==3.4.0
+        - ceres-solver >=2.2.0,<2.3.0 cpu*
+        - if: unix
+          then: mumps-seq ==5.8.2
+        - if: win or (osx and arm64)
+          then: libboost-headers ==1.89.0
+        - if: win
+          then:
+            - openblas * openmp_*
+            - mumps-seq ==5.8.2 flang_*
+        - if: linux
+          then: [libblas * *netlib, liblapack * *netlib]
+        - if: osx
+          then: [libblas, liblapack]
+        - if: win
+          then: [libblas * *openblas, liblapack * *openblas]
+
+  - package:
+      name: epcsaft
+    inherit: epcsaft-native
+    build:
+      skip:
+        - target_platform not in ["linux-64", "win-64", "osx-64", "osx-arm64"]
+        - not match(python, ">=3.12,<3.15")
+      script:
+        env:
+          EPCSAFT_BUILD_JOBS: ${{ env.get("EPCSAFT_BUILD_JOBS", default="") }}
+          EPCSAFT_SOURCE_REVISION: v${{ version }}
+          EPCSAFT_SOURCE_SHA256: ${{ source_sha256 }}
+        file: ${{ "build.bat" if win else "build.sh" }}
+    requirements:
+      ignore_run_exports:
+        by_name: [libflang]
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('cxx') }}
+        - ${{ stdlib('c') }}
+        - cmake
+        - ninja
+        - pkgconf
+        - if: linux
+          then: patchelf
+      host:
+        - python
+        - pip
+        - meson >=1.8
+        - meson-python >=0.18
+        - nanobind ==2.12.0
+        - eigen ==3.4.0
+        - ceres-solver >=2.2.0,<2.3.0 cpu*
+        - if: unix
+          then: mumps-seq ==5.8.2
+        - if: win or (osx and arm64)
+          then: libboost-headers ==1.89.0
+        - if: win
+          then:
+            - openblas * openmp_*
+            - mumps-seq ==5.8.2 flang_*
+        - if: linux
+          then: [libblas * *netlib, liblapack * *netlib]
+        - if: osx
+          then: [libblas, liblapack]
+        - if: win
+          then: [libblas * *openblas, liblapack * *openblas]
+      run:
+        - python
+        - ceres-solver >=2.2.0,<2.3.0 cpu*
+        - if: unix
+          then: mumps-seq >=5.8.2,<5.8.3.0a0
+        - if: win
+          then: mumps-seq ==5.8.2 flang_*
+        - if: unix
+          then: [libblas, liblapack]
+        - if: win
+          then: [libblas * *openblas, liblapack * *openblas]
+    tests:
+      - python:
+          imports:
+            - epcsaft
+          pip_check: true
+      - if: linux
+        then:
+          script:
+            file: check_blas.py
+          requirements:
+            run: [binutils]
+      - script:
+          file: run_test.py
 
 about:
   homepage: https://github.com/tannerpolley/epcsaft

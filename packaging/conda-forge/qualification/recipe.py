@@ -22,22 +22,25 @@ if len(sys.argv) == 3:
 elif len(sys.argv) != 1:
     raise SystemExit('usage: recipe.py [ARCHIVE REVISION]')
 for old, new in candidate + [
+    ('        file: ${{ "build-native.bat" if win else "build-native.sh" }}',
+     '          EPCSAFT_QUALIFICATION: "1"\n'
+     '        file: ${{ "build-native.bat" if win else "build-native.sh" }}'),
     ('file: ${{ "build.bat" if win else "build.sh" }}',
      'file: ${{ "qualification/build.bat" if win else "qualification/build.sh" }}'),
-    ('    - pip\n',
-     '    - pip\n' + ''.join(f'    - {name}\n' for name in ('pytest', 'numpy', 'scipy', 'pandas', 'pyomo', 'idaes-pse'))),
-    ('  - script:\n      file: run_test.py\n',
-     '''  - script:
-      file: run_test.py
-  - script:
-      file: qualification/run_test.py
-      env:
-        IPOPT_PROBE_EVIDENCE: ${{ env.get("IPOPT_PROBE_EVIDENCE", default="qualification-evidence") }}
-    requirements:
-      run: [pytest, pyomo, numpy, scipy, pandas, idaes-pse]
-    files:
-      source:
-        - qualification-runtime/
+    ('        - pip\n',
+     '        - pip\n' + ''.join(f'        - {name}\n' for name in ('pytest', 'numpy', 'scipy', 'pandas', 'pyomo', 'idaes-pse'))),
+    ('      - script:\n          file: run_test.py\n',
+     '''      - script:
+          file: run_test.py
+      - script:
+          file: qualification/run_test.py
+          env:
+            IPOPT_PROBE_EVIDENCE: ${{ env.get("IPOPT_PROBE_EVIDENCE", default="qualification-evidence") }}
+        requirements:
+          run: [pytest, pyomo, numpy, scipy, pandas, idaes-pse]
+        files:
+          source:
+            - qualification-runtime/
 '''),
 ]:
     if text.count(old) != 1:
