@@ -23,6 +23,7 @@ with tempfile.TemporaryDirectory(dir=ROOT / 'build') as directory:
     assert subprocess.run(command, stdout=subprocess.DEVNULL).returncode == 0
     report = json.loads((root / 'comparison.json').read_text())
     assert all(len(section['work']) == 1 and not section['failures'] for section in report.values())
+    assert report['fitting']['rows'] == 1
     path = root / 'B/fitting.csv'
     original = path.read_text()
     path.write_text(original.splitlines()[0] + '\n')

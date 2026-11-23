@@ -34,6 +34,7 @@ STATE_FIELDS = ('success', 'solver_status', 'temperature', 'pressure', 'amounts'
 ROWS = []
 INPUTS = {}
 COSTS = []
+RAW_CURVATURE = {}
 
 
 def digest(path):
@@ -68,6 +69,14 @@ def state(case, result):
         fields(f'{case}/row/{i}', row, ('eqid', 'kind', 'phase', 'index'))
 
 
+def record_raw_curvature(case, compiled, result):
+    # These TP declarations use Gibbs curvature unless an amount is pinned.
+    if result.success and not compiled.pinned_count:
+        n = compiled.primal_size
+        hessian = compiled.hessian(result.coordinates[:n], result.constraint_multipliers)
+        RAW_CURVATURE[case] = dict(dimension=n, hessian_frobenius_norm=math.hypot(*hessian))
+
+
 def problem_input(problem):
     return dict(T=problem.T if isinstance(problem.T, float) else vars_intensive(problem.T),
                 P=problem.P if isinstance(problem.P, float) else vars_intensive(problem.P),
@@ -90,6 +99,7 @@ def solve(case, model, problem):
     if not result.success or result.requested_tolerance_met is not True:
         raise RuntimeError(f'{case}: {result.message}')
     compiled = eq.compile_problem(model, problem)
+    record_raw_curvature(case, compiled, result)
     observables = [eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, p, i)
                    for p in range(result.phase_count) for i in range(len(model.component_ids))]
     direction = eq.SolvedStateActionDirection(1., 0., [0.] * len(model.component_ids), [])
@@ -235,17 +245,19 @@ def asl():
     reference = live.Reference()
     INPUTS['asl/anchor'] = dict(F0=live.F0.tolist(), continuation=dict(initial_step=.25, minimum_step=.25, max_steps=4, max_retries_per_step=1), record_sha256=hashlib.sha256(reference.record.encode()).hexdigest(), library_sha256=digest(reference.library))
     state('asl/anchor/declared', reference.anchor)
+    record_raw_curvature('asl/anchor/declared', eq.compile_problem(reference.model, reference.problem), reference.anchor)
     for label, F in [('anchor', live.F0), ('start-0.9', live.F0*(1., 1., .9, .9)), ('start-1.1', live.F0*(1., 1., 1.1, 1.1))]:
         INPUTS['asl/'+label] = dict(feed=F.tolist())
         start = time.perf_counter()
-        public, diagnostics = reference.public(F)
+        case = 'asl/' + label + '/diagnostics'
+        public, diagnostics = reference.public(F, observe_state=lambda compiled, result: record_raw_curvature(case, compiled, result))
         native = reference.asl(F)
         COSTS.append(dict(case='asl/'+label, seconds=time.perf_counter()-start))
         for surface, values in (('public', public), ('ASL', native)):
             for name, value in zip(('amounts', 'gradient', 'hessian'), values):
                 record('asl/'+label+'/'+surface, name, value.tolist())
         for name, value in diagnostics.items():
-            record('asl/'+label+'/diagnostics', name, value)
+            record(case, name, value)
 
 
 def main():
@@ -284,6 +296,7 @@ def main():
             driver_finalizations=sum(e.name == 'hessian_calls' for e in captured.events),
             hessian_calls=sum(sum(e.values) for e in captured.events if e.name == 'hessian_calls'))
         (args.output / f'{args.section}.json').write_text(json.dumps(dict(identity=identity, inputs=INPUTS, costs=COSTS, failure=failure, trace_counts=trace_counts,
+            raw_curvature=RAW_CURVATURE,
             limits=['declared topology numerical replay; no physical validation']), indent=2)+'\n')
 
 
