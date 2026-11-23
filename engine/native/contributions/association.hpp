@@ -189,11 +189,6 @@ inline bool solve_linear(
     return true;
 }
 
-struct AssociationPair {
-    std::size_t a, b;
-    double r, discriminant;
-};
-
 struct AssociationWorkspace {
     AssociationStrengthWorkspace<double> strength;
     std::vector<double> delta, next, negative_residual;
@@ -221,10 +216,8 @@ inline std::vector<double> solve_site_fractions(
     const std::vector<double>* strength = nullptr,
     bool pair_start = false,
     const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr,
-    const std::array<double, 4>* prepared = nullptr, AssociationWorkspace* workspace = nullptr,
-    std::optional<AssociationPair>* accepted_pair = nullptr
+    const std::array<double, 4>* prepared = nullptr, AssociationWorkspace* workspace = nullptr
 ) {
-    if (accepted_pair) accepted_pair->reset();
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
     if (prepared) (void)packing_fraction_from_geometry(molar_density, (*prepared)[3]);
@@ -332,16 +325,14 @@ inline std::vector<double> solve_site_fractions(
             // Chapman et al. (1990), DOI 10.1021/ie00104a021, Eqs. 15 and 22.
             // Avlund (2011), §2.2, gives the 2 (1:1) quadratic root.
             const double c = 1.0 + (q - r);
-            const double discriminant = std::hypot(c, 2.0 * std::sqrt(r));
             next.assign(sites, 1.0);
-            next[a] = 1.0 / (0.5 * c + 0.5 * discriminant);
+            next[a] = 1.0 / (0.5 * c + 0.5 * std::hypot(c, 2.0 * std::sqrt(r)));
             next[b] = 1.0 / (1.0 + r * next[a]);
             if (in_domain(next) && (residual_norm = residual_infinity_norm(next)) <= tolerance) {
                 const auto convergence = make_record(residual_norm, 0, core::Stop::converged, false);
                 if (record) *record = convergence;
                 scope.finish(convergence);
                 scope.probe("site_fractions", next);
-                if (accepted_pair) *accepted_pair = AssociationPair{a, b, r, discriminant};
                 fractions.swap(next);
                 return fractions;
             }

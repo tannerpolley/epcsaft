@@ -1220,10 +1220,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::optional<core::Convergence> first;
     auto& delta = scratch.association.delta;
     delta = central_strength(parameters_, temperature, density, composition, geometry, std::move(delta), &scratch.association.strength);
-    std::optional<AssociationPair> pair;
     result.site_fractions = solve_site_fractions(temperature, density,
         composition, parameters_, geometry.sigma, geometry.diameter,
-        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association, &pair);
+        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association);
     const auto& sites = result.site_fractions;
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1299,45 +1298,9 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (gradient || phase_gradient || sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
-        const bool pair_sensitivity = [&] {
-            if (!pair || blocks || point_size != 2 + components
-                || std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
-                return false;
-            using D = Taylor<1>;
-            const auto [a, b, r, discriminant] = *pair;
-            const std::vector<D> sigma(geometry.sigma.begin(), geometry.sigma.end());
-            const std::vector<D> diameter(geometry.diameter.begin(), geometry.diameter.end());
-            std::vector<D> x(components);
-            site_sensitivity.setZero();  // Isolated sites remain unbonded.
-            for (std::size_t k = 0; k < width; ++k) {
-                const auto coordinate = coordinates[k];
-                D t(temperature), v(volume), n(total);
-                t.c[1] = coordinate == 0;
-                v.c[1] = coordinate == 1;
-                n.c[1] = coordinate >= 2;
-                const D rho = n / v;
-                for (std::size_t i = 0; i < components; ++i) {
-                    D ni(amounts[i]);
-                    ni.c[1] = coordinate == 2 + i;
-                    x[i] = ni / n;
-                }
-                const auto sig = coordinate == 0 ? segment_sigma(t, parameters_) : sigma;
-                const auto diam = coordinate == 0 ? segment_diameter(t, parameters_, sig) : diameter;
-                const auto strength = association_delta(t, rho, x, parameters_, sig, diam);
-                const auto coupling = [&](std::size_t i, std::size_t j) {
-                    return (rho * NUMBER_DENSITY_PER_ANGSTROM3 * x[parameters_.site_component[j]]
-                        * parameters_.site_multiplicity[j] * strength[i * sites_count + j]).c[1];
-                };
-                // Differentiate the accepted reciprocal-pair polynomial in its original orientation.
-                const double dq = coupling(a, b), dr = coupling(b, a);
-                site_sensitivity(a, k) = -sites[a] * ((dq - dr) + sites[a] * dr) / discriminant;
-                site_sensitivity(b, k) = -sites[b] * sites[b] * (sites[a] * dr + r * site_sensitivity(a, k));
-            }
-            return site_sensitivity.allFinite();
-        }();
-        bool have_site_sensitivity = pair_sensitivity;
+        bool have_site_sensitivity = false;
         // Traced calls retain the order of the gradient and Hessian observations.
-        if (!have_site_sensitivity && isothermal_hessian && !phase_gradient && !scope.on() && width <= sites_count) {
+        if (isothermal_hessian && !phase_gradient && !scope.on() && width <= sites_count) {
             result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization, &site_sensitivity).hessian;
             have_site_sensitivity = site_sensitivity.allFinite();
         }
