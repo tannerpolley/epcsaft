@@ -104,13 +104,13 @@ struct FitRequest final {
     std::vector<double> weights;
     FitControls controls;
     std::vector<HydrationHold> holds;
-    std::vector<CheckGroup> checks;
-    std::optional<Parameters> baseline;
+    std::vector<CheckGroup> checks{};
+    std::optional<Parameters> baseline{};
     bool singular_vectors = false;
-    std::optional<MinimaxRequest> minimax;
-    std::optional<MeasurementUncertainty> uncertainty;
+    std::optional<MinimaxRequest> minimax{};
+    std::optional<MeasurementUncertainty> uncertainty{};
     // Engine-internal (fit_sequence): optimizer start; only enthalpy-shift entries are read (see fit_start).
-    std::optional<std::vector<double>> start;
+    std::optional<std::vector<double>> start{};
 };
 
 // One rejected trial: the observation that failed, its typed cause and the optimizer point. A
@@ -182,6 +182,12 @@ struct FitOutcome final {
     FitAcceptance acceptance = FitAcceptance::NotEvaluated;
 };
 
+struct PredictionUncertainty final {
+    std::string status, message{};
+    std::optional<double> value{}, variance{};
+    ObservationStatus observation_status = ObservationStatus::NotEvaluated;
+};
+
 struct FitResult final {
     FitResult() = default;
     explicit FitResult(const FitRequest& request) : solver_options(request.controls.solver_options.resolved({})) {}
@@ -217,6 +223,7 @@ struct FitResult final {
     double initial_cost = 0.0;
     double final_cost = 0.0;
     FitCovariance covariance;
+    std::vector<PredictionUncertainty> prediction_uncertainty;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     EvaluatedCoordinates chart;
@@ -269,9 +276,9 @@ struct EPC_EXCEPTION FitInterrupted final {};
 #else
 [[noreturn]] EPC_API void serve_fit(int fd);
 #endif  // a worker process: its rows of every evaluation, over fd
-EPC_API FitResult fit(const FitRequest& request);
+EPC_API FitResult fit(const FitRequest& request, const std::vector<Observation>& prediction_rows = {});
 EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
-    int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent
+    int iterations, double seconds, const std::vector<Observation>& prediction_rows = {});  // shared budgets, ordered results; unstarted points are absent
 
 // Shared unweighted check algebra and final publication, used by both native estimators.
 EPC_API std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);

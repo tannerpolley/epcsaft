@@ -532,7 +532,64 @@ void check_measurement_admission() {
     Coordinate intercept; intercept.reaction = ReactionCoordinate{"reaction_a", ReactionCoefficient::A};
     intercept.scale = 0.1; intercept.lower = -1; intercept.upper = 1;
     deficient.coordinates.coordinates.push_back(intercept);
-    const auto rank = fit(deficient); CHECK(rank.usable && rank.covariance.status == "rank_deficient");
+    const auto rank = fit(deficient, deficient.observations); CHECK(rank.usable && rank.covariance.status == "rank_deficient");
+    CHECK(rank.covariance.optimizer.empty() && rank.prediction_uncertainty.size() == 1);
+    const auto& refusal = rank.prediction_uncertainty.front();
+    CHECK(refusal.status == "rank_deficient" && refusal.value && !refusal.variance);
+
+    // ln K at fixed T is affine in the two optimizer coordinates A and D.
+    auto linear = intercept_request({300, 320, 340}, {1.52, 1.59, 1.72}, {0.02, 0.02, 0.02});
+    const auto slope = linear_measurements().coordinates.coordinates.front();
+    linear.coordinates.coordinates.push_back(slope);
+    auto prediction = linear.observations.front();
+    prediction.problem.temperature = FreeValue::fixed(350);
+    for (bool absolute : {true, false}) {
+        if (!absolute) linear.uncertainty.reset();
+        const auto training = fit(linear);
+        auto row = prediction;
+        row.observed = -10;
+        row.form = ResidualForm::LogRatio;
+        const auto fitted = fit(linear, {row});
+        CHECK(fitted.optimizer == training.optimizer && fitted.predictions == training.predictions);
+        CHECK(fitted.optimizer_jacobian == training.optimizer_jacobian && fitted.final_cost == training.final_cost);
+        CHECK(fitted.iterations == training.iterations && fitted.residual_evaluations == training.residual_evaluations
+            && fitted.jacobian_evaluations == training.jacobian_evaluations);
+        CHECK(fitted.covariance.status == "available" && fitted.covariance.optimizer == training.covariance.optimizer);
+        CHECK(fitted.prediction_uncertainty.size() == 1);
+        const auto& propagated = fitted.prediction_uncertainty.front();
+        CHECK(propagated.status == "available" && propagated.observation_status == ObservationStatus::Available
+            && propagated.value && propagated.variance);
+        const auto& covariance = fitted.covariance.optimizer;
+        const double g = 350 * slope.scale;
+        CHECK(absolute || (fitted.covariance.variance_factor && *fitted.covariance.variance_factor != 1));
+        const double scale = absolute ? 1 : *fitted.covariance.variance_factor;
+        const double terms[] = {covariance[0], (covariance[1] + covariance[2]) * g, covariance[3] * g * g};
+        CHECK(std::abs(terms[1]) > std::abs(terms[0]) / 2);
+        const double expected = scale * (terms[0] + terms[1] + terms[2]);
+        const double magnitude = scale * (std::abs(terms[0]) + std::abs(terms[1]) + std::abs(terms[2]));
+        const double roundoff = std::numeric_limits<double>::epsilon() * magnitude;
+        const auto label = absolute ? "absolute" : "common-scale";
+        CHECK(reference_scale_agrees(label, "prediction_variance", "1", *propagated.variance, expected, 16 * roundoff, 0, ""));
+        auto point_request = linear;
+        point_request.observations = {prediction};
+        point_request.uncertainty.reset();
+        double fd[2];
+        constexpr double h = 0.125;
+        for (std::size_t k = 0; k < 2; ++k) {
+            auto plus = fitted.optimizer, minus = fitted.optimizer;
+            plus[k] += h; minus[k] -= h;
+            fd[k] = (point(point_request, plus, false).predictions[0] - point(point_request, minus, false).predictions[0]) / (2 * h);
+        }
+        const double checked = scale * (fd[0] * fd[0] * covariance[0] + fd[0] * fd[1] * (covariance[1] + covariance[2])
+            + fd[1] * fd[1] * covariance[3]);
+        CHECK(reference_scale_agrees(label, "prediction_variance_finite_difference", "1", *propagated.variance,
+            checked, 128 * roundoff * std::abs(*propagated.value) / h, 0, ""));
+    }
+    linear.observations.resize(2);
+    const auto no_scale = fit(linear, {prediction});
+    CHECK(no_scale.covariance.status == "available" && !no_scale.covariance.variance_factor);
+    CHECK(no_scale.prediction_uncertainty.front().status == "missing_variance_factor"
+        && no_scale.prediction_uncertainty.front().value && !no_scale.prediction_uncertainty.front().variance);
     std::cout << "MEASUREMENT_LIMITS zero_sigma_equal=1 empty_equal=1 report_latent=" << reports.reconciliation->corrections.size()
         << " active=" << active.covariance.active_bounds.size() << " deficient_rank=" << rank.covariance.rank << '\n';
 }

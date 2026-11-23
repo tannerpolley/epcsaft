@@ -75,6 +75,26 @@ identifiability; a small fitted error does not give out-of-sample uncertainty.
 Calibration is not validation. Independent observations and an intended-use
 domain are needed for a physical validation claim.
 
+## Propagate parameter variance to predictions
+
+Pass fixed-input scalar observations as `prediction_rows` to `regression.fit`.
+The returned `prediction_uncertainty` rows follow the input order. Each can
+contain a point value and a local parameter variance in squared property
+units. The Engine evaluates the exact derivative $J$ of the property in
+optimizer coordinates and contracts it with the full covariance $C$ as
+$J C J^\mathsf{T}$. A known absolute measurement model supplies $C$ directly.
+With relative weights, the Engine multiplies the unit-variance covariance by
+the fitted common variance factor once.
+
+Read each row's covariance `status` and `observation_status` alongside its
+optional variance. A rank-deficient fit, an empty covariance, or a missing
+common variance factor leaves the variance absent. The native property or
+derivative status carries its own cause, and a usable point value can survive
+a refusal. The rows use the fitted chart and solver options. Their targets,
+residual forms and scales have no effect on fitting or reporting. Future
+measurement scatter and interval coverage factors require a separate error
+model for the intended prediction.
+
 ## Minimax and measurement reconciliation
 
 `MinimaxRequest` declares a local scaled epigraph estimate with target,

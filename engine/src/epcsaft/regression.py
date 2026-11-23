@@ -18,7 +18,7 @@ from . import _core
 from ._log import logged
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
-    CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, ObservationKind,
+    CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, PredictionUncertainty, ObservationKind,
     ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure, reaction_log10_reciprocal,
     MeasuredInputKind, MeasuredInput, MeasurementGroup, MeasurementUncertainty, InputReconciliation,
 )
@@ -63,7 +63,7 @@ _KINDS = {
     "amount_ratio": ObservationKind.PhaseAmountRatio,
     "solvent_activity": ObservationKind.PhaseSolventActivity,
 }
-__all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "Observation", "ObservationKind",
+__all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "PredictionUncertainty", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
@@ -786,7 +786,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         weights: Sequence[float] | None = None, controls: FitControls,
         thermochemistry: ThermochemistryRecord | None = None, holds: Sequence[HydrationHold] | None = None,
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
-        minimax: MinimaxRequest | None = None, uncertainty: MeasurementUncertainty | None = None) -> FitResult: ...
+        minimax: MinimaxRequest | None = None, uncertainty: MeasurementUncertainty | None = None,
+        prediction_rows: Sequence[Observation] | None = None) -> FitResult: ...
 
 
 @overload
@@ -796,7 +797,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]], shared_iterations: int | None = None,
         shared_seconds: float | None = None, minimax: MinimaxRequest | None = None,
-        uncertainty: MeasurementUncertainty | None = None) -> list[FitResult]: ...
+        uncertainty: MeasurementUncertainty | None = None,
+        prediction_rows: Sequence[Observation] | None = None) -> list[FitResult]: ...
 
 
 def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations: Sequence[Observation], *,
@@ -805,7 +807,8 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         checks: Sequence[CheckGroup] | None = None, baseline: Parameters | None = None, singular_vectors: bool | None = None,
         starts: Sequence[Sequence[float]] | None = None, shared_iterations: int | None = None,
         shared_seconds: float | None = None, minimax: MinimaxRequest | None = None,
-        uncertainty: MeasurementUncertainty | None = None) -> FitResult | list[FitResult]:
+        uncertainty: MeasurementUncertainty | None = None,
+        prediction_rows: Sequence[Observation] | None = None) -> FitResult | list[FitResult]:
     """Fit physical parameters with native least squares or declared guarded minimax.
 
     Parameters
@@ -844,6 +847,9 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         Explicit guarded minimax request instead of ordinary least squares.
     uncertainty : MeasurementUncertainty, optional
         Input/output measurement-error declarations for native reconciliation.
+    prediction_rows : sequence of Observation, optional
+        Fixed-input predictions at the fitted point, with local parameter
+        variance when available. Targets, residual forms and scales are ignored.
 
     Returns
     -------
@@ -874,7 +880,7 @@ def fit(parameters: Parameters, coordinates: Sequence[Coordinate], observations:
         _core.fit,
         parameters._native, thermochemistry, list(coordinates), list(observations), list(weights or ()), controls,
         list(holds or ()), list(checks or ()), None if baseline is None else baseline._native, bool(singular_vectors),
-        None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty)
+        None if starts is None else [list(start) for start in starts], shared_iterations, shared_seconds, minimax, uncertainty, list(prediction_rows or ()))
 
 
 def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:

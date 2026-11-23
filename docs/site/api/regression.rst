@@ -61,6 +61,7 @@ Re-exported names
 * ``epcsaft.regression.CoordinateSet`` → :py:obj:`epcsaft._core.CoordinateSet`
 * ``epcsaft.regression.FitControls`` → :py:obj:`epcsaft._core.FitControls`
 * ``epcsaft.regression.FitCovariance`` → :py:obj:`epcsaft._core.FitCovariance`
+* ``epcsaft.regression.PredictionUncertainty`` → :py:obj:`epcsaft._core.PredictionUncertainty`
 * ``epcsaft.regression.FitResult`` → :py:obj:`epcsaft._core.FitResult`
 * ``epcsaft.regression.Observation`` → :py:obj:`epcsaft._core.Observation`
 * ``epcsaft.regression.ObservationKind`` → :py:obj:`epcsaft._core.ObservationKind`
