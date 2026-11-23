@@ -86,11 +86,15 @@ as unknown; the [limits](../limits.md) explain this distinction.
 ## Installed and downloaded packets
 
 Conda installs `feos-gross-sadowski-2001/1` for nonassociating fluids and
-`feos-gross-sadowski-2002/1` for associating fluids. The packet root is
-`Path(epcsaft.__file__).resolve().parent / "data" / "packets"`.
-Source builds with the accessor expose this same path as
-`epcsaft.installed_packet_root()`. The directory can be absent when the
-installation contains no bundled packets.
+`feos-gross-sadowski-2002/1` for associating fluids. In 1.3.2, use
+`Path(epcsaft.__file__).resolve().parent / "data" / "packets"` as the packet
+root. Calling `epcsaft.installed_packet_root()` in 1.3.2 raises
+`AttributeError`, and the misspelled-component message ends at
+`has no component propan`.
+
+The accessor and the message that points to the valid component names require
+a release after 1.3.2. The accessor returns the same path, which can be absent
+when the installation contains no bundled packets.
 
 ```{doctest}
 >>> from pathlib import Path
