@@ -74,6 +74,11 @@ tolerances = _core.tolerances
 DeclarationError = _core.DeclarationError
 
 
+def installed_packet_root() -> Path:
+    """Return the package's packet directory, which may be absent on source installs."""
+    return Path(__file__).resolve().parent / "data" / "packets"
+
+
 def trace(diagnostics: bool | None = None, ipopt_log: str | None = None, ipopt_print_level: int | None = None) -> _core.Capture:
     """Capture native spans and events, and optionally an Ipopt log, inside a ``with`` block.
 
@@ -189,6 +194,7 @@ __all__ = (
     "ThermochemistryStatus",
     "ReactionThermochemistry",
     "reaction_thermochemistry_density",
+    "installed_packet_root",
     "provenance",
     "tolerances",
     "trace",

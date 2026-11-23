@@ -648,27 +648,9 @@ and never enter the wheel.
 
 ## Conda package
 
-`../packaging/conda-forge/` prepares CPython 3.12, 3.13, and 3.14 builds for
-Linux and Windows x86-64 and macOS x86-64 and arm64 with private Ipopt 3.11.9,
-MUMPS 5.8.2/OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
-nanobind 2.12.0. It installs the Python package, extension, native and ASL
-libraries, private Ipopt and notices; parameter packets, analyses, manuscript
-sources and Coin-HSL are excluded. Supply parameter declarations explicitly.
-Its package tests are the import, `pip check` and `run_test.py`. The win-64
-qualification is a manual double-check: the `qualification` workflow runs
-`qualification/recipe.py`, which derives `qualification-recipe.yaml` from the recipe.
-
-The `tannerwpolley` channel publishes epcsaft 1.3.1 for `linux-64` with CPython
-3.12, 3.13 and 3.14, and for `win-64` with CPython 3.13 only. No macOS package
-is published. Dependency resolution was verified for `win-64`, `osx-64`,
-and `osx-arm64`.
-
-Corresponding source is available from the distributor as a source-set download
-alongside the matching version at
-https://github.com/tannerpolley/epcsaft/releases: exact Engine and Ipopt sources,
-embedded third-party sources, recipe/build instructions, patches and original
-notices with SHA-256 checksums. Before binary publication, verify retrieval of
-those exact bytes. See `../NOTICE` for the source-availability rule and terms.
+See the [installation guide](../docs/site/installation.md#conda-package) for the
+published package, supported platforms and Python versions. See [NOTICE](../NOTICE)
+for corresponding source and third-party terms.
 
 ## Scientific specification and availability
 

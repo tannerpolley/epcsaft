@@ -1,8 +1,8 @@
 # Installation
 
 The Engine performs the thermodynamic calculations in C++; Python declares
-inputs and reads results. The examples read parameter packets and observation
-files under `data/` and `engine/tests/cases/` of the source release. Run the examples
+inputs and reads results. The notebooks read parameter packets and observation
+files under `data/` and `engine/tests/cases/` of the source release. Run the notebooks
 from the root of the unpacked source archive of the same
 [release](https://github.com/tannerpolley/epcsaft/releases).
 The [water-state notebook](examples/parameters-and-water-state.ipynb) checks
@@ -10,9 +10,10 @@ an installation with a native pressure closure.
 
 ## Conda package
 
-Install release 1.3.2 from the `tannerwpolley` conda channel. Linux (linux-64)
-and Windows (win-64) support Python 3.12, 3.13 and 3.14. There is no published
-macOS package.
+Prebuilt packages are distributed through conda. PyPI has no ePC-SAFT package.
+Install release 1.3.2 from the `tannerwpolley` channel. Linux (linux-64) and
+Windows (win-64) support Python 3.12, 3.13 and 3.14. There is no published macOS
+package.
 
 Replace `python=3.13` below with `python=3.12` or `python=3.14` to choose
 another supported version:
@@ -31,8 +32,8 @@ download the matching source archive and pass its `data/packets` directory to
 `Parameters.from_packets`; see [packet selection](guide/parameters-and-models.md#installed-and-downloaded-packets).
 Each packet states its own use terms.
 
-Run [first saturation and flash](quickstart.md#first-saturation-and-flash)
-from any directory using only the conda package.
+Start with [first calculations](quickstart.md). Saturation and flash use the
+installed packets. The NaCl example gives the download command for its packet.
 
 ## Build from source
 

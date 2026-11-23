@@ -41,6 +41,8 @@ intersphinx_mapping = {
 napoleon_use_ivar = True
 
 myst_enable_extensions = ["dollarmath", "amsmath"]
+# The README's plain Markdown doctest fence also runs when included in the site.
+myst_fence_as_directive = ["doctest"]
 myst_heading_anchors = 4
 
 THEORY = {
