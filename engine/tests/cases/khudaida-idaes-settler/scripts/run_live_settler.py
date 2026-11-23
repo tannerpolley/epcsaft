@@ -65,7 +65,7 @@ class Reference:
         _, _, self.library = neutral.installed_identity()
         self.external = ExternalFunction(library=str(self.library), function=NAME, units=FLOW, arg_units=[u.K, u.Pa] + [FLOW] * 4 + [None] * 3)
 
-    def public(self, F, order=2):
+    def public(self, F, order=2, *, observe_state=None):
         problem = fixed.engine_problem(feed(F))
         continuation = (
             None if np.array_equal(F, F0) else eq.continue_equilibrium(self.model, self.problem, problem, OPTIONS, start_result=self.anchor)
@@ -77,6 +77,8 @@ class Reference:
         if failures or central.mole_fractions[0] - central.mole_fractions[5] <= fixed.GAP:
             raise RuntimeError(f"branch/certificate: {failures}, {diagnostics}")
         compiled = eq.compile_problem(self.model, problem)
+        if observe_state is not None:
+            observe_state(compiled, central)
         y, g, h, statuses = np.zeros(10), np.zeros((10, 4)), np.zeros((10, 4, 4)), []
         pairs = [(-1,)] if order == 0 else [(i,) for i in range(4)]
         if order == 2:

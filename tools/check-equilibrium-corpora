@@ -49,7 +49,7 @@ MATRIX_REPORTED = REPORTED | {'I', 'E', 'H', 'dx', 'dq', 'drho', 'dT', 'dP', 'df
 # Accepted results at the #391 delivery, which both wheels must reproduce; a slice that changes one edits it
 # here. Gross failures are CSV line numbers of default-start-comparisons.csv; neutral successes are initial
 # pressures (Pa) by temperature (K); replay success and requested_tolerance_met count True rows, and keys
-# is the SHA-256 prefix of the sorted "case,quantity" lines.
+# is the SHA-256 prefix of the sorted "case,quantity" lines. The fit inventory omits iteration-cost samples.
 ACCEPTED = dict(
     cameretti=dict(states=1800, default_successes=1800, declared_all_succeeded=True),
     gross=dict(rows=724, failed_lines=[558, 722, 723]),
@@ -64,14 +64,13 @@ ACCEPTED = dict(
     matrix=dict(rows=42, passes=42),
     replay=dict(declared=dict(rows=1847, cases=263, success=6, requested_tolerance_met=6, keys='11cba60ff4310589'),
                 continuation=dict(rows=845, cases=86, success=8, requested_tolerance_met=7, keys='224947d11f3063e3'),
-                fitting=dict(rows=214, cases=3, success=0, requested_tolerance_met=0, keys='8f8c364705b3b021'),  # #1014: Held NaCl iteration-cost history grows from 21 to 25 entries at the objective floor.
+                fitting=dict(rows=189, cases=3, success=0, requested_tolerance_met=0, keys='b048af3357743038'),
                 asl=dict(rows=1479, cases=31, success=1, requested_tolerance_met=4, keys='77a70ac426a96fdb')))
 
 
 REPLAY_RESULT_INVENTORIES = dict(
     declared=dict(rows=1793, keys='ae2df993e9d3bc6d'),
     continuation=dict(rows=810, keys='68f377a1da110661'),
-    fitting=dict(rows=185, keys='4f81bfcf199d5293'),
     asl=dict(rows=1471, keys='5612f9e7334cedd8'),)
 
 RETAINED_INPUTS = (
@@ -412,17 +411,20 @@ def main():
         return found + differences(matrix(out / 'A'), matrix(out / 'B'), MATRIX_REPORTED)
     corpus('#243 matrix', lambda d: f"{sum(r['passes'] == 'True' for r in matrix(d))}/{len(matrix(d))}", matrix_problems)
 
+    inventory_rows = runpy.run_path(str(TPD / 'replay_compare.py'))['inventory_rows']
+
+    def replay_rows(label, section):
+        return inventory_rows(section, table(out / label / f'replay/{section}.csv'),
+                              work_reported=inventories[label].get('replay_work_histories') == 'reported')
+
     def replay():
-        rules = runpy.run_path(str(TPD / 'replay_compare.py'))
         if subprocess.run([sys.executable, TPD / 'replay_compare.py', out / 'A/replay', out / 'B/replay',
                            out / 'replay-compare.json'], stdout=subprocess.DEVNULL).returncode:
             raise ValueError('replay_compare.py failed')
         found = [f for section in json.loads((out / 'replay-compare.json').read_text()).values() for f in section['failures']]
         for label in selections:
             for s in SECTIONS:
-                rows = table(out / label / f'replay/{s}.csv')
-                if inventories[label].get('replay_work_histories') == 'reported':
-                    rows = [r for r in rows if rules['base'](r['quantity']) not in rules['WORK']]
+                rows = replay_rows(label, s)
                 true = lambda q: sum(r['quantity'] == q and r['value'] == 'True' for r in rows)
                 keys = '\n'.join(sorted(f"{r['case']},{r['quantity']}" for r in rows))
                 found += accepted(f'{label} replay {s}', dict(
@@ -430,7 +432,7 @@ def main():
                     requested_tolerance_met=true('requested_tolerance_met'),
                     keys=hashlib.sha256(keys.encode()).hexdigest()[:16]), inventories[label]['replay'][s])
         return found
-    corpus('replay rows (4 sections)', lambda d: f"{sum(len(table(d / f'replay/{s}.csv')) for s in SECTIONS):,}", replay)
+    corpus('replay rows (4 sections)', lambda d: f"{sum(len(replay_rows(d.name, s)) for s in SECTIONS):,}", replay)
 
     family = lambda d: [json.loads(line) for line in (d / 'mea-family.jsonl').read_text().splitlines()]
     corpus('MEA flash family', lambda d: f"{sum(r['success'] for r in family(d))}/{len(family(d))}",
