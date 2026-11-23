@@ -1298,10 +1298,16 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     if (gradient || phase_gradient || sites_count != 0) {
         const auto raw_gradient = tape_->function.Reverse(1, weights);
         ++counters_.reverse;
+        bool have_site_sensitivity = false;
+        // Traced calls retain the order of the gradient and Hessian observations.
+        if (isothermal_hessian && !phase_gradient && !scope.on() && width <= sites_count) {
+            result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization, &site_sensitivity).hessian;
+            have_site_sensitivity = site_sensitivity.allFinite();
+        }
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
         auto& partials = scratch.partials;
         partials.resize(sites_count, width);
-        if (width > 1 && width <= sites_count) {
+        if (!have_site_sensitivity && width > 1 && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size() * width, 0.0);
             for (std::size_t k = 0; k < width; ++k) direction[coordinates[k] * width + k] = 1.0;
@@ -1309,7 +1315,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
             ++counters_.forward;
             for (std::size_t site = 0; site < sites_count; ++site)
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = first[(1 + site) * width + k];
-        } else if (width <= sites_count) {
+        } else if (!have_site_sensitivity && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < width; ++k) {
@@ -1319,7 +1325,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 ++counters_.forward;
                 for (std::size_t site = 0; site < sites_count; ++site) partials(site, k) = first[1 + site];
             }
-        } else if (sites_count) {
+        } else if (!have_site_sensitivity && sites_count) {
             auto& site_weight = scratch.site_weights;
             site_weight.assign(output_count, 0.0);
             for (std::size_t site = 0; site < sites_count; ++site) {
@@ -1330,7 +1336,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = partial[coordinates[k]];
             }
         }
-        if (sites_count != 0) site_sensitivity = factorization.solve(-partials);
+        if (!have_site_sensitivity && sites_count != 0) site_sensitivity = factorization.solve(-partials);
         for (std::size_t k = 0; k < width; ++k) {
             auto& derivative = result.gradient[coordinates[k]];
             derivative = raw_gradient[coordinates[k]];
@@ -1363,7 +1369,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         core::Scope scope("helmholtz_hessian");
         ++counters_.hessian_calls;
         if (isothermal_hessian) {
-            out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization).hessian;
+            if (out.hessian.empty())
+                out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization).hessian;
         } else {
             out.hessian.assign(size * size, 0.0);
             auto& direction = evaluation_->direction;

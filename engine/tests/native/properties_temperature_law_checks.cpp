@@ -312,9 +312,29 @@ void temperature_laws() {
     // ladder continues halving to 0.00625 K (lead decision 2026-10-16); the tolerance is unchanged.
     const std::vector<double> mixed_t_steps = {0.4, 0.2, 0.1, 0.05, 0.025, 0.0125, 0.00625};
     for (const double temperature : TEMPERATURES) {
-        const auto taped = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian);
-        const auto selected = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian, true);
-        CHECK(selected.gradient_floor == taped.gradient_floor && selected.site_fractions == taped.site_fractions);
+        const auto taped = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian, false, true);
+        const auto selected = fixed.evaluate(temperature, 1.0 / RHO, X, epcsaft::DerivativeOrder::IsothermalPhaseHessian, true, true);
+        const auto& p = fixed.parameters();
+        const auto sigma = epcsaft::segment_sigma(temperature, p);
+        const auto diameter = epcsaft::segment_diameter(temperature, p, sigma);
+        epcsaft::core::Convergence sites;
+        const auto fractions = epcsaft::solve_site_fractions(temperature, RHO, X, p, sigma, diameter, &sites);
+        for (const auto* derivative : {&taped, &selected}) {
+            CHECK(derivative->site_fractions == fractions);
+            double amplification = 0.0;
+            for (Eigen::Index col = 0; col < derivative->site_sensitivity.cols(); ++col) {
+                double column = 0.0;
+                for (std::size_t site = 0; site < fractions.size(); ++site) {
+                    const double weight = X[p.site_component[site]] * p.site_multiplicity[site] / fractions[site];
+                    column += std::abs(weight * derivative->site_sensitivity(site, col));
+                }
+                amplification = std::max(amplification, column);
+            }
+            const double propagated = amplification * std::max(sites.residual, sites.floor.value_or(0.0));
+            // Both sums contain positive terms. Allow roundoff from each summation and final product.
+            const double rounding = std::numeric_limits<double>::epsilon() * (fractions.size() + 1) * propagated;
+            CHECK(std::abs(derivative->gradient_floor - propagated) <= rounding);
+        }
         for (std::size_t i = 1; i < 4; ++i) for (std::size_t j = 1; j < 4; ++j)
             CHECK(close(selected.hessian[4 * i + j], taped.hessian[4 * i + j], 1e-10));
         const auto tag = "four-site/T=" + number(temperature);

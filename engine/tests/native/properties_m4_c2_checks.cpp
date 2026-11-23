@@ -42,6 +42,21 @@ void hessian_reference() {
             recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference", associating_inputs);
     }
 
+    const auto implicit = associating.evaluate(376.88, 1.0e-4, associating_amounts,
+        epcsaft::DerivativeOrder::IsothermalPhaseHessian, false, true);
+    for (bool rank_only : {false, true}) {
+        const auto isothermal = associating.evaluate(376.88, 1.0e-4, associating_amounts,
+            epcsaft::DerivativeOrder::IsothermalPhaseHessian, true, true, rank_only);
+        const auto& tangents = isothermal.site_sensitivity;
+        CHECK(tangents.cols() == (rank_only ? 1 : 3));
+        for (Eigen::Index k = 0; k < tangents.cols(); ++k)
+            for (Eigen::Index site = 0; site < tangents.rows(); ++site)
+                recording_support::compare(std::string(rank_only ? "rank" : "phase") + "-site-tangent/"
+                    + std::to_string(site) + "/" + std::to_string(k), "site_fraction_derivative",
+                    k == 0 ? "1/m^3" : "1/mol", tangents(site, k), implicit.site_sensitivity(site, k),
+                    recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-10, "AD-reference", associating_inputs);
+    }
+
     const auto nine_parameters = properties_support::nine_species();
     const std::vector<double> nine_amounts = {
         0.795, 0.10, 0.05, 0.02, 0.02, 0.005, 0.001, 0.008, 0.001,

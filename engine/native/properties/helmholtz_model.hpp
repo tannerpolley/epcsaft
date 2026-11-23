@@ -570,7 +570,7 @@ public:
     template <typename Base>
     HelmholtzDerivativeValues<Base> isothermal(Base temperature, Base volume,
         const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
-        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr) const;
+        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
         double temperature_direction, const std::vector<double>& composition_direction) const;
@@ -626,7 +626,7 @@ private:
 #if defined(_WIN32) && !defined(EPCSAFT_NATIVE_BUILD) && !defined(EPCSAFT_NATIVE_STATIC)
 extern template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 extern template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
-    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*) const;
+    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*) const;
 #endif
 
 
