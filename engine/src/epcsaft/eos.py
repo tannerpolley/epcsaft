@@ -440,8 +440,8 @@ class Mixture:
         An inadmissible solvent composition or numerical density failure returns
         a Reference with pure_solvent_log_fugacity set to None; its
         solvent_activity result retains the native status and cause.
-        The ionic path follows the native charge-neutral dilution ladder and
-        convergence checks (ALG-REFERENCE). Input sequences are copied.
+        The ionic path evaluates the analytic infinite-dilution limit at the
+        solvent state (ALG-REFERENCE). Input sequences are copied.
         """
         if (ions is None) != (stoichiometry is None):
             raise ParameterError("reference requires both ions and stoichiometry or neither")

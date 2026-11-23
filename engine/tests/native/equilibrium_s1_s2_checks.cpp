@@ -376,8 +376,7 @@ void check_s2() {
     recording_support::compare("neutral-reference/lambda-identity", "terminal_contraction", "1",
         *first.terminal_contraction, identity, recording_support::Rule::ReferenceOrOne, 0.0, 1.0e-9,
         "fugacity-pressure-identity",
-        recording_support::fields({recording_support::field("rho", terminal.molar_density),
-            recording_support::field("observed_terminal_change", epcsaft::core::optional_number(first.observed_terminal_change))}));
+        recording_support::field("rho", terminal.molar_density));
     const auto fixed_pressure = epcsaft::reaction_reference(
         reference_model, 300.0, 2.0e5, ratios({0.0, 1.0, 1.0}), nu,
         epcsaft::ReactionReference{1.0e5, reference.source_basis});
@@ -513,7 +512,6 @@ void check_s2() {
         epcsaft::HelmholtzModel ionic_thermal(properties_support::aqueous_electrolyte(), {}, water_record);
         for (std::size_t row = 0; row < rows.size(); ++row) {
             CHECK(center[row].terminal_contraction_temperature_derivative.has_value()
-                  && !center[row].observed_terminal_change.has_value()
                   && lower[row].terminal_contraction.has_value()
                   && upper[row].terminal_contraction.has_value());
             const double slope = *center[row].terminal_contraction_temperature_derivative;
@@ -591,8 +589,7 @@ void check_s2() {
         parameters.relative_permittivity[0] = 30.0;
         const auto low = epcsaft::reaction_reference(epcsaft::HelmholtzModel(parameters),
             298.15, 1.0e5, ratios({0.0, 1.0, 1.0}), {-1.0, 1.0, 1.0}, reference);
-        CHECK(low.status == epcsaft::NeutralReferenceStatus::Available && low.terminal_contraction
-              && !low.observed_terminal_change);
+        CHECK(low.status == epcsaft::NeutralReferenceStatus::Available && low.terminal_contraction);
     }
     // #138 order-two slope on the associating MEA-water fixture, solvent water, formula
     // reaction H2O = MEA: d2C/dT2|_P against the centered difference of dC/dT|_P; floor:
@@ -688,9 +685,7 @@ void check_s2() {
                 recording_support::field("R_T2_C_Ttheta_J_per_mol_K", scaled_mixed),
                 recording_support::field("pure_pressure_action_J_per_mol_K", pure_slope),
                 recording_support::field("observed_C_T_admitted_change",
-                    epcsaft::core::optional_number(diagnostic.observed_temperature_derivative_change)),
-                recording_support::field("observed_terminal_change",
-                    epcsaft::core::optional_number(diagnostic.observed_terminal_change))});
+                    epcsaft::core::optional_number(diagnostic.observed_temperature_derivative_change))});
             const std::string id = std::string("neutral-reference/temperature-parameter/N/")
                 + (source == 0 ? "system" : "fixed") + "/tied-epsilon/pure-identity";
             recording_support::compare_custom(id, "R_T2_C_Ttheta", "J/(mol K)", scaled_mixed, pure_slope,
@@ -776,9 +771,7 @@ void check_s2() {
                     recording_support::field("P_ref_Pa", sources[source].reference_pressure_pa.value_or(pressure)),
                     recording_support::field("C_Ttheta_site_residual", temperature_parameter_column(exact_diagnostic, coordinate).diagnostics.association_residual),
                     recording_support::field("observed_C_T_admitted_change",
-                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change)),
-                    recording_support::field("observed_terminal_change",
-                        epcsaft::core::optional_number(exact_diagnostic.observed_terminal_change))});
+                        epcsaft::core::optional_number(exact_diagnostic.observed_temperature_derivative_change))});
                 for (const auto& [route, coarse, fine] : std::array<std::tuple<const char*, double, double>, 2>{
                          std::tuple{"theta-difference", theta_difference(2.0 * steps[coordinate]),
                                     theta_difference(steps[coordinate])},
