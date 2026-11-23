@@ -1,5 +1,6 @@
 #include "properties/helmholtz_model.hpp"
 
+#include "core/exact_zero_dot.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 
@@ -63,28 +64,33 @@ DeclarationCheck check_neutral_reference_declaration(
     if (!std::isfinite(solvent_mass) || solvent_mass <= 0.0) {
         return invalid("neutral reference solvent has invalid molar mass");
     }
-    double charge = 0.0;
-    double reaction_charge = 0.0;
     for (std::size_t component = 0; component < components; ++component) {
         const double ratio = declaration.solute_molality_ratios[component];
         if (!std::isfinite(ratio)
             || (component == solvent ? ratio != 0.0 : ratio <= 0.0)) {
             return invalid("invalid neutral reference solute ratio");
         }
-        const double coefficient = stoichiometry[component];
-        if (!std::isfinite(coefficient)) {
+        if (!std::isfinite(stoichiometry[component]))
             return invalid("invalid neutral reference stoichiometry");
-        }
-        charge += ratio * static_cast<double>(parameters.charge_number[component]);
-        reaction_charge += coefficient * static_cast<double>(parameters.charge_number[component]);
     }
-    if (!std::isfinite(charge) || charge != 0.0) {
+    const std::vector<double> charges(parameters.charge_number.begin(), parameters.charge_number.end());
+    if (!core::exact_zero_dot(declaration.solute_molality_ratios, charges))
         return charged("neutral reference solute ratios are not charge neutral");
-    }
-    if (!std::isfinite(reaction_charge) || reaction_charge != 0.0) {
+    if (!core::exact_zero_dot(stoichiometry, charges))
         return charged("neutral reference reaction is not charge neutral");
-    }
     return {NeutralReferenceStatus::Available, {}, solvent_mass};
+}
+
+void add_reference_work(PropertyActionDiagnostics& total, const PropertyActionDiagnostics& part, bool earlier = false) {
+    total.site_factorizations += part.site_factorizations;
+    total.site_solves += part.site_solves;
+    total.pressure_factorizations += part.pressure_factorizations;
+    total.pressure_solves += part.pressure_solves;
+    total.thermal_evaluations += part.thermal_evaluations;
+    total.recordings += part.recordings;
+    total.directional_paths += part.directional_paths;
+    total.forward_sweeps += part.forward_sweeps;
+    core::retain_first(total.first_numerical_failure, part.first_numerical_failure, earlier);
 }
 
 }  // namespace
@@ -122,13 +128,8 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
         const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
             composition, stoichiometry, direction, order, infinite_dilution, nullptr, batch);
         result.status = series.status;
-        result.diagnostics.site_factorizations += series.diagnostics.site_factorizations;
-        result.diagnostics.site_solves += series.diagnostics.site_solves;
-        result.diagnostics.pressure_factorizations += series.diagnostics.pressure_factorizations;
-        result.diagnostics.pressure_solves += series.diagnostics.pressure_solves;
+        add_reference_work(result.diagnostics, series.diagnostics);
         result.diagnostics.pressure_density_derivative = series.diagnostics.pressure_density_derivative;
-        result.diagnostics.forward_sweeps += series.diagnostics.forward_sweeps;
-        result.diagnostics.directional_paths += series.diagnostics.directional_paths;
         result.diagnostics.association_residual = std::max(result.diagnostics.association_residual, series.diagnostics.association_residual);
         result.diagnostics.pressure_residual = std::max(result.diagnostics.pressure_residual, series.diagnostics.pressure_residual);
         result.diagnostics.site_rank = series.diagnostics.site_rank;
@@ -337,9 +338,13 @@ ResidualEnergyAction reference_partial_from_trace(const HelmholtzModel& model, d
         if (!trace.pure_state[i] || stoichiometry[i] == 0.0) continue;
         std::vector<double> composition(dilute.size(), 0.0), insertion(dilute.size(), 0.0);
         composition[i] = 1.0; insertion[i] = stoichiometry[i];
-        const auto partial = reference_partial_from_state(model, temperature, composition,
+        auto partial = reference_partial_from_state(model, temperature, composition,
             insertion, a, b, parameter, *trace.pure_state[i], false, batch, second);
-        if (!partial.action) return partial;
+        if (!partial.action) {
+            add_reference_work(partial.diagnostics, result.diagnostics, true);
+            return partial;
+        }
+        add_reference_work(result.diagnostics, partial.diagnostics);
         *result.action += *partial.action;
     }
     if (!std::isfinite(*result.action)) {

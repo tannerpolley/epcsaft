@@ -93,6 +93,11 @@ bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b)
 }
 
 }  // namespace
+
+bool same_problem_state(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    return !a.discovery && !b.discovery && same_declaration(a, b) && same_state_values(a, b);
+}
+
 std::vector<double> CompiledSystem::optimizer_identity() const {
     const auto& c = *this;
     if (c.ideal) throw std::invalid_argument("ideal optimizer state unavailable");

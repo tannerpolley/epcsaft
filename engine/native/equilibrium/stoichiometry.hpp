@@ -1,5 +1,6 @@
 #pragma once
 #include "core/export.hpp"
+#include "core/exact_zero_dot.hpp"
 
 #include "equilibrium/problem.hpp"
 
@@ -13,7 +14,8 @@
 
 namespace epcsaft::equilibrium {
 
-EPC_API bool exact_zero_dot(const std::vector<double>& left, const std::vector<double>& right);
+using core::exact_zero_dot;
+bool same_problem_state(const EquilibriumProblem&, const EquilibriumProblem&);
 std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
     const std::vector<ReactionSpec>& reactions);
 void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active);

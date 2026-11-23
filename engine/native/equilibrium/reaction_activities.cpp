@@ -26,8 +26,7 @@ std::optional<double> log_quotient(const std::vector<double>& nu, const SpeciesA
 void pressure_basis(const HelmholtzModel& model, const EquilibriumResult& result, std::size_t phase,
     const std::vector<double>& x, const std::vector<double>& nu, const SpeciesActivities& density, ReactionActivities& row) {
     const auto& record = model.thermochemistry();
-    row.standard_pressure_pa = row.reference_pressure_pa ? row.reference_pressure_pa
-        : record ? std::optional<double>(record->standard_pressure) : std::nullopt;
+    if (!row.standard_pressure_pa && record) row.standard_pressure_pa = record->standard_pressure;
     if (!row.standard_pressure_pa) { row.pressure_cause = "standard pressure undeclared"; return; }
     const auto ln_q = log_quotient(nu, density, row.pressure_cause);
     if (!ln_q) return;
@@ -35,25 +34,28 @@ void pressure_basis(const HelmholtzModel& model, const EquilibriumResult& result
     double dnu = 0.0;
     for (const double v : nu) dnu += v;
     row.log_pressure_quotient = *ln_q + dnu * std::log(GAS_CONSTANT_J_PER_MOL_K * T / *row.standard_pressure_pa);
+    row.log_pressure_quotient_actions.resize(x.size() + 2);
     if (!std::isfinite(*ln_q)) { row.pressure_cause = "pressure-basis actions undefined at a structurally zero activity"; return; }
     const auto branch = branch_of(result.declaration->phases[phase].kind);
-    row.log_pressure_quotient_actions.assign(x.size() + 2, std::nullopt);
-    try { for (std::size_t k = 0; k < x.size() + 2; ++k) {
-        PressureActionDirection direction{double(k == 0), double(k == 1), std::vector<double>(x.size(), 0.0), {}};
-        if (k > 1) for (std::size_t i = 0; i < x.size(); ++i) direction.composition[i] = (i == k - 2) - x[i];
-        const auto batch = model.pressure_actions(T, P, x, branch, {PropertyObservable::LogFugacityCoefficient}, {direction});
-        double action = k == 1 ? dnu / P : 0.0;
-        for (std::size_t i = 0; i < x.size(); ++i) if (nu[i] != 0) {
-            const auto& item = batch.results.at(i);
-            if (!item.action) {
-                row.pressure_cause = solved_state_status_name(solved_state_status(item.status));
-                row.log_pressure_quotient_actions.clear(); return;
+    for (std::size_t k = 0; k < x.size() + 2; ++k) {
+        try {
+            PressureActionDirection direction{double(k == 0), double(k == 1), std::vector<double>(x.size(), 0.0), {}};
+            if (k > 1) for (std::size_t i = 0; i < x.size(); ++i) direction.composition[i] = (i == k - 2) - x[i];
+            const auto batch = model.pressure_actions(T, P, x, branch, {PropertyObservable::LogFugacityCoefficient}, {direction});
+            std::optional<double> action = k == 1 ? dnu / P : 0.0;
+            for (std::size_t i = 0; i < x.size(); ++i) if (nu[i] != 0) {
+                const auto& item = batch.results.at(i);
+                if (!item.action) {
+                    if (row.pressure_cause.empty()) row.pressure_cause = solved_state_status_name(solved_state_status(item.status));
+                    action.reset();
+                    break;
+                }
+                *action += nu[i] * (*item.action + (k > 1 ? double(i == k - 2) / x[i] - 1.0 : 0.0));
             }
-            action += nu[i] * (*item.action + (k > 1 ? double(i == k - 2) / x[i] - 1.0 : 0.0));
+            row.log_pressure_quotient_actions[k] = action;
+        } catch (const std::exception& error) {
+            if (row.pressure_cause.empty()) row.pressure_cause = error.what();
         }
-        row.log_pressure_quotient_actions[k] = action;
-    } } catch (const std::exception& error) {
-        row.pressure_cause = error.what(); row.log_pressure_quotient_actions.clear();
     }
 }
 
@@ -102,7 +104,8 @@ std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* m
             if (found != referenced.end()) {
                 const auto k = static_cast<std::size_t>(found - referenced.begin());
                 const auto& declaration = *problem.source_reference;
-                row.reference_pressure_pa = references[k].reference_pressure_pa.value_or(*result.pressure);
+                row.standard_pressure_pa = references[k].reference_pressure_pa;
+                row.reference_pressure_pa = row.standard_pressure_pa.value_or(*result.pressure);
                 row.basis = references[k].source_basis == ReferenceSourceBasis::CommonMolalityInfiniteDilution
                     ? "common-molality-infinite-dilution; EOS single-ion convention" : "raw-mole-fraction-species-reference; EOS single-ion convention";
                 if (diagnostics[k].status != NeutralReferenceStatus::Available) row.cause = diagnostics[k].message;
