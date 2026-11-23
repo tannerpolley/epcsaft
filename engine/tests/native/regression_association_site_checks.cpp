@@ -345,8 +345,14 @@ void fit_failure_records() {
     first.observed = *reference.value;
     request.weights = {1., 1.};
 
+    auto partial_pivot_bubble = first;
+    partial_pivot_bubble.problem.feed.values = {0.25, 0.75};
+    CHECK(predict_validated(model, partial_pivot_bubble).value);
+
     auto refused_bubble = first;
     refused_bubble.problem.feed.values = {0.2, 0.8};
+    // The default pressure seed now recovers. A 10 kPa seed tests the terminal path.
+    refused_bubble.problem.pressure = FreeValue::variable(1e4);
     const auto refused_reference = predict_validated(model, refused_bubble);
     CHECK(!refused_reference.value && refused_reference.first_numerical_failure
         && refused_reference.first_numerical_failure->stop == core::Stop::converged_to_floor
