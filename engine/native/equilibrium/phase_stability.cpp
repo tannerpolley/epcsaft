@@ -47,8 +47,11 @@ void count_driver(Quantities& work, const EquilibriumResult& result, const char*
     work["hessian_calls"] += result.hessian_calls;
 }
 
-DensityRoot stability_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& w, PhaseKind kind) {
-    return solve_density(model, T, P, w, kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor, std::nullopt);
+template <bool TrialStart = false>
+DensityRoot stability_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& w, PhaseKind kind,
+    double start = 0.0) {
+    const auto branch = kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor;
+    return solve_density<TrialStart>(model, T, P, w, branch, TrialStart ? std::optional{start} : std::nullopt);
 }
 
 void packing_admission(double eta) {
@@ -59,6 +62,7 @@ void packing_admission(double eta) {
 // ALG-STABILITY, EqID michelsen_modified_tangent_plane (all-neutral, non-reacting systems); empty: the driver fallback.
 // `limits` (#987) is charged before every iteration, point and Hessian; a refusal ends the trial with its work so far.
 using TrialPoint = std::pair<PhasePoint, double>;  // composition and packing fraction; dual -ln sum W
+template <bool TrialStart>
 std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, double T, double P, const PhaseSpec& phase,
     const std::vector<double>& seed, double seed_density, const std::vector<double>& shift, StabilityTrial& trial, Quantities& work,
     const DriverLimits* limits = nullptr) {
@@ -70,16 +74,16 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const auto n = static_cast<Eigen::Index>(S.size());
     struct Iterate { Eigen::VectorXd W, g; std::vector<double> w; double density = 0.0, objective = 0.0; };
     auto& o = trial.optimizer;
-    bool first = true;
-    const auto at = [&](Eigen::VectorXd W) {
-        Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0)};
+    const auto at = [&](Eigen::VectorXd W, bool first = false) {
+        Iterate p{std::move(W), Eigen::VectorXd(n), std::vector<double>(seed.size(), 0.0), seed_density};
         for (Eigen::Index a = 0; a < n; ++a) p.w[S[a]] = p.W(a) / p.W.sum();
         if (limits) charge(limits->evaluations, limits->evaluation_cap);
         ++o.evaluations;
-        if (first && p.w == seed) p.density = seed_density;
-        else { const auto root = stability_root(model, T, P, p.w, phase.kind);
-            core::retain_first(o.first_numerical_failure, root.first_numerical_failure); p.density = root.molar_density; }
-        first = false;
+        if (!first || p.w != seed) {
+            const auto root = stability_root<TrialStart>(model, T, P, p.w, phase.kind, seed_density);
+            core::retain_first(o.first_numerical_failure, root.first_numerical_failure);
+            p.density = root.molar_density;
+        }
         packing_admission(model.packing_fraction_coefficient(T, p.w) * p.density);
         const auto d = model.evaluate(T, 1.0 / p.density, p.w, DerivativeOrder::FixedParameterGradient);
         core::retain_first(o.first_numerical_failure, d.first_numerical_failure);
@@ -92,8 +96,9 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
     const auto& criterion = policy::EQUILIBRIUM_ROW_RESIDUAL;
     std::optional<TrialPoint> result;
     try {
-        auto p = at(Eigen::Map<const Eigen::VectorXd>(seed.data(), static_cast<Eigen::Index>(seed.size()))(S));
-        while (p.g.lpNorm<Eigen::Infinity>() > criterion.value && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
+        auto p = at(Eigen::Map<const Eigen::VectorXd>(seed.data(), static_cast<Eigen::Index>(seed.size()))(S), true);
+        while (p.g.template lpNorm<Eigen::Infinity>() > criterion.value && o.iterations < policy::EQUILIBRIUM_MAX_ITERATIONS.value) {
+            if constexpr (TrialStart) seed_density = p.density;
             std::optional<Iterate> q;
             if (limits) charge(limits->consumed, limits->iterations);
             if (o.iterations++ >= policy::TANGENT_PLANE_SUBSTITUTIONS.value) {
@@ -109,7 +114,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
                 const Eigen::LLT<Eigen::MatrixXd> factor(H);
                 if (factor.info() != Eigen::Success) core::retain_first(o.first_numerical_failure, [&] {
                     core::Convergence r; r.cause = "tangent-plane matrix not positive definite";
-                    r.residual = p.g.lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
+                    r.residual = p.g.template lpNorm<Eigen::Infinity>(); r.iterations = o.iterations;
                     return r;
                 });
                 if (factor.info() == Eigen::Success) {
@@ -121,7 +126,7 @@ std::optional<TrialPoint> tangent_plane_trial(const HelmholtzModel& model, doubl
             o.hessian_calls += accepted;
             p = accepted ? std::move(*q) : at(p.W.array() * (-p.g.array()).exp());
         }
-        const double residual = p.g.lpNorm<Eigen::Infinity>();
+        const double residual = p.g.template lpNorm<Eigen::Infinity>();
         const auto stop = core::classify(residual, criterion, std::nullopt, std::nullopt, true);  // converged or the cap
         o.convergence = core::Convergence{residual, {std::shared_ptr<const policy::Tolerance>{}, &criterion}, std::nullopt, std::nullopt, std::nullopt, o.iterations,
             o.evaluations, stop};
@@ -1368,7 +1373,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     if (!fast) { report_work(report.work, work); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
-                const bool native = !c.has_ions && !c.has_reaction && !options.evaluate_supplied_trials;
+                const auto native = c.has_ions || c.has_reaction || options.evaluate_supplied_trials ? nullptr
+                    : c.model->has_association() ? tangent_plane_trial<true> : tangent_plane_trial<false>;
                 CompiledSystem compiled;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
                 const auto compile = [&] {
                     if (options.evaluate_supplied_trials) compiled = supplied_system(systems, *c.model,
@@ -1380,7 +1386,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (!native) compile();
                 core::Scope scope("tangent_plane_trial");
                 ++report.work["trial_invocations"];
-                const auto found = native ? tangent_plane_trial(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
+                const auto found = native ? native(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
                     trial, report.work, limits) : std::nullopt;
                 if (limits) limits->check();  // an interrupted trial starts no driver fallback
                 if (native && !found) compile();
