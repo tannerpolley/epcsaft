@@ -583,8 +583,10 @@ void association_equations_match_closed_forms_and_limits() {
     const auto one_sided_delta = epcsaft::association_delta(
         cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter);
     epcsaft::core::Convergence one_sided_record;
+    const auto pair = epcsaft::classify_association(cross, [](std::size_t) { return false; });
     const auto one_sided_fractions = epcsaft::solve_site_fractions(
-        cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter, &one_sided_record);
+        cross_temperature, cross_density, one_sided, cross, cross_sigma, cross_diameter, &one_sided_record,
+        nullptr, &one_sided_delta, false, {}, nullptr, nullptr, nullptr, nullptr, &pair);
     CHECK(one_sided_record.iterations == 0);
     const double q = rho_n * cross.site_multiplicity[1] * one_sided_delta[1];
     const auto one_sided_inputs = recording_support::fields({
@@ -592,6 +594,99 @@ void association_equations_match_closed_forms_and_limits() {
         recording_support::field("K_AB", q)});
     record("limit-absent-cross-x-a", "site_fraction", one_sided_fractions[0], 1.0 / (1.0 + q), one_sided_inputs);
     record("limit-absent-cross-x-b", "site_fraction", one_sided_fractions[1], 1.0, one_sided_inputs);
+}
+
+void kraska_model_iv() {
+    using namespace epcsaft;
+    auto p = two_site_binary();
+    // Use the shuffled order (u, v, v, u), and make a, b, c, d = 1/2, 3, 2, 8.
+    p.site_component = {0, 1, 1, 0};
+    p.site_multiplicity = {1, 1, 1, 1};
+    p.association_active = {0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 0};
+    p.association_energy_over_k.assign(16, 0);
+    p.association_volume.assign(16, 0);
+    const auto plan = classify_association(p, [](std::size_t) { return false; });
+    const auto broken = classify_association(p, [](std::size_t edge) { return edge == 1; });
+    CHECK(broken.strategy == AssociationPlan::General);
+    const auto mismatch = [](Parameters copy) {
+        copy.temperature_law_slot.push_back({static_cast<int>(TemperatureLaw::AssociationEnergyOverK), 1, 0});
+        return classify_association(copy, [](std::size_t) { return false; });
+    };
+    CHECK(mismatch(p).strategy == AssociationPlan::General);
+    constexpr double t = 300, rho = 10000;
+    const double density = rho * NUMBER_DENSITY_PER_ANGSTROM3;
+    const std::vector<double> seed{0.56, 0.31, 0.28, 0.52}, reference{0.5, 0.25, 0.25, 0.5};
+    const auto sigma = segment_sigma(t, p), diameter = segment_diameter(t, p, sigma);
+    const auto compare = [](const std::string& id, double value, double reference, double tolerance) {
+        recording_support::compare(id, "mass_action", "1", value, reference,
+            recording_support::Rule::Absolute, tolerance, 0.0, "Kraska Model IV Eqs. 15–18");
+    };
+    // In the middle case ad = bc, so the quartic coefficient cancels.
+    for (const auto& [name, a, b, c, d] : {std::tuple{"quartic", 0.5, 3.0, 2.0, 8.0},
+             std::tuple{"degree-drop", 0.5, 3.0, 1.5, 9.0}, std::tuple{"zero-cross", 2.0, 0.0, 0.0, 12.0}}) {
+        const double x0 = b != 0 ? c / (b + c) : 0.4;
+        const std::vector<double> x{x0, 1 - x0};
+        std::vector<double> strength(16);
+        const auto bond = [&](int i, int j, double delta) { strength[4*i+j] = strength[4*j+i] = delta; };
+        bond(0, 3, a / (density * x[0])); bond(1, 2, d / (density * x[1]));
+        bond(0, 1, b / (density * x[1])); bond(2, 3, b / (density * x[1]));
+        AssociationAction accepted;
+        const auto solve = [&](const AssociationPlan* strategy) {
+            return solve_site_fractions(t, rho, x, p, sigma, diameter, nullptr, &seed, &strength,
+                false, {}, nullptr, nullptr, nullptr, &accepted, strategy);
+        };
+        const auto general = solve(nullptr), reduced = solve(&plan);
+        CHECK(accepted.strategy == AssociationPlan::BalancedBinary);
+        const auto rows = association_residuals(rho, x, p, reduced, strength);
+        const std::string id = std::string(name) + "/";
+        for (std::size_t site = 0; site < seed.size(); ++site) {
+            compare(id + "X/" + std::to_string(site), reduced[site], reference[site], 1e-12);
+            compare(id + "Newton/" + std::to_string(site), reduced[site], general[site], 1e-12);
+            compare(id + "residual/" + std::to_string(site), rows[site], 0.0, policy::ASSOCIATION_RESIDUAL.value);
+        }
+        if (b != 0) {
+            const double v = reduced[1], r = 1 - v - d*v*v, z = c*v;
+            compare(id + "polynomial", a*r*r + (1+b*v)*z*r - z*z, 0.0, 1e-12);
+        }
+        if (d == 8.0) {
+            // Violate the supplied strength's declared symmetry to exercise the original-row check.
+            strength[1] *= 1.1;
+            const auto expected = solve(nullptr), rejected = solve(&plan);
+            CHECK(accepted.strategy == AssociationPlan::General);
+            for (std::size_t site = 0; site < seed.size(); ++site)
+                compare("rejected-root/" + std::to_string(site), rejected[site], expected[site], 0.0);
+        }
+    }
+}
+
+void huang_radosz_table_vii() {
+    using namespace epcsaft;
+    constexpr double t = 300, rho = 10000;
+    const double delta = 1.0 / (rho * NUMBER_DENSITY_PER_ANGSTROM3);
+    const auto p0 = two_site_binary();
+    const auto sigma = segment_sigma(t, p0), diameter = segment_diameter(t, p0, sigma);
+    const double golden = (std::sqrt(5.0) - 1) / 2.0;
+    const double minority_4b = 2.0 / (3.0 + std::sqrt(13.0));
+    const auto check = [&](const std::string& id, std::vector<int> m, const std::vector<double>& fractions) {
+        auto p = p0;
+        p.site_component.assign(m.size(), 0);
+        p.site_multiplicity = std::move(m);
+        p.association_active = fractions.size() == 1 ? std::vector<int>{1} : std::vector<int>{0, 1, 1, 0};
+        std::vector<double> strength;
+        for (int edge : p.association_active) strength.push_back(edge * delta);
+        const auto plan = classify_association(p, [](std::size_t) { return false; });
+        const auto got = solve_site_fractions(t, rho, {1.0, 0.0}, p, sigma, diameter, nullptr, nullptr,
+            &strength, false, {}, nullptr, nullptr, nullptr, nullptr, &plan);
+        for (std::size_t i = 0; i < got.size(); ++i)
+            recording_support::compare(id + "/" + std::to_string(i), "site_fraction", "1", got[i], fractions[i],
+                recording_support::Rule::Absolute, 1e-12, 0.0, "Huang–Radosz Table VII");
+    };
+    check("1A", {1}, {golden});
+    check("2B", {1, 1}, {golden, golden});
+    check("2A", {2}, {0.5});
+    check("4C", {2, 2}, {0.5, 0.5});
+    check("3B", {2, 1}, {1.0 / std::sqrt(2.0), std::sqrt(2.0) - 1.0});
+    check("4B", {3, 1}, {1.0 / (1.0 + minority_4b), minority_4b});
 }
 
 // A term that is switched off contributes nothing, whatever else is in the
@@ -1695,6 +1790,8 @@ int main(int argc, char** argv) {
         {{"native.contributions.p4", "P4"}, association_solve_satisfies_mass_action},
         {{"native.contributions.association-unit-ceiling", "association-unit-ceiling"}, association_unit_ceiling},
         {{"native.contributions.c2", "C2"}, association_equations_match_closed_forms_and_limits},
+        {{"native.contributions.kraska-model-iv", "Kraska"}, kraska_model_iv},
+        {{"native.contributions.huang-radosz-table-vii", "HuangRadosz"}, huang_radosz_table_vii},
         {{"native.contributions.c3", "C3"}, electrolyte_born_and_dielectric_match_independent_equations},
         {{"native.contributions.p5", "P5"}, inactive_terms_contribute_nothing},
         {{"native.contributions.p6", "P6"}, same_sign_exclusion_is_a_limit},

@@ -7,6 +7,7 @@
 #include "core/scalar.hpp"
 #include "core/trace.hpp"
 #include "core/linear_error.hpp"
+#include "contributions/association_plan.hpp"
 #include "contributions/helmholtz.hpp"
 
 #include <Eigen/Dense>
@@ -189,10 +190,135 @@ inline bool solve_linear(
     return true;
 }
 
-struct AssociationPair {
-    std::size_t a, b;
-    double r, discriminant;
+// Partition the admitted pair or square and retain its original-order scatter map.
+template<class ActiveEdge>
+AssociationPlan classify_association(const Parameters& p, ActiveEdge active_edge) {
+    AssociationPlan plan;
+    const auto n = p.site_count();
+    if (!n) return plan;
+    const auto& mask = p.association_active;
+    std::size_t edges = 0, first = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+        std::size_t degree = 0;
+        for (std::size_t j = 0; j < n; ++j) if (mask[i * n + j]) {
+            if (edges++ == 0) first = i * n + j;
+            ++degree;
+        }
+        plan.one_partner_per_site &= degree == 1;
+    }
+    plan.has_edges = edges != 0;
+    const auto i = first / n, j = first % n;
+    if (edges == 2 && i != j && mask[j * n + i]) {
+        plan.strategy = AssociationPlan::ReciprocalPair;
+        plan.sites = {i, j};
+    }
+    if (n != 4 || edges != 8 || p.component_count() != 2
+        || !p.site_pathway.empty() || !p.site_correction.empty()) return plan;
+    std::array<std::size_t, 4> map{};
+    std::array<std::size_t, 2> count{};
+    for (std::size_t k = 0; k < n; ++k) {
+        const auto component = p.site_component[k];
+        if (count[component] == 2) return plan;
+        map[2 * component + count[component]++] = k;
+    }
+    const auto [a, ap, b, bp] = map;
+    const auto slot = [n](std::size_t x, std::size_t y) { return std::min(x, y) * n + std::max(x, y); };
+    const auto ab = slot(a, ap), cd = slot(b, bp);
+    if (!mask[ab] || !mask[cd] || p.site_multiplicity[a] != p.site_multiplicity[ap]
+        || p.site_multiplicity[b] != p.site_multiplicity[bp]) return plan;
+    // Label the second component so both cross edges connect opposite polarities.
+    if (!mask[a * n + bp]) std::swap(map[2], map[3]);
+    const auto left = slot(a, map[3]), right = slot(ap, map[2]);
+    if (!mask[left] || mask[left] != mask[right] || active_edge(left) || active_edge(right)
+        || p.association_energy_over_k[left] != p.association_energy_over_k[right]
+        || p.association_volume[left] != p.association_volume[right]) return plan;
+    // Cross edges share component geometry and Lij. Association law IDs and rule
+    // dependencies are the remaining inputs to the two strength functions.
+    const auto signature = [&](std::size_t edge) {
+        std::array<int, 5> key{-1, -1, -1, -1, -1};
+        for (const auto& [target, index, law] : p.temperature_law_slot)
+            if ((target == int(TemperatureLaw::AssociationEnergyOverK) || target == int(TemperatureLaw::AssociationVolume))
+                && std::size_t(index) == slot(edge / n, edge % n))
+                key[target - int(TemperatureLaw::AssociationEnergyOverK)] = law;
+        for (const auto& [out, reverse, first, second, correction] : p.association_thermal_rule)
+            if (std::size_t(out) == edge || std::size_t(reverse) == edge)
+                key = {-1, -1, std::min(first, second), std::max(first, second), correction};
+        return key;
+    };
+    if (signature(a * n + map[3]) != signature(ap * n + map[2])
+        || signature(map[3] * n + a) != signature(map[2] * n + ap)) return plan;
+    plan.strategy = AssociationPlan::BalancedBinary;
+    plan.sites = map;
+    return plan;
+}
+
+struct AssociationAction {
+    AssociationPlan::Strategy strategy = AssociationPlan::General;
+    std::array<std::size_t, 4> sites{};
+    std::array<double, 4> coefficients{};
+    std::size_t iterations = 0;
+
+    void pair_tangent(double x, double y, double dq, double dr, double& dx, double& dy) const {
+        const double r = coefficients[0], disc = coefficients[1];
+        dx = -x * ((dq - dr) + x * dr) / disc;
+        dy = -y * y * (x * dr + r * dx);
+    }
+
+    template<class Read, class Write>
+    bool tangent(Read negative_partial, Write set) const {
+        if (strategy != AssociationPlan::BalancedBinary) return false;
+        const auto [i, ip, j, jp] = sites;
+        const auto [inverse, ub, vc, slope] = coefficients;
+        if (negative_partial(i) != negative_partial(ip) || negative_partial(j) != negative_partial(jp)) return false;
+        const double fixed_v = negative_partial(i) * inverse;
+        const double dv = (negative_partial(j) - vc * fixed_v) / slope;
+        const double du = fixed_v - (ub * inverse) * dv;
+        if (!std::isfinite(du) || !std::isfinite(dv)) return false;
+        set(i, du); set(ip, du); set(j, dv); set(jp, dv);
+        return true;
+    }
 };
+
+template<class Coupling>
+AssociationAction association_candidate(const AssociationPlan& plan, Coupling coupling,
+    std::vector<double>& next, std::size_t sites, std::size_t budget) {
+    auto [i, ip, j, jp] = plan.sites;
+    if (plan.strategy == AssociationPlan::ReciprocalPair) {
+        double q = coupling(i, ip), r = coupling(ip, i);
+        if (q < r) { std::swap(i, ip); std::swap(q, r); }
+        // Chapman et al. (1990), Eqs. 15 and 22; Avlund (2011), §2.2.
+        const double c = 1.0 + (q - r), disc = std::hypot(c, 2.0 * std::sqrt(r));
+        next.assign(sites, 1.0);
+        next[i] = 1.0 / (0.5 * c + 0.5 * disc);
+        next[ip] = 1.0 / (1.0 + r * next[i]);
+        return {plan.strategy, {i, ip}, {r, disc}};
+    }
+    if (plan.strategy == AssociationPlan::BalancedBinary) {
+        const double a = coupling(i, ip), b = coupling(i, jp), c = coupling(j, ip), d = coupling(j, jp);
+        const auto valid = [](double k) { return k >= 0.0 && std::isfinite(k); };
+        if (!(valid(a) && valid(b) && valid(c) && valid(d))) return {};
+        // Kraska Model IV, Eqs. 15–16. Retain the positive denominator through the degree drop.
+        const auto root = [](double s, double twice_sqrt) { return 1.0 / (0.5 * s + 0.5 * std::hypot(s, twice_sqrt)); };
+        const double twice_sqrt_a = 2.0 * std::sqrt(a);
+        double lo = 0.0, hi = 1.0, v = root(1.0, 2.0 * std::sqrt(d));
+        for (std::size_t k = 0; k < budget; ++k) {
+            const double s = 1.0 + b * v, u = root(s, twice_sqrt_a), twice_au = 2.0 * (a * u);
+            const double inverse = 1.0 / (s + twice_au);
+            const double h = v * (1.0 + c * u + d * v) - 1.0;
+            const double slope = 1.0 + 2.0 * (d * v) + (c * u) * ((1.0 + twice_au) * inverse);
+            const double trial = v - h / slope;
+            if (std::abs(h) <= sites * std::numeric_limits<double>::epsilon() || trial == v) {
+                next.resize(sites);
+                next[i] = next[ip] = u;
+                next[j] = next[jp] = v;
+                return {plan.strategy, plan.sites, {inverse, u * b, v * c, slope}, k};
+            }
+            if (h < 0.0) lo = v; else hi = v;
+            v = lo < trial && trial < hi ? trial : lo + 0.5 * (hi - lo);
+        }
+    }
+    return {};
+}
 
 struct AssociationWorkspace {
     AssociationStrengthWorkspace<double> strength;
@@ -222,9 +348,9 @@ inline std::vector<double> solve_site_fractions(
     bool pair_start = false,
     const policy::SolverOptions& options = {}, std::optional<core::Convergence>* first_numerical_failure = nullptr,
     const std::array<double, 4>* prepared = nullptr, AssociationWorkspace* workspace = nullptr,
-    std::optional<AssociationPair>* accepted_pair = nullptr
+    AssociationAction* accepted = nullptr, const AssociationPlan* plan = nullptr
 ) {
-    if (accepted_pair) accepted_pair->reset();
+    if (accepted) accepted->strategy = AssociationPlan::General;
     std::optional<core::Convergence> local_first;
     auto& first = first_numerical_failure ? *first_numerical_failure : local_first;
     if (prepared) (void)packing_fraction_from_geometry(molar_density, (*prepared)[3]);
@@ -317,35 +443,23 @@ inline std::vector<double> solve_site_fractions(
         return true;
     };
 
-    const auto& mask = parameters.association_active;
-    const auto active = [](int edge) { return edge != 0; };
-    if (mask.size() == sites * sites && std::count_if(mask.begin(), mask.end(), active) == 2) {
-        const std::size_t edge = std::find_if(mask.begin(), mask.end(), active) - mask.begin();
-        std::size_t a = edge / sites, b = edge % sites;
-        if (a != b && mask[b * sites + a]) {
-            const auto coupling = [&](std::size_t i, std::size_t j) {
-                return number_density * mole_fractions[parameters.site_component[j]]
-                    * parameters.site_multiplicity[j] * delta[i * sites + j];
-            };
-            double q = coupling(a, b), r = coupling(b, a);
-            if (q < r) { std::swap(a, b); std::swap(q, r); }
-            // Chapman et al. (1990), DOI 10.1021/ie00104a021, Eqs. 15 and 22.
-            // Avlund (2011), §2.2, gives the 2 (1:1) quadratic root.
-            const double c = 1.0 + (q - r);
-            const double discriminant = std::hypot(c, 2.0 * std::sqrt(r));
-            next.assign(sites, 1.0);
-            next[a] = 1.0 / (0.5 * c + 0.5 * discriminant);
-            next[b] = 1.0 / (1.0 + r * next[a]);
-            if (in_domain(next) && (residual_norm = residual_infinity_norm(next)) <= tolerance) {
-                const auto convergence = make_record(residual_norm, 0, core::Stop::converged, false);
-                if (record) *record = convergence;
-                scope.finish(convergence);
-                scope.probe("site_fractions", next);
-                if (accepted_pair) *accepted_pair = AssociationPair{a, b, r, discriminant};
-                fractions.swap(next);
-                return fractions;
-            }
+    if (plan && plan->strategy != AssociationPlan::General) {
+        const auto coupling = [&](std::size_t i, std::size_t j) {
+            return number_density * mole_fractions[parameters.site_component[j]]
+                * parameters.site_multiplicity[j] * delta[i * sites + j];
+        };
+        const auto action = association_candidate(*plan, coupling, next, sites, max_iterations);
+        if (action.strategy != AssociationPlan::General
+            && in_domain(next) && (residual_norm = residual_infinity_norm(next)) <= tolerance) {
+            const auto convergence = make_record(residual_norm, action.iterations, core::Stop::converged, false);
+            if (record) *record = convergence;
+            scope.finish(convergence);
+            scope.probe("site_fractions", next);
+            if (accepted) *accepted = action;
+            fractions.swap(next);
+            return fractions;
         }
+        if (plan->strategy == AssociationPlan::BalancedBinary) evaluations = 0;
     }
 
     bool full_pivot = false;

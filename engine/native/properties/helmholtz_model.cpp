@@ -342,6 +342,8 @@ struct ActionContext final {
     double coefficient_residual = 0.0;
     std::vector<double> planned_output = std::vector<double>(tape.function.Range());
 
+    const AssociationAction* association = nullptr;
+
     void run() {
         for (auto& [key, entry] : paths) {
             if (!entry.outputs.empty()) continue;
@@ -353,7 +355,7 @@ struct ActionContext final {
                 action_coefficients(point, molar_density,
                     selected, temperature, volume, entry.order),
                 entry.order, factorization, &solves, &forward_sweeps,
-                &coefficient_residual, &entry.outputs);
+                &coefficient_residual, &entry.outputs, nullptr, nullptr, association);
         }
         planning = false;
     }
@@ -1018,6 +1020,10 @@ HelmholtzModel::HelmholtzModel(
                     "active_parameter duplicate");
         }
     }
+    association_plan_ = classify_association(parameters_, [&](std::size_t edge) {
+        return seen.count({ParameterFamily::AssociationEnergyOverK, edge})
+            || seen.count({ParameterFamily::AssociationVolume, edge});
+    });
 }
 
 // Residual Helmholtz energy as a Taylor series in molar density at fixed T and x; Fixed = Taylor<1> adds
@@ -1220,10 +1226,10 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     std::optional<core::Convergence> first;
     auto& delta = scratch.association.delta;
     delta = central_strength(parameters_, temperature, density, composition, geometry, std::move(delta), &scratch.association.strength);
-    std::optional<AssociationPair> pair;
+    AssociationAction association;
     result.site_fractions = solve_site_fractions(temperature, density,
         composition, parameters_, geometry.sigma, geometry.diameter,
-        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association, &pair);
+        &site_record, nullptr, &delta, false, solver_options_, &first, nullptr, &scratch.association, &association, &association_plan_);
     const auto& sites = result.site_fractions;
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));
@@ -1302,15 +1308,15 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         bool have_site_sensitivity = false;
         // Traced calls retain the order of the gradient and Hessian observations.
         if (isothermal_hessian && !phase_gradient && !scope.on() && width <= sites_count) {
-            result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization, &site_sensitivity).hessian;
+            result.hessian = isothermal(temperature, volume, amounts, &sites, &factorization, &site_sensitivity, &association).hessian;
             have_site_sensitivity = site_sensitivity.allFinite();
         }
         if (!have_site_sensitivity) have_site_sensitivity = [&] {
-            if (!pair || blocks || point_size != 2 + components
+            if (association.strategy != AssociationPlan::ReciprocalPair || blocks || point_size != 2 + components
                 || std::any_of(parameters_.charge_number.begin(), parameters_.charge_number.end(), [](int z) { return z != 0; }))
                 return false;
             using D = Taylor<1>;
-            const auto [a, b, r, discriminant] = *pair;
+            const auto a = association.sites[0], b = association.sites[1];
             const std::vector<D> sigma(geometry.sigma.begin(), geometry.sigma.end());
             const std::vector<D> diameter(geometry.diameter.begin(), geometry.diameter.end());
             std::vector<D> x(components);
@@ -1334,10 +1340,8 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                     return (rho * NUMBER_DENSITY_PER_ANGSTROM3 * x[parameters_.site_component[j]]
                         * parameters_.site_multiplicity[j] * strength[i * sites_count + j]).c[1];
                 };
-                // Differentiate the accepted reciprocal-pair polynomial in its original orientation.
-                const double dq = coupling(a, b), dr = coupling(b, a);
-                site_sensitivity(a, k) = -sites[a] * ((dq - dr) + sites[a] * dr) / discriminant;
-                site_sensitivity(b, k) = -sites[b] * sites[b] * (sites[a] * dr + r * site_sensitivity(a, k));
+                association.pair_tangent(sites[a], sites[b], coupling(a, b), coupling(b, a),
+                    site_sensitivity(a, k), site_sensitivity(b, k));
             }
             return site_sensitivity.allFinite();
         }();
@@ -1373,7 +1377,14 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = partial[coordinates[k]];
             }
         }
-        if (!have_site_sensitivity && sites_count != 0) site_sensitivity = factorization.solve(-partials);
+        if (!have_site_sensitivity && sites_count != 0) {
+            if (association.strategy == AssociationPlan::BalancedBinary) {
+                for (std::size_t k = 0; k < width; ++k)
+                    if (!association.tangent([&](std::size_t row) { return -partials(row, k); },
+                        [&](std::size_t row, double dx) { site_sensitivity(row, k) = dx; }))
+                        site_sensitivity.col(k) = factorization.solve(-partials.col(k));
+            } else site_sensitivity = factorization.solve(-partials);
+        }
         for (std::size_t k = 0; k < width; ++k) {
             auto& derivative = result.gradient[coordinates[k]];
             derivative = raw_gradient[coordinates[k]];
@@ -1398,7 +1409,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         result.gradient_floor = (diagonal.asDiagonal() * site_sensitivity).cwiseAbs().colwise().sum().maxCoeff() * site_residual;
     }
     if (retain_site_sensitivity) result.site_sensitivity = site_sensitivity;
-    const auto complete = [this, order, isothermal_hessian, blocks, site_residual](
+    const auto complete = [this, order, isothermal_hessian, blocks, site_residual, association](
         HelmholtzDerivatives& out, bool defer, const auto& coordinates, const auto& point, const auto& weights,
         const auto& site_sensitivity, const Eigen::FullPivLU<Eigen::MatrixXd>* factorization) {
         const auto& sites = out.site_fractions;
@@ -1407,7 +1418,7 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         ++counters_.hessian_calls;
         if (isothermal_hessian) {
             if (out.hessian.empty())
-                out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization).hessian;
+                out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization, nullptr, &association).hessian;
         } else {
             out.hessian.assign(size * size, 0.0);
             auto& direction = evaluation_->direction;
@@ -2123,6 +2134,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     std::optional<core::Convergence> association_refusal;
     PropertyActionStatus association_status = PropertyActionStatus::Available;
     std::vector<double> sites, strength;
+    AssociationAction association;
     const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
     (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, geometry.diameter);  // ideal-only actions too
     if (need_residual) {
@@ -2130,7 +2142,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         strength = central_strength(parameters_, temperature, molar_density, mole_fractions, geometry);
         try {
             sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, geometry.sigma,
-                geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first);
+                geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first, nullptr, nullptr, &association, &association_plan_);
         } catch (const core::ConvergenceFailure& error) {
             retain_density_failure(first, error, "density action association");
             association_refusal = error.record;
@@ -2149,6 +2161,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         tape_->site_values, strength, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
+    context.association = &association;
     context.maximum_order = directions.size()
         + (plan.residual[3] || plan.residual[4] ? 2 : 1);
     const auto result_support = support_status(*this, mole_fractions, all);
@@ -2950,7 +2963,7 @@ LogFugacityTerms HelmholtzModel::log_fugacity_terms(
     const auto sigma = segment_sigma(temperature, parameters_);
     const auto diameter = segment_diameter(temperature, parameters_, sigma);
     const auto sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, sigma, diameter,
-        nullptr, nullptr, nullptr, false, solver_options_);
+        nullptr, nullptr, nullptr, false, solver_options_, nullptr, nullptr, nullptr, nullptr, &association_plan_);
     // Declared pathway blocks are not stationary in X: the association term also carries the implicit site chain,
     // the complete residual gradient less the fixed-site terms. Evaluated before this function records its tape.
     const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
