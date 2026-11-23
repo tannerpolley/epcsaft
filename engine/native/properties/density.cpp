@@ -1182,12 +1182,14 @@ struct Structure final {
     std::optional<double> witness;
 };
 
-std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, bool sibling) {
+template <bool TrialStart>
+std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, bool sibling, double start) {
     try {
         const double ideal = iso.pressure() / (GAS_CONSTANT_J_PER_MOL_K * iso.temperature());
         // Starts by packing fraction: dilute below 0.037, the loop's typical slope minimum near 0.133 and a liquid at 0.38.
         const double vapor_start = std::min(ideal, structured_start(iso, 0.037)), liquid_start = structured_start(iso, 0.38);
         const double loop_start = structured_start(iso, 0.133);
+        const bool use_start = TrialStart && !sibling && start > iso.lower() && start < iso.upper();
         Structure result;
         // Unless a sample already lies inside the loop: a loop sample witnesses the loop and, below P_t, the liquid root.
         const auto loop_sample = [&] {
@@ -1195,10 +1197,11 @@ std::optional<Structure> structured_roots(Isotherm& iso, DensityBranch branch, b
         };
         // Every request checks the liquid structure first, including vapor requests.
         const bool locate_liquid = branch != DensityBranch::Vapor || sibling;
-        result.liquid = liquid_side(iso, liquid_start, locate_liquid);
+        result.liquid = liquid_side(iso, use_start && branch == DensityBranch::Liquid ? start : liquid_start, locate_liquid);
         loop_sample();
         const bool locate_vapor = branch != DensityBranch::Liquid || sibling;
-        result.vapor = vapor_side(iso, locate_vapor ? vapor_start
+        const double vapor = use_start && branch == DensityBranch::Vapor && result.liquid.exists ? start : vapor_start;
+        result.vapor = vapor_side(iso, locate_vapor ? vapor
             : std::min(2.0 * ideal, structured_start(iso, 0.037)), locate_vapor);
         if (!result.vapor.exists && result.liquid.exists && !locate_liquid)
             result.liquid = liquid_side(iso, liquid_start, true);
@@ -1711,14 +1714,15 @@ State properties::close_density(const HelmholtzModel& model, double temperature,
     return model.state_at_pressure(temperature, pressure, composition, branch, {}, false, fixed_parameters);
 }
 
+template <bool TrialStart>
 DensityRoot solve_density(
     const HelmholtzModel& model, double temperature, double pressure,
     const std::vector<double>& mole_fractions, DensityBranch branch,
-    std::optional<double> anchor_density, DensityRoot* sibling_root, DensityScanCache* scan
+    std::optional<double> start, DensityRoot* sibling_root, DensityScanCache* scan
 ) {
     core::CalculationWork::Density work;
     core::Scope scope("solve_density");
-    if (anchor_density.has_value() && sibling_root != nullptr)
+    if (!TrialStart && start.has_value() && sibling_root != nullptr)
         throw std::invalid_argument("density sibling requires an unanchored root search");
     if (!std::isfinite(temperature) || temperature <= 0.0) throw std::invalid_argument("invalid temperature " + core::optional_number(temperature) + " K; need T > 0 K");
     if (!std::isfinite(pressure) || pressure <= 0.0) throw std::invalid_argument("invalid pressure " + core::optional_number(pressure) + " Pa; need finite P > 0 Pa");
@@ -1730,7 +1734,7 @@ DensityRoot solve_density(
         if (!(ideal_density > 0.0) || !std::isfinite(ideal_density) || !std::isfinite(GAS_CONSTANT_J_PER_MOL_K * temperature))
             throw std::domain_error("nonfinite ideal-gas density closure");
         if (branch == DensityBranch::Liquid) throw std::invalid_argument("ideal-gas has only a vapor density root");
-        if (anchor_density && (!std::isfinite(*anchor_density) || *anchor_density <= 0.0))
+        if (!TrialStart && start && (!std::isfinite(*start) || *start <= 0.0))
             throw std::invalid_argument("invalid density anchor");
         DensityRoot root;
         root.molar_density = ideal_density;
@@ -1756,24 +1760,24 @@ DensityRoot solve_density(
     if (!(lower > 0.0) || !(lower < upper)) throw std::runtime_error("density domain is empty");
     std::size_t evaluations = 0;
     DensityRoot result;
-    if (anchor_density.has_value()) {
+    if (!TrialStart && start.has_value()) {
         if (branch == DensityBranch::Unspecified) throw std::invalid_argument("density anchor requires explicit branch");
-        if (!std::isfinite(*anchor_density) || *anchor_density <= 0.0) {
+        if (!std::isfinite(*start) || *start <= 0.0) {
             throw std::invalid_argument("invalid density anchor");
         }
-        if (!(*anchor_density > lower && *anchor_density < upper)) {
+        if (!(*start > lower && *start < upper)) {
             core::Convergence record{0.0, {model.solver_options().owners[policy::density], model.solver_options().criterion(policy::density)}, std::nullopt,
                 std::nullopt, std::nullopt, 0, evaluations, core::Stop::left_domain};
             record.cause = "density anchor outside " + std::to_string(static_cast<int>(branch))
-                + " domain; anchor=" + core::optional_number(*anchor_density) + "; lower=" + core::optional_number(lower)
+                + " domain; anchor=" + core::optional_number(*start) + "; lower=" + core::optional_number(lower)
                 + "; upper=" + core::optional_number(upper);
             throw core::ConvergenceFailure(record);
         }
         result = anchor(series, temperature, pressure, mole_fractions, branch, lower, upper,
-                        *anchor_density, evaluations);
+                        *start, evaluations);
     } else {
         Isotherm iso(series, temperature, pressure, lower, upper, evaluations, scope, scan);
-        const auto structure = structured_roots(iso, branch, sibling_root != nullptr);
+        const auto structure = structured_roots<TrialStart>(iso, branch, sibling_root, start.value_or(0.0));
         std::vector<DensityRoot> stable;
         std::size_t count = 0;
         if (structure) {
@@ -1866,7 +1870,7 @@ DensityRoot solve_density(
     scope.finish(result.convergence);
     return result;
     } catch (const std::exception& error) {
-        if (anchor_density && scope.diagnostics_on()) scope.probe("anchor_failure", {*anchor_density}, 0, error.what());
+        if (!TrialStart && start && scope.diagnostics_on()) scope.probe("anchor_failure", {*start}, 0, error.what());
         const bool raw = dynamic_cast<const BulkPermittivityDomainError*>(&error) != nullptr;
         if (!raw && series.permittivity_refusal.empty()) throw;
         if (raw) core::retain_failure(series.first_numerical_failure, error, "density closure");
@@ -1875,6 +1879,9 @@ DensityRoot solve_density(
             ? series.permittivity_refusal + "; " + message : message, series.first_numerical_failure);
     }
 }
+
+template EPC_API decltype(solve_density<false>) solve_density<false>;
+template EPC_API decltype(solve_density<true>) solve_density<true>;
 
 namespace {
 // Bell and Deiters (2023), doi:10.1021/acs.iecr.2c02916; start domain verified through this reduced temperature.

@@ -12,6 +12,7 @@
 
 #include <Eigen/Dense>
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <deque>
@@ -574,6 +575,10 @@ public:
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
         double temperature_direction, const std::vector<double>& composition_direction) const;
+    bool has_association() const {
+        const auto& edges = parameters_.association_active;
+        return std::any_of(edges.begin(), edges.end(), [](int edge) { return edge != 0; });
+    }
     const Parameters& parameters() const { return parameters_; }
     const std::vector<ActiveParameter>& active_parameters() const { return active_; }
     EPC_API std::vector<double> active_parameter_values() const;
@@ -630,13 +635,15 @@ extern template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::i
 #endif
 
 
+// For TrialStart, the supplied density seeds the cold search instead of selecting local continuation.
+template <bool TrialStart = false>
 EPC_API DensityRoot solve_density(
     const HelmholtzModel& model,
     double temperature,
     double pressure,
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
-    std::optional<double> anchor_density,
+    std::optional<double> start,
     DensityRoot* sibling_root = nullptr,  // unanchored only: the opposite extreme stable root
     DensityScanCache* scan = nullptr
 );

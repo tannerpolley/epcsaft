@@ -2584,8 +2584,7 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
     require(composition.size() == 1 || composition.size() == count, "composition array length");
     for (const auto& row : composition) require(row.size() == parameters_.component_count(), "composition row width");
     const bool fixed_isotherm = at_pressure && count > 1
-        && std::any_of(parameters_.association_active.begin(), parameters_.association_active.end(),
-            [](int edge) { return edge != 0; })
+        && has_association()
         && std::all_of(temperature.begin() + 1, temperature.end(), [&](const double& t) {
             return std::memcmp(&t, temperature.data(), sizeof(double)) == 0;
         }) && std::all_of(composition.begin() + 1, composition.end(), [&](const auto& x) {
