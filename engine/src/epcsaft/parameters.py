@@ -826,10 +826,10 @@ class Parameters:
             "packet": document.get("document_id", ""), "domains": document.get("domains", []),
             "components": component_records,
         }]):
-            source = set(bound_source["components"])
-            chosen = source & set(selected_ids)
+            source_components = set(bound_source["components"])
+            chosen = source_components & set(selected_ids)
             domains = bound_source.get("domains", [])
-            for domain in domains if source == chosen else _selected_domains(document, chosen, domains):
+            for domain in domains if source_components == chosen else _selected_domains(document, chosen, domains):
                 if not chosen or domain.get("kind") == "unknown":
                     continue
                 for field, quantity in (("temperature", _core.DomainQuantity.Temperature),
