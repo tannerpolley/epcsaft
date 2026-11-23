@@ -1301,7 +1301,15 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
         auto& partials = scratch.partials;
         partials.resize(sites_count, width);
-        if (width <= sites_count) {
+        if (width > 1 && width <= sites_count) {
+            auto& direction = scratch.direction;
+            direction.assign(point.size() * width, 0.0);
+            for (std::size_t k = 0; k < width; ++k) direction[coordinates[k] * width + k] = 1.0;
+            const auto first = tape_->function.Forward(1, width, direction);
+            ++counters_.forward;
+            for (std::size_t site = 0; site < sites_count; ++site)
+                for (std::size_t k = 0; k < width; ++k) partials(site, k) = first[(1 + site) * width + k];
+        } else if (width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < width; ++k) {
