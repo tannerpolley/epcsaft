@@ -192,7 +192,8 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
     families: dict[str, tuple[str, Mapping[str, Any]]] = {}
     selected: set[str] = set()
     for packet, names in packets:
-        document = json.loads((Path(root) / packet / "parameters" / "parameters.json").read_text())
+        path = Path(root) / packet / "parameters" / "parameters.json"
+        document = json.loads(path.read_text())
         if document.get("schema") != "epcsaft.parameters" or document.get("schema_version") != 1 or set(document) - _KEYS:
             raise _core.ParameterError(f"{packet} is not a schema 1 parameter document the Engine reads")
         mixing = _cation_mixing(document, [name for _, ids in packets for name in ids])
@@ -207,7 +208,9 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
                 records.append(record)
         chosen = set(names)
         if missing := sorted(chosen - {c["component_id"] for c in document["components"]}):
-            raise _core.ParameterError(f"{packet} has no component {missing[0]}")
+            raise _core.ParameterError(
+                f"{packet} has no component {missing[0]}; see components[].component_id in {path}"
+            )
         selected |= chosen  # a component taken twice is refused by from_mapping as a duplicate component_id
         declared = {record["kind"]: record for record in document.get("model_families", ())}
         for kind in ("base", "association", "electrolyte", "permittivity", "polar"):

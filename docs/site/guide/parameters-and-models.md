@@ -16,8 +16,11 @@ versioned packets below a supplied directory. `parameter_document` exposes the
 combined document before native construction. These calls are documented in
 [parameter inputs](../api/parameters.rst).
 
-The packet root in the quickstart is `data/packets`; it is a checkout path.
-A conda package built from this source includes the two packets described below. Keep the selected packet versions,
+Search the [1.3.2 component index](https://github.com/tannerpolley/epcsaft/blob/v1.3.2/data/docs/parameter-index.md)
+by component name, then use the packet ID and version as `packet/version`.
+Copy the exact `component_id` values from the index or the packet's
+`parameters/parameters.json` (`components[].component_id`). A missing name
+raises `ParameterError` and identifies the packet. Keep the selected packet versions,
 component order, source locators and caller overrides with the calculation.
 A combined document retains materialization source information. A successful
 load establishes mathematical admission, not the validity of extrapolation.
@@ -82,27 +85,33 @@ as unknown; the [limits](../limits.md) explain this distinction.
 
 ## Installed and downloaded packets
 
-A conda package built from this source includes the FeOs Gross–Sadowski 2001 and 2002 packets. Locate
-its packet root and select a component explicitly:
+Conda installs `feos-gross-sadowski-2001/1` for nonassociating fluids and
+`feos-gross-sadowski-2002/1` for associating fluids. In 1.3.2, use
+`Path(epcsaft.__file__).resolve().parent / "data" / "packets"` as the packet
+root. Calling `epcsaft.installed_packet_root()` in 1.3.2 raises
+`AttributeError`, and the misspelled-component message ends at
+`has no component propan`.
 
-```python
-from pathlib import Path
-import epcsaft
+The accessor and the message that points to the valid component names require
+a release after 1.3.2. The accessor returns the same path, which can be absent
+when the installation contains no bundled packets.
 
-packets = Path(epcsaft.__file__).resolve().parent / "data" / "packets"
-hexane = epcsaft.Parameters.from_packets(packets, [("feos-gross-sadowski-2001/1", ["hexane"])])
+```{doctest}
+>>> from pathlib import Path
+>>> import epcsaft
+>>> assert epcsaft.installed_packet_root() == Path(epcsaft.__file__).resolve().parent / "data" / "packets"
+>>> packets = Path("data/packets")  # extracted source or checkout
+>>> epcsaft.Parameters.from_packets(packets, [("feos-gross-sadowski-2001/1", ["propan"])])
+Traceback (most recent call last):
+    ...
+epcsaft._core.ParameterError: feos-gross-sadowski-2001/1 has no component propan; see components[].component_id in data/packets/feos-gross-sadowski-2001/1/parameters/parameters.json
 ```
 
-The public source archive for the installed version also contains `data/packets`.
-Download and extract the matching source archive from the [project releases](https://github.com/tannerpolley/epcsaft/releases),
-then pass its `data/packets` directory to `Parameters.from_packets`:
-
-```python
-source_packets = Path("path/to/extracted/source/data/packets")
-methane = epcsaft.Parameters.from_packets(source_packets, [("gross-sadowski-2001/3", ["methane"])])
-```
-Each packet's `packet.toml` and any
-`parameters/LICENSE-NOTICE.md` state its use terms; follow those terms.
+For other packets, download the [matching source release](https://github.com/tannerpolley/epcsaft/releases)
+and pass its `data/packets` directory to `Parameters.from_packets`. The
+[NaCl quickstart](../quickstart.md#aqueous-nacl-activity) extracts one packet
+from the 1.3.2 archive. Each packet's `packet.toml` and any
+`parameters/LICENSE-NOTICE.md` state its use terms.
 
 The source archive omits the Esper 2023 pure-component (`feos-esper-2023/1`) and
 Rehner 2023 binary (`feos-rehner-2023/1`) packets because their use basis is
@@ -136,6 +145,20 @@ The polar model may select a quadrupole–quadrupole contribution. Only one
 polar choice is active, and dipole–quadrupole mixing is not supported. Gross's
 mixing rule is unsuitable for real mixtures with more than one quadrupolar
 component. The [EOS theory](../theory/eos.md) describes the contribution.
+
+## Caloric data availability
+
+Both installed FeOs packets supply residual EOS parameters and omit ideal-gas
+thermal records. The downloadable Held, Cameretti and Sadowski NaCl packet
+also omits them. Total enthalpy requires an ideal-gas thermal record for each
+component. The [propane quickstart](../quickstart.md#pure-propane-saturation)
+shows the returned `MissingRecord` and `None` for total enthalpy.
+
+The downloadable `nasa-glenn-2002-hda-species/1` packet supplies NASA9
+ideal-gas records for hydrogen, methane, benzene and toluene. Load those
+records separately from the EOS parameters. The
+[methane caloric example](../examples/methane-caloric-properties.ipynb)
+shows how to attach the methane record and read total and residual properties.
 
 ## Composition domain report
 
