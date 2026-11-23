@@ -45,6 +45,8 @@ void check_rank_probe_permittivity_denominator();
 void check_ion_suppression_reacting_liquid_actions();
 void check_tangent_plane_admission();
 void check_prepared_supplied_trials();
+void check_feed_charge_permutation();
+void check_liquid_trial_charge_permutation();
 void check_trace_ion_curvature();
 void check_candidate_publication();
 void check_budget_retry();
@@ -138,6 +140,8 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.rank-probe-permittivity-denominator", "RankProbePermittivityDenominator", "Automatic_fast"}, check_rank_probe_permittivity_denominator},
         {{"native.equilibrium.ion-suppression-reacting-actions", "IonSuppressionReactingActions", "Automatic_fast"}, check_ion_suppression_reacting_liquid_actions},
         {{"native.equilibrium.plane-curvature", "TPD", "Automatic_fast"}, check_tangent_plane_curvature},
+        {{"native.equilibrium.feed-charge-permutation", "feed-charge-permutation", "Automatic_fast"}, check_feed_charge_permutation},
+        {{"native.equilibrium.liquid-trial-charge-permutation", "liquid-trial-charge-permutation", "Automatic_fast"}, check_liquid_trial_charge_permutation},
         {{"native.equilibrium.prepared-supplied-trials", "prepared-supplied-trials", "Automatic_fast"}, check_prepared_supplied_trials},
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},

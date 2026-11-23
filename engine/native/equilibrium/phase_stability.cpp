@@ -750,8 +750,13 @@ std::vector<double> reconstruct_trial_composition(std::vector<double> w,
     if (!(std::isfinite(total) && total > 0.0)) throw std::invalid_argument("trial normalization failed");
     const double tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
     const auto normalized_charge = [&](double charge, auto i) { return charge + z[i] * (w[i] / total); };
-    const bool close_charge = plus && (!keep_charge
+    bool close_charge = plus && (!keep_charge
         || std::abs(std::accumulate(support.begin(), support.end(), 0.0, normalized_charge)) > tolerance);
+    if (close_charge && kind == PhaseKind::Liquid) {
+        std::vector<double> charges(w.size(), 0.0);
+        for (auto i : support) charges[i] = z[i];
+        close_charge = !exact_zero_dot(charges, w);
+    }
     if (close_charge) {
         if (kind == PhaseKind::Vapor) {
             const double shift = 0.5 * (std::log(negative) - std::log(positive));

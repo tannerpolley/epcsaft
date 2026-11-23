@@ -14,6 +14,45 @@
 
 namespace equilibrium_checks {
 
+void check_feed_charge_permutation() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    auto p = properties_support::parameters(7);
+    p.segment_count = {1.2047, 1, 1, 1, 1, 1, 1};
+    p.sigma_constant = {2.7927, 2.8, 3, 3.1, 2.756, 3.2, 3.3};
+    p.dispersion_energy_over_k = {353.95, 230, 230, 210, 170, 180, 190};
+    p.molar_mass_kg_per_mol = {0.01801528, 0.00694, 0.02299, 0.0391, 0.035453, 0.0799, 0.1269};
+    p.charge_number = {0, 1, 1, 1, -1, -1, -1};
+    p.packing_diameter_angstrom = p.debye_huckel_diameter_angstrom = {0, 3, 3, 3, 3, 3, 3};
+    p.relative_permittivity = {78.09, 0, 0, 0, 0, 0, 0};
+    p.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    p.ionic_dispersion = IonicDispersion::ExcludeSameSign;
+    p.permittivity_form = PermittivityForm::IonSuppression;
+    auto problem = equilibrium_support::flash(7);
+    problem.feed.values = {1, 1, 0.1, 0.1, 1, 0.1, 0.1};
+    const HelmholtzModel model(p);
+    const auto original = compile_problem(model, problem).n_feed;
+    CHECK(original == problem.feed.values);
+    const std::vector<std::size_t> order{0, 1, 2, 3, 5, 6, 4};
+    const HelmholtzModel permuted(equilibrium_support::permute_parameters(p, order));
+    problem.feed.values = equilibrium_support::permute_vector(original, order);
+    const auto reordered = compile_problem(permuted, problem).n_feed;
+    CHECK(reordered == problem.feed.values);
+}
+
+void check_liquid_trial_charge_permutation() {
+    using namespace epcsaft::equilibrium;
+    const std::vector<double> weights{1, 0.1, 0.1, 1, 0.1, 0.1};
+    const std::vector<int> charges{1, 1, 1, -1, -1, -1};
+    const std::vector<std::size_t> original{0, 1, 2, 3, 4, 5}, reordered{0, 1, 2, 4, 5, 3};
+    auto normalized = weights;
+    const double total = std::accumulate(weights.begin(), weights.end(), 0.0);
+    for (double& value : normalized) value /= total;
+    CHECK(reconstruct_trial_composition(weights, original, charges) == normalized);
+    CHECK(reconstruct_trial_composition(weights, reordered, charges) == normalized);
+}
+
+
 namespace supplied_records {
 using namespace epcsaft;
 using namespace epcsaft::equilibrium;
