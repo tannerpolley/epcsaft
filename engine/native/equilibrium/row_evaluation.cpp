@@ -369,6 +369,7 @@ std::vector<double> pinned_hessian(
     if (multipliers.empty()) return result;
     if (multipliers.size() != compiled.rows.size())
         throw std::invalid_argument("constraint multiplier count");
+    if (std::all_of(multipliers.begin(), multipliers.end(), [](double value) { return value == 0.0; })) return result;
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
     const auto& parameters = model.parameters();

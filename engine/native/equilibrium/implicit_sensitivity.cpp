@@ -994,7 +994,10 @@ static SolvedStateActionBatch evaluate_action(
         auto enthalpy = request;
         for (auto &o : enthalpy.observables)
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
-        auto ordinary = evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union, nullptr, batch_parameters);
+        // Once the thermal column is retained, a lone Cp row consumes only the mixed derivative.
+        const bool mixed_only = request.observables.size() == 1 && shared && !shared->preparation_failed && shared->thermal_enthalpy.has_value();
+        auto ordinary = mixed_only ? SolvedStateActionBatch{} :
+            evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union, nullptr, batch_parameters);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
@@ -1006,6 +1009,10 @@ static SolvedStateActionBatch evaluate_action(
             shared->thermal_enthalpy = evaluate_action(compiled, central, {{{kind}}, {thermal}}, shared, scope, covering, prepared, parameter_union);
         const auto mixed = center_available ? evaluate_action(compiled, central, {{{kind}}, {thermal, direction}}, shared, scope, covering, prepared)
                                   : SolvedStateActionBatch{};
+        if (mixed_only) {
+            ordinary = mixed;
+            ordinary.results.front().order = request.directions.size();
+        }
         const double dfeed = std::accumulate(direction.feed_amounts_mol.begin(), direction.feed_amounts_mol.end(), 0.0);
         for (std::size_t i = 0; i < ordinary.results.size(); ++i) {
             if (request.observables[i].kind != SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) continue;
@@ -1035,7 +1042,7 @@ static SolvedStateActionBatch evaluate_action(
         if (!shared) return ordinary;
         auto &diagnostics = ordinary.diagnostics;
         for (const auto *part : {&mixed, new_thermal ? static_cast<const SolvedStateActionBatch *>(&*shared->thermal_enthalpy) : nullptr}) {
-            if (!part) continue;
+            if (!part || (mixed_only && part == &mixed)) continue;
             diagnostics.state_factorizations += part->diagnostics.state_factorizations;
             diagnostics.linear_solves += part->diagnostics.linear_solves;
             diagnostics.maximum_energy_order = std::max(diagnostics.maximum_energy_order, part->diagnostics.maximum_energy_order);

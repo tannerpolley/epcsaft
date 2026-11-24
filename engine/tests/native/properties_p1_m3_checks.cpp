@@ -420,6 +420,20 @@ void association_volume_tangent() {
             recording_support::compare(broken ? "cross-association-volume" : "self-association-volume",
                 "site_volume_tangent", "1", actual[i], reference[i],
                 recording_support::Rule::ReferenceOrOne, 0.0, 1e-10, "full implicit mass action");
+
+        // The two signed insertions have the same center and tangent. Check every returned
+        // coefficient against the negative insertion evaluated from order zero.
+        auto inserted = path;
+        inserted.resize(4, std::vector<double>(point.size(), 0.0));
+        inserted[2][0] = -1.0;
+        std::vector<std::vector<double>> expected_output, output;
+        std::vector<double> expected_sites, expected_right;
+        tape->implicit_taylor(inserted, 3, &full, nullptr, nullptr, nullptr, &expected_output, &expected_sites, &expected_right);
+        inserted[2][0] = 1.0;
+        tape->implicit_taylor(inserted, 3, &full, nullptr, nullptr, nullptr, &output, &actual, &right);
+        inserted[2][0] = -1.0;
+        tape->implicit_taylor(inserted, 3, &full, nullptr, nullptr, nullptr, &output, &actual, &right, nullptr, 2);
+        CHECK(output == expected_output && actual == expected_sites && right == expected_right);
     }
 }
 

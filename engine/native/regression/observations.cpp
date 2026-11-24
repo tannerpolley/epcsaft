@@ -476,7 +476,30 @@ Prediction predict(
             final_prepared = equilibrium::compile_problem(model, observation.final_problem);
             for (const auto* row : admission) validate_compiled(*row, model, &*prepared, &*final_prepared);
         }
-        auto initial = predict(model, item, start, std::move(prepared));
+        const auto endpoint = [&](bool feed, std::optional<std::size_t>& index) {
+            const bool share = references && !(previous && previous->saturation) && (feed || !start || references->previous_initial);
+            const auto feed_key = [](const Observation& row) {
+                return std::tie(row.temperature, row.pressure, row.composition, row.branch, row.mass_basis);
+            };
+            const auto seed = !feed && start && share ? references->previous_initial : std::nullopt;
+            if (share) for (std::size_t k = 0; k < references->heat.size(); ++k) {
+                const auto& e = references->heat[k];
+                if (e.row.kind == item.kind && seed == e.start &&
+                    (feed ? feed_key(e.row) == feed_key(item) : same_state(e.row, item))) {
+                    index = k;
+                    return e.center;
+                }
+            }
+            auto value = feed ? predict(model, item) : predict(model, item, start, std::move(prepared));
+            if (share && value.status == ObservationStatus::Available) {
+                index = references->heat.size();
+                references->heat.push_back({item, seed, value, {}});
+            }
+            return value;
+        };
+        std::optional<std::size_t> initial_index;
+        auto initial = endpoint(false, initial_index);
+        initial.initial_heat_endpoint = initial_index;
         const auto failed = [&](Prediction& p, const char* source) {
             core::retain_first(p.first_numerical_failure, initial.first_numerical_failure, true);
             core::retain_first(initial.first_numerical_failure, p.first_numerical_failure);
@@ -499,7 +522,7 @@ Prediction predict(
         } else final = predict(model, item, compatible ? initial.solved : std::nullopt, std::move(compiled));
         if (failed(final, "final")) return final;
         item.kind = ObservationKind::FeedEnthalpy;
-        auto feed = predict(model, item);
+        auto feed = endpoint(true, initial.feed_heat_endpoint);
         if (failed(feed, "feed")) return feed;
         initial.enthalpy_difference = *final.value - *initial.value;
         finish(initial, observation, *initial.enthalpy_difference / observation.feed_amount - *feed.value);
@@ -918,7 +941,7 @@ PredictionGradient differentiate(
 
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
-    const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action
+    const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
@@ -1100,7 +1123,14 @@ std::vector<PredictionGradient> differentiate_group(
             item.feed_amount = *prediction.added_amount;
         }
         item.kind = ObservationKind::SystemEnthalpy;
-        auto initial = differentiate_group(model, {&item}, prediction, coordinates).front();
+        const auto endpoint_gradient = [&](auto index, auto calculate) {
+            if (!references || !index) return calculate();
+            auto& gradient = references->heat.at(*index).gradient;
+            if (!gradient) gradient = calculate();
+            return *gradient;
+        };
+        auto initial = endpoint_gradient(prediction.initial_heat_endpoint,
+            [&] { return differentiate_group(model, {&item}, prediction, coordinates).front(); });
         if (initial.status != ObservationStatus::Available) { initial.message = "initial:" + initial.message; return {initial}; }
         auto center = prediction;
         std::swap(center.solved, center.final_solved); std::swap(center.compiled, center.final_compiled);
@@ -1109,7 +1139,7 @@ std::vector<PredictionGradient> differentiate_group(
         core::retain_first(final.first_numerical_failure, initial.first_numerical_failure, true);
         if (final.status != ObservationStatus::Available) { final.message = "final:" + final.message; return {final}; }
         item.kind = ObservationKind::FeedEnthalpy;
-        auto feed = differentiate(model, item, prediction);
+        auto feed = endpoint_gradient(prediction.feed_heat_endpoint, [&] { return differentiate(model, item, prediction); });
         core::retain_first(feed.first_numerical_failure, final.first_numerical_failure, true);
         if (feed.status != ObservationStatus::Available) { feed.message = "feed:" + feed.message; return {feed}; }
         core::retain_first(initial.first_numerical_failure, feed.first_numerical_failure);

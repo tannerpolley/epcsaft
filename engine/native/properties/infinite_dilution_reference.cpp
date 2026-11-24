@@ -125,6 +125,8 @@ ResidualEnergyAction reference_partial_from_state(const HelmholtzModel& model, d
                 direction.parameter.push_back({active.family, active.indices, sign * theta_scale[j - thermal]});
             }
         }
+        // Opposite copies of the same thermal direction have zero higher-order contraction.
+        if (mask && direction.temperature == 0.0 && direction.pressure == 0.0 && direction.parameter.empty()) continue;
         const auto series = model.reference_taylor(temperature, 1.0 / state.molar_density,
             composition, stoichiometry, direction, order, infinite_dilution, nullptr, batch);
         result.status = series.status;
