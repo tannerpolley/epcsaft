@@ -266,15 +266,48 @@ def test_pair_coefficient_domain_follows_override() -> None:
         assert model.state(300, P=1e5, x=[0.5, 0.5]).domain_violations is None
 
 
-def test_omitted_cation_mixing_domain() -> None:
+@pytest.mark.parametrize("document_local", [False, True])
+def test_omitted_cation_mixing_domain(document_local: bool) -> None:
     doc = packet("figiel-2025-chloride-mixture-refit/3")
-    doc["materialization"][0]["domains"].append({"domain_id": "omitted-cation-mixing", "kind": "fit-range",
-                                                "temperature_max": 295, "temperature_unit": "kelvin"})
+    domains = doc["domains"] if document_local else doc["materialization"][0]["domains"]
+    domains.append({"domain_id": "omitted-cation-mixing", "kind": "fit-range",
+                    "temperature_max": 295, "temperature_unit": "kelvin"})
     doc["cation_mixing"]["coefficients"][0]["provenance"] = {"domain_id": "omitted-cation-mixing"}
     model = Mixture(Parameters.from_mapping(doc, components=["water", "sodium-cation", "chloride-anion"]))
     with warnings.catch_warnings():
         warnings.simplefilter("error", DomainWarning)
         assert model.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid").domain_violations is None
+
+
+@pytest.mark.parametrize("deep", [False, True])
+def test_correlation_domain_follows_component_selection(deep: bool) -> None:
+    doc = packet("figiel-2025-reference-electrolytes/3")
+    domain_id = "ethanol-only"
+    doc["domains"].append({"domain_id": domain_id, "kind": "fit-range",
+                           "temperature_max": 295, "temperature_unit": "kelvin"})
+    constant = next(r["constant"] for r in doc["correlations"]
+                    if r["component_id"] == "ethanol" and r["family"] == "relative_permittivity")
+    citation = {"domain_id": domain_id}
+    if deep:
+        constant["value"]["evidence"] = [{"original": {"provenance": [citation]}}]
+    else:
+        constant["provenance"] = citation
+
+    aqueous = ["water", "sodium-cation", "chloride-anion"]
+    narrowed = Mixture(Parameters.from_mapping(doc, components=aqueous))
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always", DomainWarning)
+        state = narrowed.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid")
+    assert len(caught) == 0 and state.domain_violations is None
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert narrowed.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid").domain_violations is None
+
+    selected = Mixture(Parameters.from_mapping(doc, components=[*aqueous, "ethanol"]))
+    records = selected.outside_domains([0.9, 0, 0, 0.1], T=298.15, P=1e5)
+    assert [(r.variable, r.value, r.bound) for r in records if r.domain_id == domain_id] == [
+        ("temperature", 298.15, 295),
+    ]
 
 
 def test_document_domain_with_inherited_materialization() -> None:
