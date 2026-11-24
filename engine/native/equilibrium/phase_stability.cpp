@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
+#include "equilibrium/stability_grid.hpp"
 #include "contributions/helmholtz.hpp"
 
 #include "core/trace.hpp"
@@ -17,6 +18,7 @@
 #include <map>
 #include <memory>
 #include <numeric>
+#include <set>
 #include <string>
 #include <variant>
 
@@ -1597,6 +1599,224 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     auto recovery = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
         static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value));
     return explicit_test(c, result, options, nullptr, options.retry_condensed_refusals ? &recovery : nullptr);
+}
+
+StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumResult& parent,
+    const std::vector<PhaseSpec>& phases, std::uint64_t denominator, std::uint64_t ceiling,
+    bool refine, std::optional<std::size_t> trial_budget) {
+    using namespace stability_grid_detail;
+    core::Scope diagnostic("stability_grid");
+    const auto start = std::chrono::steady_clock::now();
+    if (!denominator || phases.empty() || c.ideal || c.model->parameters().ideal_gas || !c.problem.solids.empty()
+        || c.problem.temperature.free || c.problem.pressure.free)
+        throw std::invalid_argument("stability grid requires a fixed-T/P fluid parent, schedules and a positive denominator");
+    const auto& z = c.model->parameters().charge_number;
+    const auto participating = reaction_participants(z.size(), c.problem.reactions);
+    StabilityGridResult out;
+    out.ceiling = ceiling;
+    out.raw.work = {{"trial_invocations", 0}, {"root_calls", 0}, {"root_evaluations", 0},
+        {"energy_evaluations", 0}, {"finite_split_attempts", 0}};
+    std::vector<std::vector<Vertex>> vertices(phases.size());
+    Integer attempts = 0, multiple = 1;
+    const auto finish = [&] {
+        out.elapsed_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+        return std::move(out);
+    };
+    for (const auto& phase : phases) {
+        auto& row = out.coverage.emplace_back();
+        row.phase = phase;
+        if (phase.kind != PhaseKind::Liquid && phase.kind != PhaseKind::Vapor)
+            throw std::invalid_argument("stability grid requires a liquid or vapor density side");
+        auto support = phase;
+        support.kind = PhaseKind::Liquid;
+        support.support_declared = true;
+        row.phase.support = resolve_support(support, {}, z);
+        auto& list = vertices[out.coverage.size() - 1];
+        for (auto i : row.phase.support) {
+            if (std::find(c.removed_species.begin(), c.removed_species.end(), i) != c.removed_species.end()) {
+                row.omitted_species.push_back(i);
+                continue;
+            }
+            if (!(c.n_feed[i] > 0 || participating[i])) throw std::invalid_argument("grid support outside fed/reaction union");
+            if (!z[i]) list.push_back({i, i, 1, 1});
+            if (z[i] <= 0) continue;
+            for (auto j : row.phase.support) if (z[j] < 0
+                && std::find(c.removed_species.begin(), c.removed_species.end(), j) == c.removed_species.end()) {
+                const auto a = static_cast<Integer>(z[i]), b = static_cast<Integer>(-static_cast<std::int64_t>(z[j]));
+                const auto divisor = std::gcd(a, b);
+                list.push_back({i, j, b / divisor, (a + b) / divisor});
+            }
+        }
+    }
+    for (std::size_t s = 0; s < vertices.size(); ++s)
+        if (vertices[s].empty()) out.coverage[s].cause = "no feasible grid composition";
+    try {
+        for (const auto& list : vertices) {
+            const auto n = count(denominator, list.size());
+            if (attempts > maximum - n) throw std::overflow_error("raw grid count overflow");
+            attempts += n;
+        }
+        out.raw_attempts = attempts;
+        if (attempts > ceiling) throw std::length_error("raw grid ceiling exceeded");
+        for (const auto& list : vertices) for (const auto& v : list) {
+            multiple /= std::gcd(multiple, v.denominator);
+            if (multiple > maximum / v.denominator) throw std::overflow_error("grid rational scale overflow");
+            multiple *= v.denominator;
+        }
+        if (multiple > maximum / 2 / denominator) throw std::overflow_error("grid rational scale overflow");
+    } catch (const std::exception& error) {
+        out.raw.message = error.what();
+        return finish();
+    }
+    if (!attempts) { out.raw.message = "no feasible grid composition"; return finish(); }
+    const auto scale = denominator * multiple;
+    const auto fraction = [scale](Integer numerator) { return static_cast<double>(WiderScalar(numerator) / WiderScalar(scale)); };
+    const auto up = [](double x) { return std::nextafter(x, INFINITY); };
+    const auto upper_ratio = [&](Integer numerator, Integer denominator) {
+        const auto divisor = std::gcd(numerator, denominator), reduced = denominator / divisor;
+        const double value = static_cast<double>(WiderScalar(numerator) / WiderScalar(denominator));
+        return (reduced & (reduced - 1)) == 0 && numerator / divisor <= (Integer{1} << 53) ? value : up(value);
+    };
+    const auto limits = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
+        policy::EQUILIBRIUM_MAX_ITERATIONS.value);
+    std::size_t launched = 0;
+    const auto spent = [&] { return trial_budget && launched >= *trial_budget; };
+    core::CalculationWork work;
+    const auto candidate = stability_candidate(c, parent, out.raw);
+    const auto& at = candidate.physical;
+    const auto& model = *c.model;
+    auto shift = out.raw.standard_over_rt;
+    for (std::size_t i = 0; i < z.size(); ++i) shift[i] -= out.raw.plane_over_rt[i];
+    const auto evaluate = [&](StabilityTrial& trial, StabilityReport& report) {
+        const auto& w = trial.composition;
+        const auto root = stability_root(model, at.temperature, at.pressure, w, trial.phase.kind);
+        const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
+        trial.quantities["root_density_side"] = static_cast<double>(side);
+        core::retain_first(report.first_numerical_failure, root.first_numerical_failure);
+        if (!root.convergence.criterion || !(root.convergence.residual <= root.convergence.criterion->value
+            && root.pressure_density_derivative > 0))
+            throw std::domain_error("grid pressure root not closed");
+        if (side == DensityBranch::Unspecified) throw std::domain_error(density_refusal);
+        if ((side == DensityBranch::Liquid) != (trial.phase.kind == PhaseKind::Liquid))
+            throw std::domain_error("grid pressure root on wrong density side");
+        auto& q = trial.quantities;
+        q.merge(phase_energy(model, at.temperature, at.pressure, 1 / root.molar_density, w, report.standard_over_rt, report.work));
+        const double tpd = q["g_over_rt"] - std::inner_product(w.begin(), w.end(), report.plane_over_rt.begin(), 0.0);
+        if (!std::isfinite(tpd)) throw std::domain_error("nonfinite grid TPD");
+        q["tpd_over_rt"] = tpd;
+        q["tpd_error_estimate_over_rt"] = energy_estimate(q) + candidate.feasibility_estimate
+            + (2 * w.size() + 2) * std::numeric_limits<double>::epsilon() * (std::abs(q["g_over_rt"])
+                + std::inner_product(w.begin(), w.end(), report.plane_over_rt.begin(), 0.0,
+                    std::plus<>{}, [](double x, double plane) { return x * std::abs(plane); }));
+        trial.evidence = "no_resolved_descent";
+        if (tpd < 0) donor_descent(c, candidate, trial, report, {}, nullptr, false);
+        report.work["finite_split_attempts"] += trial.split_checks.size();
+        if (trial.split_checks.size() == 9 && !trial.resolved_descent)
+            trial.diagnostic_cause = "finite withdrawal attempts exhausted";
+    };
+    std::map<std::pair<PhaseKind, Node>, std::size_t> indices;
+    std::vector<std::size_t> best_nodes;
+    for (std::size_t s = 0; s < phases.size(); ++s) {
+        auto& row = out.coverage[s];
+        const auto& list = vertices[s];
+        if (list.empty()) continue;
+        row.rounding_bound = std::min(2.0, upper_ratio(list.size(), denominator));
+        std::vector<Node> nodes;
+        std::vector<bool> admitted;
+        std::set<std::size_t> seen;
+        std::optional<std::size_t> best;
+        enumerate(list, denominator, multiple, z.size(), [&](Node node) {
+            const auto [found, fresh] = indices.try_emplace({row.phase.kind, node}, out.raw.trials.size());
+            const auto index = found->second;
+            if (!seen.insert(index).second) return;
+            row.nodes.push_back(index);
+            if (fresh) {
+                auto& trial = out.raw.trials.emplace_back();
+                trial.phase = row.phase;
+                trial.evidence = "unresolved";
+                trial.phase.support.clear();
+                trial.phase.support_declared = true;
+                for (std::size_t i = 0; i < z.size(); ++i) if (node[i]) trial.phase.support.push_back(i);
+                for (auto n : node) trial.composition.push_back(fraction(n));
+                if (spent()) trial.message = "raw grid trial budget exhausted";
+                else try {
+                    ++launched;
+                    trial.seed = "grid";
+                    resolve_support(trial.phase, {}, z, &model.parameters());
+                    trial.composition = reconstruct_trial_composition(trial.composition, trial.phase.support, z, trial.phase.kind);
+                    double mapping = 0;
+                    for (auto i : trial.phase.support) {
+                        const double x = fraction(node[i]), y = trial.composition[i];
+                        mapping = up(mapping + up(std::max(std::abs(up(x) - y), std::abs(std::nextafter(x, -INFINITY) - y))));
+                    }
+                    trial.quantities["grid_mapping_allowance"] = mapping;
+                    evaluate(trial, out.raw);
+                } catch (const std::exception& error) {
+                    trial.message = error.what();
+                    retain_density_failure(out.raw.first_numerical_failure, error, "raw stability grid node");
+                }
+            }
+            const auto& trial = out.raw.trials[index];
+            row.visited += !trial.seed.empty();
+            const bool accepted = trial.quantities.count("tpd_over_rt");
+            admitted.push_back(accepted);
+            nodes.push_back(std::move(node));
+            if (!accepted) return;
+            ++row.admitted;
+            row.mapping_allowance = std::max(row.mapping_allowance.value_or(0), trial.quantities.at("grid_mapping_allowance"));
+            if (!best || trial.quantities.at("tpd_over_rt") < out.raw.trials[*best].quantities.at("tpd_over_rt")) best = index;
+        });
+        row.planned = nodes.size();
+        if (best) best_nodes.push_back(*best);
+        if (const auto gap = coverage(nodes, admitted, scale)) {
+            row.h = upper_ratio(gap->distance, scale);
+            row.worst_gap = row.nodes[gap->gap];
+            row.nearest_admitted = row.nodes[gap->admitted];
+            row.uninformative = up(up(*row.rounding_bound + *row.h) + *row.mapping_allowance) >= 2;
+        } else row.cause = "no admitted grid node";
+    }
+    report_work(out.raw.work, work);
+    out.raw.work["trial_invocations"] = launched;
+    out.raw.work["unvisited_nodes"] = std::count_if(out.raw.trials.begin(), out.raw.trials.end(), [](const auto& t) { return t.seed.empty(); });
+    out.raw.completed = out.raw.work["unvisited_nodes"] == 0;
+    if (!out.raw.completed) out.raw.message = "raw grid trial budget exhausted";
+    if (!refine) return finish();
+    auto& refined = out.refined;
+    refined.standard_over_rt = out.raw.standard_over_rt;
+    refined.plane_over_rt = out.raw.plane_over_rt;
+    refined.work["finite_split_attempts"] = 0;
+    core::CalculationWork refinement_work;
+    for (auto index : best_nodes) {
+        if (spent()) { refined.message = "refinement trial budget exhausted"; break; }
+        ++launched;
+        const auto& raw = out.raw.trials[index];
+        auto& trial = refined.trials.emplace_back();
+        trial.phase = raw.phase;
+        auto allowance = limits;
+        try {
+            core::Scope scope("stability_grid_refinement");
+            auto compiled = compile_stability_trial(model, at.temperature, at.pressure, trial.phase, raw.composition, shift, trial.row_transformation);
+            const auto eta = model.packing_fraction_coefficient(at.temperature, raw.composition) / raw.quantities.at("volume_m3_per_mol");
+            const auto initial = trial_coordinates(compiled, raw.composition, eta);
+            trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
+                scope, &trial.raw_coordinates, &allowance, Attempt::Cold, {}, false, true);
+            count_driver(refined.work, trial.optimizer, "trial_driver_invocations");
+            trial.message = trial.optimizer.message;
+            if (!trial.raw_coordinates.empty()) trial.composition = reconstruct_trial_composition(
+                compiled.prepare(trial.raw_coordinates, true).composition[0], trial.phase.support, z, trial.phase.kind);
+            if (!trial.composition.empty()) evaluate(trial, refined);
+        } catch (const std::exception& error) { trial.message = error.what(); }
+        if (!trial.optimizer.success && (allowance.iterations_spent() || allowance.caps_spent())) {
+            trial.diagnostic_cause = allowance.iterations_spent() ? "refinement iteration limit exhausted"
+                : allowance.evaluations >= allowance.evaluation_cap ? "refinement evaluation limit exhausted"
+                : "refinement Hessian limit exhausted";
+        }
+    }
+    refined.work["trial_invocations"] = refined.trials.size();
+    refined.work["unvisited_refinements"] = best_nodes.size() - refined.trials.size();
+    refined.completed = refined.trials.size() == best_nodes.size() && refined.message.empty();
+    report_work(refined.work, refinement_work);
+    return finish();
 }
 
 namespace {

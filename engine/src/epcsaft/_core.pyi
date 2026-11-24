@@ -2582,6 +2582,46 @@ def cooling_onset(compiled: CompiledSystem) -> tuple[EquilibriumResult, list[Sta
     """
     ...
 
+class StabilityGridCoverage:
+    """Composition coverage on one declared support and density side."""
+    phase: PhaseSpec
+    omitted_species: list[int]
+    """Declared species removed by the parent's verified absences."""
+    nodes: list[int]
+    """Indices into the raw trials for all distinct planned nodes on this support and side."""
+    planned: int
+    visited: int
+    admitted: int
+    rounding_bound: float | None
+    h: float | None
+    mapping_allowance: float | None
+    worst_gap: int | None
+    nearest_admitted: int | None
+    cause: str
+    uninformative: bool
+
+class StabilityGridResult:
+    """Raw and refined TPD records for an explicit fixed-T/P grid request."""
+    raw_attempts: int | None
+    """Preflight count including duplicates, or None if that count overflowed."""
+    ceiling: int
+    coverage: list[StabilityGridCoverage]
+    raw: StabilityReport
+    refined: StabilityReport
+    elapsed_seconds: float
+
+def stability_grid(compiled: CompiledSystem, parent: EquilibriumResult, phases: list[PhaseSpec],
+                   denominator: int, ceiling: int = 2048, refine: bool = False,
+                   trial_budget: int | None = None) -> StabilityGridResult:
+    """Evaluate a charge-neutral composition grid on explicit density sides.
+
+    The raw ceiling applies before deduplication. The optional trial budget
+    counts unique raw attempts followed by optional local refinements.
+    Only independently pressure-closed raw grid nodes on the requested side
+    contribute to coverage. See the stability and phase discovery guide.
+    """
+    ...
+
 def stability_test(compiled: CompiledSystem, central: EquilibriumResult,
                    options: StabilityOptions = ...) -> StabilityReport:
     """Search declared tangent-plane trials around an admitted candidate.

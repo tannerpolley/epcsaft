@@ -1,0 +1,102 @@
+---
+title: "Phase-stability grids for aqueous MDEA and AMP"
+format: html
+---
+
+Full found a finite Gibbs decrease in both reactive parents. Neither composition
+grid found a decrease at denominators 2 or 4. The union recovered both witnesses
+through Full. The grids measured how far the refused nodes lay from evaluated
+compositions on each density side.
+
+The MDEA parent is at 363.15 K and 262861919.71783307 Pa, with 1.7987685418415897 mol
+water and 1.368 mol CO₂ per mol MDEA. The AMP parent is at 393.15 K and
+1215282.4561119014 Pa, with 30.0 wt% AMP before loading and 0.700 mol CO₂ per mol AMP.
+The replay uses fixed-temperature, fixed-pressure single-liquid parents, the
+supplied reactions, and aqueous standards. It reuses the same compiled system and
+accepted parent for both independent searches in each case.
+
+[Amine-Thermodynamics at f30977a3](https://github.com/tannerpolley/Amine-Thermodynamics/tree/f30977a3)
+supplies the parameters, reaction laws, feed, reference declarations, and
+two-liquid solutions. The parent and split JSON files give the exact source
+paths and preserve component order. The MIT notice accompanies those files.
+The runner loads reference split compositions after the blind searches.
+
+## Blind searches
+
+The table reports the most negative resolved finite withdrawal in each search
+and its estimated numerical error, both in mol on the declared feed basis.
+The union selects the best witness from the two independent records. Its work
+and single-run elapsed time are the sums for those searches. Density evaluations
+are included in the total EOS evaluations. Full ran 60 finite withdrawal
+attempts for MDEA and four for AMP. Neither grid started a withdrawal or
+requested local refinement.
+
+| Case | Method | $\Delta G/(RT)$ ± error (mol) | Root calls | Density evaluations | EOS evaluations | Elapsed (s) |
+|---|---|---:|---:|---:|---:|---:|
+| MDEA | Full | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 85 | 11,525 | 12,351 | 0.341 |
+| MDEA | Grid, $m=4$ | No witness | 465 | 20,400 | 22,126 | 0.344 |
+| MDEA | Union, $m=4$ | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 550 | 31,925 | 34,477 | 0.685 |
+| AMP | Full | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 22 | 1,410 | 1,971 | 0.184 |
+| AMP | Grid, $m=4$ | No witness | 840 | 14,186 | 17,167 | 0.779 |
+| AMP | Union, $m=4$ | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 862 | 15,596 | 19,138 | 0.963 |
+
+| Case | Method | First reduced molar TPD ± estimated error | Minimum reduced molar TPD ± estimated error |
+|---|---|---:|---:|
+| MDEA | Full | $-2.84\times10^{-14}\pm1.95\times10^{-10}$ | $-0.00262223\pm1.41\times10^{-10}$ |
+| MDEA | Grid, $m=2$ | $0.378101\pm9.64\times10^{-11}$ | $0.378101\pm9.64\times10^{-11}$ |
+| MDEA | Grid, $m=4$ | $0.146417\pm3.94\times10^{-11}$ | $0.0622428\pm7.90\times10^{-11}$ |
+| AMP | Full | $-0.00313637\pm1.76\times10^{-10}$ | $-0.00313637\pm1.76\times10^{-10}$ |
+| AMP | Grid, $m=2$ | $2.98581\pm1.55\times10^{-11}$ | $0.0377781\pm1.81\times10^{-10}$ |
+| AMP | Grid, $m=4$ | $2.61200\pm5.42\times10^{-12}$ | $0.0377781\pm1.81\times10^{-10}$ |
+
+Full's estimates here are the retained donor-slope error estimates on these
+trials. Both the first and minimum grid TPD are raw, independently
+pressure-closed evaluations. [The replay records](results/mdea-amp.jsonl)
+retain the reported values, refusals, work, and timing for both denominators. Tables show
+the recorded scalar comparisons directly, including cases with unavailable
+coverage.
+
+## Achieved composition coverage
+
+Each liquid schedule uses the full reactive support. Each vapor schedule uses
+the neutral amine, carbon dioxide and water. All planned distinct nodes were
+visited. The raw counts before deduplication are 51 and 510 for MDEA and 72 and
+1,016 for AMP at $m=2$ and $m=4$, respectively.
+
+| Case | $m$ | Density side | Admitted / planned | $h$ (L1) | Planned rounding bound |
+|---|---:|---|---:|---:|---:|
+| MDEA | 2 | Liquid | 23/44 | 1 | 2 |
+| MDEA | 2 | Vapor | 0/6 | unavailable | 1.5 |
+| MDEA | 4 | Liquid | 344/450 | 0.5 | 2 |
+| MDEA | 4 | Vapor | 0/15 | unavailable | 0.75 |
+| AMP | 2 | Liquid | 29/63 | 1 | 2 |
+| AMP | 2 | Vapor | 4/6 | 1 | 1.5 |
+| AMP | 4 | Liquid | 585/825 | 2/3 | 2 |
+| AMP | 4 | Vapor | 10/15 | 1 | 0.75 |
+
+The largest outward-rounded mapping allowance was $4.17\times10^{-16}$ in
+species mole-fraction L1 distance. The attained discrete coverage improved
+with denominator on both liquid supports. Only the AMP vapor grid at $m=4$
+has a combined rounding, admission and mapping bound below the simplex
+diameter of 2. On the liquid schedules, the density search reported
+nonfinite derivatives for 20 and 105 MDEA nodes and 33 and 238 AMP nodes, in
+increasing denominator order. The other liquid gaps had unresolved root
+sides. All vapor gaps had unresolved or wrong-side roots.
+
+Coverage applies to composition distance within the represented support and
+density side. Charged vapor lies outside the declared schedules. The grid
+does not bound TPD away from evaluated nodes or enumerate every mechanical
+branch. Its absence of a witness leaves the Full witnesses decisive as
+numerical verification of model instability.
+
+## Separate two-liquid replay
+
+A solve started from the retained split endpoints passed the declared row
+criterion for each case. The extensive objective differences were
+$-4.50549748\times10^{-5}$ mol for MDEA and $-0.01618322237$ mol for AMP.
+The source reports an estimated error of $2.79\times10^{-9}$ mol for the
+AMP coexistence calculation. It supplies no total error for the retained MDEA
+coexistence result. These model calculations supply evidence about the
+declared equations and do not validate phase behavior against observations.
+
+The independent delivered review and manuscript promotion remain open.

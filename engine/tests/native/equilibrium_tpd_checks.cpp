@@ -2,6 +2,7 @@
 #include "equilibrium_checks_shared.hpp"
 #include "core/exact_zero_dot.hpp"
 #include "core/linear_error.hpp"
+#include "equilibrium/stability_grid.hpp"
 #include "surface/parameter_builder.hpp"
 
 #include <condition_variable>
@@ -11,9 +12,76 @@
 #include <cstring>
 #include <cstdint>
 #include <iostream>
+#include <set>
 #include <mutex>
 
 namespace equilibrium_checks {
+
+void check_stability_grid() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    using namespace stability_grid_detail;
+    const std::vector<Node> binary{{2, 0}, {1, 1}, {0, 2}};
+    const std::vector<bool> all{true, true, true};
+    CHECK(coverage(binary, all, 2)->distance == 0);
+    CHECK(coverage(binary, all, 2)->distance == 0);  // the other density side
+    const auto one_side = coverage(binary, {true, false, true}, 2);
+    CHECK(one_side->distance == 2 && one_side->gap == 1);
+    CHECK(one_side->admitted == 0 || one_side->admitted == 2);
+    CHECK(coverage(binary, all, 2)->distance == 0);
+    CHECK(!coverage(binary, {false, false, false}, 2));
+
+    // Two divalent cations and two monovalent anions. The two diagonals give the same midpoint.
+    const std::vector<Vertex> pairs{{0, 2, 1, 3}, {0, 3, 1, 3}, {1, 2, 1, 3}, {1, 3, 1, 3}};
+    std::set<Node> unique;
+    std::size_t planned = 0;
+    enumerate(pairs, 2, 3, 4, [&](Node point) {
+        ++planned;
+        CHECK(point[0] + point[1] + point[2] + point[3] == 6);
+        CHECK(2 * (point[0] + point[1]) == point[2] + point[3]);
+        unique.insert(std::move(point));
+    });
+    CHECK(planned == 10 && unique.size() == 9);
+    CHECK(unique.count({1, 1, 2, 2}));
+
+    const HelmholtzModel model(properties_support::neutral_binary());
+    auto problem = equilibrium_support::flash(2);
+    problem.temperature = FreeValue::fixed(150.0);
+    const auto compiled = compile_problem(model, problem);
+    const auto parent = solve_compiled(compiled);
+    CHECK(parent.has_state());
+    auto liquid = problem.phases.front(), vapor = liquid;
+    liquid.support = vapor.support = {0, 1};
+    vapor.kind = PhaseKind::Vapor;
+    const std::vector<PhaseSpec> sides{liquid, vapor};
+    const auto complete = stability_grid(compiled, parent, sides, 2, 6);
+    CHECK(complete.raw_attempts == 6 && complete.raw.completed);
+    for (const auto& row : complete.coverage) CHECK(row.planned == 3 && row.visited == 3);
+    const auto over = stability_grid(compiled, parent, sides, 2, 5);
+    CHECK(over.raw_attempts == 6 && over.raw.trials.empty() && over.raw.work.at("trial_invocations") == 0 && over.raw.work.at("root_calls") == 0);
+    CHECK(over.raw.message == "raw grid ceiling exceeded");
+    const auto default_over = stability_grid(compiled, parent, sides, 1024);
+    CHECK(default_over.raw_attempts == 2050 && default_over.ceiling == 2048);
+    CHECK(default_over.raw.work.at("root_calls") == 0 && default_over.raw.trials.empty());
+    const auto default_equal = stability_grid(compiled, parent, sides, 1023, 2048, false, 0);
+    CHECK(default_equal.raw_attempts == 2048 && default_equal.raw.trials.size() == 2048);
+    CHECK(default_equal.raw.work.at("root_calls") == 0 && default_equal.raw.work.at("unvisited_nodes") == 2048);
+    const auto overflow = stability_grid(compiled, parent, sides, maximum);
+    CHECK(!overflow.raw_attempts && overflow.raw.trials.empty() && overflow.raw.work.at("trial_invocations") == 0 && overflow.raw.work.at("root_calls") == 0);
+    CHECK(overflow.raw.message == "raw grid count overflow");
+    const auto partial = stability_grid(compiled, parent, sides, 2, 6, true, 1);
+    CHECK(!partial.raw.completed && partial.raw.work.at("trial_invocations") == 1);
+    CHECK(partial.raw.work.at("root_calls") >= 1 && partial.raw.work.at("unvisited_nodes") == 5);
+    CHECK(partial.coverage[0].planned == 3 && partial.coverage[0].visited == 1);
+    CHECK(partial.coverage[1].planned == 3 && partial.coverage[1].visited == 0);
+    CHECK(!partial.coverage[1].h && partial.raw.message == "raw grid trial budget exhausted");
+
+    auto face = liquid;
+    face.support = {0};
+    const auto shared = stability_grid(compiled, parent, {liquid, face}, 2);
+    CHECK(shared.raw_attempts == 4 && shared.raw.trials.size() == 3);
+    CHECK(shared.coverage[1].nodes == std::vector<std::size_t>{shared.coverage[0].nodes.front()});
+}
 
 void check_feed_charge_permutation() {
     using namespace epcsaft;
