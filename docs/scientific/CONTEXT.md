@@ -53,7 +53,7 @@ this intended architecture.
 | `engine/native/` | Shared scientific calculations and numerical solves |
 | `engine/src/epcsaft/` | Python input/output mapping to the native implementation |
 | `engine/tests/` | Compact numerical falsifiers of Engine claims |
-| Private `tannerpolley/epcsaft-validation` repository | One-question calculations, retained results and interpretation using the installed wheel |
+| Private `tannerpolley/epcsaft-dev` repository | One-question calculations, retained results and interpretation using the installed wheel |
 | Official application repositories | Application chemistry, parameter adoption, process equations and application acceptance |
 
 When available, the private repository is checked out at `validation/` inside
