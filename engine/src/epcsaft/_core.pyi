@@ -5260,6 +5260,17 @@ class InputReconciliation:
     """Half the squared input residual norm, dimensionless; with joint covariance it is conditional
     on the outputs.
     """
+class PredictionUncertainty:
+    """One scalar prediction and its local parameter variance in squared property units."""
+
+    value: float | None
+    variance: float | None
+    status: str
+    """Fit covariance availability or propagation refusal."""
+    observation_status: ObservationStatus
+    """Native property or derivative availability."""
+    message: str
+
 class FitResult:
     """Native parameter-estimation candidate, objective and local evidence.
 
@@ -5363,6 +5374,7 @@ class FitResult:
     """Least-squares final cost in the same convention as initial_cost; NaN for minimax. A zero
     after refusal is not evidence of a perfect fit.
     """
+    prediction_uncertainty: list[PredictionUncertainty]
     covariance: FitCovariance
     """Local least-squares uncertainty/rank evidence with explicit availability and assumptions;
     unavailable for minimax.
@@ -5413,7 +5425,8 @@ def fit(parameters: Parameters, thermochemistry: Optional[ThermochemistryRecord]
         checks: Sequence[CheckGroup] = ..., baseline: Parameters | None = ..., singular_vectors: bool = ...,
         starts: Optional[Sequence[Sequence[float]]] = None, iterations: Optional[int] = None,
         seconds: Optional[float] = None, minimax: MinimaxRequest | None = ...,
-        uncertainty: MeasurementUncertainty | None = ...) -> Union[FitResult, list[FitResult]]:
+        uncertainty: MeasurementUncertainty | None = ...,
+        prediction_rows: Sequence[Observation] = ...) -> Union[FitResult, list[FitResult]]:
     """Estimate bounded parameters with native least squares or explicitly requested minimax.
 
     Parameters

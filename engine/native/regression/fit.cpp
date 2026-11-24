@@ -1118,12 +1118,6 @@ void label(FitResult& result, const FitOutcome& outcome) {
     if (ipopt) result.message = "local constrained estimate; global feasibility and optimality unresolved";
     if (ceres && absent) result.message = "the final point could not be evaluated: " + result.message;
     result.usable = outcome.candidate == FitCandidate::Usable;
-    using C = FitCovarianceStatus;
-    const C c = outcome.covariance;
-    result.covariance.status = c == C::Available ? "available" : c == C::NotConverged ? "not_converged"
-        : c == C::RankDeficient ? "rank_deficient" : c == C::StabilityPenalty ? "stability_penalty"
-        : c == C::ActiveBound ? "active_bound" : c == C::Unavailable ? "unavailable"
-        : c == C::MinimaxUnavailable ? "minimax_unavailable" : "not_evaluated";
     const FitAcceptance a = outcome.acceptance;
     result.acceptance = a == FitAcceptance::Pass ? "pass" : a == FitAcceptance::Fail ? "fail"
         : a == FitAcceptance::Unavailable ? "unavailable" : "not_evaluated";
@@ -1174,10 +1168,10 @@ std::vector<double> fit_start(const FitRequest& request) {
     return point;
 }
 
-FitResult fit(const FitRequest& request) {
+static FitResult fit_parameters(const FitRequest& request) {
     if (request.uncertainty && request.uncertainty->groups.empty() && request.uncertainty->output_sigma.empty()
         && !request.uncertainty->covariance && !request.uncertainty->correlation) {
-        auto canonical = request; canonical.uncertainty.reset(); return fit(canonical);
+        auto canonical = request; canonical.uncertainty.reset(); return fit_parameters(canonical);
     }
     if (request.uncertainty && request.minimax) { FitResult result(request); result.message = "fit uncertainty with minimax is unsupported"; return result; }
     if (request.minimax) return fit_minimax(request);
@@ -1201,17 +1195,14 @@ FitResult fit(const FitRequest& request) {
     std::vector<double> optimizer = fit_start(request);
     optimizer.resize(width, 0.0);
     FitOutcome outcome;
-    ObservationEvaluation initial;
-    if (!evaluator.evaluate(optimizer, true, initial)) {
+    if (ObservationEvaluation initial; evaluator.evaluate(optimizer, true, initial)) result.initial_cost = initial.cost;
+    else {
         outcome.termination = FitTermination::StartRejected;
         result.message = result.failures.back().message;
         result.statuses = std::move(initial.statuses);
         label(result, outcome);
         return result;
     }
-    result.initial_cost = initial.cost;
-    initial = ObservationEvaluation{};
-
     Cost cost(request, evaluator);
     ceres::Problem::Options problem_options;
     problem_options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
@@ -1301,7 +1292,7 @@ FitResult fit(const FitRequest& request) {
     outcome.candidate = outcome.termination != T::Failure && outcome.termination != T::CallbackFailure
         && all_finite(result.physical) ? FitCandidate::Usable : FitCandidate::Values;
     if (outcome.candidate == FitCandidate::Usable) {
-        outcome.covariance = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
+        result.covariance.outcome = covariance(result, request, n, optimizer, lower, upper, outcome.termination);
         if (request.uncertainty) {
             auto reconciled = request.observations;
             request.coordinates.apply(reconciled, result.optimizer);
@@ -1334,28 +1325,73 @@ FitResult fit(const FitRequest& request) {
     return result;
 }
 
+static void predict_fit(const FitRequest& request, const std::vector<Observation>& rows, FitResult& result) {
+    const auto& covariance = result.covariance;
+    // A published reconciliation is present for an absolute measurement model, including zero latent inputs.
+    const auto scale = result.reconciliation ? std::optional{1.0} : covariance.variance_factor;
+    using C = FitCovarianceStatus;
+    const C outcome = covariance.outcome != C::Available ? covariance.outcome
+        : covariance.optimizer.empty() ? C::Unavailable : !scale ? C::MissingVarianceFactor : C::Available;
+    const C refused = outcome == C::Available ? C::Unavailable : outcome;
+    for (auto row : rows) {
+        auto& out = result.prediction_uncertainty.emplace_back(PredictionUncertainty{outcome});
+        if (result.predictions.empty()) continue;
+        row.observed = 0.0; row.scale = 1.0; row.form = ResidualForm::Difference;
+        FitRequest point{request.parameters, request.thermochemistry, request.coordinates, {std::move(row)}, {}, request.controls, request.holds};
+        FitResult failures; ObservationEvaluation evaluation;
+        try {
+            auto declarations = request.observations;
+            declarations.push_back(point.observations.front());
+            for (const auto& coordinate : point.coordinates.coordinates)
+                if (coordinate.reaction) (void)admit_reaction_law(*coordinate.reaction, point.parameters.component_count(),
+                    declarations, point.thermochemistry);
+            // The unit-weight difference above makes the optimizer residual derivative the prediction derivative.
+            ObservationEvaluator::Impl evaluator(std::move(point), failures, {1.0});
+            if (evaluator.evaluate(result.optimizer, outcome == C::Available, evaluation)) {
+                out = {outcome, {}, evaluation.predictions.front(), {}, ObservationStatus::Available};
+                if (outcome != C::Available) continue;
+                const Eigen::Map<const Eigen::VectorXd> j(evaluation.optimizer_gradient.data(), result.optimizer.size());
+                const Eigen::Map<const Eigen::MatrixXd> c(covariance.optimizer.data(), j.size(), j.size());
+                if (const double v = *scale * j.dot(c * j); std::isfinite(v) && v >= 0.0) out.variance = v;
+                else out.outcome = C::Unavailable;
+            } else {
+                const auto& failure = failures.failures.back();
+                out = {refused, failure.message, failure.central_value, {}, failure.status};
+            }
+        } catch (const std::logic_error& error) {
+            out = {refused, error.what(), {}, {}, ObservationStatus::InadmissibleTrial};
+        }
+    }
+}
+
+FitResult fit(const FitRequest& request, const std::vector<Observation>& prediction_rows) {
+    auto result = fit_parameters(request);
+    if (!prediction_rows.empty()) predict_fit(request, prediction_rows, result);
+    return result;
+}
+
 std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
-    int iterations, double seconds) {
+    int iterations, double seconds, const std::vector<Observation>& prediction_rows) {
     require(iterations > 0 && std::isfinite(seconds) && seconds > 0.0, "shared fit budgets");
     const auto begin = std::chrono::steady_clock::now();
     std::vector<FitResult> results;
-    const auto controls = request.controls;
     for (const auto& start : starts) {
         const double remaining = seconds - std::chrono::duration<double>(std::chrono::steady_clock::now() - begin).count();
         if (iterations <= 0 || remaining <= 0.0) break;
         auto trial = request;
-        trial.controls.maximum_iterations = std::min(controls.maximum_iterations, iterations);
-        trial.controls.maximum_elapsed_time_seconds = std::min(controls.maximum_elapsed_time_seconds, remaining);
+        trial.controls.maximum_iterations = std::min(request.controls.maximum_iterations, iterations);
+        trial.controls.maximum_elapsed_time_seconds = std::min(request.controls.maximum_elapsed_time_seconds, remaining);
         try {
             trial.parameters = evaluate_coordinates(request.parameters, request.coordinates, start, request.holds, request.thermochemistry, request.controls.solver_options).parameters;
             request.coordinates.apply(trial.observations, start, false);
             trial.start = start;
-            results.push_back(fit(trial));
+            results.push_back(fit_parameters(trial));
         } catch (const std::invalid_argument& error) {
             FitResult failed(request); failed.optimizer = start; failed.message = error.what(); results.push_back(std::move(failed));
         }
         iterations -= static_cast<int>(results.back().iterations);
     }
+    if (!prediction_rows.empty()) for (auto& result : results) predict_fit(request, prediction_rows, result);
     return results;
 }
 

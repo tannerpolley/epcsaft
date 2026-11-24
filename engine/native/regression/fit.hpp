@@ -104,13 +104,13 @@ struct FitRequest final {
     std::vector<double> weights;
     FitControls controls;
     std::vector<HydrationHold> holds;
-    std::vector<CheckGroup> checks;
-    std::optional<Parameters> baseline;
+    std::vector<CheckGroup> checks{};
+    std::optional<Parameters> baseline{};
     bool singular_vectors = false;
-    std::optional<MinimaxRequest> minimax;
-    std::optional<MeasurementUncertainty> uncertainty;
+    std::optional<MinimaxRequest> minimax{};
+    std::optional<MeasurementUncertainty> uncertainty{};
     // Engine-internal (fit_sequence): optimizer start; only enthalpy-shift entries are read (see fit_start).
-    std::optional<std::vector<double>> start;
+    std::optional<std::vector<double>> start{};
 };
 
 // One rejected trial: the observation that failed, its typed cause and the optimizer point. A
@@ -129,10 +129,21 @@ struct TrialFailure final {
     std::optional<core::Convergence> convergence{};
 };
 
+// NotEvaluated until a usable candidate's covariance is examined. Available needs a settled interior point of
+// full rank without stability rows; every other value is the cause it is not.
+enum class FitCovarianceStatus {
+    NotEvaluated, Available, NotConverged, RankDeficient, StabilityPenalty, ActiveBound, Unavailable, MinimaxUnavailable, MissingVarianceFactor
+};
+template<class Record>
+const char* covariance_status(const Record& record) noexcept {
+    return std::array{"not_evaluated", "available", "not_converged", "rank_deficient", "stability_penalty",
+        "active_bound", "unavailable", "minimax_unavailable", "missing_variance_factor"}[std::size_t(record.outcome)];
+}
+
 // (J^T J)^-1 of the weighted (whitened, under a declared matrix) optimizer Jacobian, mapped to physical rows by the evaluated D.
 // Available only at an interior point of full rank; otherwise the cause is the status.
 struct FitCovariance final {
-    std::string status = "not_evaluated";  // available | not_converged | rank_deficient | stability_penalty | active_bound | unavailable | minimax_unavailable
+    FitCovarianceStatus outcome = FitCovarianceStatus::NotEvaluated;
     std::string assumption;
     std::size_t rank = 0;
     std::vector<double> singular_values, right_vectors, left_vectors;
@@ -153,7 +164,7 @@ struct StabilityTransition final {
 EPC_API StabilityTransition stability_transition(std::size_t, const std::vector<double>&, const Prediction&,
     const std::vector<double>&, const Prediction&);
 
-// A fit's outcome is four named values. fit() owns them for least squares and Minimax for minimax;
+// A fit's outcome is three named values. fit() owns them for least squares and Minimax for minimax;
 // label() is the one place that writes their strings into FitResult, word for word.
 // Termination. NotRun: the request was refused before any optimizer ran, or minimax produced no point.
 // StartRejected: the start's evaluation was rejected. Failure: a round-start gradient failed or Ceres reported
@@ -169,17 +180,18 @@ enum class FitTermination {
 // published but is not usable. Usable: published and usable. A published minimax candidate keeps NaN costs and
 // empty weighted_residuals.
 enum class FitCandidate { Absent, Values, Usable };
-// NotEvaluated until a usable candidate's covariance is examined. Available needs a settled interior point of
-// full rank without stability rows; every other value is the cause it is not.
-enum class FitCovarianceStatus {
-    NotEvaluated, Available, NotConverged, RankDeficient, StabilityPenalty, ActiveBound, Unavailable, MinimaxUnavailable
-};
 enum class FitAcceptance { NotEvaluated, Pass, Fail, Unavailable };
 struct FitOutcome final {
     FitTermination termination = FitTermination::NotRun;
     FitCandidate candidate = FitCandidate::Absent;
-    FitCovarianceStatus covariance = FitCovarianceStatus::NotEvaluated;
     FitAcceptance acceptance = FitAcceptance::NotEvaluated;
+};
+
+struct PredictionUncertainty final {
+    FitCovarianceStatus outcome = FitCovarianceStatus::NotEvaluated;
+    std::string message{};
+    std::optional<double> value{}, variance{};
+    ObservationStatus observation_status = ObservationStatus::NotEvaluated;
 };
 
 struct FitResult final {
@@ -217,6 +229,7 @@ struct FitResult final {
     double initial_cost = 0.0;
     double final_cost = 0.0;
     FitCovariance covariance;
+    std::vector<PredictionUncertainty> prediction_uncertainty;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     EvaluatedCoordinates chart;
@@ -269,9 +282,9 @@ struct EPC_EXCEPTION FitInterrupted final {};
 #else
 [[noreturn]] EPC_API void serve_fit(int fd);
 #endif  // a worker process: its rows of every evaluation, over fd
-EPC_API FitResult fit(const FitRequest& request);
+EPC_API FitResult fit(const FitRequest& request, const std::vector<Observation>& prediction_rows = {});
 EPC_API std::vector<FitResult> fit_sequence(FitRequest request, const std::vector<std::vector<double>>& starts,
-    int iterations, double seconds);  // shared budgets, ordered results; unstarted points are absent
+    int iterations, double seconds, const std::vector<Observation>& prediction_rows = {});  // shared budgets, ordered results; unstarted points are absent
 
 // Shared unweighted check algebra and final publication, used by both native estimators.
 EPC_API std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction);

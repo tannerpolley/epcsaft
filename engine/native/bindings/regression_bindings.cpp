@@ -10,7 +10,6 @@
 #include <nanobind/stl/map.h>
 #include <nanobind/stl/optional.h>
 #include <nanobind/stl/pair.h>
-#include <nanobind/stl/shared_ptr.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 #include <numeric>
@@ -29,12 +28,15 @@ auto fit_entry(Function&& function) {
     return result;
 }
 
+policy::SolverOptions point_options(const nb::object& options) {
+    return bindings::solver_options(options, PROPERTY_SCOPE).resolved({});
+}
+
 // The point readers' request: fit's model inputs at a declared point, without optimizer controls.
 FitRequest point_request(const Parameters& parameters, std::vector<Coordinate> coordinates, std::vector<HydrationHold> holds,
                          std::vector<Observation> observations, std::optional<ThermochemistryRecord> thermochemistry, const nb::object& solver_options) {
-    FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, PROPERTY_SCOPE).resolved({}); request.parameters = parameters; request.thermochemistry = std::move(thermochemistry);
-    request.coordinates.coordinates = std::move(coordinates); request.holds = std::move(holds); request.observations = std::move(observations);
-    return request;
+    return {parameters, std::move(thermochemistry), {std::move(coordinates)}, std::move(observations), {},
+        {point_options(solver_options)}, std::move(holds)};
 }
 
 }  // namespace
@@ -197,9 +199,9 @@ m._serve_fit(channel)
     nb::class_<TrialFailure>(module, "TrialFailure")
         EPCSAFT_READONLY(TrialFailure, trial, observation, optimizer, status, message, jacobian, parameter_actions, first_numerical_failure, central_value, convergence);
     nb::class_<FitCovariance>(module, "FitCovariance")
-        EPCSAFT_READONLY(FitCovariance, status, assumption, rank, singular_values, left_vectors, right_vectors,
+        EPCSAFT_READONLY(FitCovariance, assumption, rank, singular_values, left_vectors, right_vectors,
             projected_gradient_norm, objective_rows, active_bounds, optimizer, physical, variance_factor)
-        EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
+        .def_prop_ro("status", &covariance_status<FitCovariance>) EPCSAFT_REPR(FitCovariance, "status", "assumption", "rank", "projected_gradient_norm", "variance_factor");
     nb::enum_<MeasuredInputKind>(module, "MeasuredInputKind")
         EPCSAFT_VALUES(MeasuredInputKind, Temperature, Pressure, MoleFraction, Molality);
     nb::class_<MeasuredInput>(module, "MeasuredInput").def(nb::init<>())
@@ -224,12 +226,15 @@ m._serve_fit(channel)
     nb::class_<StabilityTransition>(module, "StabilityTransition")
         EPCSAFT_READONLY(StabilityTransition, observation, previous_optimizer, optimizer, previous_trial, trial,
             previous_classification, classification, kind);
+    nb::class_<PredictionUncertainty>(module, "PredictionUncertainty")
+        EPCSAFT_READONLY(PredictionUncertainty, value, variance, observation_status, message)
+        .def_prop_ro("status", &covariance_status<PredictionUncertainty>);
     nb::class_<FitResult>(module, "FitResult")
         EPCSAFT_SOLVER_OPTIONS(FitResult, ALL_SCOPE)
         EPCSAFT_READONLY(FitResult, stability_transitions, stability_predictions, data_cost, stability_cost, saturation_predictions, minimax, status, chart, checks, acceptance, optimizer, message, usable, physical,
             parameters, predictions, residuals, weighted_residuals, physical_jacobian, optimizer_jacobian, statuses,
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
-            iteration_costs, initial_cost, final_cost, covariance, reconciliation, rank_records, first_numerical_failure)
+            iteration_costs, initial_cost, final_cost, covariance, prediction_uncertainty, reconciliation, rank_records, first_numerical_failure)
         EPCSAFT_REPR(FitResult, "status", "usable", "final_cost", "iterations", "physical");
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("predict");
@@ -244,19 +249,19 @@ m._serve_fit(channel)
                          std::vector<double> weights, const FitControls& controls, std::vector<HydrationHold> holds,
                          std::vector<CheckGroup> checks, std::optional<Parameters> baseline, bool singular_vectors,
                          const std::optional<std::vector<std::vector<double>>>& starts, std::optional<int> iterations, std::optional<double> seconds,
-                         std::optional<MinimaxRequest> minimax, std::optional<MeasurementUncertainty> uncertainty) -> nb::object {
+                         std::optional<MinimaxRequest> minimax, std::optional<MeasurementUncertainty> uncertainty, std::vector<Observation> prediction_rows) {
         return fit_entry([&]() -> nb::object {
             core::Scope scope("fit");
             FitRequest request{parameters, std::move(thermochemistry), {std::move(coordinates)}, std::move(observations),
                         std::move(weights), controls, std::move(holds), std::move(checks), std::move(baseline), singular_vectors,
                         std::move(minimax), std::move(uncertainty)};
-            return starts ? nb::cast(fit_sequence(request, *starts, iterations.value_or(controls.maximum_iterations), seconds.value_or(controls.maximum_elapsed_time_seconds))) : nb::cast(fit(request));
+            return starts ? nb::cast(fit_sequence(request, *starts, iterations.value_or(controls.maximum_iterations), seconds.value_or(controls.maximum_elapsed_time_seconds), prediction_rows)) : nb::cast(fit(request, prediction_rows));
         });
     }, nb::arg("parameters"), nb::arg("thermochemistry"), nb::arg("coordinates"), nb::arg("observations"),
        nb::arg("weights"), nb::arg("controls"), nb::arg("holds") = std::vector<HydrationHold>{},
        nb::arg("checks") = std::vector<CheckGroup>{}, nb::arg("baseline") = std::nullopt, nb::arg("singular_vectors") = false,
        nb::arg("starts") = std::nullopt, nb::arg("iterations") = std::nullopt, nb::arg("seconds") = std::nullopt,
-       nb::arg("minimax") = std::nullopt, nb::arg("uncertainty") = std::nullopt);
+       nb::arg("minimax") = std::nullopt, nb::arg("uncertainty") = std::nullopt, nb::arg("prediction_rows") = std::vector<Observation>{});
     module.def("observations_at", [](const Parameters& parameters, std::vector<Coordinate> coordinates,
         const std::vector<double>& optimizer, std::vector<HydrationHold> holds, std::vector<Observation> observations,
         const std::vector<double>& errors, std::optional<ThermochemistryRecord> thermochemistry, nb::object solver_options) {
@@ -296,12 +301,12 @@ m._serve_fit(channel)
        nb::arg("checks"), nb::arg("baseline"), nb::arg("minimax"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     module.def("evaluate_coordinates", [](const Parameters& p, const CoordinateSet& c, const std::vector<double>& u,
         const std::vector<HydrationHold>& h, const std::optional<ThermochemistryRecord>& t, nb::object options) {
-        return evaluate_coordinates(p, c, u, h, t, bindings::solver_options(options, PROPERTY_SCOPE).resolved({}));
+        return evaluate_coordinates(p, c, u, h, t, point_options(options));
     }, nb::arg("parameters"), nb::arg("set"), nb::arg("optimizer"),
         nb::arg("holds"), nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none());
     module.def("evaluate_checks", [](const Parameters& stored, std::vector<Observation> observations,
         std::vector<CheckGroup> checks, std::optional<Parameters> baseline, nb::object solver_options) {
-        FitRequest request; request.controls.solver_options = bindings::solver_options(solver_options, PROPERTY_SCOPE).resolved({}); request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
+        FitRequest request; request.controls.solver_options = point_options(solver_options); request.observations = std::move(observations); request.checks = std::move(checks); request.baseline = std::move(baseline);
         return evaluate_checks(request, stored);
     }, nb::arg("stored"), nb::arg("observations"), nb::arg("checks"), nb::arg("baseline") = std::nullopt, nb::arg("solver_options") = nb::none());
 }

@@ -125,7 +125,7 @@ void check_measurement_correlation() {
         const Eigen::Vector3d ey = e.head(3) / 0.02;
         const double cost = 0.5*e.dot(w*e), output_cost = 0.5*ey.dot(kac(3, rho, true)*ey);
         const auto result = fit(joint(rho, covariance));
-        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
+        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.outcome == FitCovarianceStatus::Available);
         CHECK(result.covariance.assumption.find("joint") != std::string::npos && !result.covariance.variance_factor);
         const auto& rec = *result.reconciliation;
         const double variance = information.inverse()(0, 0);
@@ -328,7 +328,7 @@ void check_measurement_fit() {
         request.controls.solver_options.values[epcsaft::policy::gradient] = 1e-14;
         request.controls.solver_options.values[epcsaft::policy::parameter] = 1e-12;
         const auto result = fit(request);
-        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.status == "available");
+        CHECK(result.usable && result.status == "converged" && result.reconciliation && result.covariance.outcome == FitCovarianceStatus::Available);
         const auto& rec = *result.reconciliation;
         const std::vector<double> temperatures = shared ? std::vector<double>{320, 320, 320} : std::vector<double>{300, 320, 340};
         const std::vector<double> y{1.52, 1.59, 1.72};
@@ -466,6 +466,38 @@ void check_measurement_reuse() {
 
 }
 
+void check_prediction_reaction_law() {
+    auto request = linear_measurements();
+    auto polynomial = request.observations.front();
+    polynomial.problem.temperature = FreeValue::fixed(350);
+    auto scalar = polynomial;
+    scalar.problem.reactions[0].correlation.reset();
+    scalar.problem.reactions[0].equilibrium_constant = 1;
+    const auto result = fit(request, {scalar, polynomial});
+    CHECK(result.covariance.outcome == FitCovarianceStatus::Available && result.prediction_uncertainty.size() == 2);
+    const auto& refused = result.prediction_uncertainty[0];
+    CHECK(refused.outcome == FitCovarianceStatus::Unavailable && refused.observation_status == ObservationStatus::InadmissibleTrial);
+    CHECK(!refused.value && !refused.variance && refused.message.find("scalar K admits only A") != std::string::npos);
+    const auto& admitted = result.prediction_uncertainty[1];
+    CHECK(admitted.outcome == FitCovarianceStatus::Available && admitted.observation_status == ObservationStatus::Available
+        && admitted.value && admitted.variance && *admitted.variance > 0);
+
+    const auto& slope = request.coordinates.coordinates.front();
+    const std::vector<std::vector<double>> starts{{0.0045 / slope.scale}};
+    const auto from_declared_law = fit_sequence(request, starts, 100, 600.0, {polynomial});
+    for (auto& row : request.observations) row.problem.reactions[0].correlation->d = 0.0;
+    polynomial.problem.reactions[0].correlation->d = 0.0;
+    const auto from_explicit_start = fit_sequence(request, starts, 100, 600.0, {polynomial});
+    CHECK(from_declared_law.size() == 1 && from_explicit_start.size() == 1);
+    const auto& explicit_fit = from_explicit_start.front();
+    CHECK(explicit_fit.usable && explicit_fit.covariance.outcome == FitCovarianceStatus::Available);
+    CHECK(explicit_fit.prediction_uncertainty.size() == 1 && from_declared_law.front().prediction_uncertainty.size() == 1);
+    const auto& predicted = explicit_fit.prediction_uncertainty.front();
+    const auto& reference = from_declared_law.front().prediction_uncertainty.front();
+    CHECK(predicted.outcome == FitCovarianceStatus::Available && predicted.observation_status == ObservationStatus::Available);
+    CHECK(predicted.value && predicted.value == reference.value && predicted.variance && predicted.variance == reference.variance);
+}
+
 void check_measurement_admission() {
     FitRequest roundoff;
     roundoff.parameters = properties_support::neutral_ternary();
@@ -527,12 +559,69 @@ void check_measurement_admission() {
     const auto reports = fit(report); CHECK(reports.usable && reports.reconciliation && reports.reconciliation->corrections.size() == 2);
     CHECK(reports.statuses.back() == ObservationStatus::Available && std::isfinite(reports.predictions.back()));
     auto bound = request; bound.uncertainty->groups[0].inputs[0].upper = 300.1;
-    const auto active = fit(bound); CHECK(active.usable && active.covariance.status == "active_bound");
+    const auto active = fit(bound); CHECK(active.usable && active.covariance.outcome == FitCovarianceStatus::ActiveBound);
     auto deficient = request; deficient.observations.resize(1); deficient.uncertainty->groups.resize(1); deficient.uncertainty->output_sigma.resize(1);
     Coordinate intercept; intercept.reaction = ReactionCoordinate{"reaction_a", ReactionCoefficient::A};
     intercept.scale = 0.1; intercept.lower = -1; intercept.upper = 1;
     deficient.coordinates.coordinates.push_back(intercept);
-    const auto rank = fit(deficient); CHECK(rank.usable && rank.covariance.status == "rank_deficient");
+    const auto rank = fit(deficient, deficient.observations); CHECK(rank.usable && rank.covariance.outcome == FitCovarianceStatus::RankDeficient);
+    CHECK(rank.covariance.optimizer.empty() && rank.prediction_uncertainty.size() == 1);
+    const auto& refusal = rank.prediction_uncertainty.front();
+    CHECK(refusal.outcome == FitCovarianceStatus::RankDeficient && refusal.value && !refusal.variance);
+
+    // ln K at fixed T is affine in the two optimizer coordinates A and D.
+    auto linear = intercept_request({300, 320, 340}, {1.52, 1.59, 1.72}, {0.02, 0.02, 0.02});
+    const auto slope = linear_measurements().coordinates.coordinates.front();
+    linear.coordinates.coordinates.push_back(slope);
+    auto prediction = linear.observations.front();
+    prediction.problem.temperature = FreeValue::fixed(350);
+    for (bool absolute : {true, false}) {
+        if (!absolute) linear.uncertainty.reset();
+        const auto training = fit(linear);
+        auto row = prediction;
+        row.observed = -10;
+        row.form = ResidualForm::LogRatio;
+        const auto fitted = fit(linear, {row});
+        CHECK(fitted.optimizer == training.optimizer && fitted.predictions == training.predictions);
+        CHECK(fitted.optimizer_jacobian == training.optimizer_jacobian && fitted.final_cost == training.final_cost);
+        CHECK(fitted.iterations == training.iterations && fitted.residual_evaluations == training.residual_evaluations
+            && fitted.jacobian_evaluations == training.jacobian_evaluations);
+        CHECK(fitted.covariance.outcome == FitCovarianceStatus::Available && fitted.covariance.optimizer == training.covariance.optimizer);
+        CHECK(fitted.prediction_uncertainty.size() == 1);
+        const auto& propagated = fitted.prediction_uncertainty.front();
+        CHECK(propagated.outcome == FitCovarianceStatus::Available && propagated.observation_status == ObservationStatus::Available
+            && propagated.value && propagated.variance);
+        const auto& covariance = fitted.covariance.optimizer;
+        const double g = 350 * slope.scale;
+        CHECK(absolute || (fitted.covariance.variance_factor && *fitted.covariance.variance_factor != 1));
+        const double scale = absolute ? 1 : *fitted.covariance.variance_factor;
+        const double terms[] = {covariance[0], (covariance[1] + covariance[2]) * g, covariance[3] * g * g};
+        CHECK(std::abs(terms[1]) > std::abs(terms[0]) / 2);
+        const double expected = scale * (terms[0] + terms[1] + terms[2]);
+        const double magnitude = scale * (std::abs(terms[0]) + std::abs(terms[1]) + std::abs(terms[2]));
+        const double roundoff = std::numeric_limits<double>::epsilon() * magnitude;
+        const auto label = absolute ? "absolute" : "common-scale";
+        CHECK(reference_scale_agrees(label, "prediction_variance", "1", *propagated.variance, expected, 16 * roundoff, 0, ""));
+        auto point_request = linear;
+        point_request.observations = {prediction};
+        point_request.uncertainty.reset();
+        double fd[2];
+        constexpr double h = 0.125;
+        for (std::size_t k = 0; k < 2; ++k) {
+            auto plus = fitted.optimizer, minus = fitted.optimizer;
+            plus[k] += h; minus[k] -= h;
+            fd[k] = (point(point_request, plus, false).predictions[0] - point(point_request, minus, false).predictions[0]) / (2 * h);
+        }
+        const double checked = scale * (fd[0] * fd[0] * covariance[0] + fd[0] * fd[1] * (covariance[1] + covariance[2])
+            + fd[1] * fd[1] * covariance[3]);
+        CHECK(reference_scale_agrees(label, "prediction_variance_finite_difference", "1", *propagated.variance,
+            checked, 128 * roundoff * std::abs(*propagated.value) / h, 0, ""));
+    }
+    linear.observations.resize(2);
+    const auto no_scale = fit(linear, {prediction});
+    CHECK(no_scale.covariance.outcome == FitCovarianceStatus::Available && !no_scale.covariance.variance_factor);
+    CHECK(no_scale.prediction_uncertainty.front().outcome == FitCovarianceStatus::MissingVarianceFactor
+        && no_scale.prediction_uncertainty.front().value && !no_scale.prediction_uncertainty.front().variance);
     std::cout << "MEASUREMENT_LIMITS zero_sigma_equal=1 empty_equal=1 report_latent=" << reports.reconciliation->corrections.size()
         << " active=" << active.covariance.active_bounds.size() << " deficient_rank=" << rank.covariance.rank << '\n';
 }

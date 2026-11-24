@@ -471,7 +471,7 @@ void recover_reactions(const std::string& id, const FitRequest& request, const s
     }
     agree(id + "/cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result));
     truth(id + "/covariance",
-          result.covariance.status == "available" && result.covariance.rank == expected.size(), summary(result));
+          result.covariance.outcome == FitCovarianceStatus::Available && result.covariance.rank == expected.size(), summary(result));
 }
 
 void check_reaction_recovery() {
@@ -1324,8 +1324,8 @@ void check_addition_enthalpy() {
     agree("addition-f6/cost", "cost", "1", recovered.final_cost, 0.0, 1.0e-14, 0.0,
         summary(recovered));
     truth("addition-f6/covariance",
-        recovered.covariance.status == "available" && recovered.covariance.rank == 2,
-        fields({field("covariance", recovered.covariance.status), field("rank", recovered.covariance.rank),
+        recovered.covariance.outcome == FitCovarianceStatus::Available && recovered.covariance.rank == 2,
+        fields({field("covariance", covariance_status(recovered.covariance)), field("rank", recovered.covariance.rank),
             field("singular_values", recovered.covariance.singular_values)}));
 
     auto two_phase = std::find_if(variants.begin(), variants.end(), [](const AdditionVariant& item) {

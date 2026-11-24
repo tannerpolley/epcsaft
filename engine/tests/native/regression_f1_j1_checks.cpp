@@ -487,7 +487,7 @@ void check_f9_f10() {
         truth(std::string("r1-f9/zero_cost_is_not_a_residual/") + name,
               failed->initial_cost == 0.0 && failed->final_cost == 0.0 && !failed->usable && failed->status == "initial_evaluation_failed"
                   && failed->termination == "not_run" && failed->predictions.empty() && failed->residuals.empty()
-                  && failed->weighted_residuals.empty() && failed->covariance.status == "not_evaluated" && failed->acceptance == "not_evaluated",
+                  && failed->weighted_residuals.empty() && failed->covariance.outcome == FitCovarianceStatus::NotEvaluated && failed->acceptance == "not_evaluated",
               fields({summary(*failed), field("predictions", failed->predictions.size()), field("initial_cost", failed->initial_cost)}));
 }
 

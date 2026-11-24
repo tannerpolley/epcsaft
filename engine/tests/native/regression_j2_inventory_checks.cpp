@@ -215,7 +215,7 @@ void check_cp_recovery() {
             request.coordinates.coordinates[k].origin, 0.0, 1e-6, inputs);
     agree("cp-b/cost", "cost", "1", result.final_cost, 0.0, 1e-14, 0.0, inputs);
     truth("cp-b/rank",
-          result.covariance.status == "available" && result.covariance.rank == 5, inputs);
+          result.covariance.outcome == FitCovarianceStatus::Available && result.covariance.rank == 5, inputs);
 }
 
 void check_j2() {
@@ -227,7 +227,7 @@ void check_j2() {
     agree("r2-j2/kij", "k_ij", "1", result.physical[1], -0.02, 1.0e-6, 0.0, summary(result));
     agree("r2-j2/final_cost", "cost", "1", result.final_cost, 0.0, 1.0e-14, 0.0, summary(result));
     truth("r2-j2/identifiable",
-          result.covariance.status == "available" && result.covariance.rank == 2, summary(result));
+          result.covariance.outcome == FitCovarianceStatus::Available && result.covariance.rank == 2, summary(result));
     // The bounded-stationarity measure max_c |u_c - clamp(u_c - g_c)|, with g = J^T r from the published columns.
     const auto projected_gradient = [](const FitRequest& request, const FitResult& result) {
         const auto [lower, upper] = request.coordinates.optimizer_bounds();
@@ -245,7 +245,7 @@ void check_j2() {
     unfinished.controls.maximum_iterations = 2;
     const auto iterate = fit(unfinished);
     truth("r2-j2/not_converged",
-          iterate.status == "limit_reached" && iterate.usable && iterate.covariance.status == "not_converged"
+          iterate.status == "limit_reached" && iterate.usable && iterate.covariance.outcome == FitCovarianceStatus::NotConverged
               && iterate.covariance.rank == 2 && iterate.covariance.optimizer.empty() && iterate.covariance.physical.empty()
               && !iterate.covariance.variance_factor.has_value() && iterate.final_cost > 1.0e-10, summary(iterate));
     agree("r2-j2/not_converged/projected_gradient", "projected_gradient_max", "1",
@@ -257,7 +257,7 @@ void check_j2() {
     agree("r2-j2/second_start/kij", "k_ij", "1", other.physical[1], -0.02, 1.0e-6, 0.0, summary(other));
     const auto bounded = fit(recovery_request(truth_case, 148.0, 0.0, 151.0));
     truth("r2-j2/active_bound",
-          bounded.usable && bounded.physical[0] == 151.0 && bounded.covariance.status == "active_bound"
+          bounded.usable && bounded.physical[0] == 151.0 && bounded.covariance.outcome == FitCovarianceStatus::ActiveBound
               && bounded.covariance.active_bounds == std::vector<std::size_t>{0}, summary(bounded));
     // The same manufactured targets, starting on the upper epsilon bound with descent initially
     // inward. Coupling to k_ij turns that gradient outward without a new bound contact (#193).
@@ -360,7 +360,7 @@ void check_r3() {
     const auto base = fit(request);
     request.weights.assign(request.observations.size(), 2.0);
     const auto doubled = fit(request);
-    CHECK(base.usable && doubled.usable && base.covariance.status == "available" && doubled.covariance.status == "available");
+    CHECK(base.usable && doubled.usable && base.covariance.outcome == FitCovarianceStatus::Available && doubled.covariance.outcome == FitCovarianceStatus::Available);
     for (std::size_t c = 0; c < 2; ++c)
         agree("r3/weight_scale/parameter/" + std::to_string(c), "theta", "native", doubled.physical[c], base.physical[c], 0.0, 1.0e-9,
               summary(doubled));
@@ -389,7 +389,7 @@ void check_r3() {
     single.observations = {truth_case.observations[0]};
     const auto deficient = fit(single);
     truth("r3/rank_deficient",
-          deficient.usable && deficient.covariance.status == "rank_deficient" && deficient.covariance.rank == 1
+          deficient.usable && deficient.covariance.outcome == FitCovarianceStatus::RankDeficient && deficient.covariance.rank == 1
               && deficient.covariance.optimizer.empty() && !deficient.covariance.variance_factor.has_value(), summary(deficient));
     CHECK(deficient.rank_records.size() == 1);
     const auto& rank = deficient.rank_records.front();
@@ -406,7 +406,7 @@ void check_r3() {
     shared.coordinates.coordinates = {{{{ParameterFamily::SigmaConstant, {0}}, {ParameterFamily::SigmaConstant, {1}}}, 3.6, 0.1, 3.0, 4.0},
                                       {{{ParameterFamily::DispersionEnergyOverK, {0}}}, 150.0, 10.0, 130.0, 170.0}};
     const auto tied = fit(shared);  // converged: an unfinished iterate carries no covariance (r2-j2/not_converged)
-    CHECK(tied.usable && tied.covariance.status == "available" && tied.covariance.physical.size() == 9);
+    CHECK(tied.usable && tied.covariance.outcome == FitCovarianceStatus::Available && tied.covariance.physical.size() == 9);
     const auto& cu = tied.covariance.optimizer;
     const double hand[9] = {0.01 * cu[0], 0.01 * cu[0], 1.0 * cu[1], 0.01 * cu[0], 0.01 * cu[0], 1.0 * cu[1],
                             1.0 * cu[2], 1.0 * cu[2], 100.0 * cu[3]};
@@ -442,7 +442,7 @@ void check_r3() {
     // The optimizer backs off the refused bound and converges there; the refusal is retained by name.
     truth("r3/inadmissible_trial",
           typed && refused.trial_failures > 0 && refused.status == "converged" && refused.usable
-              && refused.covariance.status == "active_bound", summary(refused));
+              && refused.covariance.outcome == FitCovarianceStatus::ActiveBound, summary(refused));
 }
 
 // Native rejected holds: a cached point followed by no root, and a Born-free singular relation.
