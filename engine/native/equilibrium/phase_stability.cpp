@@ -1604,8 +1604,8 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumResult& parent,
     const std::vector<PhaseSpec>& phases, std::uint64_t denominator, std::uint64_t ceiling,
     bool refine, std::optional<std::size_t> trial_budget) {
-    using namespace stability_grid_detail;
     core::Scope diagnostic("stability_grid");
+    using namespace stability_grid_detail;
     const auto start = std::chrono::steady_clock::now();
     if (!denominator || phases.empty() || c.ideal || c.model->parameters().ideal_gas || !c.problem.solids.empty()
         || c.problem.temperature.free || c.problem.pressure.free)
@@ -1653,17 +1653,17 @@ StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumRes
     try {
         for (const auto& list : vertices) {
             const auto n = count(denominator, list.size());
-            if (attempts > maximum - n) throw std::overflow_error("raw grid count overflow");
+            if (attempts > grid_integer_max - n) throw std::overflow_error("raw grid count overflow");
             attempts += n;
         }
         out.raw_attempts = attempts;
         if (attempts > ceiling) throw std::length_error("raw grid ceiling exceeded");
         for (const auto& list : vertices) for (const auto& v : list) {
             multiple /= std::gcd(multiple, v.denominator);
-            if (multiple > maximum / v.denominator) throw std::overflow_error("grid rational scale overflow");
+            if (multiple > grid_integer_max / v.denominator) throw std::overflow_error("grid rational scale overflow");
             multiple *= v.denominator;
         }
-        if (multiple > maximum / 2 / denominator) throw std::overflow_error("grid rational scale overflow");
+        if (multiple > grid_integer_max / 2 / denominator) throw std::overflow_error("grid rational scale overflow");
     } catch (const std::exception& error) {
         out.raw.message = error.what();
         return finish();

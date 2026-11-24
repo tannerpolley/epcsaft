@@ -66,7 +66,7 @@ void check_stability_grid() {
     const auto default_equal = stability_grid(compiled, parent, sides, 1023, 2048, false, 0);
     CHECK(default_equal.raw_attempts == 2048 && default_equal.raw.trials.size() == 2048);
     CHECK(default_equal.raw.work.at("root_calls") == 0 && default_equal.raw.work.at("unvisited_nodes") == 2048);
-    const auto overflow = stability_grid(compiled, parent, sides, maximum);
+    const auto overflow = stability_grid(compiled, parent, sides, grid_integer_max);
     CHECK(!overflow.raw_attempts && overflow.raw.trials.empty() && overflow.raw.work.at("trial_invocations") == 0 && overflow.raw.work.at("root_calls") == 0);
     CHECK(overflow.raw.message == "raw grid count overflow");
     const auto partial = stability_grid(compiled, parent, sides, 2, 6, true, 1);

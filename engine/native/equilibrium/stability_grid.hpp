@@ -12,18 +12,18 @@
 namespace epcsaft::equilibrium::stability_grid_detail {
 using Integer = std::uint64_t;
 using Node = std::vector<Integer>;
-constexpr auto maximum = std::numeric_limits<Integer>::max();
+constexpr auto grid_integer_max = std::numeric_limits<Integer>::max();
 
 // C(m+k-1,k-1), cancelling the divisor before each checked product.
 inline Integer count(Integer m, Integer k) {
     if (!k) return 0;
     Integer total = 1;
     for (Integer j = 1; j < k; ++j) {
-        if (m > maximum - j) throw std::overflow_error("raw grid count overflow");
+        if (m > grid_integer_max - j) throw std::overflow_error("raw grid count overflow");
         const auto divisor = std::gcd(total, j);
         const auto factor = (m + j) / (j / divisor);
         total /= divisor;
-        if (total > maximum / factor) throw std::overflow_error("raw grid count overflow");
+        if (total > grid_integer_max / factor) throw std::overflow_error("raw grid count overflow");
         total *= factor;
     }
     return total;
@@ -105,7 +105,7 @@ inline std::optional<Coverage> coverage(const std::vector<Node>& nodes, const st
     Node lower(nodes.front().size()), upper(lower.size(), scale);
     Coverage worst{0, order.front(), order.front()};
     for (std::size_t i = 0; i < nodes.size(); ++i) if (!admitted[i]) {
-        Integer best = maximum;
+        Integer best = grid_integer_max;
         std::size_t index = 0;
         nearest(nodes, nodes[i], order.begin(), order.end(), 0, lower, upper, 0, best, index);
         if (best > worst.distance) worst = {best, i, index};
