@@ -403,7 +403,8 @@ void association_volume_tangent() {
         false, {}, nullptr, nullptr, nullptr, &accepted, &symmetric.association_plan());
     CHECK(accepted && accepted->strategy == AssociationPlan::BalancedBinary);
     const auto bonded = bonded_densities(x, p, sites, strength);
-    const Eigen::FullPivLU<Eigen::MatrixXd> full(mass_action_jacobian(
+    AssociationJacobian full;
+    full.full.compute(mass_action_jacobian(
         x, p, sites, rho * NUMBER_DENSITY_PER_ANGSTROM3, strength, bonded));
     for (const auto* model : {&symmetric, &asymmetric}) {
         const bool broken = model == &asymmetric;

@@ -124,7 +124,7 @@ public:
     template <std::size_t N, bool Thermal = false>
     Taylor<N, Base> residual(Base density, Base& floor, const std::vector<double>* start = nullptr,
                        std::vector<Base>* sites_out = nullptr, const std::vector<Base>& direction = {}, Base temperature_direction = 0.0,
-                       const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr,
+                       const AssociationJacobian* prepared = nullptr,
                        const AssociationAction* accepted = nullptr) const try {
         using Series = Taylor<N, Base>;
         core::CalculationWork::energy_evaluation();
@@ -190,7 +190,7 @@ public:
             for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
             const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
             if (!sites.empty()) {
-                static thread_local Eigen::FullPivLU<Eigen::MatrixXd> factorization;
+                static thread_local AssociationJacobian factorization;
                 if (!prepared) {
                 if constexpr (std::is_same_v<Base, double>)
                     properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength, nullptr, association_.get());
@@ -1621,7 +1621,7 @@ HelmholtzDerivatives HelmholtzModel::pure_state_derivatives(double temperature, 
 template <typename Base>
 HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Base volume,
     const std::vector<Base>& amounts, const std::vector<double>* sites,
-    const Eigen::FullPivLU<Eigen::MatrixXd>* prepared, Eigen::MatrixXd* site_sensitivity,
+    const AssociationJacobian* prepared, Eigen::MatrixXd* site_sensitivity,
     const AssociationAction* association) const {
     std::vector<double> declared;
     for (const auto& amount : amounts) declared.push_back(static_cast<double>(amount));
@@ -1662,9 +1662,9 @@ HelmholtzDerivativeValues<Base> HelmholtzModel::isothermal(Base temperature, Bas
 }
 
 template HelmholtzDerivativeValues<double> HelmholtzModel::isothermal(double, double,
-    const std::vector<double>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*, const AssociationAction*) const;
+    const std::vector<double>&, const std::vector<double>*, const AssociationJacobian*, Eigen::MatrixXd*, const AssociationAction*) const;
 template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
-    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*, const AssociationAction*) const;
+    const std::vector<WiderScalar>&, const std::vector<double>*, const AssociationJacobian*, Eigen::MatrixXd*, const AssociationAction*) const;
 
 template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 template PureIsothermalValues<WiderScalar> HelmholtzModel::pure_isothermal(WiderScalar, WiderScalar, WiderScalar) const;

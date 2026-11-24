@@ -250,7 +250,7 @@ struct HelmholtzTape final {
     std::vector<double> implicit_taylor(
         const std::vector<std::vector<double>>& regular_coefficients,
         std::size_t order,
-        const Eigen::FullPivLU<Eigen::MatrixXd>* factorization = nullptr,
+        const AssociationJacobian* factorization = nullptr,
         std::size_t* solve_count = nullptr,
         std::size_t* forward_count = nullptr,
         double* coefficient_residual = nullptr,
