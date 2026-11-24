@@ -168,11 +168,13 @@ declared parameter bound. Bounds are inclusive, including single-point bounds.
 Unknown domains contribute no bounds. The values returned by the calculation
 are unchanged.
 
-Temperature and pressure bounds cited by coefficients apply while those
-coefficients are admitted. Bounds declared for the whole document apply
-directly. In a saved materialization from an earlier Engine, an inherited
-temperature or pressure bound needs a link from a retained coefficient.
-The document's own bounds take precedence over inherited records with the same id.
+Temperature and pressure checks apply to document-wide domains, whose IDs are
+uncited in the complete parameter document. The Engine does not yet report
+temperature and pressure bounds cited by coefficient or model records.
+[Issue #200](https://github.com/tannerpolley/epcsaft/issues/200) tracks that work.
+For inherited temperature and pressure bounds in saved parameter documents,
+rematerialize from the source packets if the document predates this check.
+The document's own bounds take precedence over inherited records with the same ID.
 
 When a bound is exceeded, `result.domain_violations` holds records with `variable`, `value`, `bound`,
 `side`, `packet` and `domain_id`. Temperature is in kelvin, pressure in pascal

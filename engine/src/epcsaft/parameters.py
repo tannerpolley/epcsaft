@@ -57,11 +57,6 @@ class _Entries(list[_core.ParameterEntry]):
         super().__init__()
         self.values: list[list[Any]] = []
         self.scalars: list[tuple[int, Any, str]] = []
-        self.domain_components: dict[str, set[frozenset[int]]] = {}
-
-    def cite(self, components: Sequence[int], record: Mapping[str, object]) -> None:
-        for domain_id in _domain_ids(record):
-            self.domain_components.setdefault(domain_id, set()).add(frozenset(components))
 
     def add(self, identity: object, field: str, index: Sequence[int], value: object, name: str, *, repeat_of: str | None = None) -> None:
         if repeat_of is not None:
@@ -265,15 +260,11 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
                 (merged["topology"], key, topology) for key in ("sites", "edges", "no_cross_association")]:
             into[key] += [r for r in items.get(key, ()) if _named(r) <= chosen]
         manifest = Path(root) / packet / "packet.toml"
-        if manifest.is_file():
-            document["domains"] = tomllib.loads(manifest.read_text())["domains"]
-        packet_domains = document.get("domains", [])
-        coefficient_domains = set(_domain_ids(document)) if packet_domains else set()
-        for document_wide in (True, False):
-            domains = [d for d in packet_domains if (d["domain_id"] not in coefficient_domains) == document_wide]
-            if domains or (document_wide and not packet_domains):
-                merged["materialization"].append({"packet": packet, "components": list(names), "domains_selected": document_wide,
-                                                  "sources": document.get("sources", []), "domains": domains})
+        domains = tomllib.loads(manifest.read_text())["domains"] if manifest.is_file() else document.get("domains", [])
+        cited = set(_domain_ids(document)) if domains else set()
+        merged["materialization"].append({"packet": packet, "components": list(names),
+                                          "sources": document.get("sources", []), "domains": domains,
+                                          "document_wide_domains": [d["domain_id"] for d in domains if d["domain_id"] not in cited]})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
         for (a, b), magnitude in values.items():
@@ -513,7 +504,6 @@ class Parameters:
             for family in ("molar_mass", "charge_number", "charged_molecule_ion"):
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
-                    entries.cite((positions[component_id],), item)
                     entries.add(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}")
             coefficients = _array(record.get("coefficients", ()), f"component/{component_id}/coefficients")
             for item_value in coefficients:
@@ -524,7 +514,6 @@ class Parameters:
                 identity = item.get("identity")
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"component/{component_id}/coefficients has no identity")
-                entries.cite((positions[component_id],), item)
                 entries.add(identity, renamed.get(family_value, family_value), (positions[component_id],), item["value"], identity)
 
         raw_correlations = _array(document.get("correlations", ()), "correlations")
@@ -556,7 +545,6 @@ class Parameters:
                 raise ParameterError(f"{correlation_id}: reciprocal_temperature_coefficient requires constant-plus-polynomial-and-reciprocal-in-temperature")
             base = "sigma_constant" if family == "segment_diameter" else "relative_permittivity"
             constant = _mapping(item.get("constant"), f"{correlation_id}.constant")
-            entries.cite(correlation_position, item)
             entries.add(constant.get("identity", correlation_id), base, correlation_position, constant["value"], cast(str, correlation_id))
             if form == "constant-plus-sum-of-exponentials":
                 terms = _array(item.get("terms", ()), f"{correlation_id} terms")
@@ -608,7 +596,6 @@ class Parameters:
                 identity = item.get("identity")
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"pair/{a}/{b} coefficient has no identity")
-                entries.cite(pair_index, item)
                 if family != "k_ij_reciprocal_temperature_slope":
                     _scalar(item, family, pair_index, laws, entries)
                 else:
@@ -669,7 +656,6 @@ class Parameters:
                 field = "ion_suppression_coefficient"
             else:
                 raise _core.ParameterError(f"unknown model coefficient {item.get('identity')}")
-            entries.cite((), item)
             entries.add(item.get("identity"), field, (), item["value"], cast(str, item.get("identity")))
 
         topology = _mapping(document.get("topology", {}), "topology")
@@ -690,7 +676,6 @@ class Parameters:
                 raise _core.ParameterError(f"topology site[{index}].site_id must be a non-empty string")
             if component_id not in positions:
                 continue
-            entries.cite((positions[component_id],), item)
             site_key = (component_id, site_id)
             if site_key in site_ids:
                 raise _core.ParameterError(f"duplicate topology site {site_key}")
@@ -756,7 +741,6 @@ class Parameters:
 
         # Emit only after all explicit identities exist, including forward self-edge references.
         for edge_index, edge, source in selected_edges:
-            entries.cite(tuple(site_component[i] for i in edge_index), edge)
             kind = source.get("kind")
             if kind == "explicit":
                 energy = _mapping(edge.get("energy_over_k"), "association energy")
@@ -796,7 +780,6 @@ class Parameters:
             declared.add(frozenset((a, b)))
             if a in positions and b in positions:
                 ab, zero = (positions[a], positions[b]), {"magnitude": 0.0, "unit": "dimensionless"}
-                entries.cite(ab, item)
                 entries.add(f"no_cross_association/{a}/{b}", "no_cross_association", ab, zero, a)
 
         if "pathway_weight" in document:
@@ -813,7 +796,6 @@ class Parameters:
                 if item.get("family") not in terms:
                     raise ParameterError(f"unknown pathway_weight coefficient {item.get('family')}")
                 term = terms.index(cast(str, item["family"]))
-                entries.cite(ends, item)
                 entries.add(item.get("identity"), "pathway_weight", (term,), item["value"], "pathway_weight")
 
         native_document = _core.ParameterDocument()
@@ -836,16 +818,11 @@ class Parameters:
         own_source = {"packet": document.get("document_id", ""), "domains": own_domains,
                       "components": component_records}
         for bound_source in [own_source, *cast(Any, document.get("materialization", []))]:
-            source_components = set(bound_source["components"])
-            chosen = source_components & set(selected_ids)
-            chosen_positions = {positions[name] for name in chosen}
+            chosen = set(bound_source["components"]) & set(selected_ids)
+            document_wide = own_ids if bound_source is own_source else set(bound_source.get("document_wide_domains", ()))
             for domain in bound_source.get("domains", []):
                 domain_id = domain["domain_id"]
                 if not chosen or domain.get("kind") == "unknown" or (bound_source is not own_source and domain_id in own_ids):
-                    continue
-                admitted = any(indices <= chosen_positions for indices in entries.domain_components.get(domain_id, ()))
-                document_wide = domain_id not in cited if bound_source is own_source else bound_source.get("domains_selected")
-                if not admitted and (domain_id in cited or document_wide is False):
                     continue
                 for field, quantity in (("temperature", _core.DomainQuantity.Temperature),
                                         ("pressure", _core.DomainQuantity.Pressure),
@@ -857,7 +834,7 @@ class Parameters:
                             continue
                         fraction = field == "ion_mole_fraction"
                         intensive = field in ("temperature", "pressure")
-                        if intensive and not (admitted or document_wide):
+                        if intensive and (domain_id in cited or domain_id not in document_wide):
                             continue
                         if not intensive and not fraction and domain.get("solvent") not in selected_ids:
                             continue

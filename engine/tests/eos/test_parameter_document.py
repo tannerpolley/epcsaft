@@ -2,6 +2,7 @@
 Input assembly only; no physical-validation claim."""
 import json
 import warnings
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -166,9 +167,19 @@ def test_packet_composition_bounds() -> None:
         "value": pytest.approx(5.0, rel=1e-12), "unit": "mole / kilogram"}
 
 
-def test_state_domain_warning() -> None:
-    packet_id = "held-2014-strategy2/2"
-    model = Mixture(Parameters.from_packets(PACKETS, [(packet_id, ["water", "sodium-cation", "chloride-anion"])]))
+@pytest.fixture
+def held_document_wide_model() -> Mixture:
+    ids = ["water", "sodium-cation", "chloride-anion"]
+    document = parameter_document(PACKETS, [("held-2014-strategy2/2", ids)])
+    document["document_id"] = "document-conditions"
+    document["domains"] = [{"domain_id": "document-conditions", "kind": "reported-conditions",
+                           "temperature_min": 298.15, "temperature_max": 298.15, "temperature_unit": "kelvin",
+                           "pressure_min": 1, "pressure_max": 1, "pressure_unit": "bar"}]
+    return Mixture(Parameters.from_mapping(document))
+
+
+def test_state_domain_warning(held_document_wide_model: Mixture) -> None:
+    model = held_document_wide_model
     water = 1 / model.parameters.molar_masses[0]
     inside = [water / (water + 2), 1 / (water + 2), 1 / (water + 2)]
     outside = [water / (water + 10), 5 / (water + 10), 5 / (water + 10)]
@@ -184,11 +195,14 @@ def test_state_domain_warning() -> None:
     assert state.domain_violations is not None
     by_variable = {r.variable: r for r in state.domain_violations}
     assert by_variable.keys() == {"temperature", "pressure", "solute_molality"}
-    for key, value, bound, side in (("temperature", 300, 298.15, "above"), ("pressure", 90000, 100000, "below"),
-                                    ("solute_molality", 5, 4.5, "above")):
+    for key, value, bound, side, domain_id in (
+        ("temperature", 300, 298.15, "above", "document-conditions"),
+        ("pressure", 90000, 100000, "below", "document-conditions"),
+        ("solute_molality", 5, 4.5, "above", "held-2014-chlorides-298-15-k-1-bar"),
+    ):
         record = by_variable[key]
         assert (record.bound, record.side, record.packet, record.domain_id) == (
-            bound, side, packet_id, "held-2014-chlorides-298-15-k-1-bar")
+            bound, side, "held-2014-strategy2/2" if key == "solute_molality" else "document-conditions", domain_id)
         assert record.value == pytest.approx(value)
 
     with pytest.warns(DomainWarning) as caught:
@@ -228,39 +242,30 @@ def test_unknown_domain_reports_nothing() -> None:
     with pytest.raises(ParameterError, match="phase mole fractions"):
         model.outside_domains([1])
 
-    propane = Pure(Parameters.from_packets(PACKETS, [("gross-sadowski-2001/3", ["propane"])]))
-    assert propane.outside_domains([1], T=100) == []
-    assert [r.domain_id for r in propane.outside_domains([1], T=84)] == ["propane-fit-range"]
-
-
-def test_materialized_domain_component_selection() -> None:
-    doc = parameter_document(PACKETS, [("gross-sadowski-2001/3", ["methane", "propane"])])
+def test_materialized_domain_component_selection(tmp_path: Path) -> None:
+    source = packet("gross-sadowski-2001/3")
+    source["domains"].append({"domain_id": "document-temperature", "kind": "fit-range",
+                              "temperature_min": 80, "temperature_unit": "kelvin"})
+    path = tmp_path / "test/1/parameters/parameters.json"
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(source))
+    doc: dict[str, Any] = parameter_document(tmp_path, [("test/1", ["methane", "propane"])])
     model = Pure(Parameters.from_mapping(doc, components=["propane"]))
-    assert model.outside_domains([1], T=89) == []
-    assert [r.domain_id for r in model.outside_domains([1], T=84)] == ["propane-fit-range"]
-
-    legacy: dict[str, Any] = parameter_document(PACKETS, [("gross-sadowski-2001/3", ["propane"])])
-    legacy_source = legacy["materialization"][0]
-    legacy_source.pop("domains_selected", None)
-    legacy_source["domains"] = packet("gross-sadowski-2001/3")["domains"]
-    legacy["materialization"] = [legacy_source]
-    saved = Pure(Parameters.from_mapping(legacy))
-    assert saved.outside_domains([1], T=100) == []
-    assert [r.domain_id for r in saved.outside_domains([1], T=84)] == ["propane-fit-range"]
-
-
-def test_pair_coefficient_domain_follows_override() -> None:
-    a, b = "carbon-dioxide", "ethane"
-    packets = [("gross-sadowski-2001/3", [a, b])]
-    original = Mixture(Parameters.from_packets(PACKETS, packets))
-    with pytest.warns(DomainWarning) as caught:
-        state = original.state(300, P=1e5, x=[0.5, 0.5])
-    assert len(caught) == 1 and state.domain_violations is not None
-    assert [(r.domain_id, r.value, r.bound) for r in state.domain_violations] == [
-        ("carbon-dioxide-ethane-250-270-k", 300, 270),
+    assert model.outside_domains([1], T=84) == []
+    assert [(r.packet, r.domain_id, r.bound) for r in model.outside_domains([1], T=79)] == [
+        ("test/1", "document-temperature", 80),
     ]
 
-    model = Mixture(Parameters.from_packets(PACKETS, packets, k_ij={(a, b): 0.0}))
+    doc["materialization"][0].pop("document_wide_domains")
+    legacy = Pure(Parameters.from_mapping(doc, components=["propane"]))
+    assert legacy.outside_domains([1], T=79) == []
+
+
+@pytest.mark.parametrize("override", [None, 0.0])
+def test_pair_coefficient_domain_is_deferred(override: float | None) -> None:
+    a, b = "carbon-dioxide", "ethane"
+    packets = [("gross-sadowski-2001/3", [a, b])]
+    model = Mixture(Parameters.from_packets(PACKETS, packets, k_ij=None if override is None else {(a, b): override}))
     with warnings.catch_warnings():
         warnings.simplefilter("error", DomainWarning)
         assert model.state(300, P=1e5, x=[0.5, 0.5]).domain_violations is None
@@ -279,35 +284,31 @@ def test_omitted_cation_mixing_domain(document_local: bool) -> None:
         assert model.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid").domain_violations is None
 
 
-@pytest.mark.parametrize("deep", [False, True])
-def test_correlation_domain_follows_component_selection(deep: bool) -> None:
+@pytest.mark.parametrize("record", ["born", "ethanol-constant", "ethanol-value"])
+def test_cited_temperature_pressure_domain_is_deferred(record: str) -> None:
     doc = packet("figiel-2025-reference-electrolytes/3")
-    domain_id = "ethanol-only"
-    doc["domains"].append({"domain_id": domain_id, "kind": "fit-range",
-                           "temperature_max": 295, "temperature_unit": "kelvin"})
-    constant = next(r["constant"] for r in doc["correlations"]
-                    if r["component_id"] == "ethanol" and r["family"] == "relative_permittivity")
-    citation = {"domain_id": domain_id}
-    if deep:
-        constant["value"]["evidence"] = [{"original": {"provenance": [citation]}}]
+    doc["domains"].append({"domain_id": "cited-conditions", "kind": "fit-range",
+                           "temperature_max": 295, "temperature_unit": "kelvin",
+                           "pressure_max": 0.9, "pressure_unit": "bar"})
+    citation = {"domain_id": "cited-conditions"}
+    if record == "born":
+        born = next(r for r in doc["model_families"] if r["choice"] == "born")
+        born["provenance"] = citation
     else:
-        constant["provenance"] = citation
+        constant = next(r["constant"] for r in doc["correlations"]
+                        if r["component_id"] == "ethanol" and r["family"] == "relative_permittivity")
+        if record == "ethanol-value":
+            constant["value"]["evidence"] = [{"original": {"provenance": [citation]}}]
+        else:
+            constant["provenance"] = citation
 
-    aqueous = ["water", "sodium-cation", "chloride-anion"]
-    narrowed = Mixture(Parameters.from_mapping(doc, components=aqueous))
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always", DomainWarning)
-        state = narrowed.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid")
-    assert len(caught) == 0 and state.domain_violations is None
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", DomainWarning)
-        assert narrowed.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid").domain_violations is None
-
-    selected = Mixture(Parameters.from_mapping(doc, components=[*aqueous, "ethanol"]))
-    records = selected.outside_domains([0.9, 0, 0, 0.1], T=298.15, P=1e5)
-    assert [(r.variable, r.value, r.bound) for r in records if r.domain_id == domain_id] == [
-        ("temperature", 298.15, 295),
-    ]
+    ids = ["water", "sodium-cation", "chloride-anion"]
+    for components, x in ((ids, [0.98, 0.01, 0.01]), ([*ids, "ethanol"], [0.97, 0.01, 0.01, 0.01])):
+        model = Mixture(Parameters.from_mapping(doc, components=components))
+        assert model.outside_domains(x, T=298.15, P=1e5) == []
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DomainWarning)
+            assert model.state(298.15, P=1e5, x=x, phase="liquid").domain_violations is None
 
 
 def test_document_domain_with_inherited_materialization() -> None:
@@ -315,8 +316,9 @@ def test_document_domain_with_inherited_materialization() -> None:
     model = Mixture(Parameters.from_json(source))
     water = [float(name == "water") for name in model.component_ids]
     records = model.outside_domains(water, T=300, P=90000)
-    assert {(r.variable, r.bound, r.side) for r in records if r.domain_id == "issue-658-aqueous-298-15-k"} == {
-        ("temperature", 298.15, "above"), ("pressure", 100000, "below"),
+    assert {(r.domain_id, r.variable, r.bound, r.side) for r in records} == {
+        ("issue-209-provisional-binary-aqueous", "temperature", 298.15, "above"),
+        ("issue-209-provisional-binary-aqueous", "pressure", 100000, "below"),
     }
 
 
@@ -361,9 +363,9 @@ def test_compiled_saturation_pressure_domain() -> None:
     assert [r.phase for r in actions.domain_violations] == [0, 1]
 
 
-def test_reference_activity_domains() -> None:
+def test_reference_activity_domains(held_document_wide_model: Mixture) -> None:
     ids = ["water", "sodium-cation", "chloride-anion"]
-    model = Mixture(Parameters.from_packets(PACKETS, [("held-2014-strategy2/2", ids)]))
+    model = held_document_wide_model
     with warnings.catch_warnings():
         warnings.simplefilter("error", DomainWarning)
         assert model.reference(298.15, 100000, solvent_fractions=[1, 0, 0]).domain_violations is None
