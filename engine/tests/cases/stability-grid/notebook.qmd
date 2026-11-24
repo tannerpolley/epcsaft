@@ -13,7 +13,9 @@ water and 1.368 mol CO₂ per mol MDEA. The AMP parent is at 393.15 K and
 1215282.4561119014 Pa, with 30.0 wt% AMP before loading and 0.700 mol CO₂ per mol AMP.
 The replay uses fixed-temperature, fixed-pressure single-liquid parents, the
 supplied reactions, and aqueous standards. It reuses the same compiled system and
-accepted parent for both independent searches in each case.
+accepted parent for both independent searches in each case. The model reports
+that the MDEA pressure exceeds the parameter metadata’s 10 MPa upper bound.
+The replay tests the equations at that extrapolated pressure.
 
 [Amine-Thermodynamics at f30977a3](https://github.com/tannerpolley/Amine-Thermodynamics/tree/f30977a3)
 supplies the parameters, reaction laws, feed, reference declarations, and
@@ -33,12 +35,12 @@ requested local refinement.
 
 | Case | Method | $\Delta G/(RT)$ ± error (mol) | Root calls | Density evaluations | EOS evaluations | Elapsed (s) |
 |---|---|---:|---:|---:|---:|---:|
-| MDEA | Full | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 85 | 11,525 | 12,351 | 0.281 |
-| MDEA | Grid, $m=4$ | No witness | 465 | 20,400 | 22,126 | 0.277 |
-| MDEA | Union, $m=4$ | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 550 | 31,925 | 34,477 | 0.558 |
-| AMP | Full | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 22 | 1,410 | 1,971 | 0.175 |
-| AMP | Grid, $m=4$ | No witness | 840 | 14,186 | 17,167 | 0.343 |
-| AMP | Union, $m=4$ | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 862 | 15,596 | 19,138 | 0.519 |
+| MDEA | Full | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 85 | 11,525 | 12,351 | 0.291 |
+| MDEA | Grid, $m=4$ | No witness | 465 | 20,400 | 22,126 | 0.332 |
+| MDEA | Union, $m=4$ | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 550 | 31,925 | 34,477 | 0.622 |
+| AMP | Full | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 22 | 1,410 | 1,971 | 0.174 |
+| AMP | Grid, $m=4$ | No witness | 840 | 14,186 | 17,167 | 0.346 |
+| AMP | Union, $m=4$ | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 862 | 15,596 | 19,138 | 0.520 |
 
 | Case | Method | First reduced molar TPD ± estimated error | Minimum reduced molar TPD ± estimated error |
 |---|---|---:|---:|
@@ -104,4 +106,16 @@ AMP coexistence calculation. It supplies no total error for the retained MDEA
 coexistence result. These model calculations supply evidence about the
 declared equations and do not validate phase behavior against observations.
 
-The independent delivered review and manuscript promotion remain open.
+## Donor slope under feed rescaling
+
+The manufactured isomerisation check at 180 K and 100 kPa uses the same
+composition and feeds differing by a factor of 1,000. The corrected donor-slope
+estimate is $3.93665\times10^{-14}$ on both bases, with the same Full withdrawal
+admissions. The original estimates were $4.09208\times10^{-14}$ and
+$1.63098\times10^{-12}$, outside the $7.10543\times10^{-15}$ arithmetic
+comparison criterion. The extensive repair contribution remains in the finite
+split estimate. Against main `6df8953a`, the recorded ordinary Full admissions,
+states and work agreed for both reactive parents.
+
+The replay was run with the Engine at `47d83ed0`. Manuscript promotion remains
+open.
