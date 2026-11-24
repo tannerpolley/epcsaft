@@ -72,3 +72,34 @@ and local curvature also do not exclude a distant lower-energy split. A
 critical-equation candidate satisfies necessary equations; it is not by itself
 a stability certificate. Use the wording supported by the actual search and
 read the [limits](../limits.md) before promoting a phase prediction.
+
+## Measure coverage on a declared composition grid
+
+Call `stability_grid(compiled, parent, phases, denominator)` for an accepted
+fixed-temperature, fixed-pressure parent. Each `PhaseSpec` declares a support
+and a liquid or vapor density side. The Engine enumerates mixtures of the pure
+neutral species and neutral opposite-sign ion pairs with integer vertex weights
+summing to the denominator. Exact boundary nodes use their positive species
+support. The default ceiling of 2,048 raw attempts applies across the request
+before deduplication. Set `ceiling` explicitly to allow a larger schedule.
+
+For each support and side, `h` is the largest species mole-fraction L1 distance
+from any planned grid node to its nearest admitted raw node. It is zero when
+every node is admitted and unavailable when the side has no admitted nodes.
+Wrong-side or unresolved pressure roots, refused evaluations, and unvisited
+nodes can increase the distance. Shared faces belong to each relevant support.
+The rounding bound `min(2, k / denominator)`, for `k` vertices, covers rounding
+from the represented continuous composition domain to the planned grid. Add
+that bound, `h`, and the separate mapping allowance to bound distance to an
+evaluated composition. A sum of at least 2 gives no improvement over the
+simplex diameter. The record identifies omitted species and retains the causes
+of individual gaps. Each raw trial retains its density and EOS work, including
+refused evaluations. The raw reduced molar TPD estimate treats the parent
+plane as fixed. Donor-slope and finite-withdrawal errors are separate quantities.
+
+Coverage measures composition distance only. It supplies neither a bound on
+unsampled tangent-plane distances nor a count of all density branches, so a
+finite search without a resolved Gibbs decrease cannot certify stability.
+Optional local refinement and finite withdrawals can supply witnesses without
+changing raw grid coverage. Ordinary stability tests, phase discovery, fits
+and flashes leave this diagnostic unused.

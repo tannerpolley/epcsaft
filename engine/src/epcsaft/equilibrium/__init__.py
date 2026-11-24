@@ -83,6 +83,7 @@ IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = _core.IDEAL_MOLE_FRACTION_STANDARD_STATE
 IDEAL_MOLARITY_STANDARD_STATE_ID = _core.IDEAL_MOLARITY_STANDARD_STATE_ID
 solved_state_first_actions = _core.solved_state_first_actions
 cooling_onset = _core.cooling_onset
+stability_grid = _core.stability_grid
 stability_test = _core.stability_test
 StabilityOptions = _core.StabilityOptions
 PreparedSuppliedTrials = _core.PreparedSuppliedTrials
@@ -118,6 +119,7 @@ __all__ = (
     "inventory_bounds",
     "InventoryBound",
     "cooling_onset",
+    "stability_grid",
     "stability_test",
     "StabilityOptions",
     "PreparedSuppliedTrials",
