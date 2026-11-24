@@ -60,7 +60,7 @@ from .eos import (  # noqa: E402
     ThermochemistryRecord,
     ThermochemistryStatus,
 )
-from .parameters import ParameterError, Parameters  # noqa: E402
+from .parameters import DomainWarning, OutsideDomain, ParameterError, Parameters  # noqa: E402
 from .reference import Activity, Reference, SolventActivity  # noqa: E402
 from ._log import log as _log  # noqa: E402
 
@@ -169,6 +169,8 @@ __all__ = (
     "IdealPolynomial",
     "IdealShomate",
     "Mixture",
+    "DomainWarning",
+    "OutsideDomain",
     "ParameterActionDirection",
     "ParameterError",
     "ParameterFamily",

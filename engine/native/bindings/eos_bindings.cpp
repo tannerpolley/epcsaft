@@ -1,5 +1,5 @@
 #include "properties/helmholtz_model.hpp"
-#include "surface/parameter_builder.hpp"
+#include "domain_reports.hpp"
 
 #include "equilibrium_record.hpp"
 #include "fields.hpp"
@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -97,27 +98,25 @@ void register_thermal_inputs(nb::module_& module) {
 
 void register_eos(nb::module_& module) {
     using namespace epcsaft;
+    using bindings::domain_point;
+    using bindings::domain_result;
     register_thermal_inputs(module);
     nb::enum_<DomainQuantity>(module, "DomainQuantity")
-        EPCSAFT_VALUES(DomainQuantity, SoluteMolality, IonicStrength, IonMoleFraction);
+        EPCSAFT_VALUES(DomainQuantity, SoluteMolality, IonicStrength, IonMoleFraction, Temperature, Pressure);
     nb::enum_<DomainLimit>(module, "DomainLimit") EPCSAFT_VALUES(DomainLimit, Minimum, Maximum);
-    nb::class_<CompositionBound>(module, "CompositionBound")
-        .def(nb::init<std::string, std::string, std::string, std::string, DomainQuantity, DomainLimit, std::size_t, std::vector<std::size_t>, double>())
-        EPCSAFT_READONLY(CompositionBound, packet, domain_id, solute, unit, quantity, limit, solvent, solutes, bound);
+    nb::class_<DomainBound>(module, "DomainBound")
+        .def(nb::init<std::string, std::string, std::string, std::string, DomainQuantity, DomainLimit, std::size_t, std::vector<std::size_t>, double>());
+    nb::class_<DomainBounds>(module, "DomainBounds");
     module.def("admit_domains", &admit_domains, nb::arg("parameters"), nb::arg("bounds"));
-    module.def("outside_domains", [](const Parameters& p, const std::vector<CompositionBound>& bounds, const std::vector<double>& x) {
-        nb::list result;
-        for (const auto& row : outside_domains(p, bounds, x)) {
-            const auto& b = row.declaration;
-            nb::dict record;
-            record["packet"] = b.packet; record["domain_id"] = b.domain_id;
-            record["quantity"] = b.quantity; record["limit"] = b.limit;
-            if (b.quantity == DomainQuantity::SoluteMolality) record["solute"] = b.solute;
-            record["bound"] = b.bound; record["value"] = row.value; record["unit"] = b.unit;
-            result.append(record);
-        }
-        return result;
-    }, nb::arg("parameters"), nb::arg("bounds"), nb::arg("x"));
+    nb::class_<OutsideDomain>(module, "OutsideDomain")
+        EPCSAFT_READONLY(OutsideDomain, packet, domain_id, variable, side, unit, solute, value, bound, row, phase);
+    module.def("outside_domains", [](const Parameters& p, const DomainBounds* bounds, const std::vector<double>& x,
+        std::optional<double> temperature, std::optional<double> pressure) {
+        std::vector<OutsideDomain> rows;
+        outside_domains(rows, p, bounds, x, temperature, pressure, 0, 0, true);
+        return rows;
+    }, nb::arg("parameters"), nb::arg("bounds").none(), nb::arg("x"),
+        nb::arg("temperature") = std::nullopt, nb::arg("pressure") = std::nullopt);
     nb::class_<epcsaft::ParameterEntry>(module, "ParameterEntry")
         .def(nb::init<>())
         EPCSAFT_READWRITE(epcsaft::ParameterEntry, identity, field, index, magnitude, unit);
@@ -181,7 +180,8 @@ void register_eos(nb::module_& module) {
             forward_sweeps, branch, returned_branch, stable_root_count, first_numerical_failure);
     nb::class_<epcsaft::ResidualEnergyAction>(module, "ResidualEnergyAction")
         EPCSAFT_READONLY(epcsaft::ResidualEnergyAction, action, status, diagnostics);
-    nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch")
+    nb::class_<epcsaft::PropertyActionBatch>(module, "PropertyActionBatch", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::PropertyActionBatch, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::PropertyActionBatch, results, maximum_energy_order, diagnostics, molar_density,
             density_action, density_mixed_action, density_message, density_convergence, density_status);
@@ -192,25 +192,28 @@ void register_eos(nb::module_& module) {
             k_pressure, k_density, gibbs_derivatives, status, cause);
     module.def("reaction_thermochemistry_density", &epcsaft::reaction_thermochemistry_density,
         nb::arg("record"), nb::arg("stoichiometry"), nb::arg("temperature"));
-    nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients")
+    nb::class_<epcsaft::VirialCoefficients>(module, "VirialCoefficients", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::VirialCoefficients, second, third);
-    nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms")
+    nb::class_<epcsaft::LogFugacityTerms>(module, "LogFugacityTerms", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::LogFugacityTerms, hard_chain, dispersion, association, debye_huckel, msa, born, dipolar,
             cation_mixing, log_compressibility_factor);
-    nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions")
+    nb::class_<epcsaft::VirialCoefficientActions>(module, "VirialCoefficientActions", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::VirialCoefficientActions, second, third, second_action, third_action);
     nb::enum_<epcsaft::StateStatus>(module, "StateStatus")
         EPCSAFT_VALUES(epcsaft::StateStatus, Available, ParameterError, DeclarationError, ConvergenceError, DensityStructureError, EosError, DomainError);
-    nb::class_<epcsaft::StateBatch> batch(module, "StateBatch");
-    batch EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, cause, failure_record)
+    nb::class_<epcsaft::StateBatch> batch(module, "StateBatch", nb::dynamic_attr());
+    batch EPCSAFT_DOMAIN_VIOLATIONS EPCSAFT_READONLY(epcsaft::StateBatch, rows, status, cause, failure_record)
         .def_prop_ro("first_numerical_failure", [](const epcsaft::StateBatch& value) {
             std::vector<std::optional<epcsaft::core::Convergence>> result;
             for (std::size_t k = 0; k < value.rows.size(); ++k)
                 result.push_back(value.rows[k] ? value.rows[k]->first_numerical_failure : value.failure_first[k]);
             return result;
         });
-    nb::class_<epcsaft::State> state(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.");
-    state.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
+    nb::class_<epcsaft::State> state(module, "State", "One homogeneous state in SI molar units (K, Pa, mol/m^3, J/mol); component lists in component_ids order.", nb::dynamic_attr());
+    state EPCSAFT_DOMAIN_VIOLATIONS.def_prop_ro("returned_density_branch", &epcsaft::State::returned_density_branch)
         .def_prop_ro("density_branch_mismatch", &epcsaft::State::density_branch_mismatch)
         .def_ro("first_numerical_failure", &epcsaft::State::first_numerical_failure)
         EPCSAFT_SOLVER_OPTIONS(epcsaft::State, PROPERTY_SCOPE)
@@ -257,27 +260,41 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(epcsaft::SweepCounters, forward, reverse, hessian_calls, recordings, directional_paths, maximum_energy_order);
     nb::class_<epcsaft::HelmholtzModel>(module, "HelmholtzModel")
         .def("__init__", [](epcsaft::HelmholtzModel* self, epcsaft::Parameters p, std::vector<epcsaft::ActiveParameter> a,
-                         std::optional<epcsaft::ThermochemistryRecord> t, nb::object options) {
+                         std::optional<epcsaft::ThermochemistryRecord> t, nb::object options, std::shared_ptr<const DomainBounds> domains) {
             new (self) epcsaft::HelmholtzModel(std::move(p), std::move(a), std::move(t), epcsaft::bindings::solver_options(options, PROPERTY_SCOPE));
+            self->domains = std::move(domains);
         },
              nb::arg("parameters"), nb::arg("active_parameters") = std::vector<epcsaft::ActiveParameter>{},
-             nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none())
+             nb::arg("thermochemistry") = std::nullopt, nb::arg("solver_options") = nb::none(), nb::arg("domains") = nb::none())
         .def_prop_ro("solver_options", [](const epcsaft::HelmholtzModel& v) { return epcsaft::bindings::solver_options_view(v.solver_options(), PROPERTY_SCOPE); })
         .def_prop_ro("active_parameter_values", &epcsaft::HelmholtzModel::active_parameter_values)
-        .def("virial_coefficients", &epcsaft::HelmholtzModel::virial_coefficients,
-            nb::arg("temperature"), nb::arg("composition"))
-        .def("virial_coefficient_actions", &epcsaft::HelmholtzModel::virial_coefficient_actions,
-            nb::arg("temperature"), nb::arg("composition"), nb::arg("temperature_direction"), nb::arg("composition_direction"))
-        .def("state", [](const epcsaft::HelmholtzModel& model, double temperature, double molar_density,
-                         const std::vector<double>& composition, bool derived_properties) {
-            model.validate_electroneutrality(composition);
-            return model.state(temperature, molar_density, composition, derived_properties);
+        .def("virial_coefficients", [](const HelmholtzModel& model, double t, const std::vector<double>& x) {
+            return domain_point(model.virial_coefficients(t, x), model, x, t);
+        }, nb::arg("temperature"), nb::arg("composition"))
+        .def("virial_coefficient_actions", [](const HelmholtzModel& model, double t, const std::vector<double>& x,
+            double dt, const std::vector<double>& dx) {
+            return domain_point(model.virial_coefficient_actions(t, x, dt, dx), model, x, t);
+        }, nb::arg("temperature"), nb::arg("composition"), nb::arg("temperature_direction"), nb::arg("composition_direction"))
+        .def("state", [](const HelmholtzModel& model, double t, double rho, const std::vector<double>& x,
+                         bool derived) {
+            model.validate_electroneutrality(x);
+            return domain_result(model.state(t, rho, x, derived), &model,
+                [&](auto& rows, const State& r) { outside_domains(rows, model.parameters(), model.domains.get(), x, t, r.pressure); });
         }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"),
              nb::arg("derived_properties") = false)
-        .def("log_fugacity_terms", &epcsaft::HelmholtzModel::log_fugacity_terms,
-            nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"))
-        .def("states", &epcsaft::HelmholtzModel::states, nb::arg("temperature"), nb::arg("input"), nb::arg("composition"),
-             nb::arg("at_pressure"), nb::arg("branch"), nb::arg("derived_properties"))
+        .def("log_fugacity_terms", [](const HelmholtzModel& model, double t, double rho, const std::vector<double>& x) {
+            return domain_point(model.log_fugacity_terms(t, rho, x), model, x, t, std::nullopt, rho);
+        }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"))
+        .def("states", [](const HelmholtzModel& model, const std::vector<double>& t, const std::vector<double>& input,
+            const std::vector<std::vector<double>>& x, bool at_pressure, DensityBranch branch, bool derived) {
+            return domain_result(model.states(t, input, x, at_pressure, branch, derived), &model, [&](auto& rows, const StateBatch& r) {
+                for (std::size_t i = 0; i < r.rows.size(); ++i) if (r.rows[i]) {
+                    const double pressure = at_pressure ? input[input.size() == 1 ? 0 : i] : r.rows[i]->pressure;
+                    outside_domains(rows, model.parameters(), model.domains.get(), x[x.size() == 1 ? 0 : i], t[i], pressure, i);
+                }
+            });
+        }, nb::arg("temperature"), nb::arg("input"), nb::arg("composition"), nb::arg("at_pressure"), nb::arg("branch"),
+             nb::arg("derived_properties"))
         .def("neutral_property", &epcsaft::HelmholtzModel::neutral_property, nb::arg("temperature"), nb::arg("molar_density"),
              nb::arg("property"), nb::arg("order"))
         .def("density_actions", [](const epcsaft::HelmholtzModel& model,
@@ -287,8 +304,10 @@ void register_eos(nb::module_& module) {
                                     const std::vector<epcsaft::DensityActionDirection>& directions) {
             epcsaft::core::Scope scope("density_actions");
             model.validate_electroneutrality(composition);
-            return model.density_actions(
-                temperature, molar_density, composition, observables, directions);
+            auto result = model.density_actions(temperature, molar_density, composition, observables, directions);
+            if (!model.domains || std::none_of(result.results.begin(), result.results.end(), [](const auto& row) { return row.value.has_value(); }))
+                return nb::cast(std::move(result));
+            return domain_point(std::move(result), model, composition, temperature, std::nullopt, molar_density);
         }, nb::arg("temperature"), nb::arg("molar_density"), nb::arg("mole_fractions"), nb::arg("observables"),
              nb::arg("directions"))
         .def("pressure_actions", [](const epcsaft::HelmholtzModel& model,
@@ -304,8 +323,10 @@ void register_eos(nb::module_& module) {
                 ? epcsaft::equilibrium::model_at(model, *active_parameter_values) : nullptr;
             const auto& current = shifted ? *shifted : model;
             current.validate_electroneutrality(composition);
-            return current.pressure_actions(temperature, pressure, composition, branch,
-                observables, directions, anchor_density);
+            return domain_result(current.pressure_actions(temperature, pressure, composition, branch, observables, directions, anchor_density),
+                &model, [&](auto& rows, const PropertyActionBatch& r) {
+                    if (r.molar_density) outside_domains(rows, current.parameters(), model.domains.get(), composition, temperature, pressure);
+                });
         },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("observables"), nb::arg("directions"),
@@ -322,8 +343,8 @@ void register_eos(nb::module_& module) {
                                      const std::vector<double>& composition, epcsaft::DensityBranch branch,
                                      std::optional<double> anchor_density, bool derived_properties) {
             model.validate_electroneutrality(composition);
-            return model.state_at_pressure(temperature, pressure, composition, branch, anchor_density,
-                derived_properties);
+            return domain_point(model.state_at_pressure(temperature, pressure, composition, branch, anchor_density, derived_properties),
+                model, composition, temperature, pressure);
         },
              nb::arg("temperature"), nb::arg("pressure"), nb::arg("mole_fractions"),
              nb::arg("branch"), nb::arg("anchor_density") = std::nullopt, nb::arg("derived_properties") = false)
@@ -333,27 +354,40 @@ void register_eos(nb::module_& module) {
              nb::arg("pressure"), nb::arg("composition"), nb::arg("request"))
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
-    nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
+    nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
             parameter_derivative, pure_solvent_log_fugacity, pure_solvent_state, solvent_state, diagnostics,
             solvent_status, solvent_cause, solvent_convergence);
-    nb::class_<epcsaft::SolventActivity>(module, "SolventActivity")
+    nb::class_<epcsaft::SolventActivity>(module, "SolventActivity", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::SolventActivity, solvent_activity, osmotic_coefficient,
             solvent_activity_parameter_derivative, osmotic_parameter_derivative, parameter_status, parameter_cause,
             status, cause, osmotic_cause, state);
-    nb::class_<epcsaft::HenryConstant>(module, "HenryConstant")
+    nb::class_<epcsaft::HenryConstant>(module, "HenryConstant", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px, status, message);
-    module.def("henry_constants", &epcsaft::henry_constants, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"),
-        nb::arg("solvent_fractions"), nb::arg("solute_indices"));
+    module.def("henry_constants", [](const HelmholtzModel& model, double t, double p, const std::vector<double>& x,
+        const std::vector<std::size_t>& solutes) {
+        return domain_result(henry_constants(model, t, p, x, solutes), &model, [&](auto& rows, const auto& r) {
+            if (std::any_of(r.begin(), r.end(), [](const auto& h) { return h.henry_constant_px.has_value(); }))
+                outside_domains(rows, model.parameters(), model.domains.get(), x, t, p);
+        });
+    }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("solute_indices"));
     module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {
-        return epcsaft::solvent_reference(model, T, P, x);
+        return domain_result(epcsaft::solvent_reference(model, T, P, x), &model, [&](auto& rows, const auto& r) {
+            if (r.pure_solvent_log_fugacity) outside_domains(rows, model.parameters(), model.domains.get(), x, T, P);
+        });
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"));
     module.def("solvent_activity", [](const epcsaft::HelmholtzModel& model, double T, double P,
         const std::vector<double>& x, const epcsaft::InfiniteDilutionReference& reference) {
-        return epcsaft::solvent_activity(model, T, P, x, reference);
+        auto result = epcsaft::solvent_activity(model, T, P, x, reference);
+        if (!result.solvent_activity) return nb::cast(std::move(result));
+        return domain_point(std::move(result), model, x, T, P);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("composition"), nb::arg("reference"));
-    nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "Selected salt coefficients on the declared solvent infinite-dilution reference; mean_ionic_molality_scale is the molality-scale gamma+-.")
+    nb::class_<epcsaft::ElectrolyteActivity>(module, "ElectrolyteActivity", "Selected salt coefficients on the declared solvent infinite-dilution reference; mean_ionic_molality_scale is the molality-scale gamma+-.", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::ElectrolyteActivity, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::ElectrolyteActivity, single_ion, mean_ionic_mole_fraction_scale,
             mean_ionic_log_molality_scale, mean_ionic_molality_scale, osmotic_coefficient, mean_ionic_parameter_derivative,
@@ -361,15 +395,22 @@ void register_eos(nb::module_& module) {
         EPCSAFT_REPR(ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion");
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
-        return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);
+        return domain_point(epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry),
+            model, solvent, temperature, pressure);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
        nb::arg("stoichiometry"));
     module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry,
         double molality, const epcsaft::InfiniteDilutionReference& reference,
         const std::optional<std::vector<double>>& solute_molalities) {
-        return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference,
-            std::nullopt, solute_molalities);
+        const auto evaluate = [&](std::vector<double>* composition) {
+            return epcsaft::electrolyte_activity(model, temperature, pressure, solvent, ions, stoichiometry, molality, reference,
+                std::nullopt, solute_molalities, composition);
+        };
+        if (!model.domains) return nb::cast(evaluate(nullptr));
+        std::vector<double> x;
+        auto result = evaluate(&x);
+        return domain_point(std::move(result), model, x, temperature, pressure);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
        nb::arg("stoichiometry"), nb::arg("molality"), nb::arg("reference"), nb::arg("solute_molalities") = nb::none());
 }

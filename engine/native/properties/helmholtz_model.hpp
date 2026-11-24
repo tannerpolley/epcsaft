@@ -469,6 +469,7 @@ struct NeutralReferenceReactionDiagnostic final {
     }
 };
 
+struct DomainBounds;
 class HelmholtzModel final {
 public:
     EPC_API explicit HelmholtzModel(
@@ -477,6 +478,9 @@ public:
         std::optional<ThermochemistryRecord> thermochemistry = std::nullopt,
         policy::SolverOptions solver_options = {}
     );
+
+    // Bound by Surface at model construction, read only by the returned-result bindings.
+    std::shared_ptr<const DomainBounds> domains;
 
     EPC_API ~HelmholtzModel();
 
@@ -520,6 +524,7 @@ public:
     ) const;
     EPC_API LogFugacityTerms log_fugacity_terms(
         double temperature, double molar_density, const std::vector<double>& mole_fractions) const;
+    EPC_API std::optional<double> state_pressure(double, double, const std::vector<double>&) const;
     EPC_API State state_at_pressure(
         double temperature,
         double pressure,
@@ -602,6 +607,8 @@ private:
     PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
     HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
+    HelmholtzDerivatives state_derivatives(double, double, const std::vector<double>&, bool, bool,
+        const HelmholtzDerivatives*) const;
     ResidualEnergyAction energy_action_locked(double, double, const std::vector<double>&,
         const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr) const;
     HelmholtzDerivatives evaluate_locked(
@@ -810,7 +817,8 @@ EPC_API ElectrolyteActivity electrolyte_activity(
     double molality,
     const InfiniteDilutionReference& reference,
     std::optional<double> finite_density = std::nullopt,
-    const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt
+    const std::optional<std::vector<double>>& finite_solute_molalities = std::nullopt,
+    std::vector<double>* returned_composition = nullptr
 );
 
 // The packing coefficient c = sum_i component[i] with component[i] = (pi/6) N_A 1e-30 x_i m_i d_i^3 [m^3 per
