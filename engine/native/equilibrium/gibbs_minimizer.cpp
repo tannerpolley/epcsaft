@@ -2526,7 +2526,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             // #207: three Ipopt steps reached the basin of the existing exact polish on all eight supplied starts.
             auto fast = run_driver_once(compiled, initial, structural, trial, nullptr, nullptr,
                 Attempt::Cold, {}, false, false, reporting, 3);
-            if (fast.success && admit_branches(fast, trial)) {
+            if (fast.success && fast.requested_tolerance_met.value_or(false) && admit_branches(fast, trial)) {
                 fast.solver_status = "NEWTON_CONVERGED";
                 std::move(stages).report(fast);
                 return selected(std::move(fast), limits);
