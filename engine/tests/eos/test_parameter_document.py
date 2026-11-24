@@ -239,6 +239,24 @@ def test_materialized_domain_component_selection() -> None:
     assert model.outside_domains([1], T=89) == []
     assert [r.domain_id for r in model.outside_domains([1], T=84)] == ["propane-fit-range"]
 
+    legacy: dict[str, Any] = parameter_document(PACKETS, [("gross-sadowski-2001/3", ["propane"])])
+    legacy_source = legacy["materialization"][0]
+    legacy_source.pop("domains_selected")
+    legacy_source["domains"] = packet("gross-sadowski-2001/3")["domains"]
+    saved = Pure(Parameters.from_mapping(legacy))
+    assert saved.outside_domains([1], T=100) == []
+    assert [r.domain_id for r in saved.outside_domains([1], T=84)] == ["propane-fit-range"]
+
+
+def test_document_domain_with_inherited_materialization() -> None:
+    source = PACKETS / "figiel-2025-chloride-mixture-refit/3/parameters/parameters.json"
+    model = Mixture(Parameters.from_json(source))
+    water = [float(name == "water") for name in model.component_ids]
+    records = model.outside_domains(water, T=300, P=90000)
+    assert {(r.variable, r.bound, r.side) for r in records if r.domain_id == "issue-658-aqueous-298-15-k"} == {
+        ("temperature", 298.15, "above"), ("pressure", 100000, "below"),
+    }
+
 
 def test_fixed_density_pressure_domain() -> None:
     doc = packet("gross-2001-propane/3")
@@ -284,7 +302,24 @@ def test_compiled_saturation_pressure_domain() -> None:
 def test_reference_activity_domains() -> None:
     ids = ["water", "sodium-cation", "chloride-anion"]
     model = Mixture(Parameters.from_packets(PACKETS, [("held-2014-strategy2/2", ids)]))
-    reference = model.reference(300, 90000, solvent_fractions=[1, 0, 0], ions=(ids[1], ids[2]), stoichiometry=(1, 1))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.reference(298.15, 100000, solvent_fractions=[1, 0, 0]).domain_violations is None
+        with pytest.raises(DomainWarning, match="temperature"):
+            model.reference(300, 90000, solvent_fractions=[1, 0, 0])
+    with pytest.warns(DomainWarning) as caught:
+        solvent_reference = model.reference(300, 90000, solvent_fractions=[1, 0, 0])
+    assert len(caught) == 1 and solvent_reference.domain_violations is not None
+    assert {r.variable for r in solvent_reference.domain_violations} == {"temperature", "pressure"}
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        (refused,) = solvent_reference.henry_constants(solutes=["sodium-cation"])
+    assert refused.status == _core.NeutralReferenceStatus.NonNeutralDeclaration and refused.domain_violations is None
+
+    with pytest.warns(DomainWarning) as caught:
+        reference = model.reference(300, 90000, solvent_fractions=[1, 0, 0], ions=(ids[1], ids[2]), stoichiometry=(1, 1))
+    assert len(caught) == 1 and reference.domain_violations is not None
+    assert {r.variable for r in reference.domain_violations} == {"temperature", "pressure"}
     water = 1 / model.parameters.molar_masses[0]
     with pytest.warns(DomainWarning) as caught:
         activity = reference.activity(5)
@@ -300,7 +335,9 @@ def test_henry_constant_pressure_domain() -> None:
     doc = packet("gross-2001-methane-ethane/3")
     doc["domains"].append({"domain_id": "pressure-test", "kind": "fit-range", "pressure_max": 1, "pressure_unit": "bar"})
     model = Mixture(Parameters.from_mapping(doc, components=["methane", "ethane"]))
-    reference = model.reference(200, 1e6, solvent_fractions=[0, 1])
+    with pytest.warns(DomainWarning) as caught:
+        reference = model.reference(200, 1e6, solvent_fractions=[0, 1])
+    assert len(caught) == 1
     with pytest.warns(DomainWarning) as caught:
         (henry,) = reference.henry_constants(solutes=["methane"])
     assert len(caught) == 1 and henry.henry_constant_px is not None and henry.domain_violations is not None

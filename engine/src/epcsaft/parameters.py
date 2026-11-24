@@ -129,9 +129,10 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
 
 
-def _selected_domains(document: Mapping[str, Any], components: set[str], domains: list[Any]) -> list[Any]:
-    if not any("temperature_min" in d or "temperature_max" in d or "pressure_min" in d or "pressure_max" in d
-               for d in domains if d.get("kind") != "unknown"):
+def _selected_domains(document: Mapping[str, Any], components: set[str], domains: list[Any],
+                      *, keep_unreferenced: bool = True) -> list[Any]:
+    intensives = {"temperature_min", "temperature_max", "pressure_min", "pressure_max"}
+    if not any(intensives.intersection(d) for d in domains if d.get("kind") != "unknown"):
         return domains
     selected: dict[str, bool] = {}
 
@@ -150,7 +151,10 @@ def _selected_domains(document: Mapping[str, Any], components: set[str], domains
                 visit(item, included)
 
     visit(document, True)
-    return [d for d in domains if selected.get(d["domain_id"], True)]
+    return [
+        d if keep_unreferenced or d["domain_id"] in selected else {key: value for key, value in d.items() if key not in intensives}
+        for d in domains if not intensives.intersection(d) or selected.get(d["domain_id"], True)
+    ]
 
 
 def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> list[dict[str, Any]]:
@@ -273,7 +277,7 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         manifest = Path(root) / packet / "packet.toml"
         if manifest.is_file():
             document["domains"] = tomllib.loads(manifest.read_text())["domains"]
-        merged["materialization"].append({"packet": packet, "components": list(names)} | {
+        merged["materialization"].append({"packet": packet, "components": list(names), "domains_selected": True} | {
             "sources": document.get("sources", []), "domains": _selected_domains(document, chosen, document.get("domains", []))})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
@@ -822,14 +826,19 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         bounds = []
-        for bound_source in cast(Any, document).get("materialization", [{
-            "packet": document.get("document_id", ""), "domains": document.get("domains", []),
-            "components": component_records,
-        }]):
+        own_domains = cast(list[Any], document.get("domains", []))
+        own_ids = {d["domain_id"] for d in own_domains}
+        own_source = {"packet": document.get("document_id", ""), "domains": own_domains,
+                      "components": component_records, "domains_selected": True}
+        for bound_source in [own_source, *cast(Any, document.get("materialization", []))]:
             source_components = set(bound_source["components"])
             chosen = source_components & set(selected_ids)
-            domains = bound_source.get("domains", [])
-            for domain in domains if source_components == chosen else _selected_domains(document, chosen, domains):
+            domains = [d for d in bound_source.get("domains", []) if bound_source is own_source or d["domain_id"] not in own_ids]
+            # Older materializations copied all packet domains, even for omitted components.
+            keep_unreferenced = bound_source.get("domains_selected", False)
+            if not keep_unreferenced or source_components != chosen:
+                domains = _selected_domains(document, chosen, domains, keep_unreferenced=keep_unreferenced)
+            for domain in domains:
                 if not chosen or domain.get("kind") == "unknown":
                     continue
                 for field, quantity in (("temperature", _core.DomainQuantity.Temperature),

@@ -4209,6 +4209,7 @@ class ResidualEnergyAction:
     diagnostics: PropertyActionDiagnostics
 
 class InfiniteDilutionReference:
+    domain_violations: list[OutsideDomain] | None
     """Analytic ion reference, with solvent closure and association diagnostics (ALG-REFERENCE)."""
     solver_options: list[dict[str, Any]]
     parameter_derivative: list[tuple[ResidualEnergyAction, ResidualEnergyAction]]

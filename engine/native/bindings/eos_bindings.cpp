@@ -354,7 +354,8 @@ void register_eos(nb::module_& module) {
              nb::arg("pressure"), nb::arg("composition"), nb::arg("request"))
         .def("counters", &epcsaft::HelmholtzModel::counters)
         .def("reset_counters", &epcsaft::HelmholtzModel::reset_counters);
-    nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference")
+    nb::class_<epcsaft::InfiniteDilutionReference>(module, "InfiniteDilutionReference", nb::dynamic_attr())
+        EPCSAFT_DOMAIN_VIOLATIONS
         EPCSAFT_SOLVER_OPTIONS(epcsaft::InfiniteDilutionReference, PROPERTY_SCOPE)
         EPCSAFT_READONLY(epcsaft::InfiniteDilutionReference, log_fugacity, molality, convergence_error,
             parameter_derivative, pure_solvent_log_fugacity, pure_solvent_state, solvent_state, diagnostics,
@@ -369,10 +370,15 @@ void register_eos(nb::module_& module) {
         EPCSAFT_READONLY(epcsaft::HenryConstant, component_index, raw_log_reference, henry_constant_px, status, message);
     module.def("henry_constants", [](const HelmholtzModel& model, double t, double p, const std::vector<double>& x,
         const std::vector<std::size_t>& solutes) {
-        return domain_point(henry_constants(model, t, p, x, solutes), model, x, t, p);
+        return domain_result(henry_constants(model, t, p, x, solutes), &model, [&](auto& rows, const auto& r) {
+            if (std::any_of(r.begin(), r.end(), [](const auto& h) { return h.henry_constant_px.has_value(); }))
+                outside_domains(rows, model.parameters(), model.domains.get(), x, t, p);
+        });
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("solute_indices"));
     module.def("solvent_reference", [](const epcsaft::HelmholtzModel& model, double T, double P, const std::vector<double>& x) {
-        return epcsaft::solvent_reference(model, T, P, x);
+        return domain_result(epcsaft::solvent_reference(model, T, P, x), &model, [&](auto& rows, const auto& r) {
+            if (r.pure_solvent_log_fugacity) outside_domains(rows, model.parameters(), model.domains.get(), x, T, P);
+        });
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"));
     module.def("solvent_activity", [](const epcsaft::HelmholtzModel& model, double T, double P,
         const std::vector<double>& x, const epcsaft::InfiniteDilutionReference& reference) {
@@ -389,7 +395,8 @@ void register_eos(nb::module_& module) {
         EPCSAFT_REPR(ElectrolyteActivity, "mean_ionic_molality_scale", "osmotic_coefficient", "single_ion");
     module.def("infinite_dilution_reference", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
         const std::vector<double>& solvent, const std::array<std::size_t, 2>& ions, const std::array<int, 2>& stoichiometry) {
-        return epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry);
+        return domain_point(epcsaft::infinite_dilution_reference(model, temperature, pressure, solvent, ions, stoichiometry),
+            model, solvent, temperature, pressure);
     }, nb::arg("model"), nb::arg("temperature"), nb::arg("pressure"), nb::arg("solvent_fractions"), nb::arg("ion_indices"),
        nb::arg("stoichiometry"));
     module.def("electrolyte_activity", [](const epcsaft::HelmholtzModel& model, double temperature, double pressure,
