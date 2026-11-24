@@ -1604,7 +1604,7 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumResult& parent,
     const std::vector<PhaseSpec>& phases, std::uint64_t denominator, std::uint64_t ceiling,
     bool refine, std::optional<std::size_t> trial_budget) {
-    core::Scope diagnostic("stability_grid");
+    core::Scope scope("stability_grid");
     using namespace stability_grid_detail;
     const auto start = std::chrono::steady_clock::now();
     if (!denominator || phases.empty() || c.ideal || c.model->parameters().ideal_gas || !c.problem.solids.empty()
