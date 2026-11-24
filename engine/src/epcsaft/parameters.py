@@ -130,7 +130,7 @@ def _named(record: Mapping[str, Any]) -> set[str]:
 
 
 def _selected_domains(document: Mapping[str, Any], components: set[str], domains: list[Any],
-                      *, keep_unreferenced: bool = True) -> list[Any]:
+                      *, keep_unreferenced: bool) -> list[Any]:
     intensives = {"temperature_min", "temperature_max", "pressure_min", "pressure_max"}
     if not any(intensives.intersection(d) for d in domains if d.get("kind") != "unknown"):
         return domains
@@ -278,7 +278,8 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         if manifest.is_file():
             document["domains"] = tomllib.loads(manifest.read_text())["domains"]
         merged["materialization"].append({"packet": packet, "components": list(names), "domains_selected": True} | {
-            "sources": document.get("sources", []), "domains": _selected_domains(document, chosen, document.get("domains", []))})
+            "sources": document.get("sources", []),
+            "domains": _selected_domains(document, chosen, document.get("domains", []), keep_unreferenced=True)})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
         for (a, b), magnitude in values.items():
