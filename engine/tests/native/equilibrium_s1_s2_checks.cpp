@@ -283,7 +283,8 @@ void check_mixed_reference_work() {
     const NeutralReferenceDeclaration declaration{0, {0, 1}, 1, {SpeciesReference::InfiniteDilution, SpeciesReference::PureLiquid}};
     const ReactionReference source{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
     const auto read = [&](const std::vector<double>& nu) {
-        return reaction_references(model, 260, 5e6, declaration, {nu}, {source}, 1).front();
+        const HelmholtzModel independent(model.parameters());
+        return reaction_references(independent, 260, 5e6, declaration, {nu}, {source}, 1).front();
     };
     const auto mixed = read({-1, 1}), dilute = read({-1, 0});
     CHECK(mixed.status == NeutralReferenceStatus::Available && dilute.status == mixed.status);

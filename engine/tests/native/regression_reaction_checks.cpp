@@ -1218,6 +1218,16 @@ void check_addition_enthalpy() {
         }
     }
 
+    // Fit rows may share the initial equilibrium and feed while consuming different final equilibria.
+    ReferenceCache heat;
+    for (const auto& variant : variants) {
+        const auto& row = variant.observation;
+        const auto shared = predict(model, row, {}, {}, &heat);
+        CHECK(shared.value == variant.prediction.value);
+        const auto action = differentiate_group(model, {&row}, shared, coordinates, {}, {}, &heat).front();
+        CHECK(action.value == variant.gradient);
+    }
+
     auto& reference = variants.front();
     const auto first_h = endpoint_enthalpy(model, reference.observation.problem,
         *reference.prediction.compiled, *reference.prediction.solved);

@@ -2918,7 +2918,7 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(completed, "") == completed);
     CHECK(run(completed - 1, "return") == completed);
     // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
-    constexpr std::size_t density_admission_work = 2303;
+    constexpr std::size_t density_admission_work = 2152;  // #215 replay after zero-weight Hessian and zero-direction reference work were removed
     CHECK(run(density_admission_work, "density admission") == density_admission_work);
 }
 
