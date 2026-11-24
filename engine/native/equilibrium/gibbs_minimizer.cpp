@@ -2416,7 +2416,7 @@ bool recovery_eligible(const CompiledSystem& compiled) {
         && std::all_of(compiled.n_feed.begin(), compiled.n_feed.end(), [](double n) { return n > 0.0; });
 }
 
-static bool electrolyte_liquid_split(const CompiledSystem& compiled) {
+static bool supplied_two_liquid_split(const CompiledSystem& compiled) {
     const auto& p = compiled.problem;
     if (p.phase_calculation != PhaseCalculation::Declared || !p.topology_declared || !compiled.has_ions
         || compiled.has_reaction || compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
@@ -2521,7 +2521,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
         }
         if (select_endpoint && recover && !original && !start && !warm && !limits && !seeded
             && !core::CalculationWork::active_limit() && !scope.nested("solve_equilibrium")
-            && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && electrolyte_liquid_split(compiled)) {
+            && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && supplied_two_liquid_split(compiled)) {
             core::Scope trial("electrolyte_liquid_split");
             // #207: three Ipopt steps reached the basin of the existing exact polish on all eight supplied starts.
             auto fast = run_driver_once(compiled, initial, structural, trial, nullptr, nullptr,
