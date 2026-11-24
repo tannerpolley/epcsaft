@@ -1720,7 +1720,8 @@ static EquilibriumResult run_driver_once(
     const CompiledSystem& declared,
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, const DriverLimits* limits, Attempt kind,
-    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, EquilibriumAttemptReporting reporting = {}
+    std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, EquilibriumAttemptReporting reporting = {},
+    int ipopt_iteration_cap = 0
 ) {
     core::AssociationObservations observations;
     result.attempt = kind == Attempt::Warm ? Attempt::Cold : kind;
@@ -1768,7 +1769,7 @@ static EquilibriumResult run_driver_once(
         if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
         if (const char* file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) result.diagnostic_options_file = file;
         try { nlp->begin_ipopt(); return run_ipopt(nlp, inner_tolerance,
-            static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
+            ipopt_iteration_cap ? ipopt_iteration_cap : static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
@@ -2415,6 +2416,23 @@ bool recovery_eligible(const CompiledSystem& compiled) {
         && std::all_of(compiled.n_feed.begin(), compiled.n_feed.end(), [](double n) { return n > 0.0; });
 }
 
+static bool supplied_two_liquid_split(const CompiledSystem& compiled) {
+    const auto& p = compiled.problem;
+    if (p.phase_calculation != PhaseCalculation::Declared || !p.topology_declared || !compiled.has_ions
+        || compiled.has_reaction || compiled.feasibility_cell() || compiled.unknown_count() != compiled.rows.size()
+        || p.temperature.free || p.pressure.free || !p.temperature.is_positive() || !p.pressure.is_positive()
+        || p.phases.size() != 2 || !p.solids.empty() || compiled.has_caloric_condition() || p.volume_m3
+        || p.source_reference || p.prescribed_liquid_composition || p.discovery || p.loading || p.envelope
+        || p.critical || p.spinodal || p.azeotrope || p.solver_options.nested_solve) return false;
+    const auto& support = p.phases.front().support;
+    for (const auto& phase : p.phases)
+        if (phase.kind != PhaseKind::Liquid || !phase.is_free() || !phase.declared_composition_guess
+            || phase.composition_guess.empty() || phase.support != support) return false;
+    const auto positive = std::count_if(compiled.n_feed.begin(), compiled.n_feed.end(), [](double n) { return n > 0.0; });
+    return support.size() == static_cast<std::size_t>(positive)
+        && std::all_of(support.begin(), support.end(), [&](std::size_t i) { return compiled.n_feed[i] > 0.0; });
+}
+
 EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
     core::Scope& scope, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
     bool recover, const EquilibriumResult& structural, StageWork stages,
@@ -2446,6 +2464,22 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     if (prescribed && use_start) seeded = start_point(compiled, *start, compiled.generic_point());
     EquilibriumResult result;
     bool admission_refused = false;
+    bool short_split_refused = false;
+    const auto admit_branches = [&](EquilibriumResult& candidate, core::Scope& trace) {
+        BranchCheck branches;
+        try {
+            branches = compiled.mode_count ? admit_null_mode(compiled, candidate)
+                : check_density_branches(compiled, candidate, {}, true, trace, limits);
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            branches.message = std::string("density branch admission failed: ") + error.what();
+        }
+        if (!branches.accepted) {
+            candidate.message = branches.message;
+            refuse(candidate);
+        }
+        return branches.accepted;
+    };
     // The speciated seed when there is one; the caller's start alone or after the seed's failure.
     for (int attempt = seeded ? 0 : 1; attempt < 2 && !result.success && !core::CalculationWork::stop_at("next start"); ++attempt) {
         stages.add(result);  // a failed seeded attempt
@@ -2486,24 +2520,30 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             if (fast.success) { fast.rejected_reduction = rejected; std::move(stages).report(fast); return selected(std::move(fast), limits); }
             stages.add(fast);
         }
+        if (select_endpoint && recover && !original && !start && !warm && !limits && !seeded
+            && !core::CalculationWork::active_limit() && !scope.nested("solve_equilibrium")
+            && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && supplied_two_liquid_split(compiled)) {
+            core::Scope trial("electrolyte_liquid_split");
+            // #207: three Ipopt steps reached the basin of the existing exact polish on all eight supplied starts.
+            auto fast = run_driver_once(compiled, initial, structural, trial, nullptr, nullptr,
+                Attempt::Cold, {}, false, false, reporting, 3);
+            if (fast.success && fast.requested_tolerance_met.value_or(false) && admit_branches(fast, trial)) {
+                fast.solver_status = "NEWTON_CONVERGED";
+                std::move(stages).report(fast);
+                scope.finish(fast.convergence);
+                return selected(std::move(fast), limits);
+            }
+            stages.add(fast);
+            short_split_refused = true;
+        }
         result = run_driver(compiled, std::move(initial), structural, scope, nullptr, limits, Attempt::Cold, warm, false, false, Retry::None, reporting);
         if (result.failure && attempt == 0) continue;  // the seeded attempt's failure falls back to the declared start
-        if (result.failure) { stages.report_observations(result); return result; }
-        if (!result.success) continue;
-        BranchCheck branches;
-        try {
-            branches = compiled.mode_count ? admit_null_mode(compiled, result)
-                : check_density_branches(compiled, result, {}, true, scope, limits);
-        } catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) {
-            branches.message = std::string("density branch admission failed: ") + error.what();
+        if (result.failure) {
+            if (short_split_refused) std::move(stages).report(result);
+            else stages.report_observations(result);
+            return result;
         }
-        if (!branches.accepted) {
-            admission_refused = true;
-
-            result.message = branches.message;
-            refuse(result);
-        }
+        if (result.success && !admit_branches(result, scope)) admission_refused = true;
     }
     if (!result.declaration) result = structural;
     std::move(stages).report(result);
