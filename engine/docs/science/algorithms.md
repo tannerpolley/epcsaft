@@ -3111,6 +3111,15 @@ contraction extraction and its error estimate remain per insertion. The site
 factorization also serves distinct directions and orders at the exact same
 state and site fractions within that batch. Conditioning
 and pressure-residual evidence accompany reuse. Preparation ends with the batch.
+Across batches, a completed reference Taylor series, keyed by exact state,
+direction, order, insertion mode, error request and reaction stoichiometry, is
+retained on the immutable model with its insertion result and error estimate;
+a later request with the same key reuses both. Only available results without a
+numerical failure or site-conditioning warning are retained, and the store is
+cleared at 256 entries. Within one fit trial, finite-addition heat rows whose
+initial states and starts coincide exactly share the initial endpoint solution
+and its parameter gradient, and rows with the same added feed share the feed
+endpoint.
 
 Requested source-reference errors for the dimensionless contraction $C$ and
 its first thermal derivative $C_T$ use local higher-precision re-evaluation plus
