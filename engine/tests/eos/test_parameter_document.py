@@ -241,11 +241,40 @@ def test_materialized_domain_component_selection() -> None:
 
     legacy: dict[str, Any] = parameter_document(PACKETS, [("gross-sadowski-2001/3", ["propane"])])
     legacy_source = legacy["materialization"][0]
-    legacy_source.pop("domains_selected")
+    legacy_source.pop("domains_selected", None)
     legacy_source["domains"] = packet("gross-sadowski-2001/3")["domains"]
+    legacy["materialization"] = [legacy_source]
     saved = Pure(Parameters.from_mapping(legacy))
     assert saved.outside_domains([1], T=100) == []
     assert [r.domain_id for r in saved.outside_domains([1], T=84)] == ["propane-fit-range"]
+
+
+def test_pair_coefficient_domain_follows_override() -> None:
+    a, b = "carbon-dioxide", "ethane"
+    packets = [("gross-sadowski-2001/3", [a, b])]
+    original = Mixture(Parameters.from_packets(PACKETS, packets))
+    with pytest.warns(DomainWarning) as caught:
+        state = original.state(300, P=1e5, x=[0.5, 0.5])
+    assert len(caught) == 1 and state.domain_violations is not None
+    assert [(r.domain_id, r.value, r.bound) for r in state.domain_violations] == [
+        ("carbon-dioxide-ethane-250-270-k", 300, 270),
+    ]
+
+    model = Mixture(Parameters.from_packets(PACKETS, packets, k_ij={(a, b): 0.0}))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.state(300, P=1e5, x=[0.5, 0.5]).domain_violations is None
+
+
+def test_omitted_cation_mixing_domain() -> None:
+    doc = packet("figiel-2025-chloride-mixture-refit/3")
+    doc["materialization"][0]["domains"].append({"domain_id": "omitted-cation-mixing", "kind": "fit-range",
+                                                "temperature_max": 295, "temperature_unit": "kelvin"})
+    doc["cation_mixing"]["coefficients"][0]["provenance"] = {"domain_id": "omitted-cation-mixing"}
+    model = Mixture(Parameters.from_mapping(doc, components=["water", "sodium-cation", "chloride-anion"]))
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.state(298.15, P=1e5, x=[1, 0, 0], phase="liquid").domain_violations is None
 
 
 def test_document_domain_with_inherited_materialization() -> None:

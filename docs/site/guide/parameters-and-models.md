@@ -168,10 +168,11 @@ declared parameter bound. Bounds are inclusive, including single-point bounds.
 Unknown domains contribute no bounds. The values returned by the calculation
 are unchanged.
 
-For a saved materialization from an earlier Engine, inherited temperature
-and pressure bounds require a link from a retained coefficient. The saved
-document may contain bounds for components it dropped. Bounds declared in
-the document itself take precedence over inherited records with the same id.
+Temperature and pressure bounds cited by coefficients apply while those
+coefficients are admitted. Bounds declared for the whole document apply
+directly. In a saved materialization from an earlier Engine, an inherited
+temperature or pressure bound needs a link from a retained coefficient.
+The document's own bounds take precedence over inherited records with the same id.
 
 When a bound is exceeded, `result.domain_violations` holds records with `variable`, `value`, `bound`,
 `side`, `packet` and `domain_id`. Temperature is in kelvin, pressure in pascal
