@@ -448,7 +448,11 @@ std::optional<std::pair<double, double>> speciate_single_phase(const CompiledSys
             trial[offset + m + 1] = std::log((compiled.model->parameters().ideal_gas ? 1.0 : compiled.model->packing_fraction_coefficient(t, composition)) * *density);
             std::fill(trial.begin() + static_cast<std::ptrdiff_t>(compiled.primal_size), trial.end(), 0.0);
             const auto selected = selected_chemical_phase ? std::optional<std::size_t>(index) : std::nullopt;
-            const auto rows = compiled.evaluate_at(compiled.prepare(trial, true, observations ? &observations->first_numerical_failure : nullptr, selected), selected).values;
+            const auto& parameters = compiled.model->parameters();
+            const bool gradient_only = selected && parameters.site_pathway.empty() && parameters.site_correction.empty();
+            const auto prepared = compiled.prepare_values(trial, true, observations ? &observations->first_numerical_failure : nullptr,
+                selected, {}, false, gradient_only);
+            const auto rows = compiled.evaluate_at(prepared, selected).values;
             std::vector<double> c(m);
             for (std::size_t j = 0; j < m; ++j) c[j] = rows[chemical[j]] - trial[offset + j];
             if (!ideal_speciation(B, compiled.balance, c, n, observations)) break;

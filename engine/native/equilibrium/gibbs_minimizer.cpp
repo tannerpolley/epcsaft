@@ -1297,7 +1297,7 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     EquilibriumResult& result, core::Scope& scope, const DriverLimits* limits,
     bool newton, bool refine_trial, bool non_error, const Box& inside_box, const Branch& trial_branch,
     const Solids& solid_violations, std::size_t& polish_evaluations, bool& corrected, bool& capped,
-    core::Stop& initial_branch_stop) {
+    core::Stop& initial_branch_stop, const PhasePointValues<Base>* endpoint = nullptr) {
     const auto* model = compiled.model;
     const auto expired = [&] { return limits && limits->expired(); };
     const auto row_tolerance = compiled.problem.solver_options.value(policy::row);
@@ -1318,7 +1318,16 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     std::size_t polish_round = 0;
     while (non_error && !expired()) {
         if (limits && !limits->spend(limits->evaluations, limits->evaluation_cap)) return false;
-        auto at = compiled.prepare_values(full, true, &result.first_numerical_failure);
+        PhasePointValues<Base> at;
+        if (endpoint && std::memcmp(endpoint->point.data(), full.data(), compiled.primal_size * sizeof(Base)) == 0) {
+            at = *endpoint;
+            at.point = full;
+            for (const auto& phase : at.derivative) {
+                core::CalculationWork::energy_evaluation();
+                core::retain_first(result.first_numerical_failure, phase.first_numerical_failure);
+            }
+        } else at = compiled.prepare_values(full, true, &result.first_numerical_failure);
+        endpoint = nullptr;
         ++polish_evaluations;
         if (expired()) return false;
         auto rows_before = compiled.evaluate_at(at).values;
@@ -1872,9 +1881,18 @@ static EquilibriumResult run_driver_once(
     };
     // A budget stop polishes too: an unattainable request can exhaust Ipopt after passing a
     // better point, and the polish never returns a worse classified point than its start.
+    // Only the common associated-phase tape gives the same gradient and curvature in both requests.
+    const auto* parameters = compiled.model ? &compiled.model->parameters() : nullptr;
+    const bool reuse_curvature = reuse && parameters && !classified && !compiled.problem.temperature.free
+        && !compiled.problem.pressure.free && !compiled.anchored_calorics() && parameters->component_count() > 2
+        && parameters->site_pathway.empty() && parameters->site_correction.empty() && cached->derivative.size() == 2
+        && std::all_of(cached->derivative.begin(), cached->derivative.end(), [](const auto& phase) {
+            return !phase.site_fractions.empty() && !phase.complete_hessian && !phase.hessian.empty();
+        });
     const auto polish = [&](auto& coordinates) {
         return polish_correction(compiled, coordinates, result, scope, limits, newton, refine_trial,
-            non_error, inside_box, trial_branch, solid_violations, polish_evaluations, corrected, capped, initial_branch_stop);
+            non_error, inside_box, trial_branch, solid_violations, polish_evaluations, corrected, capped, initial_branch_stop,
+            reuse_curvature ? &*cached : nullptr);
     };
     const auto end_point = refine_trial && !newton && status == Ipopt::SUCCESS ? full : std::vector<double>{};
     if (core::CalculationWork::stop_at("endpoint polish")) return limited_result();
