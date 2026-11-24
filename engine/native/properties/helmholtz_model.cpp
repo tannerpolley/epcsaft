@@ -1768,6 +1768,18 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
                 &result.diagnostics.association_residual).front() / (s * s);
             ++result.diagnostics.directional_paths;
         }
+    } else if (shared && order == 3) {
+        // D³A on three directions uses the same four signed Taylor paths, advanced together.
+        constexpr std::size_t paths = 4;
+        std::vector<std::vector<double>> series(order + 1, std::vector<double>(paths * width));
+        series[0] = point;
+        for (std::size_t i = 0; i < width; ++i) for (std::size_t path = 0; path < paths; ++path)
+            series[1][i * paths + path] = normalized[0][i] + (path & 1 ? -normalized[1][i] : normalized[1][i])
+                + (path & 2 ? -normalized[2][i] : normalized[2][i]);
+        const auto values = tape_->implicit_taylor(series, order, factorization.get(), &result.diagnostics.site_solves,
+            &result.diagnostics.forward_sweeps, &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, paths);
+        coefficient = values[0] - values[1] - values[2] + values[3];
+        result.diagnostics.directional_paths += paths;
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
         // Half of the 2^q linear sign paths, weighted by their sign products.
         std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));

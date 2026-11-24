@@ -1886,7 +1886,8 @@ static EquilibriumResult run_driver_once(
     // A finite calculation budget still charges the original preparation.
     const bool reuse_curvature = reuse && !core::CalculationWork::active_limit() && parameters && !classified && !compiled.problem.temperature.free
         && !compiled.problem.pressure.free && !compiled.anchored_calorics() && parameters->component_count() > 2
-        && parameters->site_pathway.empty() && parameters->site_correction.empty() && cached->derivative.size() == 2
+        && parameters->site_pathway.empty() && parameters->site_correction.empty()
+        && (cached->derivative.size() == 2 || (!limits && refine_trial && cached->derivative.size() == 1))
         && std::all_of(cached->derivative.begin(), cached->derivative.end(), [](const auto& phase) {
             return !phase.site_fractions.empty() && !phase.complete_hessian && !phase.hessian.empty();
         });

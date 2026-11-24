@@ -284,8 +284,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
             feasible.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i);
         }
     std::vector<PhaseSpec> phases;
-    if (options.trials) phases = *options.trials;
-    else {
+    if (!options.trials && !options.prepared_trials) {
         PhaseSpec liquid; liquid.name = "trial-liquid"; liquid.support = feasible;
         phases.push_back(liquid);
         if (!zero_charge.empty()) {
@@ -293,9 +292,11 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
             liquid.name = "trial-vapor"; liquid.kind = PhaseKind::Vapor; phases.push_back(liquid);
         }
     }
-    if (phases.empty()) throw std::invalid_argument("empty stability trial family");
+    const auto& declared = options.prepared_trials ? options.prepared_trials->trials : options.trials ? *options.trials : phases;
+    if (declared.empty()) throw std::invalid_argument("empty stability trial family");
     std::vector<PhaseSpec> admitted;
-    for (auto phase : phases) {
+    admitted.reserve(declared.size());
+    for (auto phase : declared) {
         phase.support = resolve_support(phase, feasible, z, &c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
@@ -1135,21 +1136,25 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
     }
 }
 using TrialSystems = std::map<std::pair<PhaseKind, std::vector<std::size_t>>, std::pair<CompiledSystem, std::vector<std::vector<double>>>>;
+void set_trial_feed(CompiledSystem& c, const std::vector<double>& seed) {
+    c.problem.feed.values = seed;
+    c.n_feed = resolve_feed(*c.model, c.problem.feed);
+    admit_trial_feed(c);
+    normalize_trial_feed(c);
+}
 CompiledSystem& supplied_system(TrialSystems& systems, const HelmholtzModel& model, double T, double P,
-    const PhaseSpec& phase, SuppliedPoint& point, const std::vector<double>& shift,
+    const PhaseSpec& phase, const std::vector<double>& seed, SuppliedPoint& point, const std::vector<double>& shift,
     std::vector<std::vector<double>>& transformation, Quantities& work) {
     auto key = std::make_pair(phase.kind, phase.support);
     auto found = systems.find(key);
     if (found == systems.end()) {
-        auto c = compile_stability_trial(model, T, P, phase, point.seed, shift, transformation);
+        auto c = compile_stability_trial(model, T, P, phase, seed, shift, transformation);
         found = systems.emplace(key, std::make_pair(std::move(c), transformation)).first;
         if (point.next == SuppliedStage::Inventory) point.next = SuppliedStage::Coordinates;
     } else {
         transformation = found->second.second;
         auto& c = found->second.first;
-        c.problem.feed.values = point.seed;
-        c.n_feed = resolve_feed(model, c.problem.feed);
-        admit_trial_feed(c); normalize_trial_feed(c);
+        set_trial_feed(c, seed);
         advance_supplied(point, SuppliedStage::Inventory, model, T, phase, &c, 0.0, work);
     }
     return found->second.first;
@@ -1173,7 +1178,7 @@ std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const Helm
             packing_admission(*phase.packing_guess);
             std::vector<std::vector<double>> transformation;
             CompiledSystem* c;
-            try { c = &supplied_system(systems, model, T, 1e5, phase, point,
+            try { c = &supplied_system(systems, model, T, 1e5, phase, point.seed, point,
                 std::vector<double>(model.parameters().component_count(), 0.0), transformation, set->work); }
             catch (const std::exception&) { if (!point.failure.empty()) throw; point.next = SuppliedStage::Inventory; continue; }
             advance_supplied(point, SuppliedStage::Energy, model, T, phase, c, *phase.packing_guess, set->work);
@@ -1215,7 +1220,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         if (set.model != input.model) throw std::invalid_argument("prepared trials model mismatch");
         if (!result.temperature || std::memcmp(&set.temperature, &*result.temperature, sizeof(double)) != 0)
             throw std::invalid_argument("prepared trials temperature mismatch");
-        options.trials = set.trials; options.evaluate_supplied_trials = true;
+        options.evaluate_supplied_trials = true;
     }
     TrialSystems systems;
     std::size_t entry = 0;
@@ -1225,7 +1230,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     const bool fast = options.mode == DiscoveryMode::Fast;
     bool stopped = false;
     core::CalculationWork work;
-    if (options.evaluate_supplied_trials && !options.trials)
+    if (options.evaluate_supplied_trials && !options.trials && !options.prepared_trials)
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
     const auto supports = stability_supports(c, options);
     const auto& z = c.model->parameters().charge_number;
@@ -1358,6 +1363,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             }
         }
         auto& rooted = admitted[k];
+        std::optional<TrialSystems::mapped_type> previous_system;
         std::size_t visited = 0;
         for (auto& [seed_name, seed] : seeds) {
             const Slot* slot = retry ? sources[visited++] : nullptr;
@@ -1369,13 +1375,19 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             auto start = slot ? slot->start : Start::ParentRestriction;  // in the first pass: the retry a refusal here gets
             bool searched = false;  // the start coincides with an already-searched original seed
-            SuppliedPoint point = options.prepared_trials ? options.prepared_trials->points->entries[entry++] : SuppliedPoint{};
+            SuppliedPoint point;
+            const auto* prepared_point = options.prepared_trials ? &options.prepared_trials->points->entries[entry++] : nullptr;
+            if (prepared_point) {
+                if (prepared_point->next == SuppliedStage::Complete) point.next = SuppliedStage::Complete;
+                else point = *prepared_point;
+            }
+            const auto& data = prepared_point && prepared_point->next == SuppliedStage::Complete ? *prepared_point : point;
             const auto advance = [&](SuppliedStage stage, CompiledSystem* c = nullptr, double eta = 0.0,
                                      bool* pivot_only = nullptr) {
                 advance_supplied(point, stage, *input.model, at.temperature, phase, c, eta, report.work, pivot_only, reference != nullptr);
             };
             try {
-                if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = point.seed; }
+                if (options.evaluate_supplied_trials) { advance(SuppliedStage::Seed); seed = data.seed; }
                 else if (!slot) {
                     seed = reconstruct_trial_composition(std::move(seed), phase.support, z, phase.kind);
                     ++report.work["reconstruction_evaluations"];
@@ -1420,9 +1432,23 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 CompiledSystem optimized;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
                 const auto compile = [&]() -> CompiledSystem& {
                     if (options.evaluate_supplied_trials) return supplied_system(systems, *c.model,
-                        at.temperature, at.pressure, phase, point, shift, trial.row_transformation, report.work);
+                        at.temperature, at.pressure, phase, seed, point, shift, trial.row_transformation, report.work);
+                    // For this support and fixed T, P and plane, identical balance RHS and feed total
+                    // preserve both the inventory programs and the generic-point rank Jacobian.
+                    if (previous_system) {
+                        optimized = previous_system->first;
+                        set_trial_feed(optimized, seed);
+                        if (optimized.balance == previous_system->first.balance && optimized.feed_total == previous_system->first.feed_total
+                            && std::all_of(phase.support.begin(), phase.support.end(), [&](auto i) { return optimized.n_feed[i] > 0; })) {
+                            trial.row_transformation = previous_system->second;
+                            ++report.work["trial_compilation_reuses"];
+                            return optimized;
+                        }
+                    }
                     optimized = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
                         trial.row_transformation);
+                    if (!limits && !core::CalculationWork::active_limit() && optimized.removed_species.empty())
+                        previous_system.emplace(optimized, trial.row_transformation);
                     return optimized;
                 };
                 auto& compiled = native ? optimized : compile();
@@ -1435,7 +1461,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (!found) trial.basis = compiled.B;
                 if (options.evaluate_supplied_trials) {
                     advance(SuppliedStage::Coordinates, &compiled, eta);
-                    trial.raw_coordinates = point.coordinates;
+                    trial.raw_coordinates = data.coordinates;
                 }
                 else if (!found) {
                     const auto initial = trial_coordinates(compiled, seed, eta);
@@ -1449,7 +1475,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (!slot) start = Start::OwnSeed;
                 if (trial.raw_coordinates.empty()) throw std::invalid_argument("no admitted nonfatal optimizer point");
                 if (options.evaluate_supplied_trials) advance(SuppliedStage::Raw, &compiled, eta);
-                auto raw = options.evaluate_supplied_trials ? point.raw : found ? found->first : compiled.prepare(trial.raw_coordinates, true);
+                auto raw = options.evaluate_supplied_trials ? data.raw : found ? found->first : compiled.prepare(trial.raw_coordinates, true);
                 if (options.evaluate_supplied_trials) { raw.pressure = at.pressure; raw.standard = *compiled.fixed_standard; }
                 if (!found) trial.raw_residuals = compiled.evaluate_at(raw).values;
                 if (!options.evaluate_supplied_trials) { point.raw = raw; point.next = SuppliedStage::Composition; }
@@ -1457,14 +1483,14 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                                     trial.optimizer.success &&
                                     trial.optimizer.convergence.stop == core::Stop::converged;
                 advance(SuppliedStage::Composition, nullptr, 0.0, repair ? &trial.pivot_only : nullptr);
-                trial.composition = point.composition;
-                const double volume = point.volume;
+                trial.composition = data.composition;
+                const double volume = data.volume;
                 if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
                         [&](auto i) { return z[i] != 0; })) {
                     auto& q = trial.quantities;
                     q["packing_fraction"] = raw.eta[0]; q["molar_density_mol_m3"] = 1.0 / volume;
                     advance(SuppliedStage::State);
-                    const auto& state = point.state;
+                    const auto& state = data.state;
                     q["pressure_pa"] = state.pressure;
                     q["pressure_density_derivative"] = state.pressure_density_derivative;
                     const auto root = declared_root(*c.model, at.temperature, at.pressure, trial.composition, PhaseKind::Vapor);
@@ -1480,7 +1506,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     volume, PhaseKind::Liquid, trial.quantities, "condensed_"), quotient, &trial.quantities);
                 advance(SuppliedStage::Energy);
                 trial.quantities.merge(phase_energy(*c.model, at.temperature, at.pressure, volume, trial.composition,
-                    report.standard_over_rt, report.work, nullptr, &point.energy));
+                    report.standard_over_rt, report.work, nullptr, &data.energy));
                 auto& q = trial.quantities;
                 double charge = 0.0, sum = -1.0, plane = 0.0, displacement = 0.0;
                 for (auto i : phase.support) {
@@ -1505,7 +1531,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     if (!found) q["raw_objective_over_rt"] = trial.optimizer.objective;
                     if (reference) {
                         raw.volume = {volume};
-                        raw.derivative = {point.energy.derivative};
+                        raw.derivative = {data.energy.derivative};
                         double residual = std::abs(q.at("pressure_row"));
                         for (auto i : phase.support) {
                             const double w = trial.composition[i];
@@ -1608,7 +1634,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
     if (options.evaluate_supplied_trials) report.message = "supplied trial evaluation; unavailable trials " + std::to_string(unresolved);
-    if (!options.trials && std::all_of(supports.front().support.begin(), supports.front().support.end(),
+    if (!options.trials && !options.prepared_trials && std::all_of(supports.front().support.begin(), supports.front().support.end(),
         [&](auto j) { return z[j] != 0; })) report.message += "; no neutral species";
     report_work(report.work, work);
     return report;
