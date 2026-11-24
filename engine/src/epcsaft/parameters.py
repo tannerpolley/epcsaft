@@ -10,14 +10,28 @@ from __future__ import annotations
 
 import json
 import tomllib
+import warnings
+from collections.abc import Iterator, Mapping, Sequence
 from copy import deepcopy
-from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, cast
 
 from . import _core
 
 ParameterError = _core.ParameterError
+OutsideDomain = _core.OutsideDomain
+
+
+class DomainWarning(UserWarning):
+    """A returned calculation exceeds one or more declared parameter domain bounds."""
+
+
+def _warn_domains(violations: list[OutsideDomain]) -> None:
+    message = "; ".join(f"{r.packet}/{r.domain_id}: {r.variable}={r.value:g} {r.side} {r.bound:g} {r.unit}"
+                        for r in violations)
+    warnings.warn(message, DomainWarning, skip_file_prefixes=(str(Path(__file__).parent),))
+
+
 # Top-level keys: those read below, record metadata, and records the caller reads (reaction sets come from the caller).
 _KEYS = {*"schema schema_version components correlations pairs model_families model_coefficients topology".split(),
          *"document_id document_version purpose sources domains materialization".split(),
@@ -113,6 +127,19 @@ def _named(record: Mapping[str, Any]) -> set[str]:
     """The component ids one component, pair, correlation, site, edge or no-cross record names."""
     ends = [record[key] for key in ("endpoint_a", "endpoint_b") if key in record]
     return {item[key] for item in (record, *ends) for key in ("component_id", "component_id_a", "component_id_b") if key in item}
+
+
+def _domain_ids(value: object) -> Iterator[str]:
+    if isinstance(value, Mapping):
+        provenance = value.get("provenance")
+        for source in provenance if isinstance(provenance, (list, tuple)) else (provenance,):
+            if isinstance(source, Mapping) and isinstance(domain := source.get("domain_id"), str):
+                yield domain
+        for child in value.values():
+            yield from _domain_ids(child)
+    elif isinstance(value, (list, tuple)):
+        for child in value:
+            yield from _domain_ids(child)
 
 
 def _cation_mixing(document: Mapping[str, Any], selected: Sequence[str]) -> list[dict[str, Any]]:
@@ -233,10 +260,11 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
                 (merged["topology"], key, topology) for key in ("sites", "edges", "no_cross_association")]:
             into[key] += [r for r in items.get(key, ()) if _named(r) <= chosen]
         manifest = Path(root) / packet / "packet.toml"
-        if manifest.is_file():
-            document["domains"] = tomllib.loads(manifest.read_text())["domains"]
-        merged["materialization"].append({"packet": packet, "components": list(names)} | {
-            key: document.get(key, []) for key in ("sources", "domains")})
+        domains = tomllib.loads(manifest.read_text())["domains"] if manifest.is_file() else document.get("domains", [])
+        cited = set(_domain_ids(document)) if domains else set()
+        merged["materialization"].append({"packet": packet, "components": list(names),
+                                          "sources": document.get("sources", []), "domains": domains,
+                                          "document_wide_domains": [d["domain_id"] for d in domains if d["domain_id"] not in cited]})
     merged["model_families"] = [record for _, record in families.values() if "family_id" in record or record["choice"] != "none"]
     for family, values in (("k_ij", k_ij or {}), ("l_ij", l_ij or {})):
         for (a, b), magnitude in values.items():
@@ -304,7 +332,7 @@ class Parameters:
         It retains no source document for later property/ASL serialization.
         """
         self._native = native
-        self._bounds: list[_core.CompositionBound] = []
+        self._bounds: _core.DomainBounds | None = None
         self._document: _core.ParameterDocument | None = None
         self._document_refusal: str | None = None  # why a fit has no document
         self._source: tuple[Mapping[str, object], list[list[Any]], list[tuple[int, Any, str]]] | None = None
@@ -784,31 +812,46 @@ class Parameters:
         native_document.entries = entries
         result = cls(_core.build_parameters(native_document), selected_ids, tuple(site_ids))
         bounds = []
-        for bound_source in cast(Any, document).get("materialization", [{"domains": document.get("domains", []), "components": selected_ids}]):
+        own_domains = cast(list[Any], document.get("domains", []))
+        own_ids = {d["domain_id"] for d in own_domains}
+        own_document_wide = own_ids - set(_domain_ids(document)) if own_ids else set()
+        own_source = {"packet": document.get("document_id", ""), "domains": own_domains,
+                      "components": component_records}
+        for bound_source in [own_source, *cast(Any, document.get("materialization", []))]:
             chosen = set(bound_source["components"]) & set(selected_ids)
+            document_wide = own_document_wide if bound_source is own_source else set(bound_source.get("document_wide_domains", ()))
             for domain in bound_source.get("domains", []):
-                for field, quantity in (("solute_molality", _core.DomainQuantity.SoluteMolality),
+                domain_id = domain["domain_id"]
+                if not chosen or domain.get("kind") == "unknown" or (bound_source is not own_source and domain_id in own_ids):
+                    continue
+                for field, quantity in (("temperature", _core.DomainQuantity.Temperature),
+                                        ("pressure", _core.DomainQuantity.Pressure),
+                                        ("solute_molality", _core.DomainQuantity.SoluteMolality),
                                         ("ionic_strength", _core.DomainQuantity.IonicStrength),
                                         ("ion_mole_fraction", _core.DomainQuantity.IonMoleFraction)):
                     for suffix, limit in (("min", _core.DomainLimit.Minimum), ("max", _core.DomainLimit.Maximum)):
                         if (key := f"{field}_{suffix}") not in domain:
                             continue
                         fraction = field == "ion_mole_fraction"
-                        if not fraction and domain.get("solvent") not in selected_ids:
+                        intensive = field in ("temperature", "pressure")
+                        if intensive and domain_id not in document_wide:
+                            continue
+                        if not intensive and not fraction and domain.get("solvent") not in selected_ids:
                             continue
                         values = domain[key] if field == "solute_molality" else {"": domain[key]}
                         for solute, value in values.items():
-                            names = [solute] if solute else domain.get("ionic_strength_solutes", [])
+                            names = [] if intensive else [solute] if solute else domain.get("ionic_strength_solutes", [])
                             indices = [selected_ids.index(n) for n in names if n in chosen]
-                            if not fraction and not indices:
+                            if not intensive and not fraction and not indices:
                                 continue
                             unit = "dimensionless" if fraction else domain.get(f"{field}_unit", "")
                             if isinstance(value, Mapping):
                                 value, unit = value["magnitude"], value["unit"]
-                            bounds.append(_core.CompositionBound(bound_source.get("packet", ""), domain["domain_id"], solute,
+                            bounds.append(_core.DomainBound(bound_source.get("packet", ""), domain["domain_id"], solute,
                                 unit, quantity, limit,
-                                0 if fraction else selected_ids.index(domain["solvent"]), indices, value))
-        result._bounds = _core.admit_domains(result._native, bounds)
+                                0 if intensive or fraction else selected_ids.index(domain["solvent"]), indices, value))
+        if bounds:
+            result._bounds = _core.admit_domains(result._native, bounds)
         result._document = native_document
         result._source = (document, entries.values, entries.scalars)
         return result

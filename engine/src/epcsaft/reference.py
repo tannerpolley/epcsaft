@@ -50,6 +50,8 @@ class Reference:
     pure_solvent_log_fugacity : float or None
         Dimensionless natural-log pure-solvent fugacity coefficient at the
         stored T and P. None retains native unavailability, not zero.
+    domain_violations : list of OutsideDomain or None
+        Bounds exceeded by the returned reference properties, if any.
 
     Notes
     -----
@@ -109,6 +111,11 @@ class Reference:
     def pure_solvent_log_fugacity(self) -> float | None:
         """Read ``pure_solvent_log_fugacity``, documented in the ``Reference`` Attributes section."""
         return self._native.pure_solvent_log_fugacity
+
+    @property
+    def domain_violations(self) -> list[_core.OutsideDomain] | None:
+        """Read ``domain_violations``, documented in the ``Reference`` Attributes section."""
+        return self._native.domain_violations
 
     def activity(self, molality: float, *, solute_molalities: Sequence[float] | None = None) -> Activity:
         """Evaluate the selected formula's electrolyte activity coefficients.

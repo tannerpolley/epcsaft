@@ -4,14 +4,15 @@
 #include "properties/thermochemistry.hpp"
 
 #include <cstddef>
+#include <optional>
 #include <string>
 #include <vector>
 
 namespace epcsaft {
 
-enum class DomainQuantity { SoluteMolality, IonicStrength, IonMoleFraction };
+enum class DomainQuantity { SoluteMolality, IonicStrength, IonMoleFraction, Temperature, Pressure };
 enum class DomainLimit { Minimum, Maximum };
-struct CompositionBound final {
+struct DomainBound final {
     std::string packet, domain_id, solute, unit;
     DomainQuantity quantity;
     DomainLimit limit;
@@ -20,11 +21,19 @@ struct CompositionBound final {
     double bound;
 };
 struct OutsideDomain final {
-    CompositionBound declaration;
-    double value;
+    std::string packet, domain_id, variable, side, unit, solute;
+    double value, bound;
+    std::size_t row, phase;
 };
-EPC_API std::vector<CompositionBound> admit_domains(const Parameters&, std::vector<CompositionBound>);
-EPC_API std::vector<OutsideDomain> outside_domains(const Parameters&, const std::vector<CompositionBound>&, const std::vector<double>&);
+struct DomainBounds final {
+    std::vector<DomainBound> values;
+    bool pressure = false;
+};
+
+EPC_API DomainBounds admit_domains(const Parameters&, std::vector<DomainBound>);
+EPC_API void outside_domains(std::vector<OutsideDomain>&, const Parameters&, const DomainBounds*, const std::vector<double>&,
+    std::optional<double> temperature, std::optional<double> pressure, std::size_t row = 0, std::size_t phase = 0,
+    bool validate_composition = false);
 
 struct ParameterEntry final {
     std::string identity;

@@ -286,6 +286,8 @@ class DomainQuantity:
     """Composition quantity; enum name and value follow the module convention."""
     SoluteMolality: DomainQuantity
     IonicStrength: DomainQuantity
+    Temperature: DomainQuantity
+    Pressure: DomainQuantity
     IonMoleFraction: DomainQuantity
 
 class DomainLimit:
@@ -293,26 +295,33 @@ class DomainLimit:
     Minimum: DomainLimit
     Maximum: DomainLimit
 
-class CompositionBound:
-    """One declared composition bound, indexed in native component order."""
-    packet: str
-    domain_id: str
-    solute: str
-    unit: str
-    quantity: DomainQuantity
-    limit: DomainLimit
-    solvent: int
-    solutes: list[int]
-    bound: float
+class DomainBound:
+    """One declared parameter domain bound, indexed in native component order."""
     def __init__(self, packet: str, domain_id: str, solute: str, unit: str, quantity: DomainQuantity,
                  limit: DomainLimit, solvent: int, solutes: Sequence[int], bound: float) -> None: ...
 
-def admit_domains(parameters: Parameters, bounds: Sequence[CompositionBound]) -> list[CompositionBound]:
+class DomainBounds:
+    """Admitted bounds retained in their native units."""
+
+def admit_domains(parameters: Parameters, bounds: Sequence[DomainBound]) -> DomainBounds:
     """Admit indexed declarations and their units without evaluating a phase."""
     ...
-def outside_domains(parameters: Parameters, bounds: Sequence[CompositionBound], x: Sequence[float]) -> list[dict[str, Any]]:
-    """Report strict composition-bound violations for one phase."""
-    ...
+class OutsideDomain:
+    """One exceeded parameter domain bound in SI units."""
+    variable: str
+    value: float
+    bound: float
+    side: str
+    packet: str
+    domain_id: str
+    unit: str
+    solute: str
+    row: int
+    phase: int
+
+def outside_domains(parameters: Parameters, bounds: DomainBounds | None, x: Sequence[float],
+                    temperature: float | None = None, pressure: float | None = None) -> list[OutsideDomain]:
+    """Report the declared bounds exceeded by a phase."""
 
 class ParameterEntry:
     """One source-identified parameter magnitude and declared unit."""
@@ -1283,6 +1292,7 @@ class PropertyActionDiagnostics:
 
 class PropertyActionBatch:
     """Property actions sharing one central state and implicit work."""
+    domain_violations: list[OutsideDomain] | None
     solver_options: list[dict[str, Any]]
     """Effective numerical settings as named dictionaries with values, provenance and units where
     declared.
@@ -1315,6 +1325,7 @@ class PropertyActionBatch:
 
 class VirialCoefficients:
     """Neutral molar-density expansion Z=1+B rho+C rho²+O(rho³)."""
+    domain_violations: list[OutsideDomain] | None
     second: float
     """B in m³/mol."""
     third: float
@@ -1324,6 +1335,7 @@ class LogFugacityTerms:
     """d(n a_k)/dn_i at constant T, V and n_j for each residual Helmholtz term k, per component (None for ionic insertion).
 
     Their sum over terms minus ``log_compressibility_factor`` is ln phi_i."""
+    domain_violations: list[OutsideDomain] | None
     hard_chain: list[Optional[float]]
     dispersion: list[Optional[float]]
     association: list[Optional[float]]
@@ -1335,6 +1347,7 @@ class LogFugacityTerms:
     log_compressibility_factor: float
 class VirialCoefficientActions:
     """B and C with their derivatives along a (temperature, zero-sum composition) direction."""
+    domain_violations: list[OutsideDomain] | None
     second: float
     third: float
     second_action: float
@@ -1343,6 +1356,7 @@ class VirialCoefficientActions:
     """dC along the direction."""
 
 class State:
+    domain_violations: list[OutsideDomain] | None
     unavailable_properties: list[tuple[str, PropertyActionStatus]]
     rank_records: list[NumericalRank]
     """One homogeneous state with SI molar quantities.
@@ -1655,6 +1669,7 @@ class StateStatus:
     DomainError: StateStatus
 
 class StateBatch:
+    domain_violations: list[OutsideDomain] | None
     unavailable_properties: list[Optional[list[tuple[str, PropertyActionStatus]]]]
     """Ordered State rows and property columns, with scalar SI units and availability."""
     rows: list[Optional[State]]
@@ -1734,7 +1749,7 @@ class HelmholtzModel:
     active_parameter_values: list[float]
     """Active parameter values in active order, each in its family's native unit."""
     def __init__(self, parameters: Parameters, active_parameters: Sequence[ActiveParameter] = (),
-                 thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None) -> None:
+                 thermochemistry: Optional[ThermochemistryRecord] = None, solver_options: Mapping[str, float] | None = None, domains: DomainBounds | None = None) -> None:
         """Initialize HelmholtzModel from the declared inputs.
 
         Parameters
@@ -3379,6 +3394,7 @@ class BubbleBranchEnd:
     limiting_pressure_pa: float
 
 class EquilibriumResult:
+    domain_violations: list[OutsideDomain] | None
     critical_search: CriticalSearch | None
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
     rejected_reduction: EquilibriumResult | None
@@ -3666,6 +3682,7 @@ class ContinuationRequest:
 
 class ContinuationResult:
     """Accepted states, work and terminal cause of a continuation."""
+    domain_violations: list[OutsideDomain] | None
     success: bool
     """Whether the trace completed its declared success condition; inspect stop and retained
     states.
@@ -4018,6 +4035,7 @@ class SolvedStateActionDiagnostics:
 
 class SolvedStateActionBatch:
     """Ordered solved-state actions sharing one prepared center."""
+    domain_violations: list[OutsideDomain] | None
     results: list[SolvedStateActionResult]
     """Per-observable results in request order, each with its own cause and units."""
     diagnostics: SolvedStateActionDiagnostics
@@ -4191,6 +4209,7 @@ class ResidualEnergyAction:
     diagnostics: PropertyActionDiagnostics
 
 class InfiniteDilutionReference:
+    domain_violations: list[OutsideDomain] | None
     """Analytic ion reference, with solvent closure and association diagnostics (ALG-REFERENCE)."""
     solver_options: list[dict[str, Any]]
     parameter_derivative: list[tuple[ResidualEnergyAction, ResidualEnergyAction]]
@@ -4215,6 +4234,7 @@ class SolventActivity:
     -----
     The osmotic coefficient uses mol/kg solvent and the pure-solvent reference at the same T/P. Preserve None and the precision-floor Stop value rather than substituting zero; see practical_osmotic_coefficient in engine/docs/equations.md.
     """
+    domain_violations: list[OutsideDomain] | None
     solvent_activity: Optional[float]
     """Dimensionless solvent activity against the pure-solvent liquid reference, or None with
     status/cause.
@@ -4254,6 +4274,7 @@ class HenryConstant:
     -----
     H_i^px = R*T*rho0*exp(raw_log_reference), with rho0 = 1 mol/m^3. See henry_constant_px in engine/docs/equations.md.
     """
+    domain_violations: list[OutsideDomain] | None
     component_index: int
     """Solute component index in component_ids order."""
     raw_log_reference: Optional[float]
@@ -4349,6 +4370,7 @@ def solvent_activity(model: HelmholtzModel, temperature: float, pressure: float,
     ...
 
 class ElectrolyteActivity:
+    domain_violations: list[OutsideDomain] | None
     mean_ionic_parameter_derivative: list[ResidualEnergyAction]
     """One charge-neutral salt activity on an infinite-dilution convention.
 
@@ -5965,6 +5987,7 @@ class EquilibriumWorkLimits:
 
 class EquilibriumStartsResult:
     """Ordered start outcomes and actual budget use."""
+    domain_violations: list[OutsideDomain] | None
     selected: Optional[int]
     """Index of the first result with success=True and requested_tolerance_met=True, or None without such a result; a retained floor-admitted state need not be selected."""
     results: list[Optional[EquilibriumResult]]

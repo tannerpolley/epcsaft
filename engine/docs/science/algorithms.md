@@ -156,15 +156,16 @@ physical source interval remains a separate admission operation.
 
 ## ALG-PARAMETERS
 
-Packet loading reads composition bounds from `packet.toml` domains when present,
-otherwise from the parameter document. Each packet's bounded solutes are
-intersected with its own materialization component selection, then mapped into
-the final model. Direct documents use the model selection. Native surface
-admission owns bounds and units. On request, `Mixture.outside_domains(x)` uses
-`molality_activity_conversion`, `molality_ionic_strength` and the all-ion sum in
-`ion_suppressed_bulk_permittivity` to report strict bound violations. It skips
-absent solvent/solute comparisons. No calculation path consults this report.
-Directly constructed and fitted parameters carry no packet bounds.
+Packet loading reads bounds from `packet.toml` domains when present, otherwise
+from the parameter document. Each packet's bounded solutes are intersected with
+its materialization component selection, then mapped into the final model.
+Native Surface admission converts pressure bounds to pascal.
+`Mixture.outside_domains(x, T=..., P=...)` compares declared bounds using the
+supplied temperature and pressure, `molality_activity_conversion`,
+`molality_ionic_strength` and the all-ion sum in `ion_suppressed_bulk_permittivity`.
+It skips absent solvent/solute comparisons. The same check runs after the
+calculation on the returned states. Directly constructed and fitted parameters
+carry no packet bounds.
 
 The solvent membership and normalization for `solvent-mole-weighting` are
 fixed parameter entries, retained through selection, reordering, fitting-worker
