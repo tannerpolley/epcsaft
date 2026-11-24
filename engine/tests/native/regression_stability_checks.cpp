@@ -18,6 +18,16 @@ void check_stability_requirement() {
     CHECK(*initial.stability->value < -*initial.stability->uncertainty);
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
+    auto supplied = liquid;
+    supplied.packing_guess = model.packing_fraction_coefficient(293.15, liquid.composition_guess) * initial.solved->molar_densities.at(0);
+    const auto bank = prepare_supplied_trials(model, 293.15, {supplied});
+    const auto both = predict_validated(model, row, bank);
+    CHECK(both.stability && both.stability->raw_minimum == initial.stability->raw_minimum);
+    CHECK(both.supplied_available && both.supplied_stability->trials.size() == 1);
+    CHECK(both.supplied_stability->evidence_counts({3}).at("evaluated") == 3);
+    StabilityOptions options; options.prepared_trials = bank;
+    const auto separate = stability_test(*initial.compiled, *initial.solved, options);
+    CHECK(both.supplied_stability->trials[0].quantities == separate.trials.at(0).quantities);
     auto changed = initial;
     changed.stability = std::make_shared<StabilityMeasure>(*initial.stability);
     auto& changed_trial = changed.stability->report.trials.at(*changed.stability->minimizing_trial);
@@ -28,7 +38,8 @@ void check_stability_requirement() {
     std::cout << "{\"case\":\"same-index-root-change\",\"event\":"
         << recording_support::json_string(branch_event.kind) << "}\n";
     auto capped = row; capped.stability_options.trial_budget = 0;
-    const auto incomplete = predict(model, capped);
+    const auto incomplete = predict_validated(model, capped, bank);
+    CHECK(incomplete.supplied_available && incomplete.supplied_stability->trials[0].quantities == separate.trials[0].quantities);
     CHECK(incomplete.stability && !incomplete.stability->available && !incomplete.value);
     auto tied = row; tied.problem.phases[0].composition_guess = {.999, .001};
     liquid.name = "L2"; liquid.composition_guess = {.3, .7}; tied.problem.phases.push_back(liquid);

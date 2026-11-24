@@ -1610,6 +1610,32 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     return coefficient_errors(p, *tape_, regular, sites, coefficients, known, lu);
 }
 
+struct HelmholtzModel::EnergyActionCenter {
+    bool prepared = false;
+    std::unique_ptr<Eigen::FullPivLU<Eigen::MatrixXd>> factorization;
+};
+
+// Lower triangle of D³A[c, d_i, d_j]. The phase and site equations are identical throughout
+// the contraction. The model lock holds their tape at this center for the entire triangle.
+std::pair<PropertyActionStatus, std::vector<double>> HelmholtzModel::contracted_energy_hessian(double T, double v, const std::vector<double>& amounts,
+    const std::vector<double>& contraction, const std::vector<std::vector<double>>& directions) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    EnergyActionCenter center;
+    std::vector<double> triangle;
+    std::vector<bool> moves;
+    for (const auto& d : directions) moves.push_back(std::any_of(d.begin(), d.end(), [](double x) { return x != 0; }));
+    for (std::size_t i = 0; i < moves.size(); ++i) for (std::size_t j = 0; j <= i; ++j) {
+        double value = 0.0;
+        if (moves[i] && moves[j]) {
+            auto energy = energy_action_locked(T, v, amounts, {contraction, directions[i], directions[j]}, nullptr, nullptr, core::CalculationWork::active_limit() ? nullptr : &center);
+            if (!energy.action) return {energy.status, {}};
+            value = *energy.action;
+        }
+        triangle.push_back(value);
+    }
+    return {PropertyActionStatus::Available, std::move(triangle)};
+}
+
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
     const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1630,7 +1656,7 @@ ResidualEnergyGradient HelmholtzModel::repeated_direction_energy_gradient(double
 // The contraction of three to five directions, or with `coordinates` the vector D3F[v, v, e_k] of the two equal
 // directions {v, v} into `gradient`.
 ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, double volume, const std::vector<double>& amounts,
-    const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>* coordinates, std::vector<double>* gradient) const {
+    const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>* coordinates, std::vector<double>* gradient, EnergyActionCenter* shared) const {
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
@@ -1660,18 +1686,24 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
         }
         for (double& value : normalized[direction]) value /= std::max(norms[direction], std::numeric_limits<double>::min());
     }
-    const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
-    core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
-    const double density = total / volume;
-    std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
-    result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
-        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
+    EnergyActionCenter local;
+    auto& center = shared ? *shared : local;
     result.status = PropertyActionStatus::Available;
-    observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = association_factorization(parameters_, density, refreshed.site_fractions,
-        central_strength(parameters_, temperature, density, composition),
-        composition, result.status, result.diagnostics, solver_options_);
-    if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
+    if (!center.prepared) {
+        const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
+        core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
+        const double density = total / volume;
+        std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
+        result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
+            predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
+        observations.drain(result.diagnostics.site_conditioning);
+        center.factorization = association_factorization(parameters_, density, refreshed.site_fractions,
+            central_strength(parameters_, temperature, density, composition),
+            composition, result.status, result.diagnostics, solver_options_);
+        if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
+        center.prepared = true;
+    }
+    const auto& factorization = center.factorization;
     if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0;
         if (gradient) gradient->assign(coordinates->size(), 0.0); return association_result(std::move(result), observations); }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;

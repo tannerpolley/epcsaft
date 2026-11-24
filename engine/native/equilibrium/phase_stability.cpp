@@ -25,6 +25,41 @@
 // ALG-STABILITY: the explicit tangent-plane test and fixed-T/P phase discovery.
 namespace epcsaft::equilibrium {
 
+std::map<std::string, std::size_t> StabilityReport::evidence_counts(const std::vector<std::size_t>& multiplicities) const {
+    core::Scope scope("stability_evidence_counts");
+    if (!multiplicities.empty() && multiplicities.size() != trials.size())
+        throw std::invalid_argument("one multiplicity is required for each recorded trial");
+    std::map<std::string, std::size_t> counts;
+    for (std::size_t i = 0; i < trials.size(); ++i)
+        counts[trials[i].evidence] += multiplicities.empty() ? 1 : multiplicities[i];
+    return counts;
+}
+std::map<std::string, std::size_t> StabilityReport::unresolved_reasons() const {
+    std::map<std::string, std::size_t> reasons;
+    for (const auto& t : trials)
+        if (!t.resolved_descent && t.evidence != "evaluated" && (t.evidence != "no_resolved_descent" || !t.optimizer.success)) ++reasons[t.message];
+    return reasons;
+}
+std::vector<StabilityTrial> StabilityReport::witnesses() const {
+    std::vector<StabilityTrial> witnesses;
+    for (const auto& t : trials) if (t.resolved_descent) witnesses.push_back(t);
+    return witnesses;
+}
+std::vector<StabilityTrial> StabilityReport::supplied_minima() const {
+    std::map<int, std::size_t> minima;
+    for (std::size_t i = 0; i < trials.size(); ++i) {
+        const auto& t = trials[i];
+        if (t.evidence != "evaluated") continue;
+        const auto& q = t.quantities;
+        const int side = q.count("density_side") ? static_cast<int>(q.at("density_side")) : 0;
+        auto [at, fresh] = minima.emplace(side, i);
+        if (!fresh && q.at("tpd_over_rt") < trials[at->second].quantities.at("tpd_over_rt")) at->second = i;
+    }
+    std::vector<StabilityTrial> out;
+    for (const auto& entry : minima) out.push_back(trials[entry.second]);
+    return out;
+}
+
 double present_phase_residual_distance(double chemical_contraction, double pressure_row) {
     return chemical_contraction - pressure_row;
 }
@@ -527,7 +562,7 @@ void condensed_admission(const std::optional<DensityRoot>& root, bool quotient, 
 }
 
 std::vector<double> trial_coordinates(const CompiledSystem& c, const std::vector<double>& w, double eta) {
-    auto point = c.generic_point();
+    std::vector<double> point(c.primal_size + c.rank + c.charge_row_count, 0.0);
     const auto offsets = c.phase_offsets();
     for (std::size_t i = 0; i < c.problem.phases[0].support.size(); ++i)
         point[offsets[0] + i] = std::log(w[c.problem.phases[0].support[i]]);
@@ -1079,8 +1114,8 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
                 point.coordinates = trial_coordinates(*c, point.seed, eta);
                 break;
             case SuppliedStage::Raw:
-                point.raw = c->prepare(point.coordinates, true);
-                for (auto& d : point.raw.derivative) std::vector<double>().swap(d.hessian);
+                point.raw = c->prepare_values(point.coordinates, true, nullptr, std::nullopt, {}, false, true);
+                for (auto& d : point.raw.derivative) d.complete_hessian = {};
                 break;
             case SuppliedStage::Composition:
                 point.composition = reconstruct_trial_composition(point.raw.composition[0], phase.support, z, phase.kind, pivot_only, keep_charge);
@@ -1382,21 +1417,22 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 }
                 const auto native = c.has_ions || c.has_reaction || options.evaluate_supplied_trials ? nullptr
                     : c.model->has_association() ? tangent_plane_trial<true> : tangent_plane_trial<false>;
-                CompiledSystem compiled;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
-                const auto compile = [&] {
-                    if (options.evaluate_supplied_trials) compiled = supplied_system(systems, *c.model,
+                CompiledSystem optimized;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
+                const auto compile = [&]() -> CompiledSystem& {
+                    if (options.evaluate_supplied_trials) return supplied_system(systems, *c.model,
                         at.temperature, at.pressure, phase, point, shift, trial.row_transformation, report.work);
-                    else compiled = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
+                    optimized = compile_stability_trial(*c.model, at.temperature, at.pressure, phase, seed, shift,
                         trial.row_transformation);
-                    trial.basis = compiled.B;
+                    return optimized;
                 };
-                if (!native) compile();
+                auto& compiled = native ? optimized : compile();
                 core::Scope scope("tangent_plane_trial");
                 ++report.work["trial_invocations"];
                 const auto found = native ? native(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
                     trial, report.work, limits) : std::nullopt;
                 if (limits) limits->check();  // an interrupted trial starts no driver fallback
                 if (native && !found) compile();
+                if (!found) trial.basis = compiled.B;
                 if (options.evaluate_supplied_trials) {
                     advance(SuppliedStage::Coordinates, &compiled, eta);
                     trial.raw_coordinates = point.coordinates;
@@ -1599,6 +1635,20 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
     auto recovery = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(),
         static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value));
     return explicit_test(c, result, options, nullptr, options.retry_condensed_refusals ? &recovery : nullptr);
+}
+
+std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem& c, const EquilibriumResult& parent,
+    const std::shared_ptr<const PreparedSuppliedTrials>& supplied) {
+    if (!supplied) throw std::invalid_argument("supplied trial measure requires a prepared bank");
+    StabilityOptions options;
+    options.prepared_trials = supplied;
+    StabilityReport report;
+    try { report = stability_test(c, parent, options); }
+    catch (const std::exception& error) { report.message = error.what(); }
+    const bool available = parent.requested_tolerance_met.value_or(false) && report.completed
+        && report.trials.size() == supplied->trials.size() && std::all_of(report.trials.begin(), report.trials.end(),
+            [](const auto& t) { return t.evidence == "evaluated"; });
+    return {std::move(report), available};
 }
 
 StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumResult& parent,
@@ -1881,7 +1931,7 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             if (!retain_density_side(*c.model, at.temperature, at.pressure, at.composition[p], at.volume[p],
                 c.problem.phases[p].kind, out.report.present_phases[p])) { out.cause = density_refusal; return out; }
         for (auto& t : out.report.trials)
-            if (!retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
+            if (!t.quantities.count("root_density_side") && !retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
                 t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities)) { out.cause = density_refusal; return out; }
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
     auto rows = parent ? parent->row_errors : std::vector<double>{};  // the split's original plane errors, when made

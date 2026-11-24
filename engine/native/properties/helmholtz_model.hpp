@@ -497,6 +497,8 @@ public:
         const std::vector<double>& sites) const;
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
+    EPC_API std::pair<PropertyActionStatus, std::vector<double>> contracted_energy_hessian(double, double, const std::vector<double>&,
+        const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     // D3F[v, v, e_k] for the coordinates k of [T, V, n, active parameters], one direction v of that width.
     EPC_API ResidualEnergyGradient repeated_direction_energy_gradient(double, double, const std::vector<double>&,
@@ -609,8 +611,9 @@ private:
     HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
     HelmholtzDerivatives state_derivatives(double, double, const std::vector<double>&, bool, bool,
         const HelmholtzDerivatives*) const;
+    struct EnergyActionCenter;
     ResidualEnergyAction energy_action_locked(double, double, const std::vector<double>&,
-        const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr) const;
+        const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr, EnergyActionCenter* = nullptr) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,
         double volume,
