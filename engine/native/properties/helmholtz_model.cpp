@@ -1733,7 +1733,7 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
                 series[3][i] = sign * normalized[repeated->first][i];
             coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual).front() / (s * s);
+                &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, sign < 0 ? 3 : 0).front() / (s * s);
             ++result.diagnostics.directional_paths;
         }
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
@@ -1838,7 +1838,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         if (centrals_.size() == 16) centrals_.pop_front();
         core::AssociationObservations central;
         try {
-            auto value = evaluate_locked(temperature, volume, composition, DerivativeOrder::FixedParameterHessian);
+            auto value = evaluate_locked(temperature, volume, composition, DerivativeOrder::FixedParameterStateHessian);
             central.merge(value.rank_records);
             centrals_.emplace_back(std::move(key), std::move(value));
         } catch (...) { central.forward(); throw; }
@@ -1955,14 +1955,15 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         if (capture_error) {
             paired_wide.assign(last + 1, 0.0L); paired_scale.assign(last + 1, 0.0L); paired_site.assign(last + 1, 0.0);
         }
+        std::vector<std::vector<double>> outputs;
+        std::vector<double> sites, known;
         for (double sign : {1.0, -1.0}) {
             auto inserted = path;
             for (std::size_t i = 0; i < width; ++i) inserted[insertion_degree][i] += sign * u[i];
-            std::vector<std::vector<double>> outputs;
-            std::vector<double> sites, known;
             tape.implicit_taylor(inserted, insertion_degree + last, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual, &outputs, capture_error ? &sites : nullptr, capture_error ? &known : nullptr);
+                &result.diagnostics.association_residual, &outputs, capture_error ? &sites : nullptr, capture_error ? &known : nullptr, nullptr,
+                sign < 0 ? insertion_degree : 0);
             if (capture_error) {
                 std::vector<WiderScalar> wide;
                 if (degree == 1) { const auto v = reference_coefficients<1>(parameters_, active_, inserted, sites); wide.assign(v.c.begin(), v.c.end()); }
