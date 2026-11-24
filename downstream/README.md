@@ -54,12 +54,12 @@ commit=<full-40-character-commit>
 tag="main-$commit"
 wheel_dir="build/engine-wheels/$tag"
 mkdir -p "$wheel_dir"
-gh release download "$tag" --repo tannerpolley/epcsaft-validation --dir "$wheel_dir" \
+gh release download "$tag" --repo tannerpolley/epcsaft-dev --dir "$wheel_dir" \
     --pattern 'epcsaft-*.whl' --pattern '*.sha256' --pattern release.json
 (cd "$wheel_dir" && sha256sum --check --strict ./*.sha256)
-gh api "repos/tannerpolley/epcsaft-validation/releases/tags/$tag" \
+gh api "repos/tannerpolley/epcsaft-dev/releases/tags/$tag" \
     --jq '.assets[] | select(.name | endswith(".whl")) | .digest'
-gh api "repos/tannerpolley/epcsaft-validation/git/ref/tags/$tag" --jq .object.sha
+gh api "repos/tannerpolley/epcsaft-dev/git/ref/tags/$tag" --jq .object.sha
 ```
 
 The asset `digest` GitHub reports must equal `sha256:` plus the checksum just
