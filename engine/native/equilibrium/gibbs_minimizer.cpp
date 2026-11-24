@@ -1322,10 +1322,8 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
         if (endpoint && std::memcmp(endpoint->point.data(), full.data(), compiled.primal_size * sizeof(Base)) == 0) {
             at = *endpoint;
             at.point = full;
-            for (const auto& phase : at.derivative) {
-                core::CalculationWork::energy_evaluation();
+            for (const auto& phase : at.derivative)
                 core::retain_first(result.first_numerical_failure, phase.first_numerical_failure);
-            }
         } else at = compiled.prepare_values(full, true, &result.first_numerical_failure);
         endpoint = nullptr;
         ++polish_evaluations;
@@ -1883,7 +1881,8 @@ static EquilibriumResult run_driver_once(
     // better point, and the polish never returns a worse classified point than its start.
     // Only the common associated-phase tape gives the same gradient and curvature in both requests.
     const auto* parameters = compiled.model ? &compiled.model->parameters() : nullptr;
-    const bool reuse_curvature = reuse && parameters && !classified && !compiled.problem.temperature.free
+    // A finite calculation budget still charges the original preparation.
+    const bool reuse_curvature = reuse && !core::CalculationWork::active_limit() && parameters && !classified && !compiled.problem.temperature.free
         && !compiled.problem.pressure.free && !compiled.anchored_calorics() && parameters->component_count() > 2
         && parameters->site_pathway.empty() && parameters->site_correction.empty() && cached->derivative.size() == 2
         && std::all_of(cached->derivative.begin(), cached->derivative.end(), [](const auto& phase) {
