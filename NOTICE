@@ -44,8 +44,10 @@ Native dependencies (not all are bundled in the source tree)
   and win-64 conda recipes select the cpulgpl build without SuiteSparse.
   https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
 * HiGHS 1.15.1: MIT, with embedded pdqsort under Zlib and the LP reader
-  under Michael Feldmeier's MIT notice. Retain extern/pdqsort/license.txt
-  and highs/io/filereaderlp/LICENSE alongside the main licence.
+  under Michael Feldmeier's MIT notice. The linux-64 conda package links
+  the conda-forge HiGHS shared library. Builds that embed HiGHS source
+  retain extern/pdqsort/license.txt and highs/io/filereaderlp/LICENSE
+  alongside the main licence.
   https://github.com/ERGO-Code/HiGHS/blob/v1.15.1/LICENSE.txt
 * ASL interface headers: Lucent notice retained in
   engine/build/subprojects/packagefiles/asl/funcadd.h and stdio1.h.

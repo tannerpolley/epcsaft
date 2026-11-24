@@ -5,6 +5,7 @@ context:
   release_sha256: 8f31ebc490356460db13622b20cbb2243433abc6b619db4b1267c223106f7548
   source_sha256: ${{ release_sha256 }}
   ceres_build: ${{ "cpulgpl*" if target_platform in ["linux-64", "win-64"] else "cpu*" }}
+  highs_linux: highs ==1.15.1 h171cf75_1
 
 recipe:
   name: epcsaft
@@ -23,9 +24,11 @@ source:
   - url: https://github.com/coin-or/CppAD/archive/refs/tags/20250000.3.tar.gz
     sha256: a3a4030ae49719e88e5057e923c4c97c5ba8910e22471f22661420ce65747fbe
     target_directory: engine/build/subprojects/CppAD-20250000.3
-  - url: https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v1.15.1.tar.gz
-    sha256: a840d269dff2fafb371dd247df13ad5e026d7ce3b35ad3dc1eedd59bf0c2fb16
-    target_directory: engine/build/subprojects/HiGHS-1.15.1
+  - if: target_platform != "linux-64"
+    then:
+      url: https://github.com/ERGO-Code/HiGHS/archive/refs/tags/v1.15.1.tar.gz
+      sha256: a840d269dff2fafb371dd247df13ad5e026d7ce3b35ad3dc1eedd59bf0c2fb16
+      target_directory: engine/build/subprojects/HiGHS-1.15.1
   - url: https://raw.githubusercontent.com/eigen-mirror/eigen/3.4.0/COPYING.MPL2
     sha256: fab3dd6bdab226f1c08630b1dd917e11fcb4ec5e1e020e2c16f83a0a13863e85
     file_name: Eigen-COPYING.MPL2
@@ -63,6 +66,8 @@ outputs:
       host:
         - eigen ==3.4.0
         - ceres-solver >=2.2.0,<2.3.0 ${{ ceres_build }}
+        - if: target_platform == "linux-64"
+          then: ${{ highs_linux }}
         - if: unix
           then: mumps-seq ==5.8.2
         - if: win or (osx and arm64)
@@ -111,6 +116,8 @@ outputs:
         - nanobind ==2.12.0
         - eigen ==3.4.0
         - ceres-solver >=2.2.0,<2.3.0 ${{ ceres_build }}
+        - if: target_platform == "linux-64"
+          then: ${{ highs_linux }}
         - if: unix
           then: mumps-seq ==5.8.2
         - if: win or (osx and arm64)
@@ -128,6 +135,8 @@ outputs:
       run:
         - python
         - ceres-solver >=2.2.0,<2.3.0 ${{ ceres_build }}
+        - if: target_platform == "linux-64"
+          then: ${{ highs_linux }}
         - if: unix
           then: mumps-seq >=5.8.2,<5.8.3.0a0
         - if: win
@@ -161,7 +170,7 @@ about:
     download alongside the matching version at
     https://github.com/tannerpolley/epcsaft/releases. It contains the exact
     Engine and Ipopt sources, embedded dependency sources, recipe and patches.
-  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-1.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT AND Zlib AND LicenseRef-NIST AND LicenseRef-ASL-headers
+  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-1.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT${{ " AND Zlib" if target_platform != "linux-64" else "" }} AND LicenseRef-NIST AND LicenseRef-ASL-headers
   license_file:
     - LICENSE
     - licenses/NOTICE
@@ -170,9 +179,11 @@ about:
     - ipopt-source/Ipopt/LICENSE
     - engine/build/subprojects/CppAD-20250000.3/COPYING
     - engine/build/subprojects/CppAD-20250000.3/epl-2.0.txt
-    - engine/build/subprojects/HiGHS-1.15.1/LICENSE.txt
-    - engine/build/subprojects/HiGHS-1.15.1/extern/pdqsort/license.txt
-    - engine/build/subprojects/HiGHS-1.15.1/highs/io/filereaderlp/LICENSE
+    - if: target_platform != "linux-64"
+      then:
+        - engine/build/subprojects/HiGHS-1.15.1/LICENSE.txt
+        - engine/build/subprojects/HiGHS-1.15.1/extern/pdqsort/license.txt
+        - engine/build/subprojects/HiGHS-1.15.1/highs/io/filereaderlp/LICENSE
     - engine/data/superancillary/LICENSE-NIST.md
     - engine/build/subprojects/packagefiles/asl/funcadd.h
     - engine/build/subprojects/packagefiles/asl/stdio1.h

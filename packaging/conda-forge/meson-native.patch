@@ -74,7 +74,18 @@
  
  cppad_project = subproject('cppad')
  cppad_headers_dep = cppad_project.get_variable('cppad_headers_dep')
-@@ -99,10 +103,6 @@
+@@ -82,5 +86,8 @@
+-# tools/build-engine.sh supplies a shared HiGHS build with these options (#319).
+-highs_dep = dependency('epcsaft-highs', method: 'pkg-config', required: false)
++if linux and host_machine.cpu_family() == 'x86_64'
++  highs_dep = dependency('highs', method: 'pkg-config', version: '==1.15.1')
++else
++  highs_dep = dependency('epcsaft-highs', method: 'pkg-config', required: false)
++endif
+ highs_conf_file = []
+ if not highs_dep.found()
+   highs_project = subproject(
+@@ -99,10 +106,6 @@
    highs_conf_file = highs_project.get_variable('highs_conf_file')
  endif
  
@@ -85,7 +96,7 @@
  # The order is the layer order. Nothing here may include nanobind — that is
  # bindings/, and it is the only place. contributions/ is header-only: the terms
  # are templated so one source both evaluates a double and records a tape.
-@@ -152,8 +152,8 @@
+@@ -152,8 +155,8 @@
    cpp_args: native_warnings + native_export_args,
    dependencies: native_deps,
    include_directories: native_inc,
@@ -96,7 +107,7 @@
    build_rpath: native_rpath,
    install_rpath: native_rpath,
  )
-@@ -185,40 +185,13 @@
+@@ -185,40 +188,13 @@
    link_args: release_link_args + asl_link_args,
    kwargs: asl_export_options,
    link_with: epcsaft_private,
@@ -144,7 +155,7 @@
  endif
  
  contributions_checks = executable(
-@@ -357,18 +330,6 @@
+@@ -357,18 +333,6 @@
  )
  test('specification', specification_checks)
  
