@@ -64,7 +64,7 @@ inline void partition(const std::vector<Node>& nodes, Order first, Order last, s
     std::nth_element(first, mid, last, [&](auto a, auto b) { return nodes[a][axis] < nodes[b][axis]; });
     const auto next = (axis + 1) % nodes.front().size();
     partition(nodes, first, mid, next);
-    partition(nodes, mid, last, next);
+    partition(nodes, mid + 1, last, next);
 }
 
 inline Integer difference(Integer a, Integer b) { return std::max(a, b) - std::min(a, b); }
@@ -72,14 +72,11 @@ inline Integer difference(Integer a, Integer b) { return std::max(a, b) - std::m
 // The median splits the current bounding box; child boxes inherit all other bounds.
 inline void nearest(const std::vector<Node>& nodes, const Node& gap, Order first, Order last, std::size_t axis,
     Node& lower, Node& upper, Integer bound, Integer& best, std::size_t& index) {
-    if (bound >= best) return;
-    if (last - first == 1) {
-        const auto distance = std::inner_product(gap.begin(), gap.end(), nodes[*first].begin(), Integer{0},
-            std::plus<>{}, difference);
-        if (distance < best) { best = distance; index = *first; }
-        return;
-    }
+    if (first == last || bound >= best) return;
     const auto mid = first + (last - first) / 2;
+    const auto distance = std::inner_product(gap.begin(), gap.end(), nodes[*mid].begin(), Integer{0},
+        std::plus<>{}, difference);
+    if (distance < best) { best = distance; index = *mid; }
     const auto cut = nodes[*mid][axis], x = gap[axis];
     const auto next = (axis + 1) % gap.size();
     const auto visit = [&](bool left) {
@@ -88,7 +85,7 @@ inline void nearest(const std::vector<Node>& nodes, const Node& gap, Order first
         const auto prior = difference(x, std::clamp(x, lower[axis], upper[axis]));
         edge = cut;
         const auto distance = difference(x, std::clamp(x, lower[axis], upper[axis]));
-        nearest(nodes, gap, left ? first : mid, left ? mid : last, next, lower, upper,
+        nearest(nodes, gap, left ? first : mid + 1, left ? mid : last, next, lower, upper,
             bound - prior + distance, best, index);
         edge = saved;
     };

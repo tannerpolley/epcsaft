@@ -19,7 +19,8 @@ def trial_value(trial):
     q = trial.quantities
     return {
         "tpd_over_rt": q["tpd_over_rt"],
-        "tpd_error_estimate": q.get("tpd_error_estimate_over_rt", q.get("descent_error_estimate_over_rt")),
+        "tpd_error_estimate": q.get("tpd_error_estimate_over_rt"),
+        "donor_slope_error_estimate": q.get("descent_error_estimate_over_rt"),
     }
 
 
@@ -90,6 +91,14 @@ def replay(case):
                                   if "tpd_over_rt" not in grid.raw.trials[i].quantities))
             for row in grid.coverage
         ]
+        for row, summary in zip(grid.coverage, raw["coverage"], strict=True):
+            refused = Counter()
+            for i in row.nodes:
+                trial = grid.raw.trials[i]
+                if "tpd_over_rt" not in trial.quantities:
+                    refused.update({key: trial.quantities[key]
+                                    for key in ("root_calls", "root_evaluations", "energy_evaluations")})
+            summary["refused_work"] = refused
         available = {k: r["witness"] for k, r in (("full", full), ("grid", raw)) if r["witness"] is not None}
         raw["union_witness_source"] = min(available, key=lambda k: available[k]["delta_g_over_rt_mol"], default=None)
         assert raw["union_witness_source"] is not None, (case, m, full, raw)

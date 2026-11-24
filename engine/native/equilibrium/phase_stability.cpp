@@ -1704,7 +1704,8 @@ StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumRes
         const double tpd = q["g_over_rt"] - std::inner_product(w.begin(), w.end(), report.plane_over_rt.begin(), 0.0);
         if (!std::isfinite(tpd)) throw std::domain_error("nonfinite grid TPD");
         q["tpd_over_rt"] = tpd;
-        q["tpd_error_estimate_over_rt"] = energy_estimate(q) + candidate.feasibility_estimate
+        // Reduced molar error conditional on the frozen plane. The donor estimate is separate.
+        q["tpd_error_estimate_over_rt"] = energy_estimate(q)
             + (2 * w.size() + 2) * std::numeric_limits<double>::epsilon() * (std::abs(q["g_over_rt"])
                 + std::inner_product(w.begin(), w.end(), report.plane_over_rt.begin(), 0.0,
                     std::plus<>{}, [](double x, double plane) { return x * std::abs(plane); }));
@@ -1738,6 +1739,7 @@ StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumRes
                 trial.phase.support_declared = true;
                 for (std::size_t i = 0; i < z.size(); ++i) if (node[i]) trial.phase.support.push_back(i);
                 for (auto n : node) trial.composition.push_back(fraction(n));
+                core::CalculationWork node_work;
                 if (spent()) trial.message = "raw grid trial budget exhausted";
                 else try {
                     ++launched;
@@ -1755,6 +1757,7 @@ StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumRes
                     trial.message = error.what();
                     retain_density_failure(out.raw.first_numerical_failure, error, "raw stability grid node");
                 }
+                report_work(trial.quantities, node_work);
             }
             const auto& trial = out.raw.trials[index];
             row.visited += !trial.seed.empty();

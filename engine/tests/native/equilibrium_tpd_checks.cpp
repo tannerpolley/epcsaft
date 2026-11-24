@@ -24,12 +24,15 @@ void check_stability_grid() {
     const std::vector<Node> binary{{2, 0}, {1, 1}, {0, 2}};
     const std::vector<bool> all{true, true, true};
     CHECK(coverage(binary, all, 2)->distance == 0);
-    CHECK(coverage(binary, all, 2)->distance == 0);  // the other density side
     const auto one_side = coverage(binary, {true, false, true}, 2);
     CHECK(one_side->distance == 2 && one_side->gap == 1);
     CHECK(one_side->admitted == 0 || one_side->admitted == 2);
-    CHECK(coverage(binary, all, 2)->distance == 0);
     CHECK(!coverage(binary, {false, false, false}, 2));
+
+    // Recursive partitioning must keep the outer split fixed.
+    const std::vector<Node> ternary{{8, 4, 0}, {2, 10, 0}, {5, 5, 2}, {0, 5, 7}, {1, 9, 2}, {5, 6, 1}};
+    const auto ternary_gap = coverage(ternary, {true, true, true, true, true, false}, 12);
+    CHECK(ternary_gap->distance == 2 && ternary_gap->gap == 5 && ternary_gap->admitted == 2);
 
     // Two divalent cations and two monovalent anions. The two diagonals give the same midpoint.
     const std::vector<Vertex> pairs{{0, 2, 1, 3}, {0, 3, 1, 3}, {1, 2, 1, 3}, {1, 3, 1, 3}};
@@ -56,7 +59,11 @@ void check_stability_grid() {
     const std::vector<PhaseSpec> sides{liquid, vapor};
     const auto complete = stability_grid(compiled, parent, sides, 2, 6);
     CHECK(complete.raw_attempts == 6 && complete.raw.completed);
-    for (const auto& row : complete.coverage) CHECK(row.planned == 3 && row.visited == 3);
+    for (const auto& row : complete.coverage) {
+        CHECK(row.planned == 3 && row.visited == 3 && row.admitted == 3);
+        CHECK(row.h == 0.0 && row.rounding_bound == 1.0);
+    }
+    for (const auto& trial : complete.raw.trials) CHECK(trial.quantities.at("root_calls") >= 1);
     const auto over = stability_grid(compiled, parent, sides, 2, 5);
     CHECK(over.raw_attempts == 6 && over.raw.trials.empty() && over.raw.work.at("trial_invocations") == 0 && over.raw.work.at("root_calls") == 0);
     CHECK(over.raw.message == "raw grid ceiling exceeded");
@@ -73,8 +80,11 @@ void check_stability_grid() {
     CHECK(!partial.raw.completed && partial.raw.work.at("trial_invocations") == 1);
     CHECK(partial.raw.work.at("root_calls") >= 1 && partial.raw.work.at("unvisited_nodes") == 5);
     CHECK(partial.coverage[0].planned == 3 && partial.coverage[0].visited == 1);
+    CHECK(partial.coverage[0].admitted == 1 && partial.coverage[0].h == 2.0);
     CHECK(partial.coverage[1].planned == 3 && partial.coverage[1].visited == 0);
     CHECK(!partial.coverage[1].h && partial.raw.message == "raw grid trial budget exhausted");
+    CHECK(partial.refined.work.at("unvisited_refinements") == 1);
+    CHECK(partial.refined.message == "refinement trial budget exhausted");
 
     auto face = liquid;
     face.support = {0};

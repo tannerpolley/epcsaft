@@ -93,7 +93,9 @@ from the represented continuous composition domain to the planned grid. Add
 that bound, `h`, and the separate mapping allowance to bound distance to an
 evaluated composition. A sum of at least 2 gives no improvement over the
 simplex diameter. The record identifies omitted species and retains the causes
-of individual gaps.
+of individual gaps. Each raw trial retains its density and EOS work, including
+refused evaluations. The raw reduced molar TPD estimate treats the parent
+plane as fixed. Donor-slope and finite-withdrawal errors are separate quantities.
 
 Coverage measures composition distance only. It supplies neither a bound on
 unsampled tangent-plane distances nor a count of all density branches, so a

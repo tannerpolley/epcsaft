@@ -33,25 +33,26 @@ requested local refinement.
 
 | Case | Method | $\Delta G/(RT)$ ± error (mol) | Root calls | Density evaluations | EOS evaluations | Elapsed (s) |
 |---|---|---:|---:|---:|---:|---:|
-| MDEA | Full | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 85 | 11,525 | 12,351 | 0.341 |
-| MDEA | Grid, $m=4$ | No witness | 465 | 20,400 | 22,126 | 0.344 |
-| MDEA | Union, $m=4$ | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 550 | 31,925 | 34,477 | 0.685 |
-| AMP | Full | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 22 | 1,410 | 1,971 | 0.184 |
-| AMP | Grid, $m=4$ | No witness | 840 | 14,186 | 17,167 | 0.779 |
-| AMP | Union, $m=4$ | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 862 | 15,596 | 19,138 | 0.963 |
+| MDEA | Full | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 85 | 11,525 | 12,351 | 0.281 |
+| MDEA | Grid, $m=4$ | No witness | 465 | 20,400 | 22,126 | 0.277 |
+| MDEA | Union, $m=4$ | $-2.890826\times10^{-5} \pm 7.65979\times10^{-10}$ | 550 | 31,925 | 34,477 | 0.558 |
+| AMP | Full | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 22 | 1,410 | 1,971 | 0.175 |
+| AMP | Grid, $m=4$ | No witness | 840 | 14,186 | 17,167 | 0.343 |
+| AMP | Union, $m=4$ | $-6.333333\times10^{-3} \pm 2.74779\times10^{-9}$ | 862 | 15,596 | 19,138 | 0.519 |
 
 | Case | Method | First reduced molar TPD ± estimated error | Minimum reduced molar TPD ± estimated error |
 |---|---|---:|---:|
-| MDEA | Full | $-2.84\times10^{-14}\pm1.95\times10^{-10}$ | $-0.00262223\pm1.41\times10^{-10}$ |
-| MDEA | Grid, $m=2$ | $0.378101\pm9.64\times10^{-11}$ | $0.378101\pm9.64\times10^{-11}$ |
-| MDEA | Grid, $m=4$ | $0.146417\pm3.94\times10^{-11}$ | $0.0622428\pm7.90\times10^{-11}$ |
-| AMP | Full | $-0.00313637\pm1.76\times10^{-10}$ | $-0.00313637\pm1.76\times10^{-10}$ |
-| AMP | Grid, $m=2$ | $2.98581\pm1.55\times10^{-11}$ | $0.0377781\pm1.81\times10^{-10}$ |
-| AMP | Grid, $m=4$ | $2.61200\pm5.42\times10^{-12}$ | $0.0377781\pm1.81\times10^{-10}$ |
+| MDEA | Full | $-2.84\times10^{-14}$ | $-0.00262223$ |
+| MDEA | Grid, $m=2$ | $0.378101\pm9.63\times10^{-11}$ | $0.378101\pm9.63\times10^{-11}$ |
+| MDEA | Grid, $m=4$ | $0.146417\pm3.93\times10^{-11}$ | $0.0622428\pm7.89\times10^{-11}$ |
+| AMP | Full | $-0.00313637$ | $-0.00313637$ |
+| AMP | Grid, $m=2$ | $2.98581\pm1.54\times10^{-11}$ | $0.0377781\pm1.81\times10^{-10}$ |
+| AMP | Grid, $m=4$ | $2.61200\pm5.31\times10^{-12}$ | $0.0377781\pm1.81\times10^{-10}$ |
 
-Full's estimates here are the retained donor-slope error estimates on these
-trials. Both the first and minimum grid TPD are raw, independently
-pressure-closed evaluations. [The replay records](results/mdea-amp.jsonl)
+Full supplies both TPD values and separate donor-slope errors in the replay
+records. A raw grid TPD uncertainty estimates reduced molar energy and
+arithmetic errors conditional on the frozen parent plane. Both the first and
+minimum grid TPD are raw, independently pressure-closed evaluations. [The replay records](results/mdea-amp.jsonl)
 retain the reported values, refusals, work, and timing for both denominators. Tables show
 the recorded scalar comparisons directly, including cases with unavailable
 coverage.
@@ -71,7 +72,7 @@ visited. The raw counts before deduplication are 51 and 510 for MDEA and 72 and
 | MDEA | 4 | Vapor | 0/15 | unavailable | 0.75 |
 | AMP | 2 | Liquid | 29/63 | 1 | 2 |
 | AMP | 2 | Vapor | 4/6 | 1 | 1.5 |
-| AMP | 4 | Liquid | 585/825 | 2/3 | 2 |
+| AMP | 4 | Liquid | 585/825 | 0.5 | 2 |
 | AMP | 4 | Vapor | 10/15 | 1 | 0.75 |
 
 The largest outward-rounded mapping allowance was $4.17\times10^{-16}$ in
@@ -81,7 +82,11 @@ has a combined rounding, admission and mapping bound below the simplex
 diameter of 2. On the liquid schedules, the density search reported
 nonfinite derivatives for 20 and 105 MDEA nodes and 33 and 238 AMP nodes, in
 increasing denominator order. The other liquid gaps had unresolved root
-sides. All vapor gaps had unresolved or wrong-side roots.
+sides. All vapor gaps had unresolved or wrong-side roots. At $m=4$ the
+refused liquid nodes used 106 root calls and 270 EOS evaluations for MDEA,
+and 240 root calls and 595 EOS evaluations for AMP. A direct integer-distance
+comparison agreed with the reported $h$ and nearest admitted identities on
+every schedule with admitted nodes.
 
 Coverage applies to composition distance within the represented support and
 density side. Charged vapor lies outside the declared schedules. The grid
