@@ -1173,8 +1173,8 @@ predicate with its own anchors and retains its `branch_lost` cause; its internal
 corrector does not independently reselect a cold branch. This is declared-branch
 admission, not global phase discovery, and inherits ALG-DENSITY's finite-search
 limits.
-Retain the native optimizer `solver_status` alongside the convergence stop,
-residual, and failed-attempt initialization/termination details. The optimizer
+Retain `solver_status` alongside the convergence stop, residual, and
+failed-attempt initialization/termination details. The optimizer
 stops on amount-weighted rows, which bounds an intensive trace row only by
 `tau N_feed/(N_p x_i)`; after a success, acceptable-point, tiny-step, restoration-failure,
 iteration-budget or time-budget stop, `EQUILIBRIUM_POLISH_STEPS` Newton steps on
@@ -3721,7 +3721,16 @@ Their returned method annotation supplies no new termination or admission criter
 
 ### Rejected points and the `epcsaft` logger
 
-`solver_status` is Ipopt's own return code. `SUCCESS` with `success=False`
+`solver_status` retains Ipopt's own return code for ordinary Ipopt solves.
+For the [#207](https://github.com/tannerpolley/epcsaft/issues/207) path, a
+supplied-composition, nonreacting electrolyte split into two free liquids at
+fixed T and P on the same positive-feed support first takes up to three Ipopt
+steps. An admitted exact Newton polish reports `NEWTON_CONVERGED` and retains
+the optimizer's raw return in `ipopt_diagnostics.application_return`. A refused
+attempt adds its work to the ordinary solve from the original coordinates,
+whose status then applies.
+
+`SUCCESS` with `success=False`
 means the optimizer converged and the Engine rejected the point. Every such
 rejection of a converged or floor-converged stop records `Stop::infeasible`
 and a `convergence.cause`: `phases_coalesced`, `phase_disappeared`,

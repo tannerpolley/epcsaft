@@ -2527,6 +2527,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             auto fast = run_driver_once(compiled, initial, structural, trial, nullptr, nullptr,
                 Attempt::Cold, {}, false, false, reporting, 3);
             if (fast.success && admit_branches(fast, trial)) {
+                fast.solver_status = "NEWTON_CONVERGED";
                 std::move(stages).report(fast);
                 return selected(std::move(fast), limits);
             }
