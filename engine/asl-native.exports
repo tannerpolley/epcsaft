@@ -1,0 +1,9 @@
+EPCSAFT_ASL_PRIVATE {
+    global:
+        extern "C++" {
+            epcsaft::equilibrium::admit_solid_declarations*;
+            epcsaft::equilibrium::solid_log_k*;
+            epcsaft::equilibrium::solve_equilibrium_retaining_compiled*;
+            epcsaft::equilibrium::solved_state_actions_prepared*;
+        };
+};

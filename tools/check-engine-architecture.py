@@ -3,7 +3,7 @@
 
 C++ is organised by dependency layer because include direction is the only
 structural fact a checker can enforce. Each rule is a cheap stdlib reading named
-in main()'s check table. The archive and stub rules need the linked images, so they run
+in main()'s check table. The linkage and stub rules need the linked images, so they run
 only with --build-dir, the configured Meson build of the lead's editable batch (#58).
 """
 
@@ -62,35 +62,31 @@ def layer_of(path: Path) -> str:
     return path.relative_to(NATIVE).parts[0]
 
 
-def rule_one_archive() -> list[str]:
+def rule_native_linkage() -> list[str]:
     if not MESON.is_file():
         return [f"{MESON} is missing"]
     text = MESON.read_text()
     archives = re.findall(r"(\w+)\s*=\s*static_library\s*\(\s*'([^']+)'", text)
     extensions = len(re.findall(r"\bextension_module\s*\(", text))
     bad = []
-    if archives != [("nanobind_support", "nanobind_support"), ("epcsaft_private", "epcsaft_native")]:
-        bad.append(f"expected one private native archive and nanobind support, found {archives}")
+    if archives != [("nanobind_support", "nanobind_support"), ("asl_native", "epcsaft_native")]:
+        bad.append(f"expected nanobind support and the non-Linux ASL archive declaration, found {archives}")
     if extensions != 1:
         bad.append(f"meson.build declares {extensions} extensions, expected 1")
     return bad
 
 
-def rule_archive_is_python_free(build_dir: Path) -> list[str]:
+def rule_linux_images(build_dir: Path) -> list[str]:
     build_dir = build_dir.resolve()
     if not build_dir.is_dir():
         return [f"configured build directory does not exist: {build_dir}"]
     if not (build_dir / "meson-info" / "meson-info.json").is_file():
         return [f"not a configured Meson build: {build_dir}"]
-    found = sorted(build_dir.glob("libepcsaft_native.a"))
-    if len(found) != 1:
-        return [f"expected one native archive in {build_dir}, found {found}"]
-    out = subprocess.run(
-        ["nm", "--defined-only", str(found[0])],
-        capture_output=True,
-        text=True,
-        check=False,
-    ).stdout
+    native = build_dir / "libepcsaft_native.so"
+    adapter = build_dir / "libepcsaft_asl.so"
+    if missing := [path.name for path in (native, adapter) if not path.is_file()]:
+        return [f"expected linked Linux images in {build_dir}, missing {missing}"]
+    out = subprocess.check_output(["nm", "--defined-only", str(native)], text=True)
     leaked = sorted(
         {
             line.split()[-1]
@@ -99,15 +95,10 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
         }
     )
     if leaked:
-        return [f"{found[0].name} exports Python symbols: {leaked[:5]}"]
+        return [f"{native.name} defines Python symbols: {leaked[:5]}"]
     ninja = (build_dir / "build.ninja").read_text().splitlines()
-    def link(name):
-        return next((line.split(" |", 1)[0].split()[3:] for line in ninja
-                     if line.startswith(f"build {name}: ")), [])
-    archive_objects = link("libepcsaft_native.a")
-    shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
-    if not archive_objects or archive_objects != shared_objects:
-        return ["native shared library and private archive do not reuse one PIC object set"]
+    if any(line.startswith("build libepcsaft_native.a: ") for line in ninja):
+        return ["Linux builds a private native archive"]
     support_consumers = []
     for line in ninja:
         if line.startswith("build ") and ": cpp_LINKER " in line:
@@ -115,14 +106,16 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
             inputs = line.split()[3:]
             if "libnanobind_support.a" in inputs and output != "libcore_export_check.so":  # #41 relink of _core
                 support_consumers.append(output)
-            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
-                return [f"private archive used outside ASL: {output}"]
+            if output == adapter.name and any(item.startswith(native.name + ".p/") and item.endswith(".o") for item in inputs):
+                return ["Linux ASL links native objects directly"]
     if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
         return [f"nanobind support must link only into _core: {support_consumers}"]
-    dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
-    exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
-    if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
-        return ["ASL private native copy is not localized"]
+    dynamic = subprocess.check_output(["readelf", "-d", str(adapter)], text=True)
+    exports = subprocess.check_output(["nm", "-D", "--defined-only", str(adapter)], text=True)
+    if f"Shared library: [{native.name}]" not in dynamic or "$ORIGIN" not in dynamic:
+        return ["Linux ASL does not load the sibling native library"]
+    if [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
+        return ["Linux ASL must export only funcadd_ASL"]
     return []
 
 
@@ -533,7 +526,7 @@ def main() -> int:
     arguments = parser.parse_args()
 
     checks = [
-        ("one PIC object set, shared/private libraries, one extension", rule_one_archive()),
+        ("native and ASL targets, one extension", rule_native_linkage()),
         ("include direction is downward", rule_include_direction()),
         ("regression stays below stability", rule_regression_stays_below_stability()),
         ("constants defined once", rule_constants_defined_once()),
@@ -550,7 +543,7 @@ def main() -> int:
         ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
     if arguments.build_dir:
-        checks += [("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
+        checks += [("Linux native and ASL images", rule_linux_images(arguments.build_dir)),
                    ("type stub matches the extension", rule_stub_matches_extension())]
     failed = 0
     for name, findings in checks:

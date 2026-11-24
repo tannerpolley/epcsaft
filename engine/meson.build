@@ -23,7 +23,7 @@ native_rpath = {'windows': '', 'darwin': '@loader_path'}.get(host_machine.system
 # function fails the Linux link as it fails the Windows one (#41).
 native_export_args = windows ? ['-DEPCSAFT_NATIVE_BUILD'] : ['-fvisibility-ms-compat']
 quadmath_dep = linux ? [cpp.find_library('quadmath')] : []
-# One exported symbol hides the statically linked Engine, as the version script does on Linux.
+# The adapter exports only its ASL entry point.
 asl_link_args = {'windows': [], 'darwin': ['-Wl,-exported_symbol,_funcadd_ASL']}.get(host_machine.system(), [
   '-Wl,--exclude-libs,ALL',
   '-Wl,--version-script=' + meson.current_source_dir() + '/build/subprojects/packagefiles/asl/asl.exports',
@@ -146,9 +146,12 @@ native_sources = ['native/core/trace.cpp', properties_sources, superancillary_ta
   equilibrium_sources, regression_sources, cppad_temp_file, highs_conf_file]
 native_deps = [threads_dep, ipopt_dep, eigen_dep, ceres_dep, highs_dep, cppad_headers_dep, worker_platform_dep]
 
+native_exports = 'asl-native.exports'
 epcsaft_native = shared_library(
   'epcsaft_native',
   native_sources,
+  link_args: linux ? ['-Wl,--version-script=' + meson.current_source_dir() / native_exports] : [],
+  link_depends: linux ? files(native_exports) : [],
   cpp_args: native_warnings + native_export_args,
   dependencies: native_deps,
   include_directories: native_inc,
@@ -158,22 +161,25 @@ epcsaft_native = shared_library(
   install_rpath: native_rpath,
 )
 
-private_sources = []
-if windows
-  private_sources = native_sources
-  private_options = {
-    'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
-    'dependencies': native_deps,
-    'include_directories': native_inc,
-  }
-else
-  private_options = {'objects': epcsaft_native.extract_all_objects(recursive: true)}
+asl_native = epcsaft_native
+if not linux
+  private_sources = []
+  if windows
+    private_sources = native_sources
+    private_options = {
+      'cpp_args': native_warnings + ['-DEPCSAFT_NATIVE_STATIC'],
+      'dependencies': native_deps,
+      'include_directories': native_inc,
+    }
+  else
+    private_options = {'objects': epcsaft_native.extract_all_objects(recursive: true)}
+  endif
+  asl_native = static_library(
+    'epcsaft_native', private_sources,
+    kwargs: private_options,
+    install: false,
+  )
 endif
-epcsaft_private = static_library(
-  'epcsaft_native', private_sources,
-  kwargs: private_options,
-  install: false,
-)
 
 asl_export_options = windows ? {'vs_module_defs': files('asl.def')[0]} : {}
 asl_library = shared_library(
@@ -182,9 +188,11 @@ asl_library = shared_library(
   cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
   dependencies: native_deps,
   include_directories: native_inc,
+  build_rpath: linux ? native_rpath : '',
+  install_rpath: linux ? native_rpath : '',
   link_args: release_link_args + asl_link_args,
   kwargs: asl_export_options,
-  link_with: epcsaft_private,
+  link_with: asl_native,
   install: true,
   install_dir: join_paths(py.get_install_dir(), 'epcsaft'),
 )

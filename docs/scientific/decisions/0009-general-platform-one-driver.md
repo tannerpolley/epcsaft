@@ -22,11 +22,21 @@ after a failed ordinary L+V solve ([ALG-EQUILIBRIUM](../../../engine/docs/scienc
 reuses this driver and the straight continuation controller.
 
 The existing native ownership principles remain: one Python-free native shared library for Python and native programs,
-one extension and an ASL adapter with its private native copy from the same PIC
-objects (#485 owner decision, 2026-10-14; supersedes archive-only linkage), no public C++ ABI or iterative Python callbacks, explicit
+one extension and an ASL adapter, no public C++ ABI or iterative Python callbacks, explicit
 physical inputs, common parameter identities and owner-supplied derivative
 chains. General platform scope does not introduce compatibility support,
 external catalogs, speculative extension frameworks or a second installation.
+
+On Linux, the ASL adapter loads the sibling native shared library and exports
+only `funcadd_ASL`. Four functions cross that boundary through an ELF
+symbol version internal to the library pair. The installed conda adapter recovered
+2.6109197923860044 mol CO₂ in the first external AMPL Ipopt solve, a relative
+error of 1.34e-9 against the 1e-6 criterion. The loader resolved the Engine
+calls to the packaged Ipopt 3.11.9 and MUMPS 5.8.2 while the IDAES executable
+used its own Ipopt 3.13.2 and MUMPS.
+The [#193 owner decision](https://github.com/tannerpolley/epcsaft/issues/193#issuecomment-7118357688)
+supersedes #485 on Linux. The Windows and macOS adapters retain the private
+native link under #485 (owner, 2026-10-14).
 
 On 2026-09-07 the owner specified one Ipopt driver with exact curvature for
 all admitted equilibrium specifications, including bubble/dew. Root or

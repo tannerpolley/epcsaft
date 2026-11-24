@@ -23,6 +23,13 @@
 #include <variant>
 #include <vector>
 
+// The Linux adapter imports these functions through the Engine's private ELF symbol version.
+#if defined(__linux__)
+#define EPC_ASL_PRIVATE EPC_API
+#else
+#define EPC_ASL_PRIVATE
+#endif
+
 namespace epcsaft::core { class Scope; }
 namespace epcsaft::equilibrium {
 
@@ -624,9 +631,9 @@ EPC_API CompiledSystem compile_problem(const HelmholtzModel&, const EquilibriumP
 CompiledSystem refresh_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&, const CompiledSystem&);
 
 // Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
-void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
+EPC_ASL_PRIVATE void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
 // Reads jets.temperature_order, parameters and pairs.
-std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,
+EPC_ASL_PRIVATE std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,
     const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&, const ReferenceJets& jets);
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
 CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
@@ -1023,7 +1030,7 @@ EPC_API EquilibriumResult solve_equilibrium(
     const std::optional<EquilibriumResult>& start = std::nullopt, const std::vector<std::string>& component_ids = {},
     std::optional<std::size_t> work_limit = std::nullopt, std::optional<std::size_t> branch_end_work_limit = std::nullopt
 );
-EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
+EPC_ASL_PRIVATE EquilibriumResult solve_equilibrium_retaining_compiled(const HelmholtzModel&, const EquilibriumProblem&,
     std::optional<CompiledSystem>&, const std::optional<EquilibriumResult>& = std::nullopt,
     const std::vector<std::string>& component_ids = {}, const CompiledSystem* prepared = nullptr);
 EPC_API EquilibriumResult solve_equilibrium(const HelmholtzModel&, const EquilibriumProblem&,
@@ -1324,7 +1331,7 @@ EPC_API SolvedStateActionBatch solved_state_actions(
 );
 // The ASL reader resets this workspace before replacing its compiled system or result.
 struct SolvedStateActionWorkspace;
-SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
+EPC_ASL_PRIVATE SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace);
 // Independent first-order directions at one accepted center; each response retains its own status.
 EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
@@ -1334,3 +1341,5 @@ EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
 );
 
 }  // namespace epcsaft::equilibrium
+
+#undef EPC_ASL_PRIVATE

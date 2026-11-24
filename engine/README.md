@@ -72,7 +72,7 @@ The [Gates](../docs/agents/workflow.md#gates) table owns check selection. Run
 `bash tools/check-affected.sh [base]` for local source checks and affected C++ cases.
 Use `--all` from a source archive. The lead uses
 `bash tools/check-affected.sh --python <previous-qualified-sha>` at the downstream wheel
-batch to run the Python suite, verify the private native archive and ASL exports, and
+batch to run the Python suite, verify the Linux native linkage and ASL export, and
 compare the type stubs with the installed extension. The lead runs `check-pr-native`
 once on the frozen batch candidate, then builds the delivery wheel after the applicable
 batch checks pass.

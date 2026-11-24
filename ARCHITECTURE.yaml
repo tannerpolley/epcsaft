@@ -105,7 +105,8 @@ project_map: {
 native:
   root: engine/native
   shared_library: epcsaft_native
-  private_archive_consumer: epcsaft_asl
+  asl_adapter: epcsaft_asl
+  asl_native_linkage: {linux: shared, windows: private_archive, macos: private_archive}
   extension: epcsaft._core
   checker: tools/check-engine-architecture.py
   # Downward only. bindings may include anything; nothing includes bindings.
