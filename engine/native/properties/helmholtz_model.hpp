@@ -31,6 +31,7 @@
 
 namespace epcsaft {
 
+struct AssociationJacobian;
 struct AssociationWorkspace;
 namespace detail { struct HelmholtzTape; struct HelmholtzEvaluation; }
 // Successful third-order volume evaluations for one model, temperature and composition.
@@ -578,7 +579,7 @@ public:
     template <typename Base>
     HelmholtzDerivativeValues<Base> isothermal(Base temperature, Base volume,
         const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
-        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr,
+        const AssociationJacobian* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr,
         const AssociationAction* association = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
@@ -642,7 +643,7 @@ private:
 #if defined(_WIN32) && !defined(EPCSAFT_NATIVE_BUILD) && !defined(EPCSAFT_NATIVE_STATIC)
 extern template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 extern template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
-    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*) const;
+    const std::vector<WiderScalar>&, const std::vector<double>*, const AssociationJacobian*, Eigen::MatrixXd*, const AssociationAction*) const;
 #endif
 
 
@@ -841,9 +842,7 @@ EPC_API Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temp
 
 // The factorized mass-action Jacobian of the solved site fractions; a singular or ill-conditioned one
 // throws, or with `status` is reported there.
-Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(const std::vector<double>& sites, const std::vector<double>& composition,
-    const Parameters& parameters, double number_density, const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
-void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const std::vector<double>& sites,
+void site_factorization(AssociationJacobian& factorization, const std::vector<double>& sites,
     const std::vector<double>& composition, const Parameters& parameters, double number_density,
     const std::vector<double>& delta, PropertyActionStatus* status = nullptr, AssociationWorkspace* scratch = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
