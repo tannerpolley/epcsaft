@@ -19,8 +19,9 @@ the merge ([roadmap skill](../../.agents/skills/manage-github-roadmap/SKILL.md#h
 A builder is the sole writer in its worktree and starts no subagents. It may
 implement and qualify a clear local defect fix of about 20 lines or fewer with an
 obvious numerical falsifier. It stops and reports to the lead before an
-unresolved scientific choice, a new solver, derivative or method design, a
-hard-ceiling excess or a scope change. It never loosens a tolerance or adds
+unresolved scientific choice, a new solver, derivative or method design, or a
+scope change. Handle line ceilings through [code budgets](../scientific/code-budgets.md).
+It never loosens a tolerance or adds
 per-case epsilons, application selectors or outer retries; never pushes, opens
 pull requests, merges or edits issue bodies or labels (comments are fine); and
 keeps evidence under `build/` or the analysis leaf, never `/tmp`. A promoted
@@ -63,6 +64,13 @@ independent falsifier before acceptance (examples in ALG-TERMINATION
 "Verification meaning").
 
 ## Gates
+
+A band without a measured or cited origin is a diagnostic, not a gate. Report
+gate outcomes as pass, decisive miss, or unresolved; an interval that straddles
+the limit is unresolved.
+
+A diagnosed harness or script defect may be fixed and rerun with the fix logged;
+reuse results that already passed. Publication gates still apply.
 
 This is the only gate list. Verify internal Engine changes locally with `tools/native-run`, the native `*_checks` programs, or a small C++ driver. Run the case that exercises the change and keep the issue's numerical acceptance evidence. After several changes have accumulated and a downstream application needs a new wheel, the lead builds the Python extension and wheel once for that batch. Comparisons select prepared Python interpreters or build/environment directories, with verified source and loaded-library identities. Use the previous qualified batch environment for A and the frozen candidate environment for B. Retain an unchanged baseline environment before changing its source.
 
@@ -107,6 +115,9 @@ recommendation, with the threshold's origin named (owner standing delegation,
 2026-11-18).
 
 ## Closeout
+
+The lead handles routine issue triage, including closing or parking issues and
+choosing the next issue.
 
 After each merge, the lead runs `tools/prune-worktrees WORKTREE ...` (owner,
 2026-10-20) on each task worktree whose agent task is terminal with no queued

@@ -61,10 +61,11 @@ thermodynamic or solver owner.
 
 The band of a layer, or of the total, is 1% of its current count, rounded up.
 
-1. **Raise to count plus band.** Above a hard ceiling, readiness fails.
-   Refactor or reduce, or raise the ceiling with owner approval to exactly the
-   count plus the band, recording the raise in the issue body in the same
-   change. No override flag or automatic upward ratchet exists.
+1. **Raise to count plus band.** Report an overrun with its count and open the
+   PR. The lead approves a raise to exactly the count plus the band or asks for
+   a reduction; record the raise in the issue body in the same change.
+   Line-count uncertainty alone does not block a numerically resolved design at
+   readiness. No override flag or automatic upward ratchet exists.
 2. **Lower after consolidation.** When a ceiling sits more than one band above
    the count, readiness fails with the ceiling to lower to (count plus band;
    for the total, no more than the sum of the layer ceilings).
