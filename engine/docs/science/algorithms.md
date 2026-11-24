@@ -2524,7 +2524,9 @@ ties by phase index. Compute its actual slope directly from physical gradients,
 recording plane value, chemical correction and pressure row separately.
 Propagate EqID: `tangent_plane_descent_uncertainty` from reevaluated association
 floors and site residual/conditioning, Euler energy-gradient defect, amount/volume
-column scales, feasibility and arithmetic, plus supplied standard uncertainty.
+column scales and arithmetic, plus supplied standard uncertainty. This molar
+estimate is conditional on the repaired donor. The extensive feasibility error
+contributes to the subsequent finite-split estimate.
 A maximum native floor can conservatively replace individual column estimates;
 it remains a local estimate. Final-sum rounding alone does not bound the EOS.
 

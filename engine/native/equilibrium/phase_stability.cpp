@@ -845,7 +845,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     const double gamma = (w.size() + 3.0) * std::numeric_limits<double>::epsilon();
     const double arithmetic = gamma * (magnitude + std::abs(donor.at("pressure_row"))) / (1.0 - gamma);
     const double uncertainty = energy_estimate(q) + (1.0 + std::abs(at.volume[p]))
-        * at.derivative[p].gradient_floor + candidate.feasibility_estimate + arithmetic + standard_error;
+        * at.derivative[p].gradient_floor + arithmetic + standard_error;
     q["donor_capacity_mol"] = capacity;
     q["donor_chemical_contraction_over_rt"] = chemical;
     q["donor_pressure_row"] = donor.at("pressure_row");

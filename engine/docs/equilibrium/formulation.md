@@ -545,11 +545,12 @@ support and finite withdrawal capacity. The actual fixed-molar-volume donor
 slope includes chemical and pressure corrections (EqID:
 `tangent_plane_donor_descent`); present phases obey the full chemical-plus-pressure
 identity (EqID: `present_phase_tangent_plane_identity`). Association derivative
-floors, Euler defect, feasibility correction, supplied standard-term uncertainty
-and arithmetic contribute separately to an estimated slope uncertainty
+floors, Euler defect, supplied standard-term uncertainty and arithmetic contribute
+separately to the estimated slope error conditional on the repaired donor
 (EqID: `tangent_plane_descent_uncertainty`). A resolved negative slope and plane
 value also require a retained finite inventory-conserving split whose computed
-Gibbs decrease exceeds its propagated estimate (EqID: `conserved_finite_phase_split`).
+Gibbs decrease exceeds its propagated extensive estimate, including the amount
+repair (EqID: `conserved_finite_phase_split`).
 Optimizer convergence or positive local trial inertia is not necessary for this
 descent evidence.
 

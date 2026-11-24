@@ -514,7 +514,9 @@ void check_stability_amount_correction() {
     constexpr double temperature = 180.0, pressure = 1e5, chemical_scale = 7.0;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * temperature;
     bool nonzero_correction = false;
-    for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}}) {
+    double unit_slope_error = 0.0;
+    std::vector<std::pair<std::size_t, bool>> unit_admissions;
+    for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}, {0.37, 1.0}, {0.37, 1000.0}}) {
         const std::vector<double> x{fraction, 1.0 - fraction};
         const auto root = solve_density(model, temperature, pressure, x, DensityBranch::Liquid, std::nullopt);
         const double volume = 1.0 / root.molar_density;
@@ -572,6 +574,25 @@ void check_stability_amount_correction() {
         tpd_compare(id + "/correction", quantities.at("correction_l1_mol"), correction, 1e-12 * correction, inputs, "mol");
         tpd_compare(id + "/energy", quantities.at("feasibility_estimate_over_rt"), energy, 1e-12 * energy, inputs, "mol");
         tpd_compare(id + "/donor-energy", report.trials[0].quantities.at("feasibility_error_estimate_over_rt"), energy, 1e-12 * energy, inputs, "mol");
+        if (fraction == 0.37 && scale != 10.0) {
+            const double error = report.trials[0].quantities.at("descent_error_estimate_over_rt");
+            options.evaluate_supplied_trials = false;
+            const auto full = stability_test(compiled, parent, options);
+            CHECK(full.completed && !full.trials.empty());
+            std::vector<std::pair<std::size_t, bool>> admissions;
+            for (const auto& t : full.trials) admissions.emplace_back(t.split_checks.size(), t.resolved_descent);
+            if (scale == 1.0) {
+                unit_slope_error = error;
+                unit_admissions = std::move(admissions);
+            } else {
+                // The same composition has the same molar error. The extensive correction
+                // at the larger scale must be resolvable at the comparison precision.
+                const double rounding = 32 * std::numeric_limits<double>::epsilon();
+                CHECK(energy > rounding);
+                tpd_compare("donor-slope/feed-rescaling", error, unit_slope_error, rounding);
+                CHECK(admissions == unit_admissions);
+            }
+        }
         auto coordinates = parent.coordinates;
         std::copy(report.candidate_coordinates.begin(), report.candidate_coordinates.end(), coordinates.begin());
         const auto final = compiled.prepare(coordinates);
