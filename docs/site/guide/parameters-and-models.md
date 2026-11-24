@@ -160,17 +160,28 @@ records separately from the EOS parameters. The
 [methane caloric example](../examples/methane-caloric-properties.ipynb)
 shows how to attach the methane record and read total and residual properties.
 
-## Composition domain report
+## Parameter domain warnings
 
-For packet-loaded parameters, call `mixture.outside_domains(x)` with one phase's
-mole fractions in component order (including a phase returned by equilibrium).
-Each returned dictionary names `packet`, `domain_id`, `quantity`, `limit`,
-`bound`, `value`, `unit`, and `solute` for molality. Quantity and limit are native
-`DomainQuantity` and `DomainLimit` enum values. Comparisons are strict.
+A completed state, property evaluation or equilibrium solve emits one
+`epcsaft.DomainWarning` if its temperature, pressure or composition exceeds a
+declared parameter bound. Bounds are inclusive, including single-point bounds.
+Unknown domains contribute no bounds. The values returned by the calculation
+are unchanged.
 
-Only declared bounds are reported. Temperature and pressure are outside this
-report. A missing solvent or absent bounded solute skips its comparison. Each
-packet contributes only bounds for its own selected solutes; ionic strength
-still includes all ions in the phase. A bare parameter JSON uses its own domains;
-fitted and directly constructed parameters have no packet bounds. Applications
-choose how to respond to a report; calculations are unaffected.
+Temperature and pressure checks apply to document-wide domains, whose IDs are
+uncited in the complete parameter document. The Engine does not yet report
+temperature and pressure bounds cited by coefficient or model records.
+[Issue #200](https://github.com/tannerpolley/epcsaft/issues/200) tracks that work.
+For inherited temperature and pressure bounds in saved parameter documents,
+rematerialize from the source packets if the document predates this check.
+The document's own bounds take precedence over inherited records with the same ID.
+
+When a bound is exceeded, `result.domain_violations` holds records with `variable`, `value`, `bound`,
+`side`, `packet` and `domain_id`. Temperature is in kelvin, pressure in pascal
+and composition retains its declared basis. The report uses the pressure
+specified or evaluated by the call. The fields `row` and `phase` give
+zero-based positions in batch and equilibrium results. Continuation rows count
+accepted states first, then critical candidates and the last rejected state when present.
+For an explicit check, use
+`mixture.outside_domains(x, T=298.15, P=100000)`. To raise the warning as an
+exception, use `warnings.filterwarnings("error", category=epcsaft.DomainWarning)`.

@@ -244,11 +244,12 @@ class Mixture:
         self.parameters = parameters
         self.component_ids = parameters.component_ids
         self.site_ids = parameters.site_ids
-        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options)
+        self._model = _core.HelmholtzModel(parameters._native, active_parameters or (), thermochemistry, solver_options, parameters._bounds)
 
-    def outside_domains(self, x: Sequence[float]) -> list[dict[str, Any]]:
-        """Report declared composition bounds exceeded by one phase, in component order."""
-        return _core.outside_domains(self.parameters._native, self.parameters._bounds, x)
+    def outside_domains(self, x: Sequence[float], *, T: float | None = None,
+                        P: float | None = None) -> list[_core.OutsideDomain]:
+        """Report exceeded bounds at mole fractions x, temperature T in K and pressure P in Pa."""
+        return _core.outside_domains(self.parameters._native, self.parameters._bounds, x, T, P)
 
     def states(
         self, T: Sequence[float], *, rho: float | Sequence[float] | None = None,
@@ -318,6 +319,7 @@ class Mixture:
         on an ion-free support are None, as in ``State.log_fugacity_coefficient``.
         """
         return self._model.log_fugacity_terms(T, rho, self._composition(x))
+
     def virial_coefficient_actions(
         self, T: float, x: Mapping[str, float] | Sequence[float] | None = None, *, temperature_direction: float | None = None,
         composition_direction: Mapping[str, float] | Sequence[float] | None = None,
@@ -392,7 +394,7 @@ class Mixture:
             return self._model.state(T, rho, self._composition(x), bool(derived_properties))
         assert P is not None
         return self._model.state_at_pressure(
-            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties)
+            T, P, self._composition(x), branch, anchor.molar_density if anchor else None, bool(derived_properties),
         )
 
     def reference(

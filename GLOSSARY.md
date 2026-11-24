@@ -143,8 +143,8 @@ Scope: `engine/`, `docs/site/guide/states-and-properties.md`
 
 
 **Outside domains**:
-The requested list of declared packet composition bounds exceeded by a phase.
-Each record retains the packet, domain, quantity, comparison limit, bound and
-phase value. It describes declared applicability, not thermodynamic stability.
-Source: packet contract composition bounds; [molality](engine/docs/equations.md#molality_activity_conversion),
+The list of declared packet temperature, pressure and composition bounds
+exceeded by a phase. Each record retains the packet, domain, quantity, comparison
+side, bound and phase value. It describes the fitted or reported conditions.
+Source: packet domain declarations; [molality](engine/docs/equations.md#molality_activity_conversion),
 [ionic strength](engine/docs/equations.md#molality_ionic_strength), and Figiel2025 Eq. 11.
