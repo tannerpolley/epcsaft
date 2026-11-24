@@ -1,6 +1,7 @@
 """#608: parameter documents built from several packets equal the hand-edited documents they replace.
 Input assembly only; no physical-validation claim."""
 import json
+import math
 import warnings
 from pathlib import Path
 from typing import Any
@@ -259,6 +260,48 @@ def test_materialized_domain_component_selection(tmp_path: Path) -> None:
     doc["materialization"][0].pop("document_wide_domains")
     legacy = Pure(Parameters.from_mapping(doc, components=["propane"]))
     assert legacy.outside_domains([1], T=79) == []
+
+
+def test_materialized_domain_ids_are_packet_local(tmp_path: Path) -> None:
+    names = ["methane", "ethane"]
+    for name in names:
+        doc = packet("gross-2001-methane-ethane/3")
+        doc["domains"].append({"domain_id": "local-range", "kind": "fit-range",
+                               "temperature_max": 290, "temperature_unit": "kelvin",
+                               "pressure_min": 1.1, "pressure_unit": "bar"})
+        if name == "ethane":
+            component = next(c for c in doc["components"] if c["component_id"] == name)
+            component["coefficients"][0]["provenance"] = {"domain_id": "local-range"}
+        path = tmp_path / name / "1/parameters/parameters.json"
+        path.parent.mkdir(parents=True)
+        path.write_text(json.dumps(doc))
+
+    saved = parameter_document(tmp_path, [(f"{name}/1", [name]) for name in names])
+    for components, x in ((names, [0.5, 0.5]), (["methane"], [1])):
+        model = Mixture(Parameters.from_mapping(saved, components=components))
+        with pytest.warns(DomainWarning) as caught:
+            state = model.state(300, P=100000, x=x, phase="vapor")
+        assert len(caught) == 1 and state.domain_violations is not None
+        assert [(r.packet, r.domain_id, r.variable, r.bound) for r in state.domain_violations] == [
+            ("methane/1", "local-range", "temperature", 290),
+            ("methane/1", "local-range", "pressure", 110000),
+        ]
+
+
+@pytest.mark.parametrize("bound,unit", [(1.1, "bar"), (0.11, "megapascal")])
+def test_pressure_domain_at_single_point(bound: float, unit: str) -> None:
+    doc = packet("figiel-2025-reference-electrolytes/3")
+    doc["domains"].append({"domain_id": "document-pressure", "kind": "reported-conditions",
+                           "pressure_min": bound, "pressure_max": bound, "pressure_unit": unit})
+    model = Mixture(Parameters.from_mapping(doc, components=["water", "sodium-cation", "chloride-anion"]))
+    x = [0.98, 0.01, 0.01]
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", DomainWarning)
+        assert model.state(295, P=110000, x=x, phase="liquid").domain_violations is None
+    for target, side in ((0, "below"), (math.inf, "above")):
+        adjacent = math.nextafter(110000, target)
+        (record,) = model.outside_domains(x, T=295, P=adjacent)
+        assert (record.variable, record.value, record.bound, record.side) == ("pressure", adjacent, 110000, side)
 
 
 @pytest.mark.parametrize("override", [None, 0.0])

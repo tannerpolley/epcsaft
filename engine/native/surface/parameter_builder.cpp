@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <array>
+#include <charconv>
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -793,7 +794,12 @@ DomainBounds admit_domains(const Parameters& p, std::vector<DomainBound> bounds)
     core::Scope scope("admit_domains");
     for (auto& b : bounds) {
         if (b.quantity == DomainQuantity::Pressure && (b.unit == "bar" || b.unit == "megapascal")) {
-            b.bound *= b.unit == "bar" ? 1e5 : 1e6;
+            // Shift the shortest decimal magnitude to pascal before rounding to double.
+            char decimal[std::numeric_limits<double>::max_digits10 - std::numeric_limits<double>::min_exponent10 + 8];
+            const auto digits = std::to_chars(decimal, decimal + sizeof(decimal) - 2, b.bound, std::chars_format::fixed);
+            std::memcpy(digits.ptr, b.unit == "bar" ? "e5" : "e6", 2);
+            if (digits.ec != std::errc{} || std::from_chars(decimal, digits.ptr + 2, b.bound).ec != std::errc{})
+                reject("invalid parameter domain bound or unit");
             b.unit = "pascal";
         }
     }

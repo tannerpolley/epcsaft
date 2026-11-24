@@ -814,12 +814,12 @@ class Parameters:
         bounds = []
         own_domains = cast(list[Any], document.get("domains", []))
         own_ids = {d["domain_id"] for d in own_domains}
-        cited = set(_domain_ids(document)) if own_ids or document.get("materialization") else set()
+        own_document_wide = own_ids - set(_domain_ids(document)) if own_ids else set()
         own_source = {"packet": document.get("document_id", ""), "domains": own_domains,
                       "components": component_records}
         for bound_source in [own_source, *cast(Any, document.get("materialization", []))]:
             chosen = set(bound_source["components"]) & set(selected_ids)
-            document_wide = own_ids if bound_source is own_source else set(bound_source.get("document_wide_domains", ()))
+            document_wide = own_document_wide if bound_source is own_source else set(bound_source.get("document_wide_domains", ()))
             for domain in bound_source.get("domains", []):
                 domain_id = domain["domain_id"]
                 if not chosen or domain.get("kind") == "unknown" or (bound_source is not own_source and domain_id in own_ids):
@@ -834,7 +834,7 @@ class Parameters:
                             continue
                         fraction = field == "ion_mole_fraction"
                         intensive = field in ("temperature", "pressure")
-                        if intensive and (domain_id in cited or domain_id not in document_wide):
+                        if intensive and domain_id not in document_wide:
                             continue
                         if not intensive and not fraction and domain.get("solvent") not in selected_ids:
                             continue
