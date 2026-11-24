@@ -10,7 +10,7 @@ from epcsaft import (
 )
 from epcsaft.equilibrium import Amounts, Continuation, Discover, Phase, Problem, asl_record, solve_equilibrium
 
-from tests.native_inputs import ETHANE, ROWS, bubble, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same
+from tests.native_inputs import ETHANE, ROWS, bubble, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same, surface_model
 
 METHANE = (16.043, 1.0, 3.7039, 150.03)
 BOUNDS = {"dispersion_energy_over_k": (140.0, 170.0), "k_ij": (-0.2, 0.2)}
@@ -37,6 +37,41 @@ def manufactured() -> tuple[Any, list[Any]]:
         assert prediction.status == regression.ObservationStatus.Available and prediction.value is not None
         item.observed = prediction.value
     return truth, observations
+
+
+def test_pressure_relative_stability_prediction() -> None:
+    model = surface_model()
+    boundary = bubble(353.15)
+    liquid = Problem(T=353.15, P=2e4, feed=boundary.feed, phases=[Phase("L", kind="liquid")])
+    row = regression.stability(model.parameters, liquid, scale=0.1, pressure_reference=boundary, pressure_ratio=2.0)
+    prediction = regression.predict(model, row)
+    measure = prediction.stability
+    assert measure is not None and measure.available and measure.value == prediction.value
+    reference = prediction.pressure_reference
+    pressure = solve_equilibrium(model, boundary).pressure
+    assert pressure is not None and reference is not None
+    assert reference.value == pytest.approx(pressure, rel=1e-10)
+
+
+def test_saturation_capped_prediction() -> None:
+    model = surface_model()
+    boundary = bubble(353.15)
+    pressure = solve_equilibrium(model, boundary).pressure
+    assert pressure is not None
+    # Adding 0.25 mol of s1 restores the equimolar bubble feed at its pressure.
+    liquid = Problem(T=353.15, P=pressure, feed=Amounts({"s0": 0.5, "s1": 0.25}), phases=[Phase("L", kind="liquid")])
+    row = regression.saturation_capped_addition_enthalpy(
+        model.parameters, liquid, boundary, {"s1": 1.0}, basis_amount=1.0, loading_cap=0.4,
+        loading_bounds=(0.1, 0.4), loading_grid=[0.1, 0.2, 0.3, 0.4], T=353.15, P=pressure,
+        phase="liquid", observed=0.0, form="difference", scale=1.0,
+    )
+    prediction = regression.predict(model, row)
+    assert prediction.cap_branch == "saturation_cap"
+    search = prediction.saturation
+    assert search is not None and search.accepted is not None
+    assert search.candidates[search.accepted].state.success
+    assert all(node.action_diagnostics is not None for node in search.nodes)
+    assert prediction.endpoint_loading == pytest.approx(0.25, rel=1e-10)
 
 
 def coordinates(start: Any) -> list[Any]:
