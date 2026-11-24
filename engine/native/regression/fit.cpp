@@ -1333,18 +1333,20 @@ static void predict_fit(const FitRequest& request, const std::vector<Observation
     const C outcome = covariance.outcome != C::Available ? covariance.outcome
         : covariance.optimizer.empty() ? C::Unavailable : !scale ? C::MissingVarianceFactor : C::Available;
     const C refused = outcome == C::Available ? C::Unavailable : outcome;
-    FitRequest point{request.parameters, request.thermochemistry, request.coordinates, {}, {}, request.controls, request.holds};
     for (auto row : rows) {
         auto& out = result.prediction_uncertainty.emplace_back(PredictionUncertainty{outcome});
         if (result.predictions.empty()) continue;
         row.observed = 0.0; row.scale = 1.0; row.form = ResidualForm::Difference;
-        point.observations = {std::move(row)};
+        FitRequest point{request.parameters, request.thermochemistry, request.coordinates, {std::move(row)}, {}, request.controls, request.holds};
         FitResult failures; ObservationEvaluation evaluation;
         try {
             auto declarations = request.observations;
             declarations.push_back(point.observations.front());
-            (void)point.coordinates.start(point.parameters, declarations, point.thermochemistry);
-            ObservationEvaluator evaluator(point, failures, {0});
+            for (const auto& coordinate : point.coordinates.coordinates)
+                if (coordinate.reaction) (void)admit_reaction_law(*coordinate.reaction, point.parameters.component_count(),
+                    declarations, point.thermochemistry);
+            // The unit-weight difference above makes the optimizer residual derivative the prediction derivative.
+            ObservationEvaluator::Impl evaluator(std::move(point), failures, {1.0});
             if (evaluator.evaluate(result.optimizer, outcome == C::Available, evaluation)) {
                 out = {outcome, {}, evaluation.predictions.front(), {}, ObservationStatus::Available};
                 if (outcome != C::Available) continue;

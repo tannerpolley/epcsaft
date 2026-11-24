@@ -467,7 +467,7 @@ void check_measurement_reuse() {
 }
 
 void check_prediction_reaction_law() {
-    const auto request = linear_measurements();
+    auto request = linear_measurements();
     auto polynomial = request.observations.front();
     polynomial.problem.temperature = FreeValue::fixed(350);
     auto scalar = polynomial;
@@ -481,6 +481,21 @@ void check_prediction_reaction_law() {
     const auto& admitted = result.prediction_uncertainty[1];
     CHECK(admitted.outcome == FitCovarianceStatus::Available && admitted.observation_status == ObservationStatus::Available
         && admitted.value && admitted.variance && *admitted.variance > 0);
+
+    const auto& slope = request.coordinates.coordinates.front();
+    const std::vector<std::vector<double>> starts{{0.0045 / slope.scale}};
+    const auto from_declared_law = fit_sequence(request, starts, 100, 600.0, {polynomial});
+    for (auto& row : request.observations) row.problem.reactions[0].correlation->d = 0.0;
+    polynomial.problem.reactions[0].correlation->d = 0.0;
+    const auto from_explicit_start = fit_sequence(request, starts, 100, 600.0, {polynomial});
+    CHECK(from_declared_law.size() == 1 && from_explicit_start.size() == 1);
+    const auto& explicit_fit = from_explicit_start.front();
+    CHECK(explicit_fit.usable && explicit_fit.covariance.outcome == FitCovarianceStatus::Available);
+    CHECK(explicit_fit.prediction_uncertainty.size() == 1 && from_declared_law.front().prediction_uncertainty.size() == 1);
+    const auto& predicted = explicit_fit.prediction_uncertainty.front();
+    const auto& reference = from_declared_law.front().prediction_uncertainty.front();
+    CHECK(predicted.outcome == FitCovarianceStatus::Available && predicted.observation_status == ObservationStatus::Available);
+    CHECK(predicted.value && predicted.value == reference.value && predicted.variance && predicted.variance == reference.variance);
 }
 
 void check_measurement_admission() {
