@@ -2464,6 +2464,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
     if (prescribed && use_start) seeded = start_point(compiled, *start, compiled.generic_point());
     EquilibriumResult result;
     bool admission_refused = false;
+    bool short_split_refused = false;
     const auto admit_branches = [&](EquilibriumResult& candidate, core::Scope& trace) {
         BranchCheck branches;
         try {
@@ -2529,13 +2530,19 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             if (fast.success && fast.requested_tolerance_met.value_or(false) && admit_branches(fast, trial)) {
                 fast.solver_status = "NEWTON_CONVERGED";
                 std::move(stages).report(fast);
+                scope.finish(fast.convergence);
                 return selected(std::move(fast), limits);
             }
             stages.add(fast);
+            short_split_refused = true;
         }
         result = run_driver(compiled, std::move(initial), structural, scope, nullptr, limits, Attempt::Cold, warm, false, false, Retry::None, reporting);
         if (result.failure && attempt == 0) continue;  // the seeded attempt's failure falls back to the declared start
-        if (result.failure) { stages.report_observations(result); return result; }
+        if (result.failure) {
+            if (short_split_refused) std::move(stages).report(result);
+            else stages.report_observations(result);
+            return result;
+        }
         if (result.success && !admit_branches(result, scope)) admission_refused = true;
     }
     if (!result.declaration) result = structural;

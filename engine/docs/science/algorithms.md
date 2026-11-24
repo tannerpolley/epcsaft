@@ -3725,7 +3725,9 @@ Their returned method annotation supplies no new termination or admission criter
 For the [#207](https://github.com/tannerpolley/epcsaft/issues/207) path, a
 supplied-composition, nonreacting electrolyte split into two free liquids at
 fixed T and P on the same positive-feed support first takes up to three Ipopt
-steps. An admitted exact Newton polish reports `NEWTON_CONVERGED` and retains
+steps in the top-level `solve_equilibrium` call. A compiled problem's `solve()`
+uses the ordinary driver, as does a call with `EPCSAFT_IPOPT_OPTIONS_FILE` set,
+including an empty value. An admitted exact Newton polish reports `NEWTON_CONVERGED` and retains
 the optimizer's raw return in `ipopt_diagnostics.application_return`. A refused
 attempt adds its work to the ordinary solve from the original coordinates,
 whose status then applies.
