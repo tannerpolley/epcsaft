@@ -18,7 +18,7 @@ def command(*args, **kwargs):
 
 
 def api(path, payload=None, missing=False):
-    args = ['gh', 'api', f'repos/tannerpolley/epcsaft-validation/{path}'.rstrip('/')]
+    args = ['gh', 'api', f'repos/tannerpolley/epcsaft-dev/{path}'.rstrip('/')]
     if payload is not None:
         args += ['--method', 'POST', '--input', '-']
     result = subprocess.run(args, input=json.dumps(payload) if payload is not None else None,
@@ -44,10 +44,10 @@ os.chdir(main_checkout(Path(__file__).resolve().parent))
 if command('git', 'branch', '--show-current') != 'main' or command('git', 'status', '--porcelain'):
     raise SystemExit(f'the canonical main checkout must be clean: {Path.cwd()}')
 commit = command('git', 'rev-parse', 'HEAD')
-subprocess.run(['git', 'push', 'https://github.com/tannerpolley/epcsaft-validation.git',
+subprocess.run(['git', 'push', 'https://github.com/tannerpolley/epcsaft-dev.git',
                 f'{commit}:refs/heads/engine-main'], check=True)
 tag = f'main-{commit}'
-repo = 'tannerpolley/epcsaft-validation'
+repo = 'tannerpolley/epcsaft-dev'
 if not api('')['private']:
     raise SystemExit('main wheels require the private Engine repository')
 short = command('git', 'rev-parse', '--short=8', 'HEAD')

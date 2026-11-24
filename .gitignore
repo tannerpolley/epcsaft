@@ -40,5 +40,5 @@ analyses/2026-errors-in-variables/results/ionic/*/
 data/packets/feos-esper-2023/
 data/packets/feos-rehner-2023/
 
-# Private validation repository checkout (tannerpolley/epcsaft-validation)
+# Private validation repository checkout (tannerpolley/epcsaft-dev)
 /validation/
