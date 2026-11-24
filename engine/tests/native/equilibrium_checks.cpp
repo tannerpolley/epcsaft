@@ -68,6 +68,7 @@ void check_electric_potential_difference();
 void check_prescribed_liquid_coincidence();
 void check_electric_potential_difference_phase_order();
 void check_mea_composition_bound_message();
+void check_stability_grid();
 void check_condensed_trial_recovery();
 void check_solve_error_curvature();
 void check_stability_inventory_face();
@@ -165,6 +166,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.electric-potential-difference", "electric-potential-difference", "Automatic_fast"}, check_electric_potential_difference},
         {{"native.equilibrium.electric-potential-difference-phase-order", "electric-potential-difference-phase-order", "Automatic_fast"}, check_electric_potential_difference_phase_order},
         {{"native.equilibrium.mea-composition-bound-message", "mea-composition-bound-message", "Automatic_fast"}, check_mea_composition_bound_message},
+        {{"native.equilibrium.stability-grid", "stability-grid", "Automatic_fast"}, check_stability_grid},
         {{"native.equilibrium.condensed-trial-recovery", "condensed-trial-recovery", "Automatic_fast"}, check_condensed_trial_recovery},
         {{"native.equilibrium.physical-amount-work", "physical-amount-work", "Automatic_fast"}, check_physical_amount_work},
         {{"native.equilibrium.solve-error-curvature", "solve-error-curvature", "Automatic_fast"}, check_solve_error_curvature},

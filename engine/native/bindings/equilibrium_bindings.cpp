@@ -339,6 +339,13 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<StabilityReport>(module, "StabilityReport")
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,
             plane_over_rt, present_phases, work, no_descent_in_trial_set);
+    nb::class_<StabilityGridCoverage>(module, "StabilityGridCoverage")
+        EPCSAFT_READONLY(StabilityGridCoverage, phase, omitted_species, nodes, planned, visited, admitted,
+            rounding_bound, h, mapping_allowance, worst_gap, nearest_admitted, cause, uninformative);
+    nb::class_<StabilityGridResult>(module, "StabilityGridResult")
+        EPCSAFT_READONLY(StabilityGridResult, raw_attempts, ceiling, coverage, raw, refined, elapsed_seconds);
+    module.def("stability_grid", &stability_grid, nb::arg("compiled"), nb::arg("parent"), nb::arg("phases"),
+        nb::arg("denominator"), nb::arg("ceiling") = 2048, nb::arg("refine") = false, nb::arg("trial_budget") = nb::none());
     nb::class_<StabilityMeasure>(module, "StabilityMeasure")
         EPCSAFT_READONLY(StabilityMeasure, report, raw_minimum, value, uncertainty, minimizing_trial, minima, cause, event, available);
     nb::class_<DiscoveryRecord>(module, "DiscoveryRecord")

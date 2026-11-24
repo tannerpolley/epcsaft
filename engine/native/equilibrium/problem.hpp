@@ -9,6 +9,7 @@
 #include <exception>
 #include <chrono>
 #include <algorithm>
+#include <cstdint>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -954,6 +955,25 @@ struct StabilityReport final {
     std::vector<std::map<std::string, double>> present_phases;
     std::map<std::string, double> work;
 };
+struct StabilityGridCoverage final {
+    PhaseSpec phase;
+    std::vector<std::size_t> omitted_species, nodes;
+    std::size_t planned = 0, visited = 0, admitted = 0;
+    std::optional<double> rounding_bound, h, mapping_allowance;
+    std::optional<std::size_t> worst_gap, nearest_admitted;
+    std::string cause;
+    bool uninformative = false;
+};
+struct StabilityGridResult final {
+    std::optional<std::uint64_t> raw_attempts;
+    std::uint64_t ceiling;
+    std::vector<StabilityGridCoverage> coverage;
+    StabilityReport raw, refined;
+    double elapsed_seconds = 0.0;
+};
+EPC_API StabilityGridResult stability_grid(const CompiledSystem&, const EquilibriumResult&, const std::vector<PhaseSpec>&,
+    std::uint64_t denominator, std::uint64_t ceiling = 2048, bool refine = false, std::optional<std::size_t> trial_budget = {});
+
 struct StabilityMeasure final {
     StabilityReport report;
     std::optional<double> raw_minimum, value, uncertainty;

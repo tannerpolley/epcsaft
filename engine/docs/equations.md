@@ -2798,7 +2798,7 @@ $$
 - Section: Equilibrium / Tangent-plane testing
 - Status: Implementation convention
 - Source: First-order propagation, Euler homogeneity and final-summation rounding
-- Description: ε_tg estimates trial reduced molar energy error; ε_pμi donor reduced chemical error; ε_pP pressure-row error; ε_f feasibility/representation correction; ε_fp arithmetic. Include supplied standard-term uncertainty separately in the applicable energy/chemical terms. F_n and F_V denote native association derivative-floor estimates in unit-mol amount and SI volume columns. For the single full candidate amount correction, freeze ν_j^0=μ_j^0/(RT) at the parent; d=m¹−m⁰ is the stored update, u=δ−d its update-rounding discrepancy, m²=N′x′ the physical representation and m³=N′exp(ℓ′) its reported log representation. C_n is the applied and representation displacement in mol; ε_f is extensive G/(RT) on the request amount basis. Update rounding contributes only to ε_f, retaining nonzero uncertainty when a stored update rounds away. Candidate and donor consumers share the final totals.
+- Description: ε_tg estimates trial reduced molar energy error; ε_pμi donor reduced chemical error; ε_pP pressure-row error; ε_f feasibility/representation correction; ε_fp arithmetic. Include supplied standard-term uncertainty separately in the applicable energy/chemical terms. F_n and F_V denote native association derivative-floor estimates in unit-mol amount and SI volume columns. For the single full candidate amount correction, freeze ν_j^0=μ_j^0/(RT) at the parent; d=m¹−m⁰ is the stored update, u=δ−d its update-rounding discrepancy, m²=N′x′ the physical representation and m³=N′exp(ℓ′) its reported log representation. C_n is the applied and representation displacement in mol; ε_f is extensive G/(RT) on the request amount basis. Update rounding contributes only to ε_f, retaining nonzero uncertainty when a stored update rounds away. The molar slope estimate is conditional on the repaired donor. The extensive repair error enters the finite-split comparison.
 - Change note: Report association residual/conditioning and Euler defect at reevaluated points. A maximum floor may replace each column floor with its scale retained. γ_m bounds final summation rounding only, not the EOS evaluator. Local first-order estimates are not certified enclosures.
 
 $$
@@ -2807,7 +2807,7 @@ q_j&=|m_j^2-m_j^1|+|m_j^3-m_j^2|,\qquad
 C_n=\sum_j(|d_j|+q_j),\qquad
 \epsilon_f=\sum_j(|d_j|+|u_j|+q_j)|\nu_j^0|,\\
 E_d&=\epsilon_{tg}+\sum_i|w_i|\epsilon_{p\mu i}
-+\epsilon_{pP}+\epsilon_f+\epsilon_{fp},\\
++\epsilon_{pP}+\epsilon_{fp},\\
 \epsilon_{tg,\mathrm{assoc}}&\approx\sum_i|w_i|F_{t,n_i}+|v_t|F_{t,V},\qquad
 \epsilon_{pP,\mathrm{assoc}}\approx|v_p|F_{p,V},\\
 \epsilon_{\mathrm{Euler}}&=\left|a^{\mathrm{res}}-\sum_i w_i a^{\mathrm{res}}_{n_i}-v a^{\mathrm{res}}_V\right|,\qquad
