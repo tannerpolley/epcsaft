@@ -273,13 +273,12 @@ double energy_estimate(const Quantities& q) {
         + q.at("summation_estimate_over_rt");
 }
 
-std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const StabilityOptions& options) {
+std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const StabilityOptions& options, std::set<std::size_t>* outside = nullptr) {
     const auto& z = c.model->parameters().charge_number;
-    std::vector<std::size_t> united, feasible, zero_charge;
+    std::vector<std::size_t> feasible, zero_charge;
     const auto participant = reaction_participants(c.n_feed.size(), c.problem.reactions);
     for (std::size_t i = 0; i < c.n_feed.size(); ++i)
         if (c.n_feed[i] > 0.0 || participant[i]) {
-            united.push_back(i);
             if (std::find(c.removed_species.begin(), c.removed_species.end(), i) != c.removed_species.end()) continue;
             feasible.push_back(i); if (z[i] == 0.0) zero_charge.push_back(i);
         }
@@ -300,8 +299,10 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
         phase.support = resolve_support(phase, feasible, z, &c.model->parameters());
         bool positive = false, negative = false;
         for (auto i : phase.support) {
-            if (std::find(united.begin(), united.end(), i) == united.end())
-                throw std::invalid_argument("stability support outside fed/reaction union");
+            if (!(c.n_feed[i] > 0.0 || participant[i])) {
+                if (!outside) throw std::invalid_argument("stability support outside fed/reaction union");
+                outside->insert(admitted.size());
+            }
             positive |= z[i] > 0; negative |= z[i] < 0;
         }
         if (positive != negative)
@@ -1223,7 +1224,6 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         options.evaluate_supplied_trials = true;
     }
     TrialSystems systems;
-    std::size_t entry = 0;
     if (diagnostics && limits) throw std::invalid_argument("stability diagnostics require an unlimited explicit test");
     auto c = input; c.phase_calculation = c.problem.phase_calculation = PhaseCalculation::Discovery;
     StabilityReport report;
@@ -1232,7 +1232,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     core::CalculationWork work;
     if (options.evaluate_supplied_trials && !options.trials && !options.prepared_trials)
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
-    const auto supports = stability_supports(c, options);
+    std::set<std::size_t> outside;
+    const auto supports = stability_supports(c, options, options.evaluate_supplied_trials ? &outside : nullptr);
     const auto& z = c.model->parameters().charge_number;
     if (!options.standard_uncertainty_over_rt.empty()
         && (options.standard_uncertainty_over_rt.size() != z.size()
@@ -1373,10 +1374,15 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 break;
             }
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
+            if (outside.count(k)) {
+                trial.evidence = "not_applicable"; trial.message = "stability support outside fed/reaction union";
+                report.trials.push_back(std::move(trial));
+                continue;
+            }
             auto start = slot ? slot->start : Start::ParentRestriction;  // in the first pass: the retry a refusal here gets
             bool searched = false;  // the start coincides with an already-searched original seed
             SuppliedPoint point;
-            const auto* prepared_point = options.prepared_trials ? &options.prepared_trials->points->entries[entry++] : nullptr;
+            const auto* prepared_point = options.prepared_trials ? &options.prepared_trials->points->entries[k] : nullptr;
             if (prepared_point) {
                 if (prepared_point->next == SuppliedStage::Complete) point.next = SuppliedStage::Complete;
                 else point = *prepared_point;
@@ -1412,6 +1418,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             root.reset(), seed = rooted.front().first;
                         }
                     }
+                    if (options.evaluate_supplied_trials) trial.quantities["density_side"] = static_cast<double>(
+                        properties::density_side(root->branch, root->molar_density, root->negative_slope_density));
                     seed_density = root->molar_density;
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root->molar_density;
                 }
@@ -1625,7 +1633,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     if (stopped && !fast) report.message = "search-incomplete: trial budget exhausted";
     // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
     // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
-    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) {
+    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [&](const auto& t) {
+        if (options.evaluate_supplied_trials) return t.evidence != "evaluated";
         return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"
             || (t.evidence == "no_resolved_descent" && !t.optimizer.success); });
     const auto descending = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; });
@@ -1664,10 +1673,11 @@ StabilityReport stability_test(const CompiledSystem& c, const EquilibriumResult&
 }
 
 std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem& c, const EquilibriumResult& parent,
-    const std::shared_ptr<const PreparedSuppliedTrials>& supplied) {
+    const std::shared_ptr<const PreparedSuppliedTrials>& supplied, const std::vector<double>& standard_uncertainty_over_rt) {
     if (!supplied) throw std::invalid_argument("supplied trial measure requires a prepared bank");
     StabilityOptions options;
     options.prepared_trials = supplied;
+    options.standard_uncertainty_over_rt = standard_uncertainty_over_rt;
     StabilityReport report;
     try { report = stability_test(c, parent, options); }
     catch (const std::exception& error) { report.message = error.what(); }

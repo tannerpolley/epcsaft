@@ -987,7 +987,7 @@ struct StabilityMeasure final {
     bool available = false, coincident_supports = false;
 };
 EPC_API std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem&, const EquilibriumResult&,
-    const std::shared_ptr<const PreparedSuppliedTrials>&);
+    const std::shared_ptr<const PreparedSuppliedTrials>&, const std::vector<double>& standard_uncertainty_over_rt);
 EPC_API StabilityMeasure stability_measure(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
 
 struct DiscoveryRecord final {

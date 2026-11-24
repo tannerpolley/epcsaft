@@ -320,7 +320,8 @@ Prediction predict_validated(const HelmholtzModel& model, const Observation& obs
         result.supplied_stability = std::make_shared<equilibrium::StabilityReport>();
         auto& report = *result.supplied_stability;
         if (!result.solved) report.message = result.message;
-        else std::tie(report, result.supplied_available) = equilibrium::supplied_trial_measure(*result.compiled, *result.solved, supplied);
+        else std::tie(report, result.supplied_available) = equilibrium::supplied_trial_measure(
+            *result.compiled, *result.solved, supplied, observation.stability_options.standard_uncertainty_over_rt);
     }
     return result;
 }

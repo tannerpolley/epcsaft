@@ -28,6 +28,34 @@ void check_stability_requirement() {
     StabilityOptions options; options.prepared_trials = bank;
     const auto separate = stability_test(*initial.compiled, *initial.solved, options);
     CHECK(both.supplied_stability->trials[0].quantities == separate.trials.at(0).quantities);
+    {
+        auto uncertain = row;
+        uncertain.stability_options.standard_uncertainty_over_rt = {.001, .001};
+        auto vapor = liquid; vapor.kind = PhaseKind::Vapor;
+        options.prepared_trials = prepare_supplied_trials(model, 293.15, {liquid, vapor});
+        options.standard_uncertainty_over_rt = uncertain.stability_options.standard_uncertainty_over_rt;
+        const auto rooted = predict_validated(model, uncertain, options.prepared_trials);
+        const auto independent = stability_test(*initial.compiled, *initial.solved, options);
+        CHECK(rooted.supplied_available && rooted.supplied_stability->supplied_minima().size() == 2);
+        for (std::size_t i = 0; i < 2; ++i) {
+            const auto& q = rooted.supplied_stability->trials.at(i).quantities;
+            CHECK(q == independent.trials.at(i).quantities && q.at("standard_error_estimate_over_rt") > .0019);
+            CHECK(q.at("density_side") == static_cast<double>(i ? DensityBranch::Vapor : DensityBranch::Liquid));
+            std::cout << std::setprecision(17) << "supplied root " << q.at("density_side") << " density mol/m3 "
+                << q.at("molar_density_mol_m3") << " TPD/RT " << q.at("tpd_over_rt") << " standard error "
+                << q.at("standard_error_estimate_over_rt") << " total error " << q.at("descent_error_estimate_over_rt") << '\n';
+        }
+        auto water = liquid; water.support = {0}; water.composition_guess = {1., 0.};
+        auto alcohol = liquid; alcohol.support = {1}; alcohol.composition_guess = {0., 1.};
+        auto pure = row; pure.problem.feed.values = {1., 0.}; pure.problem.phases = {water};
+        const auto mixed = predict_validated(model, pure, prepare_supplied_trials(model, 293.15, {alcohol, water}));
+        CHECK(!mixed.supplied_available && mixed.supplied_stability->completed);
+        const auto& points = mixed.supplied_stability->trials;
+        CHECK(points.size() == 2 && points[0].evidence == "not_applicable" && points[1].evidence == "evaluated");
+        CHECK(mixed.supplied_stability->unresolved_reasons().at("stability support outside fed/reaction union") == 1);
+        CHECK(points[1].quantities == predict_validated(model, pure, prepare_supplied_trials(model, 293.15, {water}))
+            .supplied_stability->trials.at(0).quantities);
+    }
     auto changed = initial;
     changed.stability = std::make_shared<StabilityMeasure>(*initial.stability);
     auto& changed_trial = changed.stability->report.trials.at(*changed.stability->minimizing_trial);
