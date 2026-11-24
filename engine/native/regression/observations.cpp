@@ -431,7 +431,7 @@ Prediction predict(
             observation.loading_bounds[0], observation.loading_bounds[1], 0, observation.pressure};
         for (auto& value : affine.direction) value *= observation.basis_amount;
         auto search = std::make_shared<equilibrium::SaturationSearch>(equilibrium::search_loading(
-            model, observation.final_problem, affine, observation.loading_grid, nullptr, deadline));
+            model, observation.final_problem, affine, observation.loading_grid, nullptr, deadline, previous ? previous->saturation.get() : nullptr));
         Prediction seed; seed.saturation = search; seed.first_numerical_failure = search->first_numerical_failure;
         if (!search->accepted) {
             seed.status = ObservationStatus::CentralSolveUnavailable;

@@ -124,6 +124,15 @@ void check_saturation_capped_addition() {
             prediction.value && prediction.saturation->accepted);
       CHECK(prediction.cap_branch == "saturation_cap" &&
             row.loading_cap - *prediction.saturation_loading >= 0.15);
+      if (column == 0 && sign == 0) {
+        const auto continued = predict(perturbed, row, {}, {}, nullptr, &center);
+        CHECK(continued.value && continued.cap_branch == prediction.cap_branch);
+        CHECK(continued.saturation->events == prediction.saturation->events);
+        CHECK(continued.saturation->nodes.size() == row.loading_grid.size());
+        CHECK(std::any_of(continued.saturation->nodes.begin(), continued.saturation->nodes.end(),
+                          [](const auto& node) { return node.prior_start == "accepted"; }));
+        CHECK(std::abs(*continued.value / *prediction.value - 1) <= 1e-12);
+      }
       const auto compiled =
           compile_problem(perturbed, *prediction.final_solved->declaration);
       const auto estimate =

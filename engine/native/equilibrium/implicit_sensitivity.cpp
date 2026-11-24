@@ -1755,9 +1755,9 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
 }
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows,
-    const std::vector<double>& prescribed_errors) {
+    const std::vector<double>& prescribed_errors, bool replay) {
     if (prescribed_errors.empty() && !plane_rows && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
-    return numerical_estimates<double>(c, result, {}, prepared, plane_rows || !prepared, nullptr, counted, plane_rows, prescribed_errors);
+    return numerical_estimates<double>(c, result, {}, prepared, replay || plane_rows || !prepared, nullptr, counted, plane_rows, prescribed_errors);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
     return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits, core::CalculationWork::active_limit());

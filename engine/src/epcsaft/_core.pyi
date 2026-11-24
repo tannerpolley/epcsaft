@@ -6152,6 +6152,7 @@ class SaturationNode:
     state: EquilibriumResult
     estimates: EquilibriumNumericalEstimates
     action_cause: str
+    prior_start: str
     action_seconds: float
     estimate_seconds: float
     local_estimates: EquilibriumNumericalEstimates

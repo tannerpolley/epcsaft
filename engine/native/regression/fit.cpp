@@ -525,7 +525,9 @@ struct ObservationEvaluator::Impl final {
                     scope.probe("observation", static_cast<double>(i));
                     scope.probe("anchor", static_cast<double>(g));
                     scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                    const auto& prior = seed ? seed->observations[i] : observation;
+                    const Trial* prior_trial = observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy && !same_point && cached_
+                        ? &*cached_ : seed;
+                    const auto& prior = prior_trial ? prior_trial->observations[i] : observation;
                     const bool unchanged = observation.kind == ObservationKind::Stability || !request_.uncertainty || (pressure_closed(observation.kind)
                         ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
                             == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
@@ -535,7 +537,7 @@ struct ObservationEvaluator::Impl final {
                         if (groups_[row] == g) admission.push_back(&trial.observations[row]);
                     trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
-                        seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
+                        prior_trial && unchanged ? &prior_trial->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
                         seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
                     if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy && observation.kind != ObservationKind::Stability) {
                         auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references,

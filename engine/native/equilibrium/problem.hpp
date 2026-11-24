@@ -899,7 +899,7 @@ struct CriticalSearch final {
 
 // `counted`: the estimate's roots and energy evaluations count in the enclosing calculation work.
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false, bool plane_rows = false,
-    const std::vector<double>& prescribed_errors = {});
+    const std::vector<double>& prescribed_errors = {}, bool replay = false);
 struct DriverLimits;
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
@@ -1074,7 +1074,7 @@ struct SaturationNode final {
     double loading = 0, mismatch = NAN, slope = NAN;
     EquilibriumResult state;
     EquilibriumNumericalEstimates estimates;
-    std::string action_cause;
+    std::string action_cause, prior_start;
     double action_seconds = 0, estimate_seconds = 0;
     EquilibriumNumericalEstimates local_estimates;
     std::shared_ptr<SolvedStateActionDiagnostics> action_diagnostics;
@@ -1100,7 +1100,7 @@ void compare_loading_candidates(SaturationSearch&, equilibrium::ComparisonEligib
 EPC_API void admit_loading_search(SaturationSearch&);
 EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,
-    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max());
+    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), const SaturationSearch* previous = nullptr);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 
