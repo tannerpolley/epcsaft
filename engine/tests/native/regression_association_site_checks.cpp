@@ -54,6 +54,80 @@ EquilibriumProblem one_phase(double T, double P, const std::vector<double>& x, P
     return problem;
 }
 
+void kim_pure_water() {
+#include "fixtures/kim_pure_water.inc"
+    using Family = ParameterFamily;
+    FitRequest request;
+    request.controls = budgeted_controls();
+    request.parameters = build_parameters(document);
+    request.coordinates.coordinates = {
+        {{{Family::TemperatureLawCoefficient, {0}}}, -0.06711345443725586, 0.01, -0.5, -0.06711345443725586, {}},
+        {{{Family::TemperatureLawCoefficient, {1}}}, 0.0012092080101259242, 0.001, -0.01, 0.01, {}},
+        {{{Family::Kij, {7, 56}}}, 0.25261865658522437, 0.01, -0.5, 0.5, {}},
+        {{{Family::Kij, {15, 57}}}, -0.00956762026107625, 0.01, -0.5, 0.5, {}},
+        {{{Family::KijReciprocalTemperatureSlope, {15, 57}}}, -15.929380742416088, 10., -1000., 1000., {}},
+        {{{Family::Kij, {23, 58}}}, 1., 0.01, -1., 1., {}},
+        {{{Family::SigmaConstant, {7}}, {Family::DebyeHuckelDiameter, {7}}, {Family::BornDiameter, {7}}},
+            3.6552722619123172, 0.1, 3., 4.5, {}},
+        {{{Family::DispersionEnergyOverK, {7}}}, 635.4895968646832, 10., 50., 950., {}},
+    };
+    const std::array temperatures = {273.15 + 60.02, 273.15 + 59.98, 273.15 + 79.99};
+    const std::array observed_pressures = {19880., 19580., 47190.};
+    for (std::size_t i = 0; i < temperatures.size(); ++i) {
+        auto problem = pure_saturation(temperatures[i], observed_pressures[i]);
+        problem.feed.values = {0., 1., 0., 0., 0., 0., 0., 0.};
+        for (auto& phase : problem.phases) {
+            phase.support = {1};
+            phase.support_declared = true;
+        }
+        auto row = solved(ObservationKind::EquilibriumPressure, problem);
+        row.observed = observed_pressures[i];
+        request.observations.push_back(row);
+    }
+    const auto width = request.coordinates.coordinates.size();
+    const auto evaluated = evaluated_columns(request, std::vector<double>(width, 0.));
+    CHECK(evaluated.residual_optimizer_gradient.size() == temperatures.size() * width);
+    bool exact = true;
+    for (std::size_t i = 0; i < temperatures.size(); ++i) {
+        CHECK(evaluated.statuses.at(i) == ObservationStatus::Available);
+        for (std::size_t k = 0; k < width; ++k) {
+            const double slope = evaluated.residual_optimizer_gradient[i * width + k];
+            exact &= slope == 0.;
+            recording_support::observe("Kim/pure-water/" + std::to_string(i) + "/" + std::to_string(k), "log-pressure slope",
+                "1", slope, 0., "parameter regression", fields({field("T_K", temperatures[i]),
+                    field("P_Pa", evaluated.predictions.at(i)), field("coordinate", k), field("exact_zero", slope == 0.)}));
+        }
+    }
+
+    // At the liquid endpoint, MDEA insertion differentiates across the same site blocks.
+    const auto amounts = request.observations[1].problem.feed.values;
+    const HelmholtzModel model(request.parameters, {{Family::SigmaConstant, {6}}});
+    const double temperature = temperatures[1];
+    const double volume = 1. / model.state_at_pressure(temperature, evaluated.predictions.at(1), amounts,
+        DensityBranch::Liquid).molar_density;
+    const auto boundary = model.evaluate(temperature, volume, amounts, DerivativeOrder::Hessian);
+    const std::size_t mdea = 6, insertion = 2 + mdea, width_with_parameter = boundary.gradient.size();
+    const double mu = boundary.gradient.at(insertion);
+    const auto perturbed = [&](double n) {
+        auto inserted = amounts;
+        inserted[mdea] = n;
+        return model.evaluate(temperature, volume, inserted, DerivativeOrder::Value).value;
+    };
+    constexpr double h = 1e-5;
+    CHECK(agree("Kim/MDEA-insertion", "residual chemical potential divided by RT", "1",
+        mu, (4 * (perturbed(h) - boundary.value) - (perturbed(2 * h) - boundary.value)) / (2 * h), 0., FIRST_ORDER,
+        fields({field("T_K", temperature), field("V_m3", volume), field("h_mol", h)})));
+    const auto fd = ladder([&](double step) {
+        auto parameters = request.parameters;
+        parameters.sigma_constant[mdea] += step;
+        return HelmholtzModel(parameters).evaluate(temperature, volume, amounts, DerivativeOrder::Gradient).gradient.at(insertion);
+    }, 1e-3);
+    CHECK(ladder_agrees("Kim/MDEA-insertion/diameter", "d(mu_res/RT)/d(sigma_MDEA)",  // reciprocal angstrom
+        boundary.hessian.at(insertion * width_with_parameter + width_with_parameter - 1), fd,
+        fields({field("T_K", temperature), field("V_m3", volume), field("h_angstrom", 1e-3)}), true));
+    CHECK(truth("Kim/pure-water/exact-zero", exact, fields({field("rows", temperatures.size()), field("coordinates", width)})));
+}
+
 void bubble_temperature() {
     using hong_pathway_weight::shifted;
     const auto parameters = properties_support::associating_binary();
@@ -529,6 +603,7 @@ int main(int argc, char** argv) {
     }
     set_fit_host({{std::filesystem::absolute(argv[0]).string(), "--fit-worker"}}, reinterpret_cast<const void*>(&bubble_temperature));
     return recording_support::run(argc, argv, {
+        {{"native.regression.kim-pure-water", "kim-pure-water"}, kim_pure_water},
         {{"native.regression.association-site-temperature", "temperature"}, bubble_temperature},
         {{"native.regression.association-site-mapping", "mapping"}, pathway_mapping},
         {{"native.regression.association-site-reaction", "reaction"}, reacting_actions},

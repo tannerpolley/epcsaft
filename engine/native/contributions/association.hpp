@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/convergence.hpp"
+#include "core/export.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/parameters.hpp"
 #include "core/physical_constants.hpp"
@@ -145,6 +146,24 @@ inline Eigen::MatrixXd mass_action_jacobian(
     }
     return jacobian;
 }
+
+// With supported sites ordered first, the mass-action Jacobian is [A 0; B D], with D diagonal.
+struct AssociationJacobian {
+    Eigen::FullPivLU<Eigen::MatrixXd> full;
+    std::optional<Eigen::FullPivLU<Eigen::MatrixXd>> supported;
+    std::vector<Eigen::Index> present, absent;
+    Eigen::MatrixXd coupling;
+    Eigen::VectorXd inverse_diagonal;
+
+    Eigen::Index rows() const { return full.rows(); }
+    template<class Derived>
+    typename Derived::PlainObject solve(const Eigen::MatrixBase<Derived>& rhs) const {
+        if (absent.empty()) return full.solve(rhs);
+        return solve_partitioned(rhs);
+    }
+    EPC_API Eigen::MatrixXd solve_partitioned(const Eigen::Ref<const Eigen::MatrixXd>& rhs) const;
+    Eigen::VectorXd solve_transpose(const Eigen::Ref<const Eigen::VectorXd>& rhs) const;
+};
 
 // A smallest pivot at or below ASSOCIATION_JACOBIAN_CONDITION times the largest refuses the factorization.
 template <class Factorization>
