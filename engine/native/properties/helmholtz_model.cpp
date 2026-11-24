@@ -1861,6 +1861,20 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     auto path_key = point;
     path_key.insert(path_key.end(), motion.begin(), motion.end());
     path_key.insert(path_key.end(), {direction.pressure, double(order), double(infinite_dilution), double(error != nullptr)});
+    auto series_key = path_key;
+    series_key.insert(series_key.end(), stoichiometry.begin(), stoichiometry.end());
+    if (const auto stored = reference_series_.find(series_key); stored != reference_series_.end()) {
+        if (error) *error = stored->second.second;
+        result = stored->second.first;
+        auto& d = result.diagnostics;
+        d.site_factorizations = d.site_solves = d.pressure_factorizations = d.pressure_solves = 0;
+        d.directional_paths = d.forward_sweeps = d.recordings = 0;
+        if (d.site_conditioning) {
+            d.site_conditioning = std::make_shared<core::NumericalRank>(*d.site_conditioning);
+            core::AssociationObservations::publish(*d.site_conditioning);
+        }
+        return result;
+    }
     std::shared_ptr<ReferenceTaylorPreparation> prepared;
     if (batch) if (const auto entry = batch->paths.find(path_key); entry != batch->paths.end())
         prepared = entry->second;
@@ -2052,7 +2066,19 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     counters_.directional_paths += result.diagnostics.directional_paths;
     counters_.forward += result.diagnostics.forward_sweeps;
     counters_.maximum_energy_order = std::max(counters_.maximum_energy_order, order + 1);
-    return association_result(std::move(result), observations);
+    observations.merge(result.diagnostics.site_conditioning);
+    // A conditioning warning belongs to the phase and observation that produced it.
+    if (result.status == PropertyActionStatus::Available && !result.diagnostics.first_numerical_failure
+        && !(result.diagnostics.site_conditioning && result.diagnostics.site_conditioning->first_conditioning_warning)) {
+        // Bound retained derivative layouts when a free pressure moves between reference states.
+        if (reference_series_.size() >= 256) reference_series_.clear();
+        auto& stored = reference_series_[std::move(series_key)];
+        stored.first = result;
+        if (result.diagnostics.site_conditioning)
+            stored.first.diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*result.diagnostics.site_conditioning);
+        if (error) stored.second = *error;
+    }
+    return result;
 }
 
 // ponytail: retain two signatures for alternating phases; widen only for measured multi-signature churn.

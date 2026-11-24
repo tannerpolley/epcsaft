@@ -129,6 +129,7 @@ struct Prediction final {
     std::optional<equilibrium::CompiledSystem> final_compiled;
     std::shared_ptr<equilibrium::SaturationSearch> saturation;
     std::optional<double> saturation_loading, endpoint_loading, added_amount, enthalpy_difference;
+    std::optional<std::size_t> initial_heat_endpoint, feed_heat_endpoint;
     std::string cap_branch;
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<Prediction> pressure_reference;
@@ -164,6 +165,15 @@ EPC_API void validate(const Observation& observation, const HelmholtzModel& mode
 EPC_API void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& prediction);
 struct ReferenceCache : std::vector<std::pair<Observation, InfiniteDilutionReference>> {
     std::vector<std::pair<Observation, Prediction>> pressures;
+    struct HeatEndpoint {
+        Observation row;
+        std::optional<std::size_t> start;
+        Prediction center;
+        std::optional<PredictionGradient> gradient;
+    };
+    std::vector<HeatEndpoint> heat;
+    std::optional<std::size_t> previous_initial;
+
 };
 EPC_API Prediction predict(
     const HelmholtzModel& model, const Observation& observation,
@@ -182,7 +192,7 @@ EPC_API std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction,
     const CoordinateSet& coordinates = {},
     const std::vector<ObservationInputDirection>& inputs = {},
-    const std::function<void(const double*, double*)>& optimizer_action = {}
+    const std::function<void(const double*, double*)>& optimizer_action = {}, ReferenceCache* references = nullptr
 );
 // r = (y - y_obs) / scale, or ln(y / y_obs) for positive y and y_obs; dr/dy = 1/scale or 1/y.
 EPC_API std::optional<double> residual(const Observation& observation, double value, ObservationStatus& status);

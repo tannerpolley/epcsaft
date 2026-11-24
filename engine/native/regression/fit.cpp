@@ -533,6 +533,7 @@ struct ObservationEvaluator::Impl final {
                     std::vector<const Observation*> admission;
                     if (needs_compiled_admission_) for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g) admission.push_back(&trial.observations[row]);
+                    trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
                         seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
@@ -598,7 +599,7 @@ struct ObservationEvaluator::Impl final {
                     gradients[g] = pressure_closed(observation.kind) && directions.empty()
                         ? std::vector<PredictionGradient>{differentiate(model, observation, prediction)}
                         : differentiate_group(model, rows, prediction, request_.coordinates, directions,
-                            [&](const double* gradient, double* mapped) { chain(request_, trial.chart.map, 1, gradient, mapped); });
+                            [&](const double* gradient, double* mapped) { chain(request_, trial.chart.map, 1, gradient, mapped); }, &trial.references);
                 }
                 const auto& gradient = gradients[g][position[g]++];
                 if (prediction.stability && !gradient.raw_minimum.empty()) {
