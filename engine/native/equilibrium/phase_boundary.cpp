@@ -2253,7 +2253,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         if (composed) { problem.loading = affine; problem.loading->seed = loading;
             problem.loading->lower = lower; problem.loading->upper = upper; problem.loading->pressure = target; }
         auto compiled = compile_problem(model, problem);
-        auto state = solve_compiled(compiled, start, nullptr, &work);
+        auto state = try_solve_compiled(compiled, start, nullptr, &work);
+        if (composed && state.failure) std::rethrow_exception(state.failure);
         if (!out.first_numerical_failure) out.first_numerical_failure = state.first_numerical_failure;
         return std::make_pair(std::move(compiled), std::move(state));
     };
@@ -2269,6 +2270,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         auto& n = retry ? *retry : out.nodes.emplace_back();
         n.driver_attempts = work.attempts - before;
         n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
+        if (n.state.failure) std::rethrow_exception(n.state.failure);
         if (!n.state.success || !n.state.has_state()) { return n.state.message; }
         n.mismatch = *n.state.pressure - affine.pressure;
         const auto estimate = [](const CompiledSystem& system, const EquilibriumResult& result, const PhasePoint* prepared = nullptr) {
