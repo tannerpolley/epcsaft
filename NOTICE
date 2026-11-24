@@ -12,7 +12,7 @@ Conda package contents and corresponding source
 
 The Linux x86-64 / CPython 3.13 package contains the Python package, _core,
 native and ASL libraries, private Ipopt 3.11.9 and the applicable notices.
-It uses conda MUMPS 5.8.2, OpenBLAS, Ceres 2.2.0 CPU, Eigen 3.4.0 and
+It uses conda MUMPS 5.8.2, BLAS/LAPACK, Ceres 2.2.0, Eigen 3.4.0 and
 nanobind 2.12.0. It contains the feos-gross-sadowski-2001/1 and feos-gross-sadowski-2002/1
 parameter packets with their FeOs MIT notices. It contains no analyses,
 manuscript sources, restricted data collections or Coin-HSL.
@@ -39,7 +39,9 @@ Native dependencies (not all are bundled in the source tree)
   https://github.com/coin-or/CppAD/blob/20250000.3/user_guide.xrst
 * Eigen 3.4: Mozilla Public License 2.0 (MPL-2.0).
   https://gitlab.com/libeigen/eigen/-/blob/3.4.0/COPYING.MPL2
-* Ceres 2.2: BSD terms, with Apache-2.0 third-party terms.
+* Ceres 2.2: BSD 3-clause, with Apache-2.0 third-party terms. Retain the
+  third-party notices supplied with Ceres on every platform. The linux-64
+  and win-64 conda recipes select the cpulgpl build without SuiteSparse.
   https://github.com/ceres-solver/ceres-solver/blob/2.2.0/LICENSE
 * HiGHS 1.15.1: MIT, with embedded pdqsort under Zlib and the LP reader
   under Michael Feldmeier's MIT notice. Retain extern/pdqsort/license.txt
@@ -60,8 +62,8 @@ Native dependencies (not all are bundled in the source tree)
 
 Build-selected transitive dependencies (not bundled in the source tree)
 
-The inspected Ipopt links BLAS/LAPACK; the inspected Ceres links glog and
-SuiteSparse. These libraries keep their own terms, outside the Ipopt permission.
+Ipopt links BLAS/LAPACK and Ceres links glog. These libraries keep their
+own terms, outside the Ipopt permission.
 Other build environments must retain the notices for their selected distributions.
 
 * Reference BLAS/LAPACK 3.12.0: BSD 3-clause.
@@ -69,7 +71,8 @@ Other build environments must retain the notices for their selected distribution
 * glog: BSD 3-clause. https://github.com/google/glog
   The selected distribution retains its notice in
   /usr/share/doc/libgoogle-glog0v6t64/copyright.
-* SuiteSparse 7: component-specific terms. AMD, CAMD, COLAMD, CCOLAMD and
+* SuiteSparse 7, for distributions that include it: component-specific
+  terms. AMD, CAMD, COLAMD, CCOLAMD and
   SuiteSparse_config use BSD 3-clause; CHOLMOD includes LGPL-2.1-or-later,
   GPL-2.0-or-later and Apache-2.0 portions; SPQR uses GPL-2.0-or-later, with
   separately identified support-file terms. Retain the selected components'
