@@ -60,6 +60,67 @@ std::vector<std::size_t> CoordinateSet::tie() const {
     return result;
 }
 
+double admit_reaction_law(const ReactionCoordinate& target, std::size_t components,
+    const std::vector<Observation>& observations, const std::optional<ThermochemistryRecord>& thermochemistry) {
+    const auto check = [&](bool ok, const char* cause) {
+        if (!ok) throw std::invalid_argument("reaction coordinate " + target.name + ": " + cause);
+    };
+    const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
+    (void)reaction_direction(target);
+    std::optional<std::pair<equilibrium::ReactionSpec, double>> prior;  // the first law and its solid volume (-1 for a reaction)
+    const equilibrium::EquilibriumProblem* prior_problem = nullptr;
+    const auto admit_problem = [&](const equilibrium::EquilibriumProblem& problem) {
+        std::size_t matches = 0;
+        const auto admit = [&](const equilibrium::ReactionSpec& reaction, double volume) {
+            if (reaction.name != target.name) return;
+            check(++matches == 1, "repeated name in problem");
+            check(!reaction.affinity_j_per_mol, "affinity target");
+            check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
+            check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
+            check(equilibrium::reaction_rank(components, problem.reactions) == problem.reactions.size(), "dependent reaction set");
+            check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
+            if (shift) check(reaction.correlation && target.pivot_temperature >= reaction.correlation->temperature_min
+                && target.pivot_temperature <= reaction.correlation->temperature_max, "enthalpy shift pivot outside correlation interval");
+            check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
+                  reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
+            if (prior) {
+                check(same_reaction(prior->first, reaction, false) && prior->second == volume, "tied declarations or starts disagree");
+                if (reaction.reference) {
+                    check(problem.source_reference && prior_problem->source_reference, "missing source declaration");
+                    const auto& x = *problem.source_reference;
+                    const auto& y = *prior_problem->source_reference;
+                    check(x.solvent_index == y.solvent_index && (reaction.reference->source_basis != ReferenceSourceBasis::CommonMolalityInfiniteDilution
+                          || x.standard_molality_mol_per_kg == y.standard_molality_mol_per_kg), "tied source bases disagree");
+                    // ln K_c = ln K_b - sum_i nu_i (L_i^c - L_i^b): every reacting species needs one convention.
+                    const auto convention = [](const NeutralReferenceDeclaration& d, std::size_t i) {
+                        return d.species_reference.empty() ? (d.solvent_index == i ? SpeciesReference::PureLiquid
+                            : SpeciesReference::InfiniteDilution) : d.species_reference.at(i);
+                    };
+                    constexpr std::array names = {"infinite dilution", "pure liquid", "pure gas"};
+                    for (std::size_t i = 0; i < reaction.stoichiometry.size(); ++i)
+                        if (reaction.stoichiometry[i] != 0.0 && convention(x, i) != convention(y, i))
+                            check(false, ("tied species references disagree: component " + std::to_string(i) + " "
+                                + names.at(std::size_t(convention(y, i))) + " vs " + names.at(std::size_t(convention(x, i)))).c_str());
+                }
+            } else {
+                prior.emplace(reaction, volume);
+                prior_problem = &problem;
+            }
+        };
+        for (const auto& reaction : problem.reactions) admit(reaction, -1.0);
+        for (const auto& solid : problem.solids) admit(equilibrium::solid_law(solid), solid.molar_volume_m3_per_mol);
+    };
+    for (const auto& observation : observations) {
+        if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
+        admit_problem(observation.problem);
+        if (addition(observation.kind)) admit_problem(observation.final_problem);
+        if (observation.pressure_reference) admit_problem(*observation.pressure_reference);
+    }
+    check(prior.has_value(), "unmatched name");
+    auto& reaction = prior->first;
+    return shift ? 0.0 : reaction.correlation ? coefficient(*reaction.correlation, target.coefficient) : std::log(reaction.equilibrium_constant.value());
+}
+
 std::vector<double> CoordinateSet::start(const Parameters& parameters, const std::vector<Observation>& observations,
     const std::optional<ThermochemistryRecord>& thermochemistry) const {
     core::Scope scope("coordinate_start");
@@ -70,68 +131,9 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
         double first = 0.0;
         if (coordinate.reaction) {
             const auto& target = *coordinate.reaction;
-            const auto check = [&](bool ok, const char* cause) {
-                if (!ok) throw std::invalid_argument("reaction coordinate " + target.name + ": " + cause);
-            };
-            check(!target.name.empty() && seen.emplace(target.name, target.coefficient).second, "empty or duplicate target");
-            const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
-            (void)reaction_direction(target);
-            std::optional<std::pair<equilibrium::ReactionSpec, double>> prior;  // the first law and its solid volume (-1 for a reaction)
-            const equilibrium::EquilibriumProblem* prior_problem = nullptr;
-            std::vector<const equilibrium::EquilibriumProblem*> problems;
-            for (const auto& observation : observations) {
-                if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
-                problems.push_back(&observation.problem);
-                if (addition(observation.kind)) problems.push_back(&observation.final_problem);
-        if (observation.pressure_reference) problems.push_back(&*observation.pressure_reference);
-            }
-            for (const auto* problem_pointer : problems) {
-                const auto& problem = *problem_pointer;
-                std::vector<std::pair<equilibrium::ReactionSpec, double>> laws;  // a solid's ln K law is fitted like a reaction's
-                for (const auto& reaction : problem.reactions) laws.emplace_back(reaction, -1.0);
-                for (const auto& solid : problem.solids) laws.emplace_back(equilibrium::solid_law(solid), solid.molar_volume_m3_per_mol);
-                std::size_t matches = 0;
-                for (const auto& [reaction, volume] : laws) {
-                    if (reaction.name != target.name) continue;
-                    check(++matches == 1, "repeated name in problem");
-                    check(!reaction.affinity_j_per_mol, "affinity target");
-                    check(reaction.correlation || reaction.equilibrium_constant, "missing ln K target");
-                    check(problem.standard_gibbs_j_per_mol.empty(), "supplied standard Gibbs values");
-                    check(equilibrium::reaction_rank(parameters.component_count(), problem.reactions) == problem.reactions.size(), "dependent reaction set");
-                    check(!reaction.uses_species_thermochemistry(), "K fixed by species thermochemistry");
-                    check(reaction.correlation || target.coefficient == ReactionCoefficient::A, "scalar K admits only A");
-                    if (shift) check(reaction.correlation && target.pivot_temperature >= reaction.correlation->temperature_min
-                        && target.pivot_temperature <= reaction.correlation->temperature_max, "enthalpy shift pivot outside correlation interval");
-                    check(reaction.reference || !thermochemistry || reaction_thermochemistry_density(*thermochemistry,
-                          reaction.stoichiometry, problem.temperature.value).status != ThermochemistryStatus::Available, "K fixed by thermochemistry");
-                    if (prior) {
-                        check(same_reaction(prior->first, reaction, false) && prior->second == volume, "tied declarations or starts disagree");
-                        if (reaction.reference) {
-                            check(problem.source_reference && prior_problem->source_reference, "missing source declaration");
-                            const auto& x = *problem.source_reference;
-                            const auto& y = *prior_problem->source_reference;
-                            check(x.solvent_index == y.solvent_index && (reaction.reference->source_basis != ReferenceSourceBasis::CommonMolalityInfiniteDilution
-                                  || x.standard_molality_mol_per_kg == y.standard_molality_mol_per_kg), "tied source bases disagree");
-                            // ln K_c = ln K_b - sum_i nu_i (L_i^c - L_i^b): every reacting species needs one convention.
-                            const auto convention = [](const NeutralReferenceDeclaration& d, std::size_t i) {
-                                return d.species_reference.empty() ? (d.solvent_index == i ? SpeciesReference::PureLiquid
-                                    : SpeciesReference::InfiniteDilution) : d.species_reference.at(i);
-                            };
-                            constexpr std::array names = {"infinite dilution", "pure liquid", "pure gas"};
-                            for (std::size_t i = 0; i < reaction.stoichiometry.size(); ++i)
-                                if (reaction.stoichiometry[i] != 0.0 && convention(x, i) != convention(y, i))
-                                    check(false, ("tied species references disagree: component " + std::to_string(i) + " "
-                                        + names.at(std::size_t(convention(y, i))) + " vs " + names.at(std::size_t(convention(x, i)))).c_str());
-                        }
-                    } else {
-                        prior.emplace(reaction, volume);
-                        prior_problem = &problem;
-                        auto law = reaction.correlation.value_or(ReactionLogPolynomial{});
-                        first = shift ? 0.0 : reaction.correlation ? coefficient(law, target.coefficient) : std::log(reaction.equilibrium_constant.value());
-                    }
-                }
-            }
-            check(prior.has_value(), "unmatched name");
+            if (target.name.empty() || !seen.emplace(target.name, target.coefficient).second)
+                throw std::invalid_argument("reaction coordinate " + target.name + ": empty or duplicate target");
+            first = admit_reaction_law(target, parameters.component_count(), observations, thermochemistry);
         } else {
             for (const auto& target : coordinate.targets) detail::validate_active_screening_coordinate(parameters, target.family);
             const auto& initial = coordinate.targets.front();

@@ -180,7 +180,7 @@ public:
         const auto& out = *result_.minimax;
         publish_candidate(result_, std::move(evaluation_), std::vector<double>(out.point.begin(), out.point.begin() + u_));
         result_.initial_cost = result_.final_cost = NAN;
-        result_.weighted_residuals.clear(); outcome_.covariance = FitCovarianceStatus::MinimaxUnavailable;
+        result_.weighted_residuals.clear(); result_.covariance.outcome = FitCovarianceStatus::MinimaxUnavailable;
         outcome_.candidate = FitCandidate::Usable;
     }
     void point_values() {
@@ -272,7 +272,7 @@ public:
 private:
     const FitRequest& request_;
     FitResult& result_;
-    FitOutcome& outcome_;  // this estimator's termination, candidate and covariance; the caller labels them
+    FitOutcome& outcome_;  // this estimator's termination, candidate and acceptance; the caller labels them
     const ObservationFunction& evaluate_;
     const MinimaxRequest& spec_;
     std::size_t u_;

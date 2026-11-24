@@ -81,6 +81,8 @@ Native parameter estimation
    :show-inheritance:
    :special-members: __init__, __int__, __enter__, __exit__
 
+.. autoapiclass:: epcsaft._core.PredictionUncertainty
+
 .. autoapiclass:: epcsaft._core.FitCovariance
    :members:
    :undoc-members:

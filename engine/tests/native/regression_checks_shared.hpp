@@ -203,7 +203,7 @@ inline std::string summary(const FitResult& result) {
     return fields({field("status", result.status), field("termination", result.termination), field("iterations", result.iterations),
                    field("residual_evaluations", result.residual_evaluations), field("jacobian_evaluations", result.jacobian_evaluations),
                    field("trial_failures", result.trial_failures), field("final_cost", result.final_cost),
-                   field("covariance", result.covariance.status)});
+                   field("covariance", covariance_status(result.covariance))});
 }
 
 }  // namespace regression_checks

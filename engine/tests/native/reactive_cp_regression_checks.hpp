@@ -41,12 +41,12 @@ void check_reactive_cp() {
         field("epsilon_relative_error",std::abs(result.physical[0]-191.42)/191.42),
         field("b_relative_error",std::abs(result.physical[2]-200)/200),
         field("singular_values",result.covariance.singular_values),field("rank",result.covariance.rank),field("active_bounds",std::vector<int>(result.covariance.active_bounds.begin(),result.covariance.active_bounds.end())),
-        field("covariance_status",result.covariance.status),field("covariance_assumption",result.covariance.assumption),
+        field("covariance_status",covariance_status(result.covariance)),field("covariance_assumption",result.covariance.assumption),
         field("conditional_covariance",result.covariance.physical),field("variance_factor",result.covariance.variance_factor.value_or(-1)),
         field("optimizer_jacobian",result.optimizer_jacobian),field("physical_jacobian",result.physical_jacobian),
         field("iteration_seconds",result.iteration_seconds),field("iteration_costs",result.iteration_costs)});
     truth("F7/recovery/rank",result.covariance.rank==2
-        &&result.covariance.singular_values.size()==2&&result.covariance.active_bounds.empty()&&result.covariance.status=="available",evidence);
+        &&result.covariance.singular_values.size()==2&&result.covariance.active_bounds.empty()&&result.covariance.outcome == FitCovarianceStatus::Available,evidence);
     agree("F7/recovery/epsilon","epsilon","K",result.physical[0],191.42,0,1e-6,evidence);
     agree("F7/recovery/b","b","K",result.physical[2],200,0,1e-6,evidence);
     agree("F7/recovery/cost","cost","1",result.final_cost,0,1e-20,0,evidence);

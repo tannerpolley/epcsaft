@@ -41,6 +41,7 @@ void check_measurement_columns();
 void check_measurement_fit();
 void check_measurement_reuse();
 void check_measurement_admission();
+void check_prediction_reaction_law();
 void check_measurement_correlation();
 }  // namespace regression_checks
 
@@ -54,6 +55,7 @@ int main(int argc, char** argv) {
         {{"native.regression.measurement-columns", "measurement-columns"}, check_measurement_columns, "R2"},
         {{"native.regression.measurement-fit", "measurement-fit"}, check_measurement_fit, "R2"},
         {{"native.regression.measurement-reuse", "measurement-reuse"}, check_measurement_reuse, "R2"},
+        {{"native.regression.prediction-reaction-law", "prediction-reaction-law"}, check_prediction_reaction_law, "R2"},
         {{"native.regression.measurement-admission", "measurement-admission"}, check_measurement_admission, "R2"},
         {{"native.regression.measurement-correlation", "measurement-correlation"}, check_measurement_correlation, "R2"},
         {{"native.regression.inventory-boundary", "inventory-boundary"}, check_propane_inventory_boundary, "R1"},

@@ -65,5 +65,7 @@ struct CoordinateSet final {
 // Reject invalid charts, conflicting named reaction declarations and constants fixed by other inputs.
 EPC_API void validate(const CoordinateSet& set, const Parameters& parameters, const std::vector<Observation>& observations = {},
               const std::optional<ThermochemistryRecord>& thermochemistry = {});
+double admit_reaction_law(const ReactionCoordinate& target, std::size_t components,
+    const std::vector<Observation>& observations, const std::optional<ThermochemistryRecord>& thermochemistry);
 
 }  // namespace epcsaft::regression
