@@ -276,9 +276,11 @@ def test_materialized_domain_ids_are_packet_local(tmp_path: Path) -> None:
         path.parent.mkdir(parents=True)
         path.write_text(json.dumps(doc))
 
-    saved = parameter_document(tmp_path, [(f"{name}/1", [name]) for name in names])
+    saved = parameter_document(tmp_path, [(f"{name}/1", [name]) for name in names],
+                               k_ij={("methane", "ethane"): 0.0})
     for components, x in ((names, [0.5, 0.5]), (["methane"], [1])):
-        model = Mixture(Parameters.from_mapping(saved, components=components))
+        parameters = Parameters.from_mapping(saved, components=components)
+        model = Pure(parameters) if len(components) == 1 else Mixture(parameters)
         with pytest.warns(DomainWarning) as caught:
             state = model.state(300, P=100000, x=x, phase="vapor")
         assert len(caught) == 1 and state.domain_violations is not None
