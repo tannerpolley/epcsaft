@@ -210,7 +210,7 @@ std::optional<DensityRoot> retain_density_side(const HelmholtzModel& model, doub
     double v, PhaseKind kind, Quantities& q) {
     const auto root = anchored_root(model, T, P, w, v, kind, q, "identity_");
     if (!root) return root;
-    const auto side = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
+    const auto side = properties::density_side(*root);
     q["root_density_side"] = static_cast<double>(side);
     q["density_side"] = static_cast<double>(side == DensityBranch::Unspecified ? (kind == PhaseKind::Liquid ? DensityBranch::Liquid : DensityBranch::Vapor) : side);
     return root;
@@ -556,10 +556,11 @@ double repair_effect(const CompiledSystem &c, const PhasePoint &at, const PhaseP
 struct CondensedRefusal final : std::invalid_argument { using std::invalid_argument::invalid_argument; };
 // Without a unit vacuum limit, a charged trial counts only on its own liquid side.
 void condensed_admission(const std::optional<DensityRoot>& root, bool quotient, Quantities* q = nullptr) {
-    if (!root || properties::density_side(root->branch, root->molar_density, root->negative_slope_density) != DensityBranch::Liquid)
+    if (!root || properties::density_side(*root) != DensityBranch::Liquid)
         throw CondensedRefusal(quotient
             ? "charged trial outside the condensed domain of permittivity without a unit vacuum limit"
             : "charged trial outside the condensed domain of density-independent permittivity");
+    if (q) (*q)["density_side"] = static_cast<double>(DensityBranch::Liquid);
     if (q && root->negative_slope_density) (*q)["negative_slope_density_mol_m3"] = *root->negative_slope_density;
 }
 
@@ -1418,8 +1419,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             root.reset(), seed = rooted.front().first;
                         }
                     }
-                    if (options.evaluate_supplied_trials) trial.quantities["density_side"] = static_cast<double>(
-                        properties::density_side(root->branch, root->molar_density, root->negative_slope_density));
+                    if (options.evaluate_supplied_trials) trial.quantities["density_side"] = static_cast<double>(properties::density_side(*root));
                     seed_density = root->molar_density;
                     eta = c.model->packing_fraction_coefficient(at.temperature, seed) * root->molar_density;
                 }
@@ -1508,6 +1508,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             && root.convergence.residual <= root.convergence.criterion->value
                             && std::isfinite(state.pressure_density_derivative) && state.pressure_density_derivative > 0.0))
                         throw std::invalid_argument("charged Vapor point outside its own vapor pressure-root window");
+                    q["density_side"] = static_cast<double>(properties::density_side(root));
                 }
                 if (condensed && slot) spend_credit(*recovery, report.work);
                 if (condensed) condensed_admission(anchored_root(*c.model, at.temperature, at.pressure, trial.composition,
@@ -1776,7 +1777,7 @@ StabilityGridResult stability_grid(const CompiledSystem& c, const EquilibriumRes
     const auto evaluate = [&](StabilityTrial& trial, StabilityReport& report) {
         const auto& w = trial.composition;
         const auto root = stability_root(model, at.temperature, at.pressure, w, trial.phase.kind);
-        const auto side = properties::density_side(root.branch, root.molar_density, root.negative_slope_density);
+        const auto side = properties::density_side(root);
         trial.quantities["root_density_side"] = static_cast<double>(side);
         core::retain_first(report.first_numerical_failure, root.first_numerical_failure);
         if (!root.convergence.criterion || !(root.convergence.residual <= root.convergence.criterion->value
@@ -2498,7 +2499,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 const auto root = anchored_root(model, *best.temperature, *best.pressure, trial.composition,
                     trial.quantities.at("volume_m3_per_mol"), phase.kind, trial.quantities, "addition_");
                 if (!root) throw std::runtime_error("descending trial has no admitted density branch");
-                if (const auto side = properties::density_side(root->branch, root->molar_density, root->negative_slope_density);
+                if (const auto side = properties::density_side(*root);
                     side != DensityBranch::Unspecified)
                     phase.kind = side == DensityBranch::Liquid ? PhaseKind::Liquid : PhaseKind::Vapor;
                 if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),

@@ -854,6 +854,9 @@ std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t in
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
 // liquid-side; explicit labels and roots without a sample are kept. liquid_reference_refusal names a vapor-side root.
 DensityBranch density_side(DensityBranch branch, double density, std::optional<double> sample);
+inline DensityBranch density_side(const DensityRoot& root) {
+    return density_side(root.branch, root.molar_density, root.negative_slope_density);
+}
 std::optional<std::string> liquid_reference_refusal(const State& state);
 // Anchored closure, regularity-checked; a failed anchor is retried once cold on the same branch.
 State close_density(const HelmholtzModel& model, double temperature, double pressure,
