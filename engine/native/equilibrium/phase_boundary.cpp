@@ -2203,18 +2203,22 @@ void compare_loading_candidates(SaturationSearch& out, ComparisonEligibility eli
     if (out.groups.size() > 1 || out.brackets > 1) out.causes.push_back("multiple_roots");
 }
 
-void admit_loading_search(SaturationSearch& out) {
+static unsigned loading_slope_reversals(const SaturationNode& node, const SaturationNode* previous) {
+    if (!std::isfinite(node.mismatch)) return 0;
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
-    compare_loading_candidates(out, {});
-    for (std::size_t i = 0; i < out.nodes.size(); ++i) {
-        const auto& a = out.nodes[i];
-        if (!std::isfinite(a.mismatch)) continue;  // unsolved node: its own cause and unexamined_gap stand
-        if (!std::isfinite(a.slope) || a.slope == 0) out.causes.push_back("unresolved_slope_reversal");
-        if (!i) continue;
-        const auto& b = out.nodes[i - 1]; const auto delta = a.mismatch - b.mismatch;
-        if (sign(a.slope) != sign(b.slope) || (std::abs(delta) > a.estimates.pressure.absolute + b.estimates.pressure.absolute
-            && sign(delta) != sign(a.slope))) out.causes.push_back("unresolved_slope_reversal");
+    unsigned count = !std::isfinite(node.slope) || node.slope == 0;
+    if (previous) {
+        const double delta = node.mismatch - previous->mismatch;
+        if (sign(node.slope) != sign(previous->slope) || (std::abs(delta) > node.estimates.pressure.absolute + previous->estimates.pressure.absolute
+            && sign(delta) != sign(node.slope))) ++count;
     }
+    return count;
+}
+
+void admit_loading_search(SaturationSearch& out) {
+    compare_loading_candidates(out, {});
+    for (std::size_t i = 0; i < out.nodes.size(); ++i)
+        out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
 
     if (out.groups.empty() && out.causes.empty()) out.causes.push_back("no_resolved_root");
     if (out.complete && out.causes.empty() && out.groups.size() == 1) out.accepted = out.groups[0][0];
@@ -2258,10 +2262,12 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     };
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
     const auto evaluate_node = [&](double alpha, std::optional<EquilibriumResult> start, std::string prior_start, SaturationNode* retry = nullptr) -> std::optional<std::string> {
+        const auto before = work.attempts;
         if (start) start->multipliers.clear();
         auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
             start, false);
         auto& n = retry ? *retry : out.nodes.emplace_back();
+        n.driver_attempts = work.attempts - before;
         n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
         if (!n.state.success || !n.state.has_state()) { return n.state.message; }
         n.mismatch = *n.state.pressure - affine.pressure;
@@ -2309,10 +2315,11 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
             std::string prior_start = reuse ? "bracket_continuation" : "not_supplied";
             SaturationNode* retry = nullptr;
             if (reuse && bracket_found) {
+                const auto before = work.attempts;
                 try {
                     const auto cause = evaluate_node(alpha, previous->nodes[i].state, "accepted");
-                    if (!cause) continue;
-                    prior_start = "fallback:" + *cause;
+                    if (!cause && !loading_slope_reversals(out.nodes.back(), &out.nodes[i - 1])) continue;
+                    prior_start = "fallback:" + cause.value_or("unresolved_slope_reversal");
                 } catch (const BudgetExhausted&) { throw; }
                 catch (const std::bad_alloc&) { throw; }
                 catch (const std::exception& error) {
@@ -2321,6 +2328,9 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                 }
                 // Retain the failed start even if the shared budget stops its ordinary retry.
                 if (out.nodes.size() == i) out.nodes.emplace_back();
+                auto& rejected = out.nodes.back();
+                rejected.loading = alpha; rejected.prior_start = prior_start; rejected.driver_attempts = work.attempts - before;
+                out.rejected_starts.push_back(std::move(rejected));
                 retry = &out.nodes.back();
                 *retry = {}; retry->loading = alpha; retry->prior_start = prior_start;
             }

@@ -83,8 +83,8 @@ FIELDS(equilibrium::SaturationOperand, a, b, c)
 FIELDS(equilibrium::SaturationCandidate, a, b, c)
 FIELDS(equilibrium::SaturationComparison, a, b, c, d)
 FIELDS(equilibrium::SolvedStateActionDiagnostics, a, b, c, d, e, f, g, h, i, j)
-FIELDS(equilibrium::SaturationNode, a, b, c, d, e, f, g, h, i, j, k)
-FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s)
+FIELDS(equilibrium::SaturationNode, a, b, c, d, e, f, g, h, i, j, k, l)
+FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t)
 auto fields(equilibrium::EquilibriumResult& v) {
     return std::tie(v.declaration, v.success, v.message, v.solver_status, v.temperature, v.pressure,
         v.amounts, v.mole_fractions, v.molar_densities, v.packing_fractions, v.residuals, v.classified_residuals,

@@ -1075,13 +1075,14 @@ struct SaturationNode final {
     EquilibriumResult state;
     EquilibriumNumericalEstimates estimates;
     std::string action_cause, prior_start;
+    std::size_t driver_attempts = 0;
     double action_seconds = 0, estimate_seconds = 0;
     EquilibriumNumericalEstimates local_estimates;
     std::shared_ptr<SolvedStateActionDiagnostics> action_diagnostics;
 };
 struct SaturationSearch final {
     std::vector<double> grid;
-    std::vector<SaturationNode> nodes;
+    std::vector<SaturationNode> nodes, rejected_starts;
     std::vector<std::array<std::size_t, 2>> events;
     std::vector<SaturationCandidate> candidates;
     std::vector<SaturationComparison> comparisons;
