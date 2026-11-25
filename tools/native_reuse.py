@@ -256,6 +256,7 @@ class Inventory:
         self.parameters = set()
         self.uses = set()
         self.callbacks = set()
+        self.defaults = set()
 
     def location(self, cursor):
         path, line = self.clang.location(cursor)
@@ -366,6 +367,35 @@ class Inventory:
                     return True
         return False
 
+    def retained_default(self, condition, alternatives):
+        clang = self.clang
+
+        def descendants(cursor):
+            yield cursor
+            for child in clang.children(cursor):
+                yield from descendants(child)
+
+        def numeric_literal(cursor):
+            while clang.kind(cursor) in {"UnexposedExpr", "ParenExpr", "UnaryOperator"}:
+                children = clang.children(cursor)
+                if len(children) != 1:
+                    return False
+                cursor = children[0]
+            return clang.kind(cursor) in {"FloatingLiteral", "IntegerLiteral"}
+
+        if not any(numeric_literal(alt) for alt in alternatives):
+            return None
+        for node in descendants(condition):
+            if clang.kind(node) != "MemberRefExpr":
+                continue
+            ref = clang.getCursorReferenced(node)
+            if not self.location(ref)[0] or clang.kind(ref) != "FieldDecl":
+                continue
+            owner = self.identity(clang.getCursorSemanticParent(ref))
+            if record_named(owner, RESULTS | OWNERS) and any(record_named(name, RESULTS) for name in self.operand(ref).records):
+                return self.identity(ref)
+        return None
+
     def visit(self, cursor, function="", call="", target="", record=""):
         clang = self.clang
         kind = clang.kind(cursor)
@@ -410,6 +440,10 @@ class Inventory:
                     self.uses.add((function, source, operand, call, file, line))
         target = self.callable_target(cursor, target)
         children = clang.children(cursor)
+        if kind == "ConditionalOperator" and function and len(children) == 3:
+            field = self.retained_default(children[0], children[1:])
+            if field:
+                self.defaults.add(Site("default", function, f"{field} selects a numeric fallback", file, line))
         if kind == "LambdaExpr" and function and target:
             if self.raw_capture(children):
                 self.callbacks.add(Site("callback", function, target, file, line))
@@ -431,7 +465,7 @@ class Inventory:
         def is_retained(operand):
             return any(record_named(name, RESULTS) for name in operand.records)
 
-        sites = set(self.callbacks)
+        sites = self.callbacks | self.defaults
         for form, owner, operand, file, line in self.storage:
             callable_member = operand.type.startswith("std::function<")
             if form == "static" or owner in owners or callable_member:
@@ -548,12 +582,13 @@ def inspect(root: Path, build: Path, revision: str | None = None) -> tuple[int, 
     if revision:
         revision = subprocess.check_output(["git", "rev-parse", "--verify", revision], cwd=root, text=True).strip()
         changed = subprocess.check_output(
-            ["git", "diff", "--name-only", "-z", revision, "--", "engine/native", "engine/meson.build"], cwd=root
+            ["git", "diff", "--name-status", "--no-renames", "-z", revision, "--", "engine/native", "engine/meson.build"], cwd=root
         )
-        for path in changed.decode().split("\0"):
-            if path == "engine/meson.build" or path.endswith(".cpp") and not (root / path).is_file():
+        fields = iter(changed.decode().split("\0"))
+        for status, path in zip(fields, fields):
+            if path == "engine/meson.build" or path.endswith(".cpp") and status in {"A", "D"}:
                 raise RuntimeError("the requested revision needs a production compile database of its own")
-            if path:
+            if status != "A":
                 overlays[root / path] = subprocess.check_output(["git", "show", f"{revision}:{path}"], cwd=root)
     return len(commands), scan(root, commands, overlays)
 
@@ -684,3 +719,31 @@ std::function<double()> retained_pressure(const State* state) {
     sites = additions("phase_boundary.cpp", raw_pointer)
     assert any(site.kind == "callback" and "::retained_pressure " in site.owner for site in sites), sites
     yield "returned callable capturing a raw State pointer flagged"
+
+    def refused_projection(text):
+        return text + """
+namespace epcsaft::regression {
+double replay_activity(const Prediction& prediction) {
+    return prediction.activity ? prediction.activity->mean_ionic_molality_scale : 1.0;
+}
+}
+"""
+
+    sites = additions("observations.cpp", refused_projection)
+    assert any(site.kind == "default" and "::replay_activity " in site.owner and "::Prediction::activity" in site.operand
+               for site in sites), sites
+    yield "numeric fallback from an absent retained activity flagged"
+
+    def shared_spinodal_output(text):
+        marker = "    static auto& begin_diagnostics(const CompiledSystem& c)"
+        assert marker in text
+        plant = """    static void shared_output(const CompiledSystem& c, const SpinodalSearch& carried) {
+        spinodal_search(c, nullptr, carried.seed, &carried, &*c.spinodal_diagnostics_);
+    }
+"""
+        return text.replace(marker, plant + marker, 1)
+
+    sites = additions("phase_boundary.cpp", shared_spinodal_output)
+    assert any(site.kind == "forward" and "::shared_output " in site.owner and "::spinodal_diagnostics_" in site.operand
+               for site in sites), sites
+    yield "carried spinodal output forwarded into a compiled result slot flagged"

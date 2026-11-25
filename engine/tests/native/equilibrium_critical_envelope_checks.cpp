@@ -301,8 +301,8 @@ void spinodal() {
     try { spinodal_search(interrupted, &spent); }
     catch (const BudgetExhausted& error) { budget_exception = true; cause = error.what(); }
     catch (const std::exception& error) { cause = error.what(); }
-    const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_search
-        && interrupted.spinodal_search->evaluations == 0 && interrupted.spinodal_search->finite_limits.empty();
+    const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_diagnostics()
+        && interrupted.spinodal_diagnostics()->evaluations == 0 && interrupted.spinodal_diagnostics()->finite_limits.empty();
     recording_support::compare("spinodal/exhausted", "budget-cause", "1", budget ? 1.0 : 0.0, 1.0,
         recording_support::Rule::Absolute, 0.0, 0.0, "spinodal-search",
         recording_support::fields({recording_support::field("cause", cause),
@@ -313,6 +313,10 @@ void spinodal() {
     const auto upper_cell = compile_problem(model, cell(240, 13000));
     const auto upper = spinodal_search(upper_cell);
     CHECK(std::abs(upper.seed - reference[0][2]) < 1e-8);
+    auto diagnostic = *fresh.spinodal_diagnostics();
+    CHECK(spinodal_search(fresh, nullptr, upper.seed, &upper, &diagnostic).seed == upper.seed);
+    CHECK(diagnostic.seed == upper.seed && fresh.spinodal_diagnostics()->seed == anchor);
+    CHECK(spinodal_search(fresh).seed == anchor);
     for (const auto& target : {compile_problem(model, cell(240, 4000)), fresh}) {
         CHECK(spinodal_search(target, nullptr, upper.seed, &upper).seed == upper.seed);
         CHECK(spinodal_search(target).seed == anchor);
@@ -409,8 +413,8 @@ void spinodal() {
             try { spinodal_search(coverage); } catch (const std::domain_error& error) {
                 if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
             }
-            CHECK(coverage.spinodal_search);
-            const bool expected_coverage=std::any_of(coverage.spinodal_search->brackets.begin(),coverage.spinodal_search->brackets.end(),
+            CHECK(coverage.spinodal_diagnostics());
+            const bool expected_coverage=std::any_of(coverage.spinodal_diagnostics()->brackets.begin(),coverage.spinodal_diagnostics()->brackets.end(),
                 [&](const auto& b) { return endpoints[0][branch]>=b.lower && endpoints[0][branch]<=b.upper; });
             CHECK(covered==expected_coverage);
             bool compatible=false;
@@ -419,9 +423,9 @@ void spinodal() {
                 try { spinodal_search(compiled); } catch (const std::domain_error& error) {
                     if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
                 }
-                CHECK(compiled.spinodal_search);
+                CHECK(compiled.spinodal_diagnostics());
                 const auto& before=initial.spinodal->search;
-                for (const auto& bracket:compiled.spinodal_search->brackets)
+                for (const auto& bracket:compiled.spinodal_diagnostics()->brackets)
                     if (endpoints[1][branch]>=bracket.lower && endpoints[1][branch]<=bracket.upper
                         && bracket.lower<=before.upper && bracket.upper>=before.lower) compatible=true;
             }
@@ -452,7 +456,7 @@ void spinodal() {
                         CHECK(path.cause_stop==ContinuationStop::branch_lost);
                         CHECK(path.last_result && path.last_result->spinodal);
                         CHECK(path.last_result->spinodal->search.evaluations==grids[grid].size());
-                        CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_search->brackets.size());
+                        CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_diagnostics()->brackets.size());
                     } else {
                         CHECK(path.success);
                         CHECK(std::abs(path.states.front().molar_densities[0]-endpoints[0][1-branch])/endpoints[0][1-branch]<=1e-8);

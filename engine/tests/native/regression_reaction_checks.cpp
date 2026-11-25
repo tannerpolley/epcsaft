@@ -1242,6 +1242,26 @@ void check_electrolyte_prediction_origin() {
     row.branch = DensityBranch::Liquid;
     row.observed = 1;
     const auto center = predict(source, row);
+    {
+        const HelmholtzModel active(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}});
+        auto unreachable = row;
+        unreachable.pressure = 1e13;
+        validate(unreachable, active);
+        const auto failure = predict(active, unreachable);
+        CHECK(failure.status == ObservationStatus::ReferenceUnavailable && !failure.value);
+        auto replay = failure;
+        project_prediction(active, unreachable, replay);
+        const auto columns = differentiate_group(active, {&unreachable}, failure);
+        CHECK(replay.status == failure.status && !replay.value && !replay.residual && replay.message == failure.message
+            && columns.front().status == failure.status && columns.front().value.empty());
+        const auto ordinary = predict(active, row);
+        const auto gradient = differentiate(active, row, ordinary);
+        CHECK(ordinary.value && gradient.status == ObservationStatus::Available && gradient.value.size() == 1 && gradient.value[0] != 0.0);
+        auto dilute = row;
+        dilute.molality = 0.0;
+        const auto limit = predict(active, dilute);
+        CHECK(limit.value == 1.0 && differentiate(active, dilute, limit).value == std::vector{0.0});
+    }
     const auto fresh_gradient = differentiate(target, row, predict(target, row));
     const auto reused_gradient = differentiate(target, row, center);
     auto moved = row;

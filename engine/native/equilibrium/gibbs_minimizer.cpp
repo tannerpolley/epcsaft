@@ -1602,11 +1602,12 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     return true;
 }
 
-EquilibriumResult spinodal_search_failure(const CompiledSystem& compiled, EquilibriumResult result, const std::string& cause) {
+EquilibriumResult spinodal_search_failure(const CompiledSystem& compiled, EquilibriumResult result, const std::string& cause, const SpinodalSearch* attempted) {
     refuse(result);
     result.message = cause; result.convergence.stop = core::Stop::left_domain;
     result.spinodal.emplace();
-    if (compiled.spinodal_search) result.spinodal->search = *compiled.spinodal_search;
+    if (attempted) result.spinodal->search = *attempted;
+    else if (compiled.spinodal_diagnostics()) result.spinodal->search = *compiled.spinodal_diagnostics();
     core::retain_failure(result.first_numerical_failure, cause, "spinodal search");
     return result;
 }
@@ -2150,7 +2151,7 @@ BranchCheck admit_null_mode(const CompiledSystem& compiled, EquilibriumResult& r
             attempted = spinodal_search(compiled, nullptr, result.molar_densities[0], carried, &attempted);
         } catch (const std::bad_alloc&) { throw; }
         catch (const std::exception& error) {
-            if (!carried && compiled.spinodal_search) attempted = *compiled.spinodal_search;
+            if (!carried && compiled.spinodal_diagnostics()) attempted = *compiled.spinodal_diagnostics();
             result.spinodal.emplace();
             result.spinodal->search = std::move(attempted);
             core::retain_failure(result.first_numerical_failure, error, "spinodal search");
@@ -2440,11 +2441,10 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint, EquilibriumAttemptReporting reporting) {
     std::optional<CompiledSystem> selected_crossing;
     if (declared.problem.spinodal && start && start->has_state() && start->spinodal) {
-        selected_crossing = declared;
-        auto& scan = selected_crossing->spinodal_search.emplace();
-        try { spinodal_search(declared, limits, start->molar_densities[0], &start->spinodal->search, &scan); }
+        SpinodalSearch scan;
+        try { selected_crossing = spinodal_corrector(declared, limits, start->molar_densities[0], &start->spinodal->search, scan); }
         catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) { return spinodal_search_failure(*selected_crossing, structural, error.what()); }
+        catch (const std::exception& error) { return spinodal_search_failure(declared, structural, error.what(), &scan); }
     }
     const auto& compiled = selected_crossing ? *selected_crossing : declared;
     const auto& model = *compiled.model;
@@ -2497,7 +2497,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
             catch (const std::bad_alloc&) { throw; }
             catch (const std::exception& error) {
                 core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
-                if (compiled.problem.spinodal && compiled.spinodal_search) {
+                if (compiled.problem.spinodal && compiled.spinodal_diagnostics()) {
                     result = spinodal_search_failure(compiled, structural, error.what());
                     std::move(stages).report(result); return result;
                 }

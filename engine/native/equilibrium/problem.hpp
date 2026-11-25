@@ -3,6 +3,7 @@
 
 #include "core/convergence.hpp"
 #include "core/linear_error.hpp"
+#include "core/retained.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
@@ -440,6 +441,8 @@ struct SpinodalSearch final {
     std::size_t evaluations = 0;
 };
 
+struct SpinodalKey;
+
 struct CompiledSystem final {
     // Internal split context; ordinary declarations retain the inventory-limited optimizer box.
     bool reaction_relaxed_split = false;
@@ -463,7 +466,6 @@ struct CompiledSystem final {
     std::vector<Row> rows;
     std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t pinned_count = 0;
-    mutable std::optional<SpinodalSearch> spinodal_search;
     std::size_t mode_count = 0;  // critical eigenvector coordinates u, just before the free intensives
     std::size_t free_intensive_count = 0;
     std::size_t rank = 0;
@@ -620,6 +622,13 @@ struct CompiledSystem final {
     double seed_temperature() const noexcept { return problem.temperature.is_positive() ? problem.temperature.value : 300.0; }
     double seed_pressure() const noexcept { return problem.pressure.is_positive() ? problem.pressure.value : 1.0e5; }
 
+    const std::optional<SpinodalSearch>& spinodal_diagnostics() const noexcept { return spinodal_diagnostics_; }
+
+private:
+    friend SpinodalKey;
+    mutable core::Retained<SpinodalKey, SpinodalSearch> spinodal_selection_;
+    mutable std::optional<SpinodalSearch> spinodal_diagnostics_;
+    mutable bool spinodal_corrector_ = false;
 };
 
 EPC_API CompiledSystem compile_problem(
