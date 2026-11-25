@@ -526,7 +526,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path)
     parser.add_argument("--linked", action="store_true", help="also check the editable extension and linked images")
-    parser.add_argument("--reuse-inventory", metavar="REVISION", help="generate a Markdown inventory of this production tree")
+    parser.add_argument("--reuse-inventory", metavar="REVISION", help="generate a Markdown inventory of a production revision")
     parser.add_argument("--reuse-self-test", action="store_true", help="run the retained-operand mutation controls")
     arguments = parser.parse_args()
     if not arguments.build_dir:
@@ -537,8 +537,8 @@ def main() -> int:
             for result in self_test(ROOT, arguments.build_dir):
                 print("ok  ", result)
             return 0
-        units, retained = inspect(ROOT, arguments.build_dir)
-    except (RuntimeError, OSError, ValueError) as error:
+        units, retained = inspect(ROOT, arguments.build_dir, arguments.reuse_inventory)
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
         print(f"FAIL  native reuse inventory: {error}", file=sys.stderr)
         return 1
     if arguments.reuse_inventory:

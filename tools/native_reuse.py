@@ -9,7 +9,7 @@ import re
 import shlex
 import subprocess
 import tempfile
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -44,7 +44,11 @@ class Location(C.Structure):
 
 
 class UnsavedFile(C.Structure):
-    _fields_ = [("filename", C.c_char_p), ("contents", C.c_char_p), ("length", C.c_ulong)]
+    _fields_ = [
+        ("filename", C.c_char_p),
+        ("contents", C.c_char_p),
+        ("length", C.c_ulong),
+    ]
 
 
 P = C.c_void_p
@@ -60,7 +64,11 @@ class Clang:
         for name, result, args in (
             ("createIndex", P, [C.c_int, C.c_int]),
             ("disposeIndex", None, [P]),
-            ("parseTranslationUnit", P, [P, C.c_char_p, C.POINTER(C.c_char_p), C.c_int, P, C.c_uint, C.c_uint]),
+            (
+                "parseTranslationUnit",
+                P,
+                [P, C.c_char_p, C.POINTER(C.c_char_p), C.c_int, P, C.c_uint, C.c_uint],
+            ),
             ("disposeTranslationUnit", None, [P]),
             ("getNumDiagnostics", C.c_uint, [P]),
             ("getDiagnostic", P, [P, C.c_uint]),
@@ -84,11 +92,17 @@ class Clang:
             ("getCursorSemanticParent", Cursor, [Cursor]),
             ("getCursorReferenced", Cursor, [Cursor]),
             ("getCursorLocation", Location, [Cursor]),
-            ("getExpansionLocation", None, [Location, C.POINTER(P), C.POINTER(C.c_uint), P, P]),
+            (
+                "getExpansionLocation",
+                None,
+                [Location, C.POINTER(P), C.POINTER(C.c_uint), P, P],
+            ),
             ("getFileName", String, [P]),
             ("Location_isInSystemHeader", C.c_int, [Location]),
             ("Cursor_isNull", C.c_int, [Cursor]),
             ("Cursor_getStorageClass", C.c_uint, [Cursor]),
+            ("getCursorTLSKind", C.c_uint, [Cursor]),
+            ("isConstQualifiedType", C.c_uint, [Type]),
             ("getCString", C.c_char_p, [String]),
             ("disposeString", None, [String]),
         ):
@@ -132,8 +146,96 @@ class Clang:
         return children
 
 
-FUNCTION = {"FunctionDecl", "CXXMethod", "Constructor", "Destructor", "ConversionFunction", "FunctionTemplate"}
-RECORD = {"StructDecl", "ClassDecl", "UnionDecl", "ClassTemplate", "ClassTemplatePartialSpecialization"}
+FUNCTION = {
+    "FunctionDecl",
+    "CXXMethod",
+    "Constructor",
+    "Destructor",
+    "ConversionFunction",
+    "FunctionTemplate",
+}
+RECORD = {
+    "StructDecl",
+    "ClassDecl",
+    "UnionDecl",
+    "ClassTemplate",
+    "ClassTemplatePartialSpecialization",
+}
+
+# Numerical records that can be supplied separately from the calculation that
+# produced them. C++ aliases and containers are resolved by record_types().
+RESULTS = frozenset(
+    [
+        "AssociationAction",
+        "AssociationJacobian",
+        "CheckResult",
+        "CompiledSystem",
+        "DensityRoot",
+        "DensityScanCache",
+        "ElectrolyteActivity",
+        "EquilibriumNumericalEstimates",
+        "EquilibriumResult",
+        "FitResult",
+        "GibbsDifference",
+        "GibbsDifferenceReference",
+        "HelmholtzDerivativeValues",
+        "InfiniteDilutionReference",
+        "IsothermMoments",
+        "NeutralReferenceReactionDiagnostic",
+        "NeutralReferenceTrace",
+        "ObservationEvaluation",
+        "OptimizerState",
+        "ParameterStandard",
+        "PhasePointValues",
+        "PointEvaluationValues",
+        "Prediction",
+        "PredictionGradient",
+        "PreparedSuppliedPoints",
+        "PreparedSuppliedTrials",
+        "PureIsothermalValues",
+        "ReferenceCache",
+        "ReferenceCalorics",
+        "ReferenceTaylor",
+        "ReferenceTaylorBatch",
+        "ReferenceTaylorPreparation",
+        "SolvedStateActionWorkspace",
+        "SolvedStateCaloricCenter",
+        "SolventActivity",
+        "SpinodalSearch",
+        "StabilityMeasure",
+        "StabilityReport",
+        "StabilityTrial",
+        "StandardTerm",
+        "State",
+    ]
+)
+
+# Objects reused across requests or callbacks. A field holding one of these
+# owners, or a static holding a native record, extends that storage graph.
+OWNERS = frozenset(
+    [
+        "CompiledSystem",
+        "DensityScanCache",
+        "EquilibriumContext",
+        "GibbsMinimizer",
+        "HelmholtzEvaluation",
+        "HelmholtzModel",
+        "HelmholtzTape",
+        "ObservationEvaluator::Impl",
+        "Prepared",
+        "PropertyContext",
+        "ReferenceCache",
+        "ReferenceTaylorBatch",
+        "ReferenceTaylorPreparation",
+        "SolvedStateActionWorkspace",
+        "SolvedStateCaloricCenter",
+        "Trial",
+    ]
+)
+
+
+def record_named(name, names):
+    return name.rsplit("::", 1)[-1] in names or any(name.endswith("::" + n) for n in names if "::" in n)
 
 
 @dataclass(frozen=True)
@@ -149,12 +251,11 @@ class Inventory:
         self.native = str(native) + "/"
         self.directory = native.parent
         self.locations = {}
-        self.results = set()
         self.record_operands = defaultdict(set)
-        self.native_parameters = set()
         self.storage = set()
         self.parameters = set()
         self.uses = set()
+        self.callbacks = set()
 
     def location(self, cursor):
         path, line = self.clang.location(cursor)
@@ -205,80 +306,161 @@ class Inventory:
     def operand(self, cursor):
         clang = self.clang
         ty = clang.getCursorType(cursor)
-        return Operand(clang.spelling(cursor), clang.string(clang.getTypeSpelling(clang.getCanonicalType(ty))),
-                       frozenset(self.record_types(ty)))
+        records = self.record_types(ty)
+        if clang.kind(cursor) == "ParmDecl":
+            # Dependent argument types expose their declaration through
+            # TemplateRef even when getTypeDeclaration cannot resolve it.
+            for child in clang.children(cursor):
+                if clang.kind(child) in {"TemplateRef", "TypeRef"}:
+                    declaration = clang.getCursorReferenced(child)
+                    if clang.kind(declaration) in RECORD and self.location(declaration)[0]:
+                        records.add(self.identity(declaration))
+        return Operand(
+            clang.spelling(cursor),
+            clang.string(clang.getTypeSpelling(clang.getCanonicalType(ty))),
+            frozenset(records),
+        )
 
-    def visit(self, cursor, function="", call=""):
+    def is_static(self, cursor):
+        clang = self.clang
+        parent = clang.getCursorSemanticParent(cursor)
+        return (
+            clang.kind(parent) in RECORD | {"Namespace", "TranslationUnit"}
+            or clang.Cursor_getStorageClass(cursor) == 3
+            or clang.getCursorTLSKind(cursor)
+        )
+
+    def callable_target(self, cursor, inherited):
+        clang = self.clang
+        kind = clang.kind(cursor)
+        if kind == "ReturnStmt":
+            return "return value"
+        if kind in {"FieldDecl", "VarDecl"}:
+            if kind == "FieldDecl" or self.is_static(cursor):
+                return self.identity(cursor)
+            return ""
+        if kind in {"BinaryOperator", "CallExpr"}:
+            children = clang.children(cursor)
+            if (kind == "BinaryOperator" or clang.spelling(clang.getCursorReferenced(cursor)) == "operator=") and (
+                len(children) >= 2 and clang.kind(children[0]) == "MemberRefExpr"
+            ):
+                return self.identity(clang.getCursorReferenced(children[0]))
+        return inherited
+
+    def raw_capture(self, children):
+        clang = self.clang
+        for child in children:
+            if clang.kind(child) == "CompoundStmt":
+                pending = [child]
+                while pending:
+                    expression = pending.pop()
+                    if clang.kind(expression) == "CXXThisExpr":
+                        return True
+                    pending.extend(clang.children(expression))
+                return False
+            if clang.kind(child) == "CXXThisExpr":
+                return True
+            if clang.kind(child) in {"DeclRefExpr", "VariableRef"}:
+                captured = clang.getCursorReferenced(child)
+                if clang.getPointeeType(clang.getCursorType(captured)).kind:
+                    return True
+        return False
+
+    def visit(self, cursor, function="", call="", target="", record=""):
         clang = self.clang
         kind = clang.kind(cursor)
         file, line = self.location(cursor)
         if not file and kind != "TranslationUnit":
             return
+        if kind in RECORD:
+            record = self.identity(cursor)
         if kind in FUNCTION:
             function = self.identity(cursor)
-            ty = clang.getCursorResultType(cursor)
-            if not clang.getPointeeType(ty).kind:
-                self.results.update(self.record_types(ty))
-            call = ""
-        if kind in {"FieldDecl", "C++ base class specifier", "VarDecl"}:
-            parent = clang.getCursorSemanticParent(cursor)
-            parent_kind = clang.kind(parent)
-            persistent = parent_kind in {"Namespace", "TranslationUnit"} or clang.Cursor_getStorageClass(cursor) == 3
+            call = target = ""
+            parameters = [child for child in clang.children(cursor) if clang.kind(child) == "ParmDecl"]
+            for position, child in enumerate(parameters, 1):
+                arg_file, arg_line = self.location(child)
+                self.parameters.add((function, position, self.operand(child), arg_file, arg_line))
+        if kind in {"FieldDecl", "C++ base class specifier"} or (kind == "VarDecl" and self.is_static(cursor)):
             operand = self.operand(cursor)
-            if kind != "VarDecl" or persistent or operand.type.startswith("std::map<"):
-                owner = self.identity(parent)
-                if parent_kind in RECORD:
-                    self.record_operands[owner].update(operand.records)
-                form = "store" if parent_kind in RECORD else "static" if persistent else "local"
-                self.storage.add((form, owner, operand, file, line))
-        if kind == "ParmDecl" and function:
-            operand = self.operand(cursor)
-            self.parameters.add((function, operand, file, line))
-            if operand.type.endswith((" *", " &")):
-                for child in clang.children(cursor):
-                    if clang.kind(child) in {"TemplateRef", "TypeRef"}:
-                        declaration = clang.getCursorReferenced(child)
-                        if clang.kind(declaration) in RECORD and self.location(declaration)[0]:
-                            self.native_parameters.add((function, operand, self.identity(declaration)))
+            if kind == "VarDecl":
+                if not clang.isConstQualifiedType(clang.getCursorType(cursor)):
+                    self.storage.add(
+                        (
+                            "static",
+                            self.identity(clang.getCursorSemanticParent(cursor)),
+                            operand,
+                            file,
+                            line,
+                        )
+                    )
+            else:
+                self.record_operands[record].update(operand.records)
+                self.storage.add(("member", record, operand, file, line))
         if kind == "CallExpr" and function:
             called = clang.getCursorReferenced(cursor)
             if self.location(called)[0]:
                 call = self.identity(called)
-        if kind in {"DeclRefExpr", "MemberRefExpr"} and function:
+        if kind == "MemberRefExpr" and function and call:
             ref = clang.getCursorReferenced(cursor)
-            if clang.kind(ref) in {"ParmDecl", "FieldDecl", "VarDecl"} and self.location(ref)[0] and (call or kind == "MemberRefExpr"):
+            if clang.kind(ref) == "FieldDecl" and self.location(ref)[0]:
                 operand = self.operand(ref)
-                if operand.records or kind == "MemberRefExpr":
-                    origin = self.identity(clang.getCursorSemanticParent(ref))
-                    self.uses.add((function, origin, operand, call, file, line))
-        for child in clang.children(cursor):
-            self.visit(child, function, call)
+                if operand.records:
+                    source = self.identity(clang.getCursorSemanticParent(ref))
+                    self.uses.add((function, source, operand, call, file, line))
+        target = self.callable_target(cursor, target)
+        children = clang.children(cursor)
+        if kind == "LambdaExpr" and function and target:
+            if self.raw_capture(children):
+                self.callbacks.add(Site("callback", function, target, file, line))
+            target = ""
+        for child in children:
+            self.visit(child, function, call, target, record)
 
     def sites(self):
-        # A native returned record remains a result when buried under an alias, a
-        # container, a base or a preparation/owner that holds it by pointer.
-        retained = set(self.results)
-        while True:
-            owners = {owner for owner, operands in self.record_operands.items() if operands & retained}
-            if owners <= retained:
-                break
-            retained.update(owners)
-        sites = set()
-        stored_types = set().union(*self.record_operands.values())
-        stored_parameters = {(reader, operand) for reader, operand, record in self.native_parameters if record in stored_types}
+        retained = {name for _, _, op, _, _ in self.storage for name in op.records if record_named(name, RESULTS)}
+        owners = {name for name in self.record_operands if record_named(name, OWNERS)}
+        owners.update(name for form, _, operand, _, _ in self.storage if form == "static" for name in operand.records)
+        pending = list(owners)
+        while pending:
+            for record in self.record_operands.get(pending.pop(), ()):
+                if record not in owners and record not in retained:
+                    owners.add(record)
+                    pending.append(record)
+
+        def is_retained(operand):
+            return any(record_named(name, RESULTS) for name in operand.records)
+
+        sites = set(self.callbacks)
         for form, owner, operand, file, line in self.storage:
-            if operand.records & retained or operand.type.startswith("std::function<") or (
-                form == "local" and operand.type.startswith("std::map<std::vector<double>")
-            ):
+            callable_member = operand.type.startswith("std::function<")
+            if form == "static" or owner in owners or callable_member:
                 sites.add(Site(form, owner, f"{operand.name}: {operand.type}", file, line))
-        for owner, operand, file, line in self.parameters:
-            numerical_input = operand.type.startswith(("const std::vector<", "const std::array<")) and operand.type.endswith(" *")
-            if operand.records & retained or numerical_input or (owner, operand) in stored_parameters:
-                sites.add(Site("reader", owner, f"{operand.name}: {operand.type}", file, line))
+
+        readers = set()
+        for owner, position, operand, file, line in self.parameters:
+            if is_retained(operand):
+                readers.add(owner)
+                sites.add(
+                    Site(
+                        "reader",
+                        owner,
+                        f"parameter {position}: {operand.type}",
+                        file,
+                        line,
+                    )
+                )
         for reader, owner, operand, call, file, line in self.uses:
-            if operand.records & retained or (owner, operand) in stored_parameters:
-                edge = f"{call} ← " if call else ""
-                sites.add(Site("forward" if call else "read", reader, edge + f"{owner}::{operand.name}", file, line))
+            if call in readers and is_retained(operand) and (owner in owners or record_named(owner, RESULTS)):
+                sites.add(
+                    Site(
+                        "forward",
+                        reader,
+                        f"{call} ← {owner}::{operand.name}",
+                        file,
+                        line,
+                    )
+                )
         by_key = {}
         for site in sorted(sites):
             by_key.setdefault(site.key, site)
@@ -287,7 +469,12 @@ class Inventory:
 
 def production_commands(root, build):
     native = root / "engine/native"
-    declared = set(re.findall(r"['\"](native/[^'\"\s]+\.cpp)['\"]", (root / "engine/meson.build").read_text()))
+    declared = set(
+        re.findall(
+            r"['\"](native/[^'\"\s]+\.cpp)['\"]",
+            (root / "engine/meson.build").read_text(),
+        )
+    )
     sources = {str(path.relative_to(root / "engine")) for path in native.rglob("*.cpp")}
     if sources != declared:
         raise RuntimeError(f"native sources and Meson disagree: {sorted(sources ^ declared)}")
@@ -321,15 +508,19 @@ def scan(root, commands, overlays=None):
     clang = Clang()
     resource = subprocess.check_output(["clang++-18", "-print-resource-dir"], text=True).strip()
     inventory = Inventory(clang, root / "engine/native")
-    unsaved = (UnsavedFile * len(overlays or {}))(*(
-        UnsavedFile(str(path).encode(), contents, len(contents)) for path, contents in (overlays or {}).items()
-    ))
+    unsaved = (UnsavedFile * len(overlays or {}))(
+        *(UnsavedFile(str(path).encode(), contents, len(contents)) for path, contents in (overlays or {}).items())
+    )
     index = clang.createIndex(0, 0)
     try:
         for directory, source, args in commands:
             inventory.directory = directory
             inventory.locations.clear()
-            arguments = [f"-working-directory={directory}", f"-resource-dir={resource}", *args]
+            arguments = [
+                f"-working-directory={directory}",
+                f"-resource-dir={resource}",
+                *args,
+            ]
             argv = (C.c_char_p * len(arguments))(*(arg.encode() for arg in arguments))
             unit = clang.parseTranslationUnit(index, str(source).encode(), argv, len(argv), unsaved, len(unsaved), 0)
             if not unit:
@@ -351,28 +542,41 @@ def scan(root, commands, overlays=None):
     return inventory.sites()
 
 
-def inspect(root: Path, build: Path) -> tuple[int, list[Site]]:
+def inspect(root: Path, build: Path, revision: str | None = None) -> tuple[int, list[Site]]:
     commands = production_commands(root, build)
-    return len(commands), scan(root, commands)
+    overlays = {}
+    if revision:
+        revision = subprocess.check_output(["git", "rev-parse", "--verify", revision], cwd=root, text=True).strip()
+        changed = subprocess.check_output(
+            ["git", "diff", "--name-only", "-z", revision, "--", "engine/native", "engine/meson.build"], cwd=root
+        )
+        for path in changed.decode().split("\0"):
+            if path == "engine/meson.build" or path.endswith(".cpp") and not (root / path).is_file():
+                raise RuntimeError("the requested revision needs a production compile database of its own")
+            if path:
+                overlays[root / path] = subprocess.check_output(["git", "show", f"{revision}:{path}"], cwd=root)
+    return len(commands), scan(root, commands, overlays)
 
 
 def table(revision: str, units: int, sites: list[Site]) -> str:
-    groups = defaultdict(list)
-    for site in sites:
-        groups[site.kind, site.owner].append(site)
+    counts = Counter(site.kind for site in sites)
     lines = [
         "# Native retained-result inventory",
         "",
         f"Generated from production revision `{revision}` with Clang 18.",
-        f"Inspected {units} translation units and flagged {len(sites)} operand sites at {len(groups)} boundaries.",
+        f"Inspected {units} translation units and flagged {len(sites)} entries.",
         "",
-        "| Kind | Owner or reader | Operand sites | Locations under engine/native |",
-        "| --- | --- | ---: | --- |",
+        "| Kind | Entries |",
+        "| --- | ---: |",
+        *(f"| {kind} | {count} |" for kind, count in sorted(counts.items())),
+        "",
+        "| Kind | Owner or reader | Operand | Location under engine/native |",
+        "| --- | --- | --- | --- |",
     ]
-    for (kind, owner), group in groups.items():
-        owner = owner.replace("|", r"\|")
-        locations = ", ".join(f"`{file}:{line}`" for file, line in sorted({(site.file, site.line) for site in group}))
-        lines.append(f"| {kind} | `{owner}` | {len(group)} | {locations} |")
+    for site in sites:
+        owner = site.owner.replace("|", r"\|")
+        operand = site.operand.replace("|", r"\|")
+        lines.append(f"| {site.kind} | `{owner}` | `{operand}` | `{site.file}:{site.line}` |")
     return "\n".join(lines) + "\n"
 
 
@@ -402,30 +606,81 @@ def self_test(root, build):
         return [site for site in after if site.key not in baseline]
 
     for name in ("column_buffer", "trial_dimension"):
+
         def alias(text, name=name):
-            text = text.replace("struct ObservationEvaluator::Impl final {",
+            text = text.replace(
+                "struct ObservationEvaluator::Impl final {",
                 f"struct ObservationEvaluator::Impl final {{\n"
                 f"    using Column = std::optional<Prediction>;\n"
-                f"    Column {name};\n", 1)
+                f"    Column {name};\n",
+                1,
+            )
             marker = '        core::Scope scope("fit_evaluation");'
             assert marker in text
-            return text.replace(marker,
-                f"        if ({name} && {name}->value) {{ out.predictions = {{*{name}->value}}; return true; }}\n{marker}", 1)
+            return text.replace(
+                marker,
+                f"        if ({name} && {name}->value) {{ out.predictions = {{*{name}->value}}; return true; }}\n{marker}",
+                1,
+            )
 
         sites = additions("fit.cpp", alias)
-        assert any(site.kind == "store" and "ObservationEvaluator::Impl" in site.owner
-                   and site.operand.startswith(name + ":") for site in sites), sites
+        assert any(
+            site.kind == "member" and "ObservationEvaluator::Impl" in site.owner and site.operand.startswith(name + ":")
+            for site in sites
+        ), sites
         yield f"aliased std::optional<Prediction> in ObservationEvaluator::Impl::{name} flagged"
 
     def stale(text):
         current = "density_branches_at(compiled, prepared, anchors, initial, scope, limits, &roots)"
         assert current in text
-        return text.replace(current,
-            "density_branches_at(compiled, *result.prepared_endpoint, anchors, initial, scope, limits, &roots)", 1)
+        return text.replace(
+            current,
+            "density_branches_at(compiled, *result.prepared_endpoint, anchors, initial, scope, limits, &roots)",
+            1,
+        )
 
     sites = additions("phase_boundary.cpp", stale)
-    assert any(site.kind == "forward" and "::check_density_branches " in site.owner
-               and "::density_branches_at " in site.operand and "::prepared_endpoint" in site.operand
-               for site in sites), sites
+    assert any(
+        site.kind == "forward"
+        and "::check_density_branches " in site.owner
+        and "::density_branches_at " in site.operand
+        and "::prepared_endpoint" in site.operand
+        for site in sites
+    ), sites
     assert not any(site.kind == "reader" for site in sites), sites
     yield "stale PhasePoint forwarding flagged in check_density_branches with its declaration unchanged"
+
+    def static_cache(text):
+        marker = '        core::Scope scope("fit_evaluation");'
+        assert marker in text
+        return text.replace(
+            marker,
+            """        static thread_local std::optional<Prediction> saved_row;
+        if (saved_row && saved_row->value) {
+            out.predictions = {*saved_row->value};
+            return true;
+        }
+"""
+            + marker,
+            1,
+        )
+
+    sites = additions("fit.cpp", static_cache)
+    assert any(site.kind == "static" and site.operand.startswith("saved_row:") for site in sites), sites
+    yield "thread-local static Prediction cache flagged"
+
+    def raw_pointer(text):
+        return (
+            text
+            + """
+namespace epcsaft {
+std::function<double()> retained_pressure(const State* state) {
+    return [state] { return state->pressure; };
+}
+}
+"""
+        )
+
+    sites = additions("phase_boundary.cpp", raw_pointer)
+    assert any(site.kind == "callback" and "::retained_pressure " in site.owner for site in sites), sites
+    yield "returned callable capturing a raw State pointer flagged"
