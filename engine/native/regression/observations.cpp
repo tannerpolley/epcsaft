@@ -654,20 +654,6 @@ Prediction predict(
 }
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
-    if (observation.kind == ObservationKind::Stability) {
-        if (!result.stability) {
-            result.stability = std::make_shared<equilibrium::StabilityMeasure>(
-                equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
-            for (auto& trial : result.stability->report.trials) {
-                trial.optimizer.prepared_endpoint.reset();
-                trial.optimizer.optimizer_state.reset();
-            }
-        }
-        result.unit = "1";
-        if (!result.stability->available) { result.value.reset(); result.residual.reset();
-            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
-        finish(result, observation, *result.stability->value); return;
-    }
     if (electrolyte_observation(observation.kind)) {
         double value = 0.0;
         result.unit = "1";
@@ -697,10 +683,31 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     const auto components = parameters.component_count();
     if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant
         || addition(observation.kind)) return;
-    const auto& solved = *result.solved;
-    bool missing_mass = false;
     result.value.reset();
     result.residual.reset();
+    if (!result.solved || !result.solved->has_state()) {
+        result.stability.reset();
+        result.reference.reset();
+        result.caloric_center.reset();
+        result.analytical_osmotic_coefficient.reset();
+        result.status = ObservationStatus::CentralSolveUnavailable;
+        result.message = "central solved state unavailable";
+        return;
+    }
+    if (observation.kind == ObservationKind::Stability) {
+        result.stability = std::make_shared<equilibrium::StabilityMeasure>(
+            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+        for (auto& trial : result.stability->report.trials) {
+            trial.optimizer.prepared_endpoint.reset();
+            trial.optimizer.optimizer_state.reset();
+        }
+        result.unit = "1";
+        if (!result.stability->available) {
+            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
+        finish(result, observation, *result.stability->value); return;
+    }
+    const auto& solved = *result.solved;
+    bool missing_mass = false;
     const auto phase = observation.phase;
     const double* fractions = solved.mole_fractions.data() + phase * components;
     double value = 0.0;
@@ -744,7 +751,11 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         const auto solvent = observation.species[0];
         std::vector<double> pure(components, 0.0);
         pure[solvent] = 1.0;
-        if (!result.reference) result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
+        if (!result.reference || result.reference->model != model.identity()
+            || !core::bitwise_equal(result.reference->temperature, *solved.temperature)
+            || !core::bitwise_equal(result.reference->pressure, *solved.pressure)
+            || !core::bitwise_equal(result.reference->solvent_fractions, pure))
+            result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
         const auto& reference = *result.reference;
         if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
         if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
@@ -793,12 +804,9 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     case ObservationKind::AssociationSiteFraction: {
         result.unit = "1";
         try {
-            if (result.phase_site_fractions.find(phase) == result.phase_site_fractions.end()) {
-                auto evaluated = equilibrium::phase_site_values(model, solved, phase);
-                core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
-                result.phase_site_fractions.emplace(phase, std::move(evaluated.site_fractions));
-            }
-            value = result.phase_site_fractions.at(phase).at(*observation.site);
+            const auto evaluated = equilibrium::phase_site_values(model, solved, phase);
+            core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
+            value = evaluated.site_fractions.at(*observation.site);
         } catch (const core::ConvergenceFailure& failure) {
             result = unavailable_solve(std::move(result), failure);
             return;
@@ -1037,7 +1045,12 @@ std::vector<PredictionGradient> differentiate_group(
     }
     for (const auto& input : inputs) directions.push_back(input.state);
     if (observations.front()->kind == ObservationKind::Stability) {
-        PredictionGradient out; const auto& measure = *prediction.stability;
+        PredictionGradient out;
+        if (!prediction.stability || !prediction.solved || !prediction.solved->has_state()
+            || prediction.solved->model_identity != model.identity()) {
+            out.message = "central stability state unavailable"; return {out};
+        }
+        const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
         const auto& row = *observations.front();
         using Kind = equilibrium::SolvedStateObservableKind;

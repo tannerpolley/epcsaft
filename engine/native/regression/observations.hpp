@@ -137,7 +137,6 @@ struct Prediction final {
     bool supplied_available = false;
     std::shared_ptr<Prediction> pressure_reference;
     std::vector<double> stability_raw_gradient;
-    std::map<std::size_t, std::vector<double>> phase_site_fractions;
 };
 
 // d(value)/d(theta) in EOS-row order, then the requested reaction-coordinate order;

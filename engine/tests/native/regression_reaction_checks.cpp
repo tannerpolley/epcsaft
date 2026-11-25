@@ -2024,6 +2024,14 @@ void check_reactive_solvent_activity() {
     agree("reactive-solvent/zero-Fe-chloride", "aw", "1", *chloride.value, *old.solvent_activity, 1e-12, 1e-10, "unchanged chloride limit");
     agree("reactive-solvent/analytical-osmotic", "phi", "1", *chloride.analytical_osmotic_coefficient,
         std::get<double>(*old.osmotic_coefficient), 1e-12, 1e-10, "analytical denominator equals dissolved species count without reactions");
+    auto warmer = row;
+    warmer.problem.temperature.value += 5.0;
+    const auto fresh = predict(model, warmer);
+    CHECK(fresh.status == ObservationStatus::Available && fresh.value != chloride.value);
+    auto projected = fresh;
+    projected.reference = chloride.reference;
+    project_prediction(model, warmer, projected);
+    CHECK(projected.status == fresh.status && projected.value == fresh.value);
     auto missing = prediction; missing.reference->pure_solvent_state.reset();
     project_prediction(model, row, missing);
     CHECK(missing.status == ObservationStatus::ReferenceUnavailable);

@@ -112,6 +112,10 @@ void check_stability_requirement() {
     CHECK(*initial.stability->value < -*initial.stability->uncertainty);
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
+    auto refused = initial;
+    refused.solved->success = false;
+    project_prediction(model, row, refused);
+    CHECK(refused.status == ObservationStatus::CentralSolveUnavailable && !refused.value && !refused.stability);
     auto supplied = liquid;
     supplied.packing_guess = model.packing_fraction_coefficient(293.15, liquid.composition_guess) * initial.solved->molar_densities.at(0);
     const auto bank = prepare_supplied_trials(model, 293.15, {supplied});
