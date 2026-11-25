@@ -124,7 +124,8 @@ m._serve_fit(channel)
         .def(nb::init<>())
         EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, analytical_solute_molality, finite_solute_molalities,
             reference_composition, branch, problem, final_problem, feed_amount, basis_amount, loading_cap, loading_bounds, loading_grid, reaction, phase, species,
-            denominator_phase, denominator_species, mass_basis, observed, form, scale, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10, log_terms);
+            denominator_phase, denominator_species, mass_basis, observed, form, scale, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10)
+        EPCSAFT_COPIED(Observation, log_terms);
     nb::enum_<CheckMetric>(module, "CheckMetric")
         EPCSAFT_VALUES(CheckMetric, AbsoluteDifference, AbsoluteLog10Ratio);
     nb::class_<HydrationHold>(module, "HydrationHold")
