@@ -10,6 +10,8 @@ cd "$workspace_root"
 export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 [[ -f build/environment-wheel/meson-build-dir ]] || bash tools/setup.sh --native
 build_dir="$(<build/environment-wheel/meson-build-dir)"
+# Refresh the test list before looking up newly registered programs.
+"$NINJA" -C "$build_dir" build.ninja
 tests=("$@")
 if ((${#tests[@]} == 0)); then
     tests=(contributions 'properties/*' diagnostics specification surface_example regression
