@@ -1924,11 +1924,19 @@ void check_gross_2002_cooling_onset() {
     CHECK(std::count_if(checks.front().trials.begin(), checks.front().trials.end(), [](const auto& t) { return t.resolved_descent; }) == 1);
     tpd_compare("gross-2002-cooling-onset/T-475", *metastable.temperature, 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
-    CHECK(refused.candidate == Candidate::Refused && !refused.has_state() && !refused.success);
-    CHECK(!refused.temperature && !refused.pressure && refused.amounts.empty()
-          && refused.mole_fractions.empty() && refused.molar_densities.empty());
-    CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root") != std::string::npos
-          || (refused.topology_event == TopologyEvent::PhasesCoalesced && refused.convergence.cause == "phases_coalesced"));
+    CHECK(!refused.has_state() && !refused.success && !refused.temperature && !refused.pressure
+          && refused.amounts.empty() && refused.mole_fractions.empty() && refused.molar_densities.empty());
+    const bool vapor_density_refused = refused.message.find(
+        "vapor branch not admitted by the finite search: the sole stable root") != std::string::npos;
+    // Cooling onset retains the ordinary unstable candidate if its vapor-reference search fails.
+    const bool unstable_reference_refusal = refused.candidate == Candidate::Unstable
+        && refused.convergence.cause == "local_phase_instability"
+        && refused.message.find("phase L has lowest eigenvalue") != std::string::npos
+        && refused.message.find("cooling onset refused: vapor reference unavailable: phase V") != std::string::npos
+        && vapor_density_refused;
+    CHECK(unstable_reference_refusal || (refused.candidate == Candidate::Refused
+        && (vapor_density_refused || (refused.topology_event == TopologyEvent::PhasesCoalesced
+                                     && refused.convergence.cause == "phases_coalesced"))));
     // Water(0.87) from 600 K: the ordinary dew coalesces into the vapor; a rejected publication is not
     // instability, so the onset search does not run and the failure returns unchanged.
     const auto [coalesced, unsearched] = run(model, 0.87, 600.0, 1.013e5);
