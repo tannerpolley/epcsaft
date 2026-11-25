@@ -1936,7 +1936,9 @@ both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
 element potentials initialized anew. For a saturation-capped addition, a failed
 node started from its predecessor is retained and the same declared node is
-solved cold within the remaining work allowance.
+solved cold within the remaining work allowance. Fit trials with identical EOS
+parameters can retain the model’s reference series and derivative tapes while
+fitting new reaction coefficients.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded
@@ -1955,7 +1957,8 @@ refusal, before publication of a full-interval root. A capped addition examines 
 through the first pressure event or the first loading at or above its source
 cap. With no event through the cap, the endpoint is the source cap and the
 saturation loading is unavailable. A sampled slope reversal is relevant to this
-decision when a participating node's pressure interval includes the target.
+decision in a cell that brackets the target or when a participating node’s
+pressure interval includes the target.
 “Unique within the declared search” excludes
 between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
 owns the heat, moving denominator and switch derivative.

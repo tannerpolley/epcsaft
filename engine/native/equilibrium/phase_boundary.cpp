@@ -2319,7 +2319,9 @@ static bool loading_pressure_event(const SaturationNode& node) {
 void admit_loading_search(SaturationSearch& out, std::optional<double> loading_cap) {
     compare_loading_candidates(out, {});
     for (std::size_t i = 0; i < out.nodes.size(); ++i) {
-        if (loading_cap && !loading_pressure_event(out.nodes[i]) && (!i || !loading_pressure_event(out.nodes[i - 1]))) continue;
+        const auto& node = out.nodes[i];
+        if (loading_cap && !loading_pressure_event(node) && (!i || (!loading_pressure_event(out.nodes[i - 1])
+            && std::signbit(node.mismatch) == std::signbit(out.nodes[i - 1].mismatch)))) continue;
         out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
     }
     const bool covered_cap = loading_cap && out.complete && !out.nodes.empty() && out.nodes.back().loading >= *loading_cap;
@@ -2376,6 +2378,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
         if (n.state.failure) {
             try { std::rethrow_exception(n.state.failure); }
+            catch (const std::bad_alloc&) { throw; }
             catch (const BudgetExhausted&) { throw; }
             catch (const std::exception& error) {
                 if (!loading_cap || !start) throw;
@@ -2482,7 +2485,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
             out.complete = out.candidates.size() == out.events.size()
                 && std::find(out.causes.begin(), out.causes.end(), "unexamined_gap") == out.causes.end();
         }
-    } catch (const std::exception& error) {
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception& error) {
         core::retain_failure(out.first_numerical_failure, error, "saturation search");
         fail(dynamic_cast<const BudgetExhausted*>(&error) ? "budget_exhausted" : error.what()); fail("unexamined_gap");
     }

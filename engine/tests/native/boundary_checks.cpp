@@ -1203,6 +1203,14 @@ void check_saturation_refusals() {
     CHECK(search.groups.size() == 2 && search.groups[0].size() == 2 && !search.accepted);
     CHECK(std::find(search.causes.begin(), search.causes.end(), "multiple_roots") != search.causes.end());
     CHECK(std::find(search.causes.begin(), search.causes.end(), "unresolved_slope_reversal") != search.causes.end());
+    // A strict pressure bracket with opposing endpoint slopes cannot establish the first root.
+    SaturationSearch bracket;
+    bracket.nodes = {search.nodes[1], search.nodes[3]};
+    bracket.candidates = {search.candidates.front()};
+    bracket.brackets = 1; bracket.complete = true;
+    admit_loading_search(bracket, 0.6);
+    CHECK(!bracket.accepted && bracket.causes == std::vector<std::string>{"unresolved_slope_reversal"});
+
     auto repeated = search;
     repeated.candidates.erase(repeated.candidates.begin() + 1);
     repeated.groups.clear(); repeated.comparisons.clear(); repeated.causes.clear(); repeated.accepted.reset();
