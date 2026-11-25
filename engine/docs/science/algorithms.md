@@ -1934,9 +1934,9 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
-element potentials initialized anew. During a fit, an admitted previous search
-can supply the physical start at the same loading after the ordinary continuation
-has passed the first pressure event and established its correction seed. Each node records whether
+element potentials initialized anew. At a fit point that meets the parameter-nearness criterion, the preceding admitted
+search can supply a start at the same loading once ordinary continuation has passed
+the first pressure event and established its correction seed. Each node records whether
 that start passed the current model’s solve, uncertainty and sampled slope
 checks, including the pressure increment from the preceding node. The search
 retains a rejected node and retries with the ordinary grid start within the

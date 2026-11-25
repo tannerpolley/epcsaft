@@ -28,6 +28,7 @@ void check_electrolyte_row_signed_zero();
 void check_electrolyte_prediction_origin();
 void check_addition_enthalpy();
 void check_saturation_capped_addition();
+void check_merkley_saturation_loading();
 void check_phase_bulk_relative_permittivity();
 void check_log_constant();
 void check_f1();
@@ -94,6 +95,7 @@ int main(int argc, char** argv) {
         {{"native.regression.electrolyte-prediction-origin", "electrolyte-prediction-origin"}, check_electrolyte_prediction_origin},
         {{"native.regression.addition-enthalpy", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
         {{"native.regression.phase-bulk-relative-permittivity", "phase-bulk-relative-permittivity"}, check_phase_bulk_relative_permittivity, "R2"},
+        {{"native.regression.merkley-saturation-loading", "merkley-saturation-loading"}, check_merkley_saturation_loading, "R1"},
         {{"native.regression.saturation-capped-addition", "saturation-capped-addition"}, check_saturation_capped_addition, "R1"},
         {{"native.regression.ln-k", "ln-k"}, check_log_constant, "R2"},
         {{"native.regression.r1-f1", "R1-F1"}, check_f1, "R1"},
