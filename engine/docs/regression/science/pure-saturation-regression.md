@@ -37,8 +37,8 @@ branches can escape this finite search. It is not an interval uniqueness or
 phase-stability certificate.
 
 Missing coverage, branch loss or exhausted shared work in the required prefix
-refuse the row. A sampled slope reversal away from the target pressure does
-not prevent the source-cap decision. Missing initial calorics can preserve the admitted
+refuse the row. A sampled maximum below target can prevent the source-cap decision when the
+endpoint tangents intersect at or above target. Missing initial calorics can preserve the admitted
 saturation result while refusing heat. A later derivative refusal preserves a
 valid heat. At the exact minimum switch there is no ordinary heat gradient;
 no smoothing or tolerance band changes the heat value.

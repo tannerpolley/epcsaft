@@ -1211,6 +1211,22 @@ void check_saturation_refusals() {
     admit_loading_search(bracket, 0.6);
     CHECK(!bracket.accepted && bracket.causes == std::vector<std::string>{"unresolved_slope_reversal"});
 
+    // Across a half-unit cell the endpoint tangents meet exactly at the target:
+    // the left tangent needs 1/8 loading unit to reach it and the right needs 3/8.
+    SaturationSearch maximum;
+    maximum.nodes = bracket.nodes;
+    auto& left = maximum.nodes.front(); auto& right = maximum.nodes.back();
+    left.loading = 0.25; right.loading = 0.75;
+    left.mismatch = -1; right.mismatch = -1.5;
+    left.slope = 8; right.slope = -4;
+    maximum.complete = true;
+    admit_loading_search(maximum, right.loading);
+    CHECK(maximum.causes == std::vector<std::string>{"unresolved_slope_reversal"});
+    maximum.causes.clear();
+    right.mismatch = -2;
+    admit_loading_search(maximum, right.loading);
+    CHECK(maximum.causes.empty());
+
     auto repeated = search;
     repeated.candidates.erase(repeated.candidates.begin() + 1);
     repeated.groups.clear(); repeated.comparisons.clear(); repeated.causes.clear(); repeated.accepted.reset();

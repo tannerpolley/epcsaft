@@ -1958,7 +1958,14 @@ through the first pressure event or the first loading at or above its source
 cap. With no event through the cap, the endpoint is the source cap and the
 saturation loading is unavailable. A sampled slope reversal is relevant to this
 decision in a cell that brackets the target or when a participating node’s
-pressure interval includes the target.
+pressure interval includes the target. For two resolved pressures below target,
+a positive left slope and a negative right slope indicate an interior maximum.
+Its pressure estimate is the intersection of the two endpoint tangents. With
+pressure mismatches $r_L,r_R<0$, exact loading slopes $s_L>0>s_R$ and cell
+width $h$, the estimate reaches the target when $-r_L/s_L+r_R/s_R\le h$.
+Equality also refuses the row with `unresolved_slope_reversal`. The tangents
+bound the pressure from above throughout a concave cell. In a cell with an
+inflection their intersection supplies only a screening estimate.
 “Unique within the declared search” excludes
 between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
 owns the heat, moving denominator and switch derivative.

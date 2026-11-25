@@ -2316,12 +2316,24 @@ static bool loading_pressure_event(const SaturationNode& node) {
     return std::abs(node.mismatch) <= node.estimates.pressure.absolute;
 }
 
+static bool loading_maximum_reaches_target(const SaturationNode& left, const SaturationNode& right) {
+    if (!(left.mismatch < 0 && right.mismatch < 0 && left.slope > 0 && right.slope < 0)) return false;
+    // Distances in loading from each endpoint to its tangent's crossing of the target.
+    const double from_left = -left.mismatch / left.slope;
+    const double from_right = right.mismatch / right.slope;
+    return from_left + from_right <= right.loading - left.loading;
+}
+
 void admit_loading_search(SaturationSearch& out, std::optional<double> loading_cap) {
     compare_loading_candidates(out, {});
     for (std::size_t i = 0; i < out.nodes.size(); ++i) {
         const auto& node = out.nodes[i];
-        if (loading_cap && !loading_pressure_event(node) && (!i || (!loading_pressure_event(out.nodes[i - 1])
-            && std::signbit(node.mismatch) == std::signbit(out.nodes[i - 1].mismatch)))) continue;
+        if (loading_cap && !loading_pressure_event(node)) {
+            if (!i) continue;
+            const auto& prior = out.nodes[i - 1];
+            if (!loading_pressure_event(prior) && std::signbit(node.mismatch) == std::signbit(prior.mismatch)
+                && !loading_maximum_reaches_target(prior, node)) continue;
+        }
         out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
     }
     const bool covered_cap = loading_cap && out.complete && !out.nodes.empty() && out.nodes.back().loading >= *loading_cap;
