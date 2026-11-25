@@ -11,7 +11,7 @@ inputs and reads results from the C++ Engine.
 ## Install
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=1.3.2
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=0.1.0
 conda activate epcsaft
 ```
 
@@ -22,12 +22,12 @@ for supported platforms and source installation.
 
 <!-- nacl-example-start -->
 From an empty directory, download and extract the Held, Cameretti and
-Sadowski (2008) parameter packet from the **1.3.2** source release. The conda
+Sadowski (2008) parameter packet from the **0.1.0** source release. The conda
 package includes two neutral-fluid packets.
 
 ```bash
-curl -fLO https://github.com/tannerpolley/epcsaft/releases/download/v1.3.2/epcsaft-1.3.2.tar.gz
-tar -xzf epcsaft-1.3.2.tar.gz --strip-components=1 epcsaft-1.3.2/data/packets/held-cameretti-sadowski-2008/4
+curl -fLO https://github.com/tannerpolley/epcsaft/releases/download/v0.1.0/epcsaft-0.1.0.tar.gz
+tar -xzf epcsaft-0.1.0.tar.gz --strip-components=1 epcsaft-0.1.0/data/packets/held-cameretti-sadowski-2008/4
 ```
 
 In Python, calculate the molality-scale mean ionic activity coefficient
