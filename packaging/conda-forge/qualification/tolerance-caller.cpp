@@ -10,7 +10,7 @@
 #endif
 int main() {
 #ifdef _WIN32
-    for (const wchar_t* name : {L"epcsaft_native.dll", L"epcsaft_ipopt_3119.dll", L"dmumps.dll", L"openblas.dll"}) {
+    for (const wchar_t* name : {L"epcsaft_native.dll", L"epcsaft_ipopt_31420.dll", L"dmumps.dll", L"openblas.dll"}) {
         char path[32768];
         const auto module = GetModuleHandleW(name);
         if (!module || !GetModuleFileNameA(module, path, 32768)) return 1;

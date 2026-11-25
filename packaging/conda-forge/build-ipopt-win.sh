@@ -17,13 +17,13 @@ FC="$(cygpath -u "$BUILD_PREFIX")/Library/bin/flang.exe"
 export FC
 test -x "$FC"
 export F77="$FC"
-# Autoconf 2.59 misreads Flang's MSVC verbose link output as GNU libraries.
+# Autoconf misreads Flang's MSVC verbose link output as GNU libraries.
 # Supply real libraries, while leaving its mixed-language link probes enabled.
 build_library_prefix=$(cygpath -m "$BUILD_PREFIX")/Library/lib
 export FLIBS="-L$build_library_prefix -lflang -lflangrti -lompstub"
 export FFLAGS="-O2 $FLIBS -lflangmain -lmsvcrt -Xlinker /subsystem:console"
-export CFLAGS="$CFLAGS -DIPOPT_BUILD -fno-fast-math -ffp-contract=off"
-export CXXFLAGS="$CXXFLAGS -DIPOPT_BUILD -fno-fast-math -ffp-contract=off -Wno-reserved-user-defined-literal"
+export CFLAGS="$CFLAGS -fno-fast-math -ffp-contract=off"
+export CXXFLAGS="$CXXFLAGS -fno-fast-math -ffp-contract=off -Wno-reserved-user-defined-literal"
 # Preserve forward slashes in configure-generated include flags.
 export CYGPATH_W="cygpath -m"
 export CPPFLAGS="$CPPFLAGS -I$library_prefix/include"
@@ -45,12 +45,12 @@ retain_configuration() {
 trap retain_configuration EXIT
 # Native Windows make cannot resolve MSYS absolute /d source paths.
 ../ipopt-source/configure --prefix="$private_prefix" \
-    --disable-static --enable-dependency-linking \
+    --enable-shared --disable-static --disable-java --disable-sipopt \
     --disable-linear-solver-loader --without-hsl --without-asl \
-    --without-pardiso --without-wsmp \
-    --with-blas=-lopenblas --with-lapack=-lopenblas \
-    --with-mumps-incdir="$library_prefix/include/mumps_seq" \
-    --with-mumps-lib=-ldmumps 2>&1 | tee "$evidence/configure.txt"
+    --disable-mpiinit --disable-pardisomkl --without-spral \
+    --with-lapack-lflags=-lopenblas \
+    --with-mumps-cflags="-I$library_prefix/include/mumps_seq" \
+    --with-mumps-lflags=-ldmumps 2>&1 | tee "$evidence/configure.txt"
 # Verify the COFF command before enabling the old libtool's unrecognized linker.
 printf '%s\n' 'extern "C" __declspec(dllexport) int link_probe() { return 0; }' > "$evidence/link-probe.cpp"
 # shellcheck disable=SC2086
@@ -68,7 +68,7 @@ while IFS= read -r libtool; do
         cd "$(dirname "$libtool")"
         patch_libtool
         # shellcheck disable=SC2016
-        sed -i '3s/; echo/ \&\& echo/; s/\$CC -o/\$CC -fuse-ld=lld -nostdlib -Xclang --dependent-lib=msvcrt -o/; s/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_3119.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_3119.dll"/' libtool
+        sed -i '3s/; echo/ \&\& echo/; s/\$CC -o/\$CC -fuse-ld=lld -nostdlib -Xclang --dependent-lib=msvcrt -o/; s/^build_libtool_libs=.*/build_libtool_libs=yes/; s/^build_old_libs=.*/build_old_libs=no/; s/^always_export_symbols=.*/always_export_symbols=yes/; s/\$tool_output_objdir/\$output_objdir\//g; s/^soname_spec=.*/soname_spec="epcsaft_ipopt_31420.dll"/; s/^library_names_spec=.*/library_names_spec="epcsaft_ipopt_31420.dll"/' libtool
     )
 done < <(find "$PWD" -name libtool -type f)
 JOBS=$("$BUILD_PREFIX/python.exe" "$RECIPE_DIR/build-jobs.py" ipopt)
@@ -76,22 +76,22 @@ nice -n 10 make -j"$JOBS" 2>&1 | tee "$evidence/make.txt"
 # The MSYS pkg-config search path cannot contain a Windows drive colon.
 make install PKG_CONFIG="env PKG_CONFIG_PATH=$(cygpath -u "$private_prefix")/lib/pkgconfig pkg-config" 2>&1 | tee "$evidence/install.txt"
 mkdir -p "$private_prefix/lib/pkgconfig" "$private_prefix/bin"
-dll="$PWD/Ipopt/src/Interfaces/.libs/epcsaft_ipopt_3119.dll"
+dll="$PWD/src/.libs/epcsaft_ipopt_31420.dll"
 test -f "$dll"
 cp "$dll" "$private_prefix/bin/"
-implib="$PWD/Ipopt/src/Interfaces/.libs/libipopt.dll.lib"
+implib="$PWD/src/.libs/libipopt.dll.lib"
 test -f "$implib"
-cp "$implib" "$private_prefix/lib/epcsaft_ipopt_3119.lib"
+cp "$implib" "$private_prefix/lib/epcsaft_ipopt_31420.lib"
 cat > "$private_prefix/lib/pkgconfig/ipopt.pc" <<PC
 prefix=\${pcfiledir}/../..
 libdir=\${prefix}/lib
-includedir=\${prefix}/include/coin
+includedir=\${prefix}/include/coin-or
 Name: Ipopt
-Description: Private Ipopt 3.11.9 with MUMPS
-Version: 3.11.9
-Libs: -L\${libdir} -lepcsaft_ipopt_3119
+Description: Private Ipopt 3.14.20 with MUMPS
+Version: 3.14.20
+Libs: -L\${libdir} -lepcsaft_ipopt_31420
 Cflags: -I\${includedir}
 PC
-sha256sum "$private_prefix/bin/epcsaft_ipopt_3119.dll" \
-    "$private_prefix/lib/epcsaft_ipopt_3119.lib" > "$evidence/sha256.txt"
-llvm-readobj --coff-imports --coff-exports "$private_prefix/bin/epcsaft_ipopt_3119.dll" > "$evidence/dll.txt"
+sha256sum "$private_prefix/bin/epcsaft_ipopt_31420.dll" \
+    "$private_prefix/lib/epcsaft_ipopt_31420.lib" > "$evidence/sha256.txt"
+llvm-readobj --coff-imports --coff-exports "$private_prefix/bin/epcsaft_ipopt_31420.dll" > "$evidence/dll.txt"

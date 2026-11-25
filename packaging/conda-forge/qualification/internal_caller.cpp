@@ -51,7 +51,7 @@ public:
   }
 };
 int main() {
-  static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 11 && IPOPT_VERSION_RELEASE == 9, "locked Ipopt required");
+  static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 14 && IPOPT_VERSION_RELEASE == 20, "locked Ipopt required");
   std::cout << std::setprecision(17) << "version=" << IPOPT_VERSION << "\nlinear_solver=mumps\n";
 #ifdef _WIN32
   HMODULE modules[1024]; DWORD needed;

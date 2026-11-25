@@ -14,11 +14,10 @@ source:
     sha256: ${{ source_sha256 }}
     patches:
       - meson-native.patch
-  - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.11.9.tar.gz
-    sha256: c092093baceec820fb917f28059b87e48831d9a7f98f312b981efda02dc7a09a
+  - url: https://codeload.github.com/coin-or/Ipopt/tar.gz/refs/tags/releases/3.14.20
+    sha256: 43bddd6fa793b1694aa94d6129fe3e4a8d452d97a84ef5f2ff721c8047c75605
+    file_name: ipopt-3.14.20.tar.gz
     target_directory: ipopt-source
-    patches:
-      - ipopt-ma28.patch
   - url: https://github.com/coin-or/CppAD/archive/refs/tags/20250000.3.tar.gz
     sha256: a3a4030ae49719e88e5057e923c4c97c5ba8910e22471f22661420ce65747fbe
     target_directory: engine/build/subprojects/CppAD-20250000.3
@@ -155,18 +154,18 @@ about:
   summary: Electrolyte PC-SAFT properties, equilibrium and exact derivative actions
   description: |
     CPython 3.12, 3.13 and 3.14 packages for Linux and Windows x86-64 and
-    macOS x86-64 and arm64, with private Ipopt 3.11.9 and MUMPS.
+    macOS x86-64 and arm64, with private Ipopt 3.14.20 and MUMPS.
     Corresponding source is available from the distributor in the source-set
     download alongside the matching version at
     https://github.com/tannerpolley/epcsaft/releases. It contains the exact
     Engine and Ipopt sources, embedded dependency sources, recipe and patches.
-  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-1.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT AND Zlib AND LicenseRef-NIST AND LicenseRef-ASL-headers
+  license: LicenseRef-GPL-3.0-with-Ipopt-permission AND EPL-2.0 AND (EPL-2.0 OR GPL-2.0-or-later) AND MPL-2.0 AND BSD-3-Clause AND MIT AND Zlib AND LicenseRef-NIST AND LicenseRef-ASL-headers
   license_file:
     - LICENSE
     - NOTICE
     - data/packets/feos-gross-sadowski-2001/1/packet.toml
     - data/packets/feos-gross-sadowski-2002/1/packet.toml
-    - ipopt-source/Ipopt/LICENSE
+    - ipopt-source/LICENSE
     - engine/build/subprojects/CppAD-20250000.3/COPYING
     - engine/build/subprojects/CppAD-20250000.3/epl-2.0.txt
     - engine/build/subprojects/HiGHS-1.15.1/LICENSE.txt

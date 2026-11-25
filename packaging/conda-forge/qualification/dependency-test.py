@@ -22,7 +22,7 @@ def parse(output, internal):
         row['bound_relax_factor'] = float(re.search(r'^bound_relax_factor=(.*)$', output, re.M)[1])
         row['internal'] = [[float(v) for v in line.split(',')[1:]] for line in output.splitlines() if line.startswith('internal,')]
         row['modules'] = re.findall(r'^module=(.*)$', output, re.M)
-        assert 'version=3.11.9' in output and 'linear_solver=mumps' in output and 'status=0' in output
+        assert 'version=3.14.20' in output and 'linear_solver=mumps' in output and 'status=0' in output
     return row
 
 
@@ -92,14 +92,14 @@ def main():
         for row in results.values():
             check(row, reference, factor)
         modules = results['internal_caller']['modules']
-        private = [p for p in modules if Path(p).name.lower() == 'epcsaft_ipopt_3119.dll']
-        assert len(private) == 1 and Path(private[0]).resolve() == (prefix/'Library/bin/epcsaft_ipopt_3119.dll').resolve(), modules
+        private = [p for p in modules if Path(p).name.lower() == 'epcsaft_ipopt_31420.dll']
+        assert len(private) == 1 and Path(private[0]).resolve() == (prefix/'Library/bin/epcsaft_ipopt_31420.dll').resolve(), modules
         assert not any(re.search(r'(^|[\\/])(lib)?ipopt[^\\/]*\.dll$', p, re.I) for p in modules)
     finally:
         retain()
         print(json.dumps(results, indent=2, allow_nan=False))
     hashes = {}
-    for name in ('Library/bin/epcsaft_ipopt_3119.dll', 'Library/lib/epcsaft_ipopt_3119.lib'):
+    for name in ('Library/bin/epcsaft_ipopt_31420.dll', 'Library/lib/epcsaft_ipopt_31420.lib'):
         hashes[name] = hashlib.sha256((prefix / name).read_bytes()).hexdigest()
     (evidence/'sha256.json').write_text(json.dumps(hashes, indent=2))
     print(hashes)
