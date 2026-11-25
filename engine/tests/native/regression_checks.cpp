@@ -2,6 +2,13 @@
 
 // The case registry. Each case function is defined in one regression_*_checks.cpp unit.
 namespace regression_checks {
+void check_addition_endpoint_admission();
+void check_addition_endpoint_cache();
+void check_supplied_trial_model();
+void check_equilibrium_refresh_model();
+void check_equilibrium_optimizer_point();
+void check_equilibrium_result_model();
+void check_equilibrium_estimate_admission();
 void check_stability_requirement();
 void check_nested_support_tangent_plane_action();
 void check_reactive_solvent_activity();
@@ -52,6 +59,13 @@ void check_measurement_correlation();
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.equilibrium-estimate-admission", "equilibrium-estimate-admission"}, check_equilibrium_estimate_admission},
+        {{"native.regression.equilibrium-result-model", "equilibrium-result-model"}, check_equilibrium_result_model},
+        {{"native.regression.equilibrium-optimizer-point", "equilibrium-optimizer-point"}, check_equilibrium_optimizer_point},
+        {{"native.regression.equilibrium-refresh-model", "equilibrium-refresh-model"}, check_equilibrium_refresh_model},
+        {{"native.regression.supplied-trial-model", "supplied-trial-model"}, check_supplied_trial_model},
+        {{"native.regression.addition-endpoint-cache", "addition-endpoint-cache"}, check_addition_endpoint_cache},
+        {{"native.regression.addition-endpoint-admission", "addition-endpoint-admission"}, check_addition_endpoint_admission},
         {{"native.regression.reactive-solvent-activity", "reactive-solvent-activity"}, check_reactive_solvent_activity, "R2"},
         {{"native.regression.stability-requirement", "stability-requirement"}, check_stability_requirement, "stability-requirement"},
         {{"native.regression.nested-support-tangent-plane-action", "nested-support-tangent-plane-action"},

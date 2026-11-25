@@ -63,6 +63,10 @@ void finish(Prediction& prediction, const Observation& observation, double value
     if (prediction.status == ObservationStatus::Nonfinite) prediction.message = "the residual is not finite";
 }
 
+bool same_feed(const Observation& a, const Observation& b) {
+    return core::bitwise_equal(std::array{a.temperature, a.pressure}, std::array{b.temperature, b.pressure})
+        && core::bitwise_equal(a.composition, b.composition) && a.branch == b.branch && a.mass_basis == b.mass_basis;
+}
 }  // namespace
 
 const char* observation_status_name(ObservationStatus status) noexcept {
@@ -483,32 +487,26 @@ Prediction predict(
             final_prepared = equilibrium::compile_problem(model, observation.final_problem);
             for (const auto* row : admission) validate_compiled(*row, model, &*prepared, &*final_prepared);
         }
-        const auto endpoint = [&](bool feed, std::optional<std::size_t>& index) {
+        const auto endpoint = [&](bool feed, std::shared_ptr<const char>& identity) {
             const bool share = references && !(previous && previous->saturation) && (feed || !start || references->previous_initial);
-            const auto same_feed = [](const Observation& a, const Observation& b) {
-                return core::bitwise_equal(std::array{a.temperature, a.pressure}, std::array{b.temperature, b.pressure})
-                    && core::bitwise_equal(a.composition, b.composition)
-                    && a.branch == b.branch && a.mass_basis == b.mass_basis;
-            };
-            const auto seed = !feed && start && share ? references->previous_initial : std::nullopt;
-            if (share) for (std::size_t k = 0; k < references->heat.size(); ++k) {
-                const auto& e = references->heat[k];
+            const auto seed = !feed && start && share ? references->previous_initial : nullptr;
+            if (share) for (const auto& e : references->heat) {
                 if (e.row.kind == item.kind && seed == e.start &&
                     (feed ? same_feed(e.row, item) : same_state(e.row, item))) {
-                    index = k;
+                    identity = e.identity;
                     return e.center;
                 }
             }
             auto value = feed ? predict(model, item) : predict(model, item, start, std::move(prepared));
             if (share && value.status == ObservationStatus::Available) {
-                index = references->heat.size();
-                references->heat.push_back({item, seed, value, {}});
+                identity = std::make_shared<const char>();
+                references->heat.push_back({item, identity, seed, value, {}});
             }
             return value;
         };
-        std::optional<std::size_t> initial_index;
-        auto initial = endpoint(false, initial_index);
-        initial.initial_heat_endpoint = initial_index;
+        std::shared_ptr<const char> initial_identity;
+        auto initial = endpoint(false, initial_identity);
+        initial.initial_heat_endpoint = std::move(initial_identity);
         const auto failed = [&](Prediction& p, const char* source) {
             core::retain_first(p.first_numerical_failure, initial.first_numerical_failure, true);
             core::retain_first(initial.first_numerical_failure, p.first_numerical_failure);
@@ -1144,13 +1142,21 @@ std::vector<PredictionGradient> differentiate_group(
             references->reaction_columns = std::move(reactions);
             for (auto& endpoint : references->heat) endpoint.gradient.reset();
         }
-        const auto endpoint_gradient = [&](auto index, auto calculate) {
-            if (!references || !index) return calculate();
-            auto& gradient = references->heat.at(*index).gradient;
-            if (gradient) return *gradient;
-            auto value = calculate();
-            if (value.status == ObservationStatus::Available) gradient = value;
-            return value;
+        const auto endpoint_gradient = [&](const auto& identity, auto calculate) {
+            if (references && identity) for (auto& endpoint : references->heat) {
+                if (endpoint.identity != identity) continue;
+                const bool admitted = endpoint.row.kind == item.kind && (item.kind == ObservationKind::FeedEnthalpy
+                    ? same_feed(endpoint.row, item) : same_state(endpoint.row, item) && prediction.solved
+                        && prediction.solved->has_state()
+                        && prediction.solved->declaration == endpoint.center.solved->declaration
+                        && core::bitwise_equal(prediction.solved->coordinates, endpoint.center.solved->coordinates));
+                if (!admitted) endpoint.gradient.reset();
+                if (endpoint.gradient) return *endpoint.gradient;
+                auto value = calculate();
+                if (admitted && value.status == ObservationStatus::Available) endpoint.gradient = value;
+                return value;
+            }
+            return calculate();
         };
         auto initial = endpoint_gradient(prediction.initial_heat_endpoint,
             [&] { return differentiate_group(model, {&item}, prediction, coordinates).front(); });

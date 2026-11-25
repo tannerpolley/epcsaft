@@ -19,6 +19,7 @@
 namespace epcsaft::equilibrium {
 
 struct CompiledSystem::Declaration final {
+    std::shared_ptr<const char> model;
     EquilibriumProblem request;
     std::vector<std::string> species;
     CompiledSystem compiled;
@@ -801,14 +802,14 @@ CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumPro
                                const std::vector<std::string>& species) {
     auto compiled = compile_problem(model, request);
     if (!request.discovery) compiled.original = std::make_shared<const CompiledSystem::Declaration>(
-        CompiledSystem::Declaration{request, species, compiled});
+        CompiledSystem::Declaration{model.identity(), request, species, compiled});
     return compiled;
 }
 
 CompiledSystem refresh_problem(const HelmholtzModel& model, const EquilibriumProblem& request,
                                const std::vector<std::string>& species, const CompiledSystem& prepared) {
     const auto& original = prepared.original;
-    if (request.discovery || !original || original->compiled.model != &model || original->species != species
+    if (request.discovery || !original || original->model != model.identity() || original->species != species
         || !same_declaration(original->request, request)) return compile_problem(model, request);
     if (same_state_values(original->request, request)) return original->compiled;
     core::Scope scope("refresh_problem");

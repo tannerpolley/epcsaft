@@ -203,7 +203,7 @@ void check_reaction_quotient_pressure() {
     for (bool declared : {true, false}) {
         const HelmholtzModel model(properties_support::neutral_ternary(), {},
             declared ? std::optional(record) : std::nullopt);
-        state.model_identity = &model;
+        state.model_identity = model.identity();
         const auto finite = model.state_at_pressure(*state.temperature, *state.pressure, state.mole_fractions, DensityBranch::Liquid);
         state.molar_densities = {finite.molar_density};
         const auto row = reaction_activities(model, state).front();
@@ -229,7 +229,7 @@ void check_reaction_quotient_actions() {
     state.temperature = 300.0; state.pressure = 1e6; state.phase_count = 1;
     state.amounts = {1}; state.mole_fractions = {0.98, 0.01, 0.01};
     state.declaration = std::make_shared<const EquilibriumProblem>(problem);
-    state.model_identity = &model;
+    state.model_identity = model.identity();
     state.molar_densities = {model.state_at_pressure(*state.temperature, *state.pressure,
         state.mole_fractions, DensityBranch::Liquid).molar_density};
     const auto row = reaction_activities(model, state).front();
@@ -387,7 +387,7 @@ void check_s2() {
     read_problem.reactions = {{"raw", nu, 1.0, {}, {}, epcsaft::ReactionReference{1e5, reference.source_basis}},
         {"density", nu, 1.0}};
     epcsaft::equilibrium::EquilibriumResult snapshot;
-    snapshot.model_identity = &reference_model; snapshot.declaration = std::make_shared<epcsaft::equilibrium::EquilibriumProblem>(read_problem);
+    snapshot.model_identity = reference_model.identity(); snapshot.declaration = std::make_shared<epcsaft::equilibrium::EquilibriumProblem>(read_problem);
     snapshot.phase_count = 1; snapshot.temperature = 300; snapshot.pressure = 2e5; snapshot.amounts = {0};
     snapshot.mole_fractions = {0.5, 0.3, 0.2};
     const auto finite = reference_model.state_at_pressure(300, 2e5, snapshot.mole_fractions, epcsaft::DensityBranch::Liquid);

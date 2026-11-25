@@ -189,19 +189,9 @@ struct GibbsDifference final {
   std::vector<double> coordinates; // repaired split, candidate-coordinate layout
   std::string cause;
 };
-struct GibbsDifferenceReference final {
-  PhasePoint physical;
-  StabilityReport report;
-  std::map<std::string, double> repair_quantities;
-  std::vector<double> row_errors;
-  double repair_error = 0;
-  std::string cause;
-};
-EPC_API GibbsDifferenceReference
-conserved_split_reference(const CompiledSystem &, const EquilibriumResult &);
 // `donor` indexes the parent; the split's donor is its first phase, the trial its last.
 EPC_API GibbsDifference conserved_split_difference(
-    const CompiledSystem &, const GibbsDifferenceReference &,
+    const CompiledSystem &, const EquilibriumResult &,
     const CompiledSystem &, const EquilibriumResult &, std::size_t donor,
     const StabilityOptions &);
 // The driver internals the stability search (phase_stability.cpp) shares.

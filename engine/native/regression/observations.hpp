@@ -130,7 +130,7 @@ struct Prediction final {
     std::optional<equilibrium::CompiledSystem> final_compiled;
     std::shared_ptr<equilibrium::SaturationSearch> saturation;
     std::optional<double> saturation_loading, endpoint_loading, added_amount, enthalpy_difference;
-    std::optional<std::size_t> initial_heat_endpoint, feed_heat_endpoint;
+    std::shared_ptr<const char> initial_heat_endpoint, feed_heat_endpoint;
     std::string cap_branch;
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<equilibrium::StabilityReport> supplied_stability;
@@ -170,12 +170,12 @@ struct ReferenceCache : std::vector<std::pair<Observation, InfiniteDilutionRefer
     std::vector<std::pair<Observation, Prediction>> pressures;
     struct HeatEndpoint {
         Observation row;
-        std::optional<std::size_t> start;
+        std::shared_ptr<const char> identity, start;
         Prediction center;
         std::optional<PredictionGradient> gradient;
     };
     std::vector<HeatEndpoint> heat;
-    std::optional<std::size_t> previous_initial;
+    std::shared_ptr<const char> previous_initial;
     std::vector<ReactionCoordinate> reaction_columns;
 
     void bind(const HelmholtzModel& model) {

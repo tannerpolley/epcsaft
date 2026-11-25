@@ -217,7 +217,7 @@ struct ReferenceTaylorKeyLess final {
     }
 };
 struct ReferenceTaylorBatch final {
-    const HelmholtzModel& model;
+    const std::shared_ptr<const char> model;
     std::map<std::vector<double>, std::shared_ptr<ReferenceTaylorPreparation>, ReferenceTaylorKeyLess> paths;
 };
 // Ordinary Taylor coefficients along a fixed-composition pressure-closed path.
@@ -243,6 +243,12 @@ struct VirialCoefficientActions final {
 };
 
 struct State final {
+    std::shared_ptr<const char> model;
+    double temperature = NAN, requested_pressure = NAN;
+    std::vector<double> composition;
+    bool at(const std::shared_ptr<const char>& id, double t, const std::vector<double>& x) const {
+        return model == id && core::bitwise_equal(temperature, t) && core::bitwise_equal(composition, x);
+    }
     policy::SolverOptions solver_options;
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -481,6 +487,7 @@ struct NeutralReferenceReactionDiagnostic final {
 
 struct DomainBounds;
 class HelmholtzModel final : public std::enable_shared_from_this<HelmholtzModel> {
+    friend struct PressureDensityDerivative;
     // Retained references can identify even a stack model without keeping a dangling model pointer.
     const std::shared_ptr<const char> identity_ = std::make_shared<const char>();
 public:
@@ -498,13 +505,11 @@ public:
 
     EPC_API ~HelmholtzModel();
 
-    // A completed request must own the covering derivatives at exactly these inputs on this model.
     EPC_API HelmholtzDerivatives evaluate(
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false,
-        const HelmholtzDerivatives* completed = nullptr
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false
     ) const;
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
@@ -536,7 +541,7 @@ public:
         double temperature,
         double molar_density,
         const std::vector<double>& mole_fractions,
-        bool derived_properties = false, const HelmholtzDerivatives* completed = nullptr
+        bool derived_properties = false
     ) const;
     EPC_API LogFugacityTerms log_fugacity_terms(
         double temperature, double molar_density, const std::vector<double>& mole_fractions) const;

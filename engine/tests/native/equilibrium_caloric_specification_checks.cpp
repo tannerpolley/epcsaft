@@ -529,6 +529,7 @@ void apparent_heat_capacity() {
             recording_support::field("fresh_has_action", bool(fresh.action))}));
     CHECK(warm.status == SolvedStateActionStatus::CentralSolveUnavailable && warm.status == fresh.status
         && !fresh.value && !fresh.action && !warm.value && !warm.action);
+    CHECK(!retained && !empty);
     const auto ph=condition(tp,true,driven(m,300,H),280);
     const auto c=compile_problem(m,ph);const auto x=solve_equilibrium(m,ph);CHECK(x.has_state());
     const double T=*x.temperature,feed=c.feed_total;auto wq=direction(c);wq.active_parameters[0]=1;

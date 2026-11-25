@@ -625,7 +625,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         double pressure = 0.0;
         NeutralReferenceTraceResult result;
     };
-    ReferenceTaylorBatch preparation{model, {}};
+    ReferenceTaylorBatch preparation{model.identity(), {}};
     std::vector<CachedTrace> cache;
     std::vector<NeutralReferenceReactionDiagnostic> result(stoichiometries.size());
     for (auto& diagnostic : result) diagnostic.solver_options = model.solver_options();
@@ -911,6 +911,8 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         result.solvent_activity_parameter_derivative.assign(columns, 0.0); return result;
     }
     try {
+        if (finite && (!finite->at(model.identity(), temperature, composition)
+            || !core::bitwise_equal(finite->requested_pressure, pressure))) finite.reset();
         result.state = finite ? std::move(*finite) : properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, std::nullopt);
     } catch (const std::runtime_error& error) {
         result.status = PropertyActionStatus::DensityUnavailable;
@@ -1020,8 +1022,6 @@ ElectrolyteActivity electrolyte_activity(
     if (!reference.ion_indices) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
     if (*reference.ion_indices != ion_indices)
         throw std::invalid_argument("electrolyte activity ordered ion indices do not match the reference");
-    if (!(reference.solver_options == model.solver_options()))
-        throw std::invalid_argument("electrolyte reference solver options do not match the model");
     double solute_ratio = 0.0;
     auto composition = formula_composition(
         solvent_fractions,
@@ -1030,12 +1030,10 @@ ElectrolyteActivity electrolyte_activity(
         stoichiometry,
         molality, finite_solute_molalities, &solute_ratio
     );
-    if (finite_solute_molalities) {
-        if (reference.model != model.identity() || !core::bitwise_equal(reference.temperature, temperature)
-            || !core::bitwise_equal(reference.pressure, pressure)
-            || !core::bitwise_equal(reference.solvent_fractions, solvent_fractions))
-            throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
-    }
+    if (reference.model != model.identity() || !core::bitwise_equal(reference.temperature, temperature)
+        || !core::bitwise_equal(reference.pressure, pressure)
+        || !core::bitwise_equal(reference.solvent_fractions, solvent_fractions) || !(reference.solver_options == model.solver_options()))
+        throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
     result.reference_solvent_fractions = reference.solvent_fractions;

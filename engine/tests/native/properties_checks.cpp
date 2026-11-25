@@ -2,6 +2,10 @@
 
 // The case registry. Each case function is defined in one properties_*_checks.cpp unit.
 namespace properties_checks {
+void electrolyte_reference_model();
+void pressure_state_model();
+void solvent_activity_state_model();
+void reference_taylor_batch_model();
 void thread_exit_hessian();
 void residual_cv_temperature_extraction();
 void born_parameter_columns();
@@ -43,6 +47,10 @@ void pathway_weight();
 int main(int argc, char** argv) {
     using namespace properties_checks;
     return recording_support::run(argc, argv, {
+        {{"native.properties.reference-taylor-batch-model", "reference-taylor-batch-model"}, reference_taylor_batch_model},
+        {{"native.properties.pressure-state-model", "pressure-state-model"}, pressure_state_model},
+        {{"native.properties.solvent-activity-state-model", "solvent-activity-state-model"}, solvent_activity_state_model},
+        {{"native.properties.electrolyte-reference-model", "electrolyte-reference-model"}, electrolyte_reference_model},
         {{"native.properties.thread-exit", "ThreadExit"}, thread_exit_hessian},
         {{"native.properties.residual-cv-temperature-extraction", "ResidualCvTemperature"}, residual_cv_temperature_extraction},
         {{"native.properties.born-parameter", "BornParameter"}, born_parameter_columns},

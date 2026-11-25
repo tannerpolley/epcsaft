@@ -560,7 +560,7 @@ struct ObservationEvaluator::Impl final {
                     std::vector<const Observation*> admission;
                     if (needs_compiled_admission_) for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g) admission.push_back(&trial.observations[row]);
-                    trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
+                    trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : nullptr;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         prior_trial && unchanged ? &prior_trial->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
                         seed && unchanged && core::bitwise_equal(trial.chart.physical, seed->chart.physical), deadline_, admission);

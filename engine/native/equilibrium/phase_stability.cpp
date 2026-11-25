@@ -328,7 +328,7 @@ struct Candidate final {
 // the achieved defect, positivity and structural support decide admission, not a row-count guess.
 Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& result,
     StabilityReport& report) {
-    if (!result.has_state() || result.model_identity != c.model || !result.declaration)
+    if (!result.has_state() || result.model_identity != c.model->identity() || !result.declaration)
         throw std::invalid_argument("stability test requires this model's accepted declared result");
     if (const auto difference = declared_state_difference(*result.declaration, c.problem); !difference.empty())
         throw std::invalid_argument("stability result/declaration mismatch: " + difference);
@@ -581,6 +581,15 @@ std::vector<double> trial_coordinates(const CompiledSystem& c, const std::vector
 }
 } // namespace
 
+namespace {
+struct GibbsDifferenceReference final {
+  PhasePoint physical;
+  StabilityReport report;
+  std::map<std::string, double> repair_quantities;
+  std::vector<double> row_errors;
+  double repair_error = 0;
+  std::string cause;
+};
 // ALG-STABILITY: cache the original solved-state row uncertainty and supported
 // repair once.
 GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, const EquilibriumResult &result) {
@@ -766,6 +775,14 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
         out.cause = error.what();
     }
     return out;
+}
+
+} // namespace
+
+GibbsDifference conserved_split_difference(const CompiledSystem& parent_system, const EquilibriumResult& parent,
+    const CompiledSystem& split_system, const EquilibriumResult& split, std::size_t donor, const StabilityOptions& options) {
+    return conserved_split_difference(parent_system, conserved_split_reference(parent_system, parent),
+        split_system, split, donor, options);
 }
 
 // EqID michelsen_modified_tangent_plane: J_ij = F_ij + 1 + p_i p_j / p_V, p_i = 1/v - F_iV, p_V = -F_VV - 1/v^2.
@@ -1167,7 +1184,7 @@ std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const Helm
     const std::vector<PhaseSpec>& trials) {
     core::Scope scope("prepare_supplied_trials");
     auto set = std::make_shared<PreparedSuppliedTrials>();
-    set->model = &model; set->temperature = T; set->trials = trials;
+    set->model = model.identity(); set->temperature = T; set->trials = trials;
     auto points = std::make_shared<PreparedSuppliedPoints>(); set->points = points;
     TrialSystems systems; core::CalculationWork work;
     for (auto& phase : set->trials) {
@@ -1217,7 +1234,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     if (options.prepared_trials) {
         const auto& set = *options.prepared_trials;
         if (options.trials) throw std::invalid_argument("prepared trials given together with trials");
-        if (set.model != input.model) throw std::invalid_argument("prepared trials model mismatch");
+        if (set.model != input.model->identity()) throw std::invalid_argument("prepared trials model mismatch");
         if (!result.temperature || std::memcmp(&set.temperature, &*result.temperature, sizeof(double)) != 0)
             throw std::invalid_argument("prepared trials temperature mismatch");
         options.evaluate_supplied_trials = true;

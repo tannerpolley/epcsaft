@@ -338,6 +338,10 @@ regression_checks = executable(
 test('regression', regression_checks, args: ['R1'])
 test('regression/Automatic_fast/stability-requirement', regression_checks, args: ['stability-requirement'])
 test('regression/Automatic_fast/nested-support-tangent-plane-action', regression_checks, args: ['nested-support-tangent-plane-action'])
+foreach name : ['addition-endpoint-admission', 'addition-endpoint-cache', 'supplied-trial-model',
+                'equilibrium-refresh-model', 'equilibrium-result-model', 'equilibrium-estimate-admission', 'equilibrium-optimizer-point']
+  test('regression/Automatic_fast/' + name, regression_checks, args: [name])
+endforeach
 test('regression_fit', regression_checks, args: ['R2'], timeout: 600)
 test('regression/Explicit/reactive-cp', regression_checks, args: ['reactive-cp'], timeout: 600)
 
@@ -348,6 +352,17 @@ regression_association_site_checks = executable(
   kwargs: check_kwargs,
 )
 test('regression/Explicit/association-site-fraction', regression_association_site_checks, timeout: 600)
+
+asl_pressure_chart_checks = executable(
+  'asl_pressure_chart_checks',
+  'tests/native/asl_pressure_chart_checks.cpp',
+  cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
+  dependencies: native_deps + quadmath_dep,
+  include_directories: native_inc,
+  link_with: epcsaft_private,
+  build_by_default: false,
+)
+test('regression/Explicit/asl-pressure-chart', asl_pressure_chart_checks)
 
 specification_checks = executable(
   'specification_checks',

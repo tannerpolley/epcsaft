@@ -1332,7 +1332,7 @@ PhasePointValues<Base> CompiledSystem::prepare_values(const std::vector<Base>& p
     result.pressure = problem.pressure.free ? point[offset++] : problem.pressure.value;
     if constexpr (std::is_same_v<Base, double>) admit_calorics(*this, result.temperature);
     if constexpr (std::is_same_v<Base, double>)
-        if (!state_only && !chemical_phase && !parameter_actions && model->active_parameters().empty()) result.state_model = model;
+        if (!state_only && !chemical_phase && !parameter_actions && model->active_parameters().empty()) result.state_model = model->identity();
     result.composition.resize(result.shape.size()); result.packing.resize(result.shape.size());
     result.eta.resize(result.shape.size()); result.volume.resize(result.shape.size());
     result.amount.resize(result.shape.size()); result.derivative.resize(result.shape.size());

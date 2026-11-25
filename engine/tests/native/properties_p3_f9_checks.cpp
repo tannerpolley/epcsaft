@@ -1597,12 +1597,93 @@ void reference_f9() {
     }
 }
 }
+static_assert(!std::is_invocable_v<decltype(&epcsaft::HelmholtzModel::evaluate),
+    const epcsaft::HelmholtzModel&, double, double, const std::vector<double>&, epcsaft::DerivativeOrder,
+    bool, bool, bool, const epcsaft::HelmholtzDerivatives*>);
+
+void pressure_state_model() {
+    using namespace epcsaft;
+    constexpr double T = 298.15, P = 1e5;
+    const std::vector<double> composition{0.98, .01, .01};
+    auto parameters = properties_support::aqueous_electrolyte();
+    HelmholtzModel first(parameters);
+    parameters.k_ij[1] += 0.01;
+    parameters.k_ij[3] += 0.01;
+    HelmholtzModel second(parameters);
+    const auto fresh = second.state_at_pressure(T, P, composition, DensityBranch::Liquid);
+    const auto foreign = first.state(T, fresh.molar_density, composition);
+    const auto warm = second.state_at_pressure(T, P, composition, DensityBranch::Liquid, {}, false, false, &foreign);
+    CHECK(foreign.residual_enthalpy != fresh.residual_enthalpy && warm.residual_enthalpy == fresh.residual_enthalpy);
+}
+
+void solvent_activity_state_model() {
+    using namespace epcsaft;
+    constexpr double T = 298.15, P = 1e5;
+    const std::vector<double> composition{0.98, .01, .01}, water{1., 0., 0.};
+    auto parameters = properties_support::aqueous_electrolyte();
+    HelmholtzModel first(parameters);
+    parameters.k_ij[1] += 0.01;
+    parameters.k_ij[3] += 0.01;
+    HelmholtzModel second(parameters);
+    const auto reference = solvent_reference(second, T, P, water);
+    const auto cold = solvent_activity(second, T, P, composition, reference);
+    const auto warm = solvent_activity(second, T, P, composition, reference,
+        first.state_at_pressure(T, P, composition, DensityBranch::Liquid));
+    CHECK(cold.solvent_activity && warm.solvent_activity == cold.solvent_activity);
+}
+
+void electrolyte_reference_model() {
+    using namespace epcsaft;
+    constexpr double T = 298.15, P = 1e5, molality = 1e-10;
+    const std::vector<double> water{1.0, 0.0, 0.0};
+    auto parameters = properties_support::aqueous_electrolyte();
+    HelmholtzModel first(parameters);
+    const auto reference = infinite_dilution_reference(first, T, P, water, {1, 2}, {1, 1});
+    parameters.k_ij[1] += 0.01;
+    parameters.k_ij[3] += 0.01;
+    HelmholtzModel second(parameters);
+    const auto fresh = infinite_dilution_reference(second, T, P, water, {1, 2}, {1, 1});
+    const auto activity = [&](const auto& ref) {
+        return electrolyte_activity(second, T, P, water, {1, 2}, {1, 1}, molality, ref).mean_ionic_molality_scale;
+    };
+    const auto expected = activity(fresh);
+    const auto refusal = recording_support::refusal([&] {
+        std::cout << "foreign reference / fresh activity " << activity(reference) << ' ' << expected << '\n';
+    });
+    CHECK(refusal == "electrolyte reference model, temperature, pressure or solvent mismatch");
+}
+
+void reference_taylor_batch_model() {
+    using namespace epcsaft;
+    auto parameters = properties_support::ethane();
+    std::optional<HelmholtzModel> model(std::in_place, parameters);
+    const auto* storage = &*model;
+    ReferenceTaylorBatch batch{model->identity(), {}};
+    PressureActionDirection direction;
+    direction.pressure = 1e5;
+    const auto evaluate = [&](ReferenceTaylorBatch* paths) {
+        return model->reference_taylor(300.0, 0.01, {1.0}, {1.0}, direction, 1, false, nullptr, paths);
+    };
+    const auto first = evaluate(&batch);
+    parameters.dispersion_energy_over_k[0] *= 1.02;
+    model.emplace(parameters);
+    CHECK(&*model == storage);
+    const auto refusal = recording_support::refusal([&] {
+        const auto reused = evaluate(&batch);
+        const HelmholtzModel cold(parameters);
+        const auto fresh = cold.reference_taylor(300.0, 0.01, {1.0}, {1.0}, direction, 1);
+        std::cout << "first / reused / fresh volume action " << first.volume.at(1)
+                  << ' ' << reused.volume.at(1) << ' ' << fresh.volume.at(1) << '\n';
+    });
+    CHECK(refusal.find("reference batch model") != std::string::npos);
+}
+
 void reference_taylor_signed_zero() {
     using namespace epcsaft;
     HelmholtzModel warm(properties_support::ethane()), cold(properties_support::ethane());
     constexpr double temperature = 300.0, volume = 0.01;
     PressureActionDirection direction;
-    ReferenceTaylorBatch batch{warm, {}};
+    ReferenceTaylorBatch batch{warm.identity(), {}};
     const auto positive = warm.reference_taylor(temperature, volume, {1.0}, {1.0}, direction, 1, false, nullptr, &batch);
     direction.pressure = -0.0;
     const auto expected = cold.reference_taylor(temperature, volume, {1.0}, {1.0}, direction, 1, false);
@@ -1621,10 +1702,10 @@ void reference_limits() {
     const auto check_paths = [](const epcsaft::Parameters& parameters) {
         using namespace epcsaft;
         HelmholtzModel model(parameters, {{PF::DispersionEnergyOverK, {0}}});
-        ReferenceTaylorBatch batch{model, {}};
+        ReferenceTaylorBatch batch{model.identity(), {}};
         auto shifted = parameters; shifted.dispersion_energy_over_k[0] *= 1.02;
         HelmholtzModel other(shifted, {{PF::DispersionEnergyOverK, {0}}});
-        ReferenceTaylorBatch other_batch{other, {}};
+        ReferenceTaylorBatch other_batch{other.identity(), {}};
         for (double temperature : {318.15, 323.15}) for (double pressure : {1e5, 2e5})
             for (const auto& x : {std::vector<double>{0.9,0.1,0,0,0,0,0,0,0},
                                   std::vector<double>{1,0,0,0,0,0,0,0,0}})

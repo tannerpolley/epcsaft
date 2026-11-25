@@ -1173,6 +1173,44 @@ void check_addition_endpoint_retry() {
             recording_support::field("fresh_status", observation_status_name(fresh.status))})));
 }
 
+void check_addition_endpoint_admission() {
+    const auto coordinates = addition_coordinates();
+    HelmholtzModel model(addition_parameters(), coordinates.active_parameters(), addition_record());
+    const auto row = addition_variant("fixed_system", 0.2, {}).observation;
+    ReferenceCache cache;
+    auto center = predict(model, row, {}, {}, &cache);
+    CHECK(center.solved && center.initial_heat_endpoint);
+    const auto evaluate = [&](ReferenceCache* references) {
+        return differentiate_group(model, {&row}, center, coordinates, {}, {}, references).front();
+    };
+    CHECK(evaluate(&cache).status == ObservationStatus::Available);
+    center.solved->success = false;
+    const auto warm = evaluate(&cache), fresh = evaluate(nullptr);
+    std::cout << "refused warm / fresh status " << observation_status_name(warm.status)
+              << ' ' << observation_status_name(fresh.status) << '\n';
+    CHECK(fresh.status == ObservationStatus::ActionUnavailable && warm.status == fresh.status);
+    CHECK(warm.value.empty() && warm.message == fresh.message);
+}
+
+void check_addition_endpoint_cache() {
+    const auto coordinates = addition_coordinates();
+    HelmholtzModel model(addition_parameters(), coordinates.active_parameters(), addition_record());
+    const auto first = addition_variant("fixed_system", 0.2, {}).observation;
+    auto other = first;
+    other.problem.temperature.value += 5.0;
+    ReferenceCache left, right;
+    const auto a = predict(model, first, {}, {}, &left), b = predict(model, other, {}, {}, &right);
+    CHECK(a.initial_heat_endpoint && b.initial_heat_endpoint);
+    const auto evaluate = [&](const Observation& row, const Prediction& center, ReferenceCache* refs) {
+        return differentiate_group(model, {&row}, center, coordinates, {}, {}, refs).front();
+    };
+    const auto primed = evaluate(first, a, &left), fresh = evaluate(other, b, nullptr);
+    CHECK(primed.status == ObservationStatus::Available && fresh.status == ObservationStatus::Available);
+    const auto warm = evaluate(other, b, &left);
+    CHECK(truth("addition-enthalpy/foreign-cache-gradient", warm.status == fresh.status && warm.value == fresh.value,
+        recording_support::fields({recording_support::field("warm", warm.value), recording_support::field("fresh", fresh.value)})));
+}
+
 void check_electrolyte_row_signed_zero() {
     Observation positive;
     positive.kind = ObservationKind::MeanIonicActivityCoefficient;
