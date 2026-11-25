@@ -4568,6 +4568,12 @@ class ObservationKind:
     """Solved system pressure times the selected phase mole-fraction sum, Pa."""
     PhaseSolventActivity: ObservationKind
     """Solved liquid solvent activity relative to its pure liquid at fixed T/P."""
+    PhaseSoluteActivity: ObservationKind
+    """Solute ln activity or −log10 activity on a molal infinite-dilution reference."""
+    PhaseConcentration: ObservationKind
+    """Sum of selected species concentrations in one phase, mol/m^3."""
+    LogLinear: ObservationKind
+    """Weighted sum of log quantities on one solved equilibrium."""
     PhaseAmountRatio: ObservationKind
     """Selected numerator component amount divided by selected denominator amount, dimensionless;
     denominator must be nonzero.
@@ -4587,7 +4593,9 @@ class ResidualForm:
     Difference: ResidualForm
     """(prediction-observed)/scale, with positive scale in the observation unit."""
     LogRatio: ResidualForm
-    """ln(prediction/observed); both arguments must be positive, and scale is unused."""
+    """Log ratio of positive quantities, without a scale. LogLinear stores the prediction
+    in natural-log units and subtracts ln(observed) directly.
+    """
 
 class ObservationStatus:
     """Availability or refusal cause of an observation row.
@@ -4633,6 +4641,12 @@ class Observation:
     pressure_ratio: float
     site: Optional[int]
     """Zero-based site ordinal, required for AssociationSiteFraction."""
+    solvent: int | None
+    """Neutral reference solvent index for a solute activity."""
+    negative_log10: bool
+    """Return minus the base-10 logarithm of the solute activity."""
+    log_terms: list[tuple[float, Observation]]
+    """Coefficients and selectors for positive quantities of one solved problem."""
 
     basis_amount: float
     loading_cap: float
@@ -4693,7 +4707,9 @@ class Observation:
     mass_basis: bool
     """For Density/PhaseDensity, request kg/m^3 rather than mol/m^3 through declared molar masses."""
     observed: float
-    """Reported measured/source value in the selected prediction unit; not a residual."""
+    """Measured/source value in the prediction unit. LogLinear with LogRatio uses the
+    positive observed product before taking its natural logarithm.
+    """
     form: ResidualForm
     """Dimensionless residual transformation."""
     scale: float
@@ -4787,22 +4803,28 @@ class ReactionCoefficient:
     """Source reaction enthalpy increment in J/mol, with a required pivot temperature; preserves ln
     K at the pivot.
     """
+    LogShift: ReactionCoefficient
+    """Additive natural-log K coordinate applied to a set of named reactions."""
 
 class ReactionCoordinate:
-    """Named source coefficient or enthalpy-shift coordinate.
+    """Named source coefficient or additive reaction-law coordinate.
 
     Notes
     -----
-    Plain assignments precede an enthalpy-shift addition on a fresh observation copy. Duplicate assignments and two shifts on one reaction are refused. Sequence starts and minimax admit EnthalpyShift as an offset from the declared correlation; see ALG-FIT.
+    Plain assignments precede additive shifts. Each reaction can receive one
+    enthalpy shift and one shared log shift. The log-shift multipliers are keyed
+    by reaction name. See ALG-FIT.
     """
     name: str
     """Reaction name shared by every matching observation/source law."""
     coefficient: ReactionCoefficient
-    """Selected a/b/c/d coefficient or pivoted enthalpy increment."""
+    """Selected a/b/c/d coefficient, pivoted enthalpy increment, or shared ln K offset."""
     pivot_temperature: float
     """Positive pivot in K within the source interval, required for EnthalpyShift; otherwise
     unused.
     """
+    log_shifts: dict[str, float]
+    """Named multipliers for a shared additive natural-log K shift."""
 
 class CoordinateTarget:
     """One native EOS target of an affine optimizer coordinate."""

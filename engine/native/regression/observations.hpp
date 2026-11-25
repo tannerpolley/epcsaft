@@ -21,7 +21,7 @@ enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability,
-    PhaseBulkRelativePermittivity, AssociationSiteFraction
+    PhaseBulkRelativePermittivity, AssociationSiteFraction, PhaseSoluteActivity, PhaseConcentration, LogLinear
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -78,6 +78,9 @@ struct Observation final {
     std::optional<equilibrium::EquilibriumProblem> pressure_reference;
     double pressure_ratio = 1.0;
     std::optional<std::size_t> site{};
+    std::optional<std::size_t> solvent{};
+    bool negative_log10 = false;
+    std::vector<std::pair<double, Observation>> log_terms{};  // selectors on this row's problem
 };
 
 struct HydrationHold final {

@@ -93,6 +93,8 @@ std::optional<double> residual(const Observation& observation, double value, Obs
     double result = 0.0;
     if (observation.form == ResidualForm::Difference) {
         result = (value - observation.observed) / observation.scale;
+    } else if (observation.kind == ObservationKind::LogLinear) {
+        result = value - std::log(observation.observed);
     } else if (!(value > 0.0) || !(observation.observed > 0.0)) {
         status = ObservationStatus::NonpositiveLogArgument;
         return std::nullopt;
@@ -109,7 +111,8 @@ std::optional<double> residual(const Observation& observation, double value, Obs
 }
 
 double residual_slope(const Observation& observation, double value) {
-    return observation.form == ResidualForm::Difference ? 1.0 / observation.scale : 1.0 / value;
+    if (observation.form == ResidualForm::Difference) return 1.0 / observation.scale;
+    return observation.kind == ObservationKind::LogLinear ? 1.0 : 1.0 / value;
 }
 
 Observation pressure_reference_row(const Observation& observation) {
@@ -236,6 +239,19 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
     require(observation.final_problem.solids.empty() && (observation.problem.solids.empty() || k == ObservationKind::PhaseMoleFraction
         || k == ObservationKind::PhaseAmountRatio || k == ObservationKind::PartialPressure || k == ObservationKind::PhaseDensity),
         "solids only for phase mole fraction, amount ratio, partial pressure or phase density");
+    require(observation.solvent.has_value() == (k == ObservationKind::PhaseSoluteActivity)
+        && (!observation.negative_log10 || observation.solvent), "solute activity reference");
+    require((k == ObservationKind::LogLinear) == !observation.log_terms.empty(), "log-linear terms");
+    if (k == ObservationKind::PhaseSoluteActivity)
+        require(observation.form == ResidualForm::Difference, "solute log activity uses Difference");
+    if (k == ObservationKind::LogLinear) for (const auto& [weight, term] : observation.log_terms) {
+        require(std::isfinite(weight) && weight != 0.0 && term.log_terms.empty() && term.kind != ObservationKind::LogLinear
+            && term.kind != ObservationKind::Stability && term.kind != ObservationKind::LogEquilibriumConstant
+            && !addition(term.kind) && !pressure_closed(term.kind) && !electrolyte_observation(term.kind)
+            && equilibrium::same_problem_state(observation.problem, term.problem),
+            "log-linear terms must select positive quantities of one solved problem");
+        (void)validate_declaration(term, model);
+    }
     require(k != ObservationKind::PhaseBulkRelativePermittivity || model.parameters().permittivity_form.declared(),
         "bulk relative permittivity requires a declared permittivity form");
     require(observation.site.has_value() == (k == ObservationKind::AssociationSiteFraction),
@@ -348,6 +364,10 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
         require(compiled.admits_apparent_cp(), "apparent Cp requires driven T/P or free T with a fixed-P enthalpy target");
         return;
     }
+    if (observation.kind == ObservationKind::LogLinear) {
+        for (const auto& [weight, term] : observation.log_terms) validate_compiled(term, model, &compiled);
+        return;
+    }
     require(observation.phase < compiled.problem.phases.size(), "phase index");
     if (observation.kind == ObservationKind::AssociationSiteFraction)
         equilibrium::validate_phase_site(model.parameters(), compiled.problem.phases[observation.phase], observation.site);
@@ -359,8 +379,20 @@ static void validate_compiled(const Observation& observation, const HelmholtzMod
         require(model.parameters().charge_number[solvent] == 0 && model.parameters().molar_mass_kg_per_mol[solvent] > 0.0, "neutral solvent with molar mass");
         require(std::isfinite(observation.analytical_solute_molality) && observation.analytical_solute_molality >= 0.0, "analytical solute molality");
     }
+    if (observation.kind == ObservationKind::PhaseSoluteActivity) {
+        const auto solvent = *observation.solvent;
+        const auto& phase = compiled.problem.phases[observation.phase];
+        const auto& parameters = model.parameters();
+        require(!compiled.problem.temperature.free && !compiled.problem.pressure.free, "solute activity requires fixed T/P");
+        require(phase.kind == equilibrium::PhaseKind::Liquid && solvent < parameters.component_count()
+            && std::find(phase.support.begin(), phase.support.end(), solvent) != phase.support.end()
+            && parameters.charge_number[solvent] == 0 && parameters.molar_mass_kg_per_mol[solvent] > 0.0,
+            "solute activity requires a supported neutral liquid solvent with molar mass");
+        require(observation.species.size() == 1 && observation.species[0] != solvent, "one species distinct from its reference solvent");
+    }
     if (observation.kind != ObservationKind::PhaseMoleFraction && observation.kind != ObservationKind::PartialPressure
-        && observation.kind != ObservationKind::PhaseAmountRatio && observation.kind != ObservationKind::PhaseSolventActivity) return;
+        && observation.kind != ObservationKind::PhaseAmountRatio && observation.kind != ObservationKind::PhaseSolventActivity
+        && observation.kind != ObservationKind::PhaseSoluteActivity && observation.kind != ObservationKind::PhaseConcentration) return;
     for (const auto& [phase, species_set] : {std::pair{observation.phase, observation.species},
              std::pair{observation.denominator_phase, observation.kind == ObservationKind::PhaseAmountRatio
                  ? observation.denominator_species : observation.species}}) {
@@ -808,39 +840,34 @@ static void project_electrolyte(const Observation& observation, const Electrolyt
     finish(result, observation, value);
 }
 
-void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
-    if (electrolyte_observation(observation.kind)) {
-        project_electrolyte(observation, electrolyte_outcome(model, observation, result).get(), result);
-        return;
-    }
+static bool project_solvent_reference(const HelmholtzModel& model, const equilibrium::EquilibriumResult& solved,
+    std::size_t solvent, Prediction& result) {
+    std::vector<double> pure(model.parameters().component_count(), 0.0);
+    pure[solvent] = 1.0;
+    if (!result.reference || result.reference->model != model.identity()
+        || !core::bitwise_equal(result.reference->temperature, *solved.temperature)
+        || !core::bitwise_equal(result.reference->pressure, *solved.pressure)
+        || !core::bitwise_equal(result.reference->solvent_fractions, pure))
+        result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
+    const auto& reference = *result.reference;
+    if (reference.pure_solvent_state)
+        core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
+    if (reference.solvent_status == PropertyActionStatus::Available && reference.pure_solvent_state) return true;
+    result.status = ObservationStatus::ReferenceUnavailable;
+    result.message = reference.solvent_cause;
+    result.refusal_convergence = reference.solvent_convergence;
+    core::retain_first(result.first_numerical_failure, reference.solvent_convergence);
+    return false;
+}
+
+static double activity_log_scale(const Observation& observation) {
+    return observation.negative_log10 ? -1.0 / std::log(10.0) : 1.0;
+}
+
+static void project_solved(const HelmholtzModel& model, const Observation& observation, Prediction& result,
+    const equilibrium::EquilibriumResult& solved, const equilibrium::CompiledSystem& compiled) {
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
-    if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant
-        || addition(observation.kind)) return;
-    result.value.reset();
-    result.residual.reset();
-    if (!admits_solved_prediction(model, observation, result)) {
-        result.stability.reset();
-        result.reference.reset();
-        result.caloric_center.reset();
-        result.analytical_osmotic_coefficient.reset();
-        result.status = ObservationStatus::CentralSolveUnavailable;
-        result.message = "central solved state unavailable";
-        return;
-    }
-    if (observation.kind == ObservationKind::Stability) {
-        result.stability = std::make_shared<equilibrium::StabilityMeasure>(
-            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
-        for (auto& trial : result.stability->report.trials) {
-            trial.optimizer.prepared_endpoint.reset();
-            trial.optimizer.optimizer_state.reset();
-        }
-        result.unit = "1";
-        if (!result.stability->available) {
-            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
-        finish(result, observation, *result.stability->value); return;
-    }
-    const auto& solved = *result.solved;
     bool missing_mass = false;
     const auto phase = observation.phase;
     const double* fractions = solved.mole_fractions.data() + phase * components;
@@ -852,9 +879,9 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         const auto kind = observation.kind == ObservationKind::SystemEnthalpy
             ? Kind::SystemEnthalpy : Kind::EquilibriumIsobaricHeatCapacity;
         const auto entry = model.solver_options().nested_solve
-            ? equilibrium::solved_state_first_actions(*result.compiled, solved, {observable(kind, 0)}, {zero},
+            ? equilibrium::solved_state_first_actions(compiled, solved, {observable(kind, 0)}, {zero},
                 &result.caloric_center).front().results.front()
-            : equilibrium::solved_state_actions(*result.compiled, solved, {{observable(kind, 0)}, {zero}}).results.front();
+            : equilibrium::solved_state_actions(compiled, solved, {{observable(kind, 0)}, {zero}}).results.front();
         if (!entry.value) {
             result.status = entry.status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
                 || entry.status == equilibrium::SolvedStateActionStatus::OutsideInterval
@@ -876,34 +903,47 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         value = *solved.temperature;
         break;
     case ObservationKind::PhaseMoleFraction:
+    case ObservationKind::PhaseConcentration:
     case ObservationKind::PartialPressure:
         for (const auto species : observation.species) value += fractions[species];
         result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
         if (observation.kind == ObservationKind::PartialPressure) value *= *solved.pressure;
-        break;
-    case ObservationKind::PhaseSolventActivity: {
-        const auto solvent = observation.species[0];
-        std::vector<double> pure(components, 0.0);
-        pure[solvent] = 1.0;
-        if (!result.reference || result.reference->model != model.identity()
-            || !core::bitwise_equal(result.reference->temperature, *solved.temperature)
-            || !core::bitwise_equal(result.reference->pressure, *solved.pressure)
-            || !core::bitwise_equal(result.reference->solvent_fractions, pure))
-            result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
-        const auto& reference = *result.reference;
-        if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
-        if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
-            result.status = ObservationStatus::ReferenceUnavailable; result.message = reference.solvent_cause;
-            result.refusal_convergence = reference.solvent_convergence;
-            core::retain_first(result.first_numerical_failure, reference.solvent_convergence); return;
+        if (observation.kind == ObservationKind::PhaseConcentration) {
+            result.unit = "mol/m^3";
+            value *= solved.molar_densities[phase];
         }
+        break;
+    case ObservationKind::PhaseSolventActivity:
+    case ObservationKind::PhaseSoluteActivity: {
+        const auto species = observation.species[0];
+        const auto solvent = observation.solvent.value_or(species);
+        if (!project_solvent_reference(model, solved, solvent, result)) return;
+        const auto& reference = *result.reference;
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
-        const auto entry = equilibrium::solved_state_actions(*result.compiled, solved,
-            {{observable(Kind::PhaseLogActivity, phase, solvent)}, {zero}}).results.front();
+        const auto entry = equilibrium::solved_state_actions(compiled, solved,
+            {{observable(Kind::PhaseLogActivity, phase, species)}, {zero}}).results.front();
         if (entry.property_diagnostics) core::retain_first(result.first_numerical_failure, entry.property_diagnostics->first_numerical_failure);
         if (!entry.value) {
             result.status = ObservationStatus::ActionUnavailable;
             result.message = entry.diagnostic_message.value_or("solved solvent log activity unavailable"); return;
+        }
+        if (observation.kind == ObservationKind::PhaseSoluteActivity) {
+            std::vector<double> insertion(components, 0.0);
+            insertion[species] = 1.0;
+            const auto offset = reference_partial_from_state(model, *solved.temperature, reference.solvent_fractions,
+                insertion, 0, 0, std::nullopt, *reference.pure_solvent_state, true);
+            core::retain_first(result.first_numerical_failure, offset.diagnostics.first_numerical_failure);
+            if (!offset.action) {
+                result.status = ObservationStatus::ReferenceUnavailable;
+                result.message = "infinite-dilution solute reference unavailable";
+                result.refusal_convergence = offset.diagnostics.first_numerical_failure;
+                return;
+            }
+            result.unit = "1";
+            // EqID: reaction_activity_quotient, common molality with the 1 mol/kg standard.
+            value = activity_log_scale(observation) * (*entry.value - *offset.action
+                - std::log(parameters.molar_mass_kg_per_mol[solvent]));
+            break;
         }
         if (!reference.pure_solvent_log_fugacity) {
             result.status = ObservationStatus::ReferenceUnavailable;
@@ -923,6 +963,26 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         else result.analytical_osmotic_cause = "OsmoticUndefinedPureSolvent";
         break;
     }
+    case ObservationKind::LogLinear:
+        result.unit = "1";
+        for (const auto& [coefficient, term] : observation.log_terms) {
+            Prediction operand;
+            project_solved(model, term, operand, solved, compiled);
+            core::retain_first(result.first_numerical_failure, operand.first_numerical_failure);
+            if (!operand.value) {
+                result.status = operand.status;
+                result.message = operand.message;
+                result.refusal_convergence = operand.refusal_convergence;
+                return;
+            }
+            if (!(*operand.value > 0.0)) {
+                result.status = ObservationStatus::NonpositiveLogArgument;
+                result.message = "log-linear term is nonpositive";
+                return;
+            }
+            value += coefficient * std::log(*operand.value);
+        }
+        break;
     case ObservationKind::PhaseAmountRatio:
         result.unit = "1";
         value = component_amount(solved, phase, observation.species)
@@ -972,6 +1032,39 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         return;
     }
     finish(result, observation, value);
+}
+
+void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
+    if (electrolyte_observation(observation.kind)) {
+        project_electrolyte(observation, electrolyte_outcome(model, observation, result).get(), result);
+        return;
+    }
+    if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant
+        || addition(observation.kind)) return;
+    result.value.reset();
+    result.residual.reset();
+    if (!admits_solved_prediction(model, observation, result)) {
+        result.stability.reset();
+        result.reference.reset();
+        result.caloric_center.reset();
+        result.analytical_osmotic_coefficient.reset();
+        result.status = ObservationStatus::CentralSolveUnavailable;
+        result.message = "central solved state unavailable";
+        return;
+    }
+    if (observation.kind == ObservationKind::Stability) {
+        result.stability = std::make_shared<equilibrium::StabilityMeasure>(
+            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+        for (auto& trial : result.stability->report.trials) {
+            trial.optimizer.prepared_endpoint.reset();
+            trial.optimizer.optimizer_state.reset();
+        }
+        result.unit = "1";
+        if (!result.stability->available) {
+            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
+        finish(result, observation, *result.stability->value); return;
+    }
+    project_solved(model, observation, result, *result.solved, *result.compiled);
 }
 
 PredictionGradient differentiate(
@@ -1183,14 +1276,17 @@ std::vector<PredictionGradient> differentiate_group(
             directions[k].reaction_coefficients.assign(problem.reactions.size(), {});
             const auto& target = reactions[k - active_width];
             for (std::size_t j = 0; j < problem.reactions.size(); ++j)
-                if (problem.reactions[j].name == target.name)
-                    directions[k].reaction_coefficients[j] = reaction_direction(target);
+                if (const double multiplier = target.multiplier(problem.reactions[j].name); multiplier != 0.0) {
+                    auto& coefficients = directions[k].reaction_coefficients[j];
+                    coefficients = reaction_direction(target);
+                    for (auto& coefficient : coefficients) coefficient *= multiplier;
+                }
             directions[k].solid_log_k.assign(problem.solids.size(), 0.0);
             for (std::size_t s = 0; s < problem.solids.size(); ++s)
-                if (problem.solids[s].name == target.name) {
+                if (const double multiplier = target.multiplier(problem.solids[s].name); multiplier != 0.0) {
                     const auto d = reaction_direction(target);
                     const auto& law = problem.solids[s].correlation;
-                    directions[k].solid_log_k[s] = reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                    directions[k].solid_log_k[s] = multiplier * reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
                         law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
                 }
         }
@@ -1303,7 +1399,7 @@ std::vector<PredictionGradient> differentiate_group(
         if (references && !std::equal(reactions.begin(), reactions.end(),
                 references->reaction_columns.begin(), references->reaction_columns.end(), [](const auto& a, const auto& b) {
                     return a.name == b.name && a.coefficient == b.coefficient
-                        && core::bitwise_equal(a.pivot_temperature, b.pivot_temperature);
+                        && core::bitwise_equal(a.pivot_temperature, b.pivot_temperature) && a.log_shifts == b.log_shifts;
                 })) {
             references->reaction_columns = std::move(reactions);
             for (auto& endpoint : references->heat) endpoint.gradient.reset();
@@ -1350,10 +1446,30 @@ std::vector<PredictionGradient> differentiate_group(
         return {initial};
     }
     const auto* solved = prediction.solved ? &*prediction.solved : nullptr;
-    std::vector<std::vector<std::size_t>> slots(observations.size());
+    // Expand log-linear selectors into the same native first-action batch as ordinary rows.
+    std::vector<const Observation*> leaves;
+    std::vector<std::optional<Prediction>> operands;
+    std::vector<std::size_t> ends;
+    if (solved && std::any_of(observations.begin(), observations.end(), [](const auto* row) {
+        return row->kind == ObservationKind::LogLinear;
+    })) {
+        for (const auto* row : observations) {
+            if (row->kind != ObservationKind::LogLinear) {
+                leaves.push_back(row);
+                operands.emplace_back();
+            } else for (const auto& [coefficient, term] : row->log_terms) {
+                leaves.push_back(&term);
+                auto& operand = operands.emplace_back(std::in_place).value();
+                project_solved(model, term, operand, *solved, *prediction.compiled);
+            }
+            ends.push_back(leaves.size());
+        }
+    }
+    const auto& rows = leaves.empty() ? observations : leaves;
+    std::vector<std::vector<std::size_t>> slots(rows.size());
     std::vector<SolvedStateObservable> observables;
-    for (std::size_t row = 0; row < observations.size(); ++row) {
-        const auto& observation = *observations[row];
+    for (std::size_t row = 0; row < rows.size(); ++row) {
+        const auto& observation = *rows[row];
         const auto phase = observation.phase;
         const auto add = [&](const SolvedStateObservable& item) {
             const auto found = std::find_if(observables.begin(), observables.end(), [&](const auto& prior) {
@@ -1373,11 +1489,14 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::EquilibriumPressure: add(observable(Kind::Pressure, 0)); break;
         case ObservationKind::EquilibriumTemperature: add(observable(Kind::Temperature, 0)); break;
         case ObservationKind::PhaseMoleFraction:
+        case ObservationKind::PhaseConcentration:
         case ObservationKind::PartialPressure:
             for (const auto species : observation.species)
                 add(observable(Kind::PhaseMoleFraction, phase, species));
             if (observation.kind == ObservationKind::PartialPressure) add(observable(Kind::Pressure, 0));
+            if (observation.kind == ObservationKind::PhaseConcentration) add(observable(Kind::PhaseMolarDensity, phase));
             break;
+        case ObservationKind::PhaseSoluteActivity:
         case ObservationKind::PhaseSolventActivity:
             add(observable(Kind::PhaseLogActivity, phase, observation.species[0]));
             break;
@@ -1405,20 +1524,32 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::FeedEnthalpy:
         case ObservationKind::IsobaricHeatCapacity:
         case ObservationKind::LogEquilibriumConstant:
+        case ObservationKind::LogLinear:
         case ObservationKind::Density: break;
         }
     }
     auto caloric = prediction.caloric_center;
     const auto batches = !solved || width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
         : equilibrium::solved_state_first_actions(*prediction.compiled, *solved, observables, directions, caloric ? &caloric : nullptr);
-    std::vector<PredictionGradient> gradients(observations.size());
-    for (std::size_t row = 0; row < observations.size(); ++row) {
-        const auto& observation = *observations[row];
+    std::vector<PredictionGradient> gradients(rows.size());
+    for (std::size_t row = 0; row < rows.size(); ++row) {
+        const auto& observation = *rows[row];
         const auto phase = observation.phase;
         const double* fractions = solved ? solved->mole_fractions.data() + phase * components : nullptr;
         bool missing_mass = false;
         const double mass = solved && observation.mass_basis ? mean_molar_mass(parameters, fractions, missing_mass) : 1.0;
         auto& gradient = gradients[row];
+        const auto& projection = !operands.empty() && operands[row] ? *operands[row] : prediction;
+        std::optional<Prediction> solute_reference;
+        if (solved && observation.kind == ObservationKind::PhaseSoluteActivity && (active_width || !inputs.empty())) {
+            auto& prepared = solute_reference.emplace();
+            prepared.reference = projection.reference;
+            if (!project_solvent_reference(model, *solved, *observation.solvent, prepared)) {
+                gradient = {{}, prepared.status, prepared.message, {},
+                    prepared.first_numerical_failure, prepared.refusal_convergence};
+                continue;
+            }
+        }
         gradient.value.assign(width, 0.0);
         gradient.status = ObservationStatus::Available;
         for (std::size_t k = 0; k < width; ++k) {
@@ -1457,16 +1588,41 @@ std::vector<PredictionGradient> differentiate_group(
             if (gradient.status != ObservationStatus::Available) break;
             double value = 0.0;
             switch (observation.kind) {
+            case ObservationKind::PhaseSoluteActivity: {
+                double offset = 0.0;
+                if (solute_reference) {
+                    const auto& reference = *solute_reference->reference;
+                    std::vector<double> insertion(components, 0.0);
+                    insertion[observation.species[0]] = 1.0;
+                    const auto subtract = [&](std::size_t t, std::size_t p, std::optional<std::size_t> parameter, double weight) {
+                        if (weight == 0.0) return;
+                        const auto partial = reference_partial_from_state(model, *solved->temperature, reference.solvent_fractions,
+                            insertion, t, p, parameter, *reference.pure_solvent_state, true);
+                        core::retain_first(gradient.first_numerical_failure, partial.diagnostics.first_numerical_failure);
+                        if (partial.action) offset += weight * *partial.action;
+                        else {
+                            gradient.status = ObservationStatus::ActionUnavailable;
+                            gradient.message = "infinite-dilution solute reference action unavailable";
+                            gradient.refusal_convergence = partial.diagnostics.first_numerical_failure;
+                        }
+                    };
+                    if (k < active_width) subtract(0, 0, k, 1.0);
+                    subtract(1, 0, {}, directions[k].temperature_k);
+                    subtract(0, 1, {}, directions[k].pressure_pa);
+                }
+                value = activity_log_scale(observation) * (action[0] - offset);
+                break;
+            }
             case ObservationKind::PhaseSolventActivity: {
                 const auto solvent = observation.species[0];
-                if (!prediction.reference || !prediction.reference->pure_solvent_state || !prediction.value
+                if (!projection.reference || !projection.reference->pure_solvent_state || !projection.value
                     || directions[k].temperature_k != 0.0 || directions[k].pressure_pa != 0.0) {
                     gradient.value.clear(); gradient.status = ObservationStatus::ActionUnavailable;
                     gradient.message = "fixed-T/P pure solvent action unavailable"; break;
                 }
                 double reference_action = 0.0;
                 if (k < active_width) {
-                    const auto& pure = *prediction.reference->pure_solvent_state;
+                    const auto& pure = *projection.reference->pure_solvent_state;
                     const auto column = pure.log_fugacity_parameter_derivative.at(solvent * active_width + k);
                     if (!column) {
                         gradient.value.clear(); gradient.status = ObservationStatus::ActionUnavailable;
@@ -1474,7 +1630,7 @@ std::vector<PredictionGradient> differentiate_group(
                     }
                     reference_action = *column;
                 }
-                value = *prediction.value * (action[0] - reference_action);
+                value = *projection.value * (action[0] - reference_action);
                 break;
             }
             case ObservationKind::PhaseAmountRatio: {
@@ -1500,17 +1656,54 @@ std::vector<PredictionGradient> differentiate_group(
                 for (std::size_t i = 0; observation.mass_basis && i < components; ++i)
                     value += solved->molar_densities[phase] * parameters.molar_mass_kg_per_mol[i] * action[1 + i];
                 break;
-            case ObservationKind::PartialPressure:  // d(P sum y) = dP sum y + P sum dy
+            case ObservationKind::PhaseConcentration:
+            case ObservationKind::PartialPressure: {
+                const double factor = observation.kind == ObservationKind::PartialPressure
+                    ? *solved->pressure : solved->molar_densities[phase];
                 for (const auto species : observation.species) value += fractions[species] * action.back();
-                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += *solved->pressure * action[i];
+                for (std::size_t i = 0; i + 1 < action.size(); ++i) value += factor * action[i];
                 break;
+            }
             default:
                 for (const auto item : action) value += item;
+            }
+            if (gradient.status != ObservationStatus::Available) {
+                gradient.value.clear();
+                break;
             }
             gradient.value[k] = value;
         }
     }
-    return gradients;
+    if (ends.empty()) return gradients;
+    std::vector<PredictionGradient> combined;
+    std::size_t first = 0;
+    for (std::size_t row = 0; row < ends.size(); ++row) {
+        const auto& terms = observations[row]->log_terms;
+        if (terms.empty()) combined.push_back(std::move(gradients[first]));
+        else {
+            auto& output = combined.emplace_back();
+            output.status = ObservationStatus::Available;
+            output.value.assign(width, 0.0);
+            for (std::size_t i = first; i < ends[row]; ++i) {
+                auto& gradient = gradients[i];
+                const auto& operand = *operands[i];
+                core::retain_first(output.first_numerical_failure, operand.first_numerical_failure);
+                core::retain_first(output.first_numerical_failure, gradient.first_numerical_failure);
+                if (!operand.value || !(*operand.value > 0.0) || gradient.status != ObservationStatus::Available) {
+                    output.value.clear();
+                    output.status = !operand.value ? operand.status : !(*operand.value > 0.0)
+                        ? ObservationStatus::NonpositiveLogArgument : gradient.status;
+                    output.message = !operand.value ? operand.message : !(*operand.value > 0.0)
+                        ? "log-linear term is nonpositive" : gradient.message;
+                    break;
+                }
+                for (std::size_t k = 0; k < width; ++k)
+                    output.value[k] += terms[i - first].first * (gradient.value[k] / *operand.value);
+            }
+        }
+        first = ends[row];
+    }
+    return combined;
 }
 
 }  // namespace epcsaft::regression

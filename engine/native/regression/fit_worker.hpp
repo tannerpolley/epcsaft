@@ -44,7 +44,7 @@ FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)
 FIELDS(ThermochemistryRecord, a, b)
 FIELDS(CoordinateTarget, a, b, c)
-FIELDS(ReactionCoordinate, a, b, c)
+FIELDS(ReactionCoordinate, a, b, c, log_shifts)
 FIELDS(Coordinate, a, b, c, d, e, f)
 FIELDS(equilibrium::PhaseSpec, a, b, c, d, e, f, declared_composition_guess, g)
 FIELDS(equilibrium::FeedSpec, a, b, c, d)
@@ -54,7 +54,7 @@ FIELDS(equilibrium::SolidSpec, a, b, c, d, e, f, g)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
-FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio, site)
+FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10, log_terms)
 // Declaration validation refuses prepared trials before worker serialization.
 auto fields(equilibrium::StabilityOptions& item) {
     auto& [a, b, prepared, c, d, e, f, g] = item;

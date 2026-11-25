@@ -739,7 +739,7 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
 ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures,
     const std::vector<std::size_t>& rows, bool admitted) {
     for (const auto& coordinate : request.coordinates.coordinates)
-        if (coordinate.reaction && coordinate.reaction->coefficient == ReactionCoefficient::EnthalpyShift) {
+        if (coordinate.reaction && coordinate.reaction->shift()) {
             validate(request.coordinates, request.parameters, request.observations, request.thermochemistry);
             break;
         }
@@ -1076,15 +1076,24 @@ std::vector<Observation> observations_at(const FitRequest& request, const std::v
     require(evaluator.evaluate(optimizer, false, values), "manufactured prediction unavailable");
     auto observations = request.observations;
     request.coordinates.apply(observations, optimizer);
-    for (std::size_t i = 0; i < errors.size(); ++i)
-        observations[i].observed = observations[i].form == ResidualForm::LogRatio
-            ? values.predictions[i] * std::pow(10.0, -errors[i]) : values.predictions[i] - errors[i];
+    for (std::size_t i = 0; i < errors.size(); ++i) {
+        auto& row = observations[i];
+        const double prediction = values.predictions[i];
+        if (row.form == ResidualForm::Difference) row.observed = prediction - errors[i];
+        else if (row.kind == ObservationKind::LogLinear) row.observed = std::exp(prediction - errors[i] * std::log(10.0));
+        else row.observed = prediction * std::pow(10.0, -errors[i]);
+    }
     return observations;
 }
 
 std::pair<double, double> check_error(CheckMetric metric, const Observation& row, double prediction) {
     if (!std::isfinite(prediction)) return {NAN, NAN};
     if (metric == CheckMetric::AbsoluteDifference) return {prediction - row.observed, 1.0};
+    if (row.kind == ObservationKind::LogLinear) {
+        const double target = row.form == ResidualForm::LogRatio ? std::log(row.observed) : row.observed;
+        const double slope = 1.0 / std::log(10.0);
+        return {(prediction - target) * slope, slope};
+    }
     if (!(prediction > 0.0 && row.observed > 0.0)) return {NAN, NAN};
     return {std::log10(prediction / row.observed), 1.0 / (std::log(10.0) * prediction)};
 }
@@ -1188,7 +1197,7 @@ std::vector<double> fit_start(const FitRequest& request) {
     require(request.start->size() == point.size(), "fit start width");
     for (std::size_t c = 0; c < point.size(); ++c) {
         const auto& reaction = request.coordinates.coordinates[c].reaction;
-        if (reaction && reaction->coefficient == ReactionCoefficient::EnthalpyShift) point[c] = (*request.start)[c];
+        if (reaction && reaction->shift()) point[c] = (*request.start)[c];
     }
     require(request.coordinates.within_bounds(point), "start outside bounds");
     return point;

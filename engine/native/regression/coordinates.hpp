@@ -15,11 +15,18 @@
 namespace epcsaft::regression {
 
 struct Observation;
-enum class ReactionCoefficient { A, B, C, D, EnthalpyShift };
+enum class ReactionCoefficient { A, B, C, D, EnthalpyShift, LogShift };
 struct ReactionCoordinate final {
     std::string name;
     ReactionCoefficient coefficient = ReactionCoefficient::A;
     double pivot_temperature = 0.0;  // K, required for EnthalpyShift
+    std::map<std::string, double> log_shifts{};
+    bool shift() const { return coefficient == ReactionCoefficient::EnthalpyShift || coefficient == ReactionCoefficient::LogShift; }
+    double multiplier(const std::string& reaction) const {
+        if (coefficient != ReactionCoefficient::LogShift) return double(reaction == name);
+        const auto found = log_shifts.find(reaction);
+        return found == log_shifts.end() ? 0.0 : found->second;
+    }
 };
 EPC_API std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate);
 // -log10 K = A/T + B + C*T; refuses a nonzero logarithmic coefficient.

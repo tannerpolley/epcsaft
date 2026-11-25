@@ -3455,7 +3455,12 @@ isobaric heat capacity, finite-addition enthalpy, the declared equilibrium
 observations including dimensionless bulk relative permittivity of a named
 fluid phase, the dimensionless fraction of one explicit unbonded site type on
 a supported species in a named fluid phase, and direct source-basis ln K
-observations. The site fraction uses the [mass-action solution](../equations.md#association_mass_action)
+observations. At fixed T/P, the solute-activity row subtracts the pure solvent
+infinite-dilution reference and applies the declared ln or negative log10
+scale. Log-linear rows combine positive quantities, including species
+concentrations, on one solved state. Their first actions use the log chain
+rule on the native batch. One additive ln K coordinate can shift multiple
+named reactions with declared multipliers. The site fraction uses the [mass-action solution](../equations.md#association_mass_action)
 at the solved phase coordinates. Its first action contracts the retained site
 sensitivity with the equilibrium phase-point direction in the same Helmholtz
 chart, including temperature, volume, amounts and active parameters. The solved-phase
