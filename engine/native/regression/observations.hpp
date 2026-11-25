@@ -123,7 +123,7 @@ struct Prediction final {
     std::optional<DensityBranch> branch;
     std::optional<std::size_t> stable_root_count;
     std::optional<bool> requested_tolerance_met;
-    std::optional<equilibrium::EquilibriumResult> solved;  // the accepted central solve
+    std::optional<equilibrium::EquilibriumResult> solved;  // the accepted central solve or the refused standalone pressure solve
     std::optional<equilibrium::CompiledSystem> compiled;    // the problem it solved, reused by differentiate
     std::shared_ptr<const equilibrium::SolvedStateCaloricCenter> caloric_center, final_caloric_center;
     std::optional<equilibrium::EquilibriumResult> final_solved;

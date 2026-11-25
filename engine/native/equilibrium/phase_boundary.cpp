@@ -2059,7 +2059,12 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     const bool free_temperature = target.problem.temperature.free;
     EquilibriumResult refused, found;
     StageWork observations;
-    const auto publish = [&](EquilibriumResult result) { std::move(observations).publish_observations(result); return result; };
+    std::string source_exceptions;
+    const auto publish = [&](EquilibriumResult result) {
+        result.message += source_exceptions;
+        std::move(observations).publish_observations(result);
+        return result;
+    };
     auto declared = target.problem;
     declared.phase_calculation = PhaseCalculation::Discovery;
     for (auto& phase : declared.phases) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
@@ -2102,15 +2107,30 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         }
         const int sources = target.has_reaction ? 2 : static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value);
         for (int j = 1; j <= sources && !found.success; ++j) {
-            limits.check();  // the slot is spent before compilation
+            limits.check();
+            if (limits.recovery && limits.caps_spent()) throw BudgetExhausted("source recovery work exhausted");
             const double exponent = target.has_reaction ? j - 1.5 : j;
             source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, exponent));
-            found = unless_failed(try_solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits), &observations);
+            EquilibriumResult attempt;
+            try {
+                attempt = try_solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits);
+                if (attempt.failure) std::rethrow_exception(attempt.failure);
+            } catch (const std::bad_alloc&) { throw; }
+            catch (const BudgetExhausted&) { observations.observe(attempt); throw; }
+            catch (const std::exception& error) {
+                observations.observe(attempt);
+                retain_density_failure(observations.first_numerical_failure, error, "temperature source");
+                source_exceptions += "; source at " + core::optional_number(source.temperature.value) + " K: " + error.what();
+                scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), error.what());
+                continue;
+            }
+            found = std::move(attempt);
             observations.observe(found);
             scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), found.message.c_str());
         }
         if (!found.success) {
-            refused.message = (target.has_reaction ? "no admitted temperature source: " : "no admitted lower-temperature source: ") + found.message;
+            refused.message = target.has_reaction ? "no admitted temperature source" : "no admitted lower-temperature source";
+            if (!found.message.empty()) refused.message += ": " + found.message;
             return publish(std::move(refused));
         }
         const auto work = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);

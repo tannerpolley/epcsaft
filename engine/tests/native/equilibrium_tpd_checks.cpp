@@ -2898,11 +2898,13 @@ void check_mdea_bubble_recovery() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
 #include "fixtures/mdea-411-bubble.inc"
-    struct Point { double temperature, co2, water, pressure; };
-    for (const auto& point : {Point{313.15, 1.3, 10.76470588235294, 10975251.728482163},
-                              Point{333.15, 1.368, 8.615384615384617, 76512100.41255684}}) {
+    struct Point { double temperature, co2, water, pressure, temperature_max; };
+    for (const auto& point : {Point{313.15, 1.3, 10.76470588235294, 10975251.728482163, 422.04},
+                              Point{333.15, 1.368, 8.615384615384617, 76512100.41255684, 422.04},
+                              Point{333.15, 1.368, 8.615384615384617, 76512100.41255684, 337.0}}) {
         bubble.temperature = FreeValue::fixed(point.temperature);
         bubble.feed.values = {point.co2, point.water, 0, 0, 0, 0, 1, 0};
+        for (auto& reaction : bubble.reactions) reaction.correlation->temperature_max = point.temperature_max;
         const auto compiled = compile_problem(model, bubble);
         const auto check = [&](const EquilibriumResult& state) {
             const double tolerance = bubble.solver_options.value(policy::row);
@@ -2914,14 +2916,66 @@ void check_mdea_bubble_recovery() {
             CHECK(state.amounts[0] > 0 && state.amounts[1] == 0);
             CHECK(state.packing_fractions[0] > state.packing_fractions[1]);
         };
-        check(solve_equilibrium(model, bubble));
+        const auto solved = solve_equilibrium(model, bubble);
         regression::Observation observation;
         observation.kind = regression::ObservationKind::EquilibriumPressure;
         observation.problem = bubble;
         observation.observed = point.pressure;
         const auto prediction = regression::predict_validated(model, observation);
+        std::printf("T %.2f K, correlation upper limit %.2f K: equilibrium %.12f MPa (row residual %.3g), prediction %.12f MPa\n",
+            point.temperature, point.temperature_max, solved.pressure.value_or(NAN) / 1e6,
+            solved.convergence.residual, prediction.value.value_or(NAN) / 1e6);
+        check(solved);
         CHECK(prediction.status == regression::ObservationStatus::Available && prediction.solved);
+        CHECK(prediction.value && std::abs(*prediction.value / point.pressure - 1.0) <= bubble.solver_options.value(policy::row));
         check(*prediction.solved);
+    }
+}
+
+void check_mdea_bubble_refusal_work() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    using namespace epcsaft::regression;
+#include "fixtures/mdea-411-bubble.inc"
+    bubble.temperature = FreeValue::fixed(333.15);
+    bubble.feed.values = {1.368, 8.615384615384617, 0, 0, 0, 0, 1, 0};
+    for (auto& reaction : bubble.reactions) reaction.correlation->temperature_min = 330.0;
+    const auto equilibrium = solve_equilibrium(model, bubble);
+    if (equilibrium.linear_solver != "ma57") return;  // the restricted source retry is qualified on MA57
+    CHECK(!equilibrium.success && !equilibrium.has_state());
+    Observation pressure;
+    pressure.kind = ObservationKind::EquilibriumPressure;
+    pressure.problem = bubble;
+    const auto direct = predict_validated(model, pressure);
+
+    Observation stability;
+    stability.kind = ObservationKind::Stability;
+    stability.problem = bubble;
+    stability.problem.pressure = FreeValue::fixed(1e8);
+    stability.problem.phases.resize(1);
+    stability.stability_options.mode = DiscoveryMode::Full;
+    stability.pressure_reference = bubble;
+    const auto referenced = predict_validated(model, stability);
+    CHECK(referenced.status == ObservationStatus::CentralSolveUnavailable && !referenced.value && !referenced.stability);
+    CHECK(referenced.pressure_reference && referenced.refusal_convergence);
+
+    std::printf("public equilibrium work %zu / %zu / %zu\n", equilibrium.iterations, equilibrium.evaluations, equilibrium.hessian_calls);
+    for (const auto* prediction : {&direct, static_cast<const Prediction*>(referenced.pressure_reference.get())}) {
+        CHECK(prediction->status == ObservationStatus::CentralSolveUnavailable && !prediction->value);
+        CHECK(prediction->refusal_convergence);
+        std::printf("%s pressure work %zu / %zu / %zu, blocking convergence %zu / %zu\n",
+            prediction == &direct ? "standalone" : "stability reference",
+            prediction->solved ? prediction->solved->iterations : 0,
+            prediction->solved ? prediction->solved->evaluations : 0,
+            prediction->solved ? prediction->solved->hessian_calls : 0,
+            prediction->refusal_convergence->iterations, prediction->refusal_convergence->evaluations);
+    }
+    for (const auto* prediction : {&direct, static_cast<const Prediction*>(referenced.pressure_reference.get())}) {
+        CHECK(prediction->solved && !prediction->solved->has_state());
+        CHECK(prediction->solved->iterations == equilibrium.iterations);
+        CHECK(prediction->solved->evaluations == equilibrium.evaluations);
+        CHECK(prediction->solved->hessian_calls == equilibrium.hessian_calls);
+        CHECK(prediction->solved->iterations > prediction->refusal_convergence->iterations);
     }
 }
 

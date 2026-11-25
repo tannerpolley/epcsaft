@@ -643,6 +643,7 @@ Prediction predict(
     }
     if (!solved.success || !solved.has_state()) {
         result.status = ObservationStatus::CentralSolveUnavailable;
+        if (recover_bubble && observation.kind == ObservationKind::EquilibriumPressure) result.solved = std::move(solved);
         return result;
     }
     // A declared free solid absent at the solved state is a phase-set change, never a fit value.
