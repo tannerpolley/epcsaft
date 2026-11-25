@@ -31,6 +31,7 @@
 
 namespace epcsaft {
 
+struct AssociationJacobian;
 struct AssociationWorkspace;
 namespace detail { struct HelmholtzTape; struct HelmholtzEvaluation; }
 // Successful third-order volume evaluations for one model, temperature and composition.
@@ -497,6 +498,8 @@ public:
         const std::vector<double>& sites) const;
     // Mixed contraction of the extensive residual Helmholtz scalar with three to five
     // directions of width 2 + C + A in [T, V, n, active parameters]: E3, E4 or E5.
+    EPC_API std::pair<PropertyActionStatus, std::vector<double>> contracted_energy_hessian(double, double, const std::vector<double>&,
+        const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     EPC_API ResidualEnergyAction residual_energy_action(double, double, const std::vector<double>&, const std::vector<std::vector<double>>&) const;
     // D3F[v, v, e_k] for the coordinates k of [T, V, n, active parameters], one direction v of that width.
     EPC_API ResidualEnergyGradient repeated_direction_energy_gradient(double, double, const std::vector<double>&,
@@ -576,7 +579,7 @@ public:
     template <typename Base>
     HelmholtzDerivativeValues<Base> isothermal(Base temperature, Base volume,
         const std::vector<Base>& amounts, const std::vector<double>* sites = nullptr,
-        const Eigen::FullPivLU<Eigen::MatrixXd>* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr,
+        const AssociationJacobian* prepared = nullptr, Eigen::MatrixXd* site_sensitivity = nullptr,
         const AssociationAction* association = nullptr) const;
     EPC_API VirialCoefficients virial_coefficients(double temperature, const std::vector<double>& composition) const;
     EPC_API VirialCoefficientActions virial_coefficient_actions(double temperature, const std::vector<double>& composition,
@@ -609,8 +612,9 @@ private:
     HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
     HelmholtzDerivatives state_derivatives(double, double, const std::vector<double>&, bool, bool,
         const HelmholtzDerivatives*) const;
+    struct EnergyActionCenter;
     ResidualEnergyAction energy_action_locked(double, double, const std::vector<double>&,
-        const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr) const;
+        const std::vector<std::vector<double>>&, const std::vector<std::size_t>* = nullptr, std::vector<double>* = nullptr, EnergyActionCenter* = nullptr) const;
     HelmholtzDerivatives evaluate_locked(
         double temperature,
         double volume,
@@ -639,7 +643,7 @@ private:
 #if defined(_WIN32) && !defined(EPCSAFT_NATIVE_BUILD) && !defined(EPCSAFT_NATIVE_STATIC)
 extern template EPC_API PureIsothermalValues<double> HelmholtzModel::pure_isothermal(double, double, double) const;
 extern template EPC_API HelmholtzDerivativeValues<WiderScalar> HelmholtzModel::isothermal(WiderScalar, WiderScalar,
-    const std::vector<WiderScalar>&, const std::vector<double>*, const Eigen::FullPivLU<Eigen::MatrixXd>*, Eigen::MatrixXd*) const;
+    const std::vector<WiderScalar>&, const std::vector<double>*, const AssociationJacobian*, Eigen::MatrixXd*, const AssociationAction*) const;
 #endif
 
 
@@ -838,9 +842,7 @@ EPC_API Taylor<3> density_volume_taylor(const HelmholtzModel& model, double temp
 
 // The factorized mass-action Jacobian of the solved site fractions; a singular or ill-conditioned one
 // throws, or with `status` is reported there.
-Eigen::FullPivLU<Eigen::MatrixXd> site_factorization(const std::vector<double>& sites, const std::vector<double>& composition,
-    const Parameters& parameters, double number_density, const std::vector<double>& delta, PropertyActionStatus* status = nullptr);
-void site_factorization(Eigen::FullPivLU<Eigen::MatrixXd>& factorization, const std::vector<double>& sites,
+void site_factorization(AssociationJacobian& factorization, const std::vector<double>& sites,
     const std::vector<double>& composition, const Parameters& parameters, double number_density,
     const std::vector<double>& delta, PropertyActionStatus* status = nullptr, AssociationWorkspace* scratch = nullptr);
 bool regular_density(double density, double slope, const std::optional<core::Convergence>& record);
@@ -851,6 +853,9 @@ std::vector<double> log_nodes(double log_lower, double log_upper, std::size_t in
 // ALG-DENSITY single loop: an Unspecified root below the stored negative-slope sample is vapor-side, above it
 // liquid-side; explicit labels and roots without a sample are kept. liquid_reference_refusal names a vapor-side root.
 DensityBranch density_side(DensityBranch branch, double density, std::optional<double> sample);
+inline DensityBranch density_side(const DensityRoot& root) {
+    return density_side(root.branch, root.molar_density, root.negative_slope_density);
+}
 std::optional<std::string> liquid_reference_refusal(const State& state);
 // Anchored closure, regularity-checked; a failed anchor is retried once cold on the same branch.
 State close_density(const HelmholtzModel& model, double temperature, double pressure,

@@ -735,7 +735,8 @@ bool GibbsMinimizer::eval_jac_g(
     }
     try {
         if (!step_admitted(x)) return false;
-        const auto jacobian = compiled_.jacobian_at(prepared(n, x, true));
+        const bool constraints_only = !core::CalculationWork::active_limit() && !compiled_.feasibility_cell() && !compiled_.problem.envelope && !compiled_.problem.azeotrope;
+        const auto jacobian = compiled_.jacobian_at(prepared(n, x, !constraints_only), constraints_only);
         Ipopt::Index entry = 0;
         for (const std::size_t row : constraint_rows_) {
             for (Ipopt::Index column = 0; column < n; ++column) {
@@ -1885,7 +1886,8 @@ static EquilibriumResult run_driver_once(
     // A finite calculation budget still charges the original preparation.
     const bool reuse_curvature = reuse && !core::CalculationWork::active_limit() && parameters && !classified && !compiled.problem.temperature.free
         && !compiled.problem.pressure.free && !compiled.anchored_calorics() && parameters->component_count() > 2
-        && parameters->site_pathway.empty() && parameters->site_correction.empty() && cached->derivative.size() == 2
+        && parameters->site_pathway.empty() && parameters->site_correction.empty()
+        && (cached->derivative.size() == 2 || (!limits && refine_trial && cached->derivative.size() == 1))
         && std::all_of(cached->derivative.begin(), cached->derivative.end(), [](const auto& phase) {
             return !phase.site_fractions.empty() && !phase.complete_hessian && !phase.hessian.empty();
         });
