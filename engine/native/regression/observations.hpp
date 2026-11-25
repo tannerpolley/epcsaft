@@ -192,7 +192,7 @@ EPC_API Prediction predict(
     const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
     bool same_parameters = false,
     std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max(),
-    const std::vector<const Observation*>& admission = {}
+    const std::vector<const Observation*>& admission = {}, bool recover_bubble = false
 );
 EPC_API Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
     std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied = {});

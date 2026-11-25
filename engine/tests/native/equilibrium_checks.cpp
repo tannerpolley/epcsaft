@@ -57,6 +57,7 @@ void check_associating_isomer_gibbs();
 void check_mdea_full_stability();
 void check_piperazine_a12s_bubble_stability();
 void check_mdea_bubble_work_limit();
+void check_mdea_bubble_recovery();
 void check_bubble_branch_end();
 void check_reaction_relaxed_search();
 void check_reaction_relaxed_pz_row();
@@ -155,6 +156,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.mdea-full-stability", "mdea-full-stability", "Automatic_fast"}, check_mdea_full_stability},
         {{"native.equilibrium.piperazine-a12s-bubble-stability", "piperazine-a12s-bubble-stability", "Automatic_fast"}, check_piperazine_a12s_bubble_stability},
         {{"native.equilibrium.mdea-bubble-work-limit", "mdea-bubble-work-limit", "Automatic_fast"}, check_mdea_bubble_work_limit},
+        {{"native.equilibrium.mdea-bubble-recovery", "mdea-bubble-recovery", "Automatic_fast"}, check_mdea_bubble_recovery},
         {{"native.equilibrium.bubble-branch-end", "bubble-branch-end", "Automatic_fast"}, check_bubble_branch_end},
         {{"native.equilibrium.reaction-relaxed-search", "reaction-relaxed-search", "Automatic_fast"}, check_reaction_relaxed_search},
         {{"native.equilibrium.reaction-relaxed-pz-row", "reaction-relaxed-pz-row", "Automatic_fast"}, check_reaction_relaxed_pz_row},

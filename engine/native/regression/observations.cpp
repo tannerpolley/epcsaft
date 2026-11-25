@@ -3,6 +3,7 @@
 #include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
@@ -323,7 +324,8 @@ Prediction predict_validated(const HelmholtzModel& model, const Observation& obs
     Prediction result;
     try {
         validate(observation, model);
-        result = predict(model, observation);
+        result = predict(model, observation, {}, {}, nullptr, nullptr, nullptr, false,
+            std::chrono::steady_clock::time_point::max(), {}, true);
     } catch (const std::domain_error& failure) { result = unavailable_solve({}, failure); }
     if (supplied) {
         result.supplied_stability = std::make_shared<equilibrium::StabilityReport>();
@@ -340,7 +342,7 @@ Prediction predict(
     const std::optional<equilibrium::EquilibriumResult>& start,
     std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references,
     const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters,
-    std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission
+    std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission, bool recover_bubble
 ) {
     if (references) references->bind(model);
     core::Scope density_scope("fit_density_anchor");
@@ -606,7 +608,7 @@ Prediction predict(
             if (result.pressure_reference && !admission.empty()) validate_compiled(reference, model, &*result.pressure_reference->compiled);
             if (!result.pressure_reference) {
                 result.pressure_reference = std::make_shared<Prediction>(predict(model, reference, {}, {}, nullptr, nullptr, nullptr, false, deadline,
-                    admission.empty() ? std::vector<const Observation*>{} : std::vector<const Observation*>{&reference}));
+                    admission.empty() ? std::vector<const Observation*>{} : std::vector<const Observation*>{&reference}, recover_bubble));
                 if (references && result.pressure_reference->value) references->pressures.emplace_back(reference, *result.pressure_reference);
             }
             if (!result.pressure_reference->value) {
@@ -621,6 +623,8 @@ Prediction predict(
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
         solved = equilibrium::solve_compiled(*result.compiled, start);
+        if (!solved.success && recover_bubble && observation.kind == ObservationKind::EquilibriumPressure && result.compiled->has_reaction)
+            solved = equilibrium::recover_from_source(*result.compiled, std::move(solved));
     } catch (const std::exception& failure) {
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
         return unavailable_solve(std::move(result), failure);

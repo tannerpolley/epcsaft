@@ -1687,6 +1687,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
 Retry retry_after(Attempt kind, bool reaction, bool non_error, bool fatal, Ipopt::SolverReturn status,
     TopologyEvent topology, core::Stop stop, Candidate candidate) {
     if (kind == Attempt::Newton || kind == Attempt::PhysicalAmounts) return Retry::None;
+    if (reaction && !fatal && status == Ipopt::LOCAL_INFEASIBILITY && topology == TopologyEvent::None) return Retry::Source;
     if (reaction) return non_error && ((status == Ipopt::RESTORATION_FAILURE && stop == core::Stop::stalled) || topology == TopologyEvent::PhaseDisappeared || stop == core::Stop::budget_exhausted)
         ? Retry::PhysicalAmounts : Retry::None;
     return !fatal && topology != TopologyEvent::PhaseDisappeared && (status == Ipopt::LOCAL_INFEASIBILITY || status == Ipopt::MAXITER_EXCEEDED
@@ -2695,7 +2696,8 @@ EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::
     if (!compiled.feasible) return structural;
     if (compiled.ideal) return run_driver_once(compiled, compiled.generic_point(), structural, scope,
         nullptr, limits, Attempt::Cold, {}, false, false);
-    const bool pure_recovery = recover && !limits && !start && !warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE") && one_component_two_density_eligible(compiled);
+    const bool automatic_recovery = recover && !limits && !start && !warm && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
+    const bool pure_recovery = automatic_recovery && one_component_two_density_eligible(compiled);
     const bool critical = recover && !start && !limits && !warm && compiled.problem.critical
         && compiled.n_feed.size() == 1 && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     auto result = [&] {
@@ -2707,7 +2709,7 @@ EquilibriumResult try_solve_compiled(const CompiledSystem& compiled, const std::
             return failed;
         }
     }();
-    if (pure_recovery) {
+    if (pure_recovery || (automatic_recovery && compiled.has_reaction && result.retry == Retry::Source)) {
         if (result.failure) with_failure(result, [&](const std::exception& error) {
             core::retain_failure(result.first_numerical_failure, error, "saturation initialization");
             if (const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error)) result.terminal_numerical_failure = failure->record;

@@ -4299,6 +4299,21 @@ and cold density-branch admission. Added optimizer iterations and continuation a
 and Hessian callbacks `EQUILIBRIUM_RECOVERY_HESSIAN_CALLS` (1024), within any caller remainder; an exhausted cap ends all recovery work. A refusal's message leads
 with the ordinary cause; reported work is the ordinary work plus every recovery driver's.
 
+**Reacting bubble recovery (#241).** An automatic declared fixed-temperature
+bubble solve with an amount feed may recover when Ipopt using MA57 returns
+local infeasibility without a topology event. This policy covers unrestricted
+public solves, standalone equilibrium-pressure predictions, and the bubble
+pressure references of standalone stability predictions. The source attempts
+keep the feed, model, and phase declarations.
+They use temperatures $T/\sqrt{r}$ and $T\sqrt{r}$ in that order, where
+$r$ is `COOLING_RATIO`, with 100 times the original free-pressure seed as
+the initial guess. The first admitted source supplies the anchors for the
+same continuation and work limits as for neutral mixtures. The target must
+pass its own classified rows, topology, and cold density-branch checks.
+The result retains the initial refusal and charges the added work. The
+recovered pressures verify local numerical solutions beyond the parameter
+set's pressure range.
+
 **Trial search before recovery.** A fixed-T/P flash whose first run coalesced (no ideal gas, no
 solids) first solves the single-phase L1 and V1 declarations and tests the successful one with the
 lower objective (a tie keeps L1) with ALG-STABILITY's Full trial set, as `stability_test` does. The

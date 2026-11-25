@@ -2894,6 +2894,37 @@ void check_mdea_full_stability() {
     CHECK(trial.optimizer.convergence.residual <= policy::EQUILIBRIUM_ROW_RESIDUAL.value);
 }
 
+void check_mdea_bubble_recovery() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mdea-411-bubble.inc"
+    struct Point { double temperature, co2, water, pressure; };
+    for (const auto& point : {Point{313.15, 1.3, 10.76470588235294, 10975251.728482163},
+                              Point{333.15, 1.368, 8.615384615384617, 76512100.41255684}}) {
+        bubble.temperature = FreeValue::fixed(point.temperature);
+        bubble.feed.values = {point.co2, point.water, 0, 0, 0, 0, 1, 0};
+        const auto compiled = compile_problem(model, bubble);
+        const auto check = [&](const EquilibriumResult& state) {
+            const double tolerance = bubble.solver_options.value(policy::row);
+            CHECK(state.has_state() && state.pressure && state.requested_tolerance_met.value_or(false));
+            CHECK(state.convergence.residual <= tolerance);
+            CHECK(compiled.classified_residual_norm(state.coordinates) <= tolerance);
+            CHECK(std::abs(*state.pressure / point.pressure - 1.0) <= tolerance);
+            CHECK(state.topology_event == TopologyEvent::None);
+            CHECK(state.amounts[0] > 0 && state.amounts[1] == 0);
+            CHECK(state.packing_fractions[0] > state.packing_fractions[1]);
+        };
+        check(solve_equilibrium(model, bubble));
+        regression::Observation observation;
+        observation.kind = regression::ObservationKind::EquilibriumPressure;
+        observation.problem = bubble;
+        observation.observed = point.pressure;
+        const auto prediction = regression::predict_validated(model, observation);
+        CHECK(prediction.status == regression::ObservationStatus::Available && prediction.solved);
+        check(*prediction.solved);
+    }
+}
+
 void check_mdea_bubble_work_limit() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;

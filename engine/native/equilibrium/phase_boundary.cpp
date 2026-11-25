@@ -2063,7 +2063,8 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     auto declared = target.problem;
     declared.phase_calculation = PhaseCalculation::Discovery;
     for (auto& phase : declared.phases) { phase.composition_guess.clear(); phase.packing_guess.reset(); }
-    if (declared.pressure.free) declared.pressure = FreeValue::variable();
+    if (declared.pressure.free) declared.pressure = target.has_reaction
+        ? FreeValue::variable(100 * target.seed_pressure()) : FreeValue::variable();
     auto source = declared;
     if (free_temperature) source.pressure = FreeValue::variable();
     try {
@@ -2099,14 +2100,19 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
             if (refused.message.empty()) refused.message = "no admitted saturation source: " + found.message;
             return publish(std::move(refused));
         }
-        for (int j = 1; j <= static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value) && !found.success; ++j) {
+        const int sources = target.has_reaction ? 2 : static_cast<int>(policy::EQUILIBRIUM_RECOVERY_SOURCES.value);
+        for (int j = 1; j <= sources && !found.success; ++j) {
             limits.check();  // the slot is spent before compilation
-            source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, j));
+            const double exponent = target.has_reaction ? j - 1.5 : j;
+            source.temperature = FreeValue::fixed(target.seed_temperature() * std::pow(policy::COOLING_RATIO.value, exponent));
             found = unless_failed(try_solve_compiled(compile_problem(model, source), std::nullopt, nullptr, &limits), &observations);
             observations.observe(found);
             scope.probe("recovery_source", {source.temperature.value}, static_cast<std::uint32_t>(j), found.message.c_str());
         }
-        if (!found.success) { refused.message = "no admitted lower-temperature source: " + found.message; return publish(std::move(refused)); }
+        if (!found.success) {
+            refused.message = (target.has_reaction ? "no admitted temperature source: " : "no admitted lower-temperature source: ") + found.message;
+            return publish(std::move(refused));
+        }
         const auto work = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
         ContinuationRequest request{source, declared, found, {0.05, 1.0e-6, work, 10}, {}};
         if (free_temperature) {
@@ -2151,7 +2157,13 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
 }
 
 EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumResult failed) {
-    if (failed.success || !one_component_two_density_eligible(target) || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) return failed;
+    if (failed.success || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) return failed;
+    if (target.has_reaction) {
+        const auto& p = target.problem;
+        if (failed.linear_solver != "ma57" || failed.retry != Retry::Source || failed.topology_event != TopologyEvent::None || !supports_work_limit(p)
+            || !p.topology_declared || p.prescribed_liquid_composition || p.solver_options.nested_solve
+            || core::CalculationWork::active_limit()) return failed;
+    } else if (!one_component_two_density_eligible(target)) return failed;
     const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
     auto work = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(), cap);
     auto recovered = recover_from_source(target, work);
