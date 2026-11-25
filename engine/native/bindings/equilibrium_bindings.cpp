@@ -245,9 +245,8 @@ void register_equilibrium(nb::module_& module) {
                     + ", composition " + std::to_string(composition.size()) + " of phases x components "
                     + std::to_string(phases) + " x " + std::to_string(components) + ", densities "
                     + std::to_string(densities.size()) + ", packing " + std::to_string(packing.size()));
-            EquilibriumResult result;
+            EquilibriumResult result = result_origin(system);
             result.success = true; result.temperature = temperature; result.pressure = pressure;
-            result.declaration = std::make_shared<const EquilibriumProblem>(system.problem);
             result.coordinates = std::move(coordinates); result.amounts = std::move(amounts);
             result.mole_fractions = std::move(composition); result.molar_densities = std::move(densities);
             result.packing_fractions = std::move(packing);

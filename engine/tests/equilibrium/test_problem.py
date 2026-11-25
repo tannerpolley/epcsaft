@@ -130,7 +130,7 @@ def test_caller_row_tolerance_maps_and_reports_its_outcome() -> None:
     action = equilibrium.SolvedStateActionRequest(
         [equilibrium.SolvedStateObservable(equilibrium.SolvedStateObservableKind.Pressure)],
         [equilibrium.SolvedStateActionDirection(1.0, 0.0, [0.0, 0.0], [])])
-    with pytest.raises(ParameterError, match="central solver options"):
+    with pytest.raises(ParameterError, match="central result does not match the compiled system"):
         equilibrium.solved_state_actions(equilibrium.compile_problem(inherited, problem(feed)), default, action)
     for tolerance in (defaults["EQUILIBRIUM_ROW_RESIDUAL"], 1e-8, 1e-12):
         ordinary = Problem(phases=[Phase("L", kind="liquid")], T=300.0, P=1e5,

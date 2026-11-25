@@ -13,7 +13,8 @@ from tests.eos.test_state import _basic_model
 from tests.native_inputs import parameters
 from tests.packets import parameters_json
 
-FIELDS = tuple(name for name in dir(State) if not name.startswith("_"))
+# A sequence reports domain violations once, as rows that name their state (test_parameter_document.py).
+FIELDS = tuple(name for name in dir(State) if not name.startswith("_") and name != "domain_violations")
 
 
 def plain(value: Any) -> Any:
