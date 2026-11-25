@@ -29,7 +29,7 @@ struct HelmholtzSpectrum final {
 EPC_API HelmholtzSpectrum helmholtz_spectrum(const HelmholtzDerivatives&, const std::vector<double>&,
     const std::vector<std::size_t>&, const std::vector<double>& normalization = {});
 EPC_API SpinodalSearch spinodal_search(const CompiledSystem&, const DriverLimits* = nullptr, double anchor = NAN, const SpinodalSearch* carried = nullptr, SpinodalSearch* attempted = nullptr);
-CompiledSystem spinodal_corrector(const CompiledSystem&, const DriverLimits*, double anchor, const SpinodalSearch* carried, SpinodalSearch& attempted);
+EPC_API CompiledSystem spinodal_corrector(const CompiledSystem&, const DriverLimits*, double anchor, const SpinodalSearch* carried, SpinodalSearch& attempted);
 EPC_API EquilibriumResult spinodal_search_failure(const CompiledSystem&, EquilibriumResult, const std::string&, const SpinodalSearch* attempted = nullptr);
 // Returned work is accumulated unless the retry caller requests invocation work.
 enum class Work : std::uint8_t { Accumulated, Invocation };

@@ -313,6 +313,30 @@ void spinodal() {
     const auto upper_cell = compile_problem(model, cell(240, 13000));
     const auto upper = spinodal_search(upper_cell);
     CHECK(std::abs(upper.seed - reference[0][2]) < 1e-8);
+    {
+        SpinodalSearch selected;
+        const auto corrector = spinodal_corrector(fresh, nullptr, upper.seed, &upper, selected);
+        const auto column = corrector.phase_offsets()[0] + corrector.feed_composition.size() + 1;
+        const double packing = model.packing_fraction_coefficient(240., corrector.feed_composition);
+        CHECK(selected.seed == upper.seed);
+        CHECK(boundary_start(corrector)[column] == std::log(packing * upper.seed));
+        auto copy = corrector;
+        CHECK(recording_support::refusal([&] { (void)spinodal_search(copy, &spent); }) == "elapsed work budget exhausted");
+        CHECK(copy.spinodal_diagnostics() && copy.spinodal_diagnostics()->evaluations == 0);
+        const auto carried = spinodal_search(fresh, nullptr, upper.seed, &upper);
+        CHECK(carried.seed == upper.seed);
+        std::string refusal;
+        try {
+            const auto start = boundary_start(corrector);
+            std::cout << std::setprecision(17) << "corrector after revocation " << std::exp(start[column]) / packing
+                << " mol/m^3, fresh carried " << carried.seed << " mol/m^3\n";
+            CHECK(start[column] == std::log(packing * carried.seed));
+        } catch (const std::domain_error& error) {
+            refusal = error.what();
+            std::cout << "corrector after revocation refused: " << refusal << '\n';
+        }
+        CHECK(refusal == "spinodal corrector crossing unavailable");
+    }
     auto diagnostic = *fresh.spinodal_diagnostics();
     CHECK(spinodal_search(fresh, nullptr, upper.seed, &upper, &diagnostic).seed == upper.seed);
     CHECK(diagnostic.seed == upper.seed && fresh.spinodal_diagnostics()->seed == anchor);

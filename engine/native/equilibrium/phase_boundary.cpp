@@ -1105,10 +1105,19 @@ struct SpinodalKey final {
         c.spinodal_corrector_ = corrector;
     }
     static auto& begin_diagnostics(const CompiledSystem& c) { return c.spinodal_diagnostics_.emplace(); }
+    static void require_ordinary_search(const CompiledSystem& c, const DriverLimits* limits) {
+        if (!c.spinodal_corrector_) return;
+        begin_diagnostics(c);
+        if (limits) limits->check();
+        throw std::domain_error("spinodal corrector crossing unavailable");
+    }
 };
 
 SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried, SpinodalSearch* attempted) {
-    if (!carried) if (const auto admitted = SpinodalKey::resolve(compiled, limits)) return *admitted;
+    if (!carried) {
+        if (const auto admitted = SpinodalKey::resolve(compiled, limits)) return *admitted;
+        SpinodalKey::require_ordinary_search(compiled, limits);
+    }
     const auto previous_selection = carried && carried == attempted ? std::optional(*carried) : std::nullopt;
     if (previous_selection) carried = &*previous_selection;
     SpinodalSearch local;
