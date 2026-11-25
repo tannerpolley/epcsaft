@@ -773,7 +773,7 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
                 std::vector<double> anchors, DensityAdmission admission, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
-                const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
+                const DriverLimits* limits = nullptr, StageWork* observations = nullptr, const SpinodalSearch* carried = nullptr) {
     BoundaryAttempt attempt;
     attempt.terminal = true;
     std::vector<double> tangent;
@@ -802,20 +802,24 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
         const bool inside = inside_domain(compiled, predicted, projected);
         scope.probe("predictor_projected", static_cast<double>(projected));
         if (inside) {
+            std::optional<CompiledSystem> selected;
             if (compiled.problem.spinodal) {
+                selected = compiled;
+                auto& scan = selected->spinodal_search.emplace();
                 try {
-                    const auto& before = spinodal_search(current, limits, anchors[0]);
                     const auto offset = compiled.phase_offsets()[0] + compiled.feed_composition.size() + 1;
-                    const auto& next = spinodal_search(compiled, limits, anchors[0], &before);
-                    predicted[offset] = std::log(next.seed * compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
+                    scan = spinodal_search(compiled, limits, anchors[0], carried, &scan);
+                    predicted[offset] = std::log(scan.seed * compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
                 } catch (const std::bad_alloc&) { throw; }
                 catch (const std::exception& error) {
-                    return admit_result(compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
+                    if (!carried && compiled.spinodal_search) scan = *compiled.spinodal_search;
+                    return admit_result(*selected, spinodal_search_failure(*selected, structural_result(*selected, scope), error.what()), anchors, false, scope);
                 }
             }
-            auto solved = unless_failed(solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm)), observations);
+            const auto& corrector = selected ? *selected : compiled;
+            auto solved = unless_failed(solve_equilibrium_from_coordinates(corrector, predicted, nullptr, limits, std::move(warm)), observations);
             if (admission != DensityAdmission::Predicted || compiled.mode_count)
-                return admit_result(compiled, std::move(solved), anchors, admission == DensityAdmission::Declared, scope);
+                return admit_result(corrector, std::move(solved), anchors, admission == DensityAdmission::Declared, scope);
             auto previous = admit_result(compiled, solved, anchors, false, scope);
             if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
             const auto at = compiled.prepare(predicted, true);
@@ -1073,13 +1077,11 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 
 }  // namespace
 
-SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
+SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried, SpinodalSearch* attempted) {
     if (!carried && compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
         && !(limits && limits->expired())) return *compiled.spinodal_search;
-    const auto previous_selection = carried && compiled.spinodal_search && carried == &*compiled.spinodal_search
-        ? std::optional(*carried) : std::nullopt;
-    if (previous_selection) carried = &*previous_selection;
-    auto& scan = compiled.spinodal_search.emplace();
+    SpinodalSearch local;
+    auto& scan = carried ? (attempted ? *attempted : local) : compiled.spinodal_search.emplace();
     const auto& declaration = *compiled.problem.spinodal;
     if (!carried) anchor = declaration.density_guess_mol_per_m3;
     const auto& x = compiled.feed_composition;
@@ -1780,7 +1782,9 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
             auto tangent = sensitivity(current, y_current, path.lever(current), failure);
             w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
             return tangent;
-        }, q_try - q, anchors, parameter_path ? DensityAdmission::Predicted : DensityAdmission::Previous, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
+        }, q_try - q, anchors, parameter_path ? DensityAdmission::Predicted : DensityAdmission::Previous, attempt_scope,
+            transfer ? result.states.back().optimizer_state : nullptr, limits, &observations,
+            result.states.back().spinodal ? &result.states.back().spinodal->search : nullptr);
         observations.observe(attempt.observations);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);

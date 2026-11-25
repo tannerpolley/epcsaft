@@ -1232,6 +1232,12 @@ void check_e5_refusals() {
     auto other = fixture.problem; other.temperature.value = 181.0;
     const auto other_compiled = epcsaft::equilibrium::compile_problem(model, other);
     invalid("mismatched-central-temperature", "central result does not match the compiled system", base, other_compiled, central);
+    auto displaced = central;
+    displaced.coordinates[0] += 0.01;
+    displaced.residuals = compiled.evaluate(displaced.coordinates).values;
+    const auto displaced_action = epcsaft::equilibrium::solved_state_actions(compiled, displaced, base).results.front();
+    CHECK(displaced_action.status == SolvedStateActionStatus::DefiningEquationsNotSatisfied
+        && displaced_action.value && !displaced_action.action);
     auto exact = equilibrium_support::flash(2);
     exact.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.5)), equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.5))};
     exact.temperature = FreeValue::variable(300.0); exact.pressure = FreeValue::variable(1.0e5);

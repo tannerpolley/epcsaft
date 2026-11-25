@@ -310,6 +310,13 @@ void spinodal() {
     const auto fresh = compile_problem(model, cell(240, 4000));
     CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
     const double anchor = spinodal_search(fresh).seed;
+    const auto upper_cell = compile_problem(model, cell(240, 13000));
+    const auto upper = spinodal_search(upper_cell);
+    CHECK(std::abs(upper.seed - reference[0][2]) < 1e-8);
+    for (const auto& target : {compile_problem(model, cell(240, 4000)), fresh}) {
+        CHECK(spinodal_search(target, nullptr, upper.seed, &upper).seed == upper.seed);
+        CHECK(spinodal_search(target).seed == anchor);
+    }
     SpinodalSearch lost; lost.lower = 101; lost.upper = 110;
     const auto cold_crossing = compile_problem(model, cell(240, 4000));
     const auto crossing_refusal = [&](const CompiledSystem& compiled) {

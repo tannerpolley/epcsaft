@@ -1230,6 +1230,22 @@ void check_saturation_loading() {
     const auto search = search_loading(model, bubble, *bubble.loading, {0.25, 0.3, 0.35, 0.4, 0.45, 0.5});
     for (const auto& cause : search.causes) std::cerr << "saturation cause: " << cause << '\n';
     CHECK(search.accepted.has_value());
+    for (const auto& node : search.nodes) {
+        auto declaration = bubble;
+        declaration.feed.values = {1, node.loading};
+        declaration.loading->seed = node.loading;
+        declaration.loading->pressure = *node.state.pressure;
+        const auto augmented = compile_problem(model, declaration);
+        auto mapped = node.state;
+        mapped.declaration = std::make_shared<const EquilibriumProblem>(augmented.problem);
+        mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), node.loading);
+        mapped.prepared_endpoint = std::make_shared<const PhasePoint>(augmented.prepare(mapped.coordinates));
+        mapped.numerical_estimates.reset();
+        const auto independent = equilibrium_numerical_estimates(augmented, mapped, mapped.prepared_endpoint.get(), false, false, {}, true);
+        CHECK(independent.loading.available && independent.loading.resolved);
+        CHECK(independent.loading.absolute == node.local_estimates.loading.absolute);
+        CHECK(independent.row_floor == node.local_estimates.row_floor);
+    }
     auto node_declaration = bubble;
     node_declaration.loading.reset(); node_declaration.feed.values = {1, 0.35};
     const auto node_state = solve_equilibrium(model, node_declaration);

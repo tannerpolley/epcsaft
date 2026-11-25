@@ -365,6 +365,44 @@ void boundary_refusals() {
         foreign.compiled = compile_problem(regular, problem);
         project_prediction(model, row, foreign);
         CHECK(foreign.status == ObservationStatus::CentralSolveUnavailable && !foreign.value);
+        const auto fixed_point = [&](const HelmholtzModel& producer) {
+            Prediction snapshot;
+            // The rank probe can already refuse these stress models. Supply the one-phase chart
+            // geometry so the test can isolate projection and action at the declared sample.
+            const auto& layout = *foreign.compiled;
+            auto& compiled = snapshot.compiled.emplace();
+            compiled.model = &producer;
+            compiled.eos_identity = producer.identity();
+            compiled.problem = layout.problem;
+            compiled.n_feed = layout.n_feed;
+            compiled.feed_total = layout.feed_total;
+            compiled.charge_row = layout.charge_row;
+            compiled.shape = layout.shape;
+            compiled.primal_size = layout.primal_size;
+            compiled.rank = layout.rank;
+            core::Scope scope("association_refusal_fixture");
+            auto state = structural_result(compiled, scope);
+            state.success = true;
+            state.temperature = problem.temperature.value;
+            state.pressure = problem.pressure.value;
+            state.phase_count = 1;
+            state.mole_fractions = {1.0};
+            state.amounts = {1.0};
+            state.molar_densities = {1.0 / volume};
+            state.packing_fractions = {producer.packing_fraction_coefficient(*state.temperature, {1.}) / volume};
+            state.coordinates.assign(compiled.unknown_count(), 0.0);
+            state.coordinates[*compiled.shape[0].amount] = 1.0;
+            state.coordinates[compiled.shape[0].volume] = std::log(state.packing_fractions[0]);
+            snapshot.solved = std::move(state);
+            snapshot.solved_request = std::make_shared<const EquilibriumProblem>(problem);
+            return snapshot;
+        };
+        auto stressed_point = fixed_point(model);
+        project_prediction(model, row, stressed_point);
+        const auto gradient = differentiate(model, row, stressed_point);
+        CHECK(stressed_point.value && *stressed_point.value == value
+            && gradient.status == ObservationStatus::ActionUnavailable && gradient.central_value == stressed_point.value
+            && gradient.value.empty() && gradient.message.find(solved_state_status_name(solved_state_status(status))) == 0);
         if (sites != 2) continue;
 
         weak.association_energy_over_k[0] = 3e5;
@@ -377,11 +415,13 @@ void boundary_refusals() {
         }
         CHECK(failure && failure->stop == core::Stop::nonfinite && failure->criterion
             && std::string_view(failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
-        Prediction refused;
-        refused.solved = point;
+        auto refused = fixed_point(overflow);
         project_prediction(overflow, row, refused);
         CHECK(truth("refusal/projection", refused.status == ObservationStatus::CentralSolveUnavailable
-            && !refused.value && !refused.residual,
+            && !refused.value && !refused.residual && refused.convergence && refused.refusal_convergence
+            && core::describe(*refused.convergence) == core::describe(*failure)
+            && core::describe(*refused.refusal_convergence) == core::describe(*failure)
+            && refused.refusal_convergence->evaluations == failure->evaluations,
             fields({field("status", observation_status_name(refused.status)), field("cause", refused.message),
                 field("mass_action_record", core::describe(*failure))})));
     }

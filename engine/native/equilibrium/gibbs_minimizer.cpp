@@ -2144,10 +2144,21 @@ BranchCheck admit_null_mode(const CompiledSystem& compiled, EquilibriumResult& r
         static_cast<HelmholtzModeRecord&>(*result.critical) = record;
         result.critical->cubic = result.residuals.back();
     } else {
-        const auto& selection = spinodal_search(compiled, nullptr, result.molar_densities[0], result.spinodal ? &result.spinodal->search : nullptr);
+        SpinodalSearch attempted;
+        const auto* carried = result.spinodal ? &result.spinodal->search : nullptr;
+        try {
+            attempted = spinodal_search(compiled, nullptr, result.molar_densities[0], carried, &attempted);
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            if (!carried && compiled.spinodal_search) attempted = *compiled.spinodal_search;
+            result.spinodal.emplace();
+            result.spinodal->search = std::move(attempted);
+            core::retain_failure(result.first_numerical_failure, error, "spinodal search");
+            return {false, false, error.what()};
+        }
         result.spinodal.emplace();
         static_cast<HelmholtzModeRecord&>(*result.spinodal) = record;
-        result.spinodal->search = selection;
+        result.spinodal->search = std::move(attempted);
         result.spinodal->normalized_null_residual = (M * u).norm() / M.norm();
     }
     BranchCheck outcome;
@@ -2423,21 +2434,25 @@ static bool supplied_two_liquid_split(const CompiledSystem& compiled) {
         && std::all_of(support.begin(), support.end(), [&](std::size_t i) { return compiled.n_feed[i] > 0.0; });
 }
 
-EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
+EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::optional<EquilibriumResult>& start,
     core::Scope& scope, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
     bool recover, const EquilibriumResult& structural, StageWork stages,
     std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint, EquilibriumAttemptReporting reporting) {
+    std::optional<CompiledSystem> selected_crossing;
+    if (declared.problem.spinodal && start && start->has_state() && start->spinodal) {
+        selected_crossing = declared;
+        auto& scan = selected_crossing->spinodal_search.emplace();
+        try { spinodal_search(declared, limits, start->molar_densities[0], &start->spinodal->search, &scan); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { return spinodal_search_failure(*selected_crossing, structural, error.what()); }
+    }
+    const auto& compiled = selected_crossing ? *selected_crossing : declared;
     const auto& model = *compiled.model;
     const bool pure_source = start && start->success && limits && limits->recovery && one_component_two_density_eligible(compiled);
     const bool use_start = pure_source || (start.has_value() && usable_start(compiled, *start));
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
-    if (compiled.problem.spinodal && start && start->has_state() && start->spinodal) {
-        try { spinodal_search(compiled, limits, start->molar_densities[0], &start->spinodal->search); }
-        catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) { return spinodal_search_failure(compiled, structural, error.what()); }
-    }
     auto cold = start && !use_start ? std::make_optional(compiled) : std::nullopt;
     if (cold && start->phase_count == cold->problem.phases.size()) {
         for (std::size_t phase = 0; phase < start->phase_count; ++phase) {

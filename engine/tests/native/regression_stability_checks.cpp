@@ -89,6 +89,9 @@ void check_equilibrium_estimate_admission() {
     auto estimate = equilibrium_numerical_estimates(compiled, solved);
     estimate.precision_bits = std::numeric_limits<double>::digits + 1;
     solved.numerical_estimates = estimate;  // exercise the branch that preserves a wider error estimate
+    CHECK(equilibrium_numerical_estimates(compiled, solved).precision_bits == estimate.precision_bits);
+    const auto replayed = equilibrium_numerical_estimates(compiled, solved, solved.prepared_endpoint.get(), false, false, {}, true);
+    CHECK(replayed.precision_bits == std::numeric_limits<double>::digits);
     solved.success = false;
     const auto refused = equilibrium_numerical_estimates(compiled, solved);
     solved.numerical_estimates.reset();
