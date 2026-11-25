@@ -62,11 +62,13 @@ _KINDS = {
     "partial_pressure": ObservationKind.PartialPressure,
     "amount_ratio": ObservationKind.PhaseAmountRatio,
     "solvent_activity": ObservationKind.PhaseSolventActivity,
+    "solute_activity": ObservationKind.PhaseSoluteActivity,
+    "concentration": ObservationKind.PhaseConcentration,
 }
 __all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "PredictionUncertainty", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
-           "predict", "reaction_coordinate", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
+           "predict", "log_linear", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
            "measured_input", "measurement_group", "saturation_pressure_observation")
@@ -334,6 +336,24 @@ def reaction_coordinate(name: str, coefficient: str, *, origin: float, scale: fl
     return result
 
 
+def reaction_log_shift(targets: Mapping[str, float], *, origin: float, scale: float,
+                       bounds: tuple[float, float] | None = None) -> Coordinate:
+    """Declare one additive natural-log K shift for two or more named reactions.
+
+    Each target maps a reaction name to its nonzero multiplier. Native fitting
+    adds multiplier times the physical coordinate to the supplied source-basis
+    ln K. The chart is q = origin + scale*v with optional inclusive bounds on q.
+    The declared reaction laws define the q = 0 starting point.
+    """
+    target = _core.ReactionCoordinate()
+    target.coefficient = _core.ReactionCoefficient.LogShift
+    target.log_shifts = dict(targets)
+    result = Coordinate()
+    result.reaction, result.origin, result.scale = target, origin, scale
+    result.lower, result.upper = (-math.inf, math.inf) if bounds is None else bounds
+    return result
+
+
 def reaction_enthalpy_shift(name: str, *, pivot_temperature: float, origin: float, scale: float,
                             bounds: tuple[float, float]) -> Coordinate:
     """Declare a reaction-enthalpy shift preserving ln K at a fixed pivot.
@@ -494,7 +514,8 @@ def _pressure_closed(parameters: Parameters, kind: ObservationKind, T: float, P:
 def observation(parameters: Parameters, kind: str, problem: Problem, *, observed: float, form: str, mass_basis: bool | None = None,
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None,
-                analytical_solute_molality: float | None = None, site: tuple[str, str] | None = None) -> Observation:
+                analytical_solute_molality: float | None = None, site: tuple[str, str] | None = None,
+                solvent: str | None = None, negative_log10: bool = False) -> Observation:
     """Declare an observable of a solved equilibrium problem.
 
     Parameters
@@ -509,7 +530,8 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         ``partial_pressure`` (Pa, P times that sum), ``phase_fraction``
         (dimensionless molar fraction), ``amount_ratio`` (dimensionless ratio
         of selected phase-component mol), ``solvent_activity`` (unit 1 relative to
-        the pure liquid solvent at fixed T/P), or
+        the pure liquid solvent at fixed T/P), ``solute_activity`` (ln activity
+        or −log10 activity), ``concentration`` (mol/m³), or
         ``equilibrium_isobaric_heat_capacity`` (J/(mol-feed K), driven T/P or PH).
     problem : Problem
         Declared phases and physical constraints; discovery is refused.
@@ -524,7 +546,15 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
         heat capacity.
     species : sequence of str, optional
         Selected numerator components for composition, pressure or amount rows;
-        exactly one neutral solvent for solvent activity.
+        exactly one neutral solvent for solvent activity, or one solute for solute activity.
+        Concentration sums the selected species' mole fractions and multiplies by
+        phase molar density (mol/m³).
+    solvent : str, optional
+        Neutral reference solvent for solute activity. The activity uses the
+        molal infinite-dilution reference with a 1 mol/kg standard at fixed T/P.
+    negative_log10 : bool, optional
+        For solute activity, report −log10(a) instead of ln(a). Use this with
+        hydrogen ion and a difference scale of 1 for a residual in pH units.
     scale : float, optional
         Required positive scale in observed units for difference residuals;
         absent for log-ratio residuals.
@@ -559,7 +589,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
-    result.kind = _KINDS[kind]
+    result.kind, result.negative_log10 = _KINDS[kind], negative_log10
     if analytical_solute_molality is not None:
         result.analytical_solute_molality = analytical_solute_molality
     if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
@@ -571,10 +601,29 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     result.species = [_index(parameters.component_ids, name, "species") for name in species or ()]
     if site is not None:
         result.site = _index(parameters.site_ids, site, "association site")
+    if solvent is not None:
+        result.solvent = _index(parameters.component_ids, solvent, "reference solvent")
     if kind == "amount_ratio":
         result.denominator_phase = _index([item.name for item in problem.phases], denominator_phase, "denominator phase")
         result.denominator_species = [_index(parameters.component_ids, name, "species") for name in denominator_species or ()]
     return _finish(result, observed, form, scale, False if mass_basis is None else mass_basis)
+
+
+def log_linear(terms: Sequence[tuple[float, Observation]], *, observed: float,
+               form: str, scale: float | None = None) -> Observation:
+    """Declare the sum of weighted natural logs of quantities from one solved problem.
+
+    Each term pairs a nonzero coefficient with an equilibrium observation
+    selecting a positive quantity in its native unit. All terms share the same
+    declared problem. The prediction is ln Q, where Q is the product of the
+    selected values raised to their coefficients. For difference, give observed
+    ln Q and its scale. For log_ratio, give positive observed Q and omit scale.
+    """
+    if not terms:
+        raise ParameterError("log-linear observation needs terms")
+    result = Observation()
+    result.kind, result.problem, result.log_terms = ObservationKind.LogLinear, terms[0][1].problem, list(terms)
+    return _finish(result, observed, form, scale, False)
 
 
 def saturation_capped_addition_enthalpy(parameters: Parameters, initial: Problem, bubble: Problem,

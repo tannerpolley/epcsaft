@@ -33,7 +33,10 @@ std::array<double, 4> reaction_direction(const ReactionCoordinate& coordinate) {
         require(std::isfinite(coordinate.pivot_temperature) && coordinate.pivot_temperature > 0.0, "enthalpy shift pivot temperature");
         // EqID: reaction_constant_coordinate_derivative
         direction = {1.0 / (GAS_CONSTANT_J_PER_MOL_K * coordinate.pivot_temperature), -1.0 / GAS_CONSTANT_J_PER_MOL_K, 0.0, 0.0};
-    } else direction.at(static_cast<std::size_t>(coordinate.coefficient)) = 1.0;
+    } else {
+        const auto slot = coordinate.coefficient == ReactionCoefficient::LogShift ? ReactionCoefficient::A : coordinate.coefficient;
+        direction.at(static_cast<std::size_t>(slot)) = 1.0;
+    }
     return direction;
 }
 
@@ -65,7 +68,16 @@ double admit_reaction_law(const ReactionCoordinate& target, std::size_t componen
     const auto check = [&](bool ok, const char* cause) {
         if (!ok) throw std::invalid_argument("reaction coordinate " + target.name + ": " + cause);
     };
-    const bool shift = target.coefficient == ReactionCoefficient::EnthalpyShift;
+    if (target.coefficient == ReactionCoefficient::LogShift) {
+        require(target.name.empty() && target.log_shifts.size() >= 2, "log shift needs at least two named reactions");
+        for (const auto& [name, weight] : target.log_shifts) {
+            require(!name.empty() && std::isfinite(weight) && weight != 0.0, "log shift reaction name and coefficient");
+            (void)admit_reaction_law({name}, components, observations, thermochemistry);
+        }
+        return 0.0;
+    }
+    require(target.log_shifts.empty(), "log shift targets require a log shift");
+    const bool shift = target.shift();
     (void)reaction_direction(target);
     std::optional<std::pair<equilibrium::ReactionSpec, double>> prior;  // the first law and its solid volume (-1 for a reaction)
     const equilibrium::EquilibriumProblem* prior_problem = nullptr;
@@ -131,8 +143,13 @@ std::vector<double> CoordinateSet::start(const Parameters& parameters, const std
         double first = 0.0;
         if (coordinate.reaction) {
             const auto& target = *coordinate.reaction;
-            if (target.name.empty() || !seen.emplace(target.name, target.coefficient).second)
-                throw std::invalid_argument("reaction coordinate " + target.name + ": empty or duplicate target");
+            const auto unique = [&](const std::string& name) {
+                if (name.empty() || !seen.emplace(name, target.coefficient).second)
+                    throw std::invalid_argument("reaction coordinate " + name + ": empty or duplicate target");
+            };
+            if (target.coefficient == ReactionCoefficient::LogShift) {
+                for (const auto& entry : target.log_shifts) unique(entry.first);
+            } else unique(target.name);
             first = admit_reaction_law(target, parameters.component_count(), observations, thermochemistry);
         } else {
             for (const auto& target : coordinate.targets) detail::validate_active_screening_coordinate(parameters, target.family);
@@ -233,19 +250,24 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     // Assign absolute coefficients before adding shifts, independent of declaration order.
     for (const bool shift : {false, true}) for (std::size_t row = 0; row < order.size(); ++row) {
         const auto& target = coordinates[order[row]].reaction;
-        if (!target || (target->coefficient == ReactionCoefficient::EnthalpyShift) != shift || (shift && !shifts)) continue;
+        if (!target || target->shift() != shift || (shift && !shifts)) continue;
         const auto rewrite = [&](auto& reaction) {
-            if (reaction.name != target->name) return;
-            if (target->coefficient == ReactionCoefficient::EnthalpyShift) {
-                require(reaction.correlation.has_value(), "enthalpy shift needs a correlation");
+            const double multiplier = target->multiplier(reaction.name);
+            if (multiplier == 0.0) return;
+            const double value = values[row] * multiplier;
+            if (shift) {
                 const auto direction = reaction_direction(*target);
-                if (values[row] != 0.0) {
-                    reaction.correlation->a += values[row] * direction[0];
-                    reaction.correlation->b += values[row] * direction[1];
+                if (reaction.correlation) {
+                    if (value != 0.0) {
+                        reaction.correlation->a += value * direction[0];
+                        reaction.correlation->b += value * direction[1];
+                    }
+                    laws.insert_or_assign(reaction.name, *reaction.correlation);
+                } else if (value != 0.0) {
+                    reaction.equilibrium_constant = std::exp(std::log(*reaction.equilibrium_constant) + value);
                 }
-                laws.emplace(target->name, *reaction.correlation);
-            } else if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = values[row];
-            else reaction.equilibrium_constant = std::exp(values[row]);
+            } else if (reaction.correlation) coefficient(*reaction.correlation, target->coefficient) = value;
+            else reaction.equilibrium_constant = std::exp(value);
         };
         for (auto* problem : problems) {
             for (auto& reaction : problem->reactions) rewrite(reaction);

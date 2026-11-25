@@ -67,6 +67,28 @@ declared problem; a mass basis multiplies by the fixed molar masses.
 | PhaseFraction | free amounts | $\beta_p = n_p / \sum_q n_q$ over the solved amounts, never the feed total | 1 |
 | PhaseAmountRatio | declared numerator phase/species set $(p,S)$ and denominator $(q,S')$ | $A/B$ with $A=\sum_S n_{p,i}$, $B=\sum_{S'}n_{q,i}$ and $B\ne0$ | 1 |
 | PartialPressure | any declared specification, phase $p$, nonempty species set $S$ within its support | $P\sum_{i\in S} x_{p,i}$ with the solved system pressure; `LogRatio` gives $\ln(p_S/p_{S,obs})$ | Pa |
+| PhaseSoluteActivity | fixed $T/P$, liquid phase, one supported solute and a named neutral solvent | molal infinite-dilution $\ln a_i$ or $-\log_{10} a_i$ | 1 |
+| PhaseConcentration | declared phase $p$, nonempty species set $S$ within its support | $\rho_p\sum_{i\in S} x_{p,i}$ | mol m$^{-3}$ |
+| LogLinear | one declared problem, positive solved-state quantities $q_k$, and nonzero coefficients $c_k$ | $\ell=\sum_k c_k\ln q_k$ using each quantity's declared native unit | 1 |
+
+The solute activity uses the [species reference convention](../../equations.md#reaction_activity_quotient)
+at the solved temperature and pressure. The native solved-state log activity
+supplies $\ln(x_i\rho_p/(1\,\mathrm{mol\,m^{-3}}))+\mu_i^{res}/(RT)$.
+The Engine subtracts the existing infinite-dilution insertion offset $L_i$
+and $\ln(M_s m^\circ)$, where $M_s$ is the named solvent's molar mass and
+$m^\circ=1\,\mathrm{mol\,kg^{-1}}$. A hydrogen-ion observation with
+`negative_log10=True` and a Difference scale of 1 has a residual in pH units.
+The ionic value follows the Engine's single-ion convention.
+
+A log-linear observation uses the same solved state and first-action batch for
+its terms. Its prediction is always $\ell=\ln Q$. Difference takes a reported
+$\ell_{obs}$ and scale $s$ and returns $(\ell-\ell_{obs})/s$. LogRatio
+takes a positive reported $Q_{obs}$ and returns $\ell-\ln Q_{obs}$. Its first
+action is $\sum_k c_k\,dq_k/q_k$. For a concentration distribution ratio,
+use coefficients $+1$ for the organic concentration and $-1$ for the aqueous
+concentration. Terms for a selectivity or exchange ratio can combine and repeat
+these phase and species selections in the same state. A zero or negative
+operand makes the prediction unavailable.
 
 `AdditionEnthalpy` evaluates two separately declared endpoints; their
 specifications and temperatures may differ. Both use the same parameters,
@@ -262,7 +284,15 @@ A plain coefficient and one enthalpy shift may target the same reaction. Each
 trial assigns the plain coefficient first, then adds the pivot direction to the
 fresh supplied law. The pivot invariant compares laws at the same plain value.
 The plain physical value remains distinct from the completed law's coefficient.
-Two shifts on one reaction and duplicate plain coefficients are refused.
+Duplicate plain coefficients, duplicate enthalpy shifts, and duplicate
+log-shift targets on a reaction are refused.
+
+`reaction_log_shift({"reaction_a": 1.0, "reaction_b": -0.5}, origin=0.0,
+scale=1.0)` declares one optimizer coordinate with a multiplier for each named
+reaction. Each source law receives $\ln K_r(T) \leftarrow \ln K_r(T)+w_r q$.
+The coordinate starts at $q=0$ for the supplied laws. Absolute coefficient
+assignments precede additive shifts, and the native implicit action differentiates
+all affected reaction laws in the same direction.
 Replay attaches `result.chart.reaction_laws` and fitted EOS parameters directly,
 without applying the coordinates a second time; preserve native double values.
 

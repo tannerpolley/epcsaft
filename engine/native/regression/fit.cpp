@@ -739,7 +739,7 @@ ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult&
 ObservationEvaluator::ObservationEvaluator(const FitRequest& request, FitResult& failures,
     const std::vector<std::size_t>& rows, bool admitted) {
     for (const auto& coordinate : request.coordinates.coordinates)
-        if (coordinate.reaction && coordinate.reaction->coefficient == ReactionCoefficient::EnthalpyShift) {
+        if (coordinate.reaction && coordinate.reaction->shift()) {
             validate(request.coordinates, request.parameters, request.observations, request.thermochemistry);
             break;
         }
@@ -1188,7 +1188,7 @@ std::vector<double> fit_start(const FitRequest& request) {
     require(request.start->size() == point.size(), "fit start width");
     for (std::size_t c = 0; c < point.size(); ++c) {
         const auto& reaction = request.coordinates.coordinates[c].reaction;
-        if (reaction && reaction->coefficient == ReactionCoefficient::EnthalpyShift) point[c] = (*request.start)[c];
+        if (reaction && reaction->shift()) point[c] = (*request.start)[c];
     }
     require(request.coordinates.within_bounds(point), "start outside bounds");
     return point;

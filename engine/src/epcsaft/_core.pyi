@@ -4568,6 +4568,12 @@ class ObservationKind:
     """Solved system pressure times the selected phase mole-fraction sum, Pa."""
     PhaseSolventActivity: ObservationKind
     """Solved liquid solvent activity relative to its pure liquid at fixed T/P."""
+    PhaseSoluteActivity: ObservationKind
+    """Solute ln activity or −log10 activity on a molal infinite-dilution reference."""
+    PhaseConcentration: ObservationKind
+    """Sum of selected species concentrations in one phase, mol/m^3."""
+    LogLinear: ObservationKind
+    """Weighted sum of log quantities on one solved equilibrium."""
     PhaseAmountRatio: ObservationKind
     """Selected numerator component amount divided by selected denominator amount, dimensionless;
     denominator must be nonzero.
@@ -4633,6 +4639,12 @@ class Observation:
     pressure_ratio: float
     site: Optional[int]
     """Zero-based site ordinal, required for AssociationSiteFraction."""
+    solvent: int | None
+    """Neutral reference solvent index for a solute activity."""
+    negative_log10: bool
+    """Return minus the base-10 logarithm of the solute activity."""
+    log_terms: list[tuple[float, Observation]]
+    """Coefficients and selectors for positive quantities of one solved problem."""
 
     basis_amount: float
     loading_cap: float
@@ -4787,6 +4799,8 @@ class ReactionCoefficient:
     """Source reaction enthalpy increment in J/mol, with a required pivot temperature; preserves ln
     K at the pivot.
     """
+    LogShift: ReactionCoefficient
+    """Additive natural-log K coordinate applied to a set of named reactions."""
 
 class ReactionCoordinate:
     """Named source coefficient or enthalpy-shift coordinate.
@@ -4803,6 +4817,8 @@ class ReactionCoordinate:
     """Positive pivot in K within the source interval, required for EnthalpyShift; otherwise
     unused.
     """
+    log_shifts: dict[str, float]
+    """Named multipliers for a shared additive natural-log K shift."""
 
 class CoordinateTarget:
     """One native EOS target of an affine optimizer coordinate."""

@@ -13,6 +13,8 @@ epcsaft.regression
 
 .. autoapifunction:: epcsaft.regression.reaction_coordinate
 
+.. autoapifunction:: epcsaft.regression.reaction_log_shift
+
 .. autoapifunction:: epcsaft.regression.reaction_enthalpy_shift
 
 .. autoapifunction:: epcsaft.regression.density
@@ -20,6 +22,8 @@ epcsaft.regression
 .. autoapifunction:: epcsaft.regression.isobaric_heat_capacity
 
 .. autoapifunction:: epcsaft.regression.observation
+
+.. autoapifunction:: epcsaft.regression.log_linear
 
 .. autoapifunction:: epcsaft.regression.addition_enthalpy
 
