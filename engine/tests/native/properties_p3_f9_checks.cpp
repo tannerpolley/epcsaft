@@ -1116,14 +1116,15 @@ void density_correlated_ion_suppression() {
                 recording_support::field("cause", pressure.density_message),
                 recording_support::field("first_failure", pressure.diagnostics.first_numerical_failure->cause)}));
 
-        for (const auto& [w, density, alpha, cause] : std::vector<std::tuple<std::vector<double>, double, double, std::string>>{
-                {{0, 0, .5, .5}, 1000, 0, "invalid permittivity solvent fraction"},
-                {x, 1000, -50, denominator}, {x, 4000, 0, "invalid bulk relative permittivity"},
-                {x, std::numeric_limits<double>::max(), 0, "invalid bulk relative permittivity"}}) {
+        const auto check_refusal = [&](const std::vector<double>& w, double density, double alpha, const std::string& cause) {
             parameters.ion_suppression_coefficient = {0, 0, alpha, alpha};
             const double temperature = density == std::numeric_limits<double>::max() ? 0.1 : 600.0;
             CHECK(recording_support::refusal([&] { (void)bulk_relative_permittivity(temperature, density, w, parameters); }) == cause);
-        }
+        };
+        check_refusal({0, 0, .5, .5}, 1000, 0, "invalid permittivity solvent fraction");
+        check_refusal(x, 1000, -50, denominator);
+        check_refusal(x, 4000, 0, "invalid bulk relative permittivity");
+        check_refusal(x, std::numeric_limits<double>::max(), 0, "invalid bulk relative permittivity");
     }
 }
 
