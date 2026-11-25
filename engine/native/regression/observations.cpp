@@ -528,6 +528,7 @@ Prediction predict(
         initial.enthalpy_difference = *final.value - *initial.value;
         finish(initial, observation, *initial.enthalpy_difference / observation.feed_amount - *feed.value);
         initial.unit = "J/mol";
+        initial.final_caloric_center = std::move(final.caloric_center);
         initial.final_solved = std::move(final.solved); initial.final_compiled = std::move(final.compiled);
         return initial;
     }
@@ -703,8 +704,10 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         equilibrium::SolvedStateActionDirection zero{0.0, 0.0, std::vector<double>(components), std::vector<double>(model.active_parameters().size())};
         const auto kind = observation.kind == ObservationKind::SystemEnthalpy
             ? Kind::SystemEnthalpy : Kind::EquilibriumIsobaricHeatCapacity;
-        const auto entry = equilibrium::solved_state_actions(*result.compiled, solved,
-            {{observable(kind, 0)}, {zero}}).results.front();
+        const auto entry = model.solver_options().nested_solve
+            ? equilibrium::solved_state_first_actions(*result.compiled, solved, {observable(kind, 0)}, {zero},
+                &result.caloric_center).front().results.front()
+            : equilibrium::solved_state_actions(*result.compiled, solved, {{observable(kind, 0)}, {zero}}).results.front();
         if (!entry.value) {
             result.status = entry.status == equilibrium::SolvedStateActionStatus::MissingThermochemistry
                 || entry.status == equilibrium::SolvedStateActionStatus::OutsideInterval
@@ -1134,6 +1137,7 @@ std::vector<PredictionGradient> differentiate_group(
             [&] { return differentiate_group(model, {&item}, prediction, coordinates).front(); });
         if (initial.status != ObservationStatus::Available) { initial.message = "initial:" + initial.message; return {initial}; }
         auto center = prediction;
+        std::swap(center.caloric_center, center.final_caloric_center);
         std::swap(center.solved, center.final_solved); std::swap(center.compiled, center.final_compiled);
         item.problem = item.final_problem;
         auto final = differentiate_group(model, {&item}, center, coordinates).front();
@@ -1212,8 +1216,9 @@ std::vector<PredictionGradient> differentiate_group(
         case ObservationKind::Density: break;
         }
     }
+    auto caloric = prediction.caloric_center;
     const auto batches = !solved || width == 0 ? std::vector<equilibrium::SolvedStateActionBatch>()
-        : equilibrium::solved_state_first_actions(*prediction.compiled, *solved, observables, directions);
+        : equilibrium::solved_state_first_actions(*prediction.compiled, *solved, observables, directions, caloric ? &caloric : nullptr);
     std::vector<PredictionGradient> gradients(observations.size());
     for (std::size_t row = 0; row < observations.size(); ++row) {
         const auto& observation = *observations[row];

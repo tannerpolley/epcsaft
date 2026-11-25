@@ -1518,10 +1518,17 @@ SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compi
     return batch;
 }
 
+struct SolvedStateCaloricCenter final {
+    SolvedStateObservableKind kind;
+    const HelmholtzModel* model;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    ActionCenter value;
+};
+
 std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,
-    const std::vector<SolvedStateActionDirection>& directions
+    const std::vector<SolvedStateActionDirection>& directions, std::shared_ptr<const SolvedStateCaloricCenter>* caloric
 ) {
     core::Scope scope("solved_state_first_actions");
     if (directions.empty()) throw std::invalid_argument("solved-state action order");
@@ -1534,6 +1541,14 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
         cover = caloric_need(compiled.problem, requests.back(), false, cover);
     }
     std::optional<ActionCenter> shared;
+    const bool retain = caloric && central.declaration && observables.size() == 1
+        && (observables.front().kind == SolvedStateObservableKind::SystemEnthalpy
+            || observables.front().kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
+    const bool reuse = retain && *caloric && (*caloric)->model == compiled.model
+        && (*caloric)->declaration == central.declaration && (*caloric)->kind == observables.front().kind
+        && (*caloric)->value.center.prepared.point == central.coordinates;
+    if (reuse) shared = (*caloric)->value;
+
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
     const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
@@ -1551,6 +1566,9 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     for (const auto& request : requests)
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
             cover, nullptr, parameters[group(request.directions.front())], nullptr, batch_parameters));
+    if (retain && !reuse && shared && !shared->preparation_failed)
+        *caloric = std::make_shared<const SolvedStateCaloricCenter>(SolvedStateCaloricCenter{
+            observables.front().kind, compiled.model, central.declaration, std::move(*shared)});
     return batches;
 }
 

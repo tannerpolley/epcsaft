@@ -1334,10 +1334,11 @@ struct SolvedStateActionWorkspace;
 SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace);
 // Independent first-order directions at one accepted center; each response retains its own status.
+struct SolvedStateCaloricCenter;
 EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,
-    const std::vector<SolvedStateActionDirection>& directions
+    const std::vector<SolvedStateActionDirection>& directions, std::shared_ptr<const SolvedStateCaloricCenter>* caloric = nullptr
 );
 
 }  // namespace epcsaft::equilibrium

@@ -99,6 +99,7 @@ struct Trial final {
     std::shared_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
     std::vector<Observation> observations;
     std::vector<Prediction> centers;
+    std::vector<std::size_t> projected_rows;
     std::vector<double> optimizer;
     ObservationEvaluation evaluation;
     bool jacobian = false;
@@ -233,9 +234,25 @@ struct ObservationEvaluator::Impl final {
         const std::size_t count = core::current_trace() || fit_host.worker.empty() ? 1
             : requested > 0 ? static_cast<std::size_t>(requested) : processors();
         std::size_t rank = 0;
+        std::vector<std::size_t> heat_groups;
+        std::vector<std::size_t> load(std::min(count, groups_.size()), 0), heat_load(load);
+        const auto share = load.empty() ? 0 : (groups_.size() + load.size() - 1) / load.size();
         for (std::size_t i = 0; i < groups_.size(); ++i) {
             owner_[i] = groups_[i] != i ? owner_[groups_[i]] : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
             const auto& current = request_.observations[i];
+            if (current.kind == ObservationKind::AdditionEnthalpy && groups_[i] == i) {
+                // Heat additions with the same initial state share its enthalpy and parameter columns.
+                const auto prior = std::find_if(heat_groups.begin(), heat_groups.end(), [&](std::size_t j) {
+                    return heat_load[owner_[j]] < share && equilibrium::same_problem_state(current.problem, request_.observations[j].problem);
+                });
+                if (prior == heat_groups.end()) {
+                    const auto available = load.begin() + static_cast<std::ptrdiff_t>(std::min(rank, load.size()));
+                    owner_[i] = static_cast<std::size_t>(std::min_element(load.begin(), available) - load.begin());
+                    heat_groups.push_back(i);
+                } else owner_[i] = owner_[*prior];
+                ++heat_load[owner_[i]];
+            }
+            if (groups_[i] == i) ++load[owner_[i]];
             if (current.kind != ObservationKind::Stability || !current.pressure_reference) continue;
             auto reference = pressure_reference_row(current);
             for (std::size_t j = 0; j < i; ++j) if (request_.observations[j].kind == ObservationKind::Stability && request_.observations[j].pressure_reference) {
@@ -493,6 +510,7 @@ struct ObservationEvaluator::Impl final {
                     [](const auto& p) { return p.saturation && p.saturation->accepted; })) trial.model = cached_->model;
                 else trial.model = std::make_shared<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
                 trial.centers.assign(groups_.size(), Prediction{});
+                trial.projected_rows.assign(n, n);
             }
             trial.observations = std::move(observations);
             const Trial* seed = nullptr;
@@ -569,7 +587,8 @@ struct ObservationEvaluator::Impl final {
                         }
                         prediction.stability = std::move(measure);
                     }
-                } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                } else if (trial.projected_rows[g] != i && !pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                trial.projected_rows[g] = i;
                 retain(prediction.first_numerical_failure);
                 if (prediction.saturation) out.saturation_predictions[i] = prediction;
                 if (observation.kind == ObservationKind::Stability) out.stability_predictions[i] = prediction;
