@@ -34,7 +34,7 @@ public:
     SmartPtr<const Vector> lower = active.x_L(), upper = active.x_U();
     double x[4], lo[4], hi[4];
     adapter->ResortX(*current, x);
-    adapter->ResortBnds(*lower, lo, *upper, hi);
+    adapter->ResortBounds(*lower, lo, *upper, hi);
     for (int i = 0; i < 4; ++i) {
       if (!std::isfinite(x[i]) || !std::isfinite(lo[i]) || !std::isfinite(hi[i])) return false;
       std::cout << "internal," << iter << ',' << i << ',' << x[i] << ',' << lo[i] << ',' << hi[i] << '\n';
