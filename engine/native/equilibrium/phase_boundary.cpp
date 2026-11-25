@@ -1576,6 +1576,8 @@ BranchCheck check_density_branches(
     const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
     const PhasePoint* supplied
 ) {
+    if (core::CalculationWork::active_limit())
+        scope.probe("density_admission_work", static_cast<double>(core::CalculationWork::current()->units()));
     if (core::CalculationWork::stop_at("density admission")) return {false, false, "work allowance exhausted"};
     const auto& model = *compiled.model;
     if (limits) limits->check();

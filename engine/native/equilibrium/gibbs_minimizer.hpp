@@ -17,7 +17,7 @@
 #include <vector>
 
 namespace epcsaft::core { class Scope; }
-namespace Ipopt { class TNLPAdapter; }
+
 
 namespace epcsaft::equilibrium {
 
@@ -415,6 +415,7 @@ public:
 
     double regularization_size() const noexcept { return regularization_size_; }
     const std::optional<std::string>& step_rule_error() const noexcept { return step_rule_error_; }
+    bool amount_limited() const { return !amount_columns_.empty(); }
     void begin_ipopt() { observations_.ipopt_diagnostics.emplace(); }
     void finish_ipopt(int initialized, int returned, bool predicted, bool physical) noexcept {
         auto& d = *observations_.ipopt_diagnostics;
@@ -457,15 +458,10 @@ private:
     double regularization_size_ = 0.0;
     const DriverLimits* limits_ = nullptr;
     std::size_t consumed_before_ = limits_ ? limits_->consumed : 0;  // the earlier stages' iterations
-    // The latest callback's iterate owner, regular or restoration: its current point is the base of every search.
-    Ipopt::SmartPtr<const Ipopt::IpoptData> search_;
-    Ipopt::TNLPAdapter* adapter_ = nullptr;
-    std::vector<double> base_, lower_;  // TNLP order; lower_ is the active problem's relaxed lower bounds
+    std::vector<double> base_, lower_, z_lower_, z_upper_;
     std::vector<std::size_t> amount_columns_;  // the free phase amounts
     std::vector<double> chart_;  // per-column unit of the TNLP coordinates: physical = chart_ * TNLP
-    unsigned int base_tag_ = 0, lower_tag_ = 0;  // Ipopt's vector tags of the cached base and bounds
     std::optional<std::string> step_rule_error_;
-    const std::vector<double>& search_base();
 };
 
 }  // namespace epcsaft::equilibrium

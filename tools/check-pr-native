@@ -158,6 +158,7 @@ def main():
         jobs = int(output(str(repo / 'tools/build-jobs'), '2560'))
         flags = ['--buildtype=debug', '-Db_ndebug=false', '-Db_lundef=false', '-Db_sanitize=address,undefined',
                  '-Db_lto=false', '-Dstrip=false', '-Dcpp_args=-idirafter' + output('gcc', '-print-file-name=include') + ' -gline-tables-only']
+        env['PKG_CONFIG_PATH'] = output('bash', str(source / 'tools/build-ipopt.sh'), str(jobs), env=env)
         env.update(EPCSAFT_BUILD_JOBS=str(jobs), CCACHE_COMPILERCHECK='content', CC='ccache clang-18', CXX='ccache clang++-18', CCACHE_BASEDIR=str(source), CCACHE_NOHASHDIR='1')
         run('meson', 'setup', str(build), str(source / 'engine'), '--prefix', str(venv), *flags, env=env)
         print(f'preparing checks in {root} with {jobs} compile jobs', flush=True)
