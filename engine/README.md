@@ -65,6 +65,8 @@ request a lower maximum. New Engine Ninja trees allow one link at a time.
 The lead's batch checks (`check-pr-native`) additionally require `clang-18`,
 `clang++-18`, `clang-tidy-18`, `run-clang-tidy-18`, `file` and `nm`. The line budgets
 need `clang-format-18` and the locked `.venv` Ruff, so run `bash tools/setup.sh --native` first.
+The native reuse check uses `clang++-18` and `libclang1-18` to read production
+declarations and operand uses from the configured Meson compile database.
 Checks that compare revisions require a Git checkout and its history.
 Setup and status also work from an extracted source tree.
 

@@ -136,6 +136,8 @@ if [[ "$python_batch" == true ]]; then
     fi
 fi
 # Start native test builds after pytest, whose subprocesses need the same Ninja lock to import the editable Engine.
+architecture_build="$(<build/environment-wheel/meson-build-dir)"
+tools/locked-ninja -C "$architecture_build" pcsaft_superancillary_table.hpp
 (
     timed native-default bash engine/tools/run-native-tests.sh
     ((${#slow_tests[@]} == 0)) || timed native-slow bash engine/tools/run-native-tests.sh "${slow_tests[@]}"
@@ -144,8 +146,8 @@ native_pid=$!
 
 timed ruff env -C engine ../.venv/bin/ruff check src tests || failed=1
 timed mypy env -C engine ../.venv/bin/mypy || failed=1
-architecture_args=()
-[[ "$python_batch" == false ]] || architecture_args=(--build-dir "$(<build/environment-wheel/meson-build-dir)")
+architecture_args=(--build-dir "$architecture_build")
+[[ "$python_batch" == false ]] || architecture_args+=(--linked)
 timed engine-architecture .venv/bin/python tools/check-engine-architecture.py "${architecture_args[@]}" || failed=1
 wait "$native_pid" || failed=1
 ((failed == 0)) || exit 1
