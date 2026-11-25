@@ -34,7 +34,7 @@ public:
     SmartPtr<const Vector> lower = active.x_L(), upper = active.x_U();
     double x[4], lo[4], hi[4];
     adapter->ResortX(*current, x);
-    adapter->ResortBnds(*lower, lo, *upper, hi);
+    adapter->ResortBounds(*lower, lo, *upper, hi);
     for (int i = 0; i < 4; ++i) {
       if (!std::isfinite(x[i]) || !std::isfinite(lo[i]) || !std::isfinite(hi[i])) return false;
       std::cout << "internal," << iter << ',' << i << ',' << x[i] << ',' << lo[i] << ',' << hi[i] << '\n';
@@ -51,7 +51,7 @@ public:
   }
 };
 int main() {
-  static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 11 && IPOPT_VERSION_RELEASE == 9, "locked Ipopt required");
+  static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 14 && IPOPT_VERSION_RELEASE == 20, "locked Ipopt required");
   std::cout << std::setprecision(17) << "version=" << IPOPT_VERSION << "\nlinear_solver=mumps\n";
 #ifdef _WIN32
   HMODULE modules[1024]; DWORD needed;

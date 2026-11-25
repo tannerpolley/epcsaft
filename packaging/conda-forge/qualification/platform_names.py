@@ -8,7 +8,7 @@ WINDOWS, DARWIN = sys.platform == 'win32', sys.platform == 'darwin'
 EXE = '.exe' if WINDOWS else ''
 LIBRARY = 'lib{}.dylib' if DARWIN else '{}.dll' if WINDOWS else 'lib{}.so'
 NATIVE, ASL = LIBRARY.format('epcsaft_native'), LIBRARY.format('epcsaft_asl')
-IPOPT = 'libipopt.1.dylib' if DARWIN else 'epcsaft_ipopt_3119.dll' if WINDOWS else 'libipopt.so.1'
+IPOPT = 'libipopt.3.dylib' if DARWIN else 'epcsaft_ipopt_31420.dll' if WINDOWS else 'libipopt.so.3'
 PACKAGE = Path(sysconfig.get_paths()['platlib']) / 'epcsaft'
 VENV_PYTHON = 'Scripts/python.exe' if WINDOWS else 'bin/python'
 # Windows-only checks and why they are excluded elsewhere.

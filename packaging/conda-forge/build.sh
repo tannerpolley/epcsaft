@@ -23,9 +23,9 @@ if [[ $target_platform == osx-* ]]; then
         codesign -f -s - "$library"
     done
 else
-    install -m755 "$IPOPT_PREFIX/lib/libipopt.so.1.9.9" "$SP_DIR/epcsaft/"
-    ln -s libipopt.so.1.9.9 "$SP_DIR/epcsaft/libipopt.so.1"
-    for library in "$SP_DIR/epcsaft"/*.so "$SP_DIR/epcsaft/libipopt.so.1.9.9"; do
+    install -m755 "$IPOPT_PREFIX/lib/libipopt.so.3.14.20" "$SP_DIR/epcsaft/"
+    ln -s libipopt.so.3.14.20 "$SP_DIR/epcsaft/libipopt.so.3"
+    for library in "$SP_DIR/epcsaft"/*.so "$SP_DIR/epcsaft/libipopt.so.3.14.20"; do
         patchelf --set-rpath '$ORIGIN:$ORIGIN/../../..' "$library"
     done
 fi

@@ -11,7 +11,7 @@ for %%P in (feos-gross-sadowski-2001 feos-gross-sadowski-2002) do (
   xcopy /e /i /y /q "%SRC_DIR%\data\packets\%%P\1" "%SP_DIR%\epcsaft\data\packets\%%P\1"
   if errorlevel 1 exit /b 1
 )
-copy "%LIBRARY_PREFIX%\bin\epcsaft_ipopt_3119.dll" "%SP_DIR%\epcsaft\"
+copy "%LIBRARY_PREFIX%\bin\epcsaft_ipopt_31420.dll" "%SP_DIR%\epcsaft\"
 if errorlevel 1 exit /b 1
 "%PYTHON%" "%RECIPE_DIR%\licenses.py"
 if errorlevel 1 exit /b 1

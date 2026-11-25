@@ -8,16 +8,16 @@ fi
 mkdir -p "$BUILD_PREFIX/epcsaft-ipopt-build"
 cd "$BUILD_PREFIX/epcsaft-ipopt-build"
 CFLAGS="${CFLAGS:-} -std=gnu11" \
-CXXFLAGS="${CXXFLAGS:-} -std=gnu++11 -DIPOPT_BUILD" \
+CXXFLAGS="${CXXFLAGS:-} -std=gnu++11" \
 CPPFLAGS="${CPPFLAGS:-} -I$PREFIX/include" \
 LDFLAGS="${LDFLAGS:-} -L$PREFIX/lib -Wl,-rpath,$PREFIX/lib" \
 "$SRC_DIR/ipopt-source/configure" \
-    --prefix="$IPOPT_PREFIX" --disable-static --enable-dependency-linking \
+    --prefix="$IPOPT_PREFIX" --enable-shared --disable-static --disable-java --disable-sipopt \
     --disable-linear-solver-loader --without-hsl --without-asl \
-    --without-pardiso --without-wsmp \
-    --with-blas=-lblas --with-lapack=-llapack \
-    --with-mumps-incdir="$PREFIX/include/mumps_seq" \
-    --with-mumps-lib="$(pkg-config --libs dmumps_seq)"
+    --disable-mpiinit --disable-pardisomkl --without-spral \
+    --with-lapack-lflags='-llapack -lblas' \
+    --with-mumps-cflags="-I$PREFIX/include/mumps_seq" \
+    --with-mumps-lflags="$(pkg-config --libs dmumps_seq)"
 jobs=$("$python" "$RECIPE_DIR/build-jobs.py" ipopt)
 make -j"$jobs"
 make install
