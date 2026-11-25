@@ -1119,10 +1119,10 @@ struct SaturationSearch final {
     std::string detection_limits = "unsampled tangencies, paired crossings or multiple roots in a cell, turns between nodes and undiscovered branches can escape detection";
 };
 void compare_loading_candidates(SaturationSearch&, equilibrium::ComparisonEligibility);
-EPC_API void admit_loading_search(SaturationSearch&);
+EPC_API void admit_loading_search(SaturationSearch&, std::optional<double> loading_cap = {});
 EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,
-    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), const SaturationSearch* previous = nullptr);
+    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), std::optional<double> loading_cap = {});
 
 // ---- Solved-state derivative actions: native records, no public promise.
 

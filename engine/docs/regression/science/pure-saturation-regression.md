@@ -29,14 +29,16 @@ loadings in mol/mol, added amount in mol, and `source_cap`, `saturation_cap` or
 `switch`. Search evidence includes every required node, event, corrected
 candidate and state comparison, original causes, residuals, numerical estimates,
 rank/conditioning, exact pressure-loading actions and shared work counts.
-The result states “unique within the declared search”; tangencies, paired
+The search stops at the first detected crossing or the first node reaching the
+source cap. A resolved prefix without a crossing returns the source cap and
+leaves the saturation loading absent. Tangencies, paired
 crossings or several roots in one cell, turns between nodes and undiscovered
 branches can escape this finite search. It is not an interval uniqueness or
 phase-stability certificate.
 
-Missing search coverage, competing roots, branch/domain loss, unresolved slope
-reversals or exhausted shared work refuse loading, heat and the fit residual,
-even below the source cap. Missing initial calorics can preserve the admitted
+Missing coverage, branch loss or exhausted shared work in the required prefix
+refuse the row. A sampled slope reversal away from the target pressure does
+not prevent the source-cap decision. Missing initial calorics can preserve the admitted
 saturation result while refusing heat. A later derivative refusal preserves a
 valid heat. At the exact minimum switch there is no ordinary heat gradient;
 no smoothing or tolerance band changes the heat value.

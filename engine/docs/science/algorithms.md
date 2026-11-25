@@ -1934,15 +1934,9 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
-element potentials initialized anew. During a fit, an admitted previous search
-can supply the physical start at the same loading after the ordinary continuation
-has passed the first pressure event and established its correction seed. Each node records whether
-that start passed the current model’s solve, uncertainty and sampled slope
-checks, including the pressure increment from the preceding node. The search
-retains a rejected node and retries with the ordinary grid start within the
-remaining budget. Trials with identical EOS parameter values, including held
-diameters, can retain the immutable model’s reference series and derivative
-tapes while fitting new reaction coefficients.
+element potentials initialized anew. For a saturation-capped addition, a failed
+node started from its predecessor is retained and the same declared node is
+solved cold within the remaining work allowance.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded
@@ -1957,7 +1951,12 @@ estimates and zero comparison allowance. Every pair in a duplicate group must
 agree; multiple strict brackets refuse independently of candidate deduplication.
 Candidate corrections/comparisons precede the sampled slope audit. All nodes
 and required events must be examined, with one admitted root group and no
-refusal, before publication. “Unique within the declared search” excludes
+refusal, before publication of a full-interval root. A capped addition examines nodes
+through the first pressure event or the first loading at or above its source
+cap. With no event through the cap, the endpoint is the source cap and the
+saturation loading is unavailable. A sampled slope reversal is relevant to this
+decision when a participating node's pressure interval includes the target.
+“Unique within the declared search” excludes
 between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
 owns the heat, moving denominator and switch derivative.
 

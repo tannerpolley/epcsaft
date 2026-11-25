@@ -577,20 +577,25 @@ Prediction predict(
             observation.loading_bounds[0], observation.loading_bounds[1], 0, observation.pressure};
         for (auto& value : affine.direction) value *= observation.basis_amount;
         auto search = std::make_shared<equilibrium::SaturationSearch>(equilibrium::search_loading(
-            model, observation.final_problem, affine, observation.loading_grid, nullptr, deadline, previous ? previous->saturation.get() : nullptr));
+            model, observation.final_problem, affine, observation.loading_grid, nullptr, deadline, observation.loading_cap));
         Prediction seed; seed.saturation = search; seed.first_numerical_failure = search->first_numerical_failure;
-        if (!search->accepted) {
+        if (!search->complete || !search->causes.empty()) {
             seed.status = ObservationStatus::CentralSolveUnavailable;
             for (const auto& cause : search->causes) seed.message += "saturation:" + cause + ";";
             return seed;
         }
-        const auto& state = search->candidates[*search->accepted].state;
-        const auto compiled = equilibrium::compile_problem(model, *state.declaration);
-        seed.saturation_loading = state.coordinates[compiled.loading_column()];
-        seed.endpoint_loading = std::min(observation.loading_cap, *seed.saturation_loading);
+        seed.endpoint_loading = observation.loading_cap;
+        seed.cap_branch = "source_cap";
+        if (search->accepted) {
+            const auto& state = search->candidates[*search->accepted].state;
+            const auto compiled = equilibrium::compile_problem(model, *state.declaration);
+            seed.saturation_loading = state.coordinates[compiled.loading_column()];
+            if (*seed.saturation_loading <= observation.loading_cap) {
+                seed.endpoint_loading = seed.saturation_loading;
+                seed.cap_branch = *seed.saturation_loading == observation.loading_cap ? "switch" : "saturation_cap";
+            }
+        }
         seed.added_amount = observation.basis_amount * *seed.endpoint_loading;
-        seed.cap_branch = observation.loading_cap == *seed.saturation_loading ? "switch"
-            : observation.loading_cap < *seed.saturation_loading ? "source_cap" : "saturation_cap";
         auto fixed = observation; fixed.kind = ObservationKind::AdditionEnthalpy; fixed.feed_amount = *seed.added_amount;
         fixed.final_problem = observation.problem; fixed.final_problem.feed.kind = equilibrium::FeedKind::Amounts;
         fixed.final_problem.feed.values = initial.n_feed;
@@ -1374,26 +1379,28 @@ std::vector<PredictionGradient> differentiate_group(
         auto item = *observations.front();
         const bool capped = item.kind == ObservationKind::SaturationCappedAdditionEnthalpy;
         std::vector<double> loading_gradient(width, 0);
-        if (capped) {
+        if (capped) item.feed_amount = *prediction.added_amount;
+        if (capped && prediction.saturation_loading) {
             const auto& search = *prediction.saturation;
             const auto& root = search.candidates[*search.accepted].state;
             const auto c = equilibrium::compile_problem(model, *root.declaration);
             const auto e = equilibrium::equilibrium_numerical_estimates(c, root);
-            const auto columns = directions.empty() ? std::vector<equilibrium::SolvedStateActionBatch>()
-                : equilibrium::solved_state_first_actions(c, root, {{equilibrium::SolvedStateObservableKind::Loading}}, directions);
-            for (std::size_t k = 0; k < width; ++k) {
-                if (!columns[k].results[0].action)
-                    return {{{}, ObservationStatus::ActionUnavailable, std::string("saturation:")
-                        + equilibrium::solved_state_status_name(columns[k].results[0].status) + ":"
-                        + columns[k].results[0].diagnostic_message.value_or("")}};
-                loading_gradient[k] = *columns[k].results[0].action;
-            }
             if (prediction.cap_branch == "switch" || !e.loading.resolved
                 || std::abs(item.loading_cap - *prediction.saturation_loading) <= e.loading.absolute) {
                 PredictionGradient unavailable; unavailable.message = "saturation:switch or unresolved branch";
                 return {unavailable};
             }
-            item.feed_amount = *prediction.added_amount;
+            if (prediction.cap_branch == "saturation_cap") {
+                const auto columns = directions.empty() ? std::vector<equilibrium::SolvedStateActionBatch>()
+                    : equilibrium::solved_state_first_actions(c, root, {{equilibrium::SolvedStateObservableKind::Loading}}, directions);
+                for (std::size_t k = 0; k < width; ++k) {
+                    if (!columns[k].results[0].action)
+                        return {{{}, ObservationStatus::ActionUnavailable, std::string("saturation:")
+                            + equilibrium::solved_state_status_name(columns[k].results[0].status) + ":"
+                            + columns[k].results[0].diagnostic_message.value_or("")}};
+                    loading_gradient[k] = *columns[k].results[0].action;
+                }
+            }
         }
         item.kind = ObservationKind::SystemEnthalpy;
         if (references && !std::equal(reactions.begin(), reactions.end(),

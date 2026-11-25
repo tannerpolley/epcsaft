@@ -2312,17 +2312,23 @@ static unsigned loading_slope_reversals(const SaturationNode& node, const Satura
     return count;
 }
 
-void admit_loading_search(SaturationSearch& out) {
-    compare_loading_candidates(out, {});
-    for (std::size_t i = 0; i < out.nodes.size(); ++i)
-        out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
+static bool loading_pressure_event(const SaturationNode& node) {
+    return std::abs(node.mismatch) <= node.estimates.pressure.absolute;
+}
 
-    if (out.groups.empty() && out.causes.empty()) out.causes.push_back("no_resolved_root");
+void admit_loading_search(SaturationSearch& out, std::optional<double> loading_cap) {
+    compare_loading_candidates(out, {});
+    for (std::size_t i = 0; i < out.nodes.size(); ++i) {
+        if (loading_cap && !loading_pressure_event(out.nodes[i]) && (!i || !loading_pressure_event(out.nodes[i - 1]))) continue;
+        out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
+    }
+    const bool covered_cap = loading_cap && out.complete && !out.nodes.empty() && out.nodes.back().loading >= *loading_cap;
+    if (!covered_cap && out.groups.empty() && out.causes.empty()) out.causes.push_back("no_resolved_root");
     if (out.complete && out.causes.empty() && out.groups.size() == 1) out.accepted = out.groups[0][0];
 }
 
 SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem declaration, const AffineLoading& affine,
-    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline, const SaturationSearch* previous) {
+    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline, std::optional<double> loading_cap) {
     using Clock = std::chrono::steady_clock;
     if (grid.size() < 2 || grid.front() != affine.lower || grid.back() != affine.upper)
         throw std::invalid_argument("saturation grid must include both declared bounds");
@@ -2334,6 +2340,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     own.attempt_cap = cap;
     const auto& work = supplied ? *supplied : own;
     SaturationSearch out; out.grid = grid; out.declaration = affine;
+    if (loading_cap) out.uniqueness_scope = "first detected crossing through the source cap";
     out.work_at_entry = {work.consumed, work.evaluations, work.hessian_calls, work.attempts};
     const auto fail = [&](const std::string& cause) { out.causes.push_back(cause); };
     const auto fail_at = [&](double alpha, const std::string& cause) { fail("loading " + core::optional_number(alpha) + ": " + cause); };
@@ -2359,15 +2366,23 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0;
     };
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
-    const auto evaluate_node = [&](double alpha, std::optional<EquilibriumResult> start, std::string prior_start, SaturationNode* retry = nullptr) -> std::optional<std::string> {
+    const auto evaluate_node = [&](double alpha, std::optional<EquilibriumResult> start, std::string prior_start) -> std::optional<std::string> {
         const auto before = work.attempts;
         if (start) start->multipliers.clear();
         auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
             start, false);
-        auto& n = retry ? *retry : out.nodes.emplace_back();
+        auto& n = out.nodes.emplace_back();
         n.driver_attempts = work.attempts - before;
         n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
-        if (n.state.failure) std::rethrow_exception(n.state.failure);
+        if (n.state.failure) {
+            try { std::rethrow_exception(n.state.failure); }
+            catch (const BudgetExhausted&) { throw; }
+            catch (const std::exception& error) {
+                if (!loading_cap || !start) throw;
+                core::retain_failure(out.first_numerical_failure, error, "loading continuation");
+                return error.what();
+            }
+        }
         if (!n.state.success || !n.state.has_state()) { return n.state.message; }
         n.mismatch = *n.state.pressure - affine.pressure;
         const auto estimate = [](const CompiledSystem& system, const EquilibriumResult& result, const PhasePoint* prepared = nullptr) {
@@ -2406,61 +2421,33 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         if (!usable(n.estimates.pressure)) { return n.estimates.cause; }
         return {};
     };
-    const bool reuse = previous && previous->accepted && previous->grid == grid && previous->nodes.size() == grid.size()
-        && previous->declaration.initial == affine.initial && previous->declaration.direction == affine.direction
-        && previous->declaration.pressure == affine.pressure;
-    bool bracket_found = false;
     try {
         for (double alpha : grid) {
             const auto i = out.nodes.size();
-            std::string prior_start = reuse ? "bracket_continuation" : "not_supplied";
-            SaturationNode* retry = nullptr;
-            if (reuse && bracket_found) {
-                const auto before = work.attempts;
-                try {
-                    const auto cause = evaluate_node(alpha, previous->nodes[i].state, "accepted");
-                    if (!cause && !loading_slope_reversals(out.nodes.back(), &out.nodes[i - 1])) continue;
-                    prior_start = "fallback:" + cause.value_or("unresolved_slope_reversal");
-                } catch (const BudgetExhausted&) { throw; }
-                catch (const std::bad_alloc&) { throw; }
-                catch (const std::exception& error) {
-                    core::retain_failure(out.first_numerical_failure, error, "prior loading node");
-                    prior_start = std::string("fallback:") + error.what();
-                }
-                // Retain the failed start even if the shared budget stops its ordinary retry.
-                if (out.nodes.size() == i) out.nodes.emplace_back();
-                auto& rejected = out.nodes.back();
-                rejected.loading = alpha; rejected.prior_start = prior_start; rejected.driver_attempts = work.attempts - before;
-                out.rejected_starts.push_back(std::move(rejected));
-                retry = &out.nodes.back();
-                *retry = {}; retry->loading = alpha; retry->prior_start = prior_start;
+            auto cause = evaluate_node(alpha, i ? std::make_optional(out.nodes[i - 1].state) : std::nullopt, "not_supplied");
+            if (loading_cap && i && cause && !out.nodes.back().state.success) {
+                out.rejected_starts.push_back(std::move(out.nodes.back()));
+                out.nodes.pop_back();
+                cause = evaluate_node(alpha, std::nullopt, "cold_after_refused_continuation");
             }
-            auto cause = evaluate_node(alpha, i ? std::make_optional(out.nodes[i - 1].state) : std::nullopt, std::move(prior_start), retry);
             if (cause) { fail_at(alpha, *cause); fail("unexamined_gap"); break; }
-            // Preserve the correction seed reached by the ordinary loading continuation.
-            const auto& n = out.nodes.back();
-            if (i && std::abs(n.mismatch) > n.estimates.pressure.absolute &&
-                (sign(n.mismatch) != sign(out.nodes[i - 1].mismatch) ||
-                 std::abs(out.nodes[i - 1].mismatch) <= out.nodes[i - 1].estimates.pressure.absolute))
-                bracket_found = true;
-        }
-        if (out.nodes.size() == grid.size() && out.causes.empty()) {
-            for (std::size_t i = 0; i < out.nodes.size(); ++i) {
-                const auto& a = out.nodes[i];
-                const bool event = std::abs(a.mismatch) <= a.estimates.pressure.absolute;
-                if (event) out.events.push_back({i ? i - 1 : i, std::min(i + 1, grid.size() - 1)});
-                if (!i || event) continue;
-                const auto& b = out.nodes[i - 1];
-                if (std::abs(b.mismatch) > b.estimates.pressure.absolute && sign(a.mismatch) != sign(b.mismatch)) {
+            const auto& node = out.nodes.back();
+            if (loading_pressure_event(node)) out.events.push_back({i ? i - 1 : i, std::min(i + 1, grid.size() - 1)});
+            else if (i) {
+                const auto& prior = out.nodes[i - 1];
+                if (!loading_pressure_event(prior) && sign(node.mismatch) != sign(prior.mismatch)) {
                     ++out.brackets; out.events.push_back({i - 1, i});
                 }
             }
+            if (loading_cap && (alpha >= *loading_cap || !out.events.empty())) break;
+        }
+        if (out.causes.empty()) {
             for (const auto& event : out.events) {
                 const auto lo = grid[event[0]], hi = grid[event[1]];
                 double seed = (lo + hi) / 2;
                 auto start_node = event[0];
-                for (std::size_t i = event[0]; i <= event[1]; ++i)
-                    if (std::abs(out.nodes[i].mismatch) <= out.nodes[i].estimates.pressure.absolute) { seed = grid[i]; start_node = i; }
+                for (std::size_t i = event[0]; i <= event[1] && i < out.nodes.size(); ++i)
+                    if (loading_pressure_event(out.nodes[i])) { seed = grid[i]; start_node = i; }
                 auto [c, state] = solve(seed, lo, hi, affine.pressure, out.nodes[start_node].state, true);
                 SaturationCandidate candidate; candidate.state = std::move(state);
                 if (!candidate.state.success || !candidate.state.has_state()) {
@@ -2499,7 +2486,7 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         core::retain_failure(out.first_numerical_failure, error, "saturation search");
         fail(dynamic_cast<const BudgetExhausted*>(&error) ? "budget_exhausted" : error.what()); fail("unexamined_gap");
     }
-    admit_loading_search(out);
+    admit_loading_search(out, loading_cap);
     out.iterations = work.consumed; out.evaluations = work.evaluations;
     out.hessian_calls = work.hessian_calls; out.attempts = work.attempts;
     return out;
