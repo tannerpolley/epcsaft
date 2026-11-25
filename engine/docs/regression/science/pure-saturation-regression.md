@@ -118,6 +118,7 @@ nondimensionalisation scale $s$ in the observation's unit (not an
 uncertainty), and `LogRatio` $r=\ln(y/y_{obs})$ for positive quantities, which
 carries no scale, evaluated as $\ln y-\ln y_{obs}$ across the dynamic range
 and as $\mathrm{log1p}$ inside the named `LOG_RATIO_NEAR_UNITY` band.
+Log-linear predictions are already in log units and use $\ell-\ln Q_{obs}$.
 A nonpositive declared observation is refused at admission with
 `observation positive LogRatio observation`; a nonpositive trial prediction is
 `nonpositive_log_argument`, and a residual that overflows is `nonfinite`
