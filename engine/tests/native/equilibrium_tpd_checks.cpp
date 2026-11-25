@@ -779,6 +779,11 @@ void check_tangent_plane_curvature() {
     std::vector<std::vector<double>> transform;
     const auto shifted = compile_stability_trial(model, 300.0, 1e5, phase, {0.25, 0.75}, {2.0, -3.0}, transform);
     const auto unshifted = compile_stability_trial(model, 300.0, 1e5, phase, {0.25, 0.75}, {0.0, 0.0}, transform);
+    for (const auto& bound : inventory_bounds(shifted, phase.support, false, 0.0)) {
+        CHECK(bound.feed_normalized_amount);
+        tpd_compare("trial-inventory/" + std::to_string(bound.species), shifted.inventory_upper_bounds[bound.species],
+            *bound.feed_normalized_amount, epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    }
     auto full = shifted.generic_point();
     full[0] = std::log(0.25); full[1] = std::log(0.75); full[2] = 1.0; full[3] = std::log(0.1);
     const auto hs = shifted.hessian(full), h0 = unshifted.hessian(full);
@@ -2926,7 +2931,7 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(completed, "") == completed);
     CHECK(run(completed - 1, "return") == completed);
     // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
-    constexpr std::size_t density_admission_work = 2152;  // #215 replay after zero-weight Hessian and zero-direction reference work were removed
+    constexpr std::size_t density_admission_work = 2080;  // #229 skips constant-path reference Taylor evaluations before admission
     CHECK(run(density_admission_work, "density admission") == density_admission_work);
 }
 

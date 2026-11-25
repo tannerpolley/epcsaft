@@ -52,7 +52,7 @@ std::vector<StabilityTrial> StabilityReport::supplied_minima() const {
         if (t.evidence != "evaluated") continue;
         const auto& q = t.quantities;
         const int side = q.count("density_side") ? static_cast<int>(q.at("density_side")) : 0;
-        auto [at, fresh] = minima.emplace(side, i);
+        auto [at, fresh] = minima.try_emplace(side, i);
         if (!fresh && q.at("tpd_over_rt") < trials[at->second].quantities.at("tpd_over_rt")) at->second = i;
     }
     std::vector<StabilityTrial> out;
@@ -222,10 +222,13 @@ struct PhaseEnergyPoint {
     Quantities diagnostics;
 };
 PhaseEnergyPoint phase_energy_point(const HelmholtzModel& model, double T, double v,
-    const std::vector<double>& w, Quantities& work) {
+    const std::vector<double>& w, Quantities& work, bool retain_curvature = false) {
     packing_admission(model.packing_fraction_coefficient(T, w) / v);
     PhaseEnergyPoint out;
-    out.derivative = model.evaluate(T, v, w, DerivativeOrder::IsothermalPhaseHessian);
+    const bool gradient_only = !retain_curvature && !core::CalculationWork::active_limit()
+        && model.has_association() && model.parameters().site_pathway.empty() && model.parameters().site_correction.empty();
+    out.derivative = model.evaluate(T, v, w, gradient_only ? DerivativeOrder::IsothermalPhaseGradient : DerivativeOrder::IsothermalPhaseHessian);
+    out.derivative.complete_hessian = {};
     if (!model.parameters().site_component.empty()) {
         ++work["association_diagnostic_evaluations"];
         const auto diagnostics = model.density_actions(T, 1.0 / v, w,
@@ -240,7 +243,7 @@ PhaseEnergyPoint phase_energy_point(const HelmholtzModel& model, double T, doubl
 Quantities phase_energy(const HelmholtzModel& model, double T, double P, double v,
     const std::vector<double>& w, const std::vector<double>& standard, Quantities& work,
     HelmholtzDerivatives* retained = nullptr, const PhaseEnergyPoint* retained_point = nullptr) {
-    const auto own = retained_point ? PhaseEnergyPoint{} : phase_energy_point(model, T, v, w, work);
+    const auto own = retained_point ? PhaseEnergyPoint{} : phase_energy_point(model, T, v, w, work, retained != nullptr);
     const auto& point = retained_point ? *retained_point : own;
     const auto& d = point.derivative;
     const double rt = GAS_CONSTANT_J_PER_MOL_K * T;
@@ -317,6 +320,7 @@ std::vector<PhaseSpec> stability_supports(const CompiledSystem& c, const Stabili
 struct Candidate final {
     PhasePoint physical;
     std::vector<Quantities> quantities;
+    std::vector<std::vector<double>> chemical_over_rt;
     double correction_norm = 0.0, feasibility_estimate = 0.0;
 };
 
@@ -399,11 +403,13 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         auto q = phase_energy(*c.model, at.temperature, at.pressure, at.volume[p], at.composition[p],
             report.standard_over_rt, report.work, &at.derivative[p]);
         double normalization = -1.0, charge = 0.0, potential = 0.0, residual = 0.0, log_normalization = -1.0, log_charge = 0.0;
+        auto& chemical = candidate.chemical_over_rt.emplace_back(c.n_feed.size());
         for (auto i : c.problem.phases[p].support) {
             normalization += at.composition[p][i]; charge += z[i] * at.composition[p][i];
             potential += at.composition[p][i] * report.plane_over_rt[i];
-            residual += at.composition[p][i] * (std::log(at.composition[p][i] / at.volume[p])
-                + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i] - report.plane_over_rt[i]);
+            chemical[i] = std::log(at.composition[p][i] / at.volume[p])
+                + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i];
+            residual += at.composition[p][i] * (chemical[i] - report.plane_over_rt[i]);
             report.candidate_coordinates.push_back(std::log(at.composition[p][i]));
             const double logged = std::exp(report.candidate_coordinates.back());
             log_normalization += logged; log_charge += z[i] * logged;
@@ -873,8 +879,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     double chemical = 0.0, magnitude = std::abs(q.at("g_over_rt"));
     double standard_error = 0.0;
     for (auto i : trial.phase.support) {
-        const double term = w[i] * (std::log(at.composition[p][i] / at.volume[p])
-            + at.derivative[p].gradient[2 + i] + report.standard_over_rt[i]);
+        const double term = w[i] * candidate.chemical_over_rt[p][i];
         chemical += term; magnitude += std::abs(term);
         if (!options.standard_uncertainty_over_rt.empty())
             standard_error += 2.0 * w[i] * options.standard_uncertainty_over_rt[i];
@@ -1085,7 +1090,7 @@ void classify_split(const CompiledSystem& c, const StabilityReport& report, Stab
     trial.split_checks.push_back(std::move(check));
 }
 
-enum class SuppliedStage { Seed, Inventory, Coordinates, Raw, Composition, State, Energy, Complete };
+enum class SuppliedStage { Seed, Coordinates, Raw, Composition, State, Energy, Complete };
 struct SuppliedPoint {
     SuppliedStage next = SuppliedStage::Seed;
     std::string failure;
@@ -1110,9 +1115,6 @@ void advance_supplied(SuppliedPoint& point, SuppliedStage through, const Helmhol
                         throw std::invalid_argument("supplied trial composition outside support");
                 point.seed = reconstruct_trial_composition(std::move(point.seed), phase.support, z, phase.kind);
                 ++work["reconstruction_evaluations"]; break;
-            case SuppliedStage::Inventory:
-                for (const auto& bound : inventory_bounds(*c, phase.support, false, 0.0)) admit_inventory_bound(bound);
-                break;
             case SuppliedStage::Coordinates:
                 point.coordinates = trial_coordinates(*c, point.seed, eta);
                 break;
@@ -1145,19 +1147,17 @@ void set_trial_feed(CompiledSystem& c, const std::vector<double>& seed) {
     normalize_trial_feed(c);
 }
 CompiledSystem& supplied_system(TrialSystems& systems, const HelmholtzModel& model, double T, double P,
-    const PhaseSpec& phase, const std::vector<double>& seed, SuppliedPoint& point, const std::vector<double>& shift,
-    std::vector<std::vector<double>>& transformation, Quantities& work) {
+    const PhaseSpec& phase, const std::vector<double>& seed, const std::vector<double>& shift,
+    std::vector<std::vector<double>>& transformation) {
     auto key = std::make_pair(phase.kind, phase.support);
     auto found = systems.find(key);
     if (found == systems.end()) {
         auto c = compile_stability_trial(model, T, P, phase, seed, shift, transformation);
         found = systems.emplace(key, std::make_pair(std::move(c), transformation)).first;
-        if (point.next == SuppliedStage::Inventory) point.next = SuppliedStage::Coordinates;
     } else {
         transformation = found->second.second;
-        auto& c = found->second.first;
-        set_trial_feed(c, seed);
-        advance_supplied(point, SuppliedStage::Inventory, model, T, phase, &c, 0.0, work);
+        // The admitted seed witnesses inventory feasibility on this support. Supplied points consume no species maxima.
+        set_trial_feed(found->second.first, seed);
     }
     return found->second.first;
 }
@@ -1179,11 +1179,9 @@ std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const Helm
             if (!phase.packing_guess) continue;
             packing_admission(*phase.packing_guess);
             std::vector<std::vector<double>> transformation;
-            CompiledSystem* c;
-            try { c = &supplied_system(systems, model, T, 1e5, phase, point.seed, point,
-                std::vector<double>(model.parameters().component_count(), 0.0), transformation, set->work); }
-            catch (const std::exception&) { if (!point.failure.empty()) throw; point.next = SuppliedStage::Inventory; continue; }
-            advance_supplied(point, SuppliedStage::Energy, model, T, phase, c, *phase.packing_guess, set->work);
+            auto& c = supplied_system(systems, model, T, 1e5, phase, point.seed,
+                std::vector<double>(model.parameters().component_count(), 0.0), transformation);
+            advance_supplied(point, SuppliedStage::Energy, model, T, phase, &c, *phase.packing_guess, set->work);
         } catch (const std::exception&) {}
     }
     report_work(set->work, work); return set;
@@ -1235,6 +1233,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
     std::set<std::size_t> outside;
     const auto supports = stability_supports(c, options, options.evaluate_supplied_trials ? &outside : nullptr);
+    if (options.evaluate_supplied_trials) report.trials.reserve(supports.size());
     const auto& z = c.model->parameters().charge_number;
     if (!options.standard_uncertainty_over_rt.empty()
         && (options.standard_uncertainty_over_rt.size() != z.size()
@@ -1440,7 +1439,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 CompiledSystem optimized;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
                 const auto compile = [&]() -> CompiledSystem& {
                     if (options.evaluate_supplied_trials) return supplied_system(systems, *c.model,
-                        at.temperature, at.pressure, phase, seed, point, shift, trial.row_transformation, report.work);
+                        at.temperature, at.pressure, phase, seed, shift, trial.row_transformation);
                     // For this support and fixed T, P and plane, identical balance RHS and feed total
                     // preserve both the inventory programs and the generic-point rank Jacobian.
                     if (previous_system) {

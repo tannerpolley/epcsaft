@@ -2303,7 +2303,7 @@ charged-phase root check retains the certified side as well. Evaluated points wi
 side share the unspecified-side minimum. The combined prediction applies the
 observation’s standard-term uncertainty to both families.
 
-Preparation stores the seed reconstruction, inventory admission, raw chart point,
+Preparation stores the seed reconstruction, raw chart point,
 final reconstruction and molar volume, a charged vapor point's own state, and
 the final energy derivatives and association diagnostics. Their stages have one
 owner shared with list evaluation. Evaluation replays each product or failure
@@ -2315,8 +2315,10 @@ could not compile, retain their seed and finish their work separately per parent
 
 A call compiles one trial system per kind and support, using the first entry
 that compiles successfully. Each entry retargets its declared feed, neutral-feed
-admission, normalization and balances; inventory programs retain their original
-refusal. The raw point takes pressure and the fixed standard term from the
+admission, normalization and balances. The reconstructed feed is nonnegative,
+vanishes outside the declared support, and sets the balance right-hand side.
+It therefore witnesses feasibility for each subsequent supplied point. Species
+maxima enter the optimizer boxes only in a minimized trial. The raw point takes pressure and the fixed standard term from the
 parent's compiled system before row evaluation. Pressure-root admission, reduced
 energy assembly, the candidate plane and donor arithmetic remain per parent.
 The optimized search uses the same final reconstruction and energy owners with
