@@ -16,7 +16,7 @@ versioned packets below a supplied directory. `parameter_document` exposes the
 combined document before native construction. These calls are documented in
 [parameter inputs](../api/parameters.rst).
 
-Search the [1.3.2 component index](https://github.com/tannerpolley/epcsaft/blob/v1.3.2/data/docs/parameter-index.md)
+Search the [0.1.0 component index](https://github.com/tannerpolley/epcsaft/blob/v0.1.0/data/docs/parameter-index.md)
 by component name, then use the packet ID and version as `packet/version`.
 Copy the exact `component_id` values from the index or the packet's
 `parameters/parameters.json` (`components[].component_id`). A missing name
@@ -86,15 +86,11 @@ as unknown; the [limits](../limits.md) explain this distinction.
 ## Installed and downloaded packets
 
 Conda installs `feos-gross-sadowski-2001/1` for nonassociating fluids and
-`feos-gross-sadowski-2002/1` for associating fluids. In 1.3.2, use
-`Path(epcsaft.__file__).resolve().parent / "data" / "packets"` as the packet
-root. Calling `epcsaft.installed_packet_root()` in 1.3.2 raises
-`AttributeError`, and the misspelled-component message ends at
-`has no component propan`.
-
-The accessor and the message that points to the valid component names require
-a release after 1.3.2. The accessor returns the same path, which can be absent
-when the installation contains no bundled packets.
+`feos-gross-sadowski-2002/1` for associating fluids.
+`epcsaft.installed_packet_root()` returns their root,
+`Path(epcsaft.__file__).resolve().parent / "data" / "packets"`, which can be
+absent when the installation contains no bundled packets. A misspelled
+component name raises `ParameterError` that points to the valid names.
 
 ```{doctest}
 >>> from pathlib import Path
@@ -110,7 +106,7 @@ epcsaft._core.ParameterError: feos-gross-sadowski-2001/1 has no component propan
 For other packets, download the [matching source release](https://github.com/tannerpolley/epcsaft/releases)
 and pass its `data/packets` directory to `Parameters.from_packets`. The
 [NaCl quickstart](../quickstart.md#aqueous-nacl-activity) extracts one packet
-from the 1.3.2 archive. Each packet's `packet.toml` and any
+from the 0.1.0 archive. Each packet's `packet.toml` and any
 `parameters/LICENSE-NOTICE.md` state its use terms.
 
 The source archive omits the Esper 2023 pure-component (`feos-esper-2023/1`) and
