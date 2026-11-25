@@ -307,6 +307,15 @@ foreach index : range(1, equilibrium_cases.length())
     args: ['native.equilibrium.' + fields[0]], timeout: 600)
 endforeach
 
+equilibrium_source_iterate_checks = executable(
+  'equilibrium_source_iterate_checks',
+  'tests/native/equilibrium_source_iterate_checks.cpp',
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep] + (linux ? worker_platform_dep : []),
+  export_dynamic: linux,
+  kwargs: check_kwargs,
+)
+test('equilibrium/Automatic_fast/mdea-bubble-source-iterate', equilibrium_source_iterate_checks)
+
 # A Python-free caller of the native interface; it includes no test support header.
 surface_example = executable(
   'surface_example',

@@ -1763,7 +1763,7 @@ static EquilibriumResult run_driver_once(
     }
     nlp->publish_observations(result);
     capture_driver(*nlp, result, record, observations);
-    if (nlp->step_rule_error()) throw std::logic_error(*nlp->step_rule_error());
+    if (nlp->step_rule_error()) throw PhaseAmountStepError(*nlp->step_rule_error());
     const Ipopt::SolverReturn status = newton ? Ipopt::SUCCESS : nlp->status();
     // ALG-TERMINATION: a failed initialization (status stays UNASSIGNED) or fatal return leaves no candidate.
     const bool fatal = initialized != Ipopt::Solve_Succeeded

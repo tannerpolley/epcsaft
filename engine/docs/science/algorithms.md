@@ -4307,12 +4307,15 @@ pressure references of standalone stability predictions. The source attempts
 keep the feed, model, and phase declarations.
 They use temperatures $T/\sqrt{r}$ and $T\sqrt{r}$ in that order, where
 $r$ is `COOLING_RATIO`, with 100 times the original free-pressure seed as
-the initial guess. Each compilation or solve refusal spends one source slot
-and retains its cause. An allocation failure propagates, and exhausted work
-ends the search. The first admitted source supplies the anchors for the same
-continuation and work limits as for neutral mixtures. A terminal continuation
-event ends recovery. The target must pass its own classified rows, topology,
-and cold density-branch checks. Success and refusal both retain the initial
+the initial guess. A source-local exception or an ordinary refused solve
+spends one source slot. Recovery appends the temperature and message of every
+source-local exception. When the source loop finishes without admission, the
+recovery message also includes the latest ordinary solve's message when it is
+nonempty. Allocation and phase-amount step rule failures propagate, and
+exhausted work ends the search. The first admitted source supplies the anchors
+for the same continuation and work limits as for neutral mixtures. A terminal
+continuation event ends recovery. The target must pass its own classified
+rows, topology, and cold density-branch checks. Success and refusal both retain the initial
 refusal and the total iterations, evaluations, and Hessian calls. A refused
 standalone pressure prediction retains that work and its blocking convergence
 record with the pressure unavailable. A blocked stability prediction carries

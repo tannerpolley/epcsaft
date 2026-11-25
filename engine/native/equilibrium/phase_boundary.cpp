@@ -2117,6 +2117,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
                 if (attempt.failure) std::rethrow_exception(attempt.failure);
             } catch (const std::bad_alloc&) { throw; }
             catch (const BudgetExhausted&) { observations.observe(attempt); throw; }
+            catch (const PhaseAmountStepError&) { observations.observe(attempt); throw; }
             catch (const std::exception& error) {
                 observations.observe(attempt);
                 retain_density_failure(observations.first_numerical_failure, error, "temperature source");
@@ -2169,6 +2170,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         reached.declaration = std::make_shared<const EquilibriumProblem>(target.problem);
         return publish(std::move(reached));
     } catch (const std::bad_alloc&) { throw; }
+    catch (const PhaseAmountStepError&) { throw; }
     catch (const std::exception& error) {
         retain_density_failure(observations.first_numerical_failure, error, "source recovery");
         refused.message = error.what();

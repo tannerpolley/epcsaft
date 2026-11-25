@@ -135,6 +135,10 @@ BranchCheck check_density_branches(
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
 EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind, bool* same_side = nullptr);
 
+struct PhaseAmountStepError final : std::logic_error {
+    using std::logic_error::logic_error;
+};
+
 struct EPC_EXCEPTION BudgetExhausted final : std::runtime_error {
     using std::runtime_error::runtime_error;
 };

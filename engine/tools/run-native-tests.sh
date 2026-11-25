@@ -12,7 +12,8 @@ export PATH="$PWD/.venv/bin:$PATH" NINJA="$PWD/tools/locked-ninja"
 build_dir="$(<build/environment-wheel/meson-build-dir)"
 tests=("$@")
 if ((${#tests[@]} == 0)); then
-    tests=(contributions 'properties/*' diagnostics specification surface_example regression)
+    tests=(contributions 'properties/*' diagnostics specification surface_example regression
+        equilibrium/Automatic_fast/mdea-bubble-source-iterate)
 fi
 # Test programs are not built by default (#319); compile only the ones the selected tests run.
 mapfile -t programs < <(.venv/bin/meson introspect "$build_dir" --tests | .venv/bin/python -c '
