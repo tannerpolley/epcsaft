@@ -2286,7 +2286,14 @@ support; composition and packing retain their exact values and multiplicity.
 Assign the set to `StabilityOptions.prepared_trials` to select supplied evaluation.
 A set cannot accompany `trials`, enter discovery or `stability_measure`, or be
 used in a fitting stability observation. Each parent still admits its supports
-against the fed and reaction union and the ionic signs.
+against the fed and reaction union and the ionic signs. An otherwise admissible supplied point
+outside that union retains its position with `not_applicable` evidence. The
+other points still run. The supplied family is available when all requested
+points have evaluated. Without a specified packing, a point retains the
+density side reported by its pressure root. A supplied packing that passes a
+charged-phase root check retains the certified side as well. Evaluated points without a known
+side share the unspecified-side minimum. The combined prediction applies the
+observation’s standard-term uncertainty to both families.
 
 Preparation stores the seed reconstruction, inventory admission, raw chart point,
 final reconstruction and molar volume, a charged vapor point's own state, and

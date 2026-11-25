@@ -2526,6 +2526,10 @@ class StabilityTrial:
 
 class StabilityReport:
     """Finite tangent-plane trial evidence for one candidate."""
+    def evidence_counts(self, multiplicities: list[int] = ...) -> dict[str, int]: ...
+    unresolved_reasons: dict[str, int]
+    witnesses: list[StabilityTrial]
+    supplied_minima: list[StabilityTrial]
     no_descent_in_trial_set: bool
 
     completed: bool
@@ -4699,6 +4703,8 @@ class Observation:
 
 class Prediction:
     """One native observation prediction with physical units and failure evidence."""
+    supplied_available: bool
+    supplied_stability: Optional[StabilityReport]
     stability: Optional[StabilityMeasure]
     pressure_reference: Optional[Prediction]
     stability_raw_gradient: list[float]
@@ -5421,7 +5427,7 @@ class FitResult:
     unavailable for minimax.
     """
 
-def predict(model: HelmholtzModel, observation: Observation) -> Prediction:
+def predict(model: HelmholtzModel, observation: Observation, supplied_trials: Optional[PreparedSuppliedTrials] = None) -> Prediction:
     """Evaluate one declared physical observation natively.
 
     Parameters

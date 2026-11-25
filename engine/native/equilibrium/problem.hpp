@@ -494,7 +494,7 @@ struct CompiledSystem final {
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
     template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;
-    template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
+    template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&, bool constraints_only = false) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
         const std::vector<std::vector<Base>>&) const;
     EPC_API PointEvaluation evaluate(const std::vector<double>& point) const;
@@ -525,7 +525,7 @@ struct CompiledSystem final {
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
     EPC_API std::vector<std::size_t> phase_offsets() const;
     EPC_API std::vector<double> jacobian(const std::vector<double>& point) const;
-    EPC_API std::vector<double> jacobian_at(const PhasePoint& prepared) const;
+    EPC_API std::vector<double> jacobian_at(const PhasePoint& prepared, bool constraints_only = false) const;
     EPC_API std::vector<double> lever_jacobian(const std::vector<double>& point) const;
     EPC_API std::vector<double> objective_gradient(const std::vector<double>& point) const;
     std::vector<double> objective_gradient_at(const PhasePoint& prepared) const;
@@ -945,6 +945,10 @@ struct StabilityTrial final {
     bool pivot_only = false;
 };
 struct StabilityReport final {
+    EPC_API std::map<std::string, std::size_t> evidence_counts(const std::vector<std::size_t>& multiplicities = {}) const;
+    EPC_API std::map<std::string, std::size_t> unresolved_reasons() const;
+    EPC_API std::vector<StabilityTrial> witnesses() const;
+    EPC_API std::vector<StabilityTrial> supplied_minima() const;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::NumericalRank> last_rank;
     bool completed = false;
@@ -982,6 +986,8 @@ struct StabilityMeasure final {
     std::string cause, event;
     bool available = false, coincident_supports = false;
 };
+EPC_API std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem&, const EquilibriumResult&,
+    const std::shared_ptr<const PreparedSuppliedTrials>&, const std::vector<double>& standard_uncertainty_over_rt);
 EPC_API StabilityMeasure stability_measure(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
 
 struct DiscoveryRecord final {

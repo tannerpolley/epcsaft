@@ -307,11 +307,23 @@ static Prediction unavailable_solve(Prediction result, const std::exception& fai
     return result;
 }
 
-Prediction predict_validated(const HelmholtzModel& model, const Observation& observation) try {
-    validate(observation, model);
-    return predict(model, observation);
-} catch (const std::domain_error& failure) {
-    return unavailable_solve({}, failure);
+Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
+    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied) {
+    if (supplied && observation.kind != ObservationKind::Stability)
+        throw std::invalid_argument("supplied stability trials require a stability observation");
+    Prediction result;
+    try {
+        validate(observation, model);
+        result = predict(model, observation);
+    } catch (const std::domain_error& failure) { result = unavailable_solve({}, failure); }
+    if (supplied) {
+        result.supplied_stability = std::make_shared<equilibrium::StabilityReport>();
+        auto& report = *result.supplied_stability;
+        if (!result.solved) report.message = result.message;
+        else std::tie(report, result.supplied_available) = equilibrium::supplied_trial_measure(
+            *result.compiled, *result.solved, supplied, observation.stability_options.standard_uncertainty_over_rt);
+    }
+    return result;
 }
 
 Prediction predict(

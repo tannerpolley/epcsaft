@@ -896,7 +896,8 @@ void check_prepared_supplied_trials() {
             if (kind == PhaseKind::Vapor) { phase.packing_guess = 0.4; trials.push_back(phase); }
         }
         const auto r = exercise(model, a, trials);
-        CHECK(r.trials[1].evidence == "evaluated");
+        CHECK(r.trials[1].evidence == "evaluated" && !r.trials[1].quantities.count("density_side"));
+        CHECK(r.trials[4].evidence == "evaluated" && r.trials[4].quantities.at("density_side") == static_cast<double>(DensityBranch::Vapor));
         for (std::size_t i : {std::size_t(5), std::size_t(6)})
             CHECK(!r.trials[i].raw_coordinates.empty() && !r.trials[i].raw_residuals.empty()
                 && !r.trials[i].composition.empty() && !r.trials[i].quantities.count("g_over_rt"));
@@ -912,6 +913,13 @@ void check_prepared_supplied_trials() {
         auto off = phase; off.packing_guess = *phase.packing_guess * 1.1;
         const auto r = exercise(model, a, {phase, off});
         CHECK(r.trials[1].evidence == "evaluated");
+        CHECK(r.trials[1].quantities.at("density_side") == static_cast<double>(DensityBranch::Liquid));
+        CHECK(r.trials[4].quantities.at("density_side") == r.trials[1].quantities.at("density_side"));
+        CHECK(r.trials[4].quantities.at("molar_density_mol_m3") == r.trials[1].quantities.at("molar_density_mol_m3"));
+        CHECK(r.supplied_minima().size() == 1);
+        std::cout << std::setprecision(17) << "packed and rooted liquid density mol/m3 "
+            << r.trials[1].quantities.at("molar_density_mol_m3") << " TPD/RT " << r.trials[1].quantities.at("tpd_over_rt")
+            << " minima " << r.supplied_minima().size() << '\n';
         CHECK(!r.trials[3].raw_residuals.empty() && !r.trials[3].composition.empty()
             && r.trials[3].quantities.count("condensed_root_log_displacement") && !r.trials[3].quantities.count("g_over_rt"));
     }

@@ -132,6 +132,8 @@ struct Prediction final {
     std::optional<std::size_t> initial_heat_endpoint, feed_heat_endpoint;
     std::string cap_branch;
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
+    std::shared_ptr<equilibrium::StabilityReport> supplied_stability;
+    bool supplied_available = false;
     std::shared_ptr<Prediction> pressure_reference;
     std::vector<double> stability_raw_gradient;
     std::map<std::size_t, std::vector<double>> phase_site_fractions;
@@ -184,7 +186,8 @@ EPC_API Prediction predict(
     std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max(),
     const std::vector<const Observation*>& admission = {}
 );
-EPC_API Prediction predict_validated(const HelmholtzModel& model, const Observation& observation);
+EPC_API Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
+    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied = {});
 EPC_API PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 );

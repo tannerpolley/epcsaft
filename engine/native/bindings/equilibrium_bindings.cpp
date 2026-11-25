@@ -337,6 +337,10 @@ void register_equilibrium(nb::module_& module) {
             composition, split_coordinates, basis, row_transformation, quantities, split_checks, present_phase_comparisons, diagnostic_cause, donor,
             resolved_descent);
     nb::class_<StabilityReport>(module, "StabilityReport")
+        .def("evidence_counts", &StabilityReport::evidence_counts, nb::arg("multiplicities") = std::vector<std::size_t>{})
+        .def_prop_ro("unresolved_reasons", &StabilityReport::unresolved_reasons)
+        .def_prop_ro("witnesses", &StabilityReport::witnesses)
+        .def_prop_ro("supplied_minima", &StabilityReport::supplied_minima)
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,
             plane_over_rt, present_phases, work, no_descent_in_trial_set);
     nb::class_<StabilityGridCoverage>(module, "StabilityGridCoverage")

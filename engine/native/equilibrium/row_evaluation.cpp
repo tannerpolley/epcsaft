@@ -467,21 +467,13 @@ std::vector<double> pinned_hessian(
                     * directions[column][i];
             }
         }
-        // Trilinear contraction: a coordinate that does not move this phase contributes exactly zero.
-        // ponytail: quadratic calls over moving pairs; contract a physical basis if cost requires it.
-        std::vector<bool> moves(n);
-        for (std::size_t c = 0; c < n; ++c)
-            moves[c] = std::any_of(directions[c].begin(), directions[c].end(), [](double v) { return v != 0.0; });
+        const auto [status, triangle] = model.contracted_energy_hessian(temperature, values[1], amounts, contraction, directions);
+        if (status != PropertyActionStatus::Available) throw std::runtime_error(std::string("third directional energy "
+            "contraction unavailable: ") + solved_state_status_name(solved_state_status(status)));
+        std::size_t entry = 0;
         for (std::size_t row = 0; row < n; ++row) {
             for (std::size_t column = 0; column <= row; ++column) {
-                double action = 0.0;
-                if (moves[row] && moves[column]) {
-                    const auto energy = model.residual_energy_action(temperature, values[1], amounts,
-                        {contraction, directions[row], directions[column]});
-                    if (!energy.action.has_value()) throw std::runtime_error(std::string("third directional energy "
-                        "contraction unavailable: ") + solved_state_status_name(solved_state_status(energy.status)));
-                    action = *energy.action;
-                }
+                const double action = triangle[entry++];
                 const double value = mapped[row * n + column] + action
                     - pressure_weight * (directions[row][1] * volume_hessian_action[column]
                         + directions[column][1] * volume_hessian_action[row]);
@@ -1797,10 +1789,10 @@ std::vector<double> CompiledSystem::jacobian(const std::vector<double>& point) c
     return jacobian_at(prepare(point));
 }
 
-std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& at) const { return jacobian_at<double>(at); }
+std::vector<double> CompiledSystem::jacobian_at(const PhasePoint& at, bool constraints_only) const { return jacobian_at<double>(at, constraints_only); }
 
 template <typename Base>
-std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prepared) const {
+std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prepared, bool constraints_only) const {
     core::CalculationWork::equilibrium_entry();
     core::Scope scope("equilibrium_jacobian");
     if constexpr (std::is_same_v<Base, double>) {
@@ -1843,6 +1835,7 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
     std::vector<std::vector<Base>> columns;  // one first coefficient per coordinate serves every condition row
     for (std::size_t row_index = 0; row_index < rows.size(); ++row_index) {
         const auto& row = rows[row_index];
+        if (constraints_only && stationarity_row(row.kind)) continue;
         if (row.kind == RowKind::Chemical) {
             const auto& derivative = derivatives[row.phase];
             const std::size_t width = derivative.gradient.size();
@@ -1944,7 +1937,7 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
     return result;
 }
 
-template std::vector<WiderScalar> CompiledSystem::jacobian_at(const PhasePointValues<WiderScalar>&) const;
+template std::vector<WiderScalar> CompiledSystem::jacobian_at(const PhasePointValues<WiderScalar>&, bool) const;
 
 std::vector<double> CompiledSystem::lever_jacobian(const std::vector<double>& point) const {
     core::Scope scope("equilibrium_lever_jacobian");
