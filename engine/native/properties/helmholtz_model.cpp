@@ -2083,7 +2083,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         }
         capture_error = error != nullptr;
         const auto g = order || error ? gradient_series(u, order) : std::vector<double>{};
-        const auto [inverse, logarithm] = inverse_log();
+        const auto inverse = order || error ? inverse_log().first : std::vector<double>{};
         const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
             : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};
         if (error) {

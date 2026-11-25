@@ -1,5 +1,6 @@
 // R1 F1-F10, #86 affine columns and density actions, and R2 J1 prediction gradients.
 #include "regression_checks_shared.hpp"
+#include "core/trace.hpp"
 
 namespace regression_checks {
 
@@ -465,6 +466,43 @@ void check_f9_f10() {
                && again.optimizer_gradient == committed.optimizer_gradient, 2);
         at(!evaluator.evaluate(u, true, rejected), 3);
         at(!evaluator.evaluate(v, true, rejected), 4);
+    }
+    {
+        FitRequest shared;
+        shared.parameters = request.parameters;
+        shared.coordinates.coordinates = {{{{ParameterFamily::DispersionEnergyOverK, {0}}}, 191.42, 10.0, 150.0, 260.0}};
+        auto problem = equilibrium_support::flash(1);
+        problem.temperature = FreeValue::fixed(200.0);
+        problem.pressure = FreeValue::fixed(1.0e6);
+        auto activity = solved(ObservationKind::PhaseSolventActivity, problem, 0, {0});
+        activity.form = ResidualForm::Difference;
+        auto density_row = density(200.0, 1.0e6, {1.0}, DensityBranch::Liquid);
+        density_row.form = ResidualForm::Difference;
+        shared.observations = {density_row, activity, activity};
+        shared.uncertainty = MeasurementUncertainty{
+            {{{1, 2}, {{MeasuredInputKind::Temperature, 0, 1.0, 190.0, 210.0, "K"}}, {}, 0.0}},
+            {1.0, 1.0, 1.0}, {}, {}};
+        FitResult warm_counts, fresh_counts;
+        ObservationEvaluator warm(shared, warm_counts, {0, 1, 2}), fresh(shared, fresh_counts, {0, 1, 2});
+        const std::vector<double> u{0.0, 0.0};
+        ObservationEvaluation central, rejected, retry, expected;
+        CHECK(warm.evaluate(u, false, central));
+        CHECK(!warm.evaluate(u, true, rejected));
+        const auto projections = [&](ObservationEvaluator& evaluator, ObservationEvaluation& out) {
+            core::Capture trace;
+            CHECK(!evaluator.evaluate(u, true, out));
+            return std::count_if(trace.trace().spans.begin(), trace.trace().spans.end(),
+                [](const auto& span) { return std::string_view(span.name) == "solved_state_actions"; });
+        };
+        const auto warm_projections = projections(warm, retry), fresh_projections = projections(fresh, expected);
+        CHECK(warm_counts.failures.back().observation == 1
+            && warm_counts.failures.back().status == ObservationStatus::ActionUnavailable
+            && warm_counts.failures.back().message == fresh_counts.failures.back().message
+            && retry.statuses == expected.statuses && retry.predictions == expected.predictions
+            && retry.residuals == expected.residuals && retry.gradient.front() != 0.0 && retry.gradient == expected.gradient
+            && retry.input_gradient == expected.input_gradient && retry.optimizer_gradient == expected.optimizer_gradient);
+        CHECK(truth("r1-f9/shared-projection-retry", fresh_projections == 1 && warm_projections == fresh_projections,
+            fields({field("retry_projections", warm_projections), field("fresh_projections", fresh_projections)})));
     }
     // Three finite rows whose squares are representable but whose accumulated objective is not: the
     // failure is typed at the row where the running sum stops being finite, never an infinite cost.

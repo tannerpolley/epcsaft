@@ -496,8 +496,8 @@ void internal_energy_specification() {
 void apparent_heat_capacity() {
     const double R=GAS_CONSTANT_J_PER_MOL_K;const auto reaction=ethane_reaction(2);const auto& r=reaction.first;const auto& tp=reaction.second;
     const std::vector<ActiveParameter> active={{ParameterFamily::DispersionEnergyOverK,{0}}};
-    const auto model=[&](double shift){auto q=e2::identical_ethane_pair();q.dispersion_energy_over_k[0]+=shift;return HelmholtzModel(q,active,r);};
-    const auto m=model(0);
+    const auto model=[&](double shift){auto q=e2::identical_ethane_pair();q.dispersion_energy_over_k[0]+=shift;return std::make_shared<HelmholtzModel>(q,active,r);};
+    const auto owner=model(0); const auto& m=*owner;
     const auto read=[](const CompiledSystem& c,const EquilibriumResult& x,SolvedStateObservableKind kind,std::vector<SolvedStateActionDirection> d) {
         const auto item=solved_state_actions(c,x,{{{kind}},d}).results[0];
         if(!item.value) throw std::runtime_error("apparent Cp read: "+item.diagnostic_message.value_or("unavailable"));
@@ -508,6 +508,27 @@ void apparent_heat_capacity() {
         return *read(c,x,kind,{direction(c)}).value;
     };
     constexpr auto Cp=SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity,H=SolvedStateObservableKind::SystemEnthalpy;
+    const auto tp_compiled = compile_problem(m, tp);
+    const auto tp_solved = solve_equilibrium(m, tp);
+    const auto cp_action = [&](const auto& state, auto& center) {
+        auto motion = direction(tp_compiled);
+        motion.active_parameters[0] = 1.0;
+        return solved_state_first_actions(tp_compiled, state, {{Cp}}, {motion}, &center).front().results.front();
+    };
+    std::shared_ptr<const SolvedStateCaloricCenter> retained, empty;
+    const auto admitted = cp_action(tp_solved, retained);
+    CHECK(retained && admitted.status == SolvedStateActionStatus::Available && admitted.value && admitted.action);
+    auto refused = tp_solved;
+    refused.success = false;
+    const auto warm = cp_action(refused, retained), fresh = cp_action(refused, empty);
+    recording_support::observe("apparent-cp/refused-center", "Cp", "J/(mol K)", warm.value.value_or(NAN),
+        fresh.value, "admission",
+        recording_support::fields({recording_support::field("warm_Cp", warm.value.value_or(NAN)),
+            recording_support::field("fresh_has_value", bool(fresh.value)),
+            recording_support::field("warm_has_action", bool(warm.action)),
+            recording_support::field("fresh_has_action", bool(fresh.action))}));
+    CHECK(warm.status == SolvedStateActionStatus::CentralSolveUnavailable && warm.status == fresh.status
+        && !fresh.value && !fresh.action && !warm.value && !warm.action);
     const auto ph=condition(tp,true,driven(m,300,H),280);
     const auto c=compile_problem(m,ph);const auto x=solve_equilibrium(m,ph);CHECK(x.has_state());
     const double T=*x.temperature,feed=c.feed_total;auto wq=direction(c);wq.active_parameters[0]=1;
@@ -536,8 +557,8 @@ void apparent_heat_capacity() {
     ladder("PH6/F2",dcp,0.2,1e-9,[&](double d){
         double v[2];
         for(int side=0;side<2;++side) {
-            const auto shifted=model(side?d:-d);const auto xs=solve_equilibrium_from_coordinates(shifted,ph,x.coordinates);CHECK(xs.has_state());
-            v[side]=driven(shifted,*xs.temperature,Cp);
+            const auto shifted=model(side?d:-d);const auto xs=solve_equilibrium_from_coordinates(*shifted,ph,x.coordinates);CHECK(xs.has_state());
+            v[side]=driven(*shifted,*xs.temperature,Cp);
         }
         return (v[1]-v[0])/(2*d);
     });

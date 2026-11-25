@@ -471,7 +471,7 @@ struct NeutralReferenceReactionDiagnostic final {
 };
 
 struct DomainBounds;
-class HelmholtzModel final {
+class HelmholtzModel final : public std::enable_shared_from_this<HelmholtzModel> {
 public:
     EPC_API explicit HelmholtzModel(
         Parameters parameters,

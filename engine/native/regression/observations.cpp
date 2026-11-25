@@ -1,10 +1,12 @@
 #include "regression/observations.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <set>
 #include <sstream>
@@ -479,14 +481,16 @@ Prediction predict(
         }
         const auto endpoint = [&](bool feed, std::optional<std::size_t>& index) {
             const bool share = references && !(previous && previous->saturation) && (feed || !start || references->previous_initial);
-            const auto feed_key = [](const Observation& row) {
-                return std::tie(row.temperature, row.pressure, row.composition, row.branch, row.mass_basis);
+            const auto same_feed = [](const Observation& a, const Observation& b) {
+                return core::bitwise_equal(std::array{a.temperature, a.pressure}, std::array{b.temperature, b.pressure})
+                    && core::bitwise_equal(a.composition, b.composition)
+                    && a.branch == b.branch && a.mass_basis == b.mass_basis;
             };
             const auto seed = !feed && start && share ? references->previous_initial : std::nullopt;
             if (share) for (std::size_t k = 0; k < references->heat.size(); ++k) {
                 const auto& e = references->heat[k];
                 if (e.row.kind == item.kind && seed == e.start &&
-                    (feed ? feed_key(e.row) == feed_key(item) : same_state(e.row, item))) {
+                    (feed ? same_feed(e.row, item) : same_state(e.row, item))) {
                     index = k;
                     return e.center;
                 }
@@ -1130,8 +1134,10 @@ std::vector<PredictionGradient> differentiate_group(
         const auto endpoint_gradient = [&](auto index, auto calculate) {
             if (!references || !index) return calculate();
             auto& gradient = references->heat.at(*index).gradient;
-            if (!gradient) gradient = calculate();
-            return *gradient;
+            if (gradient) return *gradient;
+            auto value = calculate();
+            if (value.status == ObservationStatus::Available) gradient = value;
+            return value;
         };
         auto initial = endpoint_gradient(prediction.initial_heat_endpoint,
             [&] { return differentiate_group(model, {&item}, prediction, coordinates).front(); });

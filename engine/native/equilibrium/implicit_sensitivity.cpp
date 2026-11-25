@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/trace.hpp"
 #include "core/linear_error.hpp"
 #include "core/numerical_policy.hpp"
@@ -1520,7 +1521,7 @@ SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compi
 
 struct SolvedStateCaloricCenter final {
     SolvedStateObservableKind kind;
-    const HelmholtzModel* model;
+    std::shared_ptr<const HelmholtzModel> model;
     std::shared_ptr<const EquilibriumProblem> declaration;
     ActionCenter value;
 };
@@ -1544,9 +1545,9 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const bool retain = caloric && central.declaration && observables.size() == 1
         && (observables.front().kind == SolvedStateObservableKind::SystemEnthalpy
             || observables.front().kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
-    const bool reuse = retain && *caloric && (*caloric)->model == compiled.model
+    const bool reuse = retain && central.success && central.has_state() && *caloric && (*caloric)->model.get() == compiled.model
         && (*caloric)->declaration == central.declaration && (*caloric)->kind == observables.front().kind
-        && (*caloric)->value.center.prepared.point == central.coordinates;
+        && core::bitwise_equal((*caloric)->value.center.prepared.point, central.coordinates);
     if (reuse) shared = (*caloric)->value;
 
     std::vector<SolvedStateActionBatch> batches;
@@ -1567,8 +1568,9 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
             cover, nullptr, parameters[group(request.directions.front())], nullptr, batch_parameters));
     if (retain && !reuse && shared && !shared->preparation_failed)
-        *caloric = std::make_shared<const SolvedStateCaloricCenter>(SolvedStateCaloricCenter{
-            observables.front().kind, compiled.model, central.declaration, std::move(*shared)});
+        if (auto owner = compiled.model->weak_from_this().lock())
+            *caloric = std::make_shared<const SolvedStateCaloricCenter>(SolvedStateCaloricCenter{
+                observables.front().kind, std::move(owner), central.declaration, std::move(*shared)});
     return batches;
 }
 
