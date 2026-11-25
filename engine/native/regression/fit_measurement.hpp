@@ -193,6 +193,7 @@ struct MeasurementChart final {
                     auto& x = pressure ? observation.composition : observation.problem.feed.values;
                     for (std::size_t i = 0; i < x.size(); ++i) x[i] += composition[c][i] * correction;
                 }
+                for (auto& term : observation.log_terms) term.second.problem = observation.problem;
             }
         }
     }

@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from epcsaft import Mixture, Parameters, regression
+from epcsaft import Mixture, Parameters, _core, regression
 from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction, solve_equilibrium
 from tests.native_inputs import parameters, same
 
@@ -29,8 +29,8 @@ def _parameters() -> Parameters:
                       choices=("fully-dissociated-debye-huckel", "exclude-same-sign-ion-pairs", "solvent-only"))
 
 
-def _problem(log_k: Sequence[float], salt: float = 0.05) -> Problem:
-    return Problem(T=TEMPERATURE, P=PRESSURE,
+def _problem(log_k: Sequence[float], salt: float = 0.05, *, temperature: float = TEMPERATURE) -> Problem:
+    return Problem(T=temperature, P=PRESSURE,
                    phases=[Phase("aqueous", kind="liquid", support=("s0", "s2", "s3"),
                                  composition_guess=(0.94, 0.03, 0.03)),
                            Phase("organic", kind="liquid", support=("s1", "s4", "s5"),
@@ -46,8 +46,10 @@ def _reference(model: Mixture, problem: Problem) -> tuple[float, float, float, f
     assert solved.success, solved.message
     density_aq, density_org = solved.molar_densities
     x = solved.mole_fractions
-    aqueous = model.state(TEMPERATURE, rho=density_aq, x=x[:6])
-    reference = model.reference(TEMPERATURE, PRESSURE, solvent_fractions=(1, 0, 0, 0, 0, 0), ions=("s2", "s3"), stoichiometry=(1, 1))
+    temperature = solved.temperature
+    assert temperature is not None
+    aqueous = model.state(temperature, rho=density_aq, x=x[:6])
+    reference = model.reference(temperature, PRESSURE, solvent_fractions=(1, 0, 0, 0, 0, 0), ions=("s2", "s3"), stoichiometry=(1, 1))
     fugacity = aqueous.log_fugacity_coefficient
     assert fugacity is not None and fugacity[2] is not None
     log_activity = math.log(x[2] / 0.0180153) + fugacity[2] - reference.log_fugacity[0]
@@ -128,3 +130,90 @@ def test_reactive_lle_fit_recovers_reaction_constants(evidence: Any) -> None:
     for i, (predicted, actual) in enumerate(zip(_shifted(fitted.optimizer), _shifted(known))):
         same(evidence, f"reactive-lle/recovered-ln-k/{i}", predicted, actual, 1e-6, 0.0,
              residuals=fitted.residuals, rank=fitted.covariance.rank)
+
+
+@pytest.mark.parametrize("use_starts", [False, True], ids=["final-refresh", "perturbed-starts"])
+def test_log_linear_fit_refreshes_zero_weight_row(use_starts: bool, evidence: Any) -> None:
+    p = _parameters()
+    known = (0.4, -0.3)
+    observed = _reference(Mixture(p), _problem(_shifted(known)))
+    _, ph, _, distribution, exchange = _rows(p, _problem(BASE_LOG_K), observed)
+    rows = [ph, distribution, exchange]
+    controls = regression.FitControls(maximum_iterations=40, maximum_elapsed_time_seconds=30.0, workers=1)
+    if use_starts:
+        fits = regression.fit(p, _coordinates(), rows, weights=[1, 1, 0], controls=controls,
+                              starts=[[0.2, 0.0], [-0.1, 0.2]], shared_iterations=80, shared_seconds=30.0)
+        assert len(fits) == 2
+    else:
+        fits = [regression.fit(p, _coordinates(), rows, weights=[1, 1, 0], controls=controls)]
+    for i, fitted in enumerate(fits):
+        assert fitted.usable and fitted.status == "converged", fitted.message
+        assert fitted.optimizer == pytest.approx(known, abs=1e-6, rel=0)
+        assert fitted.statuses[-1] == regression.ObservationStatus.Available
+        # This held-out row comes from the final solve at the fitted constants.
+        same(evidence, f"log-linear/final-refresh/{use_starts}/{i}", fitted.predictions[-1], math.log(observed[-1]),
+             1e-8, 0.0)
+
+
+def test_log_linear_fit_refreshes_reconciled_zero_weight_row(evidence: Any) -> None:
+    p = _parameters()
+    model = Mixture(p)
+    problem = _problem(BASE_LOG_K)
+    observed = _reference(model, problem)
+    _, _, _, distribution, exchange = _rows(p, problem, observed)
+    # A held reaction constant and an offset distribution target move the measured temperature.
+    target = regression.log_linear(distribution.log_terms, observed=math.log(observed[3]) + 0.02,
+                                   form="difference", scale=1.0)
+    uncertainty = regression.MeasurementUncertainty()
+    uncertainty.output_sigma = [0.005, 1.0]
+    uncertainty.groups = [regression.measurement_group(p, [0, 1], [
+        regression.measured_input(p, "temperature", sigma=2.0, bounds=(285.0, 310.0), unit="K")])]
+    ln_k = BASE_LOG_K[0]
+    coordinate = regression.reaction_coordinate("extract_a", "a", origin=ln_k, scale=0.5, bounds=(ln_k, ln_k))
+    fitted = regression.fit(p, [coordinate], [target, exchange], weights=[1, 0], uncertainty=uncertainty,
+                            controls=regression.FitControls(maximum_iterations=40,
+                                                           maximum_elapsed_time_seconds=30.0, workers=1))
+    assert fitted.usable and fitted.status == "converged", fitted.message
+    assert fitted.reconciliation is not None
+    temperature, = fitted.reconciliation.values
+    assert temperature != TEMPERATURE
+    expected = math.log(_reference(model, _problem(BASE_LOG_K, temperature=temperature))[-1])
+    same(evidence, "log-linear/reconciled-refresh", fitted.predictions[-1], expected, 1e-10, 0.0,
+         temperature_K=temperature)
+
+
+@pytest.mark.parametrize("decades", [0.0, 0.04], ids=["matched", "offset"])
+def test_log_linear_minimax_uses_decade_error_and_slope(decades: float, evidence: Any) -> None:
+    p = _parameters()
+    model = Mixture(p)
+    problem = _problem(BASE_LOG_K)
+    observed = _reference(model, problem)
+    distribution = _rows(p, problem, observed)[3]
+    distribution.observed /= 10.0**decades
+    spec = regression.MinimaxRequest()
+    spec.targets, spec.group_scales = [0], []
+    spec.q, spec.tolerance, spec.activity_distance, spec.margin = 1.0, 1e-10, 1e-6, 0.1
+    result = _core.evaluate_minimax(p._native, _coordinates(), [0.0, 0.0], [], [distribution], [], None, spec)
+    m = result.minimax
+    assert m is not None and m.availability == "values_only", result.message
+    same(evidence, f"log-linear/minimax-error/{decades}", m.values[0] + m.point[-1], decades, 1e-10, 0.0)
+    step = 1e-4
+    dq = [_reference(model, _problem(_shifted([sign * step, 0])))[3] for sign in (1, -1)]
+    finite = math.log10(dq[0] / dq[1]) / (2 * step)
+    same(evidence, f"log-linear/minimax-action/{decades}", m.jacobian[0], finite, 5e-6, 0.0)
+
+
+@pytest.mark.parametrize("decades", [0.0, 0.04], ids=["matched", "offset"])
+def test_observations_at_manufactures_log_linear_target_in_linear_units(decades: float, evidence: Any) -> None:
+    p = _parameters()
+    model = Mixture(p)
+    problem = _problem(BASE_LOG_K)
+    template = _rows(p, problem, _reference(model, problem))[3]
+    point = (0.2, -0.1)
+    expected_q = _reference(model, _problem(_shifted(point)))[3]
+    row, = _core.observations_at(p._native, _coordinates(), point, [], [template], [decades])
+    same(evidence, f"log-linear/manufactured-target/{decades}", row.observed, expected_q / 10.0**decades,
+         1e-10, 1e-10)
+    prediction = regression.predict(model, row)
+    same(evidence, f"log-linear/manufactured-residual/{decades}", prediction.residual, decades * math.log(10.0),
+         1e-10, 0.0)

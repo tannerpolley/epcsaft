@@ -84,9 +84,12 @@ A log-linear observation uses the same solved state and first-action batch for
 its terms. Its prediction is always $\ell=\ln Q$. Difference takes a reported
 $\ell_{obs}$ and scale $s$ and returns $(\ell-\ell_{obs})/s$. LogRatio
 takes a positive reported $Q_{obs}$ and returns $\ell-\ln Q_{obs}$. Its first
-action is $\sum_k c_k\,dq_k/q_k$. For a concentration distribution ratio,
-use coefficients $+1$ for the organic concentration and $-1$ for the aqueous
-concentration. Terms for a selectivity or exchange ratio can combine and repeat
+action is $\sum_k c_k\,dq_k/q_k$. For a LogRatio target, minimax uses
+$(\ell-\ln Q_{obs})/\ln 10$. Manufacturing an observation with a signed
+decade error $e$ stores $Q_{obs}=\exp(\ell-e\ln 10)$.
+
+For a concentration distribution ratio, use coefficients $+1$ for the organic
+concentration and $-1$ for the aqueous concentration. Terms for a selectivity or exchange ratio can combine and repeat
 these phase and species selections in the same state. A zero or negative
 operand makes the prediction unavailable.
 

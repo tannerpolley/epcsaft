@@ -244,6 +244,7 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     std::vector<equilibrium::EquilibriumProblem*> problems;
     for (auto& observation : observations) {
         problems.push_back(&observation.problem);
+        for (auto& term : observation.log_terms) problems.push_back(&term.second.problem);
         if (addition(observation.kind)) problems.push_back(&observation.final_problem);
         if (observation.pressure_reference) problems.push_back(&*observation.pressure_reference);
     }
