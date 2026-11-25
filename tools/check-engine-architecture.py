@@ -561,12 +561,13 @@ def main() -> int:
         ("bound functions open a Scope", rule_bound_functions_open_a_scope()),
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
-        (f"native reuse confinement ({units} production translation units)",
-         [f"{site.file}:{site.line}: {site.kind} {site.owner} — {site.operand}" for site in retained]),
     ]
     if arguments.linked:
         checks += [("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
                    ("type stub matches the extension", rule_stub_matches_extension())]
+    print(f"report  native reuse ({units} production translation units, {len(retained)} entries)")
+    for site in retained:
+        print(f"        {site.file}:{site.line}: {site.kind} {site.owner} — {site.operand}")
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")
