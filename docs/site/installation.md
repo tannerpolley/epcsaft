@@ -39,7 +39,7 @@ installed packets. The NaCl example gives the download command for its packet.
 
 Building from source is supported on Linux with Python 3.13, `uv`, a C and C++
 compiler, Ninja, CMake and pkg-config. Install the native development
-libraries first: Ipopt 3.11.9, Eigen 3.4 and Ceres 2.2. The locked Python
+libraries first: Ipopt 3.14.20, Eigen 3.4 and Ceres 2.2. The locked Python
 environment supplies Meson, meson-python, nanobind and `patchelf`. The first
 build downloads the checksum-pinned CppAD and HiGHS archives, so it needs
 network access. From the root of the unpacked source archive:

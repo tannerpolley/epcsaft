@@ -2,9 +2,8 @@
 #include "core/convergence.hpp"
 #include "equilibrium/problem.hpp"
 #include "core/trace.hpp"
-#if __has_include(<HSLLoader.h>)
-#include <HSLLoader.h>
-#endif
+#include <IpLibraryLoader.hpp>
+#include <IpLinearSolvers.h>
 #include <IpIpoptApplication.hpp>
 #include <IpTNLP.hpp>
 #include <algorithm>
@@ -78,19 +77,16 @@ inline const std::string& linear_solver() {
         if (!name.empty() && name != "mumps" && name != "ma57")
             throw std::invalid_argument("EPCSAFT_IPOPT_LINEAR_SOLVER must be mumps or ma57, not " + name);
         if (name == "mumps") return name;
-#if __has_include(<HSLLoader.h>)
+        if (IpoptGetAvailableLinearSolvers(1) & IPOPTLINEARSOLVER_MA57) return std::string("ma57");
         const char* path = std::getenv("EPCSAFT_HSL_LIBRARY");
-        char message[512] = "loaded library has no MA57";
-        const bool ma57 = LSL_loadHSL(path && *path ? path : nullptr, message, sizeof message) == 0
-            && LSL_isMA57available() != 0;
-        if (name == "ma57" && !ma57)
-            throw std::invalid_argument(std::string("EPCSAFT_IPOPT_LINEAR_SOLVER=ma57 is unavailable: ") + message);
-        return std::string(ma57 ? "ma57" : "mumps");
-#else
-        if (name == "ma57")
-            throw std::invalid_argument("MA57 is unavailable: Ipopt was built without its linear-solver loader");
-        return std::string("mumps");
-#endif
+        try {
+            Ipopt::LibraryLoader loader(path && *path ? path : "libhsl.so");
+            loader.loadSymbol("ma57ad");
+            return std::string("ma57");
+        } catch (const Ipopt::DYNAMIC_LIBRARY_FAILURE& error) {
+            if (name == "ma57") throw std::invalid_argument(error.Message());
+            return std::string("mumps");
+        }
     }();
     return chosen;
 }
@@ -113,7 +109,7 @@ inline void observe_ipopt(IpoptDiagnostics& d, core::Scope* scope, const IpoptIt
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
     double seconds, bool exact, double objective_factor, std::map<std::string, double>* consumed = nullptr,
-    double requested_row = 0.0, const std::function<bool(double)>& warm = {}, std::string* solver = nullptr) {
+    double requested_row = 0.0, const std::function<bool(double)>& warm = {}, std::string* solver = nullptr, bool amount_limited = false, bool feasibility = false, bool free_pressure = false, bool nonreacting_multiphase = false) {
     const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
     if (!(tolerance > 0.0) || !std::isfinite(tolerance) || !(dual_tolerance > 0.0) || !std::isfinite(dual_tolerance))
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
@@ -158,21 +154,32 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     if (seconds > 0.0) admit(options->SetNumericValue("max_cpu_time", seconds), "max_cpu_time");
     // ALG-EQUILIBRIUM: unrelaxed variable bounds; a relaxed zero amount lets a vanished phase lower the objective.
     admit(options->SetNumericValue("bound_relax_factor", 0.0), "bound_relax_factor");
+    if (amount_limited && (feasibility ? !(free_pressure && linear_solver() == "ma57") : !nonreacting_multiphase)) {
+        admit(options->SetNumericValue("bound_relax_factor", feasibility ? 1e-8 : 1e-12), "bound_relax_factor");
+    }
     if (!exact) {
         admit(options->SetStringValue("limited_memory_update_type", "bfgs"), "limited_memory_update_type");
         admit(options->SetNumericValue("compl_inf_tol", tolerance), "compl_inf_tol");
     }
     admit(options->SetStringValue("linear_solver", linear_solver()), "linear_solver");
-#if __has_include(<HSLLoader.h>)
-    admit(options->SetIntegerValue("ma57_pivot_order", 2), "ma57_pivot_order");          // AMD, as measured in #509
-    admit(options->SetStringValue("ma57_automatic_scaling", "yes"), "ma57_automatic_scaling"); // unscaled, a trace moiety row reads as dependent
-#endif
+    if (linear_solver() == "ma57") {
+        if (const char* path = std::getenv("EPCSAFT_HSL_LIBRARY"); path && *path)
+            admit(options->SetStringValue("hsllib", path), "hsllib");
+        admit(options->SetIntegerValue("ma57_pivot_order", 2), "ma57_pivot_order");          // AMD, as measured in #509
+        admit(options->SetStringValue("ma57_automatic_scaling", "yes"), "ma57_automatic_scaling"); // unscaled, a trace moiety row reads as dependent
+    }
     if (options_file && *options_file) {
         std::error_code error;
         if (!std::filesystem::is_regular_file(options_file, error) || !std::ifstream(options_file).good())
             throw std::invalid_argument(std::string("EPCSAFT_IPOPT_OPTIONS_FILE must name a readable regular file: ") + options_file);
     }
+    if (feasibility) {
+        if (linear_solver() == "ma57") admit(options->SetStringValue("mu_strategy", free_pressure ? "adaptive" : "monotone"), "mu_strategy");
+        else admit(options->SetStringValue("recalc_y", "yes"), "recalc_y");
+    }
     const auto initialized = app->Initialize(options_file ? options_file : "");
+    if (amount_limited) for (const auto* name : {"watchdog_shortened_iter_trigger", "resto.watchdog_shortened_iter_trigger"})
+        admit(options->SetIntegerValue(name, 0), name);
     if (solver) options->GetStringValue("linear_solver", *solver, "");  // after any options-file override
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
         double value = 0.0; admit(options->GetNumericValue(name, value, ""), name); (*consumed)[name] = value;

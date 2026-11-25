@@ -57,6 +57,12 @@ if [[ ! -f "$highs_prefix/pkgconfig/epcsaft-highs.pc" || ! -f "$highs_library" ]
 fi
 flock -u "$highs_lock_fd"
 
+if ! pkg-config --exact-version=3.14.20 ipopt; then
+    ipopt_prefix="${XDG_CACHE_HOME:-$HOME/.cache}/epcsaft/ipopt-3.14.20-$highs_key"
+    bash tools/build-ipopt.sh "$ipopt_prefix" "$build_jobs" >&2
+    export PKG_CONFIG_PATH="$ipopt_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+fi
+
 # The HiGHS key hashes the compiler binaries, flags and Meson version. A tree built under another
 # key is wiped, so a compiler or HiGHS change cannot link objects Ninja would not rebuild.
 build_dir="$PWD/build/engine-meson/shared"
@@ -64,7 +70,8 @@ build_dir="$PWD/build/engine-meson/shared"
 records=build/environment-wheel
 mkdir -p "$records"
 printf '%s\n' "$build_dir" >"$records/meson-build-dir"
-config=(-C "build-dir=$build_dir" -C "setup-args=-Dpkg_config_path=$highs_prefix/pkgconfig"
+pkg_dirs="$highs_prefix/pkgconfig${PKG_CONFIG_PATH:+,${PKG_CONFIG_PATH//:/,}}"
+config=(-C "build-dir=$build_dir" -C "setup-args=-Dpkg_config_path=$pkg_dirs"
     -C "compile-args=-j$build_jobs")
 
 build_wheel() {
@@ -100,7 +107,7 @@ PY
     ;;
 --native)
     [[ -f "$build_dir/build.ninja" ]] ||
-        meson setup -Db_ndebug=if-release "-Dpkg_config_path=$highs_prefix/pkgconfig" "$build_dir" engine >&2
+        meson setup -Db_ndebug=if-release "-Dpkg_config_path=$pkg_dirs" "$build_dir" engine >&2
     ;;
 --wheel)
     (($# == 2)) && [[ ! -d "$2" || -z "$(ls -A "$2")" ]] || { echo "usage: $0 --wheel <new or empty dir>" >&2; exit 2; }

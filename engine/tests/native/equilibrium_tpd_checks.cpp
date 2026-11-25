@@ -1876,7 +1876,8 @@ epcsaft::Parameters gross_2002_water_pentanol() {
 // liquid trials descend, so the onset search returns the 369.966 K declared-start dew.
 // Gross 2002 row 149 at 100 times its pressure, 1-propanol(0.413)/ethylbenzene, k_ij 0.023, 10,132,000 Pa
 // from 392.05 K: at the ordinary dew's 227.63 K the feed's sole stable density root lies above the scan's
-// negative-slope sample, so its vapor is refused (#423) and the onset returns that refusal with no state.
+// negative-slope sample (#423). The vapor assignment can fail there, or the two trial phases can
+// coincide before branch admission. Neither gives the caller a distinct liquid and vapor.
 void check_gross_2002_cooling_onset() {
     using namespace epcsaft; using namespace epcsaft::equilibrium;
     const HelmholtzModel model(gross_2002_water_pentanol());
@@ -1910,8 +1911,11 @@ void check_gross_2002_cooling_onset() {
     CHECK(std::count_if(checks.front().trials.begin(), checks.front().trials.end(), [](const auto& t) { return t.resolved_descent; }) == 1);
     tpd_compare("gross-2002-cooling-onset/T-475", *metastable.temperature, 369.9663336068358, 1e-10 * 369.9663336068358, {}, "K");
     const auto refused = run(propanol, 0.413, 392.05, 1.0132e7).first;
-    CHECK(!refused.success); CHECK(!refused.temperature && refused.molar_densities.empty());
-    CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root 10325.2153") != std::string::npos);
+    CHECK(refused.candidate == Candidate::Refused && !refused.has_state() && !refused.success);
+    CHECK(!refused.temperature && !refused.pressure && refused.amounts.empty()
+          && refused.mole_fractions.empty() && refused.molar_densities.empty());
+    CHECK(refused.message.find("vapor branch not admitted by the finite search: the sole stable root") != std::string::npos
+          || (refused.topology_event == TopologyEvent::PhasesCoalesced && refused.convergence.cause == "phases_coalesced"));
     // Water(0.87) from 600 K: the ordinary dew coalesces into the vapor; a rejected publication is not
     // instability, so the onset search does not run and the failure returns unchanged.
     const auto [coalesced, unsearched] = run(model, 0.87, 600.0, 1.013e5);

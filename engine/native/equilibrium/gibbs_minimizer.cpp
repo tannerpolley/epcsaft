@@ -7,13 +7,7 @@
 #include "core/numerical_policy.hpp"
 #include "core/physical_constants.hpp"
 
-#include <IpCompoundVector.hpp>
 #include <IpIpoptApplication.hpp>
-#include <IpIpoptCalculatedQuantities.hpp>
-#include <IpIpoptData.hpp>
-#include <IpOrigIpoptNLP.hpp>
-#include <IpTNLPAdapter.hpp>
-#include <IpoptConfig.h>
 
 #include <Eigen/Dense>
 
@@ -536,7 +530,6 @@ bool GibbsMinimizer::get_bounds_info(
         x_l[i] = compiled_.problem.loading->lower;
         x_u[i] = compiled_.problem.loading->upper;
     }
-    lower_.assign(static_cast<std::size_t>(n), -infinity);  // the amount step rule's bounds, read at each callback
     // Feasibility cells impose chemical equality, so their box is the representability limit. Other
     // cells cap the box at a fraction of each species' attainable inventory u_i/N_feed, the LP
     // max y_i s.t. B y = b/N_feed, y >= 0 on the supports (B has mixed signs, so no row ratio
@@ -606,31 +599,20 @@ bool GibbsMinimizer::get_starting_point(
     return true;
 }
 
-static_assert(IPOPT_VERSION_MAJOR == 3 && IPOPT_VERSION_MINOR == 11 && IPOPT_VERSION_RELEASE == 9,
-    "the amount step rule reads Ipopt 3.11.9 internals (ALG-EQUILIBRIUM): requalify it on an Ipopt upgrade");
-
-// Ipopt's current iterate in TNLP order; in restoration, the original block of the restoration iterate.
-// Cached by Ipopt's vector tag, so a callback at an unchanged base costs one tag comparison.
-const std::vector<double>& GibbsMinimizer::search_base() {
-    const Ipopt::Vector* current = Ipopt::GetRawPtr(search_->curr()->x());
-    if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(current)) current = Ipopt::GetRawPtr(compound->GetComp(0));
-    if (base_.empty() || current->GetTag() != base_tag_) {
-        base_.resize(lower_.size());
-        adapter_->ResortX(*current, base_.data());
-        base_tag_ = current->GetTag();
-    }
-    return base_;
-}
-
 bool GibbsMinimizer::step_admitted(const Ipopt::Number* x) {
     if (limits_) limits_->check();
     // ALG-EQUILIBRIUM: a trial point keeps at least kappa_N of each free amount's distance to its relaxed lower bound.
-    if (Ipopt::IsValid(search_)) {
-        const auto& base = search_base();
+    if (!base_.empty()) {
         bool refused = false;
-        for (const std::size_t i : amount_columns_)
-            refused = refused || (base[i] > lower_[i]
-                && x[i] - lower_[i] < policy::EQUILIBRIUM_AMOUNT_STEP_RETENTION.value * (base[i] - lower_[i]));
+        for (const std::size_t i : amount_columns_) {
+            if (x[i] == base_[i]) continue;
+            if (!std::isfinite(lower_[i])) {
+                step_rule_error_ = "phase amount lower slack unavailable for a changed amount";
+                return false;
+            }
+            refused = refused || (base_[i] > lower_[i]
+                && x[i] - lower_[i] < policy::EQUILIBRIUM_AMOUNT_STEP_RETENTION.value * (base_[i] - lower_[i]));
+        }
         if (refused) return false;
     }
     return true;
@@ -805,26 +787,22 @@ bool GibbsMinimizer::intermediate_callback(
     core::Scope callback("ipopt_intermediate");
     observe_ipopt(*observations_.ipopt_diagnostics, scope_, {int(mode), iter, ls_trials, obj_value, inf_pr, inf_du, mu, d_norm, regularization_size, alpha_du, alpha_pr});
     restored_ = restored_ || mode == Ipopt::RestorationPhaseMode;
-    // Ipopt adjusts bounds only when it accepts a point, before this callback, so the active problem's bound read
-    // here holds for every search until the next callback; in restoration that is restoration's own bound block, whose
-    // original-variable part restoration does not update when it adjusts the original problem's bounds.
-    if (!amount_columns_.empty()) {  // without free amounts the rule keeps nothing: no search base, no bound reads
-        Ipopt::IpoptNLP& active = *ip_cq->GetIpoptNLP();
-        if (adapter_ == nullptr) {  // the first callback is regular mode, before any search
-            auto* original = dynamic_cast<Ipopt::OrigIpoptNLP*>(&active);
-            adapter_ = original ? dynamic_cast<Ipopt::TNLPAdapter*>(Ipopt::GetRawPtr(original->nlp())) : nullptr;
-            if (adapter_ == nullptr) step_rule_error_ = "amount step rule: Ipopt's TNLP adapter is not reachable";
+    if (amount_limited()) {
+        // The public callbacks return the original-variable block in restoration mode.
+        const auto n = static_cast<Ipopt::Index>(chart_.size());
+        base_.resize(n);
+        z_lower_.resize(n);
+        z_upper_.resize(n);
+        lower_.resize(n);
+        if (!get_curr_iterate(ip_data, ip_cq, false, n, base_.data(), z_lower_.data(), z_upper_.data(), 0, nullptr, nullptr)
+            || !get_curr_violations(ip_data, ip_cq, false, n, nullptr, nullptr, lower_.data(), nullptr, nullptr, 0, nullptr, nullptr)) {
+            step_rule_error_ = "phase amount iterate or complementarity unavailable";
+            return false;
         }
-        if (!step_rule_error_ && active.NLP_scaling()->have_x_scaling())
-            step_rule_error_ = "amount step rule: Ipopt scales the variables, so its iterate and bounds are not the callback coordinates";
-        if (step_rule_error_) return false;
-        Ipopt::SmartPtr<const Ipopt::Vector> lower = active.x_L();
-        if (const auto* compound = dynamic_cast<const Ipopt::CompoundVector*>(Ipopt::GetRawPtr(lower))) lower = compound->GetComp(0);
-        if (lower->GetTag() != lower_tag_) {  // Ipopt relaxed or adjusted the bounds since the last callback
-            adapter_->ResortBnds(*lower, lower_.data(), *lower, nullptr);
-            lower_tag_ = lower->GetTag();
+        for (const auto i : amount_columns_) {
+            // Ipopt zeroes the bound multipliers at a converged square feasibility point.
+            lower_[i] = z_lower_[i] > 0.0 ? base_[i] - lower_[i] / z_lower_[i] : NAN;
         }
-        search_ = ip_data;
     }
     iterations_ = static_cast<std::size_t>(iter);
     if (limits_) limits_->consumed = std::max(limits_->consumed, consumed_before_ + iterations_);
@@ -1708,10 +1686,11 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
 Retry retry_after(Attempt kind, bool reaction, bool non_error, bool fatal, Ipopt::SolverReturn status,
     TopologyEvent topology, core::Stop stop, Candidate candidate) {
     if (kind == Attempt::Newton || kind == Attempt::PhysicalAmounts) return Retry::None;
-    if (reaction) return non_error && (topology == TopologyEvent::PhaseDisappeared || stop == core::Stop::budget_exhausted)
+    if (reaction) return non_error && ((status == Ipopt::RESTORATION_FAILURE && stop == core::Stop::stalled) || topology == TopologyEvent::PhaseDisappeared || stop == core::Stop::budget_exhausted)
         ? Retry::PhysicalAmounts : Retry::None;
     return !fatal && topology != TopologyEvent::PhaseDisappeared && (status == Ipopt::LOCAL_INFEASIBILITY || status == Ipopt::MAXITER_EXCEEDED
-        || ((status == Ipopt::SUCCESS || status == Ipopt::STOP_AT_ACCEPTABLE_POINT)
+        || (status == Ipopt::ERROR_IN_STEP_COMPUTATION && topology == TopologyEvent::PhasesCoalesced)
+        || ((status == Ipopt::SUCCESS || status == Ipopt::STOP_AT_ACCEPTABLE_POINT || status == Ipopt::FEASIBLE_POINT_FOUND)
             && (topology == TopologyEvent::PhasesCoalesced || candidate == Candidate::Unstable))) ? Retry::Source : Retry::None;
 }
 
@@ -1773,7 +1752,8 @@ static EquilibriumResult run_driver_once(
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
-            warm_start, &result.linear_solver);
+            warm_start, &result.linear_solver, nlp->amount_limited(), declared.feasibility_cell(),
+            declared.problem.pressure.free, !declared.has_reaction && declared.problem.phases.size() > 1);
         } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, record, observations); throw; }
     }();
     if (!newton) {
