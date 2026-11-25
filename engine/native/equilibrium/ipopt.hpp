@@ -178,9 +178,10 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         if (linear_solver() == "ma57") admit(options->SetStringValue("mu_strategy", free_pressure ? "adaptive" : "monotone"), "mu_strategy");
         else admit(options->SetStringValue("recalc_y", "yes"), "recalc_y");
     }
-    const auto initialized = app->Initialize(options_file ? options_file : "");
+    // Lock both triggers before Initialize reads a diagnostic file: rollback invalidates the saved amount base.
     if (amount_limited) for (const auto* name : {"watchdog_shortened_iter_trigger", "resto.watchdog_shortened_iter_trigger"})
-        admit(options->SetIntegerValue(name, 0), name);
+        admit(options->SetIntegerValue(name, 0, false), name);
+    const auto initialized = app->Initialize(options_file ? options_file : "");
     if (solver) options->GetStringValue("linear_solver", *solver, "");  // after any options-file override
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
         double value = 0.0; admit(options->GetNumericValue(name, value, ""), name); (*consumed)[name] = value;

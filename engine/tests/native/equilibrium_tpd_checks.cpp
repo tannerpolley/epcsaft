@@ -2897,7 +2897,8 @@ void check_mdea_full_stability() {
 void check_mdea_bubble_work_limit() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
-    const auto run = [](std::optional<std::size_t> allowance, bool expect_admission) {
+    std::size_t density_work = 0;
+    const auto run = [&](std::optional<std::size_t> allowance, bool expect_admission, bool at_density = false) {
         // Replay the same cold preparations on a fresh model for each allowance.
 #include "fixtures/mdea-313-bubble.inc"
         auto source = bubble;
@@ -2926,6 +2927,13 @@ void check_mdea_bubble_work_limit() {
         const auto spent = static_cast<std::size_t>(work->values.at(0));
         if (expect_admission) {
             CHECK(work->reason.empty());
+            // Replay target admission, after the accepted seed has passed its own density check.
+            const auto iteration = std::find_if(trace.events.begin(), trace.events.end(),
+                [](const auto& e) { return std::string_view(e.name) == "ipopt_iteration"; });
+            const auto density = std::find_if(iteration, trace.events.end(),
+                [](const auto& e) { return std::string_view(e.name) == "density_admission_work"; });
+            CHECK(density != trace.events.end());
+            density_work = static_cast<std::size_t>(density->values.at(0));
             constexpr double reference_pressure = 27204273.833506774;  // Pa, retained r4 admission replay
             CHECK(result.has_state() && result.pressure);
             CHECK(std::abs(*result.pressure - reference_pressure) <= 1e-10 * reference_pressure);
@@ -2934,6 +2942,7 @@ void check_mdea_bubble_work_limit() {
             CHECK(spent > 0 && spent <= allowance.value_or(cold_work));
         } else {
             CHECK(!work->reason.empty() && spent >= limit);
+            if (at_density) CHECK(work->reason == "density admission");
             CHECK(result.message.find("bubble work allowance exhausted at " + work->reason) == 0);
             CHECK(result.convergence.stop == core::Stop::budget_exhausted);
             CHECK(!result.pressure && !result.has_state() && result.coordinates.empty());
@@ -2953,7 +2962,7 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(completed - 1, false) == completed);
     // An interior work limit can land at different checkpoints on different solver paths.
     run(2152, false);
-    CHECK(run(completed / 2, false) < completed);
+    CHECK(run(density_work, false, true) < completed);
 }
 
 void check_bubble_branch_end() {
