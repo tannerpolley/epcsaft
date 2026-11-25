@@ -883,11 +883,16 @@ bool same_result_origin(const CompiledSystem& compiled, const EquilibriumResult&
         : same_solved_problem(*result.declaration, compiled.problem));
 }
 
-EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
+EquilibriumResult result_origin(const CompiledSystem& compiled) {
     EquilibriumResult result;
     if (compiled.model) result.model_identity = compiled.model->identity();
     if (compiled.ideal) result.ideal_identity = compiled.ideal->identity();
     result.declaration = std::make_shared<const EquilibriumProblem>(public_declaration(compiled));
+    return result;
+}
+
+EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
+    EquilibriumResult result = result_origin(compiled);
     if (compiled.problem.prescribed_liquid_composition) result.objective = NAN;
     result.rows = compiled.rows;
     result.reference_diagnostics = compiled.reference_diagnostics;

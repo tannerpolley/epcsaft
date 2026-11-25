@@ -558,7 +558,10 @@ def test_halite_columns_match_central_differences() -> None:
     assert solid == pytest.approx([-1.430830593594595e-02, -2.1295896304825715e-09, -0.11347653022633869, 1.0,
                                    8.92286053703689e-03, 2.304237756233167, -4.849349365690943], rel=1e-12, abs=0.0)
     assert abs(solid[2] + exact[1][0] / (H_Q0[2] * WATER_MOLAR_MASS) * WATER_MOLAR_MASS) <= 1e-15 and abs(solid[3] - 1.0) <= 1e-15
-    assert not exact[1][2][3].any() and not exact[3][2][3].any()
+    # The analytic zero follows the solved endpoint's last ulps: exactly 0 or a residue near 1e-51 (at most 2.9e-51 measured on
+    # MA57, 0 on MUMPS). Its linear solves are refined with a double-double defect, so eps^2 of the largest entry bounds it.
+    zero = eps ** 2 * np.abs(exact[3][2]).max()
+    assert max(np.abs(exact[1][2][3]).max(), np.abs(exact[3][2][3]).max()) <= zero
     water = exact[0]
     # The two identities below hold exactly in the equations. The amount is the solved endpoint, which moves by ulps with
     # Ipopt's bounds and linear solver (MA57 one ulp, MUMPS two), so it meets the equilibrium-row criterion
@@ -575,7 +578,7 @@ def test_halite_columns_match_central_differences() -> None:
                 pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(7)]
                 noise = 1e-13 if b == 3 else 10 * eps
                 for exact_value, fp, fm, tau in pairs:
-                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + noise * (abs(fp) + abs(fm)) / (2 * h), (row, b, h)
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + noise * (abs(fp) + abs(fm)) / (2 * h) + zero, (row, b, h)
 
 
 def test_halite_onset_and_interval_name_the_cause_and_recover() -> None:

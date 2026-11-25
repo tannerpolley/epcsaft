@@ -96,6 +96,8 @@ EPC_API EquilibriumResult one_component_two_density_attempt(const CompiledSystem
 EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);
 bool same_result_origin(const CompiledSystem&, const EquilibriumResult&);
+// An empty result carrying the model identity and declaration that same_result_origin admits.
+EPC_API EquilibriumResult result_origin(const CompiledSystem&);
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool discovery_newton_eligible(const CompiledSystem&);
 EPC_API EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,

@@ -484,9 +484,10 @@ def test_parameter_reference_chain_matches_resolves(evidence: Any, mode: str, fa
         assert result.success, result.message
         return result
 
-    problem = _kij_problem(mode)
-    result = solve(center)
-    compiled, observable = compile_problem(model(center), problem), [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
+    problem, central = _kij_problem(mode), model(center)
+    result = solve_equilibrium(central, problem)  # the actions admit only their compiled model's own result
+    assert result.success, result.message
+    compiled, observable = compile_problem(central, problem), [SolvedStateObservable(Kind.PhaseMoleFraction, 0, 1)]
     directions = [SolvedStateActionDirection(0.0, 0.0, [0.0, 0.0], unit) for unit in ([1.0, 0.0], [0.0, 1.0])]
     batch = [item.results[0] for item in solved_state_first_actions(compiled, result, observable, directions)]
     alone = [solved_state_actions(compiled, result, SolvedStateActionRequest(observable, [d])).results[0] for d in directions]

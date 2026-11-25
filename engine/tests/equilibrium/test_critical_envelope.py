@@ -107,7 +107,10 @@ def test_polish_endpoint_conditioning() -> None:
     for name, model, problem in baseline.declared_cases():
         if name not in ("case-1/two-liquid", "case-6/figure-2-point-7"):
             continue
-        result = eq.solve_equilibrium(model, problem)
+        # The top-level electrolyte two-liquid route ends on an exact Newton step with no factor at the returned point
+        # and adds none (ALG-TERMINATION); the ordinary driver's polish, a compiled solve(), publishes its endpoint factor.
+        ordinary = name == "case-6/figure-2-point-7"
+        result = eq.compile_problem(model, problem).solve() if ordinary else eq.solve_equilibrium(model, problem)
         assert result.success
         observation = next(rank.observation for rank in result.rank_records if rank.basis == "numerical")
         print(name, "available", observation.available, "condition", observation.condition,
