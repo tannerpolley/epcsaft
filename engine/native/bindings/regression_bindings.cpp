@@ -152,9 +152,9 @@ m._serve_fit(channel)
     nb::class_<equilibrium::SaturationComparison>(module, "SaturationComparison")
         EPCSAFT_READONLY(equilibrium::SaturationComparison, left, right, identity, operands);
     nb::class_<equilibrium::SaturationNode>(module, "SaturationNode")
-        EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
+        EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, prior_start, driver_attempts, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
     nb::class_<equilibrium::SaturationSearch>(module, "SaturationSearch")
-        EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, events, candidates, comparisons, causes, groups,
+        EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, rejected_starts, events, candidates, comparisons, causes, groups,
             accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)

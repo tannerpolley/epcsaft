@@ -1933,7 +1933,15 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
-element potentials initialized anew.
+element potentials initialized anew. During a fit, an admitted previous search
+can supply the physical start at the same loading after the ordinary continuation
+has passed the first pressure event and established its correction seed. Each node records whether
+that start passed the current model’s solve, uncertainty and sampled slope
+checks, including the pressure increment from the preceding node. The search
+retains a rejected node and retries with the ordinary grid start within the
+remaining budget. Trials with identical EOS parameter values, including held
+diameters, can retain the immutable model’s reference series and derivative
+tapes while fitting new reaction coefficients.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded

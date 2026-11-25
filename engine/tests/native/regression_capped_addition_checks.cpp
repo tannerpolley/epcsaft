@@ -45,6 +45,38 @@ void check_saturation_capped_addition() {
   agree("capped-addition/endpoint", "endpoint_loading", "mol_CO2/mol_MEA",
         alpha, *center.saturation_loading, 0, 0, inputs);
 
+  // An output sigma changes the residual scale. A reaction-only step keeps the EOS reference preparation.
+  const auto& reaction = row.problem.reactions.front();
+  Coordinate intercept;
+  intercept.reaction = ReactionCoordinate{reaction.name};
+  intercept.origin = reaction.correlation->a;
+  FitRequest request{parameters, thermal, {{intercept}}, {row}, {1.0}};
+  request.uncertainty = MeasurementUncertainty{{}, {row.scale}, {}, {}};
+  FitResult failures;
+  ObservationEvaluator sequence(request, failures, {0}), fresh(request, failures, {0});
+  ObservationEvaluation first, next, independent;
+  CHECK(sequence.evaluate({0.0}, false, first));
+  CHECK(sequence.evaluate({0.001}, true, next));
+  CHECK(fresh.evaluate({0.001}, true, independent));
+  const auto& nodes = next.saturation_predictions[0]->saturation->nodes;
+  CHECK(nodes.back().prior_start == "accepted");
+  CHECK(nodes.front().state.model_identity == first.saturation_predictions[0]->saturation->nodes.front().state.model_identity);
+  CHECK(std::abs(next.predictions[0] / independent.predictions[0] - 1) <= 1e-12);
+  CHECK(std::abs(next.residual_optimizer_gradient[0] / independent.residual_optimizer_gradient[0] - 1) <= 1e-12);
+
+  // The dilute node is a poor start for the last loading. The ordinary continuation must still recover it.
+  auto displaced = center;
+  displaced.saturation = std::make_shared<SaturationSearch>(*center.saturation);
+  displaced.saturation->nodes.back().state = low.nodes.front().state;
+  const auto recovered = predict(model, row, {}, {}, nullptr, &displaced);
+  CHECK(recovered.value && recovered.saturation->events == center.saturation->events);
+  CHECK(std::abs(*recovered.value / *center.value - 1) <= 1e-12);
+  CHECK(recovered.saturation->rejected_starts.size() == 1);
+  const auto& rejected = recovered.saturation->rejected_starts.front();
+  const auto& retried = recovered.saturation->nodes.back();
+  CHECK(rejected.loading == retried.loading && rejected.driver_attempts > 0 && retried.driver_attempts > 0);
+  CHECK(retried.prior_start.find("fallback:") == 0 && rejected.prior_start == retried.prior_start);
+
   auto bubble = row.final_problem;
   bubble.feed.values = row.problem.feed.values;
   bubble.feed.values[0] += row.basis_amount * alpha;
@@ -124,6 +156,15 @@ void check_saturation_capped_addition() {
             prediction.value && prediction.saturation->accepted);
       CHECK(prediction.cap_branch == "saturation_cap" &&
             row.loading_cap - *prediction.saturation_loading >= 0.15);
+      if (column == 0 && sign == 0) {
+        const auto continued = predict(perturbed, row, {}, {}, nullptr, &center);
+        CHECK(continued.value && continued.cap_branch == prediction.cap_branch);
+        CHECK(continued.saturation->events == prediction.saturation->events);
+        CHECK(continued.saturation->nodes.size() == row.loading_grid.size());
+        CHECK(std::any_of(continued.saturation->nodes.begin(), continued.saturation->nodes.end(),
+                          [](const auto& node) { return node.prior_start == "accepted"; }));
+        CHECK(std::abs(*continued.value / *prediction.value - 1) <= 1e-12);
+      }
       const auto compiled =
           compile_problem(perturbed, *prediction.final_solved->declaration);
       const auto estimate =

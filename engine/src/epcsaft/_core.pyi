@@ -6158,6 +6158,8 @@ class SaturationNode:
     state: EquilibriumResult
     estimates: EquilibriumNumericalEstimates
     action_cause: str
+    prior_start: str
+    driver_attempts: int
     action_seconds: float
     estimate_seconds: float
     local_estimates: EquilibriumNumericalEstimates
@@ -6167,6 +6169,7 @@ class SaturationSearch:
     """Finite grid/search evidence; unique within the declared search, without interval or global certification."""
     grid: list[float]
     nodes: list[SaturationNode]
+    rejected_starts: list[SaturationNode]
     events: list[tuple[int, int]]
     candidates: list[SaturationCandidate]
     comparisons: list[SaturationComparison]
