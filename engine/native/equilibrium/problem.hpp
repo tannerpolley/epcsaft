@@ -82,6 +82,11 @@ inline constexpr const char* EOS_STANDARD_STATE_ID = "eos-helmholtz-coordinate-b
 inline constexpr const char* IDEAL_MOLE_FRACTION_STANDARD_STATE_ID = "ideal-mole-fraction";
 inline constexpr const char* IDEAL_MOLARITY_STANDARD_STATE_ID = "ideal-molarity-1-mol-per-litre";
 struct IdealMoleFraction final {
+private:
+    const std::shared_ptr<const char> identity_ = std::make_shared<const char>();
+public:
+    const auto& identity() const { return identity_; }
+    IdealMoleFraction(const IdealMoleFraction&) = delete;
     std::vector<std::string> component_ids;
     std::vector<int> charge_number;
     policy::SolverOptions solver_options;
@@ -151,7 +156,7 @@ enum class DiscoveryMode { Full, Fast, FastTested };
 struct PreparedSuppliedPoints;
 class PreparedSuppliedTrials final {
 public:
-    const HelmholtzModel* model;
+    std::shared_ptr<const char> model;
     double temperature;
     std::vector<PhaseSpec> trials;
     std::shared_ptr<const PreparedSuppliedPoints> points;
@@ -378,7 +383,7 @@ struct PhasePointValues final {
     std::vector<PureIsothermalValues<Base>> pure;
     StandardTerm standard;
     bool parameter_actions = false;
-    const HelmholtzModel* state_model = nullptr;  // Owns complete fixed-parameter derivative columns.
+    std::shared_ptr<const char> state_model;  // Owns complete fixed-parameter derivative columns.
     // The referenced standard term for the parameter positions shared by a first-action batch.
     mutable std::optional<ParameterStandard> parameter_standard;
     mutable std::map<std::string, ResidualEnergyAction> energy_actions;
@@ -621,7 +626,7 @@ EPC_API CompiledSystem compile_problem(
 );
 EPC_API CompiledSystem compile_problem(const IdealMoleFraction&, const EquilibriumProblem&);
 EPC_API CompiledSystem compile_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&);
-CompiledSystem refresh_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&, const CompiledSystem&);
+EPC_API CompiledSystem refresh_problem(const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&, const CompiledSystem&);
 
 // Width, a nonzero charge-neutral nu, exactly one positive K or law, a neutral reference with P0, and V_s > 0.
 void admit_solid_declarations(const HelmholtzModel&, const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&);
@@ -825,8 +830,7 @@ struct EquilibriumResult final {
     std::map<std::string, double> solver_settings;
     std::string diagnostic_options_file, linear_solver;  // linear_solver: empty when no Ipopt solve ran
     std::shared_ptr<const OptimizerState> optimizer_state;
-    const HelmholtzModel* model_identity = nullptr;
-    const IdealMoleFraction* ideal_identity = nullptr;
+    std::shared_ptr<const char> model_identity, ideal_identity;
     std::shared_ptr<const EquilibriumProblem> declaration;
     std::shared_ptr<DiscoveryRecord> discovery;
     std::shared_ptr<const StabilityReport> recovery_stability;  // #987: the trial search run before recovery

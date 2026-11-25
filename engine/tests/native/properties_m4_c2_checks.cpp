@@ -400,8 +400,9 @@ void solvent_activity_properties() {
         CHECK(result.osmotic_parameter_derivative[0].has_value() == (q >= molality_floor));
     }
     CHECK(solvent_reference(model, 650.0, 100.0, solvent).solvent_cause.find("VaporSideState") == 0);
-    auto bad = *ref.pure_solvent_state; bad.pressure_density_derivative = 0.0;
     const auto x = formula_composition(solvent, model.parameters(), {1,2}, {1,1}, 1.0);
+    auto bad = model.state_at_pressure(298.15, 1e5, x, DensityBranch::Liquid);
+    bad.pressure_density_derivative = 0.0;
     const auto density_refused = solvent_activity(model, 298.15, 1e5, x, ref, bad);
     CHECK(density_refused.cause.find("DensityUnavailable") == 0
         && !density_refused.osmotic_coefficient && density_refused.osmotic_cause.empty());
@@ -894,7 +895,10 @@ void liquid_reference_branch_evidence() {
     const epcsaft::HelmholtzModel aqueous(properties_support::aqueous_electrolyte());
     // 650 K, 100 Pa: sole root 0.018503460 mol/m3 below sample 17653.65 mol/m3 gave gamma = 1.000000196209869.
     CHECK(refused(recording_support::refusal([&] { epcsaft::infinite_dilution_reference(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}); })));
-    CHECK(refused(recording_support::refusal([&] { epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, [] { epcsaft::InfiniteDilutionReference r; r.ion_indices = {1,2}; return r; }()); })));
+    CHECK(recording_support::refusal([&] {
+        epcsaft::InfiniteDilutionReference unbound; unbound.ion_indices = {1, 2};
+        (void)epcsaft::electrolyte_activity(aqueous, 650.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, unbound);
+    }) == "electrolyte reference model, temperature, pressure or solvent mismatch");
     // 630 K keeps its two-root liquid reference (main values).
     const auto reference = epcsaft::infinite_dilution_reference(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1});
     const auto activity = epcsaft::electrolyte_activity(aqueous, 630.0, 100.0, {1.0, 0.0, 0.0}, {1, 2}, {1, 1}, 1e-6, reference);

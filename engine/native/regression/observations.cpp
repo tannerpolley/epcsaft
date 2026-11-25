@@ -1,10 +1,12 @@
 #include "regression/observations.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <set>
 #include <sstream>
@@ -61,6 +63,10 @@ void finish(Prediction& prediction, const Observation& observation, double value
     if (prediction.status == ObservationStatus::Nonfinite) prediction.message = "the residual is not finite";
 }
 
+bool same_feed(const Observation& a, const Observation& b) {
+    return core::bitwise_equal(std::array{a.temperature, a.pressure}, std::array{b.temperature, b.pressure})
+        && core::bitwise_equal(a.composition, b.composition) && a.branch == b.branch && a.mass_basis == b.mass_basis;
+}
 }  // namespace
 
 const char* observation_status_name(ObservationStatus status) noexcept {
@@ -117,11 +123,14 @@ bool same_state(const Observation& left, const Observation& right) {
     if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
         return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
             && (left.kind == ObservationKind::BulkRelativePermittivity) == (right.kind == ObservationKind::BulkRelativePermittivity)
-            && left.temperature == right.temperature && left.pressure == right.pressure && left.branch == right.branch
-            && left.composition == right.composition && left.ion_indices == right.ion_indices
-            && left.stoichiometry == right.stoichiometry && left.molality == right.molality
-            && left.reference_composition == right.reference_composition
-            && left.finite_solute_molalities == right.finite_solute_molalities;
+            && core::bitwise_equal(std::array{left.temperature, left.pressure, left.molality},
+                                   std::array{right.temperature, right.pressure, right.molality})
+            && left.branch == right.branch && core::bitwise_equal(left.composition, right.composition)
+            && left.ion_indices == right.ion_indices && left.stoichiometry == right.stoichiometry
+            && core::bitwise_equal(left.reference_composition, right.reference_composition)
+            && left.finite_solute_molalities.has_value() == right.finite_solute_molalities.has_value()
+            && (!left.finite_solute_molalities
+                || core::bitwise_equal(*left.finite_solute_molalities, *right.finite_solute_molalities));
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
@@ -333,9 +342,10 @@ Prediction predict(
     const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters,
     std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission
 ) {
+    if (references) references->bind(model);
     core::Scope density_scope("fit_density_anchor");
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
-        if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || x != old_x || branch == DensityBranch::Unspecified
+        if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || !core::bitwise_equal(x, old_x) || branch == DensityBranch::Unspecified
             || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
         if (!same_parameters) {
             const auto witness = old->negative_slope_density;
@@ -477,30 +487,26 @@ Prediction predict(
             final_prepared = equilibrium::compile_problem(model, observation.final_problem);
             for (const auto* row : admission) validate_compiled(*row, model, &*prepared, &*final_prepared);
         }
-        const auto endpoint = [&](bool feed, std::optional<std::size_t>& index) {
+        const auto endpoint = [&](bool feed, std::shared_ptr<const char>& identity) {
             const bool share = references && !(previous && previous->saturation) && (feed || !start || references->previous_initial);
-            const auto feed_key = [](const Observation& row) {
-                return std::tie(row.temperature, row.pressure, row.composition, row.branch, row.mass_basis);
-            };
-            const auto seed = !feed && start && share ? references->previous_initial : std::nullopt;
-            if (share) for (std::size_t k = 0; k < references->heat.size(); ++k) {
-                const auto& e = references->heat[k];
+            const auto seed = !feed && start && share ? references->previous_initial : nullptr;
+            if (share) for (const auto& e : references->heat) {
                 if (e.row.kind == item.kind && seed == e.start &&
-                    (feed ? feed_key(e.row) == feed_key(item) : same_state(e.row, item))) {
-                    index = k;
+                    (feed ? same_feed(e.row, item) : same_state(e.row, item))) {
+                    identity = e.identity;
                     return e.center;
                 }
             }
             auto value = feed ? predict(model, item) : predict(model, item, start, std::move(prepared));
             if (share && value.status == ObservationStatus::Available) {
-                index = references->heat.size();
-                references->heat.push_back({item, seed, value, {}});
+                identity = std::make_shared<const char>();
+                references->heat.push_back({item, identity, seed, value, {}});
             }
             return value;
         };
-        std::optional<std::size_t> initial_index;
-        auto initial = endpoint(false, initial_index);
-        initial.initial_heat_endpoint = initial_index;
+        std::shared_ptr<const char> initial_identity;
+        auto initial = endpoint(false, initial_identity);
+        initial.initial_heat_endpoint = std::move(initial_identity);
         const auto failed = [&](Prediction& p, const char* source) {
             core::retain_first(p.first_numerical_failure, initial.first_numerical_failure, true);
             core::retain_first(initial.first_numerical_failure, p.first_numerical_failure);
@@ -648,20 +654,6 @@ Prediction predict(
 }
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
-    if (observation.kind == ObservationKind::Stability) {
-        if (!result.stability) {
-            result.stability = std::make_shared<equilibrium::StabilityMeasure>(
-                equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
-            for (auto& trial : result.stability->report.trials) {
-                trial.optimizer.prepared_endpoint.reset();
-                trial.optimizer.optimizer_state.reset();
-            }
-        }
-        result.unit = "1";
-        if (!result.stability->available) { result.value.reset(); result.residual.reset();
-            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
-        finish(result, observation, *result.stability->value); return;
-    }
     if (electrolyte_observation(observation.kind)) {
         double value = 0.0;
         result.unit = "1";
@@ -691,10 +683,31 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     const auto components = parameters.component_count();
     if (pressure_closed(observation.kind) || observation.kind == ObservationKind::LogEquilibriumConstant
         || addition(observation.kind)) return;
-    const auto& solved = *result.solved;
-    bool missing_mass = false;
     result.value.reset();
     result.residual.reset();
+    if (!result.solved || !result.solved->has_state()) {
+        result.stability.reset();
+        result.reference.reset();
+        result.caloric_center.reset();
+        result.analytical_osmotic_coefficient.reset();
+        result.status = ObservationStatus::CentralSolveUnavailable;
+        result.message = "central solved state unavailable";
+        return;
+    }
+    if (observation.kind == ObservationKind::Stability) {
+        result.stability = std::make_shared<equilibrium::StabilityMeasure>(
+            equilibrium::stability_measure(*result.compiled, *result.solved, observation.stability_options));
+        for (auto& trial : result.stability->report.trials) {
+            trial.optimizer.prepared_endpoint.reset();
+            trial.optimizer.optimizer_state.reset();
+        }
+        result.unit = "1";
+        if (!result.stability->available) {
+            result.status = ObservationStatus::CentralSolveUnavailable; result.message = result.stability->cause; return; }
+        finish(result, observation, *result.stability->value); return;
+    }
+    const auto& solved = *result.solved;
+    bool missing_mass = false;
     const auto phase = observation.phase;
     const double* fractions = solved.mole_fractions.data() + phase * components;
     double value = 0.0;
@@ -738,7 +751,11 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         const auto solvent = observation.species[0];
         std::vector<double> pure(components, 0.0);
         pure[solvent] = 1.0;
-        if (!result.reference) result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
+        if (!result.reference || result.reference->model != model.identity()
+            || !core::bitwise_equal(result.reference->temperature, *solved.temperature)
+            || !core::bitwise_equal(result.reference->pressure, *solved.pressure)
+            || !core::bitwise_equal(result.reference->solvent_fractions, pure))
+            result.reference = solvent_reference(model, *solved.temperature, *solved.pressure, pure);
         const auto& reference = *result.reference;
         if (reference.pure_solvent_state) core::retain_first(result.first_numerical_failure, reference.pure_solvent_state->first_numerical_failure);
         if (reference.solvent_status != PropertyActionStatus::Available || !reference.pure_solvent_state) {
@@ -787,12 +804,9 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
     case ObservationKind::AssociationSiteFraction: {
         result.unit = "1";
         try {
-            if (result.phase_site_fractions.find(phase) == result.phase_site_fractions.end()) {
-                auto evaluated = equilibrium::phase_site_values(model, solved, phase);
-                core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
-                result.phase_site_fractions.emplace(phase, std::move(evaluated.site_fractions));
-            }
-            value = result.phase_site_fractions.at(phase).at(*observation.site);
+            const auto evaluated = equilibrium::phase_site_values(model, solved, phase);
+            core::retain_first(result.first_numerical_failure, evaluated.first_numerical_failure);
+            value = evaluated.site_fractions.at(*observation.site);
         } catch (const core::ConvergenceFailure& failure) {
             result = unavailable_solve(std::move(result), failure);
             return;
@@ -947,6 +961,7 @@ std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
     const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
+    if (references) references->bind(model);
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {
@@ -1030,7 +1045,12 @@ std::vector<PredictionGradient> differentiate_group(
     }
     for (const auto& input : inputs) directions.push_back(input.state);
     if (observations.front()->kind == ObservationKind::Stability) {
-        PredictionGradient out; const auto& measure = *prediction.stability;
+        PredictionGradient out;
+        if (!prediction.stability || !prediction.solved || !prediction.solved->has_state()
+            || prediction.solved->model_identity != model.identity()) {
+            out.message = "central stability state unavailable"; return {out};
+        }
+        const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
         const auto& row = *observations.front();
         using Kind = equilibrium::SolvedStateObservableKind;
@@ -1127,11 +1147,29 @@ std::vector<PredictionGradient> differentiate_group(
             item.feed_amount = *prediction.added_amount;
         }
         item.kind = ObservationKind::SystemEnthalpy;
-        const auto endpoint_gradient = [&](auto index, auto calculate) {
-            if (!references || !index) return calculate();
-            auto& gradient = references->heat.at(*index).gradient;
-            if (!gradient) gradient = calculate();
-            return *gradient;
+        if (references && !std::equal(reactions.begin(), reactions.end(),
+                references->reaction_columns.begin(), references->reaction_columns.end(), [](const auto& a, const auto& b) {
+                    return a.name == b.name && a.coefficient == b.coefficient
+                        && core::bitwise_equal(a.pivot_temperature, b.pivot_temperature);
+                })) {
+            references->reaction_columns = std::move(reactions);
+            for (auto& endpoint : references->heat) endpoint.gradient.reset();
+        }
+        const auto endpoint_gradient = [&](const auto& identity, auto calculate) {
+            if (references && identity) for (auto& endpoint : references->heat) {
+                if (endpoint.identity != identity) continue;
+                const bool admitted = endpoint.row.kind == item.kind && (item.kind == ObservationKind::FeedEnthalpy
+                    ? same_feed(endpoint.row, item) : same_state(endpoint.row, item) && prediction.solved
+                        && prediction.solved->has_state()
+                        && prediction.solved->declaration == endpoint.center.solved->declaration
+                        && core::bitwise_equal(prediction.solved->coordinates, endpoint.center.solved->coordinates));
+                if (!admitted) endpoint.gradient.reset();
+                if (endpoint.gradient) return *endpoint.gradient;
+                auto value = calculate();
+                if (admitted && value.status == ObservationStatus::Available) endpoint.gradient = value;
+                return value;
+            }
+            return calculate();
         };
         auto initial = endpoint_gradient(prediction.initial_heat_endpoint,
             [&] { return differentiate_group(model, {&item}, prediction, coordinates).front(); });

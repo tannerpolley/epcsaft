@@ -251,7 +251,7 @@ std::vector<double> start_point(
 
 bool usable_start(const CompiledSystem& compiled, const EquilibriumResult& start) {
     if (compiled.problem.prescribed_liquid_composition) {
-        if (!start.has_state() || start.model_identity != compiled.model || !start.declaration
+        if (!start.has_state() || start.model_identity != compiled.model->identity() || !start.declaration
             || !start.declaration->prescribed_liquid_composition || start.declaration->phases.size() != 2
             || !start.amounts.empty() || !(*start.pressure > 0) || !std::isfinite(*start.pressure)) return false;
         for (std::size_t p = 0; p < 2; ++p) {
@@ -620,7 +620,7 @@ bool GibbsMinimizer::step_admitted(const Ipopt::Number* x) {
 
 const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* x, bool hessian) {
     if (!prepared_.has_value() || !std::equal(x, x + n, prepared_->point.begin(), prepared_->point.end(),
-        [&, i = std::size_t{0}](double value, double stored) mutable { return value * chart_[i++] == stored; })) {
+        [&, i = std::size_t{0}](double value, double stored) mutable { return core::bitwise_equal(value * chart_[i++], stored); })) {
         std::vector<double> candidate(x, x + n);
         for (Ipopt::Index i = 0; i < n; ++i) candidate[i] *= chart_[i];
         // Critical and spinodal mode rows consume curvature even at value order.
@@ -877,8 +877,8 @@ static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
 
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
     EquilibriumResult result;
-    result.model_identity = compiled.model;
-    result.ideal_identity = compiled.ideal;
+    if (compiled.model) result.model_identity = compiled.model->identity();
+    if (compiled.ideal) result.ideal_identity = compiled.ideal->identity();
     result.declaration = std::make_shared<const EquilibriumProblem>(public_declaration(compiled));
     if (compiled.problem.prescribed_liquid_composition) result.objective = NAN;
     result.rows = compiled.rows;
@@ -2755,7 +2755,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
         const auto declaration = public_declaration(compiled);
         for (const auto& seed : starts) if (seed.previous) {
             const auto& old = *seed.previous;
-            if (!old.declaration || old.model_identity != &model)
+            if (!old.declaration || old.model_identity != model.identity())
                 throw std::invalid_argument("previous start model/parameters or declaration differs");
             if (const auto difference = declared_state_difference(*old.declaration, declaration); !difference.empty())
                 throw std::invalid_argument("previous start: " + difference);

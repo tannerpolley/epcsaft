@@ -376,7 +376,7 @@ void boundary_refusals() {
         }
         CHECK(failure && failure->stop == core::Stop::nonfinite && failure->criterion
             && std::string_view(failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
-        Prediction refused;
+        auto refused = prediction;
         refused.solved = point;
         project_prediction(overflow, row, refused);
         CHECK(truth("refusal/projection", refused.status == ObservationStatus::CentralSolveUnavailable

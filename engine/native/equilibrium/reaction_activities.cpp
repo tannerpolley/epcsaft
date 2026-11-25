@@ -62,7 +62,7 @@ void pressure_basis(const HelmholtzModel& model, const EquilibriumResult& result
 std::vector<ReactionActivities> read_reaction_activities(const HelmholtzModel* model,
     const IdealMoleFraction* ideal, const EquilibriumResult& result) {
     core::Scope scope("reaction_activities");
-    if ((model && result.model_identity != model) || (ideal && result.ideal_identity != ideal))
+    if ((model && result.model_identity != model->identity()) || (ideal && result.ideal_identity != ideal->identity()))
         throw std::invalid_argument("reaction activities: model/result mismatch");
     const auto n = model ? model->parameters().component_count() : ideal->component_ids.size();
     if (!result.declaration || !result.temperature || !result.pressure || !std::isfinite(*result.temperature)

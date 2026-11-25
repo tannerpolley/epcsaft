@@ -555,7 +555,7 @@ std::optional<std::vector<NeutralReferenceReactionDiagnostic>> HelmholtzModel::s
     for (const auto& [stored, result] : references_) {
         bool covers = stored.size() == inputs.size();
         for (std::size_t i = 0; covers && i < inputs.size(); ++i)
-            covers = first <= i && i < last ? inputs[i] <= stored[i] : inputs[i] == stored[i];
+            covers = first <= i && i < last ? inputs[i] <= stored[i] : core::bitwise_equal(inputs[i], stored[i]);
         if (covers) return result;
     }
     return std::nullopt;
@@ -625,7 +625,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         double pressure = 0.0;
         NeutralReferenceTraceResult result;
     };
-    ReferenceTaylorBatch preparation{model, {}};
+    ReferenceTaylorBatch preparation{model.identity(), {}};
     std::vector<CachedTrace> cache;
     std::vector<NeutralReferenceReactionDiagnostic> result(stoichiometries.size());
     for (auto& diagnostic : result) diagnostic.solver_options = model.solver_options();
@@ -649,7 +649,7 @@ std::vector<NeutralReferenceReactionDiagnostic> reaction_references(
         const double pressure = reference.reference_pressure_pa.value_or(system_pressure);
         const auto pressure_derivatives = reference.reference_pressure_pa ? 0 : pressure_order;
         auto found = std::find_if(cache.begin(), cache.end(), [&](const auto& item) {
-            return item.pressure == pressure;
+            return core::bitwise_equal(item.pressure, pressure);
         });
         if (scope.on()) scope.probe("reference_row", {double(row), pressure,
             double(reference.reference_pressure_pa.has_value()), double(reference.source_basis), double(pressure_derivatives), double(found != cache.end())});
@@ -837,7 +837,7 @@ InfiniteDilutionReference solvent_reference(const HelmholtzModel& model, double 
     const std::vector<double>& fractions, std::optional<double> density) {
     InfiniteDilutionReference result;
     result.solver_options = model.solver_options();
-    result.model = &model; result.temperature = temperature; result.pressure = pressure;
+    result.model = model.identity(); result.temperature = temperature; result.pressure = pressure;
     result.solvent_fractions = fractions;
     const auto& parameters = model.parameters();
     double sum = 0.0;
@@ -885,7 +885,8 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
     result.osmotic_parameter_derivative.resize(columns);
     result.parameter_status.assign(columns, PropertyActionStatus::CentralPropertyUnavailable);
     result.parameter_cause.resize(columns);
-    if (reference.model && (reference.model != &model || reference.temperature != temperature || reference.pressure != pressure
+    if (reference.model && (reference.model != model.identity() || !core::bitwise_equal(reference.temperature, temperature)
+        || !core::bitwise_equal(reference.pressure, pressure)
         || !(reference.solver_options == model.solver_options()))) {
         result.cause = "SolventReferenceMismatch"; return result;
     }
@@ -910,6 +911,8 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
         result.solvent_activity_parameter_derivative.assign(columns, 0.0); return result;
     }
     try {
+        if (finite && (!finite->at(model.identity(), temperature, composition)
+            || !core::bitwise_equal(finite->requested_pressure, pressure))) finite.reset();
         result.state = finite ? std::move(*finite) : properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, std::nullopt);
     } catch (const std::runtime_error& error) {
         result.status = PropertyActionStatus::DensityUnavailable;
@@ -971,7 +974,7 @@ InfiniteDilutionReference infinite_dilution_reference(
             throw IonicReferenceBackground("IonicReferenceBackground: infinite dilution requires an ion-free solvent");
     InfiniteDilutionReference result;
     result.solver_options = model.solver_options();
-    result.model = &model; result.temperature = temperature; result.pressure = pressure;
+    result.model = model.identity(); result.temperature = temperature; result.pressure = pressure;
     result.solvent_fractions = solvent_fractions; result.ion_indices = ion_indices;
     result.solvent_state = properties::close_density(model, temperature, pressure,
         solvent_fractions, DensityBranch::Liquid, solvent_density);
@@ -1019,8 +1022,6 @@ ElectrolyteActivity electrolyte_activity(
     if (!reference.ion_indices) throw std::invalid_argument("IonicReferenceUnavailable: solvent-only reference");
     if (*reference.ion_indices != ion_indices)
         throw std::invalid_argument("electrolyte activity ordered ion indices do not match the reference");
-    if (!(reference.solver_options == model.solver_options()))
-        throw std::invalid_argument("electrolyte reference solver options do not match the model");
     double solute_ratio = 0.0;
     auto composition = formula_composition(
         solvent_fractions,
@@ -1029,11 +1030,10 @@ ElectrolyteActivity electrolyte_activity(
         stoichiometry,
         molality, finite_solute_molalities, &solute_ratio
     );
-    if (finite_solute_molalities) {
-        if (reference.model != &model || reference.temperature != temperature || reference.pressure != pressure
-            || reference.solvent_fractions != solvent_fractions)
-            throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
-    }
+    if (reference.model != model.identity() || !core::bitwise_equal(reference.temperature, temperature)
+        || !core::bitwise_equal(reference.pressure, pressure)
+        || !core::bitwise_equal(reference.solvent_fractions, solvent_fractions) || !(reference.solver_options == model.solver_options()))
+        throw std::invalid_argument("electrolyte reference model, temperature, pressure or solvent mismatch");
     ElectrolyteActivity result;
     result.solver_options = model.solver_options();
     result.reference_solvent_fractions = reference.solvent_fractions;

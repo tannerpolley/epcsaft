@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/trace.hpp"
 #include "core/linear_error.hpp"
 #include "core/numerical_policy.hpp"
@@ -1520,7 +1521,7 @@ SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compi
 
 struct SolvedStateCaloricCenter final {
     SolvedStateObservableKind kind;
-    const HelmholtzModel* model;
+    std::shared_ptr<const HelmholtzModel> model;
     std::shared_ptr<const EquilibriumProblem> declaration;
     ActionCenter value;
 };
@@ -1541,13 +1542,14 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
         cover = caloric_need(compiled.problem, requests.back(), false, cover);
     }
     std::optional<ActionCenter> shared;
-    const bool retain = caloric && central.declaration && observables.size() == 1
+    const bool retain = caloric && central.declaration && central.model_identity == compiled.model->identity() && observables.size() == 1
         && (observables.front().kind == SolvedStateObservableKind::SystemEnthalpy
             || observables.front().kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity);
-    const bool reuse = retain && *caloric && (*caloric)->model == compiled.model
+    const bool reuse = retain && central.success && central.has_state() && *caloric && (*caloric)->model->identity() == compiled.model->identity()
         && (*caloric)->declaration == central.declaration && (*caloric)->kind == observables.front().kind
-        && (*caloric)->value.center.prepared.point == central.coordinates;
+        && core::bitwise_equal((*caloric)->value.center.prepared.point, central.coordinates);
     if (reuse) shared = (*caloric)->value;
+    else if (caloric) caloric->reset();
 
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
@@ -1567,8 +1569,9 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
         batches.push_back(evaluate_action(classified ? *classified : compiled, central, request, shared, scope,
             cover, nullptr, parameters[group(request.directions.front())], nullptr, batch_parameters));
     if (retain && !reuse && shared && !shared->preparation_failed)
-        *caloric = std::make_shared<const SolvedStateCaloricCenter>(SolvedStateCaloricCenter{
-            observables.front().kind, compiled.model, central.declaration, std::move(*shared)});
+        if (auto owner = compiled.model->weak_from_this().lock())
+            *caloric = std::make_shared<const SolvedStateCaloricCenter>(SolvedStateCaloricCenter{
+                observables.front().kind, std::move(owner), central.declaration, std::move(*shared)});
     return batches;
 }
 
@@ -1774,7 +1777,12 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows,
     const std::vector<double>& prescribed_errors, bool replay) {
-    if (prescribed_errors.empty() && !plane_rows && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits) return *result.numerical_estimates;
+    if (result.has_state() && ((c.model && result.model_identity && result.model_identity != c.model->identity())
+        || (c.ideal && result.ideal_identity && result.ideal_identity != c.ideal->identity())))
+        throw std::invalid_argument("numerical estimate model/result mismatch");
+    if (result.has_state() && result.declaration && prescribed_errors.empty() && !plane_rows
+        && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits)
+        return *result.numerical_estimates;
     return numerical_estimates<double>(c, result, {}, prepared, replay || plane_rows || !prepared, nullptr, counted, plane_rows, prescribed_errors);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
@@ -1782,12 +1790,12 @@ EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSyst
 }
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel& model, const EquilibriumResult& result) {
-    if (result.model_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    if (result.model_identity != model.identity() || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
     return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
 }
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const IdealMoleFraction& model, const EquilibriumResult& result) {
-    if (result.ideal_identity != &model || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
+    if (result.ideal_identity != model.identity() || !result.declaration) throw std::invalid_argument("numerical estimate model/result mismatch");
     return equilibrium_numerical_estimates(compile_problem(model, *result.declaration), result);
 }
 

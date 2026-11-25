@@ -1168,11 +1168,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
     double temperature,
     double volume,
     const std::vector<double>& amounts,
-    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity, bool rank_only, const HelmholtzDerivatives* completed
+    DerivativeOrder order, bool isothermal_hessian, bool retain_site_sensitivity, bool rank_only
 ) const {
     require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity, rank_only, completed);
+    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity, rank_only);
 }
 
 // Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one
@@ -1883,7 +1883,7 @@ static auto inverse_log_series(const std::vector<std::vector<double>>& path, std
 ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volume,
     const std::vector<double>& composition, const std::vector<double>& stoichiometry,
     const PressureActionDirection& direction, std::size_t order, bool infinite_dilution, ReferenceTaylorError* error, ReferenceTaylorBatch* batch) const {
-    require(!batch || &batch->model == this, "reference batch model");
+    require(!batch || batch->model == identity(), "reference batch model");
     validate_point(temperature, volume, composition);
     validate_composition(composition);
     require(order <= 4 && stoichiometry.size() == composition.size()
@@ -1898,7 +1898,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     std::lock_guard<std::mutex> lock(mutex_);
     auto key = action_point(*this, temperature, volume, composition, true);
-    auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return entry.first == key; });
+    auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return core::bitwise_equal(entry.first, key); });
     if (found == centrals_.end()) {
         if (centrals_.size() == 16) centrals_.pop_front();
         core::AssociationObservations central;
@@ -1985,8 +1985,8 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (!reuse) {
         const auto state = batch ? batch->paths.lower_bound(point) : decltype(batch->paths)::iterator{};
         if (batch && state != batch->paths.end()
-            && std::equal(point.begin(), point.end(), state->first.begin())
-            && state->second->site_fractions == central.site_fractions) {
+            && state->first.size() >= width && core::bitwise_equal(point.data(), width, state->first.data(), width)
+            && core::bitwise_equal(state->second->site_fractions, central.site_fractions)) {
             prepared->factorization = state->second->factorization;
             const auto recordings = result.diagnostics.recordings;
             result.diagnostics = state->second->factorization_diagnostics;
@@ -2083,7 +2083,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         }
         capture_error = error != nullptr;
         const auto g = order || error ? gradient_series(u, order) : std::vector<double>{};
-        const auto [inverse, logarithm] = inverse_log();
+        const auto inverse = order || error ? inverse_log().first : std::vector<double>{};
         const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
             : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};
         if (error) {
@@ -2114,7 +2114,6 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
         if (prepared->diagnostics.site_conditioning)
             prepared->diagnostics.site_conditioning = std::make_shared<core::NumericalRank>(*prepared->diagnostics.site_conditioning);
         if (error) prepared->error = *error;
-        if (batch) batch->paths.emplace(std::move(path_key), prepared);
     }
     capture_error = error != nullptr;
     const auto [inverse, logarithm] = inverse_log();
@@ -2147,6 +2146,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     // A conditioning warning belongs to the phase and observation that produced it.
     if (result.status == PropertyActionStatus::Available && !result.diagnostics.first_numerical_failure
         && !(result.diagnostics.site_conditioning && result.diagnostics.site_conditioning->first_conditioning_warning)) {
+        if (batch && !reuse) batch->paths.emplace(std::move(path_key), prepared);
         // Bound retained derivative layouts when a free pressure moves between reference states.
         if (reference_series_.size() >= 256) reference_series_.clear();
         auto& stored = reference_series_[std::move(series_key)];
@@ -2758,9 +2758,9 @@ State HelmholtzModel::state(
     double temperature,
     double molar_density,
     const std::vector<double>& mole_fractions,
-    bool derived_properties, const HelmholtzDerivatives* completed
+    bool derived_properties
 ) const {
-    return state(temperature, molar_density, mole_fractions, derived_properties, false, false, completed);
+    return state(temperature, molar_density, mole_fractions, derived_properties, false, false);
 }
 
 HelmholtzDerivatives HelmholtzModel::state_derivatives(double temperature, double volume,
@@ -2771,7 +2771,8 @@ HelmholtzDerivatives HelmholtzModel::state_derivatives(double temperature, doubl
         require_law_domain(temperature, parameters_);
         return pure_state_derivatives(temperature, volume);
     }
-    return evaluate(temperature, volume, mole_fractions,
+    std::lock_guard<std::mutex> lock(mutex_);
+    return evaluate_locked(temperature, volume, mole_fractions,
         diagnostics ? (fixed_parameters ? DerivativeOrder::FixedParameterHessian : DerivativeOrder::Hessian)
                     : (fixed_parameters ? DerivativeOrder::FixedParameterStateHessian : DerivativeOrder::StateHessian),
         false, false, false, completed);
@@ -2799,6 +2800,7 @@ State HelmholtzModel::state(
 ) const try {
     core::AssociationObservations observations(true);
     State result;
+    std::tie(result.model, result.temperature, result.composition) = std::tie(identity(), temperature, mole_fractions);
     core::Scope scope("state");
     if (!composition_admitted) validate_composition(mole_fractions);
     require_molar_density(molar_density);
@@ -3159,7 +3161,8 @@ State HelmholtzModel::state_at_pressure(
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density, nullptr, scan
     );
-    const bool reuse = feed_state && !scope.on() && !core::CalculationWork::current()
+    const bool reuse = feed_state && feed_state->at(identity(), temperature, mole_fractions)
+        && !scope.on() && !core::CalculationWork::current()
         && !core::AssociationObservations::current() && !derived_properties && !fixed_parameters
         && std::memcmp(&root.molar_density, &feed_state->molar_density, sizeof(double)) == 0;
     State result = reuse ? *feed_state : state(temperature, root.molar_density, mole_fractions, derived_properties, true, fixed_parameters);
@@ -3169,6 +3172,7 @@ State HelmholtzModel::state_at_pressure(
         for (std::size_t i = 0; i < mole_fractions.size(); ++i) if (result.residual_chemical_potential_over_rt[i])
             (*result.log_fugacity_coefficient)[i] = *result.residual_chemical_potential_over_rt[i] - log_z;
     }
+    result.requested_pressure = pressure;
     result.density_convergence = root.convergence;
     for (const auto& rank : root.rank_records) core::retain_rank(result.rank_records, rank);
     core::retain_first(result.first_numerical_failure, root.first_numerical_failure, true);

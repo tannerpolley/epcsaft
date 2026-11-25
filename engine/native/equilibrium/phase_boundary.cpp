@@ -19,6 +19,19 @@
 #include <tuple>
 #include <utility>
 
+namespace epcsaft {
+struct PressureDensityDerivative final {
+    static double at(const HelmholtzModel& model, const equilibrium::PhasePoint& point, std::size_t phase,
+        double density, const std::vector<double>& composition) {
+        const double volume = 1.0 / density;
+        const auto* completed = point.state_model == model.identity()
+            && core::bitwise_equal(volume, point.volume[phase])
+            && core::bitwise_equal(composition, point.composition[phase])
+            ? &point.derivative[phase] : nullptr;
+        return model.state(point.temperature, density, composition, false, false, false, completed).pressure_density_derivative;
+    }
+};
+}
 namespace epcsaft::equilibrium {
 
 bool supports_split_seed(const CompiledSystem& compiled) {
@@ -279,7 +292,7 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
             std::array<State, 2> states;
             for (std::size_t side = 0; side < 2; ++side) {
                 const auto& composition = x[side == 1 ? vapor : 1 - vapor];
-                states[side] = loop && pass == 0 && pressure == seed && composition == compiled.feed_composition && start.feed_states[side]
+                states[side] = loop && pass == 0 && core::bitwise_equal(pressure, seed) && core::bitwise_equal(composition, compiled.feed_composition) && start.feed_states[side]
                     ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
                         side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor, {}, false, false,
                         start.feed_states[side] && composition.size() == compiled.feed_composition.size()
@@ -1064,10 +1077,8 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 }  // namespace
 
 const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
-    if (compiled.spinodal_search) {
-        if (!std::isfinite(compiled.spinodal_search->seed)) throw std::domain_error("unresolved spinodal search");
-        return *compiled.spinodal_search;
-    }
+    if (compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
+        && !(limits && limits->expired())) return *compiled.spinodal_search;
     auto& scan = compiled.spinodal_search.emplace();
     const auto& declaration = *compiled.problem.spinodal;
     if (!carried) anchor = declaration.density_guess_mol_per_m3;
@@ -1502,13 +1513,8 @@ BranchCheck density_branches_at(
         for (double& value : x) value /= total;  // the driver's own normalisation of the log chart
         const double corrected = chart_density(model, prepared, phase);
         const auto branch = branch_of(spec.kind);
-        const double volume = 1.0 / corrected;
-        const auto* completed = prepared.state_model == &model
-            && std::memcmp(&volume, &prepared.volume[phase], sizeof(double)) == 0
-            && std::memcmp(x.data(), prepared.composition[phase].data(), x.size() * sizeof(double)) == 0
-            ? &prepared.derivative[phase] : nullptr;
         const double slope = pure ? prepared.pure[phase].pressure_density_derivative
-            : model.state(prepared.temperature, corrected, x, false, completed).pressure_density_derivative;
+            : PressureDensityDerivative::at(model, prepared, phase, corrected, x);
         if (limits) limits->check();
         if (witness && spec.kind == PhaseKind::Vapor && !(std::isfinite(slope) && slope > 0.0)) {
             if (std::isfinite(slope)) *witness = BranchEndCondition::VaporMechanicalLimit;
@@ -1971,7 +1977,7 @@ std::optional<BubbleBranchEnd> classify_branch_end(
 
 EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope,
     std::optional<std::size_t> branch_end_work_limit) {
-    if (seed.model_identity != target.model || !seed.declaration || !seed.has_state()
+    if (seed.model_identity != target.model->identity() || !seed.declaration || !seed.has_state()
         || !seed.requested_tolerance_met.value_or(false) || !supports_work_limit(*seed.declaration))
         throw std::invalid_argument("bubble source must be admitted on the target model");
     if (const auto difference = declaration_difference(*seed.declaration, target.problem, true); !difference.empty())

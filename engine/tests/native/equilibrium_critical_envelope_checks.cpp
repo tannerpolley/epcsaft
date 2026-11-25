@@ -307,6 +307,10 @@ void spinodal() {
         recording_support::Rule::Absolute, 0.0, 0.0, "spinodal-search",
         recording_support::fields({recording_support::field("cause", cause),
             recording_support::field("budget_exception", budget_exception)}));
+    const auto fresh = compile_problem(model, cell(240, 4000));
+    CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
+    CHECK(recording_support::refusal([&] { (void)spinodal_search(interrupted, &spent); }) == "elapsed work budget exhausted");
+    CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
     for (int branch=0;branch<2;++branch) {
         const double guess=branch?13000:4000;
         for (int t=0;t<3;++t) {

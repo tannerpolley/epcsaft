@@ -94,6 +94,7 @@ template <class Context> struct Prepared final {
 };
 
 namespace eq = epcsaft::equilibrium;
+using epcsaft::core::bitwise_equal;
 using ActionStatus = eq::SolvedStateActionStatus;
 
 class EquilibriumFailure final : public std::runtime_error {
@@ -292,8 +293,8 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
     context.action_workspace.reset();
     context.compiled.reset();  // it points at its model
-    if (theta == context.model->active_parameter_values()) context.shifted.reset();
-    if (theta != (context.shifted ? *context.shifted : *context.model).active_parameter_values()) try {
+    if (bitwise_equal(theta, context.model->active_parameter_values())) context.shifted.reset();
+    if (!bitwise_equal(theta, (context.shifted ? *context.shifted : *context.model).active_parameter_values())) try {
         context.shifted = model_at(*context.model, theta);  // rebuilt against the current model's own values
     } catch (const std::invalid_argument& error) { throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, error.what()); }
     const auto& model = context.shifted ? *context.shifted : *context.model;
@@ -302,7 +303,7 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
     target.feed.values = context.map.amounts(feed);
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
-    const bool moved = feed != context.map.anchor || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
+    const bool moved = !bitwise_equal(feed, context.map.anchor) || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
     std::optional<eq::CompiledSystem> direct_compiled;
     if (!moved && !context.shifted) context.central = context.anchor_result;
     else {
@@ -421,7 +422,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
             if (!std::isfinite(q[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
             if (i < controls && (i < 2 ? q[i] <= 0.0 : q[i] < 0.0)) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        if (!context.compiled || context.feed != q) select_state(context, q, observable);
+        if (!context.compiled || !bitwise_equal(context.feed, q)) select_state(context, q, observable);
         auto& rows = context.rows[kind == 1];  // the amount batch also holds the solid amounts
         const auto row = kind == 2 ? phases * count + p : p * count + c;
         // Each live gradient column and Hessian pair is one batch, computed once per state and kind.
@@ -494,12 +495,12 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
 
 void evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, const std::vector<bool>& live, int order) {
     auto& branch = context.branches[phase];
-    if (branch.q == q && branch.live == live && branch.order >= order) return;
+    if (bitwise_equal(branch.q, q) && branch.live == live && branch.order >= order) return;
     using Status = epcsaft::PropertyActionStatus;
     const std::size_t c = context.model->parameters().component_count(), rows = 2 + c, n = q.size();
     const auto active = context.model->active_parameters();
     const std::vector<double> theta(q.begin() + rows, q.end());
-    if (theta != context.model->active_parameter_values()) context.model = model_at(*context.model, theta);
+    if (!bitwise_equal(theta, context.model->active_parameter_values())) context.model = model_at(*context.model, theta);
     const auto& z = context.model->parameters().charge_number;
     const double zz = std::inner_product(z.begin(), z.end(), z.begin(), 0.0);
     std::vector<double> u(q.begin() + 2, q.begin() + 2 + c), x(c), sigma(c, 1.0);
@@ -601,10 +602,10 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
 // 1 mol/m^3, so sum_i nu_i (ln x_i + ln phi_i) = l_s at saturation. It depends on (T, P, theta) only.
 void evaluate_solids(PropertyContext& context, const std::vector<double>& q, const std::vector<bool>& live, int order) {
     auto& rows = context.solid_rows;
-    if (rows.q == q && rows.live == live && rows.order >= order) return;
+    if (bitwise_equal(rows.q, q) && rows.live == live && rows.order >= order) return;
     const std::size_t S = context.solids.size(), n = q.size(), first = n - context.model->active_parameters().size();
     const std::vector<double> theta(q.begin() + first, q.end());
-    if (theta != context.model->active_parameter_values()) context.model = model_at(*context.model, theta);
+    if (!bitwise_equal(theta, context.model->active_parameter_values())) context.model = model_at(*context.model, theta);
     std::vector<std::size_t> parameters;  // the live parameters: their first-order jets, and pairs at order 2
     for (std::size_t k = first; order >= 1 && k < n; ++k) if (live[k]) parameters.push_back(k - first);
     rows = {q, std::vector<double>(S), std::vector<std::vector<double>>(S, std::vector<double>(n)),

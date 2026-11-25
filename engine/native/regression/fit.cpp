@@ -1,5 +1,6 @@
 #include "regression/fit.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/stoichiometry.hpp"
@@ -38,7 +39,6 @@
 #include <cerrno>
 #include <cmath>
 #include <chrono>
-#include <cstring>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -93,8 +93,7 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
 
 #include "fit_measurement.hpp"
 
-// The committed record is `optimizer`, `evaluation` and `jacobian`, written only by publish(). The rest is working
-// state, which a same-point evaluation may update before its verdict.
+// Same-point Jacobians work on a copy until every process accepts the trial.
 struct Trial final {
     std::shared_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
     std::vector<Observation> observations;
@@ -105,6 +104,8 @@ struct Trial final {
     bool jacobian = false;
     EvaluatedCoordinates chart;
     ReferenceCache references;
+
+    Trial upgrade() const { return {model, {}, centers, projected_rows, {}, {}, false, chart, references}; }
 };
 
 // The serial sweep's first failure: `row` orders failures across worker processes; `observation` is
@@ -272,7 +273,7 @@ struct ObservationEvaluator::Impl final {
         core::Scope scope("fit_evaluation");
         scope.probe("optimizer", optimizer);
         scope.probe("jacobian", jacobian ? 1.0 : 0.0);
-        const bool same_point = cached_ && cached_->optimizer == optimizer;
+        const bool same_point = cached_ && core::bitwise_equal(cached_->optimizer, optimizer);
         const bool hit = same_point && (!jacobian || cached_->jacobian);
         scope.probe("reuse", hit ? (cached_->jacobian ? 2.0 : 1.0) : same_point ? 3.0 : 0.0);
         if (hit) {
@@ -284,15 +285,14 @@ struct ObservationEvaluator::Impl final {
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         for (const Channel fd : workers_.sockets) put(fd, optimizer, jacobian);
-        Trial fresh;
-        Trial& trial = same_point ? *cached_ : fresh;
+        Trial trial = same_point ? cached_->upgrade() : Trial{};
         Verdict verdict = assemble(optimizer, jacobian, out, trial, same_point, scope);
         for (const Channel fd : workers_.sockets) put(fd, verdict.disposition == Disposition::Evaluated);
         if (verdict.disposition == Disposition::Rejected) {
             if (!out.saturation_predictions.empty()) result_.saturation_predictions = out.saturation_predictions;
             if (!out.stability_predictions.empty()) result_.stability_predictions = out.stability_predictions;
             fail(optimizer, std::move(verdict.failure), out);
-        } else verdict.disposition = publish(optimizer, jacobian, out, trial, fresh, same_point);
+        } else verdict.disposition = publish(optimizer, jacobian, out, trial);
         return verdict.disposition == Disposition::Committed;
     }
 
@@ -391,15 +391,14 @@ struct ObservationEvaluator::Impl final {
             bool jacobian = false, commit = false;
             get(fd, optimizer, jacobian);
             core::Scope scope("fit_evaluation");
-            const bool same_point = cached_ && cached_->optimizer == optimizer;
-            Trial fresh;
-            Trial& trial = same_point ? *cached_ : fresh;
+            const bool same_point = cached_ && core::bitwise_equal(cached_->optimizer, optimizer);
+            Trial trial = same_point ? cached_->upgrade() : Trial{};
             ObservationEvaluation out;
             const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
             put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient, out.input_gradient,
                 out.state_densities, out.reference_values, out.saturation_predictions, out.stability_predictions, out.first_numerical_failure, out.first_numerical_failure_observation);
             get(fd, commit);
-            if (commit) publish(optimizer, jacobian, out, trial, fresh, same_point);
+            if (commit) publish(optimizer, jacobian, out, trial);
         }
     }
 
@@ -504,8 +503,8 @@ struct ObservationEvaluator::Impl final {
                 trial.chart.reaction_laws = std::move(reaction_laws);
                 // Reference series and derivative tapes belong to the immutable EOS. Reaction laws belong to the observations.
                 const auto eos = trial.chart.active.size();
-                const bool same_eos = cached_ && (eos == 0 || std::memcmp(trial.chart.physical.data(),
-                    cached_->chart.physical.data(), eos * sizeof(double)) == 0);
+                const bool same_eos = cached_ && core::bitwise_equal(trial.chart.physical.data(), eos,
+                    cached_->chart.physical.data(), eos);
                 if (same_eos && std::any_of(cached_->centers.begin(), cached_->centers.end(),
                     [](const auto& p) { return p.saturation && p.saturation->accepted; })) trial.model = cached_->model;
                 else trial.model = std::make_shared<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
@@ -555,16 +554,16 @@ struct ObservationEvaluator::Impl final {
                     const auto& prior = prior_trial ? prior_trial->observations[i] : observation;
                     const bool unchanged = observation.kind == ObservationKind::Stability || !request_.uncertainty
                         || (capped_row && measurement_.membership[i] == n) || (pressure_closed(observation.kind)
-                        ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
-                            == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
+                        ? core::bitwise_equal(std::array{observation.temperature, observation.pressure}, std::array{prior.temperature, prior.pressure})
+                            && core::bitwise_equal(observation.composition, prior.composition) && observation.branch == prior.branch
                         : same_state(observation, prior));
                     std::vector<const Observation*> admission;
                     if (needs_compiled_admission_) for (std::size_t row = 0; row < n; ++row)
                         if (groups_[row] == g) admission.push_back(&trial.observations[row]);
-                    trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
+                    trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : nullptr;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         prior_trial && unchanged ? &prior_trial->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
-                        seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
+                        seed && unchanged && core::bitwise_equal(trial.chart.physical, seed->chart.physical), deadline_, admission);
                     if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy && observation.kind != ObservationKind::Stability) {
                         auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references,
                             nullptr, nullptr, false, deadline_, admission);
@@ -659,8 +658,7 @@ struct ObservationEvaluator::Impl final {
 
     // Neither a failed row nor an overflowing weighted/coordinate chain publishes starts or a cache. The only commit:
     // an Evaluated trial becomes Committed here, in the fit process on evaluate's verdict and in a worker on its byte.
-    Disposition publish(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial,
-                        Trial& fresh, bool same_point) {
+    Disposition publish(const std::vector<double>& optimizer, bool jacobian, ObservationEvaluation& out, Trial& trial) {
         for (std::size_t g = 0; g < groups_.size(); ++g)
             if (trial.centers[g].solved) starts_[g] = trial.centers[g].solved;
         // After a derivative commit the cache answers every request at this point: no row here is recomputed.
@@ -682,9 +680,7 @@ struct ObservationEvaluator::Impl final {
             if (interruptible_) out.stability_predictions = std::move(rows);
         }
         trial.jacobian = jacobian;
-        if (!same_point) {
-            cached_.emplace(std::move(fresh));
-        }
+        cached_.emplace(std::move(trial));
         return Disposition::Committed;
     }
 

@@ -2,6 +2,13 @@
 
 // The case registry. Each case function is defined in one regression_*_checks.cpp unit.
 namespace regression_checks {
+void check_addition_endpoint_admission();
+void check_addition_endpoint_cache();
+void check_supplied_trial_model();
+void check_equilibrium_refresh_model();
+void check_equilibrium_optimizer_point();
+void check_equilibrium_result_model();
+void check_equilibrium_estimate_admission();
 void check_stability_requirement();
 void check_nested_support_tangent_plane_action();
 void check_reactive_solvent_activity();
@@ -13,6 +20,10 @@ void check_coupled_recovery();
 void check_hydration_failures();
 void check_ionic_addition_enthalpy();
 void check_free_temperature_addition();
+void check_addition_endpoint_model();
+void check_addition_endpoint_layout();
+void check_addition_endpoint_retry();
+void check_electrolyte_row_signed_zero();
 void check_addition_enthalpy();
 void check_saturation_capped_addition();
 void check_phase_bulk_relative_permittivity();
@@ -48,6 +59,13 @@ void check_measurement_correlation();
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.equilibrium-estimate-admission", "equilibrium-estimate-admission"}, check_equilibrium_estimate_admission},
+        {{"native.regression.equilibrium-result-model", "equilibrium-result-model"}, check_equilibrium_result_model},
+        {{"native.regression.equilibrium-optimizer-point", "equilibrium-optimizer-point"}, check_equilibrium_optimizer_point},
+        {{"native.regression.equilibrium-refresh-model", "equilibrium-refresh-model"}, check_equilibrium_refresh_model},
+        {{"native.regression.supplied-trial-model", "supplied-trial-model"}, check_supplied_trial_model},
+        {{"native.regression.addition-endpoint-cache", "addition-endpoint-cache"}, check_addition_endpoint_cache},
+        {{"native.regression.addition-endpoint-admission", "addition-endpoint-admission"}, check_addition_endpoint_admission},
         {{"native.regression.reactive-solvent-activity", "reactive-solvent-activity"}, check_reactive_solvent_activity, "R2"},
         {{"native.regression.stability-requirement", "stability-requirement"}, check_stability_requirement, "stability-requirement"},
         {{"native.regression.nested-support-tangent-plane-action", "nested-support-tangent-plane-action"},
@@ -66,6 +84,10 @@ int main(int argc, char** argv) {
         {{"native.regression.hydration-failures", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.ionic-addition", "ionic-addition"}, check_ionic_addition_enthalpy, "R2"},
         {{"native.regression.reactive-caloric-F6-addition", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "R2"},
+        {{"native.regression.addition-endpoint-model", "addition-endpoint-model"}, check_addition_endpoint_model},
+        {{"native.regression.addition-endpoint-layout", "addition-endpoint-layout"}, check_addition_endpoint_layout},
+        {{"native.regression.addition-endpoint-retry", "addition-endpoint-retry"}, check_addition_endpoint_retry},
+        {{"native.regression.electrolyte-row-signed-zero", "electrolyte-row-signed-zero"}, check_electrolyte_row_signed_zero},
         {{"native.regression.addition-enthalpy", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
         {{"native.regression.phase-bulk-relative-permittivity", "phase-bulk-relative-permittivity"}, check_phase_bulk_relative_permittivity, "R2"},
         {{"native.regression.saturation-capped-addition", "saturation-capped-addition"}, check_saturation_capped_addition, "R1"},

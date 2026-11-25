@@ -3102,7 +3102,6 @@ void check_associating_isomer_gibbs() {
     auto c = compile_problem(m, q);
     auto r = solve_compiled(c);
     CHECK(r.success);
-    auto reference = conserved_split_reference(c, r);
     PhaseSpec fullv = v;
     fullv.support = {0, 1};
     fullv.amount = AmountSpec{};
@@ -3141,12 +3140,16 @@ void check_associating_isomer_gibbs() {
     point.push_back(*r.pressure);
     er.coordinates = add_multipliers(sc, point);
     er.declaration = std::make_shared<const EquilibriumProblem>(sc.problem);
-    er.model_identity = &m;
+    er.model_identity = m.identity();
     er.temperature = r.temperature;
     er.pressure = r.pressure;
     er.residuals = sc.evaluate(er.coordinates).values;
     er.multipliers.assign(er.coordinates.begin() + sc.primal_size, er.coordinates.begin() + sc.primal_size + sc.rank);
-    auto d = conserved_split_difference(c, reference, sc, er, 0, {});
+    auto d = conserved_split_difference(c, r, sc, er, 0, {});
+    const HelmholtzModel foreign(p);
+    const auto foreign_parent = compile_problem(foreign, q);
+    CHECK(conserved_split_difference(foreign_parent, r, sc, er, 0, {}).cause
+        == "stability test requires this model's accepted declared result");
 
     // At identical residual interactions, the pure-species Gibbs difference is the
     // mixing term plus the attained A chemical and pressure closure defects.

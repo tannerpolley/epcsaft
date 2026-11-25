@@ -1,4 +1,5 @@
 #pragma once
+#include "core/bitwise_equal.hpp"
 #include "core/wider_scalar.hpp"
 #include "core/export.hpp"
 #include "core/trace.hpp"
@@ -207,9 +208,17 @@ struct ResidualEnergyGradient final {  // D3F[v, v, e_k] for each requested coor
 };
 class HelmholtzModel;
 struct ReferenceTaylorPreparation;
+// Byte ordering keeps exact keys and places a point prefix before all its paths.
+struct ReferenceTaylorKeyLess final {
+    bool operator()(const std::vector<double>& a, const std::vector<double>& b) const {
+        const auto common = std::min(a.size(), b.size());
+        const int order = common ? std::memcmp(a.data(), b.data(), common * sizeof(double)) : 0;
+        return order == 0 ? a.size() < b.size() : order < 0;
+    }
+};
 struct ReferenceTaylorBatch final {
-    const HelmholtzModel& model;
-    std::map<std::vector<double>, std::shared_ptr<ReferenceTaylorPreparation>> paths;
+    const std::shared_ptr<const char> model;
+    std::map<std::vector<double>, std::shared_ptr<ReferenceTaylorPreparation>, ReferenceTaylorKeyLess> paths;
 };
 // Ordinary Taylor coefficients along a fixed-composition pressure-closed path.
 struct ReferenceTaylor final {
@@ -234,6 +243,12 @@ struct VirialCoefficientActions final {
 };
 
 struct State final {
+    std::shared_ptr<const char> model;
+    double temperature = NAN, requested_pressure = NAN;
+    std::vector<double> composition;
+    bool at(const std::shared_ptr<const char>& id, double t, const std::vector<double>& x) const {
+        return model == id && core::bitwise_equal(temperature, t) && core::bitwise_equal(composition, x);
+    }
     policy::SolverOptions solver_options;
     double hard_chain = 0.0;
     double dispersion = 0.0;
@@ -471,8 +486,13 @@ struct NeutralReferenceReactionDiagnostic final {
 };
 
 struct DomainBounds;
-class HelmholtzModel final {
+class HelmholtzModel final : public std::enable_shared_from_this<HelmholtzModel> {
+    friend struct PressureDensityDerivative;
+    // Retained references can identify even a stack model without keeping a dangling model pointer.
+    const std::shared_ptr<const char> identity_ = std::make_shared<const char>();
 public:
+    const auto& identity() const { return identity_; }
+
     EPC_API explicit HelmholtzModel(
         Parameters parameters,
         std::vector<ActiveParameter> active = {},
@@ -485,13 +505,11 @@ public:
 
     EPC_API ~HelmholtzModel();
 
-    // A completed request must own the covering derivatives at exactly these inputs on this model.
     EPC_API HelmholtzDerivatives evaluate(
         double temperature,
         double volume,
         const std::vector<double>& amounts,
-        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false,
-        const HelmholtzDerivatives* completed = nullptr
+        DerivativeOrder order, bool isothermal_hessian = false, bool retain_site_sensitivity = false, bool rank_only = false
     ) const;
     // Errors of E's ordinary Taylor coefficients on a requested path, including the site recurrence.
     EPC_API std::vector<double> residual_coefficient_errors(const std::vector<std::vector<double>>& regular,
@@ -523,7 +541,7 @@ public:
         double temperature,
         double molar_density,
         const std::vector<double>& mole_fractions,
-        bool derived_properties = false, const HelmholtzDerivatives* completed = nullptr
+        bool derived_properties = false
     ) const;
     EPC_API LogFugacityTerms log_fugacity_terms(
         double temperature, double molar_density, const std::vector<double>& mole_fractions) const;
@@ -635,7 +653,7 @@ private:
     mutable std::array<std::unique_ptr<detail::HelmholtzTape>, 2> reference_tapes_;
     mutable SweepCounters counters_;
     mutable std::deque<std::pair<std::vector<double>, std::vector<NeutralReferenceReactionDiagnostic>>> references_;
-    mutable std::map<std::vector<double>, std::pair<ReferenceTaylor, ReferenceTaylorError>> reference_series_;
+    mutable std::map<std::vector<double>, std::pair<ReferenceTaylor, ReferenceTaylorError>, ReferenceTaylorKeyLess> reference_series_;
     // reference_taylor central Hessians of this immutable model by exact (T, V, n): a short FIFO (#449).
     mutable std::deque<std::pair<std::vector<double>, HelmholtzDerivatives>> centrals_;
     mutable std::mutex mutex_;
@@ -732,7 +750,7 @@ struct EPC_EXCEPTION IonicReferenceBackground final : std::invalid_argument {
 
 struct InfiniteDilutionReference final {
     policy::SolverOptions solver_options;
-    const HelmholtzModel* model = nullptr;
+    std::shared_ptr<const char> model;
     double temperature = 0.0, pressure = 0.0;
     std::vector<double> solvent_fractions;
     PropertyActionStatus solvent_status = PropertyActionStatus::CentralPropertyUnavailable;

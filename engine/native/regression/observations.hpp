@@ -130,14 +130,13 @@ struct Prediction final {
     std::optional<equilibrium::CompiledSystem> final_compiled;
     std::shared_ptr<equilibrium::SaturationSearch> saturation;
     std::optional<double> saturation_loading, endpoint_loading, added_amount, enthalpy_difference;
-    std::optional<std::size_t> initial_heat_endpoint, feed_heat_endpoint;
+    std::shared_ptr<const char> initial_heat_endpoint, feed_heat_endpoint;
     std::string cap_branch;
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<equilibrium::StabilityReport> supplied_stability;
     bool supplied_available = false;
     std::shared_ptr<Prediction> pressure_reference;
     std::vector<double> stability_raw_gradient;
-    std::map<std::size_t, std::vector<double>> phase_site_fractions;
 };
 
 // d(value)/d(theta) in EOS-row order, then the requested reaction-coordinate order;
@@ -170,13 +169,21 @@ struct ReferenceCache : std::vector<std::pair<Observation, InfiniteDilutionRefer
     std::vector<std::pair<Observation, Prediction>> pressures;
     struct HeatEndpoint {
         Observation row;
-        std::optional<std::size_t> start;
+        std::shared_ptr<const char> identity, start;
         Prediction center;
         std::optional<PredictionGradient> gradient;
     };
     std::vector<HeatEndpoint> heat;
-    std::optional<std::size_t> previous_initial;
+    std::shared_ptr<const char> previous_initial;
+    std::vector<ReactionCoordinate> reaction_columns;
 
+    void bind(const HelmholtzModel& model) {
+        if (!model_) model_ = model.identity();
+        if (model_ != model.identity()) throw std::invalid_argument("observation reference cache model mismatch");
+    }
+
+private:
+    std::shared_ptr<const char> model_;
 };
 EPC_API Prediction predict(
     const HelmholtzModel& model, const Observation& observation,

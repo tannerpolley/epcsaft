@@ -1,7 +1,101 @@
 #include "regression_checks_shared.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 #include "water_isobutanol.hpp"
 
 namespace regression_checks {
+void check_equilibrium_optimizer_point() {
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::identical_ethane_pair());
+    auto problem = equilibrium_support::flash(2);
+    problem.phases[0].kind = PhaseKind::Vapor;
+    const auto compiled = compile_problem(model, problem);
+    GibbsMinimizer nlp(compiled, compiled.generic_point());
+    Ipopt::Index n, m, jac, hess;
+    Ipopt::TNLP::IndexStyleEnum style;
+    CHECK(nlp.get_nlp_info(n, m, jac, hess, style));
+    auto point = compiled.generic_point();
+    std::vector<double> rows(m);
+    point.resize(static_cast<std::size_t>(n));
+    point.front() = 0.0;
+    CHECK(nlp.eval_g(n, point.data(), true, m, rows.data()));
+    point.front() = -0.0;
+    CHECK(nlp.eval_g(n, point.data(), true, m, rows.data()));
+    CHECK(nlp.last_prepared() && std::signbit(nlp.last_prepared()->point.front()));
+}
+
+void check_equilibrium_refresh_model() {
+    using namespace epcsaft::equilibrium;
+    auto parameters = water_isobutanol();
+    std::optional<HelmholtzModel> model(std::in_place, parameters);
+    const auto* storage = &*model;
+    auto problem = equilibrium_support::flash(2);
+    problem.phases.resize(1);
+    problem.feed.values = {.6, .4};
+    const std::vector<std::string> species{"water", "isobutanol"};
+    const auto old = compile_problem(*model, problem, species);
+    policy::SolverOptions changed; changed.values[policy::row] = 2 * policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    model.emplace(parameters, std::vector<ActiveParameter>{}, std::nullopt, changed);
+    CHECK(&*model == storage);
+    const auto refreshed = refresh_problem(*model, problem, species, old);
+    const auto fresh = compile_problem(*model, problem);
+    CHECK(!(old.problem.solver_options == fresh.problem.solver_options));
+    CHECK(refreshed.problem.solver_options == fresh.problem.solver_options);
+}
+
+void check_supplied_trial_model() {
+    using namespace epcsaft::equilibrium;
+    auto parameters = water_isobutanol();
+    std::optional<HelmholtzModel> model(std::in_place, parameters);
+    const auto* storage = &*model;
+    Observation row; row.kind = ObservationKind::Stability; row.scale = .1;
+    auto& problem = row.problem;
+    problem.temperature = FreeValue::fixed(293.15); problem.pressure = FreeValue::fixed(1e5);
+    problem.feed.kind = FeedKind::Amounts; problem.feed.values = {.6, .4};
+    PhaseSpec liquid; liquid.name = "L"; liquid.kind = PhaseKind::Liquid;
+    liquid.support = {0, 1}; liquid.support_declared = true; liquid.composition_guess = {.6, .4};
+    problem.phases = {liquid};
+    liquid.packing_guess = .3;
+    StabilityOptions options;
+    options.prepared_trials = prepare_supplied_trials(*model, 293.15, {liquid});
+    parameters.dispersion_energy_over_k[0] *= 1.02;
+    model.emplace(parameters);
+    CHECK(&*model == storage);
+    const auto compiled = compile_problem(*model, problem);
+    const auto solved = solve_compiled(compiled);
+    CHECK(solved.success);
+    CHECK(recording_support::refusal([&] { (void)stability_test(compiled, solved, options); }) == "prepared trials model mismatch");
+}
+
+void check_equilibrium_result_model() {
+    using namespace epcsaft::equilibrium;
+    const auto parameters = water_isobutanol();
+    std::optional<HelmholtzModel> model(std::in_place, parameters);
+    const auto* storage = &*model;
+    const auto problem = equilibrium_support::flash(2);
+    const auto solved = solve_equilibrium(*model, problem);
+    CHECK(solved.has_state());
+    model.emplace(parameters);
+    CHECK(&*model == storage);
+    CHECK(recording_support::refusal([&] { (void)equilibrium_numerical_estimates(*model, solved); })
+        == "numerical estimate model/result mismatch");
+}
+
+void check_equilibrium_estimate_admission() {
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(water_isobutanol());
+    const auto compiled = compile_problem(model, equilibrium_support::flash(2));
+    auto solved = solve_compiled(compiled);
+    CHECK(solved.has_state());
+    auto estimate = equilibrium_numerical_estimates(compiled, solved);
+    estimate.precision_bits = std::numeric_limits<double>::digits + 1;
+    solved.numerical_estimates = estimate;  // exercise the branch that preserves a wider error estimate
+    solved.success = false;
+    const auto refused = equilibrium_numerical_estimates(compiled, solved);
+    solved.numerical_estimates.reset();
+    const auto fresh = equilibrium_numerical_estimates(compiled, solved);
+    CHECK(fresh.cause == "original_state_unavailable" && refused.cause == fresh.cause);
+}
+
 void check_stability_requirement() {
     using namespace epcsaft::equilibrium;
     HelmholtzModel model(water_isobutanol());
@@ -18,6 +112,10 @@ void check_stability_requirement() {
     CHECK(*initial.stability->value < -*initial.stability->uncertainty);
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
+    auto refused = initial;
+    refused.solved->success = false;
+    project_prediction(model, row, refused);
+    CHECK(refused.status == ObservationStatus::CentralSolveUnavailable && !refused.value && !refused.stability);
     auto supplied = liquid;
     supplied.packing_guess = model.packing_fraction_coefficient(293.15, liquid.composition_guess) * initial.solved->molar_densities.at(0);
     const auto bank = prepare_supplied_trials(model, 293.15, {supplied});

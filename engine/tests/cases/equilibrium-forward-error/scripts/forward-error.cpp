@@ -47,7 +47,7 @@ int main(int argc,char**argv) {
   EquilibriumResult result;
   result.success=true; result.temperature=t; result.pressure=p; result.amounts={1,0};
   result.molar_densities=rho; result.mole_fractions=x; result.coordinates=point;
-  result.declaration=std::make_shared<const EquilibriumProblem>(c.problem);result.model_identity=&model;
+  result.declaration=std::make_shared<const EquilibriumProblem>(c.problem);result.model_identity=model.identity();
   for(std::size_t j=0;j<point.size();++j)coordinates<<set<<','<<row<<','<<arm<<','<<j<<','<<point[j]<<'\n';
   const auto at=c.prepare(point);result.packing_fractions=at.eta;
   const auto e=equilibrium_numerical_estimates(c,result);

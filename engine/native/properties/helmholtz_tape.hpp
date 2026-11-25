@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/bitwise_equal.hpp"
 #include "contributions/association.hpp"
 #include "contributions/born.hpp"
 #include "contributions/electrolyte.hpp"
@@ -13,7 +14,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstring>
 #include <limits>
 #include <memory>
 #include <numeric>
@@ -210,8 +210,7 @@ struct HelmholtzTape final {
     }
 
     const std::vector<double>& forward_zero(const std::vector<double>& point, std::size_t* forward_count = nullptr) {
-        if (zero_point.size() != point.size()
-            || std::memcmp(zero_point.data(), point.data(), point.size() * sizeof(double)) != 0) {
+        if (!core::bitwise_equal(zero_point, point)) {
             if (quotient_model) {
                 const auto& parameters = quotient_model->parameters();
                 const auto& active = quotient_model->active_parameters();
@@ -310,7 +309,6 @@ struct HelmholtzTape final {
                 for (std::size_t s = 0; s < site_count; ++s) put(s, coefficient[s]);
                 if (solve_count) ++*solve_count;
             }
-            output = known;
             if (solve_sites) {
                 if (current < order && std::any_of(input.begin() + regular_count * paths, input.end(), [](double x) { return x != 0.0; }))
                     forward(site_equations);
@@ -321,7 +319,7 @@ struct HelmholtzTape final {
                             scales[current] = std::isfinite(value) ? std::max(scales[current], std::abs(value))
                                                                   : std::numeric_limits<double>::infinity();
                 } else output = forward(function);
-            }
+            } else output = known;
             if (!pack && output_prefix) output_prefix->push_back(output);
             if (site_coefficients) site_coefficients->insert(site_coefficients->end(), input.begin() + regular_count, input.end());
             if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-known[offset+a]);
@@ -344,11 +342,13 @@ struct HelmholtzTape final {
             if (forward_count) ++*forward_count;
             output.resize(function.Range());
             for (std::size_t k = 1; k <= order; ++k) {
-                for (std::size_t i = 0; i < output.size(); ++i) output[i] = values[i * orders + k];
+                if (output_prefix || k == order)
+                    for (std::size_t i = 0; i < output.size(); ++i) output[i] = values[i * orders + k];
                 if (output_prefix) output_prefix->push_back(output);
                 if (coefficient_residual) for (std::size_t site = 0; site < site_count; ++site) {
-                    const double residual = std::isfinite(scales[k]) && std::isfinite(output[1 + site])
-                        ? std::abs(output[1 + site]) / scales[k] : std::numeric_limits<double>::infinity();
+                    const double coefficient = values[(1 + site) * orders + k];
+                    const double residual = std::isfinite(scales[k]) && std::isfinite(coefficient)
+                        ? std::abs(coefficient) / scales[k] : std::numeric_limits<double>::infinity();
                     *coefficient_residual = std::max(*coefficient_residual, residual);
                 }
             }
