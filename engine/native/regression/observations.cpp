@@ -615,8 +615,8 @@ Prediction predict(
         return result;
     }
     equilibrium::EquilibriumResult solved;
+    auto problem = observation.problem;
     try {
-        auto problem = observation.problem;
         if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
             auto reference = pressure_reference_row(observation);
             if (references) for (const auto& entry : references->pressures) if (same_state(reference, entry.first))
@@ -634,7 +634,9 @@ Prediction predict(
                 core::retain_first(result.first_numerical_failure, result.pressure_reference->first_numerical_failure);
                 core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
             }
-            problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
+            result.reference_pressure_ratio = observation.pressure_ratio;
+            problem.pressure.value = result.reference_pressure_ratio * *result.pressure_reference->value;
+            result.compiled.reset();
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
@@ -667,7 +669,7 @@ Prediction predict(
             return result;
         }
     result.solved = std::move(solved);
-    result.solved_request = std::make_shared<const equilibrium::EquilibriumProblem>(observation.problem);
+    result.solved_request = std::make_shared<const equilibrium::EquilibriumProblem>(std::move(problem));
     project_prediction(model, observation, result);
     return result;
 }
@@ -678,8 +680,17 @@ static bool admits_electrolyte_center(const HelmholtzModel& model, const Observa
 }
 
 static bool admits_solved_prediction(const HelmholtzModel& model, const Observation& observation, const Prediction& result) {
-    return result.solved && result.solved->has_state() && result.solved->model_identity == model.identity()
-        && result.solved_request && equilibrium::same_solved_problem(*result.solved_request, observation.problem);
+    if (!result.solved || !result.solved->has_state() || result.solved->model_identity != model.identity() || !result.solved_request)
+        return false;
+    if (observation.kind != ObservationKind::Stability || !observation.pressure_reference)
+        return equilibrium::same_solved_problem(*result.solved_request, observation.problem);
+    const auto& reference = result.pressure_reference;
+    if (!reference || !reference->value || !reference->solved_request
+        || !core::bitwise_equal(result.reference_pressure_ratio, observation.pressure_ratio)
+        || !equilibrium::same_problem_state(*reference->solved_request, *observation.pressure_reference)) return false;
+    auto effective = observation.problem;
+    effective.pressure.value = observation.pressure_ratio * *reference->value;
+    return equilibrium::same_solved_problem(*result.solved_request, effective);
 }
 
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
@@ -1087,15 +1098,16 @@ std::vector<PredictionGradient> differentiate_group(
     for (const auto& input : inputs) directions.push_back(input.state);
     if (observations.front()->kind == ObservationKind::Stability) {
         PredictionGradient out;
+        const auto& row = *observations.front();
         if (!prediction.stability || !prediction.solved || !prediction.solved->has_state()
-            || prediction.solved->model_identity != model.identity()) {
+            || prediction.solved->model_identity != model.identity()
+            || !equilibrium::same_stability_options(prediction.stability->options, row.stability_options)) {
             out.message = "central stability state unavailable"; return {out};
         }
         const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
-        const auto& row = *observations.front();
         using Kind = equilibrium::SolvedStateObservableKind;
-        if (prediction.pressure_reference) {
+        if (row.pressure_reference) {
             const auto& reference = *prediction.pressure_reference;
             auto reference_row = pressure_reference_row(row);
             const auto gradient = differentiate_group(model, {&reference_row}, reference, coordinates, inputs).front();

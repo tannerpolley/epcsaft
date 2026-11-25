@@ -317,6 +317,18 @@ void spinodal() {
         CHECK(spinodal_search(target, nullptr, upper.seed, &upper).seed == upper.seed);
         CHECK(spinodal_search(target).seed == anchor);
     }
+    auto short_scan = cell(240, 4000);
+    short_scan.spinodal->density_nodes = {200., 300., 400.};
+    const auto narrow = compile_problem(model, short_scan);
+    SpinodalSearch attempted;
+    CHECK(spinodal_search(fresh, nullptr, upper.seed, &upper, &attempted).seed == upper.seed);
+    for (const auto* previous : std::array<const SpinodalSearch*, 2>{&upper, &attempted}) {
+        CHECK(recording_support::refusal([&] { (void)spinodal_search(narrow, nullptr, upper.seed, previous, &attempted); })
+            == "spinodal search lost the carried crossing");
+        CHECK(attempted.evaluations == short_scan.spinodal->density_nodes.size());
+        CHECK(attempted.brackets.empty() && !std::isfinite(attempted.seed));
+        attempted = upper;
+    }
     SpinodalSearch lost; lost.lower = 101; lost.upper = 110;
     const auto cold_crossing = compile_problem(model, cell(240, 4000));
     const auto crossing_refusal = [&](const CompiledSystem& compiled) {

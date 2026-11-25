@@ -1080,8 +1080,11 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried, SpinodalSearch* attempted) {
     if (!carried && compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
         && !(limits && limits->expired())) return *compiled.spinodal_search;
+    const auto previous_selection = carried && carried == attempted ? std::optional(*carried) : std::nullopt;
+    if (previous_selection) carried = &*previous_selection;
     SpinodalSearch local;
     auto& scan = carried ? (attempted ? *attempted : local) : compiled.spinodal_search.emplace();
+    if (carried && attempted) scan = {};
     const auto& declaration = *compiled.problem.spinodal;
     if (!carried) anchor = declaration.density_guess_mol_per_m3;
     const auto& x = compiled.feed_composition;

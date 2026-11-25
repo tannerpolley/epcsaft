@@ -17,6 +17,7 @@ namespace epcsaft::equilibrium {
 using core::exact_zero_dot;
 bool same_problem_state(const EquilibriumProblem&, const EquilibriumProblem&);
 bool same_solved_problem(const EquilibriumProblem&, const EquilibriumProblem&);
+bool same_stability_options(const StabilityOptions&, const StabilityOptions&);
 std::vector<double> reconstruct_conserved_functional(std::vector<double> candidate,
     const std::vector<ReactionSpec>& reactions);
 void restrict_inventory_balances(CompiledSystem& compiled, const std::vector<bool>& active);

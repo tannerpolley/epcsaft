@@ -985,6 +985,7 @@ EPC_API StabilityGridResult stability_grid(const CompiledSystem&, const Equilibr
 
 struct StabilityMeasure final {
     StabilityReport report;
+    StabilityOptions options;
     std::optional<double> raw_minimum, value, uncertainty;
     std::optional<std::size_t> minimizing_trial;
     std::vector<std::size_t> minima;

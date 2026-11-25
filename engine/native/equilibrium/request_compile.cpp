@@ -88,16 +88,18 @@ bool same_declaration(const EquilibriumProblem& a, const EquilibriumProblem& b, 
         [&](const PhaseSpec& x, const PhaseSpec& y) { return InputEquality::same(phase_fields(x), phase_fields(y)); });
 }
 
+bool same_phase_seed(const PhaseSpec& a, const PhaseSpec& b) {
+    return InputEquality::same(std::tie(a.composition_guess, a.packing_guess), std::tie(b.composition_guess, b.packing_guess));
+}
+
 bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b, bool solved = false) {
     const auto values = [solved](const EquilibriumProblem& x) {
         return std::make_tuple(solved && x.temperature.free ? 0.0 : x.temperature.value,
             solved && x.pressure.free ? 0.0 : x.pressure.value, std::cref(x.feed.values), std::cref(x.prescribed_liquid_composition),
             x.enthalpy_j, x.entropy_j_per_k, x.volume_m3, x.internal_energy_j, x.envelope ? x.envelope->target : 0.0);
     };
-    return InputEquality::same(values(a), values(b)) && (solved || std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(),
-        [](const PhaseSpec& x, const PhaseSpec& y) {
-            return InputEquality::same(std::tie(x.composition_guess, x.packing_guess), std::tie(y.composition_guess, y.packing_guess));
-        }));
+    return InputEquality::same(values(a), values(b))
+        && (solved || std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(), same_phase_seed));
 }
 
 }  // namespace
@@ -108,6 +110,15 @@ bool same_problem_state(const EquilibriumProblem& a, const EquilibriumProblem& b
 
 bool same_solved_problem(const EquilibriumProblem& a, const EquilibriumProblem& b) {
     return same_declaration(a, b, true) && same_state_values(a, b, true);
+}
+
+bool same_stability_options(const StabilityOptions& a, const StabilityOptions& b) {
+    const auto fields = [](const StabilityOptions& options) {
+        return std::tie(options.mode, options.evaluate_supplied_trials, options.trials, options.declaration_budget,
+            options.trial_budget, options.standard_uncertainty_over_rt, options.retry_condensed_refusals);
+    };
+    return a.prepared_trials == b.prepared_trials && InputEquality::same(fields(a), fields(b))
+        && (!a.trials || std::equal(a.trials->begin(), a.trials->end(), b.trials->begin(), same_phase_seed));
 }
 
 std::vector<double> CompiledSystem::optimizer_identity() const {

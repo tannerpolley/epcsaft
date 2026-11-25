@@ -130,6 +130,34 @@ void check_stability_requirement() {
     CHECK(*initial.stability->value < -*initial.stability->uncertainty);
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
+    {
+        auto referenced = row;
+        referenced.pressure_reference = row.problem;
+        referenced.pressure_ratio = 2.0;
+        const auto center = predict(model, referenced);
+        CHECK(center.value && center.solved->pressure == 2e5);
+        auto changed_ratio = referenced;
+        changed_ratio.pressure_ratio = 3.0;
+        const auto fresh = predict(model, changed_ratio);
+        CHECK(fresh.value && fresh.value != center.value && fresh.solved->pressure == 3e5);
+
+        auto wrong_reference = referenced;
+        wrong_reference.pressure_reference->temperature.value += 1.0;
+        auto density = row;
+        density.kind = ObservationKind::PhaseDensity;
+        for (const auto& mismatched : {changed_ratio, wrong_reference, density}) {
+            auto projected = center;
+            project_prediction(model, mismatched, projected);
+            CHECK(projected.status == ObservationStatus::CentralSolveUnavailable && !projected.value);
+            CHECK(differentiate(model, mismatched, center).status == ObservationStatus::ActionUnavailable);
+        }
+        auto projected = center;
+        project_prediction(model, referenced, projected);
+        CHECK(projected.value == center.value);
+        density.problem.pressure.value = 2e5;
+        project_prediction(model, density, projected);
+        CHECK(projected.status == ObservationStatus::Available && projected.value == predict(model, density).value);
+    }
     auto refused = initial;
     refused.solved->success = false;
     project_prediction(model, row, refused);
@@ -185,6 +213,10 @@ void check_stability_requirement() {
     const auto incomplete = predict_validated(model, capped, bank);
     CHECK(incomplete.supplied_available && incomplete.supplied_stability->trials[0].quantities == separate.trials[0].quantities);
     CHECK(incomplete.stability && !incomplete.stability->available && !incomplete.value);
+    const HelmholtzModel active(model.parameters(), {{ParameterFamily::Kij, {1, 2}}});
+    const auto active_center = predict(active, row);
+    CHECK(differentiate(active, row, active_center).status == ObservationStatus::Available);
+    CHECK(differentiate(active, capped, active_center).status == ObservationStatus::ActionUnavailable);
     auto tied = row; tied.problem.phases[0].composition_guess = {.999, .001};
     liquid.name = "L2"; liquid.composition_guess = {.3, .7}; tied.problem.phases.push_back(liquid);
     const auto tie = predict(model, tied);

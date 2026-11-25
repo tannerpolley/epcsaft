@@ -2097,6 +2097,7 @@ StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumRes
     core::CalculationWork work;
     std::optional<GibbsDifferenceReference> parent;
     auto out = measure_value(c, result, options, parent);
+    out.options = options;
     report_work(out.report.work, work);
     return out;
 }

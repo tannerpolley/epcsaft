@@ -130,7 +130,7 @@ struct Prediction final {
     std::optional<bool> requested_tolerance_met;
     std::optional<equilibrium::EquilibriumResult> solved;  // the accepted central solve
     std::optional<equilibrium::CompiledSystem> compiled;    // the problem it solved, reused by differentiate
-    std::shared_ptr<const equilibrium::EquilibriumProblem> solved_request, final_solved_request;
+    std::shared_ptr<const equilibrium::EquilibriumProblem> solved_request, final_solved_request;  // effective solve declarations
     std::shared_ptr<const equilibrium::SolvedStateCaloricCenter> caloric_center, final_caloric_center;
     std::optional<equilibrium::EquilibriumResult> final_solved;
     std::optional<equilibrium::CompiledSystem> final_compiled;
@@ -141,7 +141,8 @@ struct Prediction final {
     std::shared_ptr<equilibrium::StabilityMeasure> stability;
     std::shared_ptr<equilibrium::StabilityReport> supplied_stability;
     bool supplied_available = false;
-    std::shared_ptr<Prediction> pressure_reference;
+    std::shared_ptr<const Prediction> pressure_reference;
+    double reference_pressure_ratio = 1.0;
     std::vector<double> stability_raw_gradient;
 };
 
