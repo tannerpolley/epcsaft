@@ -140,6 +140,8 @@ regression_sources = files(
 worker_platform_dep = []
 if windows
   worker_platform_dep = [cpp.find_library('advapi32')]
+elif linux
+  worker_platform_dep = [cpp.find_library('dl')]
 endif
 
 native_sources = ['native/core/trace.cpp', properties_sources, superancillary_table, surface_sources,
