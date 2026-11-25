@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include "core/trace.hpp"
@@ -1208,6 +1209,11 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     const auto finish = [&](auto out) { observations.merge(out.rank_records); return out; };
     HelmholtzDerivatives result;
     core::CalculationWork::energy_evaluation();
+    ep235::Scope ep235_eos("eos", static_cast<unsigned>(order),
+        unsigned(isothermal_hessian) | (unsigned(retain_site_sensitivity) << 1) | (unsigned(rank_only) << 2),
+        bool(completed));
+    ep235::state_key("eos_key", {temperature, volume, double(order), double(ep235_eos.key.second),
+        double(bool(completed))}, amounts, this);
     core::Scope entry("helmholtz_evaluate_locked"), scope("evaluate");
     entry.probe("requested_order", static_cast<double>(order));
     validate_point(temperature, volume, amounts);
@@ -1241,11 +1247,12 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
     auto& delta = scratch.association.delta;
     delta = central_strength(parameters_, temperature, density, composition, geometry, std::move(delta), &scratch.association.strength);
     std::optional<AssociationAction> association;
-    if (!parameters_.site_component.empty())
+    if (!parameters_.site_component.empty()) {
+        ep235::Scope ep235_association("association");
         result.site_fractions = solve_site_fractions(temperature, density,
             composition, parameters_, geometry.sigma, geometry.diameter,
             &site_record, nullptr, &delta, false, solver_options_, &result.first_numerical_failure, nullptr, &scratch.association, &association, &association_plan_);
-    else (void)packing_fraction_from_geometry(density, composition, parameters_, geometry.diameter);
+    } else (void)packing_fraction_from_geometry(density, composition, parameters_, geometry.diameter);
     const auto& sites = result.site_fractions;
     // The gradient floor propagates the achieved site residual, not the site tolerance.
     const double site_residual = std::max(site_record.residual, site_record.floor.value_or(0.0));

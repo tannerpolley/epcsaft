@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "equilibrium/stability_grid.hpp"
@@ -856,6 +857,7 @@ void spend_credit(const DriverLimits& limits, Quantities& work) {
 // For a relaxed trial the frozen slope can classify no descent only within plane arithmetic error.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
     StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool credited = false) {
+    ep235::Scope ep235_certify("certification", relaxed, credited);
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
@@ -1018,6 +1020,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
 // standards, one cold shared-driver solve under one allowance, then the supplied-split Gibbs difference.
 GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, const StabilityTrial& trial, std::size_t p,
     const GibbsDifferenceReference& parent, const StabilityOptions& options, Quantities& work) {
+    ep235::Family ep235_split('X');
     GibbsDifference out;
     StageWork stages;
     try {
@@ -1165,6 +1168,7 @@ CompiledSystem& supplied_system(TrialSystems& systems, const HelmholtzModel& mod
 struct PreparedSuppliedPoints { std::vector<SuppliedPoint> entries; };
 std::shared_ptr<const PreparedSuppliedTrials> prepare_supplied_trials(const HelmholtzModel& model, double T,
     const std::vector<PhaseSpec>& trials) {
+    ep235::Family ep235_family('S');
     core::Scope scope("prepare_supplied_trials");
     auto set = std::make_shared<PreparedSuppliedTrials>();
     set->model = &model; set->temperature = T; set->trials = trials;
@@ -1213,6 +1217,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     const StabilityOptions& requested, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false,
     std::optional<GibbsDifferenceReference>* reference = nullptr, DriverLimits* recovery = nullptr) {
+    ep235::Family ep235_family(requested.evaluate_supplied_trials || requested.prepared_trials ? 'S' : 'O');
     auto options = requested;
     if (options.prepared_trials) {
         const auto& set = *options.prepared_trials;
@@ -1373,6 +1378,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 stopped = true;
                 break;
             }
+            ep235::Trial ep235_trial(options.evaluate_supplied_trials, bool(slot));
             StabilityTrial trial; trial.phase = phase; trial.seed = seed_name; trial.evidence = "unresolved";
             if (outside.count(k)) {
                 trial.evidence = "not_applicable"; trial.message = "stability support outside fed/reaction union";
@@ -1461,8 +1467,14 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 auto& compiled = native ? optimized : compile();
                 core::Scope scope("tangent_plane_trial");
                 ++report.work["trial_invocations"];
-                const auto found = native ? native(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
-                    trial, report.work, limits) : std::nullopt;
+                const auto found = [&]() -> std::optional<TrialPoint> {
+                    if (!native) return std::nullopt;
+                    ep235::Scope ep235_michelsen("michelsen", phase.support.size());
+                    auto result = native(*c.model, at.temperature, at.pressure, phase, seed, seed_density, shift,
+                        trial, report.work, limits);
+                    ep235_michelsen.ok(result.has_value());
+                    return result;
+                }();
                 if (limits) limits->check();  // an interrupted trial starts no driver fallback
                 if (native && !found) compile();
                 if (!found) trial.basis = compiled.B;
@@ -1472,10 +1484,22 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 }
                 else if (!found) {
                     const auto initial = trial_coordinates(compiled, seed, eta);
+                    ep235::Scope ep235_trial_driver("trial_driver", compiled.primal_size, compiled.rank, phase.support.size());
+                    ep235::Scope::event("trial_initial", [&](auto& out) {
+                        out << ',' << ep235_trial.scope.slot << ',' << ep235_trial_driver.id << ','
+                            << c.has_reaction << ',' << c.has_ions << ',' << static_cast<unsigned>(phase.kind)
+                            << ',' << at.temperature << ',' << at.pressure << ',';
+                        ep235::list(out, phase.support); out << ',';
+                        ep235::list(out, initial); out << ',';
+                        ep235::list(out, compiled.balance); out << ',';
+                        ep235::list(out, shift); out << ',';
+                        ep235::list(out, compiled.B);
+                    });
                     StageWork prior; prior.observe(trial.optimizer);
                     trial.optimizer = run_driver(compiled, initial, structural_result(compiled, scope),
                         scope, &trial.raw_coordinates, limits, Attempt::Cold, {}, false, true);
                     prior.report_observations(trial.optimizer);
+                    ep235_trial_driver.ok(trial.optimizer.success);
                     count_driver(report.work, trial.optimizer, "trial_driver_invocations");
                     trial.message = trial.optimizer.message;
                 }
@@ -1608,6 +1632,29 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (recovery && !retry && !midpoint && !quotient && dynamic_cast<const CondensedRefusal*>(&error))
                     slots.push_back({report.trials.size(), start, seed});
             }
+            ep235_trial.scope.ok(trial.evidence != "unresolved");
+            ep235::Scope::event("trial_point", [&](auto& out) {
+                out << ',' << ep235_trial.scope.slot << ',' << k << ',' << static_cast<unsigned>(phase.kind) << ',';
+                ep235::quoted(out, trial.seed); out << ',';
+                ep235::quoted(out, trial.evidence); out << ',';
+                ep235::list(out, phase.support); out << ',';
+                ep235::list(out, trial.composition); out << ',';
+                ep235::list(out, trial.raw_coordinates); out << ',';
+                ep235::list(out, trial.basis); out << ',';
+                ep235::list(out, trial.split_coordinates); out << ',';
+                out << trial.resolved_descent << ",{";
+                bool first = true;
+                for (const auto& key : {"tpd_over_rt", "packing_fraction", "volume_m3_per_mol", "density_side",
+                    "root_density_side", "plane_value_error_estimate_over_rt", "feasibility_error_estimate_over_rt",
+                    "tpd_error_estimate_over_rt", "gibbs_difference_error_estimate_over_rt", "descent_error_estimate_over_rt"}) {
+                    const auto found = trial.quantities.find(key);
+                    if (found == trial.quantities.end() || !std::isfinite(found->second)) continue;
+                    if (!first) out << ',';
+                    first = false;
+                    ep235::quoted(out, key); out << ':' << found->second;
+                }
+                out << '}';
+            });
             if (slot) {  // only a determined optimized retry replaces the original slot; its message keeps the refusal
                 auto& original = report.trials[slot->trial];
                 // A start at an already-searched seed or a returned present phase is no independent coverage.
@@ -1998,6 +2045,9 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
         if (!options.standard_uncertainty_over_rt.empty())
             error[j] = std::inner_product(t.composition.begin(), t.composition.end(), options.standard_uncertainty_over_rt.begin(), error[j]);
         t.quantities["plane_value_error_estimate_over_rt"] = error[j];
+        ep235::Scope::event("trial_uncertainty", [&](auto& out) {
+            out << ',' << j << ',' << error[j] << ',' << numerical[j];
+        });
     }
     const auto best = *out.minimizing_trial; out.uncertainty = error[best];
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
@@ -2057,6 +2107,7 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
 
 // Work totals include the search and every evaluation after it.
 StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumResult& result, const StabilityOptions& options) {
+    ep235::Family ep235_family('O');
     core::Scope scope("stability_measure");
     core::CalculationWork work;
     std::optional<GibbsDifferenceReference> parent;

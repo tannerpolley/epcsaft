@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "regression/observations.hpp"
 
 #include "core/numerical_policy.hpp"
@@ -614,7 +615,9 @@ Prediction predict(
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
+        ep235::Family ep235_parent('P');
         solved = equilibrium::solve_compiled(*result.compiled, start);
+        ep235_parent.scope.key.outcome = solved.success ? 0 : -1;
     } catch (const std::exception& failure) {
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
         return unavailable_solve(std::move(result), failure);

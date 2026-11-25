@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "contributions/helmholtz.hpp"
@@ -498,6 +499,7 @@ bool GibbsMinimizer::get_nlp_info(
     Ipopt::Index& n, Ipopt::Index& m, Ipopt::Index& nnz_jac_g,
     Ipopt::Index& nnz_h_lag, IndexStyleEnum& index_style
 ) {
+    ep235::Scope ep235_nlp("ipopt_nlp_info");
     n = static_cast<Ipopt::Index>(chart_.size());
     m = static_cast<Ipopt::Index>(constraint_rows_.size());
     nnz_jac_g = n * m;
@@ -521,6 +523,7 @@ bool GibbsMinimizer::get_bounds_info(
     Ipopt::Index n, Ipopt::Number* x_l, Ipopt::Number* x_u,
     Ipopt::Index m, Ipopt::Number* g_l, Ipopt::Number* g_u
 ) {
+    ep235::Scope ep235_bounds("ipopt_bounds", n, m);
     if (limits_ && limits_->expired()) return false;
     const double infinity = bound_infinity;
     std::fill(x_l, x_l + n, -infinity);
@@ -568,6 +571,15 @@ bool GibbsMinimizer::get_bounds_info(
     if (compiled_.problem.pressure.free) x_l[offset] = std::numeric_limits<double>::epsilon() / chart_[offset];
     std::fill(g_l, g_l + m, 0.0);
     std::fill(g_u, g_u + m, 0.0);
+    ep235::Scope::event("chart", [&](auto& out) {
+        out << ',' << ep235_bounds.id << ',' << compiled_.rank << ',';
+        ep235::list(out, chart_); out << ',';
+        ep235::list(out, std::vector<double>(x_l, x_l+n)); out << ',';
+        ep235::list(out, std::vector<double>(x_u, x_u+n)); out << ',';
+        std::vector<unsigned> kinds;
+        for (auto i : constraint_rows_) kinds.push_back(static_cast<unsigned>(compiled_.rows[i].kind));
+        ep235::list(out, kinds);
+    });
     return true;
 }
 
@@ -588,6 +600,7 @@ bool GibbsMinimizer::get_starting_point(
     bool init_z, Ipopt::Number* z_L, Ipopt::Number* z_U,
     Ipopt::Index m, bool init_lambda, Ipopt::Number* lambda
 ) {
+    ep235::Scope ep235_initial("ipopt_starting_point", n, m);
     if (!init_x && !warm_) return false;
     const std::size_t size = !compiled_.feasibility_cell() ? compiled_.primal_size : start_.size();
     for (Ipopt::Index i = 0; init_x && i < n; ++i) x[i] = (static_cast<std::size_t>(i) < size ? start_[i] : 0.0) / chart_[i];
@@ -654,31 +667,33 @@ const PointEvaluation& GibbsMinimizer::rows_at(Ipopt::Index n, const Ipopt::Numb
 bool GibbsMinimizer::eval_f(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number& value
 ) {
+    ep235::Scope ep235_callback("ipopt_eval_f", n);
     core::Scope callback("ipopt_eval_f");
-    if (limits_ && !limits_->spend(limits_->evaluations, limits_->evaluation_cap)) return false;
+    if (limits_ && !limits_->spend(limits_->evaluations, limits_->evaluation_cap)) return ep235_callback.ok(false);
     ++evaluations_;
     try {
-        if (!compiled_.feasibility_cell() && !step_admitted(x)) return false;
+        if (!compiled_.feasibility_cell() && !step_admitted(x)) return ep235_callback.ok(false);
         value = !compiled_.feasibility_cell() ? rows_at(n, x).objective : 0.0;
-        return std::isfinite(value);
+        return ep235_callback.ok(std::isfinite(value));
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_f");
-        return false;
+        return ep235_callback.ok(false);
     }
 }
 
 bool GibbsMinimizer::eval_grad_f(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/, Ipopt::Number* grad_f
 ) {
+    ep235::Scope ep235_callback("ipopt_eval_grad_f", n);
     core::Scope callback("ipopt_eval_grad_f");
     try {
-        if (!step_admitted(x)) return false;
+        if (!step_admitted(x)) return ep235_callback.ok(false);
         const auto gradient = compiled_.objective_gradient_at(prepared(n, x));
         for (Ipopt::Index i = 0; i < n; ++i) grad_f[i] = gradient[i] * chart_[i];
-        return true;
+        return ep235_callback.ok(true);
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_grad_f");
-        return false;
+        return ep235_callback.ok(false);
     }
 }
 
@@ -686,16 +701,17 @@ bool GibbsMinimizer::eval_g(
     Ipopt::Index n, const Ipopt::Number* x, bool /*new_x*/,
     Ipopt::Index m, Ipopt::Number* g
 ) {
+    ep235::Scope ep235_callback("ipopt_eval_g", n);
     core::Scope callback("ipopt_eval_g");
     try {
-        if (!step_admitted(x)) return false;
+        if (!step_admitted(x)) return ep235_callback.ok(false);
         const auto& values = rows_at(n, x).values;
         const auto& rows = constraint_rows_;
         for (Ipopt::Index row = 0; row < m; ++row) g[row] = values[rows[row]];
-        return true;
+        return ep235_callback.ok(true);
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_g");
-        return false;
+        return ep235_callback.ok(false);
     }
 }
 
@@ -704,6 +720,7 @@ bool GibbsMinimizer::eval_jac_g(
     Ipopt::Index m, Ipopt::Index nele_jac, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
+    ep235::Scope ep235_callback("ipopt_eval_jac_g", values == nullptr, n, m);
     core::Scope callback("ipopt_eval_jac_g");
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -713,10 +730,10 @@ bool GibbsMinimizer::eval_jac_g(
                 jCol[entry++] = column;
             }
         }
-        return entry == nele_jac;
+        return ep235_callback.ok(entry == nele_jac);
     }
     try {
-        if (!step_admitted(x)) return false;
+        if (!step_admitted(x)) return ep235_callback.ok(false);
         const bool constraints_only = !core::CalculationWork::active_limit() && !compiled_.feasibility_cell() && !compiled_.problem.envelope && !compiled_.problem.azeotrope;
         const auto jacobian = compiled_.jacobian_at(prepared(n, x, !constraints_only), constraints_only);
         Ipopt::Index entry = 0;
@@ -725,10 +742,22 @@ bool GibbsMinimizer::eval_jac_g(
                 values[entry++] = jacobian[row * static_cast<std::size_t>(n) + static_cast<std::size_t>(column)] * chart_[column];
             }
         }
-        return entry == nele_jac;
+        if (ep235::tracing) {
+            auto* driver = ep235_callback.parent;
+            while (driver && std::string_view(driver->key.name) != "driver") driver = driver->parent;
+            if (driver && !driver->jacobian_recorded) {
+                driver->jacobian_recorded = true;
+                ep235::Scope::event("chart_jacobian", [&](auto& out) {
+                    out << ',' << driver->id << ',' << n << ',' << m << ',';
+                    ep235::list(out, std::vector<double>(values, values+entry)); out << ',';
+                    ep235::list(out, std::vector<double>(x, x+n));
+                });
+            }
+        }
+        return ep235_callback.ok(entry == nele_jac);
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_jac_g");
-        return false;
+        return ep235_callback.ok(false);
     }
 }
 
@@ -738,8 +767,9 @@ bool GibbsMinimizer::eval_h(
     bool /*new_lambda*/, Ipopt::Index nele_hess, Ipopt::Index* iRow,
     Ipopt::Index* jCol, Ipopt::Number* values
 ) {
+    ep235::Scope ep235_callback("ipopt_eval_h", values == nullptr, n, m);
     core::Scope callback("ipopt_eval_h");
-    if (limits_ && !limits_->spend(limits_->hessian_calls, limits_->hessian_cap)) return false;
+    if (limits_ && !limits_->spend(limits_->hessian_calls, limits_->hessian_cap)) return ep235_callback.ok(false);
     ++hessian_calls_;
     if (values == nullptr) {
         Ipopt::Index entry = 0;
@@ -749,19 +779,33 @@ bool GibbsMinimizer::eval_h(
                 jCol[entry++] = column;
             }
         }
-        return entry == nele_hess;
+        return ep235_callback.ok(entry == nele_hess);
     }
     try {
-        if (!step_admitted(x)) return false;
+        if (!step_admitted(x)) return ep235_callback.ok(false);
         const auto& point = prepared(n, x, true);
         // Objective curvature is multiplier independent; the weighted constraint curvature is
         // recombined whenever the optimizer multipliers change at the same point.
-        if (!objective_hessian_.has_value()) objective_hessian_ = compiled_.hessian_at(point, {});
-        const std::vector<double> multipliers(lambda, lambda + m);
-        if (!constraint_hessian_.has_value() || constraint_hessian_multipliers_ != multipliers) {
-            constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
-            constraint_hessian_multipliers_ = multipliers;
+        {
+            ep235::Scope block("hessian_objective_cache", objective_hessian_.has_value(), n, nele_hess);
+            if (!objective_hessian_.has_value()) objective_hessian_ = compiled_.hessian_at(point, {});
         }
+        const std::vector<double> multipliers(lambda, lambda + m);
+        {
+            const bool hit = constraint_hessian_.has_value() && constraint_hessian_multipliers_ == multipliers;
+            ep235::Scope block("hessian_constraint_cache", hit, n, m);
+            if (!hit) {
+                constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
+                constraint_hessian_multipliers_ = multipliers;
+            }
+        }
+        ep235::Scope::event("numeric_hessian", [&](auto& out) {
+            out << ',' << ep235_callback.id << ',' << n << ',' << m << ',' << nele_hess
+                << ',' << std::vector<double>::size_type(n)*n << ',' << obj_factor << ',';
+            ep235::list(out, multipliers); out << ',';
+            ep235::list(out, point.point);
+        });
+        ep235::Scope scatter("hessian_scatter", n, m, nele_hess);
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < n; ++row) {
             for (Ipopt::Index column = 0; column <= row; ++column) {
@@ -771,10 +815,10 @@ bool GibbsMinimizer::eval_h(
                     + (*constraint_hessian_)[index]) * chart_[row] * chart_[column];
             }
         }
-        return entry == nele_hess;
+        return ep235_callback.ok(entry == nele_hess);
     } catch (const std::exception& error) {
         retain_callback_failure(error, "eval_h");
-        return false;
+        return ep235_callback.ok(false);
     }
 }
 
@@ -785,6 +829,7 @@ bool GibbsMinimizer::intermediate_callback(
     Ipopt::Number alpha_du, Ipopt::Number alpha_pr, Ipopt::Index ls_trials,
     const Ipopt::IpoptData* ip_data, Ipopt::IpoptCalculatedQuantities* ip_cq
 ) {
+    ep235::Scope ep235_callback("ipopt_intermediate", static_cast<unsigned>(mode), iter == 0);
     core::Scope callback("ipopt_intermediate");
     observe_ipopt(*observations_.ipopt_diagnostics, scope_, {int(mode), iter, ls_trials, obj_value, inf_pr, inf_du, mu, d_norm, regularization_size, alpha_du, alpha_pr});
     restored_ = restored_ || mode == Ipopt::RestorationPhaseMode;
@@ -798,7 +843,7 @@ bool GibbsMinimizer::intermediate_callback(
         if (!get_curr_iterate(ip_data, ip_cq, false, n, base_.data(), z_lower_.data(), z_upper_.data(), 0, nullptr, nullptr)
             || !get_curr_violations(ip_data, ip_cq, false, n, nullptr, nullptr, lower_.data(), nullptr, nullptr, 0, nullptr, nullptr)) {
             step_rule_error_ = "phase amount iterate or complementarity unavailable";
-            return false;
+            return ep235_callback.ok(false);
         }
         for (const auto i : amount_columns_) {
             // Ipopt zeroes the bound multipliers at a converged square feasibility point.
@@ -810,7 +855,7 @@ bool GibbsMinimizer::intermediate_callback(
     regularization_size_ = regularization_size;
     if (warm_ && restored_) core::retain_failure(observations_.first_numerical_failure,
         "warm attempt stopped on restoration", "Ipopt callback");
-    return !core::CalculationWork::stop_at("Ipopt iteration") && !(warm_ && restored_) && (!limits_ || !limits_->expired());  // max_iter owns iteration termination
+    return ep235_callback.ok(!core::CalculationWork::stop_at("Ipopt iteration") && !(warm_ && restored_) && (!limits_ || !limits_->expired()));  // max_iter owns iteration termination
 }
 
 void GibbsMinimizer::finalize_solution(
@@ -820,6 +865,8 @@ void GibbsMinimizer::finalize_solution(
     Ipopt::Number /*objective*/,
     const Ipopt::IpoptData* /*ip_data*/, Ipopt::IpoptCalculatedQuantities* /*ip_cq*/
 ) {
+    ep235::Scope ep235_terminal("ipopt_finalize", n, m);
+    ep235_terminal.key.outcome = static_cast<int>(status);
     if (status != Ipopt::SUCCESS && observations_.ipopt_diagnostics) {
         auto& d = *observations_.ipopt_diagnostics;
         IpoptPoint point;
@@ -1703,6 +1750,7 @@ static EquilibriumResult run_driver_once(
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, EquilibriumAttemptReporting reporting = {},
     int ipopt_iteration_cap = 0
 ) {
+    ep235::Scope ep235_attempt("driver_attempt", static_cast<unsigned>(kind), refine_trial);
     core::AssociationObservations observations;
     result.attempt = kind == Attempt::Warm ? Attempt::Cold : kind;
     result.retry = Retry::None;
@@ -2078,6 +2126,7 @@ EquilibriumResult run_driver(
     std::vector<double>* attempt, const DriverLimits* limits, Attempt kind,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, Retry runs, EquilibriumAttemptReporting reporting
 ) {
+    ep235::Scope ep235_driver("driver", static_cast<unsigned>(kind), refine_trial, compiled.primal_size);
     const auto restart = initial;
     DriverLimits shared = limits ? *limits : DriverLimits{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
         std::chrono::steady_clock::time_point::max()};
@@ -2102,6 +2151,12 @@ EquilibriumResult run_driver(
     const bool retry = selected.retry == Retry::PhysicalAmounts;
     if (runs == Retry::PhysicalAmounts && kind != Attempt::Newton) selected = recover_physical_amounts(compiled, std::move(selected), retry,
         scope, &restart, work, attempt);
+    ep235_driver.key.outcome = selected.success ? 0 : -1;
+    ep235::Scope::event("driver_endpoint", [&](auto& out) {
+        out << ',' << ep235_driver.id << ',' << selected.iterations << ',' << selected.evaluations
+            << ',' << selected.hessian_calls << ',' << static_cast<unsigned>(selected.retry)
+            << ',' << static_cast<unsigned>(selected.convergence.stop);
+    });
     return selected;
 }
 
@@ -2926,3 +2981,44 @@ EquilibriumResult solve_equilibrium_from_coordinates(
 }
 
 }  // namespace epcsaft::equilibrium
+extern "C" __attribute__((visibility("default"))) void ep235_begin(int trace) {
+    ep235::active = true;
+    ep235::tracing = trace;
+    ep235::stage = 0;
+    ep235::family = '-';
+    ep235::trial = ep235::trial_sequence = 0;
+    ep235::sequence = 0;
+    ep235::cells.clear();
+    ep235::events.clear();
+}
+extern "C" __attribute__((visibility("default"))) void ep235_stage(int stage) {
+    ep235::stage = stage;
+}
+extern "C" __attribute__((visibility("default"))) int ep235_end(const char* path, const char* key) {
+    using namespace ep235;
+    if (Scope::current != nullptr) return -1;
+    active = tracing = false;
+    std::ofstream out(path, std::ios::app);
+    out << "{\"key\":";
+    quoted(out, key);
+    out << ",\"cells\":[";
+    bool first = true;
+    for (const auto& [k, c] : cells) {
+        if (!first) out << ',';
+        first = false;
+        out << '[';
+        quoted(out, k.name);
+        out << ',' << k.stage << ",\"" << k.family << "\"," << k.first << ',' << k.second << ','
+            << k.third << ',' << k.outcome << ',' << c.count << ',' << c.exclusive << ',' << c.inclusive << ']';
+    }
+    out << "],\"events\":[";
+    first = true;
+    for (const auto& event : events) {
+        if (!first) out << ',';
+        first = false;
+        out << event;
+    }
+    out << "]}\n";
+    out.close();
+    return out.fail() ? -1 : static_cast<int>(cells.size());
+}

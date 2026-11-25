@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 // CompiledSystem coordinate labels, row values, uncertainty, Jacobians and Hessians, with the standard and
 // reference terms they read.
 #include "equilibrium/stoichiometry.hpp"
@@ -2024,7 +2025,9 @@ std::vector<double> CompiledSystem::hessian(
 std::vector<double> CompiledSystem::hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
+    ep235::Scope ep235_weighted("curvature_function", prepared.point.size(), constraint_multipliers.size());
     core::CalculationWork::equilibrium_entry();
+    ep235::Scope ep235_assembly("objective_assembly", prepared.point.size(), constraint_multipliers.size());
     core::Scope scope("equilibrium_hessian");
     const auto& point = prepared.point;
     const std::size_t n = point.size();
@@ -2392,6 +2395,8 @@ RowSeries CompiledSystem::row_series(
 std::vector<double> CompiledSystem::constraint_hessian_at(
     const PhasePoint& prepared, const std::vector<double>& constraint_multipliers, bool physical
 ) const {
+    ep235::Scope ep235_constraint("constraint_assembly", prepared.point.size(), constraint_multipliers.size());
+    ep235::Scope ep235_weighted("curvature_function", prepared.point.size(), constraint_multipliers.size());
     core::CalculationWork::equilibrium_entry();
     if (ideal) {
         if (!constraint_multipliers.empty() && constraint_multipliers.size() != rows.size())

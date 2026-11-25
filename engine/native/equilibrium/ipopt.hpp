@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #pragma once
 #include "core/convergence.hpp"
 #include "equilibrium/problem.hpp"
@@ -115,6 +116,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
             + " objective_factor=" + core::optional_number(objective_factor) + " produces invalid inner target="
             + core::optional_number(tolerance) + " or dual_inf_tol=" + core::optional_number(dual_tolerance));
+    ep235::Scope lifecycle_meter("ipopt_setup");
     core::Scope lifecycle("ipopt_application");
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     // Clones share this thread's option registry and journalist (#646); an options file's output_file must not.
@@ -199,8 +201,11 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
             admit(options->SetNumericValue("mu_init", policy::EQUILIBRIUM_WARM_MU.value), "mu_init");
         }
     }
-    if (initialized != Ipopt::Solve_Succeeded) return {initialized, initialized};
+    if (initialized != Ipopt::Solve_Succeeded) { lifecycle_meter.key.outcome = static_cast<int>(initialized); return {initialized, initialized}; }
+    ep235::Scope optimizer_meter("ipopt_optimize");
     core::Scope optimize("ipopt_optimize");
-    return {initialized, app->OptimizeTNLP(nlp)};
+    const auto status = app->OptimizeTNLP(nlp);
+    optimizer_meter.key.outcome = static_cast<int>(status);
+    return {initialized, status};
 }
 }  // namespace epcsaft::equilibrium

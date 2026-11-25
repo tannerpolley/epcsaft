@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "equilibrium/stoichiometry.hpp"
 
 #include "core/physical_constants.hpp"
@@ -721,6 +722,7 @@ IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<i
 
 CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
     if (request.prescribed_liquid_composition) throw std::invalid_argument("prescribed liquid requires a Helmholtz model");
+    ep235::Scope ep235_compile("compile");
     core::Scope scope("compile_problem");
     if (!request.topology_declared || request.discovery || request.phases.size() != 1
         || request.phases[0].kind != PhaseKind::Liquid || !request.phases[0].is_free()
@@ -793,6 +795,7 @@ CompiledSystem compile_problem(const IdealMoleFraction& model, const Equilibrium
 
 CompiledSystem compile_problem(const HelmholtzModel& model, const EquilibriumProblem& request) {
     if (request.prescribed_liquid_composition) return compile_prescribed_liquid(model, request);
+    ep235::Scope ep235_compile("compile");
     core::Scope scope("compile_problem");
     return compile_with_basis(model, request, nullptr);
 }
@@ -821,6 +824,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
     const PhaseSpec& phase, const std::vector<double>& w, const std::vector<double>& c,
     std::vector<std::vector<double>>& transformation) {
     if (model.parameters().ideal_gas) throw std::invalid_argument("ideal-gas stability trial compilation is deferred");
+    ep235::Scope ep235_compile("compile");
     core::Scope scope("compile_problem");
     const auto& support = phase.support;
     const auto& z = model.parameters().charge_number;
@@ -877,6 +881,7 @@ CompiledSystem compile_stability_trial(const HelmholtzModel& model, double T, do
 }
 
 std::vector<double> CompiledSystem::generic_point() const {
+    ep235::Scope ep235_generic("generic_point");
     core::Scope scope("equilibrium_generic_point");
     if (ideal) {
         std::vector<double> point;

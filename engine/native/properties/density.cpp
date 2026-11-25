@@ -1,3 +1,4 @@
+#include "core/issue235_meter.hpp"
 #include "properties/helmholtz_model.hpp"
 #include "pcsaft_superancillary_table.hpp"
 
@@ -1721,6 +1722,9 @@ DensityRoot solve_density(
     std::optional<double> start, DensityRoot* sibling_root, DensityScanCache* scan
 ) {
     core::CalculationWork::Density work;
+    ep235::Scope ep235_density("density", static_cast<unsigned>(branch), start.has_value(), 2*bool(scan)+bool(sibling_root));
+    ep235::state_key("density_key", {temperature, pressure, double(branch), double(TrialStart),
+        start.value_or(-1.0), double(bool(scan)), double(bool(sibling_root))}, mole_fractions, &model);
     core::Scope scope("solve_density");
     if (!TrialStart && start.has_value() && sibling_root != nullptr)
         throw std::invalid_argument("density sibling requires an unanchored root search");
@@ -1864,6 +1868,10 @@ DensityRoot solve_density(
     };
     publish_conditioning(result);
     if (sibling_root) publish_conditioning(*sibling_root);
+    ep235::Scope::event("density_endpoint", [&](auto& out) {
+        out << ',' << ep235_density.id << ',' << result.molar_density << ',' << static_cast<unsigned>(result.branch)
+            << ',' << result.stable_root_count.value_or(0);
+    });
     scope.probe("density_root", result.molar_density);
     core::retain_first(result.first_numerical_failure, series.first_numerical_failure);
     if (sibling_root) core::retain_first(sibling_root->first_numerical_failure, series.first_numerical_failure);
