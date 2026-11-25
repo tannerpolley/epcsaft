@@ -117,8 +117,9 @@ def test_reactive_lle_fit_recovers_reaction_constants(evidence: Any) -> None:
     rows: list[regression.Observation] = []
     for salt in (0.04, 0.06):
         observed = _reference(model, _problem(_shifted(known), salt))
-        _, ph, _, distribution, exchange = _rows(p, _problem(BASE_LOG_K, salt), observed)
-        rows.extend((ph, distribution, exchange))
+        _, ph, concentration, distribution, exchange = _rows(p, _problem(BASE_LOG_K, salt), observed)
+        concentration.scale = concentration.observed
+        rows.extend((ph, concentration, distribution, exchange))
     fitted = regression.fit(p, _coordinates(), rows, controls=regression.FitControls(
         maximum_iterations=40, maximum_elapsed_time_seconds=30.0, workers=2))
     assert fitted.usable and fitted.status == "converged", fitted.message
