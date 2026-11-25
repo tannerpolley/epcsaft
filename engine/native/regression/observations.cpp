@@ -119,11 +119,14 @@ bool same_state(const Observation& left, const Observation& right) {
     if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
         return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
             && (left.kind == ObservationKind::BulkRelativePermittivity) == (right.kind == ObservationKind::BulkRelativePermittivity)
-            && left.temperature == right.temperature && left.pressure == right.pressure && left.branch == right.branch
-            && left.composition == right.composition && left.ion_indices == right.ion_indices
-            && left.stoichiometry == right.stoichiometry && left.molality == right.molality
-            && left.reference_composition == right.reference_composition
-            && left.finite_solute_molalities == right.finite_solute_molalities;
+            && core::bitwise_equal(std::array{left.temperature, left.pressure, left.molality},
+                                   std::array{right.temperature, right.pressure, right.molality})
+            && left.branch == right.branch && core::bitwise_equal(left.composition, right.composition)
+            && left.ion_indices == right.ion_indices && left.stoichiometry == right.stoichiometry
+            && core::bitwise_equal(left.reference_composition, right.reference_composition)
+            && left.finite_solute_molalities.has_value() == right.finite_solute_molalities.has_value()
+            && (!left.finite_solute_molalities
+                || core::bitwise_equal(*left.finite_solute_molalities, *right.finite_solute_molalities));
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
@@ -335,9 +338,10 @@ Prediction predict(
     const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters,
     std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission
 ) {
+    if (references) references->bind(model);
     core::Scope density_scope("fit_density_anchor");
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
-        if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || x != old_x || branch == DensityBranch::Unspecified
+        if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || !core::bitwise_equal(x, old_x) || branch == DensityBranch::Unspecified
             || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
         if (!same_parameters) {
             const auto witness = old->negative_slope_density;
@@ -951,6 +955,7 @@ std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
     const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
+    if (references) references->bind(model);
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {
@@ -1131,6 +1136,14 @@ std::vector<PredictionGradient> differentiate_group(
             item.feed_amount = *prediction.added_amount;
         }
         item.kind = ObservationKind::SystemEnthalpy;
+        if (references && !std::equal(reactions.begin(), reactions.end(),
+                references->reaction_columns.begin(), references->reaction_columns.end(), [](const auto& a, const auto& b) {
+                    return a.name == b.name && a.coefficient == b.coefficient
+                        && core::bitwise_equal(a.pivot_temperature, b.pivot_temperature);
+                })) {
+            references->reaction_columns = std::move(reactions);
+            for (auto& endpoint : references->heat) endpoint.gradient.reset();
+        }
         const auto endpoint_gradient = [&](auto index, auto calculate) {
             if (!references || !index) return calculate();
             auto& gradient = references->heat.at(*index).gradient;

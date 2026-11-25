@@ -13,6 +13,10 @@ void check_coupled_recovery();
 void check_hydration_failures();
 void check_ionic_addition_enthalpy();
 void check_free_temperature_addition();
+void check_addition_endpoint_model();
+void check_addition_endpoint_layout();
+void check_addition_endpoint_retry();
+void check_electrolyte_row_signed_zero();
 void check_addition_enthalpy();
 void check_saturation_capped_addition();
 void check_phase_bulk_relative_permittivity();
@@ -66,6 +70,10 @@ int main(int argc, char** argv) {
         {{"native.regression.hydration-failures", "hydration-failures"}, check_hydration_failures, "R1"},
         {{"native.regression.ionic-addition", "ionic-addition"}, check_ionic_addition_enthalpy, "R2"},
         {{"native.regression.reactive-caloric-F6-addition", "reactive-caloric-F6-addition"}, check_free_temperature_addition, "R2"},
+        {{"native.regression.addition-endpoint-model", "addition-endpoint-model"}, check_addition_endpoint_model},
+        {{"native.regression.addition-endpoint-layout", "addition-endpoint-layout"}, check_addition_endpoint_layout},
+        {{"native.regression.addition-endpoint-retry", "addition-endpoint-retry"}, check_addition_endpoint_retry},
+        {{"native.regression.electrolyte-row-signed-zero", "electrolyte-row-signed-zero"}, check_electrolyte_row_signed_zero},
         {{"native.regression.addition-enthalpy", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
         {{"native.regression.phase-bulk-relative-permittivity", "phase-bulk-relative-permittivity"}, check_phase_bulk_relative_permittivity, "R2"},
         {{"native.regression.saturation-capped-addition", "saturation-capped-addition"}, check_saturation_capped_addition, "R1"},

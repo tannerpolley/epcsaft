@@ -176,7 +176,15 @@ struct ReferenceCache : std::vector<std::pair<Observation, InfiniteDilutionRefer
     };
     std::vector<HeatEndpoint> heat;
     std::optional<std::size_t> previous_initial;
+    std::vector<ReactionCoordinate> reaction_columns;
 
+    void bind(const HelmholtzModel& model) {
+        if (!model_) model_ = model.identity();
+        if (model_ != model.identity()) throw std::invalid_argument("observation reference cache model mismatch");
+    }
+
+private:
+    std::shared_ptr<const char> model_;
 };
 EPC_API Prediction predict(
     const HelmholtzModel& model, const Observation& observation,

@@ -1113,6 +1113,79 @@ void check_free_temperature_addition() {
     }
 }
 
+void check_addition_endpoint_model() {
+    const auto parameters = addition_parameters();
+    const auto coordinates = addition_coordinates();
+    HelmholtzModel first(parameters, coordinates.active_parameters(), addition_record());
+    auto changed = parameters;
+    changed.dispersion_energy_over_k[0] *= 1.02;
+    HelmholtzModel second(changed, coordinates.active_parameters(), addition_record());
+    const auto row = addition_variant("fixed_system", 0.2, {}).observation;
+    ReferenceCache cache;
+    const auto warm = predict(first, row, {}, {}, &cache);
+    const auto fresh = predict(second, row);
+    CHECK(warm.status == ObservationStatus::Available && fresh.status == ObservationStatus::Available && warm.value != fresh.value);
+    CHECK(recording_support::refusal([&] { (void)predict(second, row, {}, {}, &cache); }) == "observation reference cache model mismatch");
+}
+
+void check_addition_endpoint_layout() {
+    const auto parameters = addition_parameters();
+    const auto coordinates = addition_coordinates();
+    HelmholtzModel model(parameters, coordinates.active_parameters(), addition_record());
+    const auto row = addition_variant("fixed_system", 0.2, {}).observation;
+    ReferenceCache cache;
+    const auto center = predict(model, row, {}, {}, &cache);
+    CHECK(center.status == ObservationStatus::Available && center.initial_heat_endpoint);
+    const auto warm = differentiate_group(model, {&row}, center, coordinates, {}, {}, &cache).front();
+    CHECK(warm.status == ObservationStatus::Available);
+    auto reversed = coordinates;
+    std::swap(reversed.coordinates[2], reversed.coordinates[3]);
+    const auto retry = differentiate_group(model, {&row}, center, reversed, {}, {}, &cache).front();
+    const auto fresh = differentiate_group(model, {&row}, predict(model, row), reversed).front();
+    CHECK(fresh.status == ObservationStatus::Available && fresh.value != warm.value);
+    CHECK(truth("addition-enthalpy/reaction-column-order",
+        retry.status == fresh.status && retry.value == fresh.value,
+        recording_support::fields({recording_support::field("retry", retry.value), recording_support::field("fresh", fresh.value)})));
+}
+
+void check_addition_endpoint_retry() {
+    const auto parameters = addition_parameters();
+    const auto coordinates = addition_coordinates();
+    HelmholtzModel model(parameters, coordinates.active_parameters(), addition_record());
+    const auto row = addition_variant("fixed_system", 0.2, {}).observation;
+    ReferenceCache cache;
+    const auto center = predict(model, row, {}, {}, &cache);
+    CHECK(center.status == ObservationStatus::Available && center.initial_heat_endpoint && center.solved);
+    const auto evaluate = [&](const Prediction& state, ReferenceCache* references) {
+        return differentiate_group(model, {&row}, state, coordinates, {}, {}, references).front();
+    };
+    auto refused = center;
+    refused.solved->success = false;
+    const auto rejected = evaluate(refused, &cache);
+    CHECK(rejected.status == ObservationStatus::ActionUnavailable && rejected.message.rfind("initial:", 0) == 0);
+    const auto retry = evaluate(center, &cache);
+    HelmholtzModel cold(parameters, coordinates.active_parameters(), addition_record());
+    const auto fresh = differentiate_group(cold, {&row}, predict(cold, row), coordinates).front();
+    CHECK(fresh.status == ObservationStatus::Available);
+    CHECK(truth("addition-enthalpy/refused-endpoint-retry",
+        retry.status == fresh.status && retry.value == fresh.value,
+        recording_support::fields({recording_support::field("retry_status", observation_status_name(retry.status)),
+            recording_support::field("fresh_status", observation_status_name(fresh.status))})));
+}
+
+void check_electrolyte_row_signed_zero() {
+    Observation positive;
+    positive.kind = ObservationKind::MeanIonicActivityCoefficient;
+    positive.composition = {1.0, 0.0};
+    auto negative = positive;
+    negative.composition.back() = -0.0;
+    CHECK(!same_state(positive, negative));
+    negative = positive;
+    negative.molality = -0.0;
+    positive.molality = 0.0;
+    CHECK(!same_state(positive, negative));
+}
+
 void check_addition_enthalpy() {
     const auto parameters = addition_parameters();
     const auto record = addition_record();

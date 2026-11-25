@@ -1597,6 +1597,25 @@ void reference_f9() {
     }
 }
 }
+void reference_taylor_signed_zero() {
+    using namespace epcsaft;
+    HelmholtzModel warm(properties_support::ethane()), cold(properties_support::ethane());
+    constexpr double temperature = 300.0, volume = 0.01;
+    PressureActionDirection direction;
+    ReferenceTaylorBatch batch{warm, {}};
+    const auto positive = warm.reference_taylor(temperature, volume, {1.0}, {1.0}, direction, 1, false, nullptr, &batch);
+    direction.pressure = -0.0;
+    const auto expected = cold.reference_taylor(temperature, volume, {1.0}, {1.0}, direction, 1, false);
+    const auto cached = warm.reference_taylor(temperature, volume, {1.0}, {1.0}, direction, 1, false, nullptr, &batch);
+    // A different insertion misses the whole-series cache but exercises the same pressure path.
+    const auto batched = warm.reference_taylor(temperature, volume, {1.0}, {2.0}, direction, 1, false, nullptr, &batch);
+    for (const auto* result : {&positive, &expected, &cached, &batched})
+        CHECK(result->status == PropertyActionStatus::Available && result->volume.at(1) == 0.0);
+    CHECK(std::signbit(positive.volume[1]) && !std::signbit(expected.volume[1]));
+    std::cout << "volume coefficient sign bits, cached / batch / cold "
+        << std::signbit(cached.volume[1]) << ' ' << std::signbit(batched.volume[1]) << ' ' << std::signbit(expected.volume[1]) << '\n';
+    CHECK(!std::signbit(cached.volume[1]) && !std::signbit(batched.volume[1]));
+}
 void reference_limits() {
     // An uncached contraction is the independent numerical path for batch reuse.
     const auto check_paths = [](const epcsaft::Parameters& parameters) {

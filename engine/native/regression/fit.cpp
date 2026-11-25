@@ -39,7 +39,6 @@
 #include <cerrno>
 #include <cmath>
 #include <chrono>
-#include <cstring>
 #include <cstdlib>
 #include <ctime>
 #include <fstream>
@@ -105,6 +104,8 @@ struct Trial final {
     bool jacobian = false;
     EvaluatedCoordinates chart;
     ReferenceCache references;
+
+    Trial upgrade() const { return {model, {}, centers, projected_rows, {}, {}, false, chart, references}; }
 };
 
 // The serial sweep's first failure: `row` orders failures across worker processes; `observation` is
@@ -284,7 +285,7 @@ struct ObservationEvaluator::Impl final {
         ++trials_;
         (jacobian ? result_.jacobian_evaluations : result_.residual_evaluations) += 1;
         for (const Channel fd : workers_.sockets) put(fd, optimizer, jacobian);
-        Trial trial = same_point ? *cached_ : Trial{};
+        Trial trial = same_point ? cached_->upgrade() : Trial{};
         Verdict verdict = assemble(optimizer, jacobian, out, trial, same_point, scope);
         for (const Channel fd : workers_.sockets) put(fd, verdict.disposition == Disposition::Evaluated);
         if (verdict.disposition == Disposition::Rejected) {
@@ -391,7 +392,7 @@ struct ObservationEvaluator::Impl final {
             get(fd, optimizer, jacobian);
             core::Scope scope("fit_evaluation");
             const bool same_point = cached_ && core::bitwise_equal(cached_->optimizer, optimizer);
-            Trial trial = same_point ? *cached_ : Trial{};
+            Trial trial = same_point ? cached_->upgrade() : Trial{};
             ObservationEvaluation out;
             const auto failure = compute(optimizer, jacobian, out, trial, same_point, scope);
             put(fd, failure, out.predictions, out.residuals, out.statuses, out.gradient, out.input_gradient,
@@ -502,8 +503,8 @@ struct ObservationEvaluator::Impl final {
                 trial.chart.reaction_laws = std::move(reaction_laws);
                 // Reference series and derivative tapes belong to the immutable EOS. Reaction laws belong to the observations.
                 const auto eos = trial.chart.active.size();
-                const bool same_eos = cached_ && (eos == 0 || std::memcmp(trial.chart.physical.data(),
-                    cached_->chart.physical.data(), eos * sizeof(double)) == 0);
+                const bool same_eos = cached_ && core::bitwise_equal(trial.chart.physical.data(), eos,
+                    cached_->chart.physical.data(), eos);
                 if (same_eos && std::any_of(cached_->centers.begin(), cached_->centers.end(),
                     [](const auto& p) { return p.saturation && p.saturation->accepted; })) trial.model = cached_->model;
                 else trial.model = std::make_shared<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
@@ -553,8 +554,8 @@ struct ObservationEvaluator::Impl final {
                     const auto& prior = prior_trial ? prior_trial->observations[i] : observation;
                     const bool unchanged = observation.kind == ObservationKind::Stability || !request_.uncertainty
                         || (capped_row && measurement_.membership[i] == n) || (pressure_closed(observation.kind)
-                        ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
-                            == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
+                        ? core::bitwise_equal(std::array{observation.temperature, observation.pressure}, std::array{prior.temperature, prior.pressure})
+                            && core::bitwise_equal(observation.composition, prior.composition) && observation.branch == prior.branch
                         : same_state(observation, prior));
                     std::vector<const Observation*> admission;
                     if (needs_compiled_admission_) for (std::size_t row = 0; row < n; ++row)
@@ -562,7 +563,7 @@ struct ObservationEvaluator::Impl final {
                     trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
                         prior_trial && unchanged ? &prior_trial->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
-                        seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
+                        seed && unchanged && core::bitwise_equal(trial.chart.physical, seed->chart.physical), deadline_, admission);
                     if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy && observation.kind != ObservationKind::Stability) {
                         auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references,
                             nullptr, nullptr, false, deadline_, admission);

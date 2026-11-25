@@ -7,6 +7,7 @@ void residual_cv_temperature_extraction();
 void born_parameter_columns();
 void reference_f8();
 void reference_f9();
+void reference_taylor_signed_zero();
 void reference_limits();
 void residual_properties_and_caloric_ladders();
 void residual_internal_energy_identity_ladder();
@@ -47,6 +48,7 @@ int main(int argc, char** argv) {
         {{"native.properties.born-parameter", "BornParameter"}, born_parameter_columns},
         {{"native.properties.reference-f8", "F8"}, reference_f8, "F8"},
         {{"native.properties.reference-f9", "F9"}, reference_f9, "F9"},
+        {{"native.properties.reference-taylor-signed-zero", "reference-taylor-signed-zero"}, reference_taylor_signed_zero},
         {{"native.properties.reference-limits", "ReferenceLimits"}, reference_limits, "ReferenceLimits"},
         {{"native.properties.p1", "P1"}, residual_properties_and_caloric_ladders, "P1"},
         {{"native.properties.f1", "F1"}, residual_internal_energy_identity_ladder, "F1"},

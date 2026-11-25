@@ -1898,7 +1898,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
     std::lock_guard<std::mutex> lock(mutex_);
     auto key = action_point(*this, temperature, volume, composition, true);
-    auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return entry.first == key; });
+    auto found = std::find_if(centrals_.begin(), centrals_.end(), [&](const auto& entry) { return core::bitwise_equal(entry.first, key); });
     if (found == centrals_.end()) {
         if (centrals_.size() == 16) centrals_.pop_front();
         core::AssociationObservations central;
@@ -1985,8 +1985,8 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     if (!reuse) {
         const auto state = batch ? batch->paths.lower_bound(point) : decltype(batch->paths)::iterator{};
         if (batch && state != batch->paths.end()
-            && std::equal(point.begin(), point.end(), state->first.begin())
-            && state->second->site_fractions == central.site_fractions) {
+            && state->first.size() >= width && core::bitwise_equal(point.data(), width, state->first.data(), width)
+            && core::bitwise_equal(state->second->site_fractions, central.site_fractions)) {
             prepared->factorization = state->second->factorization;
             const auto recordings = result.diagnostics.recordings;
             result.diagnostics = state->second->factorization_diagnostics;
