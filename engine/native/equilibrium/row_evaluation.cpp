@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <string>
 
+#include "core/issue235_prototype.hpp"
+
 namespace epcsaft::equilibrium {
 namespace {
 
@@ -391,8 +393,27 @@ std::vector<double> pinned_hessian(
             if (descriptor.kind == RowKind::Pressure) pressure_weight += multipliers[row];
         }
         using AD = CppAD::AD<double>;
+
+        // The pinned bubble geometry reads its own phase and the free shared controls.
+        std::vector<std::size_t> columns;
+        if (issue235::enabled(issue235::curvature) && !problem.loading) {
+            columns = shape[phase].x;
+            columns.push_back(shape[phase].volume);
+            if (shape[phase].amount) columns.push_back(*shape[phase].amount);
+            if (problem.temperature.free) columns.push_back(temperature_index);
+            if (problem.pressure.free) columns.push_back(compiled.primal_size - 1);
+            std::sort(columns.begin(), columns.end());
+        } else {
+            columns.resize(n);
+            std::iota(columns.begin(), columns.end(), 0);
+        }
+        const auto size = columns.size();
+        std::vector<double> center;
+        for (const auto col : columns) center.push_back(point[col]);
+        std::vector<AD> active(center.begin(), center.end());
+        CppAD::Independent(active);
         std::vector<AD> q(point.begin(), point.end());
-        CppAD::Independent(q);
+        for (std::size_t i = 0; i < size; ++i) q[columns[i]] = active[i];
         const AD T = problem.temperature.free ? q[temperature_index] : AD(temperature);
         const AD P = problem.pressure.free ? q[compiled.primal_size - 1]
                                           : AD(problem.pressure.value);
@@ -441,8 +462,8 @@ std::vector<double> pinned_hessian(
         std::vector<AD> output = {T, volume};
         output.insert(output.end(), x.begin(), x.end());
         output.push_back(simple);
-        CppAD::ADFun<double> geometry(q, output);
-        const auto values = geometry.Forward(0, point);
+        CppAD::ADFun<double> geometry(active, output);
+        const auto values = geometry.Forward(0, center);
         const std::vector<double> amounts(values.begin() + 2, values.begin() + physical);
         const auto& derivative = prepared.derivative[phase];
         const std::size_t width = derivative.gradient.size();
@@ -456,13 +477,13 @@ std::vector<double> pinned_hessian(
                 map_weights[i] += derivative.hessian[i * width + k] * contraction[k];
         }
         map_weights[1] -= pressure_weight * derivative.gradient[1];
-        const auto mapped = geometry.Hessian(point, map_weights);
-        const auto jacobian = geometry.Jacobian(point);
-        std::vector<std::vector<double>> directions(n, std::vector<double>(width, 0.0));
-        std::vector<double> volume_hessian_action(n, 0.0);
-        for (std::size_t column = 0; column < n; ++column) {
+        const auto mapped = geometry.Hessian(center, map_weights);
+        const auto jacobian = geometry.Jacobian(center);
+        std::vector<std::vector<double>> directions(size, std::vector<double>(width, 0.0));
+        std::vector<double> volume_hessian_action(size, 0.0);
+        for (std::size_t column = 0; column < size; ++column) {
             for (std::size_t i = 0; i < physical; ++i) {
-                directions[column][i] = jacobian[i * n + column];
+                directions[column][i] = jacobian[i * size + column];
                 volume_hessian_action[column] += derivative.hessian[width + i]
                     * directions[column][i];
             }
@@ -471,14 +492,14 @@ std::vector<double> pinned_hessian(
         if (status != PropertyActionStatus::Available) throw std::runtime_error(std::string("third directional energy "
             "contraction unavailable: ") + solved_state_status_name(solved_state_status(status)));
         std::size_t entry = 0;
-        for (std::size_t row = 0; row < n; ++row) {
+        for (std::size_t row = 0; row < size; ++row) {
             for (std::size_t column = 0; column <= row; ++column) {
                 const double action = triangle[entry++];
-                const double value = mapped[row * n + column] + action
+                const double value = mapped[row * size + column] + action
                     - pressure_weight * (directions[row][1] * volume_hessian_action[column]
                         + directions[column][1] * volume_hessian_action[row]);
-                result[row * n + column] += value;
-                if (row != column) result[column * n + row] += value;
+                result[columns[row] * n + columns[column]] += value;
+                if (row != column) result[columns[column] * n + columns[row]] += value;
             }
         }
     }
@@ -2065,7 +2086,8 @@ std::vector<double> CompiledSystem::hessian_at(
         for (std::size_t i = 0; i < spec.support.size(); ++i) {
             const std::size_t si = spec.support[i];
             const double dv_i = packing.component[si] / eta;
-            for (std::size_t j = 0; j < spec.support.size(); ++j) {
+            const auto columns = issue235::enabled(issue235::curvature) ? i + 1 : spec.support.size();
+            for (std::size_t j = 0; j < columns; ++j) {
                 const std::size_t sj = spec.support[j];
                 const double dv_j = packing.component[sj] / eta;
                 // Keep the ideal diagonal analytic and apply residual curvature before trace fractions multiply.

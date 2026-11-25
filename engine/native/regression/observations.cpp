@@ -14,6 +14,8 @@
 #include <string>
 #include <tuple>
 
+#include "core/issue235_prototype.hpp"
+
 namespace epcsaft::regression {
 namespace {
 
@@ -334,6 +336,17 @@ Prediction predict(
     std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission
 ) {
     core::Scope density_scope("fit_density_anchor");
+    struct RefusalTiming {
+        issue235::Clock::time_point begin, terminal{};
+        ~RefusalTiming() {
+            if (terminal == issue235::Clock::time_point{}) return;
+            ++issue235::row.counts[issue235::refusal_count];
+            issue235::row.counts[issue235::refusal_before_ns] +=
+                std::chrono::duration_cast<std::chrono::nanoseconds>(terminal - begin).count();
+            issue235::row.counts[issue235::refusal_publication_ns] += issue235::elapsed(terminal);
+        }
+    } refusal{issue235::enabled(issue235::refusal) && observation.kind == ObservationKind::EquilibriumPressure
+        ? issue235::Clock::now() : issue235::Clock::time_point{}};
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
         if (!old || !previous_model || !(model.solver_options() == previous_model->solver_options()) || x != old_x || branch == DensityBranch::Unspecified
             || !properties::regular_density(old->molar_density, old->pressure_density_derivative, old->density_convergence)) return std::nullopt;
@@ -619,6 +632,9 @@ Prediction predict(
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
         return unavailable_solve(std::move(result), failure);
     }
+    if (refusal.begin != issue235::Clock::time_point{}
+        && (solved.topology_event != equilibrium::TopologyEvent::None || !solved.success || !solved.has_state()))
+        refusal.terminal = issue235::Clock::now();
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
     if (!solved.success) core::retain_first(result.first_numerical_failure, solved.convergence);

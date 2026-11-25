@@ -1,6 +1,9 @@
 #include "properties/helmholtz_model.hpp"
 
 #include "core/trace.hpp"
+#include "core/issue235_prototype.hpp"
+
+#include <cstring>
 #include "core/linear_error.hpp"
 #include "contributions/association.hpp"
 #include "contributions/born.hpp"
@@ -1172,7 +1175,96 @@ HelmholtzDerivatives HelmholtzModel::evaluate(
 ) const {
     require(order != DerivativeOrder::PressureSlope, "tape pressure slope is unavailable");
     std::lock_guard<std::mutex> lock(mutex_);
-    return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity, rank_only, completed);
+    const auto evaluate = [&] {
+        return evaluate_locked(temperature, volume, amounts, order, isothermal_hessian, retain_site_sensitivity, rank_only, completed);
+    };
+    using namespace issue235;
+    if (!enabled(eos)) return evaluate();
+    auto& c = row.counts;
+    if (completed || core::CalculationWork::active_limit() || core::current_trace()
+        || order == DerivativeOrder::PhaseGradient || order == DerivativeOrder::IsothermalPhaseGradient) {
+        ++c[eos_ineligible];
+        return evaluate();
+    }
+    struct Entry {
+        const HelmholtzModel* model = nullptr;
+        double temperature = 0.0, volume = 0.0;
+        unsigned flags = 0;
+        std::vector<double> amounts;
+        HelmholtzDerivatives value;
+    };
+    struct Cache {
+        std::uint64_t generation = 0;
+        std::array<Entry, 256> entries;
+    };
+    static thread_local Cache cache;
+    if (cache.generation != row.generation) {
+        cache = {};
+        cache.generation = row.generation;
+    }
+    const unsigned flags = (static_cast<unsigned>(order) << 3)
+        | (isothermal_hessian ? 4u : 0u) | (retain_site_sensitivity ? 2u : 0u) | (rank_only ? 1u : 0u);
+    const auto bits = [](double d) { std::uint64_t value; std::memcpy(&value, &d, sizeof(value)); return value; };
+    std::uint64_t hash = reinterpret_cast<std::uintptr_t>(this) ^ flags;
+    const auto mix = [&](double d) {
+        hash ^= bits(d) + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+    };
+    mix(temperature);
+    mix(volume);
+    for (const auto value : amounts) mix(value);
+    hash ^= hash >> 33;
+    hash *= 0xff51afd7ed558ccdULL;
+    hash ^= hash >> 33;
+    auto& entry = cache.entries[hash % cache.entries.size()];
+    ++c[eos_probes];
+    const auto equal_array = [](const auto& a, const auto& b) {
+        return a.size() == b.size()
+            && (a.size() == 0 || std::memcmp(a.data(), b.data(), a.size() * sizeof(double)) == 0);
+    };
+    const bool hit = entry.model == this && bits(temperature) == bits(entry.temperature)
+        && bits(volume) == bits(entry.volume) && flags == entry.flags && equal_array(amounts, entry.amounts);
+    if (hit) {
+        ++c[eos_hits];
+        if (!enabled(shadow)) {
+            core::CalculationWork::energy_evaluation();  // logical evaluation counts are public diagnostics
+            return entry.value;
+        }
+        ++c[eos_checks];
+    }
+    // An empty rank stream is a prerequisite for replay, preserving the enclosing observation order.
+    const bool inherited = core::AssociationObservations::current() != nullptr;
+    core::AssociationObservations captured;
+    auto value = evaluate();
+    std::vector<core::NumericalRank> observed;
+    captured.merge(observed);
+    captured.forward();
+    const bool replayable = observed.empty() && !value.complete_hessian
+        && !value.first_numerical_failure && !value.association_refinement;
+    if (!inherited) captured.merge(value.rank_records);
+    if (hit) {
+        const auto& a = entry.value;
+        c[eos_differences] += !replayable || bits(a.value) != bits(value.value)
+            || bits(a.volume_second_derivative) != bits(value.volume_second_derivative)
+            || bits(a.gradient_floor) != bits(value.gradient_floor)
+            || !equal_array(a.gradient, value.gradient) || !equal_array(a.hessian, value.hessian)
+            || !equal_array(a.gradient_error, value.gradient_error)
+            || !equal_array(a.site_fractions, value.site_fractions)
+            || a.site_sensitivity.rows() != value.site_sensitivity.rows()
+            || a.site_sensitivity.cols() != value.site_sensitivity.cols()
+            || !equal_array(a.site_sensitivity, value.site_sensitivity);
+    } else if (replayable) {
+        c[eos_evictions] += entry.model != nullptr;
+        entry = {this, temperature, volume, flags, amounts, value};
+        if (enabled(meter)) {
+            std::size_t bytes = sizeof(cache);
+            for (const auto& item : cache.entries)
+                bytes += sizeof(double) * (item.amounts.capacity() + item.value.gradient.capacity()
+                    + item.value.hessian.capacity() + item.value.gradient_error.capacity()
+                    + item.value.site_fractions.capacity() + item.value.site_sensitivity.size());
+            c[eos_bytes] = std::max(c[eos_bytes], static_cast<std::uint64_t>(bytes));
+        }
+    } else ++c[eos_ineligible];
+    return value;
 }
 
 // Declared pathway blocks are not stationary in X (pathway_weighted_association_helmholtz). Their gradient error along one

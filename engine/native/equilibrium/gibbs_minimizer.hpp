@@ -408,6 +408,7 @@ public:
     const std::optional<PointEvaluation>& last_rows() const noexcept { return rows_; }
     std::vector<double> last_classified() const { return rows_ && prepared_ ? compiled_.classified_residuals(*prepared_, rows_->values) : std::vector<double>{}; }
     Ipopt::SolverReturn status() const noexcept { return status_; }
+    void prototype_iteration_count(std::size_t count) { iterations_ = count; }
     std::size_t iterations() const noexcept { return iterations_; }
     std::size_t evaluations() const noexcept { return evaluations_; }
     std::size_t hessian_calls() const noexcept { return hessian_calls_; }

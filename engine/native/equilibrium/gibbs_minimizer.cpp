@@ -1,4 +1,7 @@
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "core/issue235_prototype.hpp"
+#include <cstdio>
+#include "equilibrium/issue235_reduced_trial.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "contributions/helmholtz.hpp"
 
@@ -751,6 +754,18 @@ bool GibbsMinimizer::eval_h(
         }
         return entry == nele_hess;
     }
+    const bool metered = issue235::enabled(issue235::meter);
+    const auto hessian_begin = metered ? issue235::Clock::now() : issue235::Clock::time_point{};
+    struct Timing {
+        issue235::Clock::time_point begin;
+        bool pinned;
+        ~Timing() {
+            if (begin == issue235::Clock::time_point{}) return;
+            auto& c = issue235::row.counts;
+            ++c[pinned ? issue235::hessian_pinned_calls : issue235::hessian_trial_calls];
+            c[pinned ? issue235::hessian_pinned_ns : issue235::hessian_trial_ns] += issue235::elapsed(begin);
+        }
+    } timing{hessian_begin, compiled_.feasibility_cell()};
     try {
         if (!step_admitted(x)) return false;
         const auto& point = prepared(n, x, true);
@@ -762,13 +777,89 @@ bool GibbsMinimizer::eval_h(
             constraint_hessian_ = compiled_.constraint_hessian_at(point, multipliers);
             constraint_hessian_multipliers_ = multipliers;
         }
+        std::vector<double> dense_objective, dense_constraint;
+        const bool compare = issue235::enabled(issue235::curvature) && issue235::enabled(issue235::shadow);
+        if (compare) {
+            issue235::row.mode ^= issue235::curvature;
+            try {
+                dense_objective = compiled_.hessian_at(point, {});
+                dense_constraint = compiled_.constraint_hessian_at(point, multipliers);
+            } catch (...) {
+                issue235::row.mode ^= issue235::curvature;
+                ++issue235::row.counts[issue235::hessian_check_refusals];
+                throw;
+            }
+            issue235::row.mode ^= issue235::curvature;
+            const bool pinned = compiled_.feasibility_cell();
+            if (!issue235::row.counts[pinned ? issue235::hessian_pinned_calls : issue235::hessian_trial_calls])
+                if (const auto* path = std::getenv("EP235_HESSIAN_WEIGHTS")) {
+                    static thread_local auto file = std::unique_ptr<std::FILE, int(*)(std::FILE*)>(
+                        std::fopen(path, "w"), std::fclose);
+                    if (file) for (const bool zero : {true, false}) {
+                        std::vector<double> weights = multipliers;
+                        for (auto& weight : weights) weight = zero ? 0.0 : -weight;
+                        if (!zero && !weights.empty()
+                            && std::all_of(weights.begin(), weights.end(), [](double weight) { return weight == 0.0; }))
+                            weights.front() = 1.0;
+                        const unsigned mode = issue235::row.mode;
+                        std::vector<double> ref, structured;
+                        bool ref_ok = true, structured_ok = true;
+                        issue235::row.mode &= ~issue235::curvature;
+                        try { ref = compiled_.constraint_hessian_at(point, weights); }
+                        catch (const std::exception&) { ref_ok = false; }
+                        issue235::row.mode = mode;
+                        try { structured = compiled_.constraint_hessian_at(point, weights); }
+                        catch (const std::exception&) { structured_ok = false; }
+                        std::size_t checked = 0, different = 0;
+                        double delta = 0.0;
+                        if (ref_ok && structured_ok) for (Ipopt::Index i = 0; i < n; ++i)
+                            for (Ipopt::Index j = 0; j <= i; ++j) {
+                                const auto k = static_cast<std::size_t>(i) * n + j;
+                                const double base = ((zero ? 0.0 : obj_factor) * dense_objective[k] + ref[k])
+                                    * chart_[i] * chart_[j];
+                                const double candidate = ((zero ? 0.0 : obj_factor) * (*objective_hessian_)[k] + structured[k])
+                                    * chart_[i] * chart_[j];
+                                ++checked;
+                                different += candidate != base;
+                                delta = std::max(delta, std::abs(candidate - base));
+                            }
+                        std::fprintf(file.get(), "%llu,%s,%s,%d,%d,%zu,%zu,%a\n",
+                            static_cast<unsigned long long>(issue235::row.generation),
+                            pinned ? "pinned" : "gibbs", zero ? "zero" : "changed",
+                            ref_ok, structured_ok, checked, different, delta);
+                        std::fflush(file.get());
+                    }
+                }
+        }
         Ipopt::Index entry = 0;
         for (Ipopt::Index row = 0; row < n; ++row) {
             for (Ipopt::Index column = 0; column <= row; ++column) {
                 const std::size_t index = static_cast<std::size_t>(row) * n
                     + static_cast<std::size_t>(column);
-                values[entry++] = (obj_factor * (*objective_hessian_)[index]
+                const double value = (obj_factor * (*objective_hessian_)[index]
                     + (*constraint_hessian_)[index]) * chart_[row] * chart_[column];
+                if (compare) {
+                    const double baseline = (obj_factor * dense_objective[index] + dense_constraint[index])
+                        * chart_[row] * chart_[column];
+                    ++issue235::row.counts[issue235::hessian_entries];
+                    issue235::row.counts[issue235::hessian_differences] += value != baseline;
+                    if (value != baseline) if (const auto* path = std::getenv("EP235_HESSIAN_DIFFERENCES")) {
+                        static thread_local auto file = std::unique_ptr<std::FILE, int(*)(std::FILE*)>(
+                            std::fopen(path, "w"), std::fclose);
+                        if (file) {
+                            std::fprintf(file.get(), "%llu,%zu,%s,%d,%d,%a,%a,%a",
+                                static_cast<unsigned long long>(issue235::row.generation), hessian_calls_,
+                                compiled_.feasibility_cell() ? "pinned" : "gibbs",
+                                int(row), int(column), baseline, value, obj_factor);
+                            for (Ipopt::Index i=0; i<n; ++i) std::fprintf(file.get(), ",%a", x[i]);
+                            std::fprintf(file.get(), ",lambda");
+                            for (Ipopt::Index i=0; i<m; ++i) std::fprintf(file.get(), ",%a", lambda[i]);
+                            std::fputc('\n', file.get());
+                            std::fflush(file.get());
+                        }
+                    }
+                }
+                values[entry++] = value;
             }
         }
         return entry == nele_hess;
@@ -1701,7 +1792,7 @@ static EquilibriumResult run_driver_once(
     std::vector<double> initial, EquilibriumResult result, core::Scope& scope,
     std::vector<double>* attempt, const DriverLimits* limits, Attempt kind,
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, EquilibriumAttemptReporting reporting = {},
-    int ipopt_iteration_cap = 0
+    int ipopt_iteration_cap = 0, bool reduced_trial = false
 ) {
     core::AssociationObservations observations;
     result.attempt = kind == Attempt::Warm ? Attempt::Cold : kind;
@@ -1739,6 +1830,18 @@ static EquilibriumResult run_driver_once(
     }
     auto fallback = limits || newton ? initial : std::vector<double>{};
     Ipopt::SmartPtr<GibbsMinimizer> nlp = new GibbsMinimizer(declared, std::move(initial), &scope, limits, physical_amounts);
+    Ipopt::SmartPtr<issue235_trial::Chart> reduced;
+    Ipopt::SmartPtr<Ipopt::TNLP> optimizer = nlp;
+    if (reduced_trial) {
+        reduced = new issue235_trial::Chart(*nlp, declared);
+        auto& c = issue235::row.counts;
+        if (!reduced->admitted) {
+            ++c[issue235::trial_unrepresentable];
+            return result;
+        }
+        ++c[issue235::trial_eligible];
+        optimizer = reduced;
+    }
     record.convergence.residual = std::numeric_limits<double>::quiet_NaN();
     const std::function<bool(double)> warm_start = warm ? std::function<bool(double)>([&](double cap) {
         const bool enabled = nlp->initialize_warm(*warm, cap, predicted);
@@ -1748,17 +1851,28 @@ static EquilibriumResult run_driver_once(
     const auto [initialized, returned] = [&] {
         if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
         if (const char* file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) result.diagnostic_options_file = file;
-        try { nlp->begin_ipopt(); return run_ipopt(nlp, inner_tolerance,
+        try { nlp->begin_ipopt(); return run_ipopt(optimizer, inner_tolerance,
             ipopt_iteration_cap ? ipopt_iteration_cap : static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
                 static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
-            warm_start, &result.linear_solver, nlp->amount_limited(), declared.feasibility_cell(),
+            warm_start, &result.linear_solver, !reduced_trial && nlp->amount_limited(), declared.feasibility_cell(),
             declared.problem.pressure.free, !declared.has_reaction && declared.problem.phases.size() > 1);
         } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, record, observations); throw; }
     }();
     if (!newton) {
         nlp->finish_ipopt(int(initialized), int(returned), predicted, physical_amounts);
+    }
+    if (reduced_trial) {
+        nlp->prototype_iteration_count(reduced->iterations);
+        issue235::row.counts[issue235::trial_reduced_iterations] += reduced->iterations;
+        if (nlp->solution().empty()) {
+            result.iterations = reduced->iterations;
+            result.evaluations = nlp->evaluations();
+            result.hessian_calls = nlp->hessian_calls();
+            nlp->publish_observations(result);
+            return result;
+        }
     }
     nlp->publish_observations(result);
     capture_driver(*nlp, result, record, observations);
@@ -2083,7 +2197,64 @@ EquilibriumResult run_driver(
         std::chrono::steady_clock::time_point::max()};
     const auto* work = limits ? limits : warm ? &shared : nullptr;
     const auto primary = [&]() -> EquilibriumResult {
-    if (!warm || kind == Attempt::Newton) return run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt, limits, kind, {}, predicted, refine_trial, reporting);
+    if (refine_trial && issue235::enabled(issue235::reduced) && kind == Attempt::Cold
+        && !limits && !warm && !core::CalculationWork::active_limit() && !std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")
+        && compiled.problem.phase_calculation == PhaseCalculation::Discovery && compiled.shape.size() == 1
+        && !compiled.problem.temperature.free && !compiled.problem.pressure.free && !compiled.feasibility_cell()) {
+        auto& c = issue235::row.counts;
+        const auto started = issue235::Clock::now();
+        const auto eligible = c[issue235::trial_eligible];
+
+        const auto retain_driver = [&](const char* route, const EquilibriumResult& endpoint,
+                                       std::uint64_t nanos) {
+            if (const auto* path = std::getenv("EP235_REDUCED_ATTEMPTS")) {
+                static thread_local auto file = std::unique_ptr<std::FILE, int(*)(std::FILE*)>(
+                    std::fopen(path, "w"), std::fclose);
+                if (file) std::fprintf(file.get(), "%llu,%zu,%s,%s,%zu,%llu,%d\n",
+                    static_cast<unsigned long long>(issue235::row.generation), compiled.primal_size,
+                    compiled.has_ions ? "charged" : "neutral", route, endpoint.iterations,
+                    static_cast<unsigned long long>(nanos), endpoint.success);
+                if (file) std::fflush(file.get());
+            }
+        };
+        std::vector<double> lifted;
+        auto tried = run_driver_once(compiled, initial, result, scope, &lifted, limits, kind, {},
+                                    predicted, refine_trial, reporting, 0, true);
+        const auto attempt_ns = issue235::elapsed(started);
+        c[issue235::trial_ns] += attempt_ns;
+        retain_driver(c[issue235::trial_eligible] == eligible ? "unrepresentable" : "reduced",
+            tried, attempt_ns);
+        if (tried.success && !lifted.empty()) {
+            if (attempt) *attempt = std::move(lifted);
+            return tried;
+        }
+        c[issue235::trial_fallback] += c[issue235::trial_eligible] != eligible;
+        StageWork stages;
+        stages.add(tried);
+        const auto full_started = issue235::Clock::now();
+        auto original = run_driver_once(compiled, std::move(initial), std::move(result), scope,
+                                        attempt, limits, kind, {}, predicted, refine_trial, reporting);
+        const auto full_ns = issue235::elapsed(full_started);
+        c[issue235::trial_full_ns] += full_ns;
+        retain_driver("full", original, full_ns);
+        c[issue235::trial_full_iterations] += original.iterations;
+        // Work is charged to the reduced attempt without replacing the original refusal's diagnostics.
+        original.iterations += stages.iterations;
+        original.evaluations += stages.evaluations;
+        original.hessian_calls += stages.hessian_calls;
+        return original;
+    }
+    if (!warm || kind == Attempt::Newton) {
+        const auto begun = refine_trial && issue235::enabled(issue235::meter)
+            ? issue235::Clock::now() : issue235::Clock::time_point{};
+        auto original = run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt,
+                                        limits, kind, {}, predicted, refine_trial, reporting);
+        if (begun != issue235::Clock::time_point{}) {
+            issue235::row.counts[issue235::trial_full_ns] += issue235::elapsed(begun);
+            issue235::row.counts[issue235::trial_full_iterations] += original.iterations;
+        }
+        return original;
+    }
     auto tried = [&] {
         core::Scope warm_scope("equilibrium_warm_attempt");
         return run_driver_once(compiled, initial, result, warm_scope, attempt, work, Attempt::Warm, warm, predicted, refine_trial, reporting);
