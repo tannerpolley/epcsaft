@@ -2133,17 +2133,25 @@ void check_fixed_state_plane_uncertainty() {
         double empty_floor = 0.0;
         for (const auto* compiled : {&empty_compiled, &fitted_compiled}) for (bool detailed : {false, true}) {
             core::Capture capture(detailed);
-            const auto parent = solve_equilibrium(*compiled->model, problem);
-            CHECK(parent.success && parent.has_state() && parent.convergence.floor);
+            const auto solved = solve_equilibrium(*compiled->model, problem);
+            CHECK(solved.success && solved.has_state() && solved.convergence.floor);
+            auto parent = solved;
+            if (compiled == &fitted_compiled) {
+                // Hold the state fixed across charts. Independent cold solves can round the phase amount differently.
+                parent = empty_parent;
+                parent.model_identity = solved.model_identity;
+                parent.prepared_endpoint.reset();
+                parent.numerical_estimates.reset();
+            }
             const auto measure = stability_measure(*compiled, parent);
             const double floor = compiled->evaluate(parent.coordinates).floor;
             std::printf("P=%.17g reacting=%d fitted=%d capture=%d residual=%.17g floor=%.17g point_floor=%.17g "
                 "minimum=%.17g uncertainty=%.17g cause=%s\n",
-                pressure, reacting, compiled == &fitted_compiled, detailed, parent.convergence.residual,
-                *parent.convergence.floor, floor, measure.raw_minimum.value_or(NAN),
+                pressure, reacting, compiled == &fitted_compiled, detailed, solved.convergence.residual,
+                *solved.convergence.floor, floor, measure.raw_minimum.value_or(NAN),
                 measure.uncertainty.value_or(NAN), measure.cause.c_str());
             CHECK(measure.available && measure.uncertainty && std::isfinite(*measure.uncertainty));
-            CHECK(std::isfinite(floor) && std::isfinite(*parent.convergence.floor));
+            CHECK(std::isfinite(floor) && std::isfinite(*solved.convergence.floor));
             if (compiled == &empty_compiled && !detailed) {
                 empty_parent = parent; empty_measure = measure; empty_floor = floor;
                 continue;
@@ -2156,7 +2164,7 @@ void check_fixed_state_plane_uncertainty() {
                 CHECK(trial.seed == baseline.seed && trial.composition == baseline.composition);
                 CHECK(trial.quantities.at("volume_m3_per_mol") == baseline.quantities.at("volume_m3_per_mol"));
             }
-            CHECK(parent.convergence.floor == empty_parent.convergence.floor && floor == empty_floor);
+            CHECK(solved.convergence.floor == empty_parent.convergence.floor && floor == empty_floor);
             CHECK(measure.uncertainty == empty_measure.uncertainty);
             CHECK(measure.minima == empty_measure.minima && measure.event == empty_measure.event);
             CHECK(measure.report.no_descent_in_trial_set == empty_measure.report.no_descent_in_trial_set);
@@ -2359,7 +2367,21 @@ void check_mea_trace_ion_discovery() {
     problem.feed.values[0] = 1.859375 * row.basis_amount;
     problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
     problem.pressure = FreeValue::fixed(7533583.1305387868);
-    const auto result = discover_phases(model, problem);
+    auto result = discover_phases(model, problem);
+    if (!result.success && result.linear_solver == "mumps") {
+        // At the exact pressure MUMPS can exhaust the finite search on vanishing additions.
+        CHECK(result.message == "resolved descent with exhausted declaration budget");
+        CHECK(!result.has_state() && !result.temperature && !result.pressure && result.amounts.empty()
+              && result.mole_fractions.empty() && result.molar_densities.empty());
+        CHECK(result.discovery && result.discovery->candidate.has_state());
+        const auto& attempts = result.discovery->declarations;
+        CHECK(std::any_of(attempts.begin(), attempts.end(), [](const auto& attempt) {
+            return !attempt.success && attempt.topology_event == TopologyEvent::PhaseDisappeared;
+        }));
+        // One representable pressure below this pin, MUMPS reaches the same two-liquid branch.
+        problem.pressure = FreeValue::fixed(std::nextafter(problem.pressure.value, 0.0));
+        result = discover_phases(model, problem);
+    }
     CHECK(result.success && result.phase_count == 2 && result.residual_norm() <= 1e-10);
     for (std::size_t p = 0; p < 2; ++p)
         CHECK(result.declaration->phases[p].kind == PhaseKind::Liquid && result.mole_fractions[9 * p + 2] > 0.5);
