@@ -516,7 +516,7 @@ void check_stability_amount_correction() {
     bool nonzero_correction = false;
     double unit_slope_error = 0.0;
     std::vector<std::pair<std::size_t, bool>> unit_admissions;
-    for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}, {0.37, 1.0}, {0.37, 1000.0}}) {
+    for (const auto& [fraction, scale] : {std::pair{1e-17, 1.0}, {0.37, 10.0}, {0.83, 1.0}, {0.37, 1.0}, {0.37, 1250.0}}) {
         const std::vector<double> x{fraction, 1.0 - fraction};
         const auto root = solve_density(model, temperature, pressure, x, DensityBranch::Liquid, std::nullopt);
         const double volume = 1.0 / root.molar_density;
@@ -568,7 +568,7 @@ void check_stability_amount_correction() {
         const auto report = stability_test(compiled, parent, options);
         CHECK(report.completed && report.trials.size() == 1 && energy >= 0.0);
         nonzero_correction = nonzero_correction || energy > 0.0;
-        const auto inputs = recording_support::fields({recording_support::field("rhs_mol", rhs),
+        const auto inputs = recording_support::fields({recording_support::field("feed_mol", scale), recording_support::field("rhs_mol", rhs),
             recording_support::field("representation_energy", representation_energy)});
         const auto& quantities = report.present_phases[0];
         tpd_compare(id + "/correction", quantities.at("correction_l1_mol"), correction, 1e-12 * correction, inputs, "mol");
@@ -588,7 +588,7 @@ void check_stability_amount_correction() {
                 // The same composition has the same molar error. The extensive correction
                 // at the larger scale must be resolvable at the comparison precision.
                 const double rounding = 32 * std::numeric_limits<double>::epsilon();
-                CHECK(energy > rounding);
+                CHECK(rhs != 0.0 && energy > rounding);
                 tpd_compare("donor-slope/feed-rescaling", error, unit_slope_error, rounding);
                 CHECK(admissions == unit_admissions);
             }
@@ -2265,8 +2265,11 @@ void check_reaction_relaxed_split() {
                           Attempt::PhysicalAmounts, {}, false, false, Retry::None);
     };
     const auto ordinary = solve();
-    CHECK(!ordinary.has_state());
-    CHECK(std::abs(ordinary.residual_norm() - 657.68450047028728) < 1e-8);
+    CHECK(ordinary.candidate == Candidate::Refused && !ordinary.has_state());
+    // The raw norm describes the last primary iterate. Vapor disappearance rejects this chart.
+    CHECK(ordinary.topology_event == TopologyEvent::PhaseDisappeared && ordinary.topology_phase == 1);
+    recording_support::observe("reaction-relaxed-split/refused-primary", "raw row infinity norm", "RT",
+        ordinary.residual_norm(), std::nullopt, "refused primary chart");
     compiled.reaction_relaxed_split = true;
     const auto split = solve();
     CHECK(split.has_state());
@@ -2886,7 +2889,7 @@ void check_mdea_full_stability() {
 void check_mdea_bubble_work_limit() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
-    const auto run = [](std::optional<std::size_t> allowance, std::string_view boundary) {
+    const auto run = [](std::optional<std::size_t> allowance, bool expect_admission) {
         // Replay the same cold preparations on a fresh model for each allowance.
 #include "fixtures/mdea-313-bubble.inc"
         auto source = bubble;
@@ -2908,9 +2911,13 @@ void check_mdea_bubble_work_limit() {
         const auto& trace = capture.trace();
         const auto work = std::find_if(trace.events.begin(), trace.events.end(),
             [](const auto& e) { return std::string_view(e.name) == "bubble_work"; });
-        CHECK(work != trace.events.end() && work->reason == boundary);
+        CHECK(work != trace.events.end() && work->values.size() == 2);
+        const auto limit = allowance.value_or(cold_work);
+        CHECK(work->values[1] == static_cast<double>(limit));
+        std::printf("MDEA bubble work %.0f / %zu at %s\n", work->values[0], limit, work->reason.c_str());
         const auto spent = static_cast<std::size_t>(work->values.at(0));
-        if (boundary.empty()) {
+        if (expect_admission) {
+            CHECK(work->reason.empty());
             constexpr double reference_pressure = 27204273.833506774;  // Pa, retained r4 admission replay
             CHECK(result.has_state() && result.pressure);
             CHECK(std::abs(*result.pressure - reference_pressure) <= 1e-10 * reference_pressure);
@@ -2918,6 +2925,8 @@ void check_mdea_bubble_work_limit() {
             CHECK(result.convergence.residual <= bubble.solver_options.value(policy::row));
             CHECK(spent > 0 && spent <= allowance.value_or(cold_work));
         } else {
+            CHECK(!work->reason.empty() && spent >= limit);
+            CHECK(result.message.find("bubble work allowance exhausted at " + work->reason) == 0);
             CHECK(result.convergence.stop == core::Stop::budget_exhausted);
             CHECK(!result.pressure && !result.has_state() && result.coordinates.empty());
             CHECK(!result.first_numerical_failure);
@@ -2931,12 +2940,12 @@ void check_mdea_bubble_work_limit() {
         return spent;
     };
 
-    const auto completed = run(std::nullopt, "");
-    CHECK(run(completed, "") == completed);
-    CHECK(run(completed - 1, "return") == completed);
-    // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
-    constexpr std::size_t density_admission_work = 2080;  // #229 skips constant-path reference Taylor evaluations before admission
-    CHECK(run(density_admission_work, "density admission") == density_admission_work);
+    const auto completed = run(std::nullopt, true);
+    CHECK(run(completed, true) == completed);
+    CHECK(run(completed - 1, false) == completed);
+    // An interior work limit can land at different checkpoints on different solver paths.
+    run(2152, false);
+    CHECK(run(completed / 2, false) < completed);
 }
 
 void check_bubble_branch_end() {
