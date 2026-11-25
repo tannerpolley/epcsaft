@@ -96,6 +96,21 @@ void check_equilibrium_estimate_admission() {
     CHECK(fresh.cause == "original_state_unavailable" && refused.cause == fresh.cause);
 }
 
+void check_compiled_result_origin() {
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel first(water_isobutanol()), second(water_isobutanol());
+    const auto problem = equilibrium_support::flash(2);
+    const auto first_cell = compile_problem(first, problem), second_cell = compile_problem(second, problem);
+    const auto solved = solve_compiled(first_cell);
+    CHECK(solved.has_state());
+    const auto request = SolvedStateActionRequest{{{SolvedStateObservableKind::PhaseMolarDensity}}, {{0, 0, {0.1, -0.1}, {}}}};
+    CHECK(!recording_support::refusal([&] { (void)solved_state_actions(second_cell, solved, request); }).empty());
+    auto wrong_kind = solved;
+    wrong_kind.model_identity.reset();
+    wrong_kind.ideal_identity = std::make_shared<const char>();
+    CHECK(!recording_support::refusal([&] { (void)equilibrium_numerical_estimates(first_cell, wrong_kind); }).empty());
+}
+
 void check_stability_requirement() {
     using namespace epcsaft::equilibrium;
     HelmholtzModel model(water_isobutanol());

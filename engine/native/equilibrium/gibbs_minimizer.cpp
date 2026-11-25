@@ -638,7 +638,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
     // Start at the last phase while its zeroth-order tape state is still live.
     if (hessian) for (auto phase = prepared_->derivative.rbegin(); phase != prepared_->derivative.rend(); ++phase) {
         if (!phase->complete_hessian) continue;
-        phase->complete_hessian(*phase);
+        phase->complete_hessian(*compiled_.model, *phase);
         phase->complete_hessian = {};
     }
     if (limits_) limits_->check();
@@ -873,6 +873,14 @@ static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
     if (declaration.prescribed_liquid_composition)
         for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
     return declaration;
+}
+
+bool same_result_origin(const CompiledSystem& compiled, const EquilibriumResult& result) {
+    const bool model = compiled.model ? !result.ideal_identity && result.model_identity == compiled.model->identity()
+        : compiled.ideal && !result.model_identity && result.ideal_identity == compiled.ideal->identity();
+    return model && result.declaration && (compiled.problem.prescribed_liquid_composition
+        ? same_solved_problem(*result.declaration, public_declaration(compiled))
+        : same_solved_problem(*result.declaration, compiled.problem));
 }
 
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
@@ -1663,7 +1671,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             if (accepted && !core::CalculationWork::stop_at("returned-point estimate")) {
                 refined.numerical_estimates = equilibrium_numerical_estimates(compiled, refined, point, limits);
                 const auto& returned = *refined.numerical_estimates;
-                const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits, &at);
+                const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits);
                 accepted = admission.accepted && returned.cause.empty() && returned.physical_radius <= policy::MIXTURE_FORWARD_ERROR.value;
                 if (!accepted) refined.message = admission.accepted ? "returned-point error target not met" : admission.message;
             }

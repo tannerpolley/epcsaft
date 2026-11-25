@@ -604,10 +604,11 @@ void check_minimax_consistency() {
     }
     {
         HelmholtzModel columns(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::Kij, {1, 3}}});
-        // Constructed State qualification isolates consumption; it does not certify mixed producer availability.
+        // Keep the admitted observation and replace individual columns to isolate their refusal handling.
         for (bool reference : {false, true}) {
-            Prediction mixed; mixed.status = ObservationStatus::Available; mixed.value = 1;
-            mixed.state.emplace();
+            auto mixed = predict(columns, epsilon);
+            CHECK(mixed.status == ObservationStatus::Available && mixed.state);
+            mixed.value = 1;
             mixed.state->bulk_relative_permittivity = 64;
             mixed.state->permittivity_parameter_derivative = {.0625, .25};
             mixed.reference_state = mixed.state;
@@ -636,14 +637,17 @@ void check_minimax_consistency() {
         };
         check(differentiate(columns, energy, prediction));
         auto transfer = energy; transfer.kind = ObservationKind::TransferGibbsEnergy;
-        prediction.second_reference = prediction.reference; prediction.reference = intact;
-        check(differentiate(columns, transfer, prediction));
-        prediction.reference = prediction.second_reference;
-        prediction.activity = electrolyte_activity(columns, gamma.temperature, gamma.pressure, {1, 0, 0}, {1, 2}, {1, 1}, .1, *prediction.reference);
-        CHECK(std::isfinite(prediction.activity->mean_ionic_molality_scale));
-        CHECK(prediction.reference->log_fugacity == intact.log_fugacity);
-        CHECK(prediction.reference->parameter_derivative[0][1].action == intact.parameter_derivative[0][1].action);
-        check(differentiate(columns, gamma, prediction));
+        transfer.reference_composition = energy.composition;
+        auto transferred = predict(columns, transfer);
+        transferred.second_reference = prediction.reference;
+        check(differentiate(columns, transfer, transferred));
+        auto activity = predict(columns, gamma);
+        activity.reference = prediction.reference;
+        activity.activity = electrolyte_activity(columns, gamma.temperature, gamma.pressure, {1, 0, 0}, {1, 2}, {1, 1}, .1, *activity.reference);
+        CHECK(std::isfinite(activity.activity->mean_ionic_molality_scale));
+        CHECK(activity.reference->log_fugacity == intact.log_fugacity);
+        CHECK(activity.reference->parameter_derivative[0][1].action == intact.parameter_derivative[0][1].action);
+        check(differentiate(columns, gamma, activity));
         bool refused = false;
         try {
             HelmholtzModel nine(properties_support::nine_species());

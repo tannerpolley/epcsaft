@@ -106,6 +106,11 @@ EPC_API EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, 
     const std::optional<ThermochemistryRecord>& thermochemistry = {}, const policy::SolverOptions& solver_options = {});
 
 struct Prediction final {
+    struct ElectrolyteCenter final {
+        std::shared_ptr<const char> model;
+        Observation observation;
+    };
+    std::shared_ptr<const ElectrolyteCenter> electrolyte_center;
     policy::SolverOptions solver_options;
     std::optional<InfiniteDilutionReference> reference, second_reference;
     std::optional<ElectrolyteActivity> activity;

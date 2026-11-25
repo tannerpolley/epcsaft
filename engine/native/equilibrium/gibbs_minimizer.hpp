@@ -28,7 +28,7 @@ struct HelmholtzSpectrum final {
 };
 EPC_API HelmholtzSpectrum helmholtz_spectrum(const HelmholtzDerivatives&, const std::vector<double>&,
     const std::vector<std::size_t>&, const std::vector<double>& normalization = {});
-EPC_API const SpinodalSearch& spinodal_search(const CompiledSystem&, const DriverLimits* = nullptr, double anchor = NAN, const SpinodalSearch* carried = nullptr);
+EPC_API SpinodalSearch spinodal_search(const CompiledSystem&, const DriverLimits* = nullptr, double anchor = NAN, const SpinodalSearch* carried = nullptr);
 EPC_API EquilibriumResult spinodal_search_failure(const CompiledSystem&, EquilibriumResult, const std::string&);
 // Returned work is accumulated unless the retry caller requests invocation work.
 enum class Work : std::uint8_t { Accumulated, Invocation };
@@ -94,6 +94,7 @@ EPC_API EquilibriumResult one_component_two_density_attempt(const CompiledSystem
     const EquilibriumResult&, core::Scope&, const DriverLimits*);
 EPC_API EquilibriumResult publish_candidate(const CompiledSystem&, const PhasePoint&, EquilibriumResult,
     core::Scope&, const DriverLimits* = nullptr);
+bool same_result_origin(const CompiledSystem&, const EquilibriumResult&);
 bool newton_eligible(const CompiledSystem&), recovery_eligible(const CompiledSystem&);
 bool discovery_newton_eligible(const CompiledSystem&);
 EPC_API EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
@@ -129,8 +130,7 @@ struct BranchCheck final {
 EPC_API BranchCheck admit_null_mode(const CompiledSystem&, EquilibriumResult&);
 BranchCheck check_density_branches(
     const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr,
-    const PhasePoint* prepared = nullptr
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits = nullptr
 );
 // Cold root on the declared branch; throws when the stored negative-slope sample places a sole root on the other side (#423).
 EPC_API DensityRoot declared_root(const HelmholtzModel& model, double T, double P, const std::vector<double>& x, PhaseKind kind, bool* same_side = nullptr);

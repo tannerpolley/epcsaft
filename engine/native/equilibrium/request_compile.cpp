@@ -68,35 +68,46 @@ struct InputEquality final {
     }
 };
 
-bool same_declaration(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+bool same_declaration(const EquilibriumProblem& a, const EquilibriumProblem& b, bool solved = false) {
     const auto fields = [](const EquilibriumProblem& x) {
         return std::make_tuple(x.phase_calculation, x.topology_declared, x.azeotrope, x.temperature.free, x.temperature.absent,
             x.pressure.free, x.pressure.absent, x.feed.kind, x.feed.values.size(), std::cref(x.feed.solvent),
             x.feed.solvent_mass_kg, x.prescribed_liquid_composition ? x.prescribed_liquid_composition->size() + 1 : 0,
             std::cref(x.reactions), std::cref(x.standard_gibbs_j_per_mol), std::cref(x.source_reference), bool(x.enthalpy_j),
-            bool(x.entropy_j_per_k), bool(x.volume_m3), bool(x.internal_energy_j), std::cref(x.spinodal), std::cref(x.critical),
+            bool(x.entropy_j_per_k), bool(x.volume_m3), bool(x.internal_energy_j), std::cref(x.spinodal),
+            x.critical.has_value(),
             x.envelope ? std::optional(std::tuple(x.envelope->kind, x.envelope->component)) : std::nullopt,
             std::cref(x.loading), x.solver_options.nested_solve, std::cref(x.solver_options.values),
-            std::cref(x.solver_options.owners), std::cref(x.solids));
+            std::cref(x.solids));
     };
-    return InputEquality::same(a.phases, b.phases) && InputEquality::same(fields(a), fields(b));
+    if (!InputEquality::same(fields(a), fields(b))) return false;
+    if (!solved) return InputEquality::same(a.phases, b.phases) && InputEquality::same(a.critical, b.critical)
+        && InputEquality::same(a.solver_options.owners, b.solver_options.owners);
+    const auto phase_fields = [](const PhaseSpec& p) { return std::tie(p.kind, p.support, p.amount); };
+    return std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(), b.phases.end(),
+        [&](const PhaseSpec& x, const PhaseSpec& y) { return InputEquality::same(phase_fields(x), phase_fields(y)); });
 }
 
-bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b) {
-    const auto values = [](const EquilibriumProblem& x) {
-        return std::make_tuple(x.temperature.value, x.pressure.value, std::cref(x.feed.values), std::cref(x.prescribed_liquid_composition),
+bool same_state_values(const EquilibriumProblem& a, const EquilibriumProblem& b, bool solved = false) {
+    const auto values = [solved](const EquilibriumProblem& x) {
+        return std::make_tuple(solved && x.temperature.free ? 0.0 : x.temperature.value,
+            solved && x.pressure.free ? 0.0 : x.pressure.value, std::cref(x.feed.values), std::cref(x.prescribed_liquid_composition),
             x.enthalpy_j, x.entropy_j_per_k, x.volume_m3, x.internal_energy_j, x.envelope ? x.envelope->target : 0.0);
     };
-    return InputEquality::same(values(a), values(b)) && std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(),
+    return InputEquality::same(values(a), values(b)) && (solved || std::equal(a.phases.begin(), a.phases.end(), b.phases.begin(),
         [](const PhaseSpec& x, const PhaseSpec& y) {
             return InputEquality::same(std::tie(x.composition_guess, x.packing_guess), std::tie(y.composition_guess, y.packing_guess));
-        });
+        }));
 }
 
 }  // namespace
 
 bool same_problem_state(const EquilibriumProblem& a, const EquilibriumProblem& b) {
     return !a.discovery && !b.discovery && same_declaration(a, b) && same_state_values(a, b);
+}
+
+bool same_solved_problem(const EquilibriumProblem& a, const EquilibriumProblem& b) {
+    return same_declaration(a, b, true) && same_state_values(a, b, true);
 }
 
 std::vector<double> CompiledSystem::optimizer_identity() const {
@@ -334,6 +345,7 @@ static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, con
     if (prepared && support != prepared->declared_supports.front()) return compile_problem(model, request);
     CompiledSystem compiled;
     compiled.model = &model;
+    compiled.eos_identity = model.identity();
     compiled.problem = request;
     compiled.phase_calculation = request.phase_calculation;
     compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
@@ -417,6 +429,7 @@ static CompiledSystem compile_with_basis(
     const std::size_t components = model.parameters().component_count();
     CompiledSystem compiled;
     compiled.model = &model;
+    compiled.eos_identity = model.identity();
     compiled.phase_calculation = request.phase_calculation;
     compiled.problem = request;
     compiled.problem.solver_options = request.solver_options.resolved(model.solver_options());
@@ -699,7 +712,8 @@ IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<i
                                    policy::SolverOptions options, std::optional<std::string> basis,
                                    std::optional<double> volume, std::optional<std::string> solvent)
     : component_ids(std::move(ids)), charge_number(std::move(charges)), solver_options(std::move(options)),
-      activity_basis(basis.value_or("mole_fraction")), solution_volume_m3(volume), unit_activity_solvent(std::move(solvent)) {
+      activity_basis(basis.value_or("mole_fraction")), solution_volume_m3(volume), unit_activity_solvent(std::move(solvent)),
+      solvent_index([&]() -> std::optional<std::size_t> {
     if (component_ids.empty() || component_ids.size() != charge_number.size())
         throw std::invalid_argument("ideal species/charge size");
     auto sorted = component_ids;
@@ -716,9 +730,10 @@ IdealMoleFraction::IdealMoleFraction(std::vector<std::string> ids, std::vector<i
         const auto found = std::find(component_ids.begin(), component_ids.end(), *unit_activity_solvent);
         if (found == component_ids.end() || charge_number[found - component_ids.begin()] != 0)
             throw std::invalid_argument("unit-activity solvent must be a known neutral species");
-        solvent_index = found - component_ids.begin();
+        return found - component_ids.begin();
     }
-}
+    return std::nullopt;
+}()) {}
 
 CompiledSystem compile_problem(const IdealMoleFraction& model, const EquilibriumProblem& request) {
     if (request.prescribed_liquid_composition) throw std::invalid_argument("prescribed liquid requires a Helmholtz model");

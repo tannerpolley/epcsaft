@@ -309,6 +309,14 @@ void spinodal() {
             recording_support::field("budget_exception", budget_exception)}));
     const auto fresh = compile_problem(model, cell(240, 4000));
     CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
+    const double anchor = spinodal_search(fresh).seed;
+    SpinodalSearch lost; lost.lower = 101; lost.upper = 110;
+    const auto cold_crossing = compile_problem(model, cell(240, 4000));
+    const auto crossing_refusal = [&](const CompiledSystem& compiled) {
+        return recording_support::refusal([&] { (void)spinodal_search(compiled, nullptr, anchor, &lost); });
+    };
+    CHECK(crossing_refusal(cold_crossing) == "spinodal search lost the carried crossing");
+    CHECK(crossing_refusal(fresh) == crossing_refusal(cold_crossing));
     CHECK(recording_support::refusal([&] { (void)spinodal_search(interrupted, &spent); }) == "elapsed work budget exhausted");
     CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
     for (int branch=0;branch<2;++branch) {

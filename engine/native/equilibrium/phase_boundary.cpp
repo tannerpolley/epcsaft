@@ -294,10 +294,7 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
                 const auto& composition = x[side == 1 ? vapor : 1 - vapor];
                 states[side] = loop && pass == 0 && core::bitwise_equal(pressure, seed) && core::bitwise_equal(composition, compiled.feed_composition) && start.feed_states[side]
                     ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
-                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor, {}, false, false,
-                        start.feed_states[side] && composition.size() == compiled.feed_composition.size()
-                            && std::memcmp(composition.data(), compiled.feed_composition.data(), composition.size() * sizeof(double)) == 0
-                            ? &*start.feed_states[side] : nullptr);
+                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
             }
             if (correct_dense && states[1].stable_root_count == 1 && liquid_feed(states[1])) {
                 corrected = true;
@@ -1076,9 +1073,12 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 
 }  // namespace
 
-const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
-    if (compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
+SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
+    if (!carried && compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
         && !(limits && limits->expired())) return *compiled.spinodal_search;
+    const auto previous_selection = carried && compiled.spinodal_search && carried == &*compiled.spinodal_search
+        ? std::optional(*carried) : std::nullopt;
+    if (previous_selection) carried = &*previous_selection;
     auto& scan = compiled.spinodal_search.emplace();
     const auto& declaration = *compiled.problem.spinodal;
     if (!carried) anchor = declaration.density_guess_mol_per_m3;
@@ -1579,19 +1579,18 @@ BranchCheck density_branches_at(
 
 BranchCheck check_density_branches(
     const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
-    const PhasePoint* supplied
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits
 ) {
     if (core::CalculationWork::active_limit())
         scope.probe("density_admission_work", static_cast<double>(core::CalculationWork::current()->units()));
     if (core::CalculationWork::stop_at("density admission")) return {false, false, "work allowance exhausted"};
     const auto& model = *compiled.model;
     if (limits) limits->check();
-    // The driver's published point serves when it is this result's point: admission reads only its
-    // compositions, volumes, packing fractions, T and P. A one-component point needs the pure state.
+    // Admission reads the driver's published physical point when it matches the current chart.
     const bool pure = one_component_two_density_eligible(compiled);
-    if (!supplied && !pure && result.prepared_endpoint && result.prepared_endpoint->point == result.coordinates)
-        supplied = result.prepared_endpoint.get();
+    const auto* supplied = result.has_state() && result.prepared_endpoint && same_result_origin(compiled, result)
+        && core::bitwise_equal(result.prepared_endpoint->point, result.coordinates)
+        && (!pure || !result.prepared_endpoint->pure.empty()) ? result.prepared_endpoint.get() : nullptr;
     const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
     const auto& prepared = supplied ? *supplied : *owned;
     if (initial && !limits && pure) {
@@ -2308,6 +2307,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         auto mapped = n.state;
         mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), alpha);
         mapped.declaration = std::make_shared<EquilibriumProblem>(augmented.problem);
+        mapped.prepared_endpoint.reset();
+        mapped.numerical_estimates.reset();
         const auto local_errors = estimate(augmented, mapped);
         n.estimates.loading = local_errors.loading;
         n.local_estimates = local_errors;

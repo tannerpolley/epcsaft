@@ -1224,6 +1224,36 @@ void check_electrolyte_row_signed_zero() {
     CHECK(!same_state(positive, negative));
 }
 
+void check_electrolyte_prediction_origin() {
+    auto parameters = properties_support::aqueous_electrolyte();
+    const std::vector<ActiveParameter> active{{ParameterFamily::Kij, {1, 3}}};
+    const HelmholtzModel source(parameters, active);
+    parameters.k_ij[1] += 0.01;
+    parameters.k_ij[3] += 0.01;
+    const HelmholtzModel target(parameters, active);
+    Observation row;
+    row.kind = ObservationKind::MeanIonicActivityCoefficient;
+    row.temperature = 298.15;
+    row.pressure = 1e5;
+    row.molality = 0.05;
+    row.composition = {1, 0, 0};
+    row.ion_indices = {1, 2};
+    row.stoichiometry = {1, 1};
+    row.branch = DensityBranch::Liquid;
+    row.observed = 1;
+    const auto center = predict(source, row);
+    const auto fresh_gradient = differentiate(target, row, predict(target, row));
+    const auto reused_gradient = differentiate(target, row, center);
+    auto moved = row;
+    moved.molality = 0.5;
+    auto projected = center;
+    project_prediction(source, moved, projected);
+    const auto fresh = predict(source, moved);
+    CHECK(fresh.value && center.value && *fresh.value != *center.value);
+    CHECK(fresh_gradient.status == ObservationStatus::Available);
+    CHECK(!projected.value && reused_gradient.status == ObservationStatus::ActionUnavailable && reused_gradient.value.empty());
+}
+
 void check_addition_enthalpy() {
     const auto parameters = addition_parameters();
     const auto record = addition_record();

@@ -1601,19 +1601,41 @@ static_assert(!std::is_invocable_v<decltype(&epcsaft::HelmholtzModel::evaluate),
     const epcsaft::HelmholtzModel&, double, double, const std::vector<double>&, epcsaft::DerivativeOrder,
     bool, bool, bool, const epcsaft::HelmholtzDerivatives*>);
 
+void phase_hessian_producer() {
+    using namespace epcsaft;
+    const auto parameters = properties_support::ethane();
+    const auto owned_gradient = [&] {
+        const HelmholtzModel source(parameters);
+        return source.evaluate(300., .01, {1.}, DerivativeOrder::PhaseGradient);
+    }();
+    const HelmholtzModel replacement(parameters);
+    auto destination = owned_gradient;
+    const auto refuses = [&]<class Completion>(const Completion& completion) {
+        if constexpr (std::is_invocable_v<const Completion&, const HelmholtzModel&, HelmholtzDerivatives&>)
+            return !recording_support::refusal([&] { completion(replacement, destination); }).empty();
+        else
+            return !completion;
+    };
+    CHECK(std::isfinite(owned_gradient.gradient.at(1)) && owned_gradient.hessian.empty());
+    CHECK(refuses(owned_gradient.complete_hessian));
+}
+
 void pressure_state_model() {
     using namespace epcsaft;
+    static_assert(!std::is_invocable_v<decltype(&HelmholtzModel::state_at_pressure),
+        const HelmholtzModel&, double, double, const std::vector<double>&, DensityBranch,
+        std::optional<double>, bool, bool, const State*>);
     constexpr double T = 298.15, P = 1e5;
     const std::vector<double> composition{0.98, .01, .01};
-    auto parameters = properties_support::aqueous_electrolyte();
-    HelmholtzModel first(parameters);
-    parameters.k_ij[1] += 0.01;
-    parameters.k_ij[3] += 0.01;
-    HelmholtzModel second(parameters);
-    const auto fresh = second.state_at_pressure(T, P, composition, DensityBranch::Liquid);
-    const auto foreign = first.state(T, fresh.molar_density, composition);
-    const auto warm = second.state_at_pressure(T, P, composition, DensityBranch::Liquid, {}, false, false, &foreign);
-    CHECK(foreign.residual_enthalpy != fresh.residual_enthalpy && warm.residual_enthalpy == fresh.residual_enthalpy);
+    const auto parameters = properties_support::aqueous_electrolyte();
+    const std::vector<ActiveParameter> active{{ParameterFamily::Kij, {1, 3}}};
+    const HelmholtzModel model(parameters, active), fresh_model(parameters, active);
+    const auto fixed = model.state_at_pressure(T, P, composition, DensityBranch::Liquid, {}, false, true);
+    const auto warm = model.state_at_pressure(T, P, composition, DensityBranch::Liquid);
+    const auto fresh = fresh_model.state_at_pressure(T, P, composition, DensityBranch::Liquid);
+    CHECK(fixed.density_parameter_derivative.empty());
+    CHECK(fresh.density_parameter_derivative.size() == 1 && fresh.density_parameter_derivative[0]);
+    CHECK(warm.density_parameter_derivative == fresh.density_parameter_derivative);
 }
 
 void solvent_activity_state_model() {
@@ -1630,6 +1652,15 @@ void solvent_activity_state_model() {
     const auto warm = solvent_activity(second, T, P, composition, reference,
         first.state_at_pressure(T, P, composition, DensityBranch::Liquid));
     CHECK(cold.solvent_activity && warm.solvent_activity == cold.solvent_activity);
+
+    const HelmholtzModel active(parameters, {{ParameterFamily::Kij, {1, 3}}});
+    const auto active_reference = solvent_reference(active, T, P, water);
+    const auto expected = solvent_activity(active, T, P, composition, active_reference);
+    const auto fixed = active.state_at_pressure(T, P, composition, DensityBranch::Liquid, {}, false, true);
+    const auto actual = solvent_activity(active, T, P, composition, active_reference, fixed);
+    CHECK(expected.solvent_activity && actual.solvent_activity == expected.solvent_activity);
+    CHECK(expected.solvent_activity_parameter_derivative.size() == 1 && expected.solvent_activity_parameter_derivative[0]);
+    CHECK(actual.solvent_activity_parameter_derivative == expected.solvent_activity_parameter_derivative);
 }
 
 void electrolyte_reference_model() {

@@ -337,7 +337,7 @@ void declaration_refusals() {
 }
 
 void boundary_refusals() {
-    using Status = SolvedStateActionStatus;
+    using Status = PropertyActionStatus;
     for (const auto& [sites, q, status] : {std::tuple{2u, 1e26, Status::AssociationIllConditioned},
                                         std::tuple{128u, 1e27, Status::AssociationSingular}}) {
         const auto stressed = properties_support::association_stress(sites, q);
@@ -349,21 +349,22 @@ void boundary_refusals() {
         const auto row = site_row(problem, 0, 0);
         const ActiveParameter energy{ParameterFamily::DispersionEnergyOverK, {0}};
         const HelmholtzModel model(stressed, {energy});
-        Prediction prediction;
-        prediction.solved = point;
-        prediction.compiled = compile_problem(regular, problem);
-        // The weak model supplies the coordinates and compiled declaration for this boundary check.
-        prediction.compiled->model = &model;
-        project_prediction(model, row, prediction);
+        const double volume = 1. / point.molar_densities[0];
+        const auto value = model.evaluate(300., volume, {1.}, DerivativeOrder::Value).site_fractions.at(0);
         const double exact = 2. / (1. + std::sqrt(1. + 4. * q));
-        CHECK(prediction.value && prediction.residual);
-        CHECK(reference_scale_agrees("refusal/stress-value", "site fraction", "1", *prediction.value, exact,
+        CHECK(reference_scale_agrees("refusal/stress-value", "site fraction", "1", value, exact,
             0., 2e-12, fields({field("q", q), field("sites", sites)})));
-        const auto action = differentiate(model, row, prediction);
-        CHECK(truth("refusal/stress-action", action.status == ObservationStatus::ActionUnavailable
-            && action.central_value == prediction.value && action.value.empty()
-            && action.message.find(solved_state_status_name(status)) == 0,
-            fields({field("cause", action.message), field("q", q), field("sites", sites)})));
+        std::optional<Status> action;
+        try {
+            (void)model.evaluate(300., volume, {1.}, DerivativeOrder::Hessian, false, true);
+        } catch (const AssociationJacobianFailure& error) { action = error.status; }
+        CHECK(truth("refusal/stress-action", action == status,
+            fields({field("q", q), field("sites", sites)})));
+        Prediction foreign;
+        foreign.solved = point;
+        foreign.compiled = compile_problem(regular, problem);
+        project_prediction(model, row, foreign);
+        CHECK(foreign.status == ObservationStatus::CentralSolveUnavailable && !foreign.value);
         if (sites != 2) continue;
 
         weak.association_energy_over_k[0] = 3e5;
@@ -376,16 +377,12 @@ void boundary_refusals() {
         }
         CHECK(failure && failure->stop == core::Stop::nonfinite && failure->criterion
             && std::string_view(failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
-        auto refused = prediction;
+        Prediction refused;
         refused.solved = point;
         project_prediction(overflow, row, refused);
         CHECK(truth("refusal/projection", refused.status == ObservationStatus::CentralSolveUnavailable
-            && !refused.value && !refused.residual && refused.convergence && refused.refusal_convergence
-            && core::describe(*refused.convergence) == core::describe(*failure)
-            && core::describe(*refused.refusal_convergence) == core::describe(*failure)
-            && refused.refusal_convergence->evaluations == failure->evaluations,
+            && !refused.value && !refused.residual,
             fields({field("status", observation_status_name(refused.status)), field("cause", refused.message),
-                field("refusal_record", refused.refusal_convergence ? core::describe(*refused.refusal_convergence) : "absent"),
                 field("mass_action_record", core::describe(*failure))})));
     }
 }

@@ -912,7 +912,8 @@ SolventActivity solvent_activity(const HelmholtzModel& model, double temperature
     }
     try {
         if (finite && (!finite->at(model.identity(), temperature, composition)
-            || !core::bitwise_equal(finite->requested_pressure, pressure))) finite.reset();
+            || !core::bitwise_equal(finite->requested_pressure, pressure)
+            || finite->log_fugacity_parameter_derivative.size() != columns * composition.size())) finite.reset();
         result.state = finite ? std::move(*finite) : properties::close_density(model, temperature, pressure, composition, DensityBranch::Liquid, std::nullopt);
     } catch (const std::runtime_error& error) {
         result.status = PropertyActionStatus::DensityUnavailable;

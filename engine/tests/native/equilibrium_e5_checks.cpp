@@ -1228,16 +1228,10 @@ void check_e5_refusals() {
     invalid("free-pressure-control", "free pressure is a solved output", free_t, pinned_compiled, pinned_central);
     auto foreign = free_t; foreign.directions = {direction(0.0, 0.0, {0.0, 0.0})};
     invalid("mismatched-central", "central result does not match the compiled system", foreign, pinned_compiled, central);
-    // Typed refusals with retained central values: a same-layout result of another problem
-    // does not satisfy this problem's defining rows.
+    // A same-layout result at a different fixed temperature cannot supply this request's centre.
     auto other = fixture.problem; other.temperature.value = 181.0;
     const auto other_compiled = epcsaft::equilibrium::compile_problem(model, other);
-    const auto other_batch = epcsaft::equilibrium::solved_state_actions(other_compiled, central, base);
-    const double other_rows = epcsaft::equilibrium::maximum_abs(other_compiled.evaluate(central.coordinates).values);
-    record_bool("e5-8/typed/defining-equations",
-        other_rows > 1.0e-10 && other_batch.results[0].status == SolvedStateActionStatus::DefiningEquationsNotSatisfied
-            && other_batch.results[0].value.has_value() && !other_batch.results[0].action.has_value(),
-        recording_support::fields({recording_support::field("central_rows", other_rows), recording_support::field("status", status_field(other_batch, 0))}));
+    invalid("mismatched-central-temperature", "central result does not match the compiled system", base, other_compiled, central);
     auto exact = equilibrium_support::flash(2);
     exact.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.5)), equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.5))};
     exact.temperature = FreeValue::variable(300.0); exact.pressure = FreeValue::variable(1.0e5);

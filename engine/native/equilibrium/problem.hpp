@@ -87,13 +87,13 @@ private:
 public:
     const auto& identity() const { return identity_; }
     IdealMoleFraction(const IdealMoleFraction&) = delete;
-    std::vector<std::string> component_ids;
-    std::vector<int> charge_number;
-    policy::SolverOptions solver_options;
-    std::string activity_basis;
-    std::optional<double> solution_volume_m3;
-    std::optional<std::string> unit_activity_solvent;
-    std::optional<std::size_t> solvent_index;
+    const std::vector<std::string> component_ids;
+    const std::vector<int> charge_number;
+    const policy::SolverOptions solver_options;
+    const std::string activity_basis;
+    const std::optional<double> solution_volume_m3;
+    const std::optional<std::string> unit_activity_solvent;
+    const std::optional<std::size_t> solvent_index;
     EPC_API IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
                       policy::SolverOptions options = {}, std::optional<std::string> basis = {},
                       std::optional<double> volume = {}, std::optional<std::string> solvent = {});
@@ -448,6 +448,7 @@ struct CompiledSystem final {
     std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
+    std::shared_ptr<const char> eos_identity;
     const IdealMoleFraction* ideal = nullptr;
     std::vector<double> ideal_log_k;
     EquilibriumProblem problem;

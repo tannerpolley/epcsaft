@@ -381,6 +381,8 @@ Prediction predict(
     };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
+        result.electrolyte_center = std::make_shared<const Prediction::ElectrolyteCenter>(
+            Prediction::ElectrolyteCenter{model.identity(), observation});
         result.solver_options = observation.problem.solver_options.resolved(model.solver_options());
         try {
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
@@ -445,6 +447,12 @@ Prediction predict(
                 ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable, "prediction");
         }
         return result;
+    }
+    if (prepared) {
+        auto request = observation.problem;
+        request.solver_options = request.solver_options.resolved(model.solver_options());
+        if (prepared->eos_identity != model.identity() || !equilibrium::same_problem_state(prepared->problem, request))
+            prepared.reset();
     }
     if (observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy) {
         validate(observation, model, prepared ? &*prepared : nullptr);
@@ -653,8 +661,23 @@ Prediction predict(
     return result;
 }
 
+static bool admits_electrolyte_center(const HelmholtzModel& model, const Observation& observation, const Prediction& result) {
+    return result.electrolyte_center && result.electrolyte_center->model == model.identity()
+        && same_state(result.electrolyte_center->observation, observation)
+        && (result.electrolyte_center->observation.kind == observation.kind
+            || (result.activity && (observation.kind == ObservationKind::MeanIonicActivityCoefficient
+                || observation.kind == ObservationKind::OsmoticCoefficient)));
+}
+
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
     if (electrolyte_observation(observation.kind)) {
+        if (!admits_electrolyte_center(model, observation, result)) {
+            result.value.reset();
+            result.residual.reset();
+            result.status = ObservationStatus::CentralSolveUnavailable;
+            result.message = "electrolyte prediction model or observation mismatch";
+            return;
+        }
         double value = 0.0;
         result.unit = "1";
         switch (observation.kind) {
@@ -685,7 +708,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         || addition(observation.kind)) return;
     result.value.reset();
     result.residual.reset();
-    if (!result.solved || !result.solved->has_state()) {
+    if (!result.solved || !result.solved->has_state() || result.solved->model_identity != model.identity()) {
         result.stability.reset();
         result.reference.reset();
         result.caloric_center.reset();
@@ -846,6 +869,8 @@ PredictionGradient differentiate(
     if (prediction.status != ObservationStatus::Available)
         return {{}, prediction.status, prediction.message, {}, prediction.first_numerical_failure};
     if (electrolyte_observation(observation.kind)) {
+        if (!admits_electrolyte_center(model, observation, prediction))
+            return {{}, ObservationStatus::ActionUnavailable, "electrolyte prediction model or observation mismatch"};
         PredictionGradient gradient;
         const auto width = model.active_parameters().size();
         for (std::size_t a = 0; a < width; ++a) {
@@ -962,6 +987,8 @@ std::vector<PredictionGradient> differentiate_group(
     const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
     if (references) references->bind(model);
+    if (prediction.solved && prediction.solved->model_identity != model.identity())
+        return std::vector<PredictionGradient>(observations.size(), {{}, ObservationStatus::ActionUnavailable, "prediction model mismatch"});
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {

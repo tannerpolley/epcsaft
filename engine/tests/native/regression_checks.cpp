@@ -9,6 +9,7 @@ void check_equilibrium_refresh_model();
 void check_equilibrium_optimizer_point();
 void check_equilibrium_result_model();
 void check_equilibrium_estimate_admission();
+void check_compiled_result_origin();
 void check_stability_requirement();
 void check_nested_support_tangent_plane_action();
 void check_reactive_solvent_activity();
@@ -24,6 +25,7 @@ void check_addition_endpoint_model();
 void check_addition_endpoint_layout();
 void check_addition_endpoint_retry();
 void check_electrolyte_row_signed_zero();
+void check_electrolyte_prediction_origin();
 void check_addition_enthalpy();
 void check_saturation_capped_addition();
 void check_phase_bulk_relative_permittivity();
@@ -60,6 +62,7 @@ int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
         {{"native.regression.equilibrium-estimate-admission", "equilibrium-estimate-admission"}, check_equilibrium_estimate_admission},
+        {{"native.regression.compiled-result-origin", "compiled-result-origin"}, check_compiled_result_origin},
         {{"native.regression.equilibrium-result-model", "equilibrium-result-model"}, check_equilibrium_result_model},
         {{"native.regression.equilibrium-optimizer-point", "equilibrium-optimizer-point"}, check_equilibrium_optimizer_point},
         {{"native.regression.equilibrium-refresh-model", "equilibrium-refresh-model"}, check_equilibrium_refresh_model},
@@ -88,6 +91,7 @@ int main(int argc, char** argv) {
         {{"native.regression.addition-endpoint-layout", "addition-endpoint-layout"}, check_addition_endpoint_layout},
         {{"native.regression.addition-endpoint-retry", "addition-endpoint-retry"}, check_addition_endpoint_retry},
         {{"native.regression.electrolyte-row-signed-zero", "electrolyte-row-signed-zero"}, check_electrolyte_row_signed_zero},
+        {{"native.regression.electrolyte-prediction-origin", "electrolyte-prediction-origin"}, check_electrolyte_prediction_origin},
         {{"native.regression.addition-enthalpy", "addition-enthalpy"}, check_addition_enthalpy, "R2"},
         {{"native.regression.phase-bulk-relative-permittivity", "phase-bulk-relative-permittivity"}, check_phase_bulk_relative_permittivity, "R2"},
         {{"native.regression.saturation-capped-addition", "saturation-capped-addition"}, check_saturation_capped_addition, "R1"},
