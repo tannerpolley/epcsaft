@@ -636,7 +636,7 @@ packet materializations are explicit and hash-bound. Installed-wheel analyses
 live in `../analyses/`. See `../AGENTS.md`, `../ARCHITECTURE.yaml`, and
 `../docs/scientific/CONTEXT.md`.
 
-Meson discovers threads natively; Ipopt exactly 3.11.9 and Eigen >=3.4,<3.5
+Meson discovers threads natively; Ipopt exactly 3.14.20 and Eigen >=3.4,<3.5
 through pkg-config; Ceres 2.2 through its CMake package metadata. Exact
 archive wraps own CppAD 20250000.3 and HiGHS 1.15.1. CMake only resolves the
 Ceres imported target; the Engine has no CMake build route.

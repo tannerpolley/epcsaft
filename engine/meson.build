@@ -37,8 +37,8 @@ release_link_args = linux and get_option('buildtype') == 'release' \
   : []
 
 threads_dep = dependency('threads')
-# Exact: gibbs_minimizer.cpp static_asserts Ipopt 3.11.9 internals.
-ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '==3.11.9', include_type: 'system')
+# The public amount-step callbacks and equilibrium corpora are qualified on this release.
+ipopt_dep = dependency('ipopt', method: 'pkg-config', version: '==3.14.20', include_type: 'system')
 eigen_dep = dependency('eigen3', method: 'pkg-config', version: ['>=3.4', '<3.5'], include_type: 'system')
 ceres_dep = dependency(
   'Ceres',
@@ -261,7 +261,7 @@ properties_checks = executable(
         'tests/native/properties_temperature_law_checks.cpp',
         'tests/native/properties_pathway_weight_checks.cpp',
         'tests/native/properties_cation_mixing_checks.cpp'),
-  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep],
+  dependencies: [ipopt_dep, eigen_dep, cppad_headers_dep] + quadmath_dep,
   kwargs: check_kwargs,
 )
 # One test per case, named properties/<case> from the case table, as for equilibrium below.

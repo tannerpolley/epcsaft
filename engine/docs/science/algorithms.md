@@ -1093,7 +1093,7 @@ primal point. With $a=1/N_{feed}$ and amount chart $S_i$, equality multipliers
 are stored as $a\lambda$ and bound multipliers as $a u_i z_i/S_i$, where
 $u_i=N_{feed}$ for phase-amount coordinates and one otherwise; the next solve
 reverses these transformations using its own feed total and chart.
-Ipopt 3.11.9's documented warm-start initialization uses primal and multiplier
+Ipopt's documented warm-start initialization uses primal and multiplier
 pushes of `EQUILIBRIUM_WARM_PUSH` and monotone barrier `EQUILIBRIUM_WARM_MU`
 (the manual's *Warm-Starting Capabilities via AMPL*). Nonfinite operands, changed
 layouts, fixed bounds, or equality/bound multipliers above Ipopt's effective
@@ -1440,13 +1440,10 @@ point is therefore refused unless, for each free phase amount with $b-l>0$,
 
 $$x-l\ge\kappa_N\,(b-l),\qquad \kappa_N=\texttt{EQUILIBRIUM\_AMOUNT\_STEP\_RETENTION}=0.1 .$$
 
-Here $b$ is the amount at the base of the direction being searched (Ipopt's current
-iterate, which a watchdog rollback restores; in restoration the original-variable
-block of the restoration iterate), $l$ the active search problem's lower bound
-(restoration's own during restoration; exact solves set `bound_relax_factor=0`, so
-the zero amount bound is not relaxed) and $x$ the trial amount, all in Ipopt's amount
-coordinate $y_p=n_p/S_p$ defined below. The rule is unchanged by a positive per-column
-scale, so it reads the same in mol. Along one shrinking
+Here $b$ is the current amount in the original-variable block of the regular or
+restoration iterate, $l$ is its active lower bound and $x$ is the trial amount.
+All three use the optimizer coordinate $y_p=n_p/S_p$ defined below. A positive per-column
+scale preserves the inequality, so it reads the same in mol. Along one shrinking
 direction $d$ this is $\alpha\le(1-\kappa_N)(b-l)/(-d)$: a fraction-to-boundary rule
 with $\tau_N=0.9$ on the free amounts only, the tighter of Ipopt's $\tau$ and 0.9
 applying to a shrinking amount. It adds no constraint, bound or amount floor and
@@ -1470,22 +1467,26 @@ iterations in both phase orders, the neutral liquid case 42 to 50, the neutral v
 case 120 to 113, and E4-C reaches the same 0.6075 with 2,172 to 2,181 optimizer
 callbacks. Over the 58 MEA family points accepted by both starts, 12 need more of
 some work component (worst 49/69/50 to 145/446/144) while the sums fall from
-2778/4388/2835 to 1866/3479/1922. The qualification trace found the identified base
+2778/4388/2835 to 1866/3479/1922. The Ipopt 3.11.9 qualification trace found the identified base
 and active bound at all 16,161 admissions over 2,540 callbacks, including restoration
-and watchdog rollback. The value 0.1 is provisional. The rule reads Ipopt
-3.11.9 internals (the TNLP adapter's ordering, the current iterate and the active
-problem's bounds; IpBacktrackingLineSearch.cpp, IpRestoIpoptNLP.cpp). A missing
-mapping or Ipopt's own variable scaling, which would put its iterate and bounds outside the
-callback coordinates, stops the solve with a named error, and a compile-time
-check refuses another Ipopt release, which must requalify the rule (3.14's
-`get_curr_iterate` returns iterates, not these relaxed bounds).
-Only `gibbs_minimizer.cpp` includes the private algorithm headers and dereferences
-these objects. Its declaration keeps opaque types; destruction is defined in
-the implementation so the reference-counted live iterate owner remains intact.
-The qualification rejected 3.14.20 on the unchanged near-critical
-methane/ethane comparisons with MUMPS and MA57. The deployed dependency remains
-exactly 3.11.9; confinement does not remove the private dependency or qualify
-another release.
+and watchdog rollback. The value 0.1 is provisional. On stock Ipopt 3.14.20, the intermediate callback reads the current amounts and lower
+multipliers with `get_curr_iterate` and the corresponding complementarity products
+with `get_curr_violations`. For positive lower multiplier $z_L$, dividing the product
+by $z_L$ gives the active slack $b-l$, including Ipopt's numerical slack adjustment.
+A changed amount whose slack is unavailable is refused. Both regular and restoration
+watchdog rollbacks are disabled for free-amount solves so the saved base applies to
+each subsequent trial.
+
+The caller's inner tolerance sets `constr_viol_tol`. With free amounts the bound
+relaxation factor is zero for nonreacting multiphase objective solves and
+$10^{-12}$ for the other objective solves, including single-phase stability trials. Feasibility solves use $10^{-8}$ except for
+MA57 with free pressure, which uses unrelaxed bounds throughout. MUMPS feasibility solves recalculate equality multipliers.
+MA57 free-pressure feasibility solves use adaptive barrier updates, with the
+existing monotone policy for warm starts. Coalesced phases on a singular cold
+step enter the existing source recovery. A stalled nonfatal restoration on a
+reacting primary attempt can enter the existing physical-mol retry. At 265.95 K five methane/ethane starts
+needed 523 recovery evaluations apiece with unrelaxed bounds on MA57. With
+relaxed bounds each exhausted its 2,048-evaluation allowance.
 
 <a id="equilibrium-start-amount-scaling"></a>
 
@@ -1515,7 +1516,7 @@ under positive feed scaling except for the $\max(1,N_{\mathrm{feed}})$ dual-tole
 below 1 mol and Ipopt's absolute `compl_inf_tol`. C3 still refuses its vanished vapor; its
 convergence category is now `stalled` instead of `converged_to_floor`.
 
-For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, or stops non-error with its iteration budget exhausted, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. An exhausted attempt qualifies without it: whether its last, unconverged iterate classifies a phase as vanished depends on last-bit arithmetic (one retained MEA case classified a vanished phase on some platform builds and not on another). Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work, each counted once, and both causes on failure, including exceptions: an ordinary result reports their sum, while each discovery declaration record keeps its own invocation's work and the discovery total sums the records; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
+For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, stops non-error with its iteration budget exhausted, or stalls after a nonfatal restoration failure, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. An exhausted attempt qualifies without it: whether its last, unconverged iterate classifies a phase as vanished depends on last-bit arithmetic (one retained MEA case classified a vanished phase on some platform builds and not on another). Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work, each counted once, and both causes on failure, including exceptions: an ordinary result reports their sum, while each discovery declaration record keeps its own invocation's work and the discovery total sums the records; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
@@ -2303,7 +2304,7 @@ charged-phase root check retains the certified side as well. Evaluated points wi
 side share the unspecified-side minimum. The combined prediction applies the
 observation’s standard-term uncertainty to both families.
 
-Preparation stores the seed reconstruction, inventory admission, raw chart point,
+Preparation stores the seed reconstruction, raw chart point,
 final reconstruction and molar volume, a charged vapor point's own state, and
 the final energy derivatives and association diagnostics. Their stages have one
 owner shared with list evaluation. Evaluation replays each product or failure
@@ -2315,8 +2316,10 @@ could not compile, retain their seed and finish their work separately per parent
 
 A call compiles one trial system per kind and support, using the first entry
 that compiles successfully. Each entry retargets its declared feed, neutral-feed
-admission, normalization and balances; inventory programs retain their original
-refusal. The raw point takes pressure and the fixed standard term from the
+admission, normalization and balances. The reconstructed feed is nonnegative,
+vanishes outside the declared support, and sets the balance right-hand side.
+It therefore witnesses feasibility for each subsequent supplied point. Species
+maxima enter the optimizer boxes only in a minimized trial. The raw point takes pressure and the fixed standard term from the
 parent's compiled system before row evaluation. Pressure-root admission, reduced
 energy assembly, the candidate plane and donor arithmetic remain per parent.
 The optimized search uses the same final reconstruction and energy owners with
@@ -3480,7 +3483,7 @@ share's warm starts and same-point centers; electrolyte rows, which share one re
 stay in the fit's own process. The fit merges rows in observation order and reports the
 one-process sweep's first failure, and every process publishes starts and its cache only when
 the whole evaluation succeeds, so the worker count does not change the evaluation. Processes,
-not threads: Ipopt 3.11.9 drives MUMPS 5.6, whose Fortran modules and C I/O state are
+not threads: Ipopt drives MUMPS 5.6, whose Fortran modules and C I/O state are
 process-global. A Python KeyboardInterrupt stops the fit between rows only
 when it runs on Python's main thread, which alone receives signals; elsewhere it runs to its end. Named scalar ln K and stored
 `ReactionLogPolynomial` a/b/c/d coordinates share the affine chart with EOS
@@ -3721,7 +3724,7 @@ for a neutral record; raw composition actions have a different basis.
    logger is enabled for DEBUG; native `core::Capture` keeps 12. For the 1 bar
    methane/ethane L+V rejection (598 iterations) the log is 79.7 kB at level 5
    and 24.4 MB at level 12. An all-category J_MAIN level-12 dump is not
-   qualified on installed Ipopt 3.11.9.
+   qualified by those measurements.
 5. Interpret each quantity in its own basis. Structural rank, endpoint rank,
    association pivot admission, pressure slope and Ipopt regularization describe
    different operations. Small backward error alone does not bound physical

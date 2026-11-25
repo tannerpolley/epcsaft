@@ -500,7 +500,7 @@ void fit_failure_records() {
     const HelmholtzModel mass_model(large_mass, active, {}, solver_options);
     const auto terminal_parameters = request.coordinates.apply(parameters, {-1000.});
     const HelmholtzModel terminal_model(terminal_parameters, active, {}, solver_options);
-    for (auto row : {solved(ObservationKind::PhaseDensity, cell), site_row(cell, 0, 0)}) {
+    for (const auto& row : {solved(ObservationKind::PhaseDensity, cell), site_row(cell, 0, 0)}) {
         const bool site = row.site.has_value();
         const auto prediction = predict_validated(model, row);
         CHECK(prediction.value && prediction.solved && prediction.solved->success && prediction.convergence);

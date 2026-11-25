@@ -167,7 +167,7 @@ void check_nested_support_tangent_plane_action() {
     CHECK(action.status == ObservationStatus::Available);
     const double expected = std::accumulate(action.value.begin(), action.value.end(), 0.0);
     CHECK(std::abs(expected - 0.0396268846633831) <= FIRST_ORDER);
-    for (auto support : {vapor, restricted}) {
+    for (const auto& support : {vapor, restricted}) {
         auto single = row;
         single.stability_options.trials = std::vector{support};
         const auto prediction = trial_set(single, model, 0.0);
