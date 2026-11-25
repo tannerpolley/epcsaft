@@ -515,7 +515,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
                 phase: str | None = None, species: Sequence[str] | None = None, scale: float | None = None,
                 denominator_phase: str | None = None, denominator_species: Sequence[str] | None = None,
                 analytical_solute_molality: float | None = None, site: tuple[str, str] | None = None,
-                solvent: str | None = None, negative_log10: bool = False) -> Observation:
+                solvent: str | None = None, negative_log10: bool | None = None) -> Observation:
     """Declare an observable of a solved equilibrium problem.
 
     Parameters
@@ -589,7 +589,7 @@ def observation(parameters: Parameters, kind: str, problem: Problem, *, observed
     if isinstance(problem.phases, Discover):
         raise ParameterError("a regression observation needs declared phases")
     result = Observation()
-    result.kind, result.negative_log10 = _KINDS[kind], negative_log10
+    result.kind, result.negative_log10 = _KINDS[kind], negative_log10 is True
     if analytical_solute_molality is not None:
         result.analytical_solute_molality = analytical_solute_molality
     if phase is None and kind not in ("pressure", "temperature", "equilibrium_isobaric_heat_capacity"):
