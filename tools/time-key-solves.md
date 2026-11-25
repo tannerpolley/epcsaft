@@ -151,7 +151,7 @@ startup, communication and merging outside `compute`; total fit CPU including
 child processes and total compute CPU are reported separately. No instruction
 counts or physical-validation claim follow from these measurements.
 
-**Frozen reference on main `5ad73fb9`, host `tnnrpolley21-MS-7C95`.**
+**Frozen reference on main `5ad73fb9`, host `reference-workstation`.**
 
 | Quantity | Issue baseline `36485a88` | Refrozen current main |
 |---|---:|---:|

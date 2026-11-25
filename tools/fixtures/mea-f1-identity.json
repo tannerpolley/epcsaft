@@ -34,7 +34,7 @@
   },
   "frozen": {
     "revision": "5ad73fb9ff2a7e21d44b4d2fb20924aaa643ab6e",
-    "host": "tnnrpolley21-MS-7C95",
+    "host": "reference-workstation",
     "serial_cpu_seconds": 16.279413456,
     "serial_wall_seconds": 16.28246296299767,
     "reference_taylor_evaluations": 675,

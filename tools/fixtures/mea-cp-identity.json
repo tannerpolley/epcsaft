@@ -29,7 +29,7 @@
   "frozen": {
     "engine_tree": "07f2b379ae5ba93b2c2384e67d76823fae73e227",
     "base": "56216880de538223ca1e7ae189e700c977cafeec",
-    "host": "tnnrpolley21-MS-7C95",
+    "host": "reference-workstation",
     "serial_cpu_seconds": 1.9789931799999998,
     "serial_wall_seconds": 1.9794414640055038,
     "work": {

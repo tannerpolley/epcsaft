@@ -271,7 +271,7 @@ class Inventory:
         clang = self.clang
         parts = []
         while not clang.Cursor_isNull(cursor) and clang.kind(cursor) != "TranslationUnit":
-            name = clang.spelling(cursor)
+            name = clang.spelling(cursor).replace(self.native, "")  # lambda spellings embed the absolute source path
             if not name:
                 name = "(" + self.location(cursor)[0] + ")"
             if clang.kind(cursor) in FUNCTION:
