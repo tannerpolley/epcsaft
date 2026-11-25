@@ -2,6 +2,7 @@
 
 #include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
+#include "core/retained.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
@@ -119,12 +120,8 @@ Observation pressure_reference_row(const Observation& observation) {
     return reference;
 }
 
-bool same_state(const Observation& left, const Observation& right) {
-    if (left.kind == ObservationKind::Stability || right.kind == ObservationKind::Stability) return false;
-    if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind))
-        return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
-            && (left.kind == ObservationKind::BulkRelativePermittivity) == (right.kind == ObservationKind::BulkRelativePermittivity)
-            && core::bitwise_equal(std::array{left.temperature, left.pressure, left.molality},
+static bool same_electrolyte_inputs(const Observation& left, const Observation& right) {
+    return core::bitwise_equal(std::array{left.temperature, left.pressure, left.molality},
                                    std::array{right.temperature, right.pressure, right.molality})
             && left.branch == right.branch && core::bitwise_equal(left.composition, right.composition)
             && left.ion_indices == right.ion_indices && left.stoichiometry == right.stoichiometry
@@ -132,6 +129,18 @@ bool same_state(const Observation& left, const Observation& right) {
             && left.finite_solute_molalities.has_value() == right.finite_solute_molalities.has_value()
             && (!left.finite_solute_molalities
                 || core::bitwise_equal(*left.finite_solute_molalities, *right.finite_solute_molalities));
+}
+
+bool same_state(const Observation& left, const Observation& right) {
+    if (left.kind == ObservationKind::Stability || right.kind == ObservationKind::Stability) return false;
+    if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind)) {
+        const auto activity = [](ObservationKind kind) {
+            return kind == ObservationKind::MeanIonicActivityCoefficient || kind == ObservationKind::OsmoticCoefficient;
+        };
+        return electrolyte_observation(left.kind) && electrolyte_observation(right.kind)
+            && (left.kind == right.kind || (activity(left.kind) && activity(right.kind) && left.molality > 0.0))
+            && same_electrolyte_inputs(left, right);
+    }
     // Pressure closures stay singletons; equilibrium projection and residual metadata do not select physics.
     if (pressure_closed(left.kind) || pressure_closed(right.kind)
         || left.kind == ObservationKind::LogEquilibriumConstant || right.kind == ObservationKind::LogEquilibriumConstant
@@ -139,6 +148,74 @@ bool same_state(const Observation& left, const Observation& right) {
     if (left.kind == ObservationKind::PhaseSolventActivity || right.kind == ObservationKind::PhaseSolventActivity)
         if (left.kind != right.kind || left.phase != right.phase || left.species != right.species) return false;
     return equilibrium::same_problem_state(left.problem, right.problem);
+}
+
+namespace {
+
+struct ElectrolyteOperands final {
+    std::optional<State> state, reference_state;
+    std::optional<InfiniteDilutionReference> reference, second_reference;
+    std::optional<ElectrolyteActivity> activity;
+};
+
+struct ElectrolyteRefusal final {
+    ObservationStatus status;
+    std::string message;
+    std::optional<core::Convergence> convergence, refusal, first_failure;
+};
+
+using ElectrolyteOutcome = std::variant<ElectrolyteOperands, ElectrolyteRefusal>;
+
+struct ElectrolyteKey final {
+    struct Request { const HelmholtzModel& model; const Observation& row; bool input_actions = false; };
+    using Entry = core::Retained<ElectrolyteKey, ElectrolyteOutcome>;
+    std::shared_ptr<const char> producer;
+    Observation row;
+
+    bool matches(const Request& request) const { return producer == request.model.identity() && same_state(row, request.row); }
+
+    static bool admits(const Request& request, const ElectrolyteOutcome& outcome) {
+        const auto* operands = std::get_if<ElectrolyteOperands>(&outcome);
+        if (!operands) return true;
+        const auto& row = request.row;
+        if (request.input_actions)
+            return (row.kind == ObservationKind::MeanIonicActivityCoefficient || row.kind == ObservationKind::OsmoticCoefficient)
+                && row.molality > 0.0 && operands->reference && operands->activity;
+        switch (row.kind) {
+        case ObservationKind::BulkRelativePermittivity:
+            return operands->state && (row.reference_composition.empty() || operands->reference_state);
+        case ObservationKind::MeanIonicActivityCoefficient:
+            return operands->reference && (row.molality > 0.0 ? operands->activity.has_value()
+                : row.molality == 0.0 && (!row.finite_solute_molalities || std::all_of(row.finite_solute_molalities->begin(),
+                    row.finite_solute_molalities->end(), [](double molality) { return molality == 0.0; })));
+        case ObservationKind::OsmoticCoefficient: return operands->reference && operands->activity;
+        case ObservationKind::MixtureOsmoticCoefficient: return operands->activity.has_value();
+        case ObservationKind::SolvationGibbsEnergy:
+        case ObservationKind::TransferGibbsEnergy:
+            return operands->reference && (row.kind == ObservationKind::SolvationGibbsEnergy || operands->second_reference)
+                && row.species.size() == 1 && (row.species[0] == row.ion_indices[0] || row.species[0] == row.ion_indices[1]);
+        default: return false;
+        }
+    }
+
+    static Entry publish(const HelmholtzModel& model, const Observation& row, ElectrolyteOutcome value) {
+        return Entry::publish({model.identity(), row}, std::move(value));
+    }
+    static auto resolve(const Entry& entry, const Request& request) { return entry.resolve(request); }
+};
+
+}  // namespace
+
+class Prediction::ElectrolyteCenter final {
+    ElectrolyteKey::Entry entry_;
+public:
+    ElectrolyteCenter(const HelmholtzModel& model, const Observation& row, ElectrolyteOutcome value)
+        : entry_(ElectrolyteKey::publish(model, row, std::move(value))) {}
+    auto resolve(const ElectrolyteKey::Request& request) const { return ElectrolyteKey::resolve(entry_, request); }
+};
+
+static auto electrolyte_outcome(const HelmholtzModel& model, const Observation& row, const Prediction& result, bool input_actions = false) {
+    return result.electrolyte_center ? result.electrolyte_center->resolve({model, row, input_actions}) : nullptr;
 }
 
 bool validate_declaration(const Observation& observation, const HelmholtzModel& model) {
@@ -383,6 +460,11 @@ Prediction predict(
     };
     if (electrolyte_observation(observation.kind)) {
         Prediction result;
+        const auto refuse = [&](Prediction failure) {
+            failure.electrolyte_center = std::make_shared<const Prediction::ElectrolyteCenter>(model, observation,
+                ElectrolyteRefusal{failure.status, failure.message, failure.convergence, failure.refusal_convergence, failure.first_numerical_failure});
+            return failure;
+        };
         result.solver_options = observation.problem.solver_options.resolved(model.solver_options());
         try {
             if (observation.kind == ObservationKind::BulkRelativePermittivity) {
@@ -401,7 +483,7 @@ Prediction predict(
                     close(observation.composition, previous && previous->activity ? &previous->activity->state : nullptr));
                 if (!activity.solvent_activity) {
                     result.status = ObservationStatus::ReferenceUnavailable; result.message = activity.cause;
-                    core::retain_failure(result.first_numerical_failure, activity.cause, "prediction"); return result;
+                    core::retain_failure(result.first_numerical_failure, activity.cause, "prediction"); return refuse(std::move(result));
                 }
                 result.activity.emplace();
                 result.activity->state = std::move(activity.state);
@@ -414,7 +496,7 @@ Prediction predict(
                     auto key = observation;
                     key.finite_solute_molalities.reset();
                     key.composition = x; key.molality = 0.0; key.reference_composition.clear();
-                    for (const auto& entry : cache) if (same_state(key, entry.first)) return entry.second;
+                    for (const auto& entry : cache) if (same_electrolyte_inputs(key, entry.first)) return entry.second;
                     const State* solvent = old && old->solvent_state ? &*old->solvent_state : nullptr;
                     const auto anchor = prior(solvent, x, x, DensityBranch::Liquid);
                     auto value = infinite_dilution_reference(model, key.temperature, key.pressure, x,
@@ -439,14 +521,22 @@ Prediction predict(
                     }
                 }
             }
+            result.electrolyte_center = std::make_shared<const Prediction::ElectrolyteCenter>(model, observation,
+                ElectrolyteOperands{result.state, result.reference_state, result.reference, result.second_reference, result.activity});
             project_prediction(model, observation, result);
         } catch (const std::bad_alloc&) {
             throw;
         } catch (const std::exception& error) {
-            return unavailable_solve(std::move(result), error, observation.kind == ObservationKind::BulkRelativePermittivity
-                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable, "prediction");
+            return refuse(unavailable_solve(std::move(result), error, observation.kind == ObservationKind::BulkRelativePermittivity
+                ? ObservationStatus::DensityUnavailable : ObservationStatus::ReferenceUnavailable, "prediction"));
         }
         return result;
+    }
+    if (prepared) {
+        auto request = observation.problem;
+        request.solver_options = request.solver_options.resolved(model.solver_options());
+        if (prepared->eos_identity != model.identity() || !equilibrium::same_problem_state(prepared->problem, request))
+            prepared.reset();
     }
     if (observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy) {
         validate(observation, model, prepared ? &*prepared : nullptr);
@@ -527,6 +617,7 @@ Prediction predict(
         if (previous && previous->saturation && previous->cap_branch != "source_cap") {
             final.solved = previous->saturation->candidates[*previous->saturation->accepted].state;
             final.compiled = equilibrium::compile_problem(model, *final.solved->declaration);
+            final.solved_request = std::make_shared<const equilibrium::EquilibriumProblem>(item.problem);
             project_prediction(model, item, final);
         } else final = predict(model, item, compatible ? initial.solved : std::nullopt, std::move(compiled));
         if (failed(final, "final")) return final;
@@ -538,6 +629,7 @@ Prediction predict(
         initial.unit = "J/mol";
         initial.final_caloric_center = std::move(final.caloric_center);
         initial.final_solved = std::move(final.solved); initial.final_compiled = std::move(final.compiled);
+        initial.final_solved_request = std::move(final.solved_request);
         return initial;
     }
     Prediction result;
@@ -599,8 +691,8 @@ Prediction predict(
         return result;
     }
     equilibrium::EquilibriumResult solved;
+    auto problem = observation.problem;
     try {
-        auto problem = observation.problem;
         if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
             auto reference = pressure_reference_row(observation);
             if (references) for (const auto& entry : references->pressures) if (same_state(reference, entry.first))
@@ -618,7 +710,9 @@ Prediction predict(
                 core::retain_first(result.first_numerical_failure, result.pressure_reference->first_numerical_failure);
                 core::retain_failure(result.first_numerical_failure, result.message, "prediction solve"); return result;
             }
-            problem.pressure.value = observation.pressure_ratio * *result.pressure_reference->value; result.compiled.reset();
+            result.reference_pressure_ratio = observation.pressure_ratio;
+            problem.pressure.value = result.reference_pressure_ratio * *result.pressure_reference->value;
+            result.compiled.reset();
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
@@ -654,34 +748,69 @@ Prediction predict(
             return result;
         }
     result.solved = std::move(solved);
+    result.solved_request = std::make_shared<const equilibrium::EquilibriumProblem>(std::move(problem));
     project_prediction(model, observation, result);
     return result;
 }
 
+static bool admits_solved_prediction(const HelmholtzModel& model, const Observation& observation, const Prediction& result) {
+    if (!result.solved || !result.solved->has_state() || result.solved->model_identity != model.identity() || !result.solved_request)
+        return false;
+    if (observation.kind != ObservationKind::Stability || !observation.pressure_reference)
+        return equilibrium::same_solved_problem(*result.solved_request, observation.problem);
+    const auto& reference = result.pressure_reference;
+    if (!reference || !reference->value || !reference->solved_request
+        || !core::bitwise_equal(result.reference_pressure_ratio, observation.pressure_ratio)
+        || !equilibrium::same_problem_state(*reference->solved_request, *observation.pressure_reference)) return false;
+    auto effective = observation.problem;
+    effective.pressure.value = observation.pressure_ratio * *reference->value;
+    return equilibrium::same_solved_problem(*result.solved_request, effective);
+}
+
+static void project_electrolyte(const Observation& observation, const ElectrolyteOutcome* outcome, Prediction& result) {
+    result.value.reset();
+    result.residual.reset();
+    if (!outcome) {
+        result.status = ObservationStatus::CentralSolveUnavailable;
+        result.message = "electrolyte prediction model or observation mismatch";
+        return;
+    }
+    if (const auto* refusal = std::get_if<ElectrolyteRefusal>(outcome)) {
+        result.status = refusal->status;
+        result.message = refusal->message;
+        result.convergence = refusal->convergence;
+        result.refusal_convergence = refusal->refusal;
+        result.first_numerical_failure = refusal->first_failure;
+        return;
+    }
+    const auto& operands = std::get<ElectrolyteOperands>(*outcome);
+    double value = 0.0;
+    result.message.clear();
+    result.unit = "1";
+    switch (observation.kind) {
+    case ObservationKind::BulkRelativePermittivity:
+        value = operands.state->bulk_relative_permittivity;
+        if (operands.reference_state) value /= operands.reference_state->bulk_relative_permittivity;
+        break;
+    case ObservationKind::MeanIonicActivityCoefficient: value = observation.molality == 0.0 ? 1.0 : operands.activity->mean_ionic_molality_scale; break;
+    case ObservationKind::OsmoticCoefficient:
+    case ObservationKind::MixtureOsmoticCoefficient:
+        if (!operands.activity->osmotic_coefficient || !std::holds_alternative<double>(*operands.activity->osmotic_coefficient)) {
+            result.status = ObservationStatus::ActionUnavailable; result.message = "osmotic precision floor or missing pure solvent"; return;
+        }
+        value = std::get<double>(*operands.activity->osmotic_coefficient); break;
+    default:
+        result.unit = "J/mol";
+        const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
+        value = GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (operands.reference->log_fugacity[ion]
+            - (operands.second_reference ? operands.second_reference->log_fugacity[ion] : 0.0));
+    }
+    finish(result, observation, value);
+}
+
 void project_prediction(const HelmholtzModel& model, const Observation& observation, Prediction& result) {
     if (electrolyte_observation(observation.kind)) {
-        double value = 0.0;
-        result.unit = "1";
-        switch (observation.kind) {
-        case ObservationKind::BulkRelativePermittivity:
-            value = result.state->bulk_relative_permittivity;
-            if (result.reference_state) value /= result.reference_state->bulk_relative_permittivity;
-            break;
-        case ObservationKind::MeanIonicActivityCoefficient: value = result.activity ? result.activity->mean_ionic_molality_scale : 1.0; break;
-        case ObservationKind::OsmoticCoefficient:
-        case ObservationKind::MixtureOsmoticCoefficient:
-            if (!result.activity->osmotic_coefficient || !std::holds_alternative<double>(*result.activity->osmotic_coefficient)) {
-                result.status = ObservationStatus::ActionUnavailable; result.message = "osmotic precision floor or missing pure solvent"; return;
-            }
-            value = std::get<double>(*result.activity->osmotic_coefficient); break;
-        default:
-            result.unit = "J/mol";
-            const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
-            value = GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (result.reference->log_fugacity[ion]
-                - (result.second_reference ? result.second_reference->log_fugacity[ion] : 0.0));
-        }
-        result.residual.reset();
-        finish(result, observation, value);
+        project_electrolyte(observation, electrolyte_outcome(model, observation, result).get(), result);
         return;
     }
     const auto& parameters = model.parameters();
@@ -690,7 +819,7 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
         || addition(observation.kind)) return;
     result.value.reset();
     result.residual.reset();
-    if (!result.solved || !result.solved->has_state()) {
+    if (!admits_solved_prediction(model, observation, result)) {
         result.stability.reset();
         result.reference.reset();
         result.caloric_center.reset();
@@ -848,9 +977,15 @@ void project_prediction(const HelmholtzModel& model, const Observation& observat
 PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 ) {
-    if (prediction.status != ObservationStatus::Available)
-        return {{}, prediction.status, prediction.message, {}, prediction.first_numerical_failure};
     if (electrolyte_observation(observation.kind)) {
+        const auto outcome = electrolyte_outcome(model, observation, prediction);
+        if (!outcome)
+            return {{}, ObservationStatus::ActionUnavailable, "electrolyte prediction model or observation mismatch"};
+        Prediction projection;
+        project_electrolyte(observation, outcome.get(), projection);
+        if (projection.status != ObservationStatus::Available)
+            return {{}, projection.status, projection.message, {}, projection.first_numerical_failure, projection.refusal_convergence};
+        const auto& operands = std::get<ElectrolyteOperands>(*outcome);
         PredictionGradient gradient;
         const auto width = model.active_parameters().size();
         for (std::size_t a = 0; a < width; ++a) {
@@ -868,21 +1003,24 @@ PredictionGradient differentiate(
                     core::retain_first(action.diagnostics.first_numerical_failure, state.first_numerical_failure);
                     return entry;
                 };
-                const auto sample = column(*prediction.state, "sample");
-                const auto reference = prediction.reference_state && sample ? column(*prediction.reference_state, "reference") : std::optional(0.0);
-                value = sample && reference ? prediction.reference_state
-                    ? (*sample - *prediction.value * *reference) / prediction.reference_state->bulk_relative_permittivity : *sample : NAN;
+                const auto sample = column(*operands.state, "sample");
+                const auto reference = operands.reference_state && sample ? column(*operands.reference_state, "reference") : std::optional(0.0);
+                value = sample && reference ? operands.reference_state
+                    ? (*sample - (operands.state->bulk_relative_permittivity / operands.reference_state->bulk_relative_permittivity) * *reference)
+                        / operands.reference_state->bulk_relative_permittivity : *sample : NAN;
             } else if (observation.kind == ObservationKind::MeanIonicActivityCoefficient) {
-                if (prediction.activity) action = prediction.activity->mean_ionic_parameter_derivative.at(a);
-                value = prediction.activity ? action.action.value_or(NAN) : 0.0;
+                if (observation.molality > 0.0) {
+                    action = operands.activity->mean_ionic_parameter_derivative.at(a);
+                    value = action.action.value_or(NAN);
+                }
             } else if (observation.kind == ObservationKind::OsmoticCoefficient || observation.kind == ObservationKind::MixtureOsmoticCoefficient)
-                value = prediction.activity->osmotic_parameter_derivative.at(a);
+                value = operands.activity->osmotic_parameter_derivative.at(a);
             else {
                 const auto ion = observation.species[0] == observation.ion_indices[0] ? 0 : 1;
-                const auto column = prediction.reference->parameter_derivative.at(a)[ion];
-                const auto ref = prediction.second_reference ? prediction.second_reference->parameter_derivative.at(a)[ion]
+                const auto column = operands.reference->parameter_derivative.at(a)[ion];
+                const auto ref = operands.second_reference ? operands.second_reference->parameter_derivative.at(a)[ion]
                     : ResidualEnergyAction{0.0, PropertyActionStatus::Available, {}};
-                action = !column.action || !prediction.second_reference ? column : ref;
+                action = !column.action || !operands.second_reference ? column : ref;
                 value = column.action && ref.action ? GAS_CONSTANT_J_PER_MOL_K * observation.temperature * (*column.action - *ref.action) : NAN;
             }
             if (std::isfinite(value)) { action.action = value; action.status = PropertyActionStatus::Available; }
@@ -901,6 +1039,8 @@ PredictionGradient differentiate(
         }
         return gradient;
     }
+    if (prediction.status != ObservationStatus::Available)
+        return {{}, prediction.status, prediction.message, {}, prediction.first_numerical_failure};
     if (!pressure_closed(observation.kind))
         return differentiate_group(model, {&observation}, prediction).front();
     PredictionGradient gradient;
@@ -967,6 +1107,9 @@ std::vector<PredictionGradient> differentiate_group(
     const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
     if (references) references->bind(model);
+    if (prediction.solved && std::any_of(observations.begin(), observations.end(), [&](const auto* row) {
+        return !admits_solved_prediction(model, *row, prediction);
+    })) return std::vector<PredictionGradient>(observations.size(), {{}, ObservationStatus::ActionUnavailable, "prediction model or state mismatch"});
     if (electrolyte_observation(observations.front()->kind) || pressure_closed(observations.front()->kind)) {
         std::vector<PredictionGradient> result;
         for (const auto* row : observations) {
@@ -975,10 +1118,14 @@ std::vector<PredictionGradient> differentiate_group(
                 unavailable.message = "full solute input actions are not declared";
                 result.push_back(std::move(unavailable)); continue;
             }
-            auto projected = prediction;
-            if (!pressure_closed(row->kind)) project_prediction(model, *row, projected);
-            auto gradient = differentiate(model, *row, projected);
+            auto gradient = differentiate(model, *row, prediction);
             if (gradient.status != ObservationStatus::Available) { result.push_back(std::move(gradient)); continue; }
+            const auto outcome = electrolyte_observation(row->kind) && !inputs.empty() ? electrolyte_outcome(model, *row, prediction, true) : nullptr;
+            const auto* operands = outcome ? std::get_if<ElectrolyteOperands>(outcome.get()) : nullptr;
+            if (electrolyte_observation(row->kind) && !inputs.empty() && !operands) {
+                result.push_back({{}, ObservationStatus::ActionUnavailable, "electrolyte input action operands unavailable"});
+                continue;
+            }
             const auto parameter_width = model.active_parameters().size()
                 + std::count_if(coordinates.coordinates.begin(), coordinates.coordinates.end(), [](const auto& c) { return c.reaction.has_value(); });
             gradient.value.resize(parameter_width, 0.0);
@@ -987,7 +1134,7 @@ std::vector<PredictionGradient> differentiate_group(
                 double value = NAN;
                 if (electrolyte_observation(row->kind)) {
                     auto action = electrolyte_input_action(model, row->temperature, row->pressure, row->composition,
-                        row->ion_indices, row->stoichiometry, row->molality, *prediction.reference, *prediction.activity,
+                        row->ion_indices, row->stoichiometry, row->molality, *operands->reference, *operands->activity,
                         {d.temperature_k, d.pressure_pa, inputs[j].molality});
                     core::retain_first(gradient.first_numerical_failure, action.first_numerical_failure);
                     gradient.refusal_convergence = std::move(action.refusal_convergence);
@@ -1051,15 +1198,16 @@ std::vector<PredictionGradient> differentiate_group(
     for (const auto& input : inputs) directions.push_back(input.state);
     if (observations.front()->kind == ObservationKind::Stability) {
         PredictionGradient out;
+        const auto& row = *observations.front();
         if (!prediction.stability || !prediction.solved || !prediction.solved->has_state()
-            || prediction.solved->model_identity != model.identity()) {
+            || prediction.solved->model_identity != model.identity()
+            || !equilibrium::same_stability_options(prediction.stability->options, row.stability_options)) {
             out.message = "central stability state unavailable"; return {out};
         }
         const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
-        const auto& row = *observations.front();
         using Kind = equilibrium::SolvedStateObservableKind;
-        if (prediction.pressure_reference) {
+        if (row.pressure_reference) {
             const auto& reference = *prediction.pressure_reference;
             auto reference_row = pressure_reference_row(row);
             const auto gradient = differentiate_group(model, {&reference_row}, reference, coordinates, inputs).front();
@@ -1182,7 +1330,8 @@ std::vector<PredictionGradient> differentiate_group(
         auto center = prediction;
         std::swap(center.caloric_center, center.final_caloric_center);
         std::swap(center.solved, center.final_solved); std::swap(center.compiled, center.final_compiled);
-        item.problem = item.final_problem;
+        std::swap(center.solved_request, center.final_solved_request);
+        item.problem = capped ? *center.solved_request : item.final_problem;
         auto final = differentiate_group(model, {&item}, center, coordinates).front();
         core::retain_first(final.first_numerical_failure, initial.first_numerical_failure, true);
         if (final.status != ObservationStatus::Available) { final.message = "final:" + final.message; return {final}; }

@@ -301,14 +301,69 @@ void spinodal() {
     try { spinodal_search(interrupted, &spent); }
     catch (const BudgetExhausted& error) { budget_exception = true; cause = error.what(); }
     catch (const std::exception& error) { cause = error.what(); }
-    const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_search
-        && interrupted.spinodal_search->evaluations == 0 && interrupted.spinodal_search->finite_limits.empty();
+    const bool budget = budget_exception && cause == "elapsed work budget exhausted" && interrupted.spinodal_diagnostics()
+        && interrupted.spinodal_diagnostics()->evaluations == 0 && interrupted.spinodal_diagnostics()->finite_limits.empty();
     recording_support::compare("spinodal/exhausted", "budget-cause", "1", budget ? 1.0 : 0.0, 1.0,
         recording_support::Rule::Absolute, 0.0, 0.0, "spinodal-search",
         recording_support::fields({recording_support::field("cause", cause),
             recording_support::field("budget_exception", budget_exception)}));
     const auto fresh = compile_problem(model, cell(240, 4000));
     CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
+    const double anchor = spinodal_search(fresh).seed;
+    const auto upper_cell = compile_problem(model, cell(240, 13000));
+    const auto upper = spinodal_search(upper_cell);
+    CHECK(std::abs(upper.seed - reference[0][2]) < 1e-8);
+    {
+        SpinodalSearch selected;
+        const auto corrector = spinodal_corrector(fresh, nullptr, upper.seed, &upper, selected);
+        const auto column = corrector.phase_offsets()[0] + corrector.feed_composition.size() + 1;
+        const double packing = model.packing_fraction_coefficient(240., corrector.feed_composition);
+        CHECK(selected.seed == upper.seed);
+        CHECK(boundary_start(corrector)[column] == std::log(packing * upper.seed));
+        auto copy = corrector;
+        CHECK(recording_support::refusal([&] { (void)spinodal_search(copy, &spent); }) == "elapsed work budget exhausted");
+        CHECK(copy.spinodal_diagnostics() && copy.spinodal_diagnostics()->evaluations == 0);
+        const auto carried = spinodal_search(fresh, nullptr, upper.seed, &upper);
+        CHECK(carried.seed == upper.seed);
+        std::string refusal;
+        try {
+            const auto start = boundary_start(corrector);
+            std::cout << std::setprecision(17) << "corrector after revocation " << std::exp(start[column]) / packing
+                << " mol/m^3, fresh carried " << carried.seed << " mol/m^3\n";
+            CHECK(start[column] == std::log(packing * carried.seed));
+        } catch (const std::domain_error& error) {
+            refusal = error.what();
+            std::cout << "corrector after revocation refused: " << refusal << '\n';
+        }
+        CHECK(refusal == "spinodal corrector crossing unavailable");
+    }
+    auto diagnostic = *fresh.spinodal_diagnostics();
+    CHECK(spinodal_search(fresh, nullptr, upper.seed, &upper, &diagnostic).seed == upper.seed);
+    CHECK(diagnostic.seed == upper.seed && fresh.spinodal_diagnostics()->seed == anchor);
+    CHECK(spinodal_search(fresh).seed == anchor);
+    for (const auto& target : {compile_problem(model, cell(240, 4000)), fresh}) {
+        CHECK(spinodal_search(target, nullptr, upper.seed, &upper).seed == upper.seed);
+        CHECK(spinodal_search(target).seed == anchor);
+    }
+    auto short_scan = cell(240, 4000);
+    short_scan.spinodal->density_nodes = {200., 300., 400.};
+    const auto narrow = compile_problem(model, short_scan);
+    SpinodalSearch attempted;
+    CHECK(spinodal_search(fresh, nullptr, upper.seed, &upper, &attempted).seed == upper.seed);
+    for (const auto* previous : std::array<const SpinodalSearch*, 2>{&upper, &attempted}) {
+        CHECK(recording_support::refusal([&] { (void)spinodal_search(narrow, nullptr, upper.seed, previous, &attempted); })
+            == "spinodal search lost the carried crossing");
+        CHECK(attempted.evaluations == short_scan.spinodal->density_nodes.size());
+        CHECK(attempted.brackets.empty() && !std::isfinite(attempted.seed));
+        attempted = upper;
+    }
+    SpinodalSearch lost; lost.lower = 101; lost.upper = 110;
+    const auto cold_crossing = compile_problem(model, cell(240, 4000));
+    const auto crossing_refusal = [&](const CompiledSystem& compiled) {
+        return recording_support::refusal([&] { (void)spinodal_search(compiled, nullptr, anchor, &lost); });
+    };
+    CHECK(crossing_refusal(cold_crossing) == "spinodal search lost the carried crossing");
+    CHECK(crossing_refusal(fresh) == crossing_refusal(cold_crossing));
     CHECK(recording_support::refusal([&] { (void)spinodal_search(interrupted, &spent); }) == "elapsed work budget exhausted");
     CHECK(spinodal_search(interrupted).seed == spinodal_search(fresh).seed);
     for (int branch=0;branch<2;++branch) {
@@ -382,8 +437,8 @@ void spinodal() {
             try { spinodal_search(coverage); } catch (const std::domain_error& error) {
                 if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
             }
-            CHECK(coverage.spinodal_search);
-            const bool expected_coverage=std::any_of(coverage.spinodal_search->brackets.begin(),coverage.spinodal_search->brackets.end(),
+            CHECK(coverage.spinodal_diagnostics());
+            const bool expected_coverage=std::any_of(coverage.spinodal_diagnostics()->brackets.begin(),coverage.spinodal_diagnostics()->brackets.end(),
                 [&](const auto& b) { return endpoints[0][branch]>=b.lower && endpoints[0][branch]<=b.upper; });
             CHECK(covered==expected_coverage);
             bool compatible=false;
@@ -392,9 +447,9 @@ void spinodal() {
                 try { spinodal_search(compiled); } catch (const std::domain_error& error) {
                     if (std::string(error.what()) != "no resolved connected spinodal bracket in declared scan") throw;
                 }
-                CHECK(compiled.spinodal_search);
+                CHECK(compiled.spinodal_diagnostics());
                 const auto& before=initial.spinodal->search;
-                for (const auto& bracket:compiled.spinodal_search->brackets)
+                for (const auto& bracket:compiled.spinodal_diagnostics()->brackets)
                     if (endpoints[1][branch]>=bracket.lower && endpoints[1][branch]<=bracket.upper
                         && bracket.lower<=before.upper && bracket.upper>=before.lower) compatible=true;
             }
@@ -425,7 +480,7 @@ void spinodal() {
                         CHECK(path.cause_stop==ContinuationStop::branch_lost);
                         CHECK(path.last_result && path.last_result->spinodal);
                         CHECK(path.last_result->spinodal->search.evaluations==grids[grid].size());
-                        CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_search->brackets.size());
+                        CHECK(path.last_result->spinodal->search.brackets.size()==coverage.spinodal_diagnostics()->brackets.size());
                     } else {
                         CHECK(path.success);
                         CHECK(std::abs(path.states.front().molar_densities[0]-endpoints[0][1-branch])/endpoints[0][1-branch]<=1e-8);

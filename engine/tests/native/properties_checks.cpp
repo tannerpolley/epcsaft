@@ -4,6 +4,7 @@
 namespace properties_checks {
 void electrolyte_reference_model();
 void pressure_state_model();
+void phase_hessian_producer();
 void solvent_activity_state_model();
 void reference_taylor_batch_model();
 void thread_exit_hessian();
@@ -49,6 +50,7 @@ int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.properties.reference-taylor-batch-model", "reference-taylor-batch-model"}, reference_taylor_batch_model},
         {{"native.properties.pressure-state-model", "pressure-state-model"}, pressure_state_model},
+        {{"native.properties.phase-hessian-producer", "phase-hessian-producer"}, phase_hessian_producer},
         {{"native.properties.solvent-activity-state-model", "solvent-activity-state-model"}, solvent_activity_state_model},
         {{"native.properties.electrolyte-reference-model", "electrolyte-reference-model"}, electrolyte_reference_model},
         {{"native.properties.thread-exit", "ThreadExit"}, thread_exit_hessian},

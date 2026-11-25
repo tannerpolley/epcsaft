@@ -3,6 +3,7 @@
 
 #include "core/convergence.hpp"
 #include "core/linear_error.hpp"
+#include "core/retained.hpp"
 #include "properties/helmholtz_model.hpp"
 
 #include <cstddef>
@@ -87,13 +88,13 @@ private:
 public:
     const auto& identity() const { return identity_; }
     IdealMoleFraction(const IdealMoleFraction&) = delete;
-    std::vector<std::string> component_ids;
-    std::vector<int> charge_number;
-    policy::SolverOptions solver_options;
-    std::string activity_basis;
-    std::optional<double> solution_volume_m3;
-    std::optional<std::string> unit_activity_solvent;
-    std::optional<std::size_t> solvent_index;
+    const std::vector<std::string> component_ids;
+    const std::vector<int> charge_number;
+    const policy::SolverOptions solver_options;
+    const std::string activity_basis;
+    const std::optional<double> solution_volume_m3;
+    const std::optional<std::string> unit_activity_solvent;
+    const std::optional<std::size_t> solvent_index;
     EPC_API IdealMoleFraction(std::vector<std::string> ids, std::vector<int> charges,
                       policy::SolverOptions options = {}, std::optional<std::string> basis = {},
                       std::optional<double> volume = {}, std::optional<std::string> solvent = {});
@@ -440,6 +441,8 @@ struct SpinodalSearch final {
     std::size_t evaluations = 0;
 };
 
+struct SpinodalKey;
+
 struct CompiledSystem final {
     // Internal split context; ordinary declarations retain the inventory-limited optimizer box.
     bool reaction_relaxed_split = false;
@@ -448,6 +451,7 @@ struct CompiledSystem final {
     std::optional<core::NumericalRank> last_rank;
     std::vector<double> optimizer_identity() const;
     const HelmholtzModel* model = nullptr;
+    std::shared_ptr<const char> eos_identity;
     const IdealMoleFraction* ideal = nullptr;
     std::vector<double> ideal_log_k;
     EquilibriumProblem problem;
@@ -462,7 +466,6 @@ struct CompiledSystem final {
     std::vector<Row> rows;
     std::vector<std::pair<std::size_t, std::size_t>> log_charge_rows;  // numerical row, phase
     std::size_t pinned_count = 0;
-    mutable std::optional<SpinodalSearch> spinodal_search;
     std::size_t mode_count = 0;  // critical eigenvector coordinates u, just before the free intensives
     std::size_t free_intensive_count = 0;
     std::size_t rank = 0;
@@ -619,6 +622,13 @@ struct CompiledSystem final {
     double seed_temperature() const noexcept { return problem.temperature.is_positive() ? problem.temperature.value : 300.0; }
     double seed_pressure() const noexcept { return problem.pressure.is_positive() ? problem.pressure.value : 1.0e5; }
 
+    const std::optional<SpinodalSearch>& spinodal_diagnostics() const noexcept { return spinodal_diagnostics_; }
+
+private:
+    friend SpinodalKey;
+    mutable core::Retained<SpinodalKey, SpinodalSearch> spinodal_selection_;
+    mutable std::optional<SpinodalSearch> spinodal_diagnostics_;
+    mutable bool spinodal_corrector_ = false;
 };
 
 EPC_API CompiledSystem compile_problem(
@@ -984,6 +994,7 @@ EPC_API StabilityGridResult stability_grid(const CompiledSystem&, const Equilibr
 
 struct StabilityMeasure final {
     StabilityReport report;
+    StabilityOptions options;
     std::optional<double> raw_minimum, value, uncertainty;
     std::optional<std::size_t> minimizing_trial;
     std::vector<std::size_t> minima;

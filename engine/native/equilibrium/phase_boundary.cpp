@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/stoichiometry.hpp"
@@ -294,10 +295,7 @@ double fugacity_pressure_seed(const CompiledSystem& compiled, std::vector<double
                 const auto& composition = x[side == 1 ? vapor : 1 - vapor];
                 states[side] = loop && pass == 0 && core::bitwise_equal(pressure, seed) && core::bitwise_equal(composition, compiled.feed_composition) && start.feed_states[side]
                     ? *start.feed_states[side] : compiled.model->state_at_pressure(temperature, pressure, composition,
-                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor, {}, false, false,
-                        start.feed_states[side] && composition.size() == compiled.feed_composition.size()
-                            && std::memcmp(composition.data(), compiled.feed_composition.data(), composition.size() * sizeof(double)) == 0
-                            ? &*start.feed_states[side] : nullptr);
+                        side == 0 ? DensityBranch::Liquid : DensityBranch::Vapor);
             }
             if (correct_dense && states[1].stable_root_count == 1 && liquid_feed(states[1])) {
                 corrected = true;
@@ -734,7 +732,7 @@ BoundaryAttempt admit_result(
     BranchCheck branch;
     try { branch = compiled.mode_count ? admit_null_mode(compiled, result) : check_density_branches(compiled, result, anchors, initial, scope); }
     catch (const std::exception& error) {
-        if (compiled.problem.spinodal && compiled.spinodal_search && !std::isfinite(compiled.spinodal_search->seed))
+        if (compiled.problem.spinodal && compiled.spinodal_diagnostics() && !std::isfinite(compiled.spinodal_diagnostics()->seed))
             result = spinodal_search_failure(compiled, std::move(result), error.what());
         branch.message = error.what();
     }
@@ -776,7 +774,7 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
                 const std::vector<double>& y, const CompiledSystem& compiled, const EquilibriumProblem& problem,
                 const std::function<std::vector<double>(std::optional<core::Convergence>*)>& tangent_at, double delta,
                 std::vector<double> anchors, DensityAdmission admission, core::Scope& scope, std::shared_ptr<const OptimizerState> warm,
-                const DriverLimits* limits = nullptr, StageWork* observations = nullptr) {
+                const DriverLimits* limits = nullptr, StageWork* observations = nullptr, const SpinodalSearch* carried = nullptr) {
     BoundaryAttempt attempt;
     attempt.terminal = true;
     std::vector<double> tangent;
@@ -805,20 +803,22 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
         const bool inside = inside_domain(compiled, predicted, projected);
         scope.probe("predictor_projected", static_cast<double>(projected));
         if (inside) {
+            std::optional<CompiledSystem> selected;
             if (compiled.problem.spinodal) {
+                SpinodalSearch scan;
                 try {
-                    const auto& before = spinodal_search(current, limits, anchors[0]);
                     const auto offset = compiled.phase_offsets()[0] + compiled.feed_composition.size() + 1;
-                    const auto& next = spinodal_search(compiled, limits, anchors[0], &before);
-                    predicted[offset] = std::log(next.seed * compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
+                    selected = spinodal_corrector(compiled, limits, anchors[0], carried, scan);
+                    predicted[offset] = std::log(scan.seed * compiled.model->packing_fraction_coefficient(compiled.seed_temperature(), compiled.feed_composition));
                 } catch (const std::bad_alloc&) { throw; }
                 catch (const std::exception& error) {
-                    return admit_result(compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what()), anchors, false, scope);
+                    return admit_result(compiled, spinodal_search_failure(compiled, structural_result(compiled, scope), error.what(), carried ? &scan : nullptr), anchors, false, scope);
                 }
             }
-            auto solved = unless_failed(solve_equilibrium_from_coordinates(compiled, predicted, nullptr, limits, std::move(warm)), observations);
+            const auto& corrector = selected ? *selected : compiled;
+            auto solved = unless_failed(solve_equilibrium_from_coordinates(corrector, predicted, nullptr, limits, std::move(warm)), observations);
             if (admission != DensityAdmission::Predicted || compiled.mode_count)
-                return admit_result(compiled, std::move(solved), anchors, admission == DensityAdmission::Declared, scope);
+                return admit_result(corrector, std::move(solved), anchors, admission == DensityAdmission::Declared, scope);
             auto previous = admit_result(compiled, solved, anchors, false, scope);
             if (previous.accepted || previous.stop != ContinuationStop::branch_lost) return previous;
             const auto at = compiled.prepare(predicted, true);
@@ -1076,10 +1076,53 @@ ContinuationResult trace_envelope(const HelmholtzModel& model, const Continuatio
 
 }  // namespace
 
-const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried) {
-    if (compiled.spinodal_search && std::isfinite(compiled.spinodal_search->seed)
-        && !(limits && limits->expired())) return *compiled.spinodal_search;
-    auto& scan = compiled.spinodal_search.emplace();
+struct SpinodalKey final {
+    struct Request { const CompiledSystem& compiled; const DriverLimits* limits; bool corrector; };
+    using Entry = core::Retained<SpinodalKey, SpinodalSearch>;
+    std::shared_ptr<const char> producer;
+    double temperature, guess;
+    std::vector<double> feed, nodes;
+    std::vector<std::size_t> support;
+    bool corrector;
+
+    bool matches(const Request& r) const {
+        const auto& c = r.compiled;
+        return c.model && producer == c.model->identity() && c.problem.spinodal && corrector == r.corrector
+            && core::bitwise_equal(temperature, c.seed_temperature())
+            && core::bitwise_equal(guess, c.problem.spinodal->density_guess_mol_per_m3)
+            && core::bitwise_equal(feed, c.feed_composition) && core::bitwise_equal(nodes, c.problem.spinodal->density_nodes)
+            && support == c.problem.phases[0].support;
+    }
+    static bool admits(const Request& r, const SpinodalSearch& result) {
+        return std::isfinite(result.seed) && !(r.limits && r.limits->expired());
+    }
+    static auto resolve(const CompiledSystem& c, const DriverLimits* limits) {
+        return c.spinodal_selection_.resolve(Request{c, limits, c.spinodal_corrector_});
+    }
+    static void publish(const CompiledSystem& c, const SpinodalSearch& report, bool corrector) {
+        c.spinodal_selection_ = Entry::publish({c.model->identity(), c.seed_temperature(), c.problem.spinodal->density_guess_mol_per_m3,
+            c.feed_composition, c.problem.spinodal->density_nodes, c.problem.phases[0].support, corrector}, report);
+        c.spinodal_corrector_ = corrector;
+    }
+    static auto& begin_diagnostics(const CompiledSystem& c) { return c.spinodal_diagnostics_.emplace(); }
+    static void require_ordinary_search(const CompiledSystem& c, const DriverLimits* limits) {
+        if (!c.spinodal_corrector_) return;
+        begin_diagnostics(c);
+        if (limits) limits->check();
+        throw std::domain_error("spinodal corrector crossing unavailable");
+    }
+};
+
+SpinodalSearch spinodal_search(const CompiledSystem& compiled, const DriverLimits* limits, double anchor, const SpinodalSearch* carried, SpinodalSearch* attempted) {
+    if (!carried) {
+        if (const auto admitted = SpinodalKey::resolve(compiled, limits)) return *admitted;
+        SpinodalKey::require_ordinary_search(compiled, limits);
+    }
+    const auto previous_selection = carried && carried == attempted ? std::optional(*carried) : std::nullopt;
+    if (previous_selection) carried = &*previous_selection;
+    SpinodalSearch local;
+    auto& scan = carried ? (attempted ? *attempted : local) : SpinodalKey::begin_diagnostics(compiled);
+    if (carried && attempted) scan = {};
     const auto& declaration = *compiled.problem.spinodal;
     if (!carried) anchor = declaration.density_guess_mol_per_m3;
     const auto& x = compiled.feed_composition;
@@ -1146,7 +1189,18 @@ const SpinodalSearch& spinodal_search(const CompiledSystem& compiled, const Driv
         if (std::signbit(fa) != std::signbit(at.values[0])) b = m;
         else { a = m; fa = at.values[0]; }
     }
+    if (limits && limits->expired()) { scan.seed = NAN; limits->check(); }
+    if (!carried) SpinodalKey::publish(compiled, scan, false);
     return scan;
+}
+
+CompiledSystem spinodal_corrector(const CompiledSystem& compiled, const DriverLimits* limits, double anchor,
+    const SpinodalSearch* carried, SpinodalSearch& attempted) {
+    attempted = spinodal_search(compiled, limits, anchor, carried, &attempted);
+    auto selected = compiled;
+    SpinodalKey::begin_diagnostics(selected) = attempted;
+    SpinodalKey::publish(selected, attempted, true);
+    return selected;
 }
 
 std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate, const DriverLimits* limits, StageWork* stages,
@@ -1579,19 +1633,18 @@ BranchCheck density_branches_at(
 
 BranchCheck check_density_branches(
     const CompiledSystem& compiled, const EquilibriumResult& result,
-    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits,
-    const PhasePoint* supplied
+    const std::vector<double>& anchors, bool initial, core::Scope& scope, const DriverLimits* limits
 ) {
     if (core::CalculationWork::active_limit())
         scope.probe("density_admission_work", static_cast<double>(core::CalculationWork::current()->units()));
     if (core::CalculationWork::stop_at("density admission")) return {false, false, "work allowance exhausted"};
     const auto& model = *compiled.model;
     if (limits) limits->check();
-    // The driver's published point serves when it is this result's point: admission reads only its
-    // compositions, volumes, packing fractions, T and P. A one-component point needs the pure state.
+    // Admission reads the driver's published physical point when it matches the current chart.
     const bool pure = one_component_two_density_eligible(compiled);
-    if (!supplied && !pure && result.prepared_endpoint && result.prepared_endpoint->point == result.coordinates)
-        supplied = result.prepared_endpoint.get();
+    const auto* supplied = result.has_state() && result.prepared_endpoint && same_result_origin(compiled, result)
+        && core::bitwise_equal(result.prepared_endpoint->point, result.coordinates)
+        && (!pure || !result.prepared_endpoint->pure.empty()) ? result.prepared_endpoint.get() : nullptr;
     const auto owned = supplied ? std::optional<PhasePoint>{} : std::make_optional(compiled.prepare(result.coordinates, true));
     const auto& prepared = supplied ? *supplied : *owned;
     if (initial && !limits && pure) {
@@ -1736,7 +1789,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
             try { seed = solve_initial(boundary_start(start, true, nullptr, &observations)); }
             catch (const std::bad_alloc&) { throw; }
             catch (const std::exception& error) {
-                if (!start.problem.spinodal || !start.spinodal_search || std::isfinite(start.spinodal_search->seed)) throw;
+                if (!start.problem.spinodal || !start.spinodal_diagnostics() || std::isfinite(start.spinodal_diagnostics()->seed)) throw;
                 seed = spinodal_search_failure(start, structural_result(start, initial), error.what());
             }
             admitted = admit_result(start, std::move(seed), anchors, true, initial);
@@ -1781,7 +1834,9 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
             auto tangent = sensitivity(current, y_current, path.lever(current), failure);
             w = 1.0 / (1.0 + std::inner_product(tangent.begin(), tangent.end(), tangent.begin(), 0.0));
             return tangent;
-        }, q_try - q, anchors, parameter_path ? DensityAdmission::Predicted : DensityAdmission::Previous, attempt_scope, transfer ? result.states.back().optimizer_state : nullptr, limits, &observations);
+        }, q_try - q, anchors, parameter_path ? DensityAdmission::Predicted : DensityAdmission::Previous, attempt_scope,
+            transfer ? result.states.back().optimizer_state : nullptr, limits, &observations,
+            result.states.back().spinodal ? &result.states.back().spinodal->search : nullptr);
         observations.observe(attempt.observations);
         if (attempt.accepted)
             if (const auto pair = swapped_pair(compiled, y_current, attempt.result->coordinates)) coalesced(attempt, compiled, *pair);
@@ -2342,6 +2397,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         auto mapped = n.state;
         mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), alpha);
         mapped.declaration = std::make_shared<EquilibriumProblem>(augmented.problem);
+        mapped.prepared_endpoint.reset();
+        mapped.numerical_estimates.reset();
         const auto local_errors = estimate(augmented, mapped);
         n.estimates.loading = local_errors.loading;
         n.local_estimates = local_errors;

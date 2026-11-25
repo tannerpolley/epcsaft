@@ -190,7 +190,12 @@ public:
             for (std::size_t a = 0; a < central_sites_.size(); ++a) site_series[a].c[0] = central_sites_[a];
             const bool blocks = !parameters_.site_pathway.empty() || !parameters_.site_correction.empty();
             if (!sites.empty()) {
-                static thread_local AssociationJacobian factorization;
+                auto& factorization = [&]() -> AssociationJacobian& {
+                    if constexpr (std::is_same_v<Base, double>) {
+                        static thread_local AssociationJacobian scratch;
+                        return scratch;
+                    } else return central_factorization_;
+                }();
                 if (!prepared) {
                 if constexpr (std::is_same_v<Base, double>)
                     properties::site_factorization(factorization, sites, composition_, parameters_, rho0 * NUMBER_DENSITY_PER_ANGSTROM3, strength, nullptr, association_.get());
@@ -366,6 +371,7 @@ private:
     IsothermMoments<Base> moments_;
     Base temperature_, total_ = 0.0;
     mutable std::vector<Base> central_sites_;
+    mutable std::conditional_t<std::is_same_v<Base, double>, std::monostate, AssociationJacobian> central_factorization_;
     mutable std::unique_ptr<AssociationWorkspace> association_;
     mutable std::size_t used_ = 0;
     std::vector<Base> composition_, sigma_, diameter_, amounts_;

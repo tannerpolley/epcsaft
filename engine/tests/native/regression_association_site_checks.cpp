@@ -337,7 +337,7 @@ void declaration_refusals() {
 }
 
 void boundary_refusals() {
-    using Status = SolvedStateActionStatus;
+    using Status = PropertyActionStatus;
     for (const auto& [sites, q, status] : {std::tuple{2u, 1e26, Status::AssociationIllConditioned},
                                         std::tuple{128u, 1e27, Status::AssociationSingular}}) {
         const auto stressed = properties_support::association_stress(sites, q);
@@ -349,21 +349,60 @@ void boundary_refusals() {
         const auto row = site_row(problem, 0, 0);
         const ActiveParameter energy{ParameterFamily::DispersionEnergyOverK, {0}};
         const HelmholtzModel model(stressed, {energy});
-        Prediction prediction;
-        prediction.solved = point;
-        prediction.compiled = compile_problem(regular, problem);
-        // The weak model supplies the coordinates and compiled declaration for this boundary check.
-        prediction.compiled->model = &model;
-        project_prediction(model, row, prediction);
+        const double volume = 1. / point.molar_densities[0];
+        const auto value = model.evaluate(300., volume, {1.}, DerivativeOrder::Value).site_fractions.at(0);
         const double exact = 2. / (1. + std::sqrt(1. + 4. * q));
-        CHECK(prediction.value && prediction.residual);
-        CHECK(reference_scale_agrees("refusal/stress-value", "site fraction", "1", *prediction.value, exact,
+        CHECK(reference_scale_agrees("refusal/stress-value", "site fraction", "1", value, exact,
             0., 2e-12, fields({field("q", q), field("sites", sites)})));
-        const auto action = differentiate(model, row, prediction);
-        CHECK(truth("refusal/stress-action", action.status == ObservationStatus::ActionUnavailable
-            && action.central_value == prediction.value && action.value.empty()
-            && action.message.find(solved_state_status_name(status)) == 0,
-            fields({field("cause", action.message), field("q", q), field("sites", sites)})));
+        std::optional<Status> action;
+        try {
+            (void)model.evaluate(300., volume, {1.}, DerivativeOrder::Hessian, false, true);
+        } catch (const AssociationJacobianFailure& error) { action = error.status; }
+        CHECK(truth("refusal/stress-action", action == status,
+            fields({field("q", q), field("sites", sites)})));
+        Prediction foreign;
+        foreign.solved = point;
+        foreign.compiled = compile_problem(regular, problem);
+        project_prediction(model, row, foreign);
+        CHECK(foreign.status == ObservationStatus::CentralSolveUnavailable && !foreign.value);
+        const auto fixed_point = [&](const HelmholtzModel& producer) {
+            Prediction snapshot;
+            // The rank probe can already refuse these stress models. Supply the one-phase chart
+            // geometry so the test can isolate projection and action at the declared sample.
+            const auto& layout = *foreign.compiled;
+            auto& compiled = snapshot.compiled.emplace();
+            compiled.model = &producer;
+            compiled.eos_identity = producer.identity();
+            compiled.problem = layout.problem;
+            compiled.n_feed = layout.n_feed;
+            compiled.feed_total = layout.feed_total;
+            compiled.charge_row = layout.charge_row;
+            compiled.shape = layout.shape;
+            compiled.primal_size = layout.primal_size;
+            compiled.rank = layout.rank;
+            core::Scope scope("association_refusal_fixture");
+            auto state = structural_result(compiled, scope);
+            state.success = true;
+            state.temperature = problem.temperature.value;
+            state.pressure = problem.pressure.value;
+            state.phase_count = 1;
+            state.mole_fractions = {1.0};
+            state.amounts = {1.0};
+            state.molar_densities = {1.0 / volume};
+            state.packing_fractions = {producer.packing_fraction_coefficient(*state.temperature, {1.}) / volume};
+            state.coordinates.assign(compiled.unknown_count(), 0.0);
+            state.coordinates[*compiled.shape[0].amount] = 1.0;
+            state.coordinates[compiled.shape[0].volume] = std::log(state.packing_fractions[0]);
+            snapshot.solved = std::move(state);
+            snapshot.solved_request = std::make_shared<const EquilibriumProblem>(problem);
+            return snapshot;
+        };
+        auto stressed_point = fixed_point(model);
+        project_prediction(model, row, stressed_point);
+        const auto gradient = differentiate(model, row, stressed_point);
+        CHECK(stressed_point.value && *stressed_point.value == value
+            && gradient.status == ObservationStatus::ActionUnavailable && gradient.central_value == stressed_point.value
+            && gradient.value.empty() && gradient.message.find(solved_state_status_name(solved_state_status(status))) == 0);
         if (sites != 2) continue;
 
         weak.association_energy_over_k[0] = 3e5;
@@ -376,8 +415,7 @@ void boundary_refusals() {
         }
         CHECK(failure && failure->stop == core::Stop::nonfinite && failure->criterion
             && std::string_view(failure->criterion->name) == policy::ASSOCIATION_RESIDUAL.name);
-        auto refused = prediction;
-        refused.solved = point;
+        auto refused = fixed_point(overflow);
         project_prediction(overflow, row, refused);
         CHECK(truth("refusal/projection", refused.status == ObservationStatus::CentralSolveUnavailable
             && !refused.value && !refused.residual && refused.convergence && refused.refusal_convergence
@@ -385,7 +423,6 @@ void boundary_refusals() {
             && core::describe(*refused.refusal_convergence) == core::describe(*failure)
             && refused.refusal_convergence->evaluations == failure->evaluations,
             fields({field("status", observation_status_name(refused.status)), field("cause", refused.message),
-                field("refusal_record", refused.refusal_convergence ? core::describe(*refused.refusal_convergence) : "absent"),
                 field("mass_action_record", core::describe(*failure))})));
     }
 }

@@ -3,6 +3,7 @@
 #include "equilibrium/stability_grid.hpp"
 #include "contributions/helmholtz.hpp"
 
+#include "core/bitwise_equal.hpp"
 #include "core/trace.hpp"
 
 #include "core/numerical_policy.hpp"
@@ -189,6 +190,20 @@ bool coincident_trial_point(const StabilityTrial& a, const StabilityTrial& b) {
 }
 bool same_stationary_trial(const StabilityTrial& a, const StabilityTrial& b, bool same_kind = true) {
     return a.phase.support == b.phase.support && (!same_kind || a.phase.kind == b.phase.kind) && coincident_trial_point(a, b);
+}
+
+bool same_split_trial(const StabilityTrial& a, const StabilityTrial& b) {
+    return a.donor == b.donor && a.phase.support == b.phase.support
+        && a.phase.support_declared == b.phase.support_declared
+        && a.phase.declared_composition_guess == b.phase.declared_composition_guess
+        && core::bitwise_equal(a.composition, b.composition)
+        && core::bitwise_equal(a.quantities.at("volume_m3_per_mol"), b.quantities.at("volume_m3_per_mol"));
+}
+
+std::vector<double> recovery_point_key(const PhasePoint& point) {
+    auto key = point.composition[0];
+    key.push_back(point.volume[0]);
+    return key;
 }
 
 // The density owner's stable root of w within the anchor window of v, else none (#423).
@@ -1264,19 +1279,19 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     for (std::size_t i = 0; i < shift.size(); ++i) shift[i] -= report.plane_over_rt[i];
     std::optional<GibbsDifferenceReference> own;
     auto& parent = reference ? *reference : own;
-    std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;  // one comparison per coincident gas endpoint
+    std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;
     // #21: after the completed schedule, one guarded pass over its condensed-domain refusals, funded by `recovery`.
     // A slot refused before optimization restarts from the parent restriction, a refused end point from its own seed.
     enum class Start { ParentRestriction, FirstAdmittedSeed, OwnSeed };
     struct Slot { std::size_t trial; Start start; std::vector<double> seed; };
     std::vector<Slot> slots;
     std::vector<std::vector<std::pair<std::vector<double>, double>>> admitted(supports.size());
-    std::map<std::vector<double>, std::variant<std::string, DensityRoot>> liquid_roots;  // root or cause, by composition
-    std::map<std::vector<double>, std::optional<std::string>> decisions;  // refusal cause, by prepared point
+    std::map<std::vector<double>, std::variant<std::string, DensityRoot>, ReferenceTaylorKeyLess> liquid_roots;
+    std::map<std::vector<double>, std::optional<std::string>, ReferenceTaylorKeyLess> decisions;
     // A proposal keeps the admitted liquid root of its own composition: denser than its negative-slope sample,
     // mechanically stable and within the anchor window of that root.
     const auto guard = [&](const PhasePoint& point) {
-        const auto [decision, fresh] = decisions.try_emplace(point.point);
+        const auto [decision, fresh] = decisions.try_emplace(recovery_point_key(point));
         if (!fresh) { ++report.work["recovery_guard_cache_hits"]; return decision->second; }
         auto& refusal = decision->second;
         try {
@@ -1310,6 +1325,10 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     const auto trial_budget_exhausted = [&] {
         return options.trial_budget && report.work["trial_invocations"] >= *options.trial_budget;
     };
+    struct ResetAdmission {
+        DriverLimits* recovery;
+        ~ResetAdmission() { if (recovery) recovery->admit = {}; }
+    } reset_admission{recovery};
     for (std::size_t visit = 0, k = 0; visit < before_retry + supports.size(); k = ++visit % supports.size()) {
         if (stopped && !fast) break;
         const bool retry = visit >= before_retry;
@@ -1599,7 +1618,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident, slot);
                 if (reacting && gas && !coincident && trial.evidence == "indeterminate") {
                     auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) {
-                        return s.first.donor == trial.donor && same_stationary_trial(s.first, trial, false);
+                        return same_split_trial(s.first, trial);
                     });
                     if (shared == splits.end()) {
                         if (!parent) {  // the original plane and repair, their numerical estimates counted here
@@ -2078,6 +2097,7 @@ StabilityMeasure stability_measure(const CompiledSystem& c, const EquilibriumRes
     core::CalculationWork work;
     std::optional<GibbsDifferenceReference> parent;
     auto out = measure_value(c, result, options, parent);
+    out.options = options;
     report_work(out.report.work, work);
     return out;
 }

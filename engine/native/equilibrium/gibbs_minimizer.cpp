@@ -638,7 +638,7 @@ const PhasePoint& GibbsMinimizer::prepared(Ipopt::Index n, const Ipopt::Number* 
     // Start at the last phase while its zeroth-order tape state is still live.
     if (hessian) for (auto phase = prepared_->derivative.rbegin(); phase != prepared_->derivative.rend(); ++phase) {
         if (!phase->complete_hessian) continue;
-        phase->complete_hessian(*phase);
+        phase->complete_hessian(*compiled_.model, *phase);
         phase->complete_hessian = {};
     }
     if (limits_) limits_->check();
@@ -873,6 +873,14 @@ static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
     if (declaration.prescribed_liquid_composition)
         for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
     return declaration;
+}
+
+bool same_result_origin(const CompiledSystem& compiled, const EquilibriumResult& result) {
+    const bool model = compiled.model ? !result.ideal_identity && result.model_identity == compiled.model->identity()
+        : compiled.ideal && !result.model_identity && result.ideal_identity == compiled.ideal->identity();
+    return model && result.declaration && (compiled.problem.prescribed_liquid_composition
+        ? same_solved_problem(*result.declaration, public_declaration(compiled))
+        : same_solved_problem(*result.declaration, compiled.problem));
 }
 
 EquilibriumResult structural_result(const CompiledSystem& compiled, core::Scope& scope) {
@@ -1594,11 +1602,12 @@ static bool polish_correction(const CompiledSystem& compiled, std::vector<Base>&
     return true;
 }
 
-EquilibriumResult spinodal_search_failure(const CompiledSystem& compiled, EquilibriumResult result, const std::string& cause) {
+EquilibriumResult spinodal_search_failure(const CompiledSystem& compiled, EquilibriumResult result, const std::string& cause, const SpinodalSearch* attempted) {
     refuse(result);
     result.message = cause; result.convergence.stop = core::Stop::left_domain;
     result.spinodal.emplace();
-    if (compiled.spinodal_search) result.spinodal->search = *compiled.spinodal_search;
+    if (attempted) result.spinodal->search = *attempted;
+    else if (compiled.spinodal_diagnostics()) result.spinodal->search = *compiled.spinodal_diagnostics();
     core::retain_failure(result.first_numerical_failure, cause, "spinodal search");
     return result;
 }
@@ -1663,7 +1672,7 @@ EquilibriumResult refine_selected_endpoint(const CompiledSystem& compiled, Equil
             if (accepted && !core::CalculationWork::stop_at("returned-point estimate")) {
                 refined.numerical_estimates = equilibrium_numerical_estimates(compiled, refined, point, limits);
                 const auto& returned = *refined.numerical_estimates;
-                const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits, &at);
+                const auto admission = check_density_branches(compiled, refined, {}, true, scope, limits);
                 accepted = admission.accepted && returned.cause.empty() && returned.physical_radius <= policy::MIXTURE_FORWARD_ERROR.value;
                 if (!accepted) refined.message = admission.accepted ? "returned-point error target not met" : admission.message;
             }
@@ -2137,10 +2146,21 @@ BranchCheck admit_null_mode(const CompiledSystem& compiled, EquilibriumResult& r
         static_cast<HelmholtzModeRecord&>(*result.critical) = record;
         result.critical->cubic = result.residuals.back();
     } else {
-        const auto& selection = spinodal_search(compiled, nullptr, result.molar_densities[0], result.spinodal ? &result.spinodal->search : nullptr);
+        SpinodalSearch attempted;
+        const auto* carried = result.spinodal ? &result.spinodal->search : nullptr;
+        try {
+            attempted = spinodal_search(compiled, nullptr, result.molar_densities[0], carried, &attempted);
+        } catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) {
+            if (!carried && compiled.spinodal_diagnostics()) attempted = *compiled.spinodal_diagnostics();
+            result.spinodal.emplace();
+            result.spinodal->search = std::move(attempted);
+            core::retain_failure(result.first_numerical_failure, error, "spinodal search");
+            return {false, false, error.what()};
+        }
         result.spinodal.emplace();
         static_cast<HelmholtzModeRecord&>(*result.spinodal) = record;
-        result.spinodal->search = selection;
+        result.spinodal->search = std::move(attempted);
         result.spinodal->normalized_null_residual = (M * u).norm() / M.norm();
     }
     BranchCheck outcome;
@@ -2416,21 +2436,24 @@ static bool supplied_two_liquid_split(const CompiledSystem& compiled) {
         && std::all_of(support.begin(), support.end(), [&](std::size_t i) { return compiled.n_feed[i] > 0.0; });
 }
 
-EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::optional<EquilibriumResult>& start,
+EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::optional<EquilibriumResult>& start,
     core::Scope& scope, const DriverLimits* limits, std::shared_ptr<const OptimizerState> warm,
     bool recover, const EquilibriumResult& structural, StageWork stages,
     std::optional<std::vector<double>> original, std::shared_ptr<const EquilibriumResult> rejected, bool select_endpoint, EquilibriumAttemptReporting reporting) {
+    std::optional<CompiledSystem> selected_crossing;
+    if (declared.problem.spinodal && start && start->has_state() && start->spinodal) {
+        SpinodalSearch scan;
+        try { selected_crossing = spinodal_corrector(declared, limits, start->molar_densities[0], &start->spinodal->search, scan); }
+        catch (const std::bad_alloc&) { throw; }
+        catch (const std::exception& error) { return spinodal_search_failure(declared, structural, error.what(), &scan); }
+    }
+    const auto& compiled = selected_crossing ? *selected_crossing : declared;
     const auto& model = *compiled.model;
     const bool pure_source = start && start->success && limits && limits->recovery && one_component_two_density_eligible(compiled);
     const bool use_start = pure_source || (start.has_value() && usable_start(compiled, *start));
     // A previous result that start_point copies replaces the start's composition; skip its speciation.
     const bool copied = start.has_value() && start->phase_count == compiled.problem.phases.size()
         && valid_previous_phase(*start, 0, model.parameters().component_count());
-    if (compiled.problem.spinodal && start && start->has_state() && start->spinodal) {
-        try { spinodal_search(compiled, limits, start->molar_densities[0], &start->spinodal->search); }
-        catch (const std::bad_alloc&) { throw; }
-        catch (const std::exception& error) { return spinodal_search_failure(compiled, structural, error.what()); }
-    }
     auto cold = start && !use_start ? std::make_optional(compiled) : std::nullopt;
     if (cold && start->phase_count == cold->problem.phases.size()) {
         for (std::size_t phase = 0; phase < start->phase_count; ++phase) {
@@ -2475,7 +2498,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& compiled, const std::o
             catch (const std::bad_alloc&) { throw; }
             catch (const std::exception& error) {
                 core::retain_failure(stages.first_numerical_failure, error, "solve initialization");
-                if (compiled.problem.spinodal && compiled.spinodal_search) {
+                if (compiled.problem.spinodal && compiled.spinodal_diagnostics()) {
                     result = spinodal_search_failure(compiled, structural, error.what());
                     std::move(stages).report(result); return result;
                 }

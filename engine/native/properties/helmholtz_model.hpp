@@ -62,6 +62,8 @@ struct NeutralPropertyDerivatives final {
     std::vector<double> hessian;
 };
 
+class HelmholtzModel;
+
 template <typename Base>
 struct HelmholtzDerivativeValues final {
     Base value = 0.0;
@@ -73,7 +75,7 @@ struct HelmholtzDerivativeValues final {
     std::vector<Base> gradient_error;
     std::vector<Base> site_fractions;
     Eigen::MatrixXd site_sensitivity;
-    std::function<void(HelmholtzDerivativeValues&)> complete_hessian;
+    std::function<void(const HelmholtzModel&, HelmholtzDerivativeValues&)> complete_hessian;
     std::vector<core::NumericalRank> rank_records;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::Convergence> association_refinement;  // wider replay's site refinement stop, else absent
@@ -552,7 +554,7 @@ public:
         const std::vector<double>& mole_fractions,
         DensityBranch branch,
         std::optional<double> anchor_density = std::nullopt,
-        bool derived_properties = false, bool fixed_parameters = false, const State* feed_state = nullptr,
+        bool derived_properties = false, bool fixed_parameters = false,
         DensityScanCache* scan = nullptr
     ) const;
     EPC_API PropertyActionBatch density_actions(

@@ -266,9 +266,8 @@ void validate_request(const CompiledSystem& compiled, const EquilibriumResult& c
     if (compiled.problem.prescribed_liquid_composition) throw std::invalid_argument("solved-state actions unavailable for prescribed liquid composition");
     if (compiled.ideal) throw std::invalid_argument("ideal solved-state actions unavailable");
     const auto& problem = compiled.problem;
-    if (central.has_state() && (!central.declaration ||
-        !(central.declaration->solver_options == problem.solver_options)))
-        throw std::invalid_argument("central solver options do not match the compiled system");
+    if (central.has_state() && !same_result_origin(compiled, central))
+        throw std::invalid_argument("central result does not match the compiled system");
     const std::size_t components = compiled.model->parameters().component_count();
     const std::size_t actives = compiled.model->active_parameters().size();
     if (request.observables.empty()) throw std::invalid_argument("no solved-state observables");
@@ -1492,6 +1491,9 @@ SolvedStateActionBatch solved_state_actions(
 }
 
 struct SolvedStateActionWorkspace final {
+    std::shared_ptr<const char> model;
+    std::shared_ptr<const EquilibriumProblem> declaration;
+    std::vector<double> point;
     std::optional<PhasePoint> prepared;
     std::optional<ActionCenter> amount_center;
     FirstCoefficients first_coefficients;
@@ -1500,7 +1502,14 @@ struct SolvedStateActionWorkspace final {
 SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace) {
     core::Scope scope("solved_state_actions");
-    if (!workspace) workspace = std::make_shared<SolvedStateActionWorkspace>();
+    validate_request(compiled, central, request);
+    if (!workspace || !central.success || !central.has_state() || workspace->model != central.model_identity
+        || workspace->declaration != central.declaration || !core::bitwise_equal(workspace->point, central.coordinates)) {
+        workspace = std::make_shared<SolvedStateActionWorkspace>();
+        workspace->model = central.model_identity;
+        workspace->declaration = central.declaration;
+        workspace->point = central.coordinates;
+    }
     const auto& problem = compiled.problem;
     const bool fixed_feed_actions = compiled.solids.empty() && compiled.model->active_parameters().empty()
         && !problem.temperature.free && !problem.pressure.free && !compiled.has_caloric_condition()
@@ -1512,7 +1521,6 @@ SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compi
             return o.kind == SolvedStateObservableKind::PhaseComponentAmount;
         });
     if (!fixed_feed_actions) return actions_at(compiled, central, request, &workspace->prepared, scope);
-    validate_request(compiled, central, request);
     auto batch = evaluate_action(compiled, central, request, workspace->amount_center, scope, {}, &workspace->prepared, {},
         &workspace->first_coefficients);
     if (workspace->amount_center) workspace->amount_center->center.prepared.energy_actions.clear();
@@ -1777,15 +1785,19 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
 
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const PhasePoint* prepared, bool counted, bool plane_rows,
     const std::vector<double>& prescribed_errors, bool replay) {
-    if (result.has_state() && ((c.model && result.model_identity && result.model_identity != c.model->identity())
-        || (c.ideal && result.ideal_identity && result.ideal_identity != c.ideal->identity())))
-        throw std::invalid_argument("numerical estimate model/result mismatch");
-    if (result.has_state() && result.declaration && prescribed_errors.empty() && !plane_rows
-        && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits)
+    if (result.has_state() && !same_result_origin(c, result))
+        throw std::invalid_argument("numerical estimate result does not match the compiled system");
+    const auto* endpoint = result.prepared_endpoint.get();
+    if (!endpoint || !core::bitwise_equal(endpoint->point, result.coordinates)) endpoint = nullptr;
+    if (prepared != endpoint) prepared = nullptr;
+    if (!replay && result.success && result.has_state() && result.declaration && prescribed_errors.empty() && !plane_rows
+        && endpoint && result.numerical_estimates && result.numerical_estimates->precision_bits > std::numeric_limits<double>::digits)
         return *result.numerical_estimates;
     return numerical_estimates<double>(c, result, {}, prepared, replay || plane_rows || !prepared, nullptr, counted, plane_rows, prescribed_errors);
 }
 EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<WiderScalar>& internal, const DriverLimits* limits) {
+    if (result.has_state() && !same_result_origin(c, result))
+        throw std::invalid_argument("numerical estimate result does not match the compiled system");
     return numerical_estimates(c, result, internal, static_cast<const PhasePointValues<WiderScalar>*>(nullptr), false, limits, core::CalculationWork::active_limit());
 }
 

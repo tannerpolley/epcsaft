@@ -627,7 +627,7 @@ void cache_invariance() {
     auto deferred = model.evaluate(323.15, 1.5e-3, {1.35, 0.12, 0.03}, epcsaft::DerivativeOrder::PhaseGradient);
     (void)model.evaluate(298.15, 1.0e-3, {0.98, 0.01, 0.01}, epcsaft::DerivativeOrder::PhaseGradient);
     CHECK(deferred.hessian.empty() && deferred.complete_hessian);
-    deferred.complete_hessian(deferred);
+    deferred.complete_hessian(model, deferred);
     CHECK(deferred.hessian.size() == fresh_a.hessian.size());
     for (std::size_t i = 0; i < fresh_a.hessian.size(); ++i)
         CHECK(close(deferred.hessian[i], fresh_a.hessian[i], 1e-10));

@@ -1429,32 +1429,32 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         result.gradient_floor = (diagonal.asDiagonal() * site_sensitivity).cwiseAbs().colwise().sum().maxCoeff() * site_residual;
     }
     if (retain_site_sensitivity) result.site_sensitivity = site_sensitivity;
-    const auto complete = [this, order, isothermal_hessian, blocks, site_residual](
-        HelmholtzDerivatives& out, bool defer, const auto& coordinates, const auto& point, const auto& weights,
+    const auto complete = [order, isothermal_hessian, blocks, site_residual](
+        const HelmholtzModel& model, HelmholtzDerivatives& out, bool defer, const auto& coordinates, const auto& point, const auto& weights,
         const auto& site_sensitivity, const AssociationJacobian* factorization, const AssociationAction* action) {
         const auto& sites = out.site_fractions;
         const std::size_t site_count = sites.size(), point_size = point.size() - site_count, size = out.gradient.size();
         core::Scope scope("helmholtz_hessian");
-        ++counters_.hessian_calls;
+        ++model.counters_.hessian_calls;
         if (isothermal_hessian) {
             if (out.hessian.empty())
-                out.hessian = isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization, nullptr, action).hessian;
+                out.hessian = model.isothermal(point[0], point[1], {point.begin() + 2, point.begin() + point_size}, &sites, factorization, nullptr, action).hessian;
         } else {
             out.hessian.assign(size * size, 0.0);
-            auto& direction = evaluation_->direction;
+            auto& direction = model.evaluation_->direction;
             direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < coordinates.size(); ++k) {
                 const auto column = coordinates[k];
-                const bool skipped = (order == DerivativeOrder::StateHessian || order == DerivativeOrder::FixedParameterStateHessian) && column >= 2 && column < 2 + parameters_.component_count();
+                const bool skipped = (order == DerivativeOrder::StateHessian || order == DerivativeOrder::FixedParameterStateHessian) && column >= 2 && column < 2 + model.parameters_.component_count();
                 if (skipped && !(blocks && site_count)) continue;
                 direction[column] = 1.0;
                 for (std::size_t s = 0; s < site_count; ++s) direction[point_size + s] = site_sensitivity(s, k);
-                const auto tangent = tape_->function.Forward(1, direction);
-                ++counters_.forward;
-                const auto second = tape_->function.Reverse(2, weights);
-                ++counters_.reverse;
+                const auto tangent = model.tape_->function.Forward(1, direction);
+                ++model.counters_.forward;
+                const auto second = model.tape_->function.Reverse(2, weights);
+                ++model.counters_.reverse;
                 if (blocks && site_count)
-                    out.gradient_floor = std::max(out.gradient_floor, coupled_site_floor(tape_->zero_value, tangent, second, weights, *factorization, point_size, site_residual));
+                    out.gradient_floor = std::max(out.gradient_floor, coupled_site_floor(model.tape_->zero_value, tangent, second, weights, *factorization, point_size, site_residual));
                 if (!skipped) for (std::size_t r = 0; r < coordinates.size(); ++r) {
                     const auto row = coordinates[r];
                     if (!defer && !site_count && k == 0) out.gradient[row] = second[2 * row];
@@ -1470,18 +1470,22 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         scope.probe("volume_second_derivative", out.volume_second_derivative);
     };
     if (phase_gradient && !blocks) {
-        result.complete_hessian = [this, complete, coordinates, point, signature, weights, site_sensitivity,
-            prepared = isothermal_hessian && sites_count ? std::optional{std::pair{factorization, association}} : std::nullopt](HelmholtzDerivatives& out) {
-            std::lock_guard lock(mutex_);
-            auto& regular = evaluation_->point;
+        result.complete_hessian = [producer = identity(), complete, coordinates, point, signature, weights, site_sensitivity,
+            sites = result.site_fractions, gradient = result.gradient,
+            prepared = isothermal_hessian && sites_count ? std::optional{std::pair{factorization, association}} : std::nullopt](const HelmholtzModel& model, HelmholtzDerivatives& out) {
+            if (model.identity() != producer || !core::bitwise_equal(sites, out.site_fractions)
+                || !core::bitwise_equal(gradient, out.gradient) || !out.hessian.empty())
+                throw std::invalid_argument("phase Hessian completion producer or point mismatch");
+            std::lock_guard lock(model.mutex_);
+            auto& regular = model.evaluation_->point;
             regular.assign(point.begin(), point.end() - out.site_fractions.size());
-            ensure_tape(regular, out.site_fractions, signature, {}, 0.0, true);
-            tape_->forward_zero(point, &counters_.forward);
-            tape_->site_values = out.site_fractions;
-            complete(out, true, coordinates, point, weights, site_sensitivity, prepared ? &prepared->first : nullptr,
+            model.ensure_tape(regular, out.site_fractions, signature, {}, 0.0, true);
+            model.tape_->forward_zero(point, &model.counters_.forward);
+            model.tape_->site_values = out.site_fractions;
+            complete(model, out, true, coordinates, point, weights, site_sensitivity, prepared ? &prepared->first : nullptr,
                 prepared && prepared->second ? &*prepared->second : nullptr);
         };
-    } else complete(result, false, coordinates, point, weights, site_sensitivity, &factorization, association ? &*association : nullptr);
+    } else complete(*this, result, false, coordinates, point, weights, site_sensitivity, &factorization, association ? &*association : nullptr);
     scope.probe("site_fractions", result.site_fractions);
     scope.probe("gradient_floor", result.gradient_floor);
     return finish(std::move(result));
@@ -2722,7 +2726,7 @@ StateBatch HelmholtzModel::states(const std::vector<double>& temperature, const 
             validate_electroneutrality(x);
             const double value = input[input.size() == 1 ? 0 : k];
             result.rows[k] = at_pressure ? state_at_pressure(temperature[k], value, x, branch, {}, derived,
-                false, nullptr, scan_cache)
+                false, scan_cache)
                 : state(temperature[k], value, x, derived, true);
         } catch (const core::DeclarationError& e) { fail(StateStatus::DeclarationError, e, e.record);
         } catch (const core::ConvergenceFailure& e) { fail(StateStatus::ConvergenceError, e, e.record, e.first_numerical_failure);
@@ -3155,17 +3159,13 @@ State HelmholtzModel::state_at_pressure(
     const std::vector<double>& mole_fractions,
     DensityBranch branch,
     std::optional<double> anchor_density,
-    bool derived_properties, bool fixed_parameters, const State* feed_state, DensityScanCache* scan
+    bool derived_properties, bool fixed_parameters, DensityScanCache* scan
 ) const {
     core::Scope scope("state_at_pressure");
     const auto root = solve_density(
         *this, temperature, pressure, mole_fractions, branch, anchor_density, nullptr, scan
     );
-    const bool reuse = feed_state && feed_state->at(identity(), temperature, mole_fractions)
-        && !scope.on() && !core::CalculationWork::current()
-        && !core::AssociationObservations::current() && !derived_properties && !fixed_parameters
-        && std::memcmp(&root.molar_density, &feed_state->molar_density, sizeof(double)) == 0;
-    State result = reuse ? *feed_state : state(temperature, root.molar_density, mole_fractions, derived_properties, true, fixed_parameters);
+    State result = state(temperature, root.molar_density, mole_fractions, derived_properties, true, fixed_parameters);
     if (result.log_fugacity_coefficient) {
         // Fixed-pressure fugacity uses the prescribed P; EOS pressure retains the root residual.
         const double log_z = std::log(pressure / (GAS_CONSTANT_J_PER_MOL_K * temperature * root.molar_density));

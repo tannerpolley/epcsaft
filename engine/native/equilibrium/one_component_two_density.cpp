@@ -338,7 +338,7 @@ EquilibriumResult one_component_two_density_attempt(const CompiledSystem& c, con
             scope.finish(convergence);
             result = publish_candidate(c, at.phase, std::move(result), scope, limits);
             if (result.success) {
-                const auto branch = check_density_branches(c, result, {}, true, scope, limits, &at.phase);
+                const auto branch = check_density_branches(c, result, {}, true, scope, limits);
                 if (!branch.accepted) {
                     core::retain_failure(result.first_numerical_failure, branch.message, "one-component two-density admission");
                      result.message = branch.message; refuse(result);

@@ -349,7 +349,7 @@ regression_checks = executable(
 test('regression', regression_checks, args: ['R1'])
 test('regression/Automatic_fast/stability-requirement', regression_checks, args: ['stability-requirement'])
 test('regression/Automatic_fast/nested-support-tangent-plane-action', regression_checks, args: ['nested-support-tangent-plane-action'])
-foreach name : ['addition-endpoint-admission', 'addition-endpoint-cache', 'supplied-trial-model',
+foreach name : ['electrolyte-prediction-origin', 'compiled-result-origin', 'addition-endpoint-admission', 'addition-endpoint-cache', 'supplied-trial-model',
                 'equilibrium-refresh-model', 'equilibrium-result-model', 'equilibrium-estimate-admission', 'equilibrium-optimizer-point']
   test('regression/Automatic_fast/' + name, regression_checks, args: [name])
 endforeach
@@ -363,6 +363,26 @@ regression_association_site_checks = executable(
   kwargs: check_kwargs,
 )
 test('regression/Explicit/association-site-fraction', regression_association_site_checks, timeout: 600)
+
+# Tests of the file-local association and stability reuse paths.
+foreach native_check : ['association_refinement', 'stability_trial']
+  executable_test = executable(
+    native_check + '_checks',
+    'tests/native/' + native_check + '_checks.cpp',
+    cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
+    dependencies: native_deps + quadmath_dep,
+    include_directories: native_inc,
+    link_with: epcsaft_private,
+    build_by_default: false,
+  )
+  if native_check == 'association_refinement'
+    test('properties/association-refinement', executable_test)
+  else
+    foreach name : ['recovery-support', 'relaxed-split-point']
+      test('equilibrium/Automatic_fast/' + name, executable_test, args: [name])
+    endforeach
+  endif
+endforeach
 
 asl_pressure_chart_checks = executable(
   'asl_pressure_chart_checks',

@@ -20,7 +20,7 @@ jobs:
     env:
       EPCSAFT_IPOPT_LINEAR_SOLVER: mumps
       NATIVE_PACKAGES: >-
-        build-essential ca-certificates clang-format-18 cmake libmumps-seq-dev gfortran
+        build-essential ca-certificates clang-18 clang-format-18 cmake libmumps-seq-dev gfortran
         file git libceres-dev libeigen3-dev ninja-build pkg-config time
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -68,6 +68,11 @@ jobs:
         run: bash tools/setup.sh
       - name: Import
         run: .venv/bin/python -c 'import epcsaft; print(epcsaft.provenance())'
+      - name: Report native reuse and verify the checker
+        run: |
+          build_dir="$(cat build/environment-wheel/meson-build-dir)"
+          .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir"
+          .venv/bin/python tools/check-engine-architecture.py --build-dir "$build_dir" --reuse-self-test
       # The conda build installs these two packets into the package; the smoke case checks them there.
       - name: Install the shipped packets
         run: |

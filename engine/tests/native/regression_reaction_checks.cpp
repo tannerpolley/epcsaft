@@ -1224,6 +1224,97 @@ void check_electrolyte_row_signed_zero() {
     CHECK(!same_state(positive, negative));
 }
 
+void check_electrolyte_prediction_origin() {
+    auto parameters = properties_support::aqueous_electrolyte();
+    const std::vector<ActiveParameter> active{{ParameterFamily::Kij, {1, 3}}};
+    const HelmholtzModel source(parameters, active);
+    parameters.k_ij[1] += 0.01;
+    parameters.k_ij[3] += 0.01;
+    const HelmholtzModel target(parameters, active);
+    Observation row;
+    row.kind = ObservationKind::MeanIonicActivityCoefficient;
+    row.temperature = 298.15;
+    row.pressure = 1e5;
+    row.molality = 0.05;
+    row.composition = {1, 0, 0};
+    row.ion_indices = {1, 2};
+    row.stoichiometry = {1, 1};
+    row.branch = DensityBranch::Liquid;
+    row.observed = 1;
+    const auto center = predict(source, row);
+    {
+        const HelmholtzModel active(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}});
+        auto unreachable = row;
+        unreachable.pressure = 1e13;
+        validate(unreachable, active);
+        const auto failure = predict(active, unreachable);
+        CHECK(failure.status == ObservationStatus::ReferenceUnavailable && !failure.value);
+        auto replay = failure;
+        project_prediction(active, unreachable, replay);
+        const auto columns = differentiate_group(active, {&unreachable}, failure);
+        CHECK(replay.status == failure.status && !replay.value && !replay.residual && replay.message == failure.message
+            && columns.front().status == failure.status && columns.front().value.empty());
+        const auto ordinary = predict(active, row);
+        const auto gradient = differentiate(active, row, ordinary);
+        CHECK(ordinary.value && gradient.status == ObservationStatus::Available && gradient.value.size() == 1 && gradient.value[0] != 0.0);
+        auto dilute = row;
+        dilute.molality = 0.0;
+        const auto limit = predict(active, dilute);
+        CHECK(limit.value == 1.0 && differentiate(active, dilute, limit).value == std::vector{0.0});
+    }
+    const auto fresh_gradient = differentiate(target, row, predict(target, row));
+    const auto reused_gradient = differentiate(target, row, center);
+    auto moved = row;
+    moved.molality = 0.5;
+    auto projected = center;
+    project_prediction(source, moved, projected);
+    const auto fresh = predict(source, moved);
+    CHECK(fresh.value && center.value && *fresh.value != *center.value);
+    CHECK(fresh_gradient.status == ObservationStatus::Available);
+    CHECK(!projected.value && reused_gradient.status == ObservationStatus::ActionUnavailable && reused_gradient.value.empty());
+
+    auto energy = row;
+    energy.kind = ObservationKind::SolvationGibbsEnergy;
+    energy.species = {1};
+    energy.observed = -397'000;
+    CHECK(!same_state(row, energy) && !same_state(energy, row));
+    FitRequest fit;
+    fit.parameters = source.parameters();
+    const double origin = source.parameters().k_ij[1];
+    fit.coordinates.coordinates = {{{{ParameterFamily::Kij, {1, 3}}}, origin, 1., origin - 0.1, origin + 0.1}};
+    for (const auto& order : {std::vector{row, energy}, std::vector{energy, row}}) {
+        fit.observations = order;
+        const auto output = evaluated_columns(fit, {0.});
+        for (std::size_t i = 0; i < order.size(); ++i) {
+            const auto independent = predict(source, order[i]);
+            CHECK(independent.value && output.statuses[i] == ObservationStatus::Available);
+            CHECK(output.predictions[i] == *independent.value);
+        }
+    }
+
+    const HelmholtzModel neutral(properties_support::neutral_binary(), {{ParameterFamily::Kij, {1, 2}}});
+    Observation density;
+    density.kind = ObservationKind::PhaseDensity;
+    density.problem = equilibrium_support::flash(2);
+    density.problem.temperature.value = 300;
+    density.problem.pressure.value = 1e5;
+    density.problem.phases[0].kind = equilibrium::PhaseKind::Vapor;
+    auto warmed = density;
+    warmed.problem.temperature.value += 1.;
+    auto prior = predict(neutral, density);
+    const auto current = predict(neutral, warmed);
+    CHECK(prior.value && current.value && prior.value != current.value);
+    CHECK(differentiate(neutral, warmed, prior).status == ObservationStatus::ActionUnavailable);
+    project_prediction(neutral, warmed, prior);
+    CHECK(!prior.value);
+    auto fraction = warmed;
+    fraction.kind = ObservationKind::PhaseMoleFraction;
+    fraction.species = {0};
+    auto projection = current;
+    project_prediction(neutral, fraction, projection);
+    CHECK(projection.value == predict(neutral, fraction).value);
+}
+
 void check_addition_enthalpy() {
     const auto parameters = addition_parameters();
     const auto record = addition_record();
@@ -2032,7 +2123,7 @@ void check_reactive_solvent_activity() {
     projected.reference = chloride.reference;
     project_prediction(model, warmer, projected);
     CHECK(projected.status == fresh.status && projected.value == fresh.value);
-    auto missing = prediction; missing.reference->pure_solvent_state.reset();
+    auto missing = chloride; missing.reference->pure_solvent_state.reset();
     project_prediction(model, row, missing);
     CHECK(missing.status == ObservationStatus::ReferenceUnavailable);
 }

@@ -604,46 +604,50 @@ void check_minimax_consistency() {
     }
     {
         HelmholtzModel columns(parameters, {{ParameterFamily::DispersionEnergyOverK, {0}}, {ParameterFamily::Kij, {1, 3}}});
-        // Constructed State qualification isolates consumption; it does not certify mixed producer availability.
+        // A detached report cannot replace either endpoint of the admitted derivative.
         for (bool reference : {false, true}) {
-            Prediction mixed; mixed.status = ObservationStatus::Available; mixed.value = 1;
-            mixed.state.emplace();
-            mixed.state->bulk_relative_permittivity = 64;
-            mixed.state->permittivity_parameter_derivative = {.0625, .25};
-            mixed.reference_state = mixed.state;
-            mixed.reference_state->permittivity_parameter_derivative[1] = .125;
+            auto ratio = epsilon;
+            ratio.reference_composition = {1, 0, 0};
+            auto mixed = predict(columns, ratio);
+            const auto fresh = differentiate(columns, ratio, mixed);
+            CHECK(mixed.status == ObservationStatus::Available && mixed.state);
+            CHECK(fresh.status == ObservationStatus::Available && fresh.value.size() == 2 && mixed.reference_state);
+            const auto& sample = *mixed.state;
+            const auto& pure = *mixed.reference_state;
+            for (std::size_t i = 0; i < fresh.value.size(); ++i)
+                CHECK(fresh.value[i] == (*sample.permittivity_parameter_derivative[i]
+                    - *mixed.value * *pure.permittivity_parameter_derivative[i]) / pure.bulk_relative_permittivity);
             auto& failed_state = reference ? *mixed.reference_state : *mixed.state;
             failed_state.permittivity_parameter_derivative[0].reset();
             failed_state.unavailable_properties.emplace_back("permittivity_parameter_derivative[0]", PropertyActionStatus::PressureSingular);
-            const auto gradient = differentiate(columns, epsilon, mixed);
-            CHECK(gradient.status == ObservationStatus::ActionUnavailable);
-            CHECK(gradient.parameter_actions.size() == 2 && !gradient.parameter_actions[0].action);
-            CHECK(gradient.parameter_actions[0].status == PropertyActionStatus::PressureSingular);
-            CHECK(gradient.parameter_actions[1].action && *gradient.parameter_actions[1].action == .001953125);
-            CHECK(gradient.message.find(reference ? "reference" : "sample") != std::string::npos);
-            CHECK(gradient.message.find("permittivity_parameter_derivative[0]") != std::string::npos);
+            const auto gradient = differentiate(columns, ratio, mixed);
+            CHECK(gradient.status == fresh.status && gradient.value == fresh.value);
         }
         auto prediction = predict(columns, energy);
         const auto intact = *prediction.reference;
+        const auto fresh_energy = differentiate(columns, energy, prediction);
         auto& failed = prediction.reference->parameter_derivative[0][0];
         failed.action.reset(); failed.status = PropertyActionStatus::AssociationResidual;
         failed.diagnostics.association_residual = 2e-8;
-        const auto check = [&](const PredictionGradient& gradient) {
-            CHECK(gradient.status == ObservationStatus::ActionUnavailable && gradient.value.size() == 2);
-            CHECK(!gradient.parameter_actions[0].action && gradient.parameter_actions[0].status == PropertyActionStatus::AssociationResidual);
-            CHECK(gradient.parameter_actions[0].diagnostics.association_residual == 2e-8);
-            CHECK(gradient.parameter_actions[1].action && std::isfinite(gradient.value[1]));
-        };
-        check(differentiate(columns, energy, prediction));
+        CHECK(fresh_energy.status == ObservationStatus::Available && fresh_energy.value.size() == 2);
+        CHECK(differentiate(columns, energy, prediction).value == fresh_energy.value);
         auto transfer = energy; transfer.kind = ObservationKind::TransferGibbsEnergy;
-        prediction.second_reference = prediction.reference; prediction.reference = intact;
-        check(differentiate(columns, transfer, prediction));
-        prediction.reference = prediction.second_reference;
-        prediction.activity = electrolyte_activity(columns, gamma.temperature, gamma.pressure, {1, 0, 0}, {1, 2}, {1, 1}, .1, *prediction.reference);
-        CHECK(std::isfinite(prediction.activity->mean_ionic_molality_scale));
-        CHECK(prediction.reference->log_fugacity == intact.log_fugacity);
-        CHECK(prediction.reference->parameter_derivative[0][1].action == intact.parameter_derivative[0][1].action);
-        check(differentiate(columns, gamma, prediction));
+        transfer.reference_composition = energy.composition;
+        auto transferred = predict(columns, transfer);
+        const auto fresh_transfer = differentiate(columns, transfer, transferred);
+        transferred.second_reference = prediction.reference;
+        CHECK(fresh_transfer.status == ObservationStatus::Available && differentiate(columns, transfer, transferred).value == fresh_transfer.value);
+        auto activity = predict(columns, gamma);
+        const auto fresh_activity = differentiate(columns, gamma, activity);
+        activity.reference = prediction.reference;
+        activity.activity = electrolyte_activity(columns, gamma.temperature, gamma.pressure, {1, 0, 0}, {1, 2}, {1, 1}, .1, *activity.reference);
+        CHECK(std::isfinite(activity.activity->mean_ionic_molality_scale));
+        CHECK(activity.reference->log_fugacity == intact.log_fugacity);
+        CHECK(activity.reference->parameter_derivative[0][1].action == intact.parameter_derivative[0][1].action);
+        const auto& action = activity.activity->mean_ionic_parameter_derivative;
+        CHECK(action.size() == 2 && !action[0].action && action[0].status == PropertyActionStatus::AssociationResidual);
+        CHECK(action[0].diagnostics.association_residual == 2e-8 && action[1].action && std::isfinite(*action[1].action));
+        CHECK(fresh_activity.status == ObservationStatus::Available && differentiate(columns, gamma, activity).value == fresh_activity.value);
         bool refused = false;
         try {
             HelmholtzModel nine(properties_support::nine_species());

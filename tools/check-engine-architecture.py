@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""Structural rules for engine/native and the public Python surface.
-
-C++ is organised by dependency layer because include direction is the only
-structural fact a checker can enforce. Each rule is a cheap stdlib reading named
-in main()'s check table. The archive and stub rules need the linked images, so they run
-only with --build-dir, the configured Meson build of the lead's editable batch (#58).
-"""
+"""Structural rules for the native Engine and the public Python surface."""
 
 from __future__ import annotations
 
@@ -17,6 +11,7 @@ import sys
 from pathlib import Path
 
 from diffstat import architecture
+from native_reuse import inspect, self_test, table
 
 ROOT = Path(__file__).resolve().parent.parent
 NATIVE = ROOT / "engine" / "native"
@@ -530,7 +525,25 @@ def rule_stub_matches_extension() -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--build-dir", type=Path)
+    parser.add_argument("--linked", action="store_true", help="also check the editable extension and linked images")
+    parser.add_argument("--reuse-inventory", metavar="REVISION", help="generate a Markdown inventory of a production revision")
+    parser.add_argument("--reuse-self-test", action="store_true", help="run the retained-operand mutation controls")
     arguments = parser.parse_args()
+    if not arguments.build_dir:
+        parser.error("--build-dir must point to the configured production Meson build")
+
+    try:
+        if arguments.reuse_self_test:
+            for result in self_test(ROOT, arguments.build_dir):
+                print("ok  ", result)
+            return 0
+        units, retained = inspect(ROOT, arguments.build_dir, arguments.reuse_inventory)
+    except (RuntimeError, OSError, ValueError, subprocess.CalledProcessError) as error:
+        print(f"FAIL  native reuse inventory: {error}", file=sys.stderr)
+        return 1
+    if arguments.reuse_inventory:
+        print(table(arguments.reuse_inventory, units, retained), end="")
+        return 0
 
     checks = [
         ("one PIC object set, shared/private libraries, one extension", rule_one_archive()),
@@ -549,9 +562,12 @@ def main() -> int:
         ("no hand-named residual stops", rule_no_hand_named_residual_stop()),
         ("exact Hessian callback", rule_exact_hessian_callback()),
     ]
-    if arguments.build_dir:
+    if arguments.linked:
         checks += [("archive is Python-free", rule_archive_is_python_free(arguments.build_dir)),
                    ("type stub matches the extension", rule_stub_matches_extension())]
+    print(f"report  native reuse ({units} production translation units, {len(retained)} entries)")
+    for site in retained:
+        print(f"        {site.file}:{site.line}: {site.kind} {site.owner} — {site.operand}")
     failed = 0
     for name, findings in checks:
         print(f"{'FAIL' if findings else 'ok  '}  {name}")
