@@ -125,6 +125,7 @@ struct Prediction final {
     std::optional<bool> requested_tolerance_met;
     std::optional<equilibrium::EquilibriumResult> solved;  // the accepted central solve
     std::optional<equilibrium::CompiledSystem> compiled;    // the problem it solved, reused by differentiate
+    std::shared_ptr<const equilibrium::SolvedStateCaloricCenter> caloric_center, final_caloric_center;
     std::optional<equilibrium::EquilibriumResult> final_solved;
     std::optional<equilibrium::CompiledSystem> final_compiled;
     std::shared_ptr<equilibrium::SaturationSearch> saturation;
