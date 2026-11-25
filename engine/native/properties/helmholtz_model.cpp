@@ -1363,31 +1363,36 @@ HelmholtzDerivatives HelmholtzModel::evaluate_locked(
         // Site partials of the requested columns from the cheaper of forward and reverse sweeps.
         auto& partials = scratch.partials;
         partials.resize(sites_count, width);
+        if (!have_site_sensitivity && sites_count) {
+            tape_->prepare_site_equations(point);
+            tape_->site_equations.Forward(0, point);
+            ++counters_.forward;
+        }
         if (!have_site_sensitivity && width > 1 && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size() * width, 0.0);
             for (std::size_t k = 0; k < width; ++k) direction[coordinates[k] * width + k] = 1.0;
-            const auto first = tape_->function.Forward(1, width, direction);
+            const auto first = tape_->site_equations.Forward(1, width, direction);
             ++counters_.forward;
             for (std::size_t site = 0; site < sites_count; ++site)
-                for (std::size_t k = 0; k < width; ++k) partials(site, k) = first[(1 + site) * width + k];
+                for (std::size_t k = 0; k < width; ++k) partials(site, k) = first[site * width + k];
         } else if (!have_site_sensitivity && width <= sites_count) {
             auto& direction = scratch.direction;
             direction.assign(point.size(), 0.0);
             for (std::size_t k = 0; k < width; ++k) {
                 direction[coordinates[k]] = 1.0;
-                const auto first = tape_->function.Forward(1, direction);
+                const auto first = tape_->site_equations.Forward(1, direction);
                 direction[coordinates[k]] = 0.0;
                 ++counters_.forward;
-                for (std::size_t site = 0; site < sites_count; ++site) partials(site, k) = first[1 + site];
+                for (std::size_t site = 0; site < sites_count; ++site) partials(site, k) = first[site];
             }
         } else if (!have_site_sensitivity && sites_count) {
             auto& site_weight = scratch.site_weights;
-            site_weight.assign(output_count, 0.0);
+            site_weight.assign(sites_count, 0.0);
             for (std::size_t site = 0; site < sites_count; ++site) {
-                site_weight[1 + site] = 1.0;
-                const auto partial = tape_->function.Reverse(1, site_weight);
-                site_weight[1 + site] = 0.0;
+                site_weight[site] = 1.0;
+                const auto partial = tape_->site_equations.Reverse(1, site_weight);
+                site_weight[site] = 0.0;
                 ++counters_.reverse;
                 for (std::size_t k = 0; k < width; ++k) partials(site, k) = partial[coordinates[k]];
             }
@@ -1626,6 +1631,32 @@ std::vector<double> HelmholtzModel::residual_coefficient_errors(
     return coefficient_errors(p, *tape_, regular, sites, coefficients, known, lu);
 }
 
+struct HelmholtzModel::EnergyActionCenter {
+    bool prepared = false;
+    std::unique_ptr<AssociationJacobian> factorization;
+};
+
+// Lower triangle of D³A[c, d_i, d_j]. The phase and site equations are identical throughout
+// the contraction. The model lock holds their tape at this center for the entire triangle.
+std::pair<PropertyActionStatus, std::vector<double>> HelmholtzModel::contracted_energy_hessian(double T, double v, const std::vector<double>& amounts,
+    const std::vector<double>& contraction, const std::vector<std::vector<double>>& directions) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    EnergyActionCenter center;
+    std::vector<double> triangle;
+    std::vector<bool> moves;
+    for (const auto& d : directions) moves.push_back(std::any_of(d.begin(), d.end(), [](double x) { return x != 0; }));
+    for (std::size_t i = 0; i < moves.size(); ++i) for (std::size_t j = 0; j <= i; ++j) {
+        double value = 0.0;
+        if (moves[i] && moves[j]) {
+            auto energy = energy_action_locked(T, v, amounts, {contraction, directions[i], directions[j]}, nullptr, nullptr, core::CalculationWork::active_limit() ? nullptr : &center);
+            if (!energy.action) return {energy.status, {}};
+            value = *energy.action;
+        }
+        triangle.push_back(value);
+    }
+    return {PropertyActionStatus::Available, std::move(triangle)};
+}
+
 ResidualEnergyAction HelmholtzModel::residual_energy_action(double temperature, double volume,
     const std::vector<double>& amounts, const std::vector<std::vector<double>>& directions) const {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -1646,7 +1677,7 @@ ResidualEnergyGradient HelmholtzModel::repeated_direction_energy_gradient(double
 // The contraction of three to five directions, or with `coordinates` the vector D3F[v, v, e_k] of the two equal
 // directions {v, v} into `gradient`.
 ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, double volume, const std::vector<double>& amounts,
-    const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>* coordinates, std::vector<double>* gradient) const {
+    const std::vector<std::vector<double>>& directions, const std::vector<std::size_t>* coordinates, std::vector<double>* gradient, EnergyActionCenter* shared) const {
     validate_point(temperature, volume, amounts);
     const std::size_t components = parameters_.component_count(), order = directions.size();
     const std::size_t width = 2 + components + active_.size();
@@ -1676,18 +1707,24 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
         }
         for (double& value : normalized[direction]) value /= std::max(norms[direction], std::numeric_limits<double>::min());
     }
-    const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
-    core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
-    const double density = total / volume;
-    std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
-    result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
-        predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
+    EnergyActionCenter local;
+    auto& center = shared ? *shared : local;
     result.status = PropertyActionStatus::Available;
-    observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = association_factorization(parameters_, density, refreshed.site_fractions,
-        central_strength(parameters_, temperature, density, composition),
-        composition, result.status, result.diagnostics, solver_options_);
-    if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
+    if (!center.prepared) {
+        const auto refreshed = evaluate_locked(temperature, volume, amounts, DerivativeOrder::Value);
+        core::retain_first(result.diagnostics.first_numerical_failure, refreshed.first_numerical_failure);
+        const double density = total / volume;
+        std::vector<double> composition(amounts); for (double& amount : composition) amount /= total;
+        result.diagnostics.recordings = ensure_tape(point, refreshed.site_fractions,
+            predicate_signature(temperature, composition), {}, 0.0, true) ? 1 : 0;
+        observations.drain(result.diagnostics.site_conditioning);
+        center.factorization = association_factorization(parameters_, density, refreshed.site_fractions,
+            central_strength(parameters_, temperature, density, composition),
+            composition, result.status, result.diagnostics, solver_options_);
+        if (result.status != PropertyActionStatus::Available) return association_result(std::move(result), observations);
+        center.prepared = true;
+    }
+    const auto& factorization = center.factorization;
     if (std::any_of(norms.begin(), norms.end(), [](double norm) { return norm == 0.0; })) { result.action = 0.0;
         if (gradient) gradient->assign(coordinates->size(), 0.0); return association_result(std::move(result), observations); }
     std::optional<std::pair<std::size_t, std::size_t>> repeated;
@@ -1752,6 +1789,18 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
                 &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, sign < 0 ? 3 : 0).front() / (s * s);
             ++result.diagnostics.directional_paths;
         }
+    } else if (shared && order == 3) {
+        // D³A on three directions uses the same four signed Taylor paths, advanced together.
+        constexpr std::size_t paths = 4;
+        std::vector<std::vector<double>> series(order + 1, std::vector<double>(paths * width));
+        series[0] = point;
+        for (std::size_t i = 0; i < width; ++i) for (std::size_t path = 0; path < paths; ++path)
+            series[1][i * paths + path] = normalized[0][i] + (path & 1 ? -normalized[1][i] : normalized[1][i])
+                + (path & 2 ? -normalized[2][i] : normalized[2][i]);
+        const auto values = tape_->implicit_taylor(series, order, factorization.get(), &result.diagnostics.site_solves,
+            &result.diagnostics.forward_sweeps, &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, 0, paths);
+        coefficient = values[0] - values[1] - values[2] + values[3];
+        result.diagnostics.directional_paths += paths;
     } else for (std::size_t mask = 0; mask < (std::size_t(1) << (order - 1)); ++mask) {
         // Half of the 2^q linear sign paths, weighted by their sign products.
         std::vector<std::vector<double>> series(order + 1, std::vector<double>(width, 0.0));
@@ -1995,6 +2044,11 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
             for (std::size_t k = 0; k <= last; ++k)
                 gradient[k] += 0.5 * sign * outputs[insertion_degree + k][0];
             ++result.diagnostics.directional_paths;
+            // For a constant path the first coefficient is odd in the insertion.
+            if (order == 0 && !capture_error && std::all_of(motion.begin(), motion.end(), [](double x) { return x == 0.0; })) {
+                gradient[0] += 0.5 * outputs[1][0];
+                break;
+            }
         }
         return gradient;
     };
@@ -2014,6 +2068,12 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
     } else {
         result.diagnostics.pressure_factorizations = 1;
         for (std::size_t k = 1; k <= order; ++k) {
+            // P(V) has zero first coefficient until the imposed pressure moves V.
+            if (k == 1 && std::all_of(motion.begin(), motion.end(), [](double x) { return x == 0.0; })) {
+                path[k][1] = (direction.pressure / norm) / pv;
+                ++result.diagnostics.pressure_solves;
+                continue;
+            }
             const auto g = gradient_series(u, k);
             const auto inverse = inverse_log().first;
             const double known = gas * (temperature * (inverse[k] - g[k] / volume)
@@ -2022,7 +2082,7 @@ ReferenceTaylor HelmholtzModel::reference_taylor(double temperature, double volu
             ++result.diagnostics.pressure_solves;
         }
         capture_error = error != nullptr;
-        const auto g = gradient_series(u, order);
+        const auto g = order || error ? gradient_series(u, order) : std::vector<double>{};
         const auto [inverse, logarithm] = inverse_log();
         const auto wide_series = error ? inverse_log_series<WiderScalar>(path, order)
             : std::pair<std::vector<WiderScalar>, std::vector<WiderScalar>>{};

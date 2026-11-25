@@ -1934,7 +1934,15 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
-element potentials initialized anew.
+element potentials initialized anew. During a fit, an admitted previous search
+can supply the physical start at the same loading after the ordinary continuation
+has passed the first pressure event and established its correction seed. Each node records whether
+that start passed the current model’s solve, uncertainty and sampled slope
+checks, including the pressure increment from the preceding node. The search
+retains a rejected node and retries with the ordinary grid start within the
+remaining budget. Trials with identical EOS parameter values, including held
+diameters, can retain the immutable model’s reference series and derivative
+tapes while fitting new reaction coefficients.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded
@@ -2287,9 +2295,16 @@ support; composition and packing retain their exact values and multiplicity.
 Assign the set to `StabilityOptions.prepared_trials` to select supplied evaluation.
 A set cannot accompany `trials`, enter discovery or `stability_measure`, or be
 used in a fitting stability observation. Each parent still admits its supports
-against the fed and reaction union and the ionic signs.
+against the fed and reaction union and the ionic signs. An otherwise admissible supplied point
+outside that union retains its position with `not_applicable` evidence. The
+other points still run. The supplied family is available when all requested
+points have evaluated. Without a specified packing, a point retains the
+density side reported by its pressure root. A supplied packing that passes a
+charged-phase root check retains the certified side as well. Evaluated points without a known
+side share the unspecified-side minimum. The combined prediction applies the
+observation’s standard-term uncertainty to both families.
 
-Preparation stores the seed reconstruction, inventory admission, raw chart point,
+Preparation stores the seed reconstruction, raw chart point,
 final reconstruction and molar volume, a charged vapor point's own state, and
 the final energy derivatives and association diagnostics. Their stages have one
 owner shared with list evaluation. Evaluation replays each product or failure
@@ -2301,8 +2316,10 @@ could not compile, retain their seed and finish their work separately per parent
 
 A call compiles one trial system per kind and support, using the first entry
 that compiles successfully. Each entry retargets its declared feed, neutral-feed
-admission, normalization and balances; inventory programs retain their original
-refusal. The raw point takes pressure and the fixed standard term from the
+admission, normalization and balances. The reconstructed feed is nonnegative,
+vanishes outside the declared support, and sets the balance right-hand side.
+It therefore witnesses feasibility for each subsequent supplied point. Species
+maxima enter the optimizer boxes only in a minimized trial. The raw point takes pressure and the fixed standard term from the
 parent's compiled system before row evaluation. Pressure-root admission, reduced
 energy assembly, the candidate plane and donor arithmetic remain per parent.
 The optimized search uses the same final reconstruction and energy owners with

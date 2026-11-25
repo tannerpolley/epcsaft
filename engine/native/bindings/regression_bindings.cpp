@@ -152,14 +152,14 @@ m._serve_fit(channel)
     nb::class_<equilibrium::SaturationComparison>(module, "SaturationComparison")
         EPCSAFT_READONLY(equilibrium::SaturationComparison, left, right, identity, operands);
     nb::class_<equilibrium::SaturationNode>(module, "SaturationNode")
-        EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
+        EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, prior_start, driver_attempts, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
     nb::class_<equilibrium::SaturationSearch>(module, "SaturationSearch")
-        EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, events, candidates, comparisons, causes, groups,
+        EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, rejected_starts, events, candidates, comparisons, causes, groups,
             accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)
         EPCSAFT_READONLY(Prediction, analytical_osmotic_coefficient, analytical_osmotic_cause, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met, first_numerical_failure, stability, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
+            requested_tolerance_met, first_numerical_failure, stability, supplied_stability, supplied_available, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
         EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, central_value);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
@@ -237,10 +237,11 @@ m._serve_fit(channel)
             failures, iterations, residual_evaluations, jacobian_evaluations, trial_failures, iteration_seconds,
             iteration_costs, initial_cost, final_cost, covariance, prediction_uncertainty, reconciliation, rank_records, first_numerical_failure)
         EPCSAFT_REPR(FitResult, "status", "usable", "final_cost", "iterations", "physical");
-    module.def("predict", [](const HelmholtzModel& model, const Observation& observation) {
+    module.def("predict", [](const HelmholtzModel& model, const Observation& observation,
+            std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied) {
         core::Scope scope("predict");
-        return predict_validated(model, observation);
-    }, nb::arg("model"), nb::arg("observation"));
+        return predict_validated(model, observation, std::move(supplied));
+    }, nb::arg("model"), nb::arg("observation"), nb::arg("supplied_trials") = nullptr);
     module.def("differentiate", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("differentiate");
         return differentiate(model, observation, predict_validated(model, observation));

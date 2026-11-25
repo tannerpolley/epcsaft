@@ -256,9 +256,9 @@ struct HelmholtzTape final {
         double* coefficient_residual = nullptr,
         std::vector<std::vector<double>>* output_prefix = nullptr,
         std::vector<double>* site_coefficients = nullptr, std::vector<double>* right_coefficients = nullptr,
-        const AssociationAction* association = nullptr, std::size_t first_order = 0
+        const AssociationAction* association = nullptr, std::size_t first_order = 0, std::size_t paths = 1
     ) {
-        core::CalculationWork::energy_evaluation();
+        for (std::size_t path = 0; path < paths; ++path) core::CalculationWork::energy_evaluation();
         core::Scope scope("implicit_taylor"), evaluation("evaluate");
         scope.probe("derivative_order", static_cast<double>(order));
         const std::size_t input_count = regular_count + site_count;
@@ -267,13 +267,22 @@ struct HelmholtzTape final {
         if (site_coefficients) site_coefficients->resize(first_order * site_count);
         if (right_coefficients) right_coefficients->resize(first_order * site_count);
         // Without U, callers may consume only the site-independent Ideal outputs.
-        // The negative insertion follows its positive partner immediately on this tape.
+        // The site equations determine one coefficient at a time. Once these are known,
+        // the scalar energy tape can propagate all orders in one traversal.
+        const bool pack = paths == 1 && first_order == 0 && order > 1 && site_count && factorization;
+        const auto orders = order + 1;
+        std::vector<double> coefficients(pack ? input_count * orders : 0);
+        std::vector<double> scales(pack && coefficient_residual ? orders : 0, 1.0);
+        const auto save_input = [&](std::size_t k) {
+            for (std::size_t i = 0; i < input_count; ++i) coefficients[i * orders + k] = input[i];
+        };
         for (std::size_t current = first_order; current <= order; ++current) {
-            input.assign(input_count, 0.0);
+            input.assign(current ? paths * input_count : input_count, 0.0);
             std::copy(regular_coefficients[current].begin(), regular_coefficients[current].end(), input.begin());
             if (!current) {
                 std::copy(site_values.begin(), site_values.end(), input.begin() + regular_count);
                 output = forward_zero(input, forward_count);
+                if (pack) save_input(0);
                 if (order && site_count && factorization) {
                     prepare_site_equations(input);
                     site_equations.Forward(0, input);
@@ -284,45 +293,62 @@ struct HelmholtzTape final {
                 if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-output[1+a]);
                 continue;
             }
+            const auto forward = [&](auto& tape) {
+                if (forward_count) ++*forward_count;
+                return paths == 1 ? tape.Forward(current, input) : tape.Forward(current, paths, input);
+            };
             const bool solve_sites = site_count && factorization;
-            const auto known = solve_sites ? site_equations.Forward(current, input) : function.Forward(current, input);
+            const auto known = forward(solve_sites ? site_equations : function);
             const std::size_t offset = solve_sites ? 0 : 1;
-            if (forward_count != nullptr) ++*forward_count;
-            if (site_count && factorization != nullptr
-                && !(current == 1 && association && association->tangent(
-                    [&](std::size_t site) { return -known[offset + site]; },
-                    [&](std::size_t site, double dx) { input[regular_count + site] = dx; }))) {
-                std::vector<double> rhs(site_count);
-                for (std::size_t site = 0; site < site_count; ++site)
-                    rhs[site] = -known[offset + site];
-                const Eigen::VectorXd coefficient = factorization->solve(
-                    Eigen::Map<const Eigen::VectorXd>(rhs.data(),
-                        static_cast<Eigen::Index>(site_count)));
-                for (std::size_t site = 0; site < site_count; ++site)
-                    input[regular_count + site] = coefficient[static_cast<Eigen::Index>(site)];
-                if (solve_count != nullptr) ++*solve_count;
+            for (std::size_t path = 0; site_count && factorization && path < paths; ++path) {
+                const auto rhs = [&](std::size_t s) { return -known[(offset + s) * paths + path]; };
+                const auto put = [&](std::size_t s, double v) { input[(regular_count + s) * paths + path] = v; };
+                if (current == 1 && association && association->tangent(rhs, put)) continue;
+                Eigen::VectorXd right(site_count);
+                for (std::size_t s = 0; s < site_count; ++s) right[s] = rhs(s);
+                const Eigen::VectorXd coefficient = factorization->solve(right);
+                for (std::size_t s = 0; s < site_count; ++s) put(s, coefficient[s]);
+                if (solve_count) ++*solve_count;
             }
             output = known;
             if (solve_sites) {
-                if (current < order && std::any_of(input.begin() + regular_count, input.end(), [](double x) { return x != 0.0; })) {
-                    site_equations.Forward(current, input);
-                    if (forward_count) ++*forward_count;
-                }
-                output = function.Forward(current, input);
-                if (forward_count != nullptr) ++*forward_count;
+                if (current < order && std::any_of(input.begin() + regular_count * paths, input.end(), [](double x) { return x != 0.0; }))
+                    forward(site_equations);
+                if (pack) {
+                    save_input(current);
+                    if (coefficient_residual)
+                        for (double value : known)
+                            scales[current] = std::isfinite(value) ? std::max(scales[current], std::abs(value))
+                                                                  : std::numeric_limits<double>::infinity();
+                } else output = forward(function);
             }
-            if (output_prefix != nullptr) output_prefix->push_back(output);
+            if (!pack && output_prefix) output_prefix->push_back(output);
             if (site_coefficients) site_coefficients->insert(site_coefficients->end(), input.begin() + regular_count, input.end());
             if (right_coefficients) for (std::size_t a = 0; a < site_count; ++a) right_coefficients->push_back(-known[offset+a]);
-            if (coefficient_residual != nullptr && site_count != 0 && factorization != nullptr) {
+            for (std::size_t path = 0; !pack && coefficient_residual && site_count && factorization && path < paths; ++path) {
                 double scale = 1.0;
                 for (std::size_t site = 0; site < site_count; ++site)
-                    scale = std::max(scale, std::abs(known[offset + site]));
+                    scale = std::max(scale, std::abs(known[(offset + site) * paths + path]));
                 for (std::size_t site = 0; site < site_count; ++site) {
-                    const double residual = std::isfinite(known[offset + site])
-                        && std::isfinite(output[1 + site])
-                        ? std::abs(output[1 + site]) / scale
+                    const auto index = (1 + site) * paths + path;
+                    const double residual = std::isfinite(known[(offset + site) * paths + path])
+                        && std::isfinite(output[index])
+                        ? std::abs(output[index]) / scale
                         : std::numeric_limits<double>::infinity();
+                    *coefficient_residual = std::max(*coefficient_residual, residual);
+                }
+            }
+        }
+        if (pack) {
+            const auto values = function.Forward(order, coefficients);
+            if (forward_count) ++*forward_count;
+            output.resize(function.Range());
+            for (std::size_t k = 1; k <= order; ++k) {
+                for (std::size_t i = 0; i < output.size(); ++i) output[i] = values[i * orders + k];
+                if (output_prefix) output_prefix->push_back(output);
+                if (coefficient_residual) for (std::size_t site = 0; site < site_count; ++site) {
+                    const double residual = std::isfinite(scales[k]) && std::isfinite(output[1 + site])
+                        ? std::abs(output[1 + site]) / scales[k] : std::numeric_limits<double>::infinity();
                     *coefficient_residual = std::max(*coefficient_residual, residual);
                 }
             }

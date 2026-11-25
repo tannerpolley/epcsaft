@@ -115,6 +115,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
             + " objective_factor=" + core::optional_number(objective_factor) + " produces invalid inner target="
             + core::optional_number(tolerance) + " or dual_inf_tol=" + core::optional_number(dual_tolerance));
+    core::Scope lifecycle("ipopt_application");
     const char* options_file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE");
     // Clones share this thread's option registry and journalist (#646); an options file's output_file must not.
     thread_local const Ipopt::SmartPtr<Ipopt::IpoptApplication> base = ::IpoptApplicationFactory();
@@ -197,6 +198,8 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
             admit(options->SetNumericValue("mu_init", policy::EQUILIBRIUM_WARM_MU.value), "mu_init");
         }
     }
-    return {initialized, initialized == Ipopt::Solve_Succeeded ? app->OptimizeTNLP(nlp) : initialized};
+    if (initialized != Ipopt::Solve_Succeeded) return {initialized, initialized};
+    core::Scope optimize("ipopt_optimize");
+    return {initialized, app->OptimizeTNLP(nlp)};
 }
 }  // namespace epcsaft::equilibrium

@@ -96,9 +96,10 @@ std::vector<std::size_t> state_groups(const std::vector<Observation>& observatio
 // The committed record is `optimizer`, `evaluation` and `jacobian`, written only by publish(). The rest is working
 // state, which a same-point evaluation may update before its verdict.
 struct Trial final {
-    std::unique_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
+    std::shared_ptr<const HelmholtzModel> model;  // declared first: compiled centers are destroyed first
     std::vector<Observation> observations;
     std::vector<Prediction> centers;
+    std::vector<std::size_t> projected_rows;
     std::vector<double> optimizer;
     ObservationEvaluation evaluation;
     bool jacobian = false;
@@ -233,9 +234,25 @@ struct ObservationEvaluator::Impl final {
         const std::size_t count = core::current_trace() || fit_host.worker.empty() ? 1
             : requested > 0 ? static_cast<std::size_t>(requested) : processors();
         std::size_t rank = 0;
+        std::vector<std::size_t> heat_groups;
+        std::vector<std::size_t> load(std::min(count, groups_.size()), 0), heat_load(load);
+        const auto share = load.empty() ? 0 : (groups_.size() + load.size() - 1) / load.size();
         for (std::size_t i = 0; i < groups_.size(); ++i) {
             owner_[i] = groups_[i] != i ? owner_[groups_[i]] : electrolyte_observation(request_.observations[i].kind) ? 0 : rank++ % count;
             const auto& current = request_.observations[i];
+            if (current.kind == ObservationKind::AdditionEnthalpy && groups_[i] == i) {
+                // Heat additions with the same initial state share its enthalpy and parameter columns.
+                const auto prior = std::find_if(heat_groups.begin(), heat_groups.end(), [&](std::size_t j) {
+                    return heat_load[owner_[j]] < share && equilibrium::same_problem_state(current.problem, request_.observations[j].problem);
+                });
+                if (prior == heat_groups.end()) {
+                    const auto available = load.begin() + static_cast<std::ptrdiff_t>(std::min(rank, load.size()));
+                    owner_[i] = static_cast<std::size_t>(std::min_element(load.begin(), available) - load.begin());
+                    heat_groups.push_back(i);
+                } else owner_[i] = owner_[*prior];
+                ++heat_load[owner_[i]];
+            }
+            if (groups_[i] == i) ++load[owner_[i]];
             if (current.kind != ObservationKind::Stability || !current.pressure_reference) continue;
             auto reference = pressure_reference_row(current);
             for (std::size_t j = 0; j < i; ++j) if (request_.observations[j].kind == ObservationKind::Stability && request_.observations[j].pressure_reference) {
@@ -485,8 +502,15 @@ struct ObservationEvaluator::Impl final {
             if (!same_point) {
                 trial.chart = evaluate_coordinates(request_.parameters, request_.coordinates, parameter_point, request_.holds, request_.thermochemistry, request_.controls.solver_options);
                 trial.chart.reaction_laws = std::move(reaction_laws);
-                trial.model = std::make_unique<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
+                // Reference series and derivative tapes belong to the immutable EOS. Reaction laws belong to the observations.
+                const auto eos = trial.chart.active.size();
+                const bool same_eos = cached_ && (eos == 0 || std::memcmp(trial.chart.physical.data(),
+                    cached_->chart.physical.data(), eos * sizeof(double)) == 0);
+                if (same_eos && std::any_of(cached_->centers.begin(), cached_->centers.end(),
+                    [](const auto& p) { return p.saturation && p.saturation->accepted; })) trial.model = cached_->model;
+                else trial.model = std::make_shared<HelmholtzModel>(trial.chart.parameters, trial.chart.active, request_.thermochemistry, request_.controls.solver_options);
                 trial.centers.assign(groups_.size(), Prediction{});
+                trial.projected_rows.assign(n, n);
             }
             trial.observations = std::move(observations);
             const Trial* seed = nullptr;
@@ -525,8 +549,12 @@ struct ObservationEvaluator::Impl final {
                     scope.probe("observation", static_cast<double>(i));
                     scope.probe("anchor", static_cast<double>(g));
                     scope.probe("targets", static_cast<double>(std::count(groups_.begin(), groups_.end(), g)));
-                    const auto& prior = seed ? seed->observations[i] : observation;
-                    const bool unchanged = observation.kind == ObservationKind::Stability || !request_.uncertainty || (pressure_closed(observation.kind)
+                    const bool capped_row = observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy;
+                    const Trial* prior_trial = capped_row && !same_point && cached_
+                        ? &*cached_ : seed;
+                    const auto& prior = prior_trial ? prior_trial->observations[i] : observation;
+                    const bool unchanged = observation.kind == ObservationKind::Stability || !request_.uncertainty
+                        || (capped_row && measurement_.membership[i] == n) || (pressure_closed(observation.kind)
                         ? std::tie(observation.temperature, observation.pressure, observation.composition, observation.branch)
                             == std::tie(prior.temperature, prior.pressure, prior.composition, prior.branch)
                         : same_state(observation, prior));
@@ -535,7 +563,7 @@ struct ObservationEvaluator::Impl final {
                         if (groups_[row] == g) admission.push_back(&trial.observations[row]);
                     trial.references.previous_initial = cached_ ? cached_->centers[g].initial_heat_endpoint : std::nullopt;
                     prediction = predict(model, observation, starts_[g], std::move(prediction.compiled), &trial.references,
-                        seed && unchanged ? &seed->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
+                        prior_trial && unchanged ? &prior_trial->centers[g] : nullptr, seed && unchanged ? seed->model.get() : nullptr,
                         seed && unchanged && trial.chart.physical == seed->chart.physical, deadline_, admission);
                     if (prediction.status != ObservationStatus::Available && starts_[g] && observation.kind != ObservationKind::SaturationCappedAdditionEnthalpy && observation.kind != ObservationKind::Stability) {
                         auto retry = predict(model, observation, std::nullopt, std::move(prediction.compiled), &trial.references,
@@ -559,7 +587,8 @@ struct ObservationEvaluator::Impl final {
                         }
                         prediction.stability = std::move(measure);
                     }
-                } else if (!pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                } else if (trial.projected_rows[g] != i && !pressure_closed(observation.kind)) project_prediction(model, observation, prediction);
+                trial.projected_rows[g] = i;
                 retain(prediction.first_numerical_failure);
                 if (prediction.saturation) out.saturation_predictions[i] = prediction;
                 if (observation.kind == ObservationKind::Stability) out.stability_predictions[i] = prediction;

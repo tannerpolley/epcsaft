@@ -779,6 +779,11 @@ void check_tangent_plane_curvature() {
     std::vector<std::vector<double>> transform;
     const auto shifted = compile_stability_trial(model, 300.0, 1e5, phase, {0.25, 0.75}, {2.0, -3.0}, transform);
     const auto unshifted = compile_stability_trial(model, 300.0, 1e5, phase, {0.25, 0.75}, {0.0, 0.0}, transform);
+    for (const auto& bound : inventory_bounds(shifted, phase.support, false, 0.0)) {
+        CHECK(bound.feed_normalized_amount);
+        tpd_compare("trial-inventory/" + std::to_string(bound.species), shifted.inventory_upper_bounds[bound.species],
+            *bound.feed_normalized_amount, epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value);
+    }
     auto full = shifted.generic_point();
     full[0] = std::log(0.25); full[1] = std::log(0.75); full[2] = 1.0; full[3] = std::log(0.1);
     const auto hs = shifted.hessian(full), h0 = unshifted.hessian(full);
@@ -896,7 +901,8 @@ void check_prepared_supplied_trials() {
             if (kind == PhaseKind::Vapor) { phase.packing_guess = 0.4; trials.push_back(phase); }
         }
         const auto r = exercise(model, a, trials);
-        CHECK(r.trials[1].evidence == "evaluated");
+        CHECK(r.trials[1].evidence == "evaluated" && !r.trials[1].quantities.count("density_side"));
+        CHECK(r.trials[4].evidence == "evaluated" && r.trials[4].quantities.at("density_side") == static_cast<double>(DensityBranch::Vapor));
         for (std::size_t i : {std::size_t(5), std::size_t(6)})
             CHECK(!r.trials[i].raw_coordinates.empty() && !r.trials[i].raw_residuals.empty()
                 && !r.trials[i].composition.empty() && !r.trials[i].quantities.count("g_over_rt"));
@@ -912,6 +918,13 @@ void check_prepared_supplied_trials() {
         auto off = phase; off.packing_guess = *phase.packing_guess * 1.1;
         const auto r = exercise(model, a, {phase, off});
         CHECK(r.trials[1].evidence == "evaluated");
+        CHECK(r.trials[1].quantities.at("density_side") == static_cast<double>(DensityBranch::Liquid));
+        CHECK(r.trials[4].quantities.at("density_side") == r.trials[1].quantities.at("density_side"));
+        CHECK(r.trials[4].quantities.at("molar_density_mol_m3") == r.trials[1].quantities.at("molar_density_mol_m3"));
+        CHECK(r.supplied_minima().size() == 1);
+        std::cout << std::setprecision(17) << "packed and rooted liquid density mol/m3 "
+            << r.trials[1].quantities.at("molar_density_mol_m3") << " TPD/RT " << r.trials[1].quantities.at("tpd_over_rt")
+            << " minima " << r.supplied_minima().size() << '\n';
         CHECK(!r.trials[3].raw_residuals.empty() && !r.trials[3].composition.empty()
             && r.trials[3].quantities.count("condensed_root_log_displacement") && !r.trials[3].quantities.count("g_over_rt"));
     }
@@ -2922,7 +2935,7 @@ void check_mdea_bubble_work_limit() {
     CHECK(run(completed, "") == completed);
     CHECK(run(completed - 1, "return") == completed);
     // The retained target density checkpoint catches a skipped admission recorded as a numerical failure.
-    constexpr std::size_t density_admission_work = 2152;  // #215 replay after zero-weight Hessian and zero-direction reference work were removed
+    constexpr std::size_t density_admission_work = 2080;  // #229 skips constant-path reference Taylor evaluations before admission
     CHECK(run(density_admission_work, "density admission") == density_admission_work);
 }
 

@@ -690,7 +690,7 @@ def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, 
     return result
 
 
-def predict(model: Mixture | Pure, item: Observation) -> Prediction:
+def predict(model: Mixture | Pure, item: Observation, *, supplied_trials: _core.PreparedSuppliedTrials | None = None) -> Prediction:
     """Evaluate one observation using the model's shared native calculations.
 
     Parameters
@@ -699,6 +699,9 @@ def predict(model: Mixture | Pure, item: Observation) -> Prediction:
         Model with any required thermochemistry and active-parameter declaration.
     item : Observation
         Physical observation, including its observed value, units and residual.
+
+    supplied_trials : PreparedSuppliedTrials, optional
+        Evaluate this bank against the admitted stability parent and return its report in supplied_stability.
 
     Returns
     -------
@@ -716,7 +719,7 @@ def predict(model: Mixture | Pure, item: Observation) -> Prediction:
     Inspect the returned prediction cause before consuming its value. Failed
     trials are not observations of zero (ALG-FIT).
     """
-    return _core.predict(model._model, item)
+    return _core.predict(model._model, item, supplied_trials)
 
 
 def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequence[Coordinate],

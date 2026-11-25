@@ -494,7 +494,7 @@ struct CompiledSystem final {
     template <typename Base> PointEvaluationValues<Base> evaluate_at(const PhasePointValues<Base>&, std::optional<std::size_t> = std::nullopt) const;
     // The chemical row of `species` in `phase` at mole fraction `fraction`; at fraction 1, its finite part.
     template <typename Base> Base chemical_row(const PhasePointValues<Base>&, std::size_t phase, std::size_t species, const Base& fraction) const;
-    template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&) const;
+    template <typename Base> std::vector<Base> jacobian_at(const PhasePointValues<Base>&, bool constraints_only = false) const;
     template <typename Base> RowUncertaintyValues<Base> row_uncertainty_at(const PhasePointValues<Base>&,
         const std::vector<std::vector<Base>>&) const;
     EPC_API PointEvaluation evaluate(const std::vector<double>& point) const;
@@ -525,7 +525,7 @@ struct CompiledSystem final {
     // First solved-chart coordinate of each declared phase: its log compositions, then a free amount and log packing.
     EPC_API std::vector<std::size_t> phase_offsets() const;
     EPC_API std::vector<double> jacobian(const std::vector<double>& point) const;
-    EPC_API std::vector<double> jacobian_at(const PhasePoint& prepared) const;
+    EPC_API std::vector<double> jacobian_at(const PhasePoint& prepared, bool constraints_only = false) const;
     EPC_API std::vector<double> lever_jacobian(const std::vector<double>& point) const;
     EPC_API std::vector<double> objective_gradient(const std::vector<double>& point) const;
     std::vector<double> objective_gradient_at(const PhasePoint& prepared) const;
@@ -899,7 +899,7 @@ struct CriticalSearch final {
 
 // `counted`: the estimate's roots and energy evaluations count in the enclosing calculation work.
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const PhasePoint* = nullptr, bool counted = false, bool plane_rows = false,
-    const std::vector<double>& prescribed_errors = {});
+    const std::vector<double>& prescribed_errors = {}, bool replay = false);
 struct DriverLimits;
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const CompiledSystem&, const EquilibriumResult&, const std::vector<WiderScalar>&, const DriverLimits* = nullptr);
 EPC_API EquilibriumNumericalEstimates equilibrium_numerical_estimates(const HelmholtzModel&, const EquilibriumResult&);
@@ -945,6 +945,10 @@ struct StabilityTrial final {
     bool pivot_only = false;
 };
 struct StabilityReport final {
+    EPC_API std::map<std::string, std::size_t> evidence_counts(const std::vector<std::size_t>& multiplicities = {}) const;
+    EPC_API std::map<std::string, std::size_t> unresolved_reasons() const;
+    EPC_API std::vector<StabilityTrial> witnesses() const;
+    EPC_API std::vector<StabilityTrial> supplied_minima() const;
     std::optional<core::Convergence> first_numerical_failure;
     std::optional<core::NumericalRank> last_rank;
     bool completed = false;
@@ -982,6 +986,8 @@ struct StabilityMeasure final {
     std::string cause, event;
     bool available = false, coincident_supports = false;
 };
+EPC_API std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem&, const EquilibriumResult&,
+    const std::shared_ptr<const PreparedSuppliedTrials>&, const std::vector<double>& standard_uncertainty_over_rt);
 EPC_API StabilityMeasure stability_measure(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions& = {});
 
 struct DiscoveryRecord final {
@@ -1074,14 +1080,15 @@ struct SaturationNode final {
     double loading = 0, mismatch = NAN, slope = NAN;
     EquilibriumResult state;
     EquilibriumNumericalEstimates estimates;
-    std::string action_cause;
+    std::string action_cause, prior_start;
+    std::size_t driver_attempts = 0;
     double action_seconds = 0, estimate_seconds = 0;
     EquilibriumNumericalEstimates local_estimates;
     std::shared_ptr<SolvedStateActionDiagnostics> action_diagnostics;
 };
 struct SaturationSearch final {
     std::vector<double> grid;
-    std::vector<SaturationNode> nodes;
+    std::vector<SaturationNode> nodes, rejected_starts;
     std::vector<std::array<std::size_t, 2>> events;
     std::vector<SaturationCandidate> candidates;
     std::vector<SaturationComparison> comparisons;
@@ -1100,7 +1107,7 @@ void compare_loading_candidates(SaturationSearch&, equilibrium::ComparisonEligib
 EPC_API void admit_loading_search(SaturationSearch&);
 EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,
-    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max());
+    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), const SaturationSearch* previous = nullptr);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 
@@ -1327,10 +1334,11 @@ struct SolvedStateActionWorkspace;
 SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace);
 // Independent first-order directions at one accepted center; each response retains its own status.
+struct SolvedStateCaloricCenter;
 EPC_API std::vector<SolvedStateActionBatch> solved_state_first_actions(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const std::vector<SolvedStateObservable>& observables,
-    const std::vector<SolvedStateActionDirection>& directions
+    const std::vector<SolvedStateActionDirection>& directions, std::shared_ptr<const SolvedStateCaloricCenter>* caloric = nullptr
 );
 
 }  // namespace epcsaft::equilibrium

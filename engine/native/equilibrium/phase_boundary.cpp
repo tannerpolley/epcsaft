@@ -2203,25 +2203,29 @@ void compare_loading_candidates(SaturationSearch& out, ComparisonEligibility eli
     if (out.groups.size() > 1 || out.brackets > 1) out.causes.push_back("multiple_roots");
 }
 
-void admit_loading_search(SaturationSearch& out) {
+static unsigned loading_slope_reversals(const SaturationNode& node, const SaturationNode* previous) {
+    if (!std::isfinite(node.mismatch)) return 0;
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
-    compare_loading_candidates(out, {});
-    for (std::size_t i = 0; i < out.nodes.size(); ++i) {
-        const auto& a = out.nodes[i];
-        if (!std::isfinite(a.mismatch)) continue;  // unsolved node: its own cause and unexamined_gap stand
-        if (!std::isfinite(a.slope) || a.slope == 0) out.causes.push_back("unresolved_slope_reversal");
-        if (!i) continue;
-        const auto& b = out.nodes[i - 1]; const auto delta = a.mismatch - b.mismatch;
-        if (sign(a.slope) != sign(b.slope) || (std::abs(delta) > a.estimates.pressure.absolute + b.estimates.pressure.absolute
-            && sign(delta) != sign(a.slope))) out.causes.push_back("unresolved_slope_reversal");
+    unsigned count = !std::isfinite(node.slope) || node.slope == 0;
+    if (previous) {
+        const double delta = node.mismatch - previous->mismatch;
+        if (sign(node.slope) != sign(previous->slope) || (std::abs(delta) > node.estimates.pressure.absolute + previous->estimates.pressure.absolute
+            && sign(delta) != sign(node.slope))) ++count;
     }
+    return count;
+}
+
+void admit_loading_search(SaturationSearch& out) {
+    compare_loading_candidates(out, {});
+    for (std::size_t i = 0; i < out.nodes.size(); ++i)
+        out.causes.insert(out.causes.end(), loading_slope_reversals(out.nodes[i], i ? &out.nodes[i - 1] : nullptr), "unresolved_slope_reversal");
 
     if (out.groups.empty() && out.causes.empty()) out.causes.push_back("no_resolved_root");
     if (out.complete && out.causes.empty() && out.groups.size() == 1) out.accepted = out.groups[0][0];
 }
 
 SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem declaration, const AffineLoading& affine,
-    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline) {
+    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline, const SaturationSearch* previous) {
     using Clock = std::chrono::steady_clock;
     if (grid.size() < 2 || grid.front() != affine.lower || grid.back() != affine.upper)
         throw std::invalid_argument("saturation grid must include both declared bounds");
@@ -2249,7 +2253,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         if (composed) { problem.loading = affine; problem.loading->seed = loading;
             problem.loading->lower = lower; problem.loading->upper = upper; problem.loading->pressure = target; }
         auto compiled = compile_problem(model, problem);
-        auto state = solve_compiled(compiled, start, nullptr, &work);
+        auto state = try_solve_compiled(compiled, start, nullptr, &work);
+        if (composed && state.failure) std::rethrow_exception(state.failure);
         if (!out.first_numerical_failure) out.first_numerical_failure = state.first_numerical_failure;
         return std::make_pair(std::move(compiled), std::move(state));
     };
@@ -2257,45 +2262,88 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0;
     };
     const auto sign = [](double value) { return (value > 0) - (value < 0); };
+    const auto evaluate_node = [&](double alpha, std::optional<EquilibriumResult> start, std::string prior_start, SaturationNode* retry = nullptr) -> std::optional<std::string> {
+        const auto before = work.attempts;
+        if (start) start->multipliers.clear();
+        auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
+            start, false);
+        auto& n = retry ? *retry : out.nodes.emplace_back();
+        n.driver_attempts = work.attempts - before;
+        n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
+        if (n.state.failure) std::rethrow_exception(n.state.failure);
+        if (!n.state.success || !n.state.has_state()) { return n.state.message; }
+        n.mismatch = *n.state.pressure - affine.pressure;
+        const auto estimate = [](const CompiledSystem& system, const EquilibriumResult& result, const PhasePoint* prepared = nullptr) {
+            core::Scope scope("loading_node_uncertainty");
+            return equilibrium_numerical_estimates(system, result, prepared, false, false, {}, true);
+        };
+        auto begun = Clock::now();
+        n.estimates = estimate(c, n.state, n.state.prepared_endpoint.get());
+        n.estimate_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
+        SolvedStateActionDirection direction; direction.feed_amounts_mol = affine.direction;
+        direction.active_parameters.resize(model.active_parameters().size());
+        begun = Clock::now();
+        const auto action = solved_state_first_actions(c, n.state,
+            {{SolvedStateObservableKind::Pressure}}, {direction});
+        n.action_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
+        if (!action.empty()) n.action_diagnostics = std::make_shared<SolvedStateActionDiagnostics>(action[0].diagnostics);
+        if (action.empty() || action[0].results.empty() || !action[0].results[0].action || action[0].results[0].status != SolvedStateActionStatus::Available) {
+            n.action_cause = action.empty() || action[0].results.empty() ? "action_unavailable" : solved_state_status_name(action[0].results[0].status);
+            if (!action.empty() && !action[0].results.empty())
+                n.action_cause += ":" + action[0].results[0].diagnostic_message.value_or("");
+            return n.action_cause;
+        }
+        n.slope = *action[0].results[0].action;
+        auto local = c.problem;
+        local.loading = affine; local.loading->seed = alpha; local.loading->pressure = *n.state.pressure;
+        const auto augmented = compile_problem(model, local);
+        auto mapped = n.state;
+        mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), alpha);
+        mapped.declaration = std::make_shared<EquilibriumProblem>(augmented.problem);
+        const auto local_errors = estimate(augmented, mapped);
+        n.estimates.loading = local_errors.loading;
+        n.local_estimates = local_errors;
+        if (!usable(local_errors.loading)) { return local_errors.cause; }
+        if (!usable(n.estimates.pressure)) { return n.estimates.cause; }
+        return {};
+    };
+    const bool reuse = previous && previous->accepted && previous->grid == grid && previous->nodes.size() == grid.size()
+        && previous->declaration.initial == affine.initial && previous->declaration.direction == affine.direction
+        && previous->declaration.pressure == affine.pressure;
+    bool bracket_found = false;
     try {
         for (double alpha : grid) {
-            auto start = out.nodes.empty() ? std::optional<EquilibriumResult>{}
-                                          : std::make_optional(out.nodes.back().state);
-            if (start) start->multipliers.clear();
-            auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
-                start, false);
-            SaturationNode node; node.loading = alpha; node.state = std::move(state);
-            out.nodes.push_back(std::move(node)); auto& n = out.nodes.back();
-            if (!n.state.success || !n.state.has_state()) { fail_at(alpha, n.state.message); fail("unexamined_gap"); break; }
-            n.mismatch = *n.state.pressure - affine.pressure;
-            auto begun = Clock::now();
-            n.estimates = equilibrium_numerical_estimates(c, n.state);
-            n.estimate_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
-            SolvedStateActionDirection direction; direction.feed_amounts_mol = affine.direction;
-            direction.active_parameters.resize(model.active_parameters().size());
-            begun = Clock::now();
-            const auto action = solved_state_first_actions(c, n.state,
-                {{SolvedStateObservableKind::Pressure}}, {direction});
-            n.action_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
-            if (!action.empty()) n.action_diagnostics = std::make_shared<SolvedStateActionDiagnostics>(action[0].diagnostics);
-            if (action.empty() || action[0].results.empty() || !action[0].results[0].action || action[0].results[0].status != SolvedStateActionStatus::Available) {
-                n.action_cause = action.empty() || action[0].results.empty() ? "action_unavailable" : solved_state_status_name(action[0].results[0].status);
-                if (!action.empty() && !action[0].results.empty())
-                    n.action_cause += ":" + action[0].results[0].diagnostic_message.value_or("");
-                fail_at(alpha, n.action_cause); fail("unexamined_gap"); break;
+            const auto i = out.nodes.size();
+            std::string prior_start = reuse ? "bracket_continuation" : "not_supplied";
+            SaturationNode* retry = nullptr;
+            if (reuse && bracket_found) {
+                const auto before = work.attempts;
+                try {
+                    const auto cause = evaluate_node(alpha, previous->nodes[i].state, "accepted");
+                    if (!cause && !loading_slope_reversals(out.nodes.back(), &out.nodes[i - 1])) continue;
+                    prior_start = "fallback:" + cause.value_or("unresolved_slope_reversal");
+                } catch (const BudgetExhausted&) { throw; }
+                catch (const std::bad_alloc&) { throw; }
+                catch (const std::exception& error) {
+                    core::retain_failure(out.first_numerical_failure, error, "prior loading node");
+                    prior_start = std::string("fallback:") + error.what();
+                }
+                // Retain the failed start even if the shared budget stops its ordinary retry.
+                if (out.nodes.size() == i) out.nodes.emplace_back();
+                auto& rejected = out.nodes.back();
+                rejected.loading = alpha; rejected.prior_start = prior_start; rejected.driver_attempts = work.attempts - before;
+                out.rejected_starts.push_back(std::move(rejected));
+                retry = &out.nodes.back();
+                *retry = {}; retry->loading = alpha; retry->prior_start = prior_start;
             }
-            n.slope = *action[0].results[0].action;
-            auto local = c.problem;
-            local.loading = affine; local.loading->seed = alpha; local.loading->pressure = *n.state.pressure;
-            const auto augmented = compile_problem(model, local);
-            auto mapped = n.state;
-            mapped.coordinates.insert(mapped.coordinates.begin() + augmented.loading_column(), alpha);
-            mapped.declaration = std::make_shared<EquilibriumProblem>(augmented.problem);
-            const auto local_errors = equilibrium_numerical_estimates(augmented, mapped);
-            n.estimates.loading = local_errors.loading;
-            n.local_estimates = local_errors;
-            if (!usable(local_errors.loading)) { fail_at(alpha, local_errors.cause); fail("unexamined_gap"); break; }
-            if (!usable(n.estimates.pressure)) { fail_at(alpha, n.estimates.cause); fail("unexamined_gap"); break; }
+            auto cause = evaluate_node(alpha, i ? std::make_optional(out.nodes[i - 1].state) : std::nullopt, std::move(prior_start), retry);
+            if (cause) { fail_at(alpha, *cause); fail("unexamined_gap"); break; }
+            // Preserve the correction seed reached by the ordinary loading continuation.
+            const auto& n = out.nodes.back();
+            if (i && std::abs(n.mismatch) > n.estimates.pressure.absolute &&
+                (sign(n.mismatch) != sign(out.nodes[i - 1].mismatch) ||
+                 std::abs(out.nodes[i - 1].mismatch) <= out.nodes[i - 1].estimates.pressure.absolute))
+                bracket_found = true;
         }
         if (out.nodes.size() == grid.size() && out.causes.empty()) {
             for (std::size_t i = 0; i < out.nodes.size(); ++i) {

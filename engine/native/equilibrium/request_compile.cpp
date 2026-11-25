@@ -480,8 +480,14 @@ static CompiledSystem compile_with_basis(
     for (const std::size_t i : all)
         feed_point = feed_point && (compiled.n_feed[i] == 0.0 || (std::count(indices.begin(), indices.end(), i)
             && policy::EQUILIBRIUM_BOX_INVENTORY_FRACTION.value * compiled.feed_composition[i] >= policy::EQUILIBRIUM_COMPOSITION_BOX.value));
-    const auto bounds = feed_point ? std::vector<InventoryBound>{} : inventory_bounds(inventory, indices, false, 0.0);
+    // A trial with one positive balance row attains each species maximum by putting the
+    // entire inventory in that species. This is the same LP as inventory_bounds with one equality.
+    const bool single_balance = trial_basis && compiled.rank == 1 && compiled.balance.front() > 0.0
+        && std::all_of(indices.begin(), indices.end(), [&](auto i) { return compiled.B.front()[i] > 0.0; });
+    const auto bounds = feed_point || single_balance ? std::vector<InventoryBound>{} : inventory_bounds(inventory, indices, false, 0.0);
     compiled.inventory_upper_bounds = feed_point ? compiled.feed_composition : std::vector<double>(components, 1.0);
+    if (single_balance) for (const auto i : indices)
+        compiled.inventory_upper_bounds[i] = (compiled.balance.front() / compiled.feed_total) / compiled.B.front()[i];
     std::vector<bool> absent(components, false);
     const auto certify = [&](std::size_t i, std::vector<double> candidate) {
         candidate = reconstruct_conserved_functional(std::move(candidate), request.reactions);

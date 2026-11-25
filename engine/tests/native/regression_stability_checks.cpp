@@ -18,6 +18,44 @@ void check_stability_requirement() {
     CHECK(*initial.stability->value < -*initial.stability->uncertainty);
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
+    auto supplied = liquid;
+    supplied.packing_guess = model.packing_fraction_coefficient(293.15, liquid.composition_guess) * initial.solved->molar_densities.at(0);
+    const auto bank = prepare_supplied_trials(model, 293.15, {supplied});
+    const auto both = predict_validated(model, row, bank);
+    CHECK(both.stability && both.stability->raw_minimum == initial.stability->raw_minimum);
+    CHECK(both.supplied_available && both.supplied_stability->trials.size() == 1);
+    CHECK(both.supplied_stability->evidence_counts({3}).at("evaluated") == 3);
+    StabilityOptions options; options.prepared_trials = bank;
+    const auto separate = stability_test(*initial.compiled, *initial.solved, options);
+    CHECK(both.supplied_stability->trials[0].quantities == separate.trials.at(0).quantities);
+    {
+        auto uncertain = row;
+        uncertain.stability_options.standard_uncertainty_over_rt = {.001, .001};
+        auto vapor = liquid; vapor.kind = PhaseKind::Vapor;
+        options.prepared_trials = prepare_supplied_trials(model, 293.15, {liquid, vapor});
+        options.standard_uncertainty_over_rt = uncertain.stability_options.standard_uncertainty_over_rt;
+        const auto rooted = predict_validated(model, uncertain, options.prepared_trials);
+        const auto independent = stability_test(*initial.compiled, *initial.solved, options);
+        CHECK(rooted.supplied_available && rooted.supplied_stability->supplied_minima().size() == 2);
+        for (std::size_t i = 0; i < 2; ++i) {
+            const auto& q = rooted.supplied_stability->trials.at(i).quantities;
+            CHECK(q == independent.trials.at(i).quantities && q.at("standard_error_estimate_over_rt") > .0019);
+            CHECK(q.at("density_side") == static_cast<double>(i ? DensityBranch::Vapor : DensityBranch::Liquid));
+            std::cout << std::setprecision(17) << "supplied root " << q.at("density_side") << " density mol/m3 "
+                << q.at("molar_density_mol_m3") << " TPD/RT " << q.at("tpd_over_rt") << " standard error "
+                << q.at("standard_error_estimate_over_rt") << " total error " << q.at("descent_error_estimate_over_rt") << '\n';
+        }
+        auto water = liquid; water.support = {0}; water.composition_guess = {1., 0.};
+        auto alcohol = liquid; alcohol.support = {1}; alcohol.composition_guess = {0., 1.};
+        auto pure = row; pure.problem.feed.values = {1., 0.}; pure.problem.phases = {water};
+        const auto mixed = predict_validated(model, pure, prepare_supplied_trials(model, 293.15, {alcohol, water}));
+        CHECK(!mixed.supplied_available && mixed.supplied_stability->completed);
+        const auto& points = mixed.supplied_stability->trials;
+        CHECK(points.size() == 2 && points[0].evidence == "not_applicable" && points[1].evidence == "evaluated");
+        CHECK(mixed.supplied_stability->unresolved_reasons().at("stability support outside fed/reaction union") == 1);
+        CHECK(points[1].quantities == predict_validated(model, pure, prepare_supplied_trials(model, 293.15, {water}))
+            .supplied_stability->trials.at(0).quantities);
+    }
     auto changed = initial;
     changed.stability = std::make_shared<StabilityMeasure>(*initial.stability);
     auto& changed_trial = changed.stability->report.trials.at(*changed.stability->minimizing_trial);
@@ -28,7 +66,8 @@ void check_stability_requirement() {
     std::cout << "{\"case\":\"same-index-root-change\",\"event\":"
         << recording_support::json_string(branch_event.kind) << "}\n";
     auto capped = row; capped.stability_options.trial_budget = 0;
-    const auto incomplete = predict(model, capped);
+    const auto incomplete = predict_validated(model, capped, bank);
+    CHECK(incomplete.supplied_available && incomplete.supplied_stability->trials[0].quantities == separate.trials[0].quantities);
     CHECK(incomplete.stability && !incomplete.stability->available && !incomplete.value);
     auto tied = row; tied.problem.phases[0].composition_guess = {.999, .001};
     liquid.name = "L2"; liquid.composition_guess = {.3, .7}; tied.problem.phases.push_back(liquid);
