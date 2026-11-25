@@ -14,9 +14,8 @@ source:
     sha256: ${{ source_sha256 }}
     patches:
       - meson-native.patch
-  - url: https://codeload.github.com/coin-or/Ipopt/tar.gz/refs/tags/releases/3.14.20
+  - url: https://github.com/coin-or/Ipopt/archive/refs/tags/releases/3.14.20.tar.gz
     sha256: 43bddd6fa793b1694aa94d6129fe3e4a8d452d97a84ef5f2ff721c8047c75605
-    file_name: ipopt-3.14.20.tar.gz
     target_directory: ipopt-source
   - url: https://github.com/coin-or/CppAD/archive/refs/tags/20250000.3.tar.gz
     sha256: a3a4030ae49719e88e5057e923c4c97c5ba8910e22471f22661420ce65747fbe
