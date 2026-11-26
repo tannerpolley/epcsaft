@@ -420,7 +420,7 @@ explicitly requested alternative. Existing mass and density rules retain their a
 | --- | --- | --- |
 | Component constant or temperature polynomial | [Component polynomial](../equations.md#component_permittivity_temperature_polynomial), with the sum empty for a constant | Engine component-correlation convention |
 | `solvent-mole-weighting`, either normalization | [Solvent mole weighting](../equations.md#solvent_mole_weighted_bulk_permittivity) | Bülow et al., Eq. (19), with solvent normalization as an Engine convention |
-| `solvent-only` | [Salt-free solvent mass weighting](../equations.md#salt_free_solvent_permittivity) | Figiel et al., Eq. (11) at zero suppression |
+| `solvent-only` | [Salt-free solvent mass weighting](../equations.md#salt_free_solvent_permittivity) | Held2014, Eq. (23), p. 2890, and Uyan2015, Eq. (5), p. 93, with Debye–Hückel only |
 | `ion-fraction-suppression` or `ion-specific-suppression` | [Common or species-specific suppression](../equations.md#ion_suppressed_bulk_permittivity) | Figiel et al., Eq. (11), or Zuber et al., Eqs. (8)–(10) |
 | `component-permittivity-mixing` | [Solvent-mass and ion-mole weighting](../equations.md#component_mixed_bulk_permittivity) | Ascani and Held, Eq. (13) |
 | `solvent-density-temperature` | [Separate parameter averages](../equations.md#density_correlation_mixed_parameters) in the [density law](../equations.md#density_correlated_bulk_permittivity) | Yang et al., Eqs. (1a), (2a), and (2b) |
@@ -428,6 +428,16 @@ explicitly requested alternative. Existing mass and density rules retain their a
 | `solvent-density-temperature-ion-specific-susceptibility-suppression` | [Susceptibility divided by the suppression factor](../equations.md#susceptibility_suppressed_density_correlated_bulk_permittivity) | Engine relation selected in #78 |
 | `dipolar-perturbation` | [Dipolar response](../equations.md#dipolar_perturbation_bulk_permittivity) | Rueben et al., Eqs. (4)–(6) |
 | `none` | Electrolyte contribution removed | Engine convention |
+
+`solvent-only` and the `solvent-normalized` option of `solvent-mole-weighting`
+are dilute-electrolyte rules. The source evidence for ignoring ions in the
+permittivity comes from Debye–Hückel-only models. Held2014 reports results up
+to 5 mol/kg at 298.15 K (Table 5), and Held2008 shows aqueous densities to
+6 mol/kg and vapor pressures to 10 mol/kg (p. 92). The resulting range of
+about 5–10 mol/kg describes the tested salt systems. Both ratios are undefined
+at zero solvent, where their numerator and denominator vanish, and generally
+have no path-independent limit for mixed solvents. Their composition
+derivatives can grow inversely with the total solvent mole fraction.
 
 `solvent-volume-weighting` uses the [Novak solvent-volume rule](../equations.md#solvent_volume_weighted_bulk_permittivity).
 Declare `solvent_molar_volume` component coefficients in `liter / mole` for exactly the neutral species
