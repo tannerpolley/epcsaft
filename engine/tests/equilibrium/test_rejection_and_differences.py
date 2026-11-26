@@ -78,9 +78,12 @@ def test_bubble_point_above_coalescence_verdict() -> None:
     """F3: a coalesced bubble point names what was observed and leaves the critical limit untested."""
     problem = bubble_point(liquid=Phase("L", kind="liquid"), T=250.0, feed=Amounts({"methane": 0.9, "ethane": 0.1}))
     result = solve_equilibrium(methane_ethane(), problem)
-    # ALG-TERMINATION: a converged stop becomes infeasible; where the coalesced KKT matrix stops the optimizer in its
-    # step computation (MUMPS), the singular stop stands.
-    assert not result.success and result.convergence.stop in (Stop.infeasible, Stop.singular)
+    assert not result.success and not result.coordinates and result.topology_event == _core.TopologyEvent.PhasesCoalesced
+    assert (
+        result.convergence.stop == Stop.infeasible and result.convergence.cause == "phases_coalesced"
+        or result.convergence.stop == Stop.stalled
+        and result.solver_status == result.convergence.cause == "ERROR_IN_STEP_COMPUTATION"
+    )
     assert result.message.startswith("no distinct bubble point was found at T = 250 K: declared phases L and V coalesced")
     assert "one possible, untested explanation" in result.message
     assert not any(claim in result.message for claim in UNSUPPORTED_CLAIMS)
