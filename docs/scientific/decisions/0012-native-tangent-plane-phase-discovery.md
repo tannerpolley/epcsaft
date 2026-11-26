@@ -248,10 +248,12 @@ owns the procedure, budget and accounting.
 neutral vapor reservoir plane and signed transfer on the original reaction
 invariants. The bounded search covers two free phases with reachable neutral
 vapor inventories and no retained vapor reaction. The exact trial driver tests
-the original ionic liquid support. A returned endpoint that misses the liquid
-pressure-root window stays undecided. A finite balanced Gibbs decrease supplies
-a positive seed for the original split. Use the adaptive Ipopt barrier only in
-that restart, because the original barrier/filter steps drove the row 45 liquid
+the original ionic liquid support. [Issue #301](https://github.com/tannerpolley/epcsaft/issues/301)
+classifies a converged endpoint that coincides with the admitted vapor in
+composition and molar volume as a return to the parent. A distinct endpoint
+that misses the liquid pressure-root window stays undecided. A finite balanced
+Gibbs decrease supplies a positive seed for the original split. Use the adaptive
+Ipopt barrier only in that restart, because the original barrier/filter steps drove the row 45 liquid
 toward zero before the balances closed. The shared driver and physical admission
 still decide the returned split. [ALG-STABILITY](../../../engine/docs/science/algorithms.md#alg-stability)
 owns the calculation.

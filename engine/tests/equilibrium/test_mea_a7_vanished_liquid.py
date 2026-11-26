@@ -137,22 +137,34 @@ def test_a7_vanished_liquid_trials(row: str, start: str, solve: Flash, evidence:
     report = result.vanished_phase_stability
     assert report is not None
     vapor = closed_vapor(report, case)
-    admitted = liquid_trials(report)
-    assert admitted and all(list(t.phase.support) == list(range(len(MEA))) for t in admitted)
-    assert report.completed and report.work["trial_invocations"] > 0
-    if report.descent == "resolved_descent":
-        assert result.success and result.requested_tolerance_met and result.convergence.residual <= ROW_CRITERION
-    else:
-        assert not result.success and not result.amounts
-        assert report.descent in ("no_witness", "undecided")
-        required = {"positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2"}
-        assert required <= {trial.seed for trial in report.trials}
-        if report.descent == "undecided":
-            assert report.undecided
-            assert all("liquid pressure-root window" in report.trials[i].message for i in report.undecided)
-        else:
-            assert report.no_descent_in_trial_set
-            assert len(admitted) == len(report.trials)
+    trials = report.trials
     evidence.observe(f"A7/{row}/{start}", vapor=vapor, outcome=report.descent, work=report.work,
                      trials=[{"seed": t.seed, "outcome": t.evidence, "message": t.message,
-                              "quantities": t.quantities, "transfers": t.split_checks} for t in report.trials])
+                              "composition": t.composition, "quantities": t.quantities, "transfers": t.split_checks}
+                             for t in trials])
+    assert not result.success and not result.amounts
+    assert report.completed and report.work["trial_invocations"] > 0
+    assert report.descent == "no_witness" and report.no_descent_in_trial_set and not report.undecided
+    expected = {"positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2", "physical-mol-liquid"}
+    if start == "seeded":
+        expected.add("declared-liquid")
+    # Only the physical-mol retry supplies a vanished liquid on these archived starts.
+    if (row, start) not in {("16", "cold"), ("18", "cold"), ("62", "seeded")}:
+        expected.add("removed-phase")
+    assert {trial.seed for trial in trials} == expected
+    assert len(trials) == len(expected)
+    admitted = liquid_trials(report)
+    returned = [t for t in trials if t.evidence == "returned_to_parent"]
+    assert admitted and len(admitted) + len(returned) == len(trials)
+    assert all(t.evidence == "returned_to_parent" for t in trials if t.seed == "near-pure-0")
+    assert all(list(t.phase.support) == list(range(len(MEA))) and t.optimizer.success for t in trials)
+    for trial in admitted:
+        assert trial.evidence == "no_resolved_descent"
+        q = trial.quantities
+        assert q["tpd_over_rt"] > q["descent_error_estimate_over_rt"] >= 0.0, trial.seed
+    parent_x = [n / vapor["amount_mol"] for n in case["inputs"][2:]] + [0.0] * (len(MEA) - 3)
+    coincidence = TOLERANCES["PHASE_COINCIDENCE_DISTANCE"]
+    for trial in returned:
+        assert max(abs(w - x) for w, x in zip(trial.composition, parent_x, strict=True)) <= coincidence
+        assert abs(math.log(trial.quantities["volume_m3_per_mol"] / vapor["volume_m3_per_mol"])) <= coincidence
+        assert not trial.split_checks

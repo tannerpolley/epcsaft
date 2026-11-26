@@ -61,7 +61,7 @@ auto fields(equilibrium::StabilityOptions& item) {
     return std::tie(a, b, c, d, e, f, g, plane_value_errors);
 }
 FIELDS(equilibrium::StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance)
-FIELDS(equilibrium::StabilityTrial, a, b, c, d, e, f, g, h, i, seed, j, k, l, m, present_phase_comparisons, diagnostic_cause, n, o, pivot_only)
+FIELDS(equilibrium::StabilityTrial, disposition, a, b, c, d, e, f, g, h, i, seed, j, k, l, m, present_phase_comparisons, diagnostic_cause, n, o, pivot_only)
 FIELDS(equilibrium::StabilityReport, a, b, c, d, e, f, g, h, i, j, k)
 FIELDS(equilibrium::StabilityMeasure, a, options, b, c, d, e, f, g, h, i, coincident_supports)
 FIELDS(HydrationHold, a, b, c, d, e, f)

@@ -2182,8 +2182,12 @@ columns of the original balance matrix to map electroneutral liquid
 compositions to signed vapor withdrawals. Refuse a direction outside the
 vapor inventory span. Search with exact curvature, starting from the first
 vanished composition, the declared liquid guess if supplied, the distinct
-physical-mol endpoint, and the ordinary liquid seeds. Each reconstructed
-endpoint must pass the liquid pressure-root check to contribute a decision.
+physical-mol endpoint, and the ordinary liquid seeds. Retain a converged
+endpoint as `returned_to_parent` when its maximum mole-fraction difference and
+absolute log molar-volume ratio to the admitted vapor both meet
+`PHASE_COINCIDENCE_DISTANCE`. This trial decides only that the start returned
+to the parent. Each distinct endpoint must pass the liquid pressure-root check
+to contribute a decision.
 
 Restart the original fixed-T/P declaration when a positive transfer passes the
 represented inventory checks and lowers common-standard Gibbs energy beyond the
@@ -2197,8 +2201,9 @@ requested row closure, and a resolved Gibbs decrease against the closed vapor.
 One allowance covers the surviving declaration, trials, finite-transfer checks
 and restart. Report them in `result.vanished_phase_stability`. A failed restart
 leaves the witness and the original split refusal. A completed, decided finite
-search without descent reports the minimum raw TPD/RT. Failed parent closure,
-unresolved trial endpoints and exhausted work are named in the report. Returned
+search without descent reports the minimum raw TPD/RT among the admitted liquid
+endpoints. Failed parent closure, unresolved trial endpoints and exhausted work
+are named in the report. Returned
 solved-state actions use the fixed declaration without searching.
 Qualification must compare the retained before/after declared numerical values
 bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
