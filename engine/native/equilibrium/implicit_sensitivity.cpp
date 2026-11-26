@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
+#include "contributions/electrolyte.hpp"
 #include "core/bitwise_equal.hpp"
 #include "core/trace.hpp"
 #include "core/linear_error.hpp"
@@ -61,6 +62,31 @@ power_of_two_equilibration(const Matrix& a) {
     return {(a * column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power), column};
 }
 
+struct EquilibratedRows {
+    Eigen::MatrixXd jacobian;
+    Eigen::VectorXd row, column;
+    Eigen::FullPivLU<Eigen::MatrixXd> lu;
+
+    SolvedStateActionStatus factor(const Eigen::MatrixXd& physical) {
+        if (!square_and_numeric(physical)) return SolvedStateActionStatus::NonfiniteJacobian;
+        std::tie(row, column) = power_of_two_equilibration(physical);
+        jacobian = row.asDiagonal() * physical * column.asDiagonal();
+        if (!jacobian.allFinite()) return SolvedStateActionStatus::NonfiniteJacobian;
+        lu = jacobian.fullPivLu();
+        return lu.rank() == jacobian.rows() ? SolvedStateActionStatus::Available : SolvedStateActionStatus::RankDeficient;
+    }
+
+    double norm() const { return jacobian.cwiseAbs().rowwise().sum().maxCoeff(); }
+    double condition() const { return norm() * lu.inverse().cwiseAbs().rowwise().sum().maxCoeff(); }
+};
+
+SolvedStateActionStatus linear_solve_status(double error, double condition) {
+    if (!std::isfinite(error)) return SolvedStateActionStatus::NonfiniteJacobian;
+    if (error > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) return SolvedStateActionStatus::LinearSolveResidual;
+    return 2.0 * condition * error <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value
+        ? SolvedStateActionStatus::Available : SolvedStateActionStatus::IllConditioned;
+}
+
 }  // namespace
 
 SensitivityInfo inspect_sensitivity(
@@ -96,7 +122,7 @@ SensitivityInfo inspect_sensitivity(
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure, std::vector<double> jacobian, bool check_forward
+    const std::vector<double>& column, std::optional<core::Convergence>* failure, std::vector<double> jacobian
 ) {
     core::Scope scope("implicit_sensitivity");
     const std::size_t rows = compiled.rows.size(), dimension = prepared.point.size();
@@ -114,31 +140,74 @@ std::vector<double> solve_implicit(
     };
     if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, nullptr);
     const auto matrix = dense_matrix(jacobian, rows, dimension);
-    if (!matrix.allFinite()) return refuse("implicit nonfinite Jacobian", core::Stop::nonfinite, nullptr);
-    const auto [row_scale, column_scale] = power_of_two_equilibration(matrix);
-    const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
-    const auto lu = equilibrated.fullPivLu();
-    if (static_cast<std::size_t>(lu.rank()) != dimension) return refuse("implicit Jacobian rank", core::Stop::singular, &lu);
+    EquilibratedRows rows_factor;
+    const auto status = rows_factor.factor(matrix);
+    if (status == SolvedStateActionStatus::NonfiniteJacobian) return refuse("implicit nonfinite Jacobian", core::Stop::nonfinite, nullptr);
+    if (status == SolvedStateActionStatus::RankDeficient) return refuse("implicit Jacobian rank", core::Stop::singular, &rows_factor.lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
-    const Eigen::MatrixXd rhs = row_scale.asDiagonal() * right, scaled = lu.solve(rhs);
-    const Eigen::MatrixXd result = column_scale.asDiagonal() * scaled;
-    const auto& j = check_forward ? equilibrated : matrix;
-    const auto& x = check_forward ? scaled : result;
-    const auto& b = check_forward ? rhs : right;
-    const double norm = j.cwiseAbs().rowwise().sum().maxCoeff();
-    const double error = backward_error((j * x.col(0) - b.col(0)).cwiseAbs().maxCoeff(),
-        norm, x.cwiseAbs().maxCoeff(), b.cwiseAbs().maxCoeff());
+    const Eigen::MatrixXd result = rows_factor.column.asDiagonal() * rows_factor.lu.solve(rows_factor.row.asDiagonal() * right);
+    const double error = backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
+        matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff());
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
-        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &lu,
+        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &rows_factor.lu,
             result.allFinite() ? std::optional<double>(error) : std::nullopt);
-    if (check_forward && !(2 * error * norm * lu.inverse().cwiseAbs().rowwise().sum().maxCoeff() <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value))
-        return refuse("implicit forward error", core::Stop::singular, &lu);
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
     return {result.data(), result.data() + rows};
+}
+
+bool check_held_responses(const CompiledSystem& compiled, const std::function<Eigen::MatrixXd()>& jacobian,
+    const Eigen::VectorXd& scale, EquilibriumResult& result) {
+    using Status = SolvedStateActionStatus;
+    const auto refuse = [&](core::Stop stop, const char* cause, std::string message) {
+        result.convergence.stop = stop;
+        result.convergence.cause = cause;
+        result.message = std::move(message);
+        return false;
+    };
+    if (const auto& parameters = compiled.model->parameters(); uses_solvent_ratio(parameters)
+        && std::any_of(parameters.charge_number.begin(), parameters.charge_number.end(), [](int z) { return z != 0; })) {
+        for (std::size_t p = 0; p < compiled.shape.size(); ++p)
+            if (std::count_if(result.held_species.begin(), result.held_species.end(), [&](const auto& cell) {
+                return cell.phase == p && dielectric_solvent_component(cell.species, parameters);
+            }) >= 2)
+                return refuse(core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
+    }
+    const auto physical = jacobian();
+    if (physical.rows() != physical.cols())
+        return refuse(core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
+    EquilibratedRows factor;
+    const auto matrix = factor.factor(physical);
+    if (matrix != Status::Available)
+        return refuse(matrix == Status::RankDeficient ? core::Stop::singular : core::Stop::nonfinite,
+            "held_response_unavailable", solved_state_status_name(matrix));
+    const double condition = factor.condition();
+    auto record = result.held_species.begin();
+    for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
+        const auto& row = compiled.rows[r];
+        if (!row.held_column) continue;
+        const Eigen::VectorXd right = factor.row[r] * Eigen::VectorXd::Unit(scale.size(), r);
+        const Eigen::VectorXd scaled = factor.lu.solve(right), response = factor.column.cwiseProduct(scaled).cwiseQuotient(scale);
+        const auto status = linear_solve_status(backward_error((factor.jacobian * scaled - right).lpNorm<Eigen::Infinity>(),
+            factor.norm(), scaled.lpNorm<Eigen::Infinity>(), right.lpNorm<Eigen::Infinity>()), condition);
+        const auto cell = "species " + std::to_string(row.index) + " in phase " + compiled.problem.phases[row.phase].name;
+        if (!response.allFinite() || status != Status::Available) {
+            const auto failure = response.allFinite() ? status : Status::NonfiniteJacobian;
+            return refuse(failure == Status::NonfiniteJacobian ? core::Stop::nonfinite : core::Stop::singular,
+                "held_response_unavailable", cell + ": " + solved_state_status_name(failure));
+        }
+        double norm = 0;
+        for (std::size_t k = 0; k < compiled.primal_size; ++k)
+            if (k != *row.held_column) norm = std::max(norm, std::abs(response[k]));
+        (record++)->response = norm;
+        const auto stop = core::classify(norm, policy::EQUILIBRIUM_POLISH_CORRECTION, {}, {}, false);
+        if (stop != core::Stop::converged)
+            return refuse(stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(norm));
+    }
+    return true;
 }
 
 std::vector<double> sensitivity(
@@ -383,11 +452,8 @@ bool caloric_property(PropertyObservable property) {
     return static_cast<std::size_t>(property) < CALORIC_PROPERTY_COUNT && property_family(property) != 1;
 }
 
-struct Center final {
+struct Center final : EquilibratedRows {
     PhasePoint prepared;
-    Eigen::MatrixXd jacobian;  // equilibrated R J C with power-of-two diagonals row, column
-    Eigen::VectorXd row, column;
-    Eigen::FullPivLU<Eigen::MatrixXd> lu;
 };
 
 struct FirstCoefficient final {
@@ -469,14 +535,12 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     for (std::size_t k = 1; k <= order; ++k) {
         double residual = 0.0;
         for (std::size_t row = 0; row < n; ++row) residual = std::max(residual, std::abs(center.row(static_cast<Eigen::Index>(row)) * path.series.rows[k][row]));
-        residual = backward_error(residual, center.jacobian.cwiseAbs().rowwise().sum().maxCoeff(), solution_norm[k], right_norm[k]);
+        residual = backward_error(residual, center.norm(), solution_norm[k], right_norm[k]);
         if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
         // The first refused coefficient names the cause; 2 cond eta is the first-order forward bound.
         if (path.status != SolvedStateActionStatus::Available) continue;
-        if (residual > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
-        else if (!(2.0 * *diagnostics.condition_estimate * residual <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value))
-            path.status = SolvedStateActionStatus::IllConditioned;
+        path.status = linear_solve_status(residual, *diagnostics.condition_estimate);
     }
     return path;
 }
@@ -1339,19 +1403,11 @@ static SolvedStateActionBatch evaluate_action(
         if (!shared->matrix_checked) {
             const std::size_t n = central.coordinates.size();
             const auto jacobian = compiled.jacobian_at(center.prepared);
-            center.jacobian = dense_matrix(jacobian, compiled.rows.size(), n);
-            if (!square_and_numeric(center.jacobian)) {
-                shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
-            } else {
-                std::tie(center.row, center.column) = power_of_two_equilibration(center.jacobian);
-                center.jacobian = center.row.asDiagonal() * center.jacobian * center.column.asDiagonal();
-                center.lu = center.jacobian.fullPivLu();
+            shared->matrix_gate = center.factor(dense_matrix(jacobian, compiled.rows.size(), n));
+            if (shared->matrix_gate != SolvedStateActionStatus::NonfiniteJacobian) {
                 batch.diagnostics.state_factorizations = 1;
                 shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
-                // cond_inf(R J C), the norm of the backward error it multiplies in the forward bound.
-                if (*shared->diagnostics.rank < n) shared->matrix_gate = SolvedStateActionStatus::RankDeficient;
-                else shared->diagnostics.condition_estimate = center.jacobian.cwiseAbs().rowwise().sum().maxCoeff()
-                    * center.lu.inverse().cwiseAbs().rowwise().sum().maxCoeff();
+                if (shared->matrix_gate == SolvedStateActionStatus::Available) shared->diagnostics.condition_estimate = center.condition();
             }
             shared->matrix_checked = true;
         }

@@ -2444,15 +2444,44 @@ void check_mea_below_bubble_hold() {
     CHECK(held.phase == 0 && held.species == 1);
     const double tolerance = problem.solver_options.value(policy::row);
     std::printf("MEA x=%.17g row=%.17g complementarity=%.17g response=%.17g; CO2 x=%.17g\n",
-        held.fraction, held.chemical_row, held.complementarity, held.response, state.mole_fractions[0]);
+        held.fraction, held.chemical_row, held.complementarity, held.response.value_or(NAN), state.mole_fractions[0]);
     CHECK(held.fraction == std::exp(std::log(policy::EQUILIBRIUM_HELD_FRACTION.value)));
+    const double nominal_hold = policy::EQUILIBRIUM_HELD_FRACTION.value;
+    CHECK(nominal_hold * nominal_hold == std::numeric_limits<double>::min());
     CHECK(std::abs(held.chemical_row / 207950.3873609833 - 1) <= 1e-8);
     CHECK(held.complementarity > 0 && held.complementarity <= tolerance
-        && held.response <= policy::EQUILIBRIUM_POLISH_CORRECTION.value);
+        && held.response && *held.response > 0 && *held.response <= policy::EQUILIBRIUM_POLISH_CORRECTION.value);
     const auto at = compiled.prepare(state.coordinates);
     const double product = at.amount[0] * at.composition[0][1] / compiled.feed_total_at(at) * held.chemical_row;
     CHECK(held.complementarity == product);
     CHECK(std::abs(std::log(state.mole_fractions[0] / 6.2485917e-12)) <= 1e-6);
+
+    // Discovery's declaration driver records the endpoint alongside the result, before phase removal.
+    const auto declaration_attempt = [](const CompiledSystem& system, std::vector<double>& attempt) {
+        core::Scope scope("held-declaration-attempt");
+        return run_driver(system, boundary_start(system), structural_result(system, scope), scope,
+            &attempt, nullptr, Attempt::Cold, {}, false, false, Retry::None);
+    };
+    std::vector<double> attempt;
+    const auto addition = declaration_attempt(compiled, attempt);
+    CHECK(addition.success && addition.coordinates == attempt && addition.held_species.size() == 1);
+    CHECK(std::exp(attempt[compiled.shape[0].x[1]]) == addition.held_species[0].fraction);
+    const auto endpoint_floor = compiled.evaluate_at(at).floor;
+    std::printf("saved MEA log fraction=%.17g, retained floor=%.17g, evaluated floor=%.17g\n",
+        attempt[compiled.shape[0].x[1]], state.convergence.floor.value_or(NAN), endpoint_floor);
+    CHECK(endpoint_floor > 0 && state.convergence.floor == endpoint_floor);
+
+    auto swapped_problem = problem;
+    swapped_problem.pressure.value = 4888.1467153853455;
+    const auto swapped = compile_problem(model, swapped_problem);
+    const auto swapped_result = solve_compiled(swapped);
+    CHECK(!swapped_result.success && swapped_result.message.find("swapped phase labels") != std::string::npos);
+    const auto swapped_addition = declaration_attempt(swapped, attempt);
+    CHECK(swapped_addition.coordinates == attempt && swapped_addition.held_species.size() == 1);
+    const auto topology = check_topology(swapped, attempt);
+    CHECK(topology.event == swapped_result.topology_event && topology.log_packing[0] < topology.log_packing[1]);
+    CHECK(std::exp(attempt[swapped.shape[0].x[1]]) == swapped_addition.held_species[0].fraction);
+    std::printf("saved swapped candidate packing L=%.17g V=%.17g\n", std::exp(topology.log_packing[0]), std::exp(topology.log_packing[1]));
 
     problem.phases[0].support.erase(problem.phases[0].support.begin() + 1);
     const auto reduced = compile_problem(model, problem);
@@ -2505,7 +2534,7 @@ void check_mea_below_bubble_hold() {
             const double budget = a.numerical_error.value_or(NAN) + b.numerical_error.value_or(NAN);
             std::printf("actual=%.17g reference=%.17g difference=%.17g relative=%.17g error_budget=%s\n",
                 *a.action, *b.action, error, error / std::abs(*b.action), core::optional_number(budget).c_str());
-            if (std::isfinite(budget)) CHECK(error <= budget);
+            if (!(error <= 1e-10 * std::abs(*b.action))) CHECK(std::isfinite(budget) && error <= budget);
         }
     }
 
@@ -2534,6 +2563,11 @@ void check_mea_below_bubble_hold() {
     const auto continuation = continue_equilibrium(model, path);
     std::printf("continuation %s; attempts=%zu\n", continuation.message.c_str(), continuation.attempts);
     CHECK(continuation.stop == ContinuationStop::held_species && continuation.attempts == 0);
+    path.start_result.reset();
+    const auto internal_path = continue_equilibrium(model, path);
+    std::printf("cold continuation %s; attempts=%zu\n", internal_path.message.c_str(), internal_path.attempts);
+    CHECK(internal_path.stop == ContinuationStop::held_species && internal_path.attempts == 0
+        && internal_path.last_result && internal_path.last_result->held_species.size() == 1);
 
     const HelmholtzModel path_model(model.parameters(), {{ParameterFamily::Kij, {2, 18}}});
     path.start_result = solve_equilibrium(path_model, compiled.problem);
@@ -2552,11 +2586,62 @@ void check_mea_below_bubble_hold() {
     point[compiled.shape[0].x[2]] = point[compiled.shape[0].x[1]];
     auto candidate = state;
     candidate.candidate = Candidate::Admitted;
-    candidate.held_species.push_back({0, 2, held.fraction, NAN, NAN, NAN});
+    candidate.held_species[0].response.reset();
+    candidate.held_species.push_back({0, 2, held.fraction, NAN, NAN, {}});
     core::Scope scope("hold-all-solvents");
     const auto refused = publish_candidate(all_solvents, all_solvents.prepare(point, true), std::move(candidate), scope, nullptr);
     std::printf("all solvents %s\n", refused.message.c_str());
-    CHECK(!refused.success && refused.convergence.cause == "hold_dependent");
+    CHECK(!refused.success && refused.convergence.cause == "hold_dependent"
+        && !refused.held_species[0].response && !refused.held_species[1].response);
+
+    // A held log-fraction row followed by a coupled primal row and a multiplier row.
+    auto matrix_system = compiled;
+    matrix_system.rows = {{RowKind::Chemical, 0, 1, 0}, {RowKind::Chemical, 0, 2, {}}, {RowKind::Chemical, 0, 3, {}}};
+    matrix_system.primal_size = 2;
+    const Eigen::VectorXd scale = Eigen::VectorXd::Ones(3);
+    Eigen::MatrixXd jacobian = Eigen::MatrixXd::Identity(3, 3);
+    const auto matrix = [&] { return jacobian; };
+    const auto response_case = [&](core::Stop stop, const char* cause, std::optional<double> response) {
+        EquilibriumResult witness;
+        witness.held_species.push_back({0, 1, held.fraction, held.chemical_row, held.complementarity, {}});
+        CHECK(!check_held_responses(matrix_system, matrix, scale, witness));
+        std::printf("response witness %s, %s, response=%s\n", core::stop_name(witness.convergence.stop),
+            witness.message.c_str(), core::optional_number(witness.held_species[0].response).c_str());
+        CHECK(witness.convergence.stop == stop && witness.convergence.cause == cause
+            && witness.held_species[0].response == response);
+    };
+    jacobian(2, 2) = NAN;
+    response_case(core::Stop::nonfinite, "held_response_unavailable", {});
+    jacobian(2, 2) = 0;
+    response_case(core::Stop::singular, "held_response_unavailable", {});
+    jacobian(2, 2) = 1;
+    jacobian(1, 0) = -1;
+    response_case(core::Stop::stalled, "hold_dependent", 1);
+
+    jacobian.setIdentity();
+    matrix_system.rows[1].held_column = 1;
+    auto weighting = model.parameters();
+    weighting.permittivity_solvent = {0, 1, 1, 0, 0, 0, 0, 0, 0};
+    weighting.solvent_molar_volume_m3_per_mol = {0, 6e-5, 1.8e-5, 0, 0, 0, 0, 0, 0};
+    for (const auto form : {PermittivityForm::SolventMoleWeighting, PermittivityForm::SolventVolumeWeighting}) {
+        weighting.permittivity_form = form;
+        for (const bool normalized : {true, false}) {
+            if (!normalized && form == PermittivityForm::SolventVolumeWeighting) continue;  // The model requires normalized volume weights.
+            weighting.permittivity_solvent_normalized = normalized;
+            const HelmholtzModel weighted(weighting);
+            matrix_system.model = &weighted;
+            auto witness = refused;
+            witness.convergence.cause.clear();
+            const bool accepted = check_held_responses(matrix_system, matrix, scale, witness);
+            std::printf("solvent form=%d normalized=%d accepted=%d cause=%s\n",
+                static_cast<int>(form), normalized, accepted, witness.convergence.cause.c_str());
+            if (normalized)
+                CHECK(!accepted && witness.convergence.cause == "hold_dependent"
+                    && !witness.held_species[0].response && !witness.held_species[1].response);
+            else
+                CHECK(accepted && witness.held_species[0].response == 0 && witness.held_species[1].response == 0);
+        }
+    }
 }
 
 void check_mea_packet3_trace_root() {

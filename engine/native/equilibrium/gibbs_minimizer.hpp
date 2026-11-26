@@ -346,8 +346,10 @@ NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& 
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}, bool check_forward = false
+    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}
 );
+EPC_API bool check_held_responses(const CompiledSystem&, const std::function<Eigen::MatrixXd()>&,
+    const Eigen::VectorXd&, EquilibriumResult&);
 
 EPC_API std::vector<double> sensitivity(
     const CompiledSystem& compiled,

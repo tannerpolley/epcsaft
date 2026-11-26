@@ -3449,7 +3449,7 @@ class HeldSpecies:
     fraction: float
     chemical_row: float
     complementarity: float
-    response: float
+    response: float | None
 
 class EquilibriumResult:
     held_species: list[HeldSpecies]

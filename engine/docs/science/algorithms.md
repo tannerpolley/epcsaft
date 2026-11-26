@@ -1209,13 +1209,15 @@ positive row and pass the physical product in EqID
 On the returned classified system, the scaled infinity norm of the first-order
 response of the other primal coordinates to a unit perturbation of $\ln x_h$
 must be at most `EQUILIBRIUM_POLISH_CORRECTION`. The response solve requires a
-finite Jacobian, full rank and the implicit linear-solve check. A phase whose
-solvent-only permittivity takes a ratio of held solvents is hold-dependent.
+finite Jacobian, full rank and the implicit linear-solve check. A phase with two
+or more held dielectric solvents is hold-dependent when its permittivity uses
+a solvent ratio. This includes normalized solvent mole and volume weighting.
 The reduced-Hessian projection still includes held coordinates. A negative
 direction can therefore refuse even a stationary classified point. The response
 describes only the linearized dependence at the point. The held species' root
 remains unresolved below the hold. The result carries its phase, species,
-fraction, chemical row, complementarity product and response.
+fraction, chemical row, complementarity product and response. The response is
+unavailable if its solve did not produce a checked value.
 
 The nominal pair product is $x_h^2=2^{-1022}$, the smallest normal double.
 The chemical row's logarithm is above its clamp for $V_p<2^{511}$ m³/mol.

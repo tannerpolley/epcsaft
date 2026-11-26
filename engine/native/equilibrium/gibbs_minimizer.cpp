@@ -1,7 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "contributions/helmholtz.hpp"
-#include "contributions/electrolyte.hpp"
 
 #include "core/trace.hpp"
 
@@ -1050,39 +1049,13 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     std::vector<double> physical;
     Eigen::FullPivLU<Matrix> numerical;
     const auto factor = [&] { if (physical.empty()) physical = compiled.jacobian_at(prepared); numerical.compute(Eigen::Map<const Matrix>(compiled.numerical_rows(prepared, physical, full.size()).data(), n, n)); };
-    if (result.candidate == Candidate::Admitted && topology_ok && !result.held_species.empty()) {
-        const auto held_failure = [&](core::Stop stop, const char* cause, std::string message) {
-            held_refusal(result, stop, cause, std::move(message));
-            refuse(result);
-            return std::move(result);
-        };
-        if (const auto& parameters = model->parameters(); parameters.permittivity_form.is(PermittivityForm::IonSuppression))
-            for (std::size_t p = 0; p < compiled.shape.size(); ++p)
-                if (std::count_if(result.held_species.begin(), result.held_species.end(), [&](const auto& cell) {
-                    return cell.phase == p && dielectric_solvent_component(cell.species, parameters);
-                }) >= 2)
-                    return held_failure(core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
-        physical = compiled.jacobian_at(prepared);
-        const auto scale = coordinate_scale(compiled, prepared, n);
-        std::vector<double> direction(compiled.rows.size());
-        auto record = result.held_species.begin();
-        for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
-            const auto& row = compiled.rows[r];
-            if (!row.held_column) continue;
-            std::optional<core::Convergence> failure;
-            direction[r] = -1;
-            const auto response = solve_implicit(compiled, prepared, direction, &failure, physical, true);
-            direction[r] = 0;
-            const auto cell = "species " + std::to_string(row.index) + " in phase " + compiled.problem.phases[row.phase].name;
-            if (failure)
-                return held_failure(failure->stop, "held_response_unavailable", cell + ": " + core::describe(*failure));
-            auto& held = *record++;
-            for (std::size_t k = 0; k < compiled.primal_size; ++k)
-                if (k != *row.held_column) held.response = std::max(held.response, std::abs(response[k] / scale[k]));
-            const auto stop = core::classify(held.response, policy::EQUILIBRIUM_POLISH_CORRECTION, {}, {}, false);
-            if (stop != core::Stop::converged)
-                return held_failure(stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(held.response));
-        }
+    if (result.candidate == Candidate::Admitted && topology_ok && !result.held_species.empty()
+        && !check_held_responses(compiled, [&]() -> Eigen::MatrixXd {
+            physical = compiled.jacobian_at(prepared);
+            return Eigen::Map<const Matrix>(physical.data(), static_cast<Eigen::Index>(compiled.rows.size()), n);
+        }, coordinate_scale(compiled, prepared, n), result)) {
+        refuse(result);
+        return result;
     }
     if (!compiled.log_charge_rows.empty()) {
         factor();
@@ -1866,7 +1839,7 @@ static EquilibriumResult run_driver_once(
     // Names the solids violating their classification and, with `flip`, flips them. An absent amount is exactly zero.
     const auto solid_violations = [&](bool flip) {
         std::string names;
-        if (!classified) return names;
+        if (!classified || classified->solids.empty()) return names;
         const auto at = compiled.prepare(full, true, &result.first_numerical_failure);
         for (std::size_t s = 0; s < classified->solids.size(); ++s) {
             auto& solid = classified->solids[s];
@@ -1978,21 +1951,23 @@ static EquilibriumResult run_driver_once(
             }
         }
     }
-    if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
+    const auto save_attempt = [&] {
+        if (attempt && !fatal && !nlp->solution().empty()) *attempt = full;
+    };
     const auto retain_rows = [&](const CompiledSystem& system) {
         result.residuals = evaluation.values;
         result.classified_residuals = system.classified_residuals(prepared, evaluation.values);
         result.objective = evaluation.objective;
         result.convergence.residual = maximum_abs(result.classified_residuals);
+        result.convergence.floor = evaluation.floor > 0.0 ? std::optional<double>(evaluation.floor) : std::nullopt;
     };
-    if (expired()) return limited_result();
+    if (expired()) { save_attempt(); return limited_result(); }
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
     scope.probe("prepared_points", static_cast<double>(nlp->prepared_points()));
     core::Convergence& convergence = result.convergence;
     convergence = {};
     retain_rows(compiled);
     core::stopping_criterion(convergence, compiled.problem.solver_options, policy::row);
-    if (evaluation.floor > 0.0) convergence.floor = evaluation.floor;
     convergence.amplification = nlp->regularization_size();
     result.iterations = convergence.iterations = nlp->iterations();
     result.hessian_calls = nlp->hessian_calls();
@@ -2047,7 +2022,6 @@ static EquilibriumResult run_driver_once(
             }
         }
     }
-    const auto box_stop = convergence.stop;
     const auto classify_row = [&](double residual) { return core::classify(residual, *convergence.criterion, {}, {}, false); };
     for (bool release_round = false; !nominated.empty(); release_round = true) {
         if (!polish(release_round)) return limited_result();
@@ -2078,17 +2052,18 @@ static EquilibriumResult run_driver_once(
                 continue;
             }
             const double product = (prepared.amount[r.phase] * x / compiled.feed_total_at(prepared)) * a;
-            const auto stop = a <= 0 ? box_stop : classify_row(product);
+            const auto stop = a <= 0 ? core::Stop::stalled : classify_row(product);
             if (stop != core::Stop::converged)
                 held_refusal(result, stop, "held_complementarity", cell + ": held classification did not settle in one release round: " + core::optional_number(a));
             else {
-                result.held_species.push_back({r.phase, r.index, x, a, product, 0.0});
+                result.held_species.push_back({r.phase, r.index, x, a, product, {}});
                 result.message += "; " + cell + " held, root unresolved below the hold";
             }
         }
         if (release_round || result.held_species.size() == nominated.size() || convergence.stop != core::Stop::converged) break;
         result.held_species.clear();
     }
+    save_attempt();
     result.evaluations = convergence.evaluations = nlp->evaluations() + polish_evaluations;
     scope.finish(convergence);
     const bool admitted = non_error && (!newton || (!capped && in_bounds && corrected))
