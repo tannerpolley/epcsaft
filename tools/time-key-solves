@@ -19,10 +19,11 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
+from equilibrium_state_comparison import STATE_TOLERANCE, scaled_state_differences
+
 ORDINARY = ('case-6/figure-2-point-7', 'case-7/flash-5918.5286-Pa')
 COUNTS = ('iterations', 'evaluations', 'hessian_calls')
 PHYSICAL = ('temperature', 'pressure', 'amounts', 'mole_fractions', 'molar_densities')
-STATE_TOLERANCE = 1e-10
 F1 = 'mea-f1/residual-jacobian'
 # Affinity, niceness and the desktop CPU ceilings belong to the Linux timing host.
 LINUX = sys.platform == 'linux'
@@ -281,8 +282,7 @@ def scaled_differences(a, b, case=None, quantity=None):
                 if quantity == 'residual_optimizer_gradient':
                     floors[i] = 1.0
         return [abs(x-y) / max(abs(x), abs(y), floor) for x, y, floor in zip(a, b, floors, strict=True)]
-    scale = max(map(abs, (*a, *b)), default=0.0)
-    return [abs(x - y) / scale if scale else 0.0 for x, y in zip(a, b, strict=True)]
+    return scaled_state_differences(a, b)
 
 
 def physical_difference(a, b, keys=PHYSICAL):
@@ -315,9 +315,8 @@ def gate(work_rows, state_rows, expect_change=False):
             keys = count_keys(case)
             line = f"WORK CHANGE {point}: A {sorted(seen['A'])} B {sorted(seen['B'])} ({'/'.join(keys)})"
             print(line, flush=True)
-            if case.rsplit('/', 1)[0] in ORDINARY and not expect_change:
-                failures.append(line)
-            if case in FROZEN and (len(seen['A']) != 1 or len(seen['B']) != 1 or (not expect_change
+            if (case in FROZEN or case.rsplit('/', 1)[0] in ORDINARY) and (
+                    len(seen['A']) != 1 or len(seen['B']) != 1 or (not expect_change
                     and any(b > a for a, b in zip(next(iter(seen['A'])), next(iter(seen['B'])), strict=True)))):
                 failures.append(line)
     values = {}
@@ -428,7 +427,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, epilog=(
         'Work counts are the primary comparison. Change = 100*(B/A-1); negative is faster. '
         'Each pair includes AB and BA blocks. Times cover solve calls only, after a complete warmup. '
-        'Exit is nonzero when a case-6 or case-7 work count changes (unless --expect-change) or a state '
+        'Exit is nonzero when a case-6 or case-7 work count rises (unless --expect-change), samples do not repeat, or a state '
         'differs beyond 1e-10 of its quantity scale. F1 work increases and absolute CPU/wall ceilings also fail. '
         'The sequential case resets to cold point 1 and reuses each result at the next point.'))
     parser.add_argument('prepared_A', nargs='?', type=Path, help='prepared interpreter, virtual environment, or build-tree root')
@@ -575,11 +574,10 @@ def main():
             for attempt in range(1, 4 if case in FROZEN else 2):
                 baseline[case] = {label: call(label, case, starts) for label in ('A', 'B')}
                 causes = {label: reply['not_comparable'] for label, reply in baseline[case].items() if 'not_comparable' in reply}
-                if causes:
-                    break
-                for label in ('A', 'B'):
-                    retain(label, case, 'warmup' if attempt == 1 else f'serial-{attempt}', baseline[case][label])
-                if case not in FROZEN:
+                for label, reply in baseline[case].items():
+                    if label not in causes:
+                        retain(label, case, 'warmup' if attempt == 1 else f'serial-{attempt}', reply)
+                if causes or case not in FROZEN:
                     break
                 summary.setdefault('serial_attempts', {}).setdefault(case, []).append({
                     label: baseline[case][label]['cpu_seconds'] for label in ('A', 'B')})
@@ -591,7 +589,6 @@ def main():
                         raise
                     print(f'{case} serial pair {attempt}: invalid host measurement; retrying pair', flush=True)
             if causes:
-                # Neither arm's rows are retained or compared; the case is a named gate failure (#602).
                 summary.setdefault('not_comparable', {})[case] = causes
                 for label, cause in causes.items():
                     not_comparable.append(f'NOT COMPARABLE {case}: {label} {cause}')
@@ -718,6 +715,7 @@ def main():
         summary['runtime_seconds'] = time.perf_counter() - begun
         summary['input_sha256'] = {path.relative_to(ROOT).as_posix(): digest(path) for path in (
             Path(__file__).resolve(), *(path for fixture in FROZEN.values() for path in (fixture['input'], fixture['identity_path'])),
+            ROOT / 'tools/equilibrium_state_comparison.py',
             ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts/baseline.py',
             ROOT / 'engine/tests/cases/khudaida-idaes-settler/scripts/run_fixed_settler.py',
             ROOT / 'engine/tests/cases/khudaida/figures/figure-02/source/source-points.csv',
