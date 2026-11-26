@@ -131,6 +131,27 @@ void check_stability_requirement() {
     CHECK(!initial.stability->report.no_descent_in_trial_set);
     CHECK(initial.solved->residual_norm() <= 1e-10);
     {
+        auto requested = row;
+        requested.stability_options.plane_value_errors = true;
+        const auto fitted = predict(model, requested);
+        CHECK(fitted.stability && fitted.compiled && fitted.solved);
+        const auto direct = stability_test(*fitted.compiled, *fitted.solved, requested.stability_options);
+        CHECK(direct.trials.size() == fitted.stability->report.trials.size());
+        for (std::size_t i = 0; i < direct.trials.size(); ++i) {
+            const auto& t = direct.trials[i];
+            const auto& fit = fitted.stability->report.trials[i];
+            CHECK(t.phase.support == fit.phase.support && t.phase.kind == fit.phase.kind && t.seed == fit.seed);
+            for (const auto* key : {"tpd_over_rt", "numerical_plane_value_error_over_rt", "plane_value_error_estimate_over_rt"})
+                CHECK(core::bitwise_equal(t.quantities.at(key), fit.quantities.at(key)));
+        }
+        requested.stability_options.trial_budget = 1;
+        const auto partial = stability_test(*fitted.compiled, *fitted.solved, requested.stability_options);
+        CHECK(!partial.completed && partial.trials.size() == 1);
+        const auto& q = partial.trials.front().quantities;
+        CHECK(std::isfinite(q.at("tpd_over_rt")) && q.count("plane_value_error_estimate_over_rt")
+            && q.count("numerical_plane_value_error_over_rt"));
+    }
+    {
         auto referenced = row;
         referenced.pressure_reference = row.problem;
         referenced.pressure_ratio = 2.0;
@@ -169,6 +190,8 @@ void check_stability_requirement() {
     CHECK(both.stability && both.stability->raw_minimum == initial.stability->raw_minimum);
     CHECK(both.supplied_available && both.supplied_stability->trials.size() == 1);
     CHECK(both.supplied_stability->evidence_counts({3}).at("evaluated") == 3);
+    CHECK(both.supplied_stability->completed && !both.supplied_stability->no_descent_in_trial_set);
+    CHECK(both.supplied_stability->descent() == StabilityDescent::Undecided && both.supplied_stability->undecided().empty());
     StabilityOptions options; options.prepared_trials = bank;
     const auto separate = stability_test(*initial.compiled, *initial.solved, options);
     CHECK(both.supplied_stability->trials[0].quantities == separate.trials.at(0).quantities);
@@ -222,6 +245,7 @@ void check_stability_requirement() {
     const auto tie = predict(model, tied);
     CHECK(tie.stability && !tie.stability->available && !tie.stability->event.empty() && !tie.value);
     CHECK(tie.stability->report.no_descent_in_trial_set && tie.stability->minima.size() >= 2);
+    CHECK(tie.stability->report.descent() == StabilityDescent::NoWitness);
     CHECK(differentiate(model, tied, tie).status != ObservationStatus::Available);
     std::cout << std::setprecision(17) << "distinct tie " << *tie.stability->raw_minimum << ' '
         << *tie.stability->uncertainty << ' ' << tie.stability->minima.size() << '\n';
@@ -252,6 +276,63 @@ void check_stability_requirement() {
         << ",\"previous_m\":" << *initial.stability->value
         << ",\"available\":" << (transition.stability->available ? "true" : "false")
         << ",\"action_status\":" << recording_support::json_string(observation_status_name(action.status)) << "}\n";
+}
+
+void check_mdea_stability_acceptance() {
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mdea-endpoint-a-cap.inc"
+#include "fixtures/mdea-endpoint-a-comparison.inc"
+    Observation row;
+    row.kind = ObservationKind::Stability;
+    row.problem = cap;
+    row.stability_options.plane_value_errors = true;
+    const auto ranked = predict(model, row);
+    CHECK(ranked.stability && !ranked.stability->available && !ranked.stability->cause.empty());
+    const auto& bank = ranked.stability->report;
+    CHECK(bank.completed && bank.trials.size() == 14 && bank.undecided().empty());
+    CHECK(bank.descent() == StabilityDescent::NoWitness);
+    for (const auto& trial : bank.trials)
+        if (trial.quantities.count("tpd_over_rt")) {
+            CHECK(trial.quantities.count("plane_value_error_estimate_over_rt"));
+            CHECK(trial.quantities.count("numerical_plane_value_error_over_rt"));
+        }
+    row.problem = comparison;
+    const auto witnessed = predict(model, row);
+    CHECK(witnessed.stability && !witnessed.stability->available
+        && witnessed.stability->report.descent() == StabilityDescent::ResolvedDescent);
+    row.stability_options.trial_budget = 0;
+    const auto undecided = predict(model, row);
+    CHECK(undecided.stability && !undecided.stability->available
+        && undecided.stability->report.descent() == StabilityDescent::Undecided);
+    for (bool reverse : {false, true}) {
+        FitOutcome outcome;
+        outcome.candidate = FitCandidate::Usable;
+        outcome.acceptance = FitAcceptance::Pass;
+        reduce_stability_acceptance(outcome, reverse ? undecided : witnessed);
+        reduce_stability_acceptance(outcome, reverse ? witnessed : undecided);
+        CHECK(outcome.acceptance == FitAcceptance::Fail && outcome.candidate == FitCandidate::Values);
+    }
+
+    row.stability_options.trial_budget.reset();
+    row.stability_options.trials = std::vector<PhaseSpec>{vapor};
+    row.scale = 2.0;
+    const auto available = predict(model, row);
+    CHECK(available.status == ObservationStatus::Available && available.value && *available.value < 0.0);
+    FitRequest request;
+    request.parameters = parameters;
+    request.thermochemistry = thermal;
+    request.observations = {row};
+    request.weights = {1.0};
+    FitResult failures;
+    ObservationEvaluator objective(request, failures, {0});
+    ObservationEvaluation evaluation;
+    CHECK(objective.evaluate({}, false, evaluation));
+    const double residual = *available.value / row.scale;
+    const double expected = 0.5 * request.weights.front() * residual * residual;
+    recording_support::compare("mdea-vapor-stability-cost", "Weighted squared residual over two", "1",
+        evaluation.stability_cost, expected, recording_support::Rule::ReferenceScale,
+        0.0, 4 * std::numeric_limits<double>::epsilon(), "Vapor {0, 1, 6}, unit weight, scale 2");
+    CHECK(evaluation.cost == evaluation.stability_cost && evaluation.data_cost == 0.0);
 }
 
 void check_nested_support_tangent_plane_action() {

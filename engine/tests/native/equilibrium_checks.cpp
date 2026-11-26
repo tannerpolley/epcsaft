@@ -53,6 +53,8 @@ void check_candidate_publication();
 void check_budget_retry();
 void check_physical_amount_work();
 void check_reaction_relaxed_split();
+void check_capped_gibbs_descent();
+void check_mdea_endpoint_gibbs();
 void check_associating_isomer_gibbs();
 void check_mdea_full_stability();
 void check_piperazine_a12s_bubble_stability();
@@ -119,6 +121,8 @@ namespace caloric_ph_ps { void run(); }
 int main(int argc, char** argv) {
     using namespace equilibrium_checks;
     return recording_support::run(argc, argv, {
+        {{"native.equilibrium.capped-gibbs-descent", "capped-gibbs-descent", "Automatic_fast"}, check_capped_gibbs_descent},
+        {{"native.equilibrium.mdea-endpoint-gibbs", "mdea-endpoint-gibbs", "Automatic_fast"}, check_mdea_endpoint_gibbs},
         {{"native.equilibrium.discovery-work", "discovery-work", "Automatic_fast"}, check_discovery_work},
         {{"native.equilibrium.concurrent-first-discovery", "concurrent-first-discovery", "Automatic_fast"}, check_concurrent_first_discovery},
         {{"native.equilibrium.species-thermochemistry", "species-thermochemistry", "Automatic_fast"}, check_species_thermochemistry},

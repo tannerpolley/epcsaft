@@ -265,3 +265,20 @@ to the next trial. An admitted addition solves the reduced declaration and lower
 Gibbs energy by more than the existing addition margin. The rule provides
 no estimate of the distance from a full-support minimum or evidence of
 composition-domain applicability.
+
+## Addendum on finite-search descent and reaction-relaxed endpoints (#266)
+
+The Engine lead adopted the common-reference endpoint comparison on
+2026-11-25. A finite bank reports its descent conclusion even when the fitted
+scalar is unavailable. Evaluated supplied points do not supply the optimized
+finite-set no-witness conclusion. Trial energy uncertainty can be requested on
+the direct Full optimized report.
+
+A reaction-relaxed integral that reaches 128 panels without qualifying can
+establish descent when the repaired endpoint difference and integral have
+overlapping negative intervals on bitwise equal standards. The integral error
+accounts for a split-reference difference wherever the split inventory is
+available. A qualified integral uses its own estimated interval. Final fit
+acceptance fails when any stability observation has a witness, regardless of
+observation order. [ALG-STABILITY](../../../engine/docs/science/algorithms.md#alg-stability)
+owns the numerical comparison and reporting rules.

@@ -188,7 +188,7 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<StabilityOptions>(module, "StabilityOptions")
         .def(nb::init<>())
         EPCSAFT_READWRITE(StabilityOptions, mode, evaluate_supplied_trials, prepared_trials, declaration_budget, trial_budget,
-            standard_uncertainty_over_rt, retry_condensed_refusals)
+            standard_uncertainty_over_rt, retry_condensed_refusals, plane_value_errors)
         EPCSAFT_COPIED(StabilityOptions, trials);
     nb::class_<CriticalDeclaration>(module, "CriticalDeclaration")
         .def(nb::init<>())
@@ -338,6 +338,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<StabilityReport>(module, "StabilityReport")
         .def("evidence_counts", &StabilityReport::evidence_counts, nb::arg("multiplicities") = std::vector<std::size_t>{})
         .def_prop_ro("unresolved_reasons", &StabilityReport::unresolved_reasons)
+        .def_prop_ro("descent", &StabilityReport::descent_name)
+        .def_prop_ro("undecided", &StabilityReport::undecided)
         .def_prop_ro("witnesses", &StabilityReport::witnesses)
         .def_prop_ro("supplied_minima", &StabilityReport::supplied_minima)
         EPCSAFT_READONLY(StabilityReport, first_numerical_failure, last_rank, completed, message, trials, candidate_coordinates, standard_over_rt,

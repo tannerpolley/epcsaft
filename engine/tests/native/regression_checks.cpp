@@ -10,6 +10,7 @@ void check_equilibrium_optimizer_point();
 void check_equilibrium_result_model();
 void check_equilibrium_estimate_admission();
 void check_compiled_result_origin();
+void check_mdea_stability_acceptance();
 void check_stability_requirement();
 void check_nested_support_tangent_plane_action();
 void check_reactive_solvent_activity();
@@ -62,6 +63,7 @@ void check_measurement_correlation();
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.mdea-stability-acceptance", "mdea-stability-acceptance"}, check_mdea_stability_acceptance, "mdea-stability-acceptance"},
         {{"native.regression.equilibrium-estimate-admission", "equilibrium-estimate-admission"}, check_equilibrium_estimate_admission},
         {{"native.regression.compiled-result-origin", "compiled-result-origin"}, check_compiled_result_origin},
         {{"native.regression.equilibrium-result-model", "equilibrium-result-model"}, check_equilibrium_result_model},

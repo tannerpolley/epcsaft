@@ -196,6 +196,10 @@ struct GibbsDifference final {
   std::vector<double> coordinates; // repaired split, candidate-coordinate layout
   std::string cause;
 };
+EPC_API bool capped_gibbs_descent(double integral, double integral_error, double endpoint, double endpoint_error);
+enum class CappedGibbsDescent { StandardsDiffer, Unresolved, Resolved };
+EPC_API CappedGibbsDescent capped_gibbs_descent(double integral, double integral_error, double endpoint, double endpoint_error,
+    const std::vector<double>& split_standard, const std::vector<double>& parent_standard);
 // `donor` indexes the parent; the split's donor is its first phase, the trial its last.
 EPC_API GibbsDifference conserved_split_difference(
     const CompiledSystem &, const EquilibriumResult &,

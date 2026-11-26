@@ -291,6 +291,7 @@ EPC_API std::pair<double, double> check_error(CheckMetric metric, const Observat
 void publish_candidate(FitResult& result, ObservationEvaluation evaluation, const std::vector<double>& point);
 FitAcceptance finish_checks(FitResult& result, const FitRequest& request, const std::vector<Observation>* reconciled = nullptr);
 void label(FitResult& result, const FitOutcome& outcome);
+EPC_API void reduce_stability_acceptance(FitOutcome& outcome, const Prediction& prediction);
 using ObservationFunction = std::function<bool(const std::vector<double>&, bool, ObservationEvaluation&)>;
 EPC_API FitResult solve_minimax(const FitRequest& request, const std::vector<double>& start,
     const std::vector<CheckResult>& frozen, const ObservationFunction& evaluate);

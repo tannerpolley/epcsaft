@@ -1133,6 +1133,14 @@ FitAcceptance finish_checks(FitResult& result, const FitRequest& request, const 
 // The one place a fit's outcome becomes its labels. `message` keeps its owner's free text (a setup or Ipopt
 // refusal, the Ceres summary, a trial failure; empty for PointOnly) unless the termination has a fixed text. A fit
 // that ran Ceres and whose returned point has no committed evaluation is "failed", whatever its termination.
+void reduce_stability_acceptance(FitOutcome& outcome, const Prediction& prediction) {
+    const bool unavailable = !prediction.stability || !prediction.stability->available;
+    if (unavailable) outcome.candidate = FitCandidate::Values;
+    if (prediction.stability && prediction.stability->report.descent() == equilibrium::StabilityDescent::ResolvedDescent)
+        outcome.acceptance = FitAcceptance::Fail;
+    else if (unavailable && outcome.acceptance != FitAcceptance::Fail)
+        outcome.acceptance = FitAcceptance::Unavailable;
+}
 void label(FitResult& result, const FitOutcome& outcome) {
     using T = FitTermination;
     const T t = outcome.termination;
@@ -1348,10 +1356,7 @@ static FitResult fit_parameters(const FitRequest& request) {
             auto event = stability_transition(i, optimizer, *result.stability_predictions[i], optimizer, fresh);
             if (!event.kind.empty()) result.stability_transitions.push_back(std::move(event));
             result.stability_predictions[i] = fresh;
-            if (!fresh.stability || !fresh.stability->available) {
-                outcome.candidate = FitCandidate::Values;
-                outcome.acceptance = FitAcceptance::Unavailable;
-            } else if (!fresh.stability->report.no_descent_in_trial_set) outcome.acceptance = FitAcceptance::Fail;
+            reduce_stability_acceptance(outcome, fresh);
         }
     }
     label(result, outcome);

@@ -929,20 +929,32 @@ void check_prepared_supplied_trials() {
             && r.trials[3].quantities.count("condensed_root_log_displacement") && !r.trials[3].quantities.count("g_over_rt"));
     }
     {
-        auto parameters = properties_support::parameters(3);
+        auto parameters = properties_support::parameters(4);
         const auto ethane = properties_support::ethane();
-        for (std::size_t i = 0; i < 3; ++i) {
+        for (std::size_t i = 0; i < 4; ++i) {
             parameters.segment_count[i] = ethane.segment_count[0]; parameters.sigma_constant[i] = ethane.sigma_constant[0];
             parameters.dispersion_energy_over_k[i] = ethane.dispersion_energy_over_k[0];
             parameters.molar_mass_kg_per_mol[i] = ethane.molar_mass_kg_per_mol[0];
         }
         const HelmholtzModel model(parameters);
-        auto a = equilibrium_support::flash(3); a.temperature = FreeValue::fixed(200.0); a.feed.values = {1.0, 0.0, 0.0};
-        a.reactions = {{"s1=s2", {0.0, -1.0, 1.0}, 1.0}};
-        auto pure = a.phases[0]; pure.support = {0}; pure.support_declared = true; pure.composition_guess = {1.0, 0.0, 0.0}; pure.packing_guess = 0.4;
-        auto full = pure; full.support = {0, 1, 2}; full.composition_guess = {0.98, 0.01, 0.01};
-        const auto r = exercise(model, a, {pure, full});
-        CHECK(r.trials[1].evidence == "evaluated" && r.trials[3].evidence == "evaluated_without_positive_donor");
+        auto a = equilibrium_support::flash(4); a.temperature = FreeValue::fixed(200.0); a.feed.values = {1.0, 0.0, 0.0, 0.0};
+        a.reactions = {{"s1=s2", {0.0, -1.0, 1.0, 0.0}, 1.0}};
+        auto pure = a.phases[0]; pure.support = {0}; pure.support_declared = true; pure.composition_guess = {1.0, 0.0, 0.0, 0.0}; pure.packing_guess = 0.4;
+        auto full = pure; full.support = {0, 1, 2}; full.composition_guess = {0.98, 0.01, 0.01, 0.0};
+        auto outside = pure;
+        outside.support = {3}; outside.composition_guess = {0.0, 0.0, 0.0, 1.0};
+        const auto prepared = exercise(model, a, {pure, full});
+        CHECK(prepared.trials[1].evidence == "evaluated" && prepared.trials[3].evidence == "evaluated_without_positive_donor");
+        const auto compiled = compile_problem(model, a);
+        const auto parent = solve_compiled(compiled);
+        StabilityOptions options;
+        options.evaluate_supplied_trials = true;
+        options.trials = std::vector<PhaseSpec>{pure, full, outside};
+        const auto r = stability_test(compiled, parent, options);
+        CHECK(r.completed && r.trials.size() == 3);
+        CHECK(r.trials[0].evidence == "evaluated" && r.trials[1].evidence == "evaluated_without_positive_donor"
+            && r.trials[2].evidence == "not_applicable");
+        CHECK(r.undecided() == (std::vector<std::size_t>{1, 2}));
     }
     {
         const HelmholtzModel model(properties_support::neutral_binary());
@@ -2809,6 +2821,8 @@ void check_reaction_relaxed_search() {
         CHECK(measure.raw_minimum && std::abs(*measure.raw_minimum - raw) <= error);
         const auto& t = measure.report.trials.at(measure.minimizing_trial.value_or(0));
         CHECK(t.phase.kind == PhaseKind::Liquid && t.split_checks.size() == 1);
+        CHECK(t.split_checks.front().at("integral_qualified") == 1.0);
+        CHECK(t.split_checks.front().at("reference_error_over_rt_mol") == 0.0);
         const auto& q3 = t.quantities;
         CHECK(q3.count("split_delta_g_over_rt") && q3.count("split_error_estimate_over_rt") && q3.at("split_beta_mol") > 0.0);
         if (uncertain) {
@@ -3136,7 +3150,12 @@ void check_reaction_relaxed_pz_row() {
     const auto compiled = compile_problem(model, q);
     const auto parent = solve_compiled(compiled);
     CHECK(parent.success);
-    const auto measure = stability_measure(compiled, parent);
+    regression::Observation row;
+    row.kind = regression::ObservationKind::Stability;
+    row.problem = q;
+    const auto prediction = regression::predict(model, row);
+    CHECK(prediction.stability);
+    const auto& measure = *prediction.stability;
     if (!measure.available) std::cout << measure.cause << std::endl;
     CHECK(measure.report.completed && measure.report.trials.size() == 17 && measure.available);
     CHECK(measure.value && std::abs(*measure.value - (-0.276000003756792)) <= *measure.uncertainty + 6.39e-10);
@@ -3163,6 +3182,121 @@ void check_reaction_relaxed_pz_row() {
         difference = D - difference;
     }
     CHECK(std::abs(difference) <= sum);
+}
+
+void check_capped_gibbs_descent() {
+    using namespace epcsaft::equilibrium;
+    constexpr double integral = -0.0671823633159, ei = 2.7e-11, endpoint = -0.0671823633384, ed = 1.76e-8;
+    CHECK(capped_gibbs_descent(integral, ei, endpoint, ed));
+    CHECK(!capped_gibbs_descent(integral, ei, endpoint, 0.07));
+    CHECK(!capped_gibbs_descent(integral, ei, endpoint - 1e-3, ed));
+    CHECK(!capped_gibbs_descent(-10., .5, -12., .5));
+    CHECK(!capped_gibbs_descent(integral, 0.07, endpoint, ed));
+    CHECK(!capped_gibbs_descent(-INFINITY, ei, endpoint, ed));
+    CHECK(!capped_gibbs_descent(integral, ei, endpoint, -ed));
+    CHECK(!capped_gibbs_descent(integral, ei, endpoint, INFINITY));
+    CHECK(capped_gibbs_descent(integral, ei, endpoint, ed, {0.0}, {0.0}) == CappedGibbsDescent::Resolved);
+    CHECK(capped_gibbs_descent(integral, ei, endpoint, ed, {0.0}, {-0.0}) == CappedGibbsDescent::StandardsDiffer);
+    CHECK(capped_gibbs_descent(integral, ei, endpoint, ed, {1e-8}, {0.0}) == CappedGibbsDescent::StandardsDiffer);
+}
+
+static void check_endpoint_error(const std::map<std::string, double>& q) {
+    const double rebuilt =
+        q.at("endpoint_energy_error_over_rt_mol") + q.at("endpoint_summation_error_over_rt_mol") +
+        q.at("endpoint_feasibility_error_over_rt_mol") + std::abs(q.at("inventory_plane_over_rt_mol")) +
+        q.at("parent_error_over_rt_mol") + q.at("standard_error_over_rt_mol") + q.at("repair_error_over_rt_mol");
+    CHECK(std::abs(q.at("endpoint_error_over_rt_mol") - rebuilt) <= 4 * std::numeric_limits<double>::epsilon() * rebuilt);
+}
+
+static void check_endpoint_energies(const epcsaft::equilibrium::StabilityReport& parent,
+    const epcsaft::equilibrium::StabilityReport& split, std::size_t species, std::size_t donor_support,
+    const std::map<std::string, double>& q) {
+    CHECK(parent.present_phases.size() == 1 && split.present_phases.size() == 2);
+    const auto& p = parent.present_phases.front();
+    const auto& l = split.present_phases.front();
+    const auto& v = split.present_phases.back();
+    const long double p_amount = parent.candidate_coordinates.at(donor_support);
+    const long double l_amount = split.candidate_coordinates.at(donor_support);
+    const long double v_amount = split.candidate_coordinates.end()[-2];
+    const long double initial = p_amount * p.at("g_over_rt"), left = l_amount * l.at("g_over_rt"),
+        added = v_amount * v.at("g_over_rt");
+    const auto energy_error = [](const auto& phase) {
+        return phase.at("association_energy_estimate_over_rt") + phase.at("euler_defect_over_rt")
+            + phase.at("summation_estimate_over_rt");
+    };
+    const auto check = [&](const char* term, long double reconstructed) {
+        CHECK(std::abs(q.at(term) - reconstructed) <= 4 * std::numeric_limits<double>::epsilon() * std::abs(reconstructed));
+    };
+    const double gamma = (species + 3) * std::numeric_limits<double>::epsilon();
+    check("endpoint_gibbs_change_over_rt_mol", left + added - initial);
+    check("endpoint_energy_error_over_rt_mol", p_amount * energy_error(p) + l_amount * energy_error(l) + v_amount * energy_error(v));
+    check("endpoint_summation_error_over_rt_mol", gamma / (1 - gamma) * (std::abs(initial) + std::abs(left) + std::abs(added)));
+    check("endpoint_feasibility_error_over_rt_mol", p.at("feasibility_estimate_over_rt") + l.at("feasibility_estimate_over_rt"));
+    check_endpoint_error(q);
+}
+
+void check_mdea_endpoint_gibbs() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mdea-endpoint-a-cap.inc"
+#include "fixtures/mdea-endpoint-a-comparison.inc"
+    const auto compiled = compile_problem(model, comparison);
+    const auto parent = solve_compiled(compiled);
+    StabilityOptions options;
+    options.plane_value_errors = true;
+    const auto report = stability_test(compiled, parent, options);
+    CHECK(report.completed && report.descent() == StabilityDescent::ResolvedDescent);
+    CHECK(!stability_measure(compiled, parent, options).available);
+    auto lv = comparison;
+    lv.phases.push_back(vapor);
+    const auto split_system = compile_problem(model, lv);
+    const auto split = solve_compiled(split_system);
+    CHECK(split.has_state() && split.requested_tolerance_met && split.amounts.at(1) > 0.);
+    const auto declared = conserved_split_difference(compiled, parent, split_system, split, 0, options);
+    CHECK(declared.status == GibbsDifferenceStatus::Decrease);
+    const double target = -0.06718236333836, target_error = 1.76e-8;
+    const auto& q = declared.quantities;
+    const double D = q.at("endpoint_gibbs_change_over_rt_mol"), E = q.at("endpoint_error_over_rt_mol");
+    CHECK(std::abs(D - target) <= E + target_error);
+    auto negative = options;
+    negative.standard_uncertainty_over_rt.assign(comparison.feed.values.size(), 0.0);
+    negative.standard_uncertainty_over_rt.front() = -1e-12;
+    std::string refused;
+    try { conserved_split_difference(compiled, parent, split_system, split, 0, negative); }
+    catch (const std::exception& error) { refused = error.what(); }
+    CHECK(refused == "invalid standard-term uncertainty estimates");
+    StabilityOptions no_trials;
+    no_trials.trial_budget = 0;
+    check_endpoint_energies(report, stability_test(split_system, split, no_trials),
+        comparison.feed.values.size(), liquid.support.size(), q);
+    std::vector<std::size_t> undecided;
+    std::set<std::pair<PhaseKind, std::string>> witnesses = {
+        {PhaseKind::Liquid, "near-pure-0"}, {PhaseKind::Vapor, "near-pure-0"},
+        {PhaseKind::Vapor, "near-pure-1"}, {PhaseKind::Vapor, "ideal-gas"}};
+    CHECK(report.witnesses().size() == witnesses.size());
+    for (std::size_t i = 0; i < report.trials.size(); ++i) {
+        const auto& t = report.trials[i];
+        if (t.phase.kind == PhaseKind::Liquid && t.phase.support == liquid.support && t.seed == "near-pure-0") {
+            undecided.push_back(i);
+            CHECK(t.evidence == "indeterminate" && !t.split_checks.empty());
+            for (const auto& check : t.split_checks) CHECK(!check.count("reference_error_over_rt_mol"));
+        }
+        if (t.quantities.count("tpd_over_rt")) {
+            CHECK(t.quantities.count("numerical_plane_value_error_over_rt") == 1);
+            CHECK(t.quantities.count("plane_value_error_estimate_over_rt") == 1);
+        }
+        if (t.phase.support != vapor.support || !witnesses.erase({t.phase.kind, t.seed})) continue;
+        const auto& check = t.split_checks.at(0);
+        CHECK(check.at("quadrature_panels") == 128 && check.at("integral_qualified") == 0);
+        CHECK(check.at("reference_error_over_rt_mol") == 0);
+        CHECK(t.resolved_descent && t.message.find("incomplete Gibbs integral refinement") != std::string::npos);
+        const double endpoint = check.at("endpoint_gibbs_change_over_rt_mol"), error = check.at("endpoint_error_over_rt_mol");
+        CHECK(capped_gibbs_descent(check.at("gibbs_change_over_rt_mol"), check.at("complete_error_over_rt_mol"), endpoint, error));
+        CHECK(t.quantities.at("split_delta_g_over_rt") == endpoint && t.quantities.at("split_error_estimate_over_rt") == error);
+        CHECK(std::abs(endpoint - D) <= error + E);
+        check_endpoint_error(check);
+    }
+    CHECK(witnesses.empty() && undecided.size() == 1 && report.undecided() == undecided);
 }
 
 // Identical associating isomers: the residual contribution cancels analytically.
@@ -3216,42 +3350,48 @@ void check_associating_isomer_gibbs() {
     eq.pressure = FreeValue::fixed(*r.pressure);
     eq.phases[1] = fullv;
     eq.phases[1].amount = AmountSpec{};
-    EquilibriumResult er;
-    er.success = true;
-    for (int j = 0; j < 2; ++j) {
-        auto one = eq;
-        one.phases = {eq.phases[j]};
-        one.feed.values = {j == 0 ? .9999 : .0001, 0};
-        auto oc = compile_problem(m, one);
-        auto part = solve_compiled(oc);
-        er.success &= part.success;
-        er.amounts.push_back(part.amounts.at(0));
-        er.mole_fractions.insert(er.mole_fractions.end(), part.mole_fractions.begin(), part.mole_fractions.end());
-        er.packing_fractions.push_back(part.packing_fractions.at(0));
-        er.molar_densities.push_back(part.molar_densities.at(0));
-        er.iterations += part.iterations;
-        er.evaluations += part.evaluations;
-        er.hessian_calls += part.hessian_calls;
-    }
-    CHECK(er.success);
+    const auto assemble = [&](const CompiledSystem& sc, double pressure) {
+        EquilibriumResult er;
+        er.success = true;
+        for (int j = 0; j < 2; ++j) {
+            auto one = sc.problem;
+            one.pressure = FreeValue::fixed(pressure);
+            one.phases = {sc.problem.phases[j]};
+            one.phases[0].amount = AmountSpec::free();
+            one.feed.values = {j == 0 ? .9999 : .0001, 0};
+            auto oc = compile_problem(m, one);
+            auto part = solve_compiled(oc);
+            er.success &= part.success;
+            er.amounts.push_back(part.amounts.at(0));
+            er.mole_fractions.insert(er.mole_fractions.end(), part.mole_fractions.begin(), part.mole_fractions.end());
+            er.packing_fractions.push_back(part.packing_fractions.at(0));
+            er.molar_densities.push_back(part.molar_densities.at(0));
+            er.iterations += part.iterations;
+            er.evaluations += part.evaluations;
+            er.hessian_calls += part.hessian_calls;
+        }
+        CHECK(er.success);
 
+        std::vector<double> point;
+        for (size_t j = 0; j < 2; ++j) {
+            for (size_t i = 0; i < 2; ++i) point.push_back(std::log(er.mole_fractions[j * 2 + i]));
+            if (j == 0) point.push_back(er.amounts[j]);
+            point.push_back(std::log(er.packing_fractions[j]));
+        }
+        point.push_back(pressure);
+        er.coordinates = add_multipliers(sc, point);
+        er.declaration = std::make_shared<const EquilibriumProblem>(sc.problem);
+        er.model_identity = m.identity();
+        er.temperature = r.temperature;
+        er.pressure = pressure;
+        er.residuals = sc.evaluate(er.coordinates).values;
+        er.multipliers.assign(er.coordinates.begin() + sc.primal_size, er.coordinates.begin() + sc.primal_size + sc.rank);
+        return er;
+    };
     eq.pressure = FreeValue::variable(*r.pressure);
     eq.phases[1].amount = AmountSpec::pinned(.0001);
-    auto sc = compile_problem(m, eq);
-    std::vector<double> point;
-    for (size_t j = 0; j < 2; ++j) {
-        for (size_t i = 0; i < 2; ++i) point.push_back(std::log(er.mole_fractions[j * 2 + i]));
-        if (j == 0) point.push_back(er.amounts[j]);
-        point.push_back(std::log(er.packing_fractions[j]));
-    }
-    point.push_back(*r.pressure);
-    er.coordinates = add_multipliers(sc, point);
-    er.declaration = std::make_shared<const EquilibriumProblem>(sc.problem);
-    er.model_identity = m.identity();
-    er.temperature = r.temperature;
-    er.pressure = r.pressure;
-    er.residuals = sc.evaluate(er.coordinates).values;
-    er.multipliers.assign(er.coordinates.begin() + sc.primal_size, er.coordinates.begin() + sc.primal_size + sc.rank);
+    const auto sc = compile_problem(m, eq);
+    const auto er = assemble(sc, *r.pressure);
     auto d = conserved_split_difference(c, r, sc, er, 0, {});
     const HelmholtzModel foreign(p);
     const auto foreign_parent = compile_problem(foreign, q);
@@ -3274,6 +3414,51 @@ void check_associating_isomer_gibbs() {
     recording_support::compare("associating-isomer-gibbs", "Gibbs change over RT", "mol", value, target,
         recording_support::Rule::Absolute, error, 0, "identical residual interactions");
     CHECK(std::abs(value - target) <= error);
+    CHECK(std::abs(d.quantities.at("endpoint_gibbs_change_over_rt_mol") - target) <= d.quantities.at("endpoint_error_over_rt_mol"));
+    CHECK(d.quantities.at("reference_error_over_rt_mol") == 0.0);
+    StabilityOptions no_trials;
+    no_trials.trial_budget = 0;
+    // The parent also retains a zero-pinned incipient phase.
+    auto before = stability_test(c, r, no_trials);
+    before.present_phases.resize(1);
+    check_endpoint_energies(before, stability_test(sc, er, no_trials), 2, 2, d.quantities);
+
+    // Slight compression from the bubble leaves two mechanical roots but a positive cost for the added vapor.
+    const double pressure = *r.pressure * 1.001;
+    auto fixed = q;
+    fixed.pressure = FreeValue::fixed(pressure);
+    fixed.phases = {l};
+    const auto fc = compile_problem(m, fixed);
+    const auto fr = solve_compiled(fc);
+    CHECK(fr.has_state());
+    auto supplied = eq;
+    supplied.pressure = FreeValue::variable(pressure);
+    const auto control = compile_problem(m, supplied);
+    const auto control_result = assemble(control, pressure);
+    const auto unchanged = conserved_split_difference(fc, fr, control, control_result, 0, {});
+    CHECK(unchanged.status == GibbsDifferenceStatus::NoDecrease);
+    CHECK(unchanged.quantities.at("gibbs_change_over_rt_mol") > 0.0);
+
+    const auto original_standards = stability_test(fc, fr, no_trials).standard_over_rt;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * fixed.temperature.value;
+    for (double standard : original_standards) supplied.standard_gibbs_j_per_mol.push_back((standard - .01) * rt);
+    const auto shifted = compile_problem(m, supplied);
+    const auto shifted_result = assemble(shifted, pressure);
+    const auto adjusted = conserved_split_difference(fc, fr, shifted, shifted_result, 0, {});
+    const auto& terms = adjusted.quantities;
+    CHECK(terms.at("integral_qualified") == 1.0);
+    CHECK(adjusted.status == GibbsDifferenceStatus::Overlap);
+    const double integral = terms.at("gibbs_change_over_rt_mol");
+    const double error_with_reference = terms.at("complete_error_over_rt_mol");
+    const double reference_error = terms.at("reference_error_over_rt_mol");
+    CHECK(integral + error_with_reference - reference_error < 0.0);
+    const auto shifted_report = stability_test(shifted, shifted_result, no_trials);
+    const auto& phase = shifted_report.candidate_coordinates;
+    double sum = 0.0;
+    for (std::size_t i = 0; i < original_standards.size(); ++i)
+        sum += std::exp(phase[phase.size() - 4 + i]) * std::abs(shifted_report.standard_over_rt[i] - original_standards[i]);
+    const double expected = phase.end()[-2] * sum;
+    CHECK(std::abs(reference_error - expected) <= 8 * std::numeric_limits<double>::epsilon() * expected);
 }
 
 // #21: published MEA record (density-independent permittivity), census states 19 and 18 at 313.15 K and loading 0.05.
@@ -3299,6 +3484,23 @@ void check_condensed_trial_recovery() {
         CHECK(!plain.work.count("recovery_density_credits"));
         for (const auto* seed : {"near-pure-0", "positive-neutral-base"})
             CHECK(slot(plain, seed).evidence == "unresolved" && !second_pass(slot(plain, seed)));
+        auto with_errors = options;
+        with_errors.plane_value_errors = true;
+        const auto evaluated = stability_test(compiled, parent, with_errors);
+        bool finite = false, refused = false;
+        for (const auto& trial : evaluated.trials) {
+            const auto& q = trial.quantities;
+            const bool has_energy = q.count("tpd_over_rt") && std::isfinite(q.at("tpd_over_rt"));
+            finite |= has_energy;
+            refused |= !q.count("g_over_rt") && trial.evidence == "unresolved";
+            CHECK(q.count("plane_value_error_estimate_over_rt") == has_energy);
+            CHECK(q.count("numerical_plane_value_error_over_rt") == has_energy);
+        }
+        CHECK(finite && refused);
+        for (const auto& trial : plain.trials) {
+            CHECK(!trial.quantities.count("plane_value_error_estimate_over_rt"));
+            CHECK(!trial.quantities.count("numerical_plane_value_error_over_rt"));
+        }
         options.retry_condensed_refusals = true;
         const auto report = stability_test(compiled, parent, options);
         CHECK(report.completed && report.trials.size() == 10);
