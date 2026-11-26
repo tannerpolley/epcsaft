@@ -1564,6 +1564,12 @@ convergence category is now `stalled` instead of `converged_to_floor`.
 
 For a reacting Gibbs declaration whose selected primary attempt is rejected by `run_driver_once` for `PhaseDisappeared` after its existing non-error stop decision, stops non-error with its iteration budget exhausted, or stalls after a nonfatal restoration failure, the shared driver may make one additional invocation with physical-mol amount coordinates, $S=I$. `check_topology` alone owns disappearance classification. An exhausted attempt qualifies without it: whether its last, unconverged iterate classifies a phase as vanished depends on last-bit arithmetic (one retained MEA case classified a vanished phase on some platform builds and not on another). Successful attempts, nonreacting declarations, feasibility cells, solids, critical candidates, error/fatal stops and other admission refusals do not enter this recovery. Ordinary solves rebuild the original declaration's start after their existing attempts; discovery uses its conserved declaration coordinates and spends another declaration-solve slot; explicit starts and continuation use their declared or predicted coordinates. The physical-mol invocation carries no optimizer multipliers and uses the same equations, exact derivatives, options, polish and physical admission. It never restarts from a vanished endpoint and never retries itself. All caller limits remain shared and are checked again after preparation. Retain primary, preparation and recovery work, each counted once, and both causes on failure, including exceptions: an ordinary result reports their sum, while each discovery declaration record keeps its own invocation's work and the discovery total sums the records; an unavailable public result has no usable physical-state arrays. If discovery has no new raw endpoint, retain its primary point only for a budget-permitted conserved removal and keep the failed invocation's raw-point record empty. Remaining disappearance is returned to the existing caller; recovery supplies no physical-absence or global-stability conclusion.
 
+For a public fixed-T/P flash, a failed physical-mol retry can leave the primary
+disappearance as the reported outcome when the surviving declaration closes
+and its finite trial set finds no descent. The report retains the retry
+diagnostics and work. See [ALG-STABILITY](#alg-stability) for trial and restart
+admission.
+
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
 Its exact Hessian callback must obey EqID: `weighted_lagrangian_hessian` at
@@ -2173,6 +2179,9 @@ could have solved can be refused. The public flash can test a vanished declared 
 at fixed T and P, after the physical-mol retry. The surviving declaration
 must close before a trial on the vanished phase's support is tested.
 The vanished-vapor search uses the surviving liquid and its existing seeds.
+A previous-result start also permits vanished-liquid recovery in a failed
+public flash with disappearance evidence for a reacting ionic liquid and a
+surviving vapor. Continuation keeps its branch-following admission.
 
 For a vanished reacting ionic liquid with a neutral vapor, require a
 vapor-supported feed, unique vapor inventories, and no reaction carried
@@ -2191,8 +2200,9 @@ to contribute a decision.
 
 Restart the original fixed-T/P declaration when a positive transfer passes the
 represented inventory checks and lowers common-standard Gibbs energy beyond the
-estimated error. Only this positive-amount restart uses Ipopt's adaptive barrier
-strategy. In the A7 row 45 diagnosis, the ordinary barrier/filter accepted steps
+estimated error. The initial positive-amount restart uses Ipopt's adaptive barrier
+strategy. Its physical-mol retry uses the default barrier strategy. In the A7 row
+45 diagnosis, the ordinary barrier/filter accepted steps
 that reduced the amount toward zero while Gibbs energy rose and the equality
 constraints remained open. The adaptive strategy recovered the admitted split
 from the same transfer. Publish the split only after the usual admission,
@@ -2201,8 +2211,9 @@ requested row closure, and a resolved Gibbs decrease against the closed vapor.
 One allowance covers the surviving declaration, trials, finite-transfer checks
 and restart. Report them in `result.vanished_phase_stability`. A failed restart
 leaves the witness and the original split refusal. A completed, decided finite
-search without descent reports the minimum raw TPD/RT among the admitted liquid
-endpoints. Failed parent closure, unresolved trial endpoints and exhausted work
+search without descent reports the minimum raw TPD/RT among the admitted trial
+endpoints and informs [selection after the physical-mol retry](#equilibrium-start-amount-scaling).
+Failed parent closure, unresolved trial endpoints and exhausted work
 are named in the report. Returned
 solved-state actions use the fixed declaration without searching.
 Qualification must compare the retained before/after declared numerical values

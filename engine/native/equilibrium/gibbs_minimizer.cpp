@@ -1811,7 +1811,7 @@ static EquilibriumResult run_driver_once(
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver, nlp->amount_limited(), declared.feasibility_cell(),
             declared.problem.pressure.free, !declared.has_reaction && declared.problem.phases.size() > 1,
-            reporting.positive_liquid_restart);
+            reporting.positive_liquid_restart && !physical_amounts);
         } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, record, observations); throw; }
     }();
     if (!newton) {
@@ -2678,7 +2678,8 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     if (!result.declaration) result = structural;
     std::move(stages).report(result);
     const bool retry = result.retry == Retry::PhysicalAmounts && !admission_refused;
-    const auto vanished_phase = result.topology_phase;
+    const auto vanished_phase = result.topology_event == TopologyEvent::PhaseDisappeared ? result.topology_phase : std::nullopt;
+    auto primary_disappearance = retry && vanished_phase ? std::make_optional(result) : std::nullopt;
     const auto vanished = result.vanished_composition;
     result = recover_physical_amounts(compiled, std::move(result), retry,
         scope, original ? &*original : nullptr, limits, nullptr, true, nullptr, 0, nullptr, Work::Accumulated, reporting);
@@ -2694,13 +2695,26 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     };
     // ALG-STABILITY: a vanished declared phase at fixed T and P is named from the surviving declaration under that
     // allowance. The reservoir may follow a conserved transfer to the declared split.
-    const auto phase = !vanished.empty() ? vanished_phase
-        : result.topology_event == TopologyEvent::PhaseDisappeared ? result.topology_phase : std::nullopt;
-    if (!result.success && recover && phase && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
-        && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty()) {
+    const auto retry_phase = result.topology_event == TopologyEvent::PhaseDisappeared ? result.topology_phase : std::nullopt;
+    const auto phase = vanished_phase && (recover || reservoir_applicable(compiled, *vanished_phase))
+        ? vanished_phase : retry_phase;
+    if (!result.success && phase && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
+        && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty()
+        && (recover || (select_endpoint && start && !limits && reservoir_applicable(compiled, *phase)))) {
         auto probe = allowance();
         auto report = vanished_phase_stability(compiled, *phase, probe, vanished, result);
         if (limits) limits->consumed += probe.consumed;
+        if (!result.success && primary_disappearance && phase == vanished_phase && phase != retry_phase
+            && report.no_descent_in_trial_set) {
+            auto& primary = *primary_disappearance;
+            primary.iterations = result.iterations;
+            primary.evaluations = result.evaluations;
+            primary.hessian_calls = result.hessian_calls;
+            primary.limit_record = std::move(result.limit_record);
+            StageWork::publish_observations(result, primary);
+            primary.message += "; physical-mol retry: " + result.message;
+            result = std::move(primary);
+        }
         // Driver plus tangent-plane work, as the report keeps them; the original solve's work is the remainder.
         auto& w = report.work;
         result.iterations += static_cast<std::size_t>(w["iterations"] + w["trial_tangent_plane_iterations"]);

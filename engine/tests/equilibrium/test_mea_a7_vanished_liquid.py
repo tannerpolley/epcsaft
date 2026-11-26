@@ -14,7 +14,7 @@ from tests.native_inputs import MEA, nominally_unloaded_mea
 REFERENCE = Path(__file__).resolve().parents[2] / "data" / "reference" / "mea-a7"
 DECLARATIONS = json.loads((REFERENCE / "vanished-liquid.json").read_text())
 CASES = DECLARATIONS["rows"]
-Flash = Callable[[dict[str, Any], str], _core.EquilibriumResult]
+Flash = Callable[[dict[str, Any], str | _core.EquilibriumResult], _core.EquilibriumResult]
 ROW_CRITERION = 1e-10
 TOLERANCES = {t.name: t.value for t in _core.tolerances()}
 
@@ -44,16 +44,76 @@ def solve() -> Flash:
     reference = NeutralReference(solvent="water", standard_molality_mol_per_kg=1.,
                                  solute_molality_ratios=dict(zip(MEA[:2] + MEA[3:], (1., 1., 5., 2., 1., 1., 1., 1.))))
 
-    def flash(case: dict[str, Any], start: str) -> _core.EquilibriumResult:
+    def flash(case: dict[str, Any], start: str | _core.EquilibriumResult) -> _core.EquilibriumResult:
         T, P, *feed = case["inputs"]
         x, y = DECLARATIONS["anchor_guesses"] if start == "seeded" else ([], [])
         return solve_equilibrium(model, Problem(
             T=T, P=P, feed=Amounts(dict(zip(MEA[:3], feed, strict=True))),
             phases=[Phase("L", kind="liquid", support=MEA, composition_guess=x),
                     Phase("V", kind="vapor", support=MEA[:3], composition_guess=y)],
-            reactions=reactions, neutral_reference=reference, topology_declared=True, row_tolerance=ROW_CRITERION))
+            reactions=reactions, neutral_reference=reference, topology_declared=True, row_tolerance=ROW_CRITERION),
+            start=None if isinstance(start, str) else start)
 
     return flash
+
+
+def a7_flash(T: float, P: float, loading: float) -> dict[str, Any]:
+    return {"inputs": (T, P, loading, 1.0, 7.929776437398854)}
+
+
+# Pressures from the issue #306 round-8 map, in Pa, on the 1 mol MEA feed basis.
+@pytest.mark.parametrize(("T", "P", "loading", "vanished"), [
+    (313.15, 6617.360703385514, 0.2, 1),
+    (333.15, 53097.256911496384, 0.2, 1),
+    (353.15, 43805.10503001105, 0.3, 1),
+    (333.15, 1769.9085637165463, 0.2, 0),
+    (393.15, 17550.205504126272, 0.1, 0),
+])
+def test_a7_phase_disappearance(T: float, P: float, loading: float, vanished: int, solve: Flash, evidence: Any) -> None:
+    case = a7_flash(T, P, loading)
+    result = solve(case, "cold")
+    report = result.vanished_phase_stability
+    evidence.observe(f"A7/{T}/{P}", topology=str(result.topology_event), vanished=result.topology_phase,
+                     residual=result.convergence.residual,
+                     phases=report.present_phases if report else [], work=report.work if report else {},
+                     trials=[t.quantities for t in report.trials] if report else [])
+    assert not result.success and not result.amounts
+    assert result.topology_event == _core.TopologyEvent.PhaseDisappeared and result.topology_phase == vanished
+    assert report is not None and report.completed and report.no_descent_in_trial_set
+    (survivor,) = report.present_phases
+    assert survivor["volume_m3_per_mol"] > 0 and abs(survivor["pressure_row"]) <= ROW_CRITERION
+    if vanished == 0:
+        closed_vapor(report, case)
+    scored = [t.quantities for t in report.trials if t.evidence != "returned_to_parent"]
+    assert scored
+    assert all(q["tpd_over_rt"] > q.get("descent_error_estimate_over_rt", 0.0) for q in scored)
+
+
+@pytest.mark.parametrize(("T", "P", "start_P", "liquid_mol"), [
+    (393.15, 65526.81171601749, None, 0.1174),
+    (353.15, 8381.817631074895, 25145.45289322468, 0.2652),
+])
+def test_a7_liquid_split_after_disappearance(
+    T: float, P: float, start_P: float | None, liquid_mol: float, solve: Flash, evidence: Any,
+) -> None:
+    case = a7_flash(T, P, 0.5)
+    start = "cold" if start_P is None else solve(a7_flash(T, start_P, 0.5), "cold")
+    result = solve(case, start)
+    report = result.vanished_phase_stability
+    evidence.observe(f"A7/{T}/{P}", amounts_mol=result.amounts, residual=result.convergence.residual,
+                     trials=[t.quantities for t in report.trials] if report else [])
+    assert result.success and result.phase_count == 2 and result.requested_tolerance_met
+    assert result.amounts[0] == pytest.approx(liquid_mol, abs=0.00005, rel=0)
+    assert report is not None
+    closed_vapor(report, case)
+    (endpoint,) = [t.quantities for t in report.trials if "restart_delta_g_over_rt_mol" in t.quantities]
+    error = endpoint["restart_error_over_rt_mol"]
+    assert endpoint["restart_delta_g_over_rt_mol"] < -error
+    if start_P is not None:
+        cold = solve(case, "cold")
+        assert cold.success and cold.phase_count == 2 and cold.requested_tolerance_met
+        assert cold.amounts[0] == pytest.approx(liquid_mol, abs=0.00005, rel=0)
+        assert result.objective == pytest.approx(cold.objective, abs=error, rel=0)
 
 
 def closed_vapor(report: _core.StabilityReport, case: dict[str, Any]) -> dict[str, float]:
