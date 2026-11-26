@@ -370,7 +370,7 @@ struct Candidate final {
 // Equality repair acts on supported amounts. Redundant charge/balance rows are solved together;
 // the achieved defect, positivity and structural support decide admission, not a row-count guess.
 Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& result,
-    StabilityReport& report) {
+    StabilityReport& report, const DriverLimits* reservoir_limits = nullptr, const StandardTerm* standard = nullptr) {
     if (!result.has_state() || result.model_identity != c.model->identity() || !result.declaration)
         throw std::invalid_argument("stability test requires this model's accepted declared result");
     if (const auto difference = declared_state_difference(*result.declaration, c.problem); !difference.empty())
@@ -380,7 +380,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     at = c.prepare(result.coordinates);
     const auto raw = result.held_species.empty() ? c.evaluate_at(at) : classify_result(c, result).evaluate_at(at);
     if (raw.values != result.residuals) throw std::invalid_argument("stability result/input identity mismatch");
-    report.standard_over_rt = at.standard.derivative[0];
+    report.standard_over_rt = (standard ? *standard : at.standard).derivative[0];
     report.plane_over_rt.assign(c.n_feed.size(), 0.0);
     for (std::size_t k = 0; k < c.rank; ++k)
         for (std::size_t i = 0; i < c.n_feed.size(); ++i)
@@ -442,6 +442,11 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
         if (at.amount[p] > 0.0) {
             at.amount[p] = std::accumulate(inventory[p].begin(), inventory[p].end(), 0.0);
             for (auto i : c.problem.phases[p].support) at.composition[p][i] = inventory[p][i] / at.amount[p];
+        }
+        if (reservoir_limits) {
+            if (!reservoir_limits->spend(reservoir_limits->evaluations, reservoir_limits->evaluation_cap)) reservoir_limits->check();
+            at.volume[p] = 1.0 / declared_root(*c.model, at.temperature, at.pressure, at.composition[p], c.problem.phases[p].kind).molar_density;
+            if (!reservoir_limits->spend(reservoir_limits->evaluations, reservoir_limits->evaluation_cap)) reservoir_limits->check();
         }
         auto q = phase_energy(*c.model, at.temperature, at.pressure, at.volume[p], at.composition[p],
             report.standard_over_rt, report.work, &at.derivative[p]);
@@ -976,24 +981,85 @@ void spend_credit(const DriverLimits& limits, Quantities& work) {
     if (!limits.spend(limits.evaluations, limits.evaluation_cap)) limits.check();
     ++work["recovery_density_credits"];
 }
+struct Reservoir {
+    const CompiledSystem& system;
+    std::size_t liquid;
+    const std::vector<double>& retry;
+    EquilibriumResult& restart;
+    Eigen::MatrixXd transfer;
+};
+
+// Factor the scaled vapor columns once. Factoring against all species gives the
+// withdrawal map and its transpose maps the vapor chemical potentials to the plane.
+void reservoir_plane(Reservoir& r, const CompiledSystem& vapor, const Candidate& candidate, StabilityReport& report) {
+    const auto& c = r.system;
+    const auto& support = vapor.problem.phases.front().support;
+    Eigen::MatrixXd B(c.rank, c.n_feed.size()), V(c.rank, support.size());
+    for (std::size_t k = 0; k < c.rank; ++k) {
+        B.row(k) = Eigen::Map<const Eigen::RowVectorXd>(c.B[k].data(), B.cols());
+        B.row(k) /= B.row(k).cwiseAbs().maxCoeff();
+    }
+    for (std::size_t j = 0; j < support.size(); ++j) V.col(j) = B.col(support[j]);
+    const auto factor = V.completeOrthogonalDecomposition();
+    report.last_rank = core::numerical_rank(factor, "vapor_reservoir");
+    if (factor.rank() != V.cols()) throw std::invalid_argument("vapor inventory is underdetermined");
+    r.transfer = Eigen::MatrixXd::Zero(B.cols(), B.cols());
+    const Eigen::MatrixXd map = factor.solve(B);
+    Eigen::MatrixXd defect = V * map - B;
+    Eigen::VectorXd charge = Eigen::VectorXd::Zero(B.cols());
+    const auto& z = c.model->parameters().charge_number;
+    for (auto i : c.problem.phases[r.liquid].support) charge[i] = z[i];
+    const Eigen::VectorXd gauge = defect * charge / charge.squaredNorm();
+    double reach = 0.0;
+    for (auto i : c.problem.phases[r.liquid].support)
+        reach = std::max(reach, (defect.col(i) - gauge * charge[i]).lpNorm<Eigen::Infinity>());
+    if (!(reach <= policy::ADDITION_MATERIAL_BALANCE.value))
+        throw std::invalid_argument("neutral liquid directions outside vapor inventory span");
+    for (std::size_t j = 0; j < support.size(); ++j) r.transfer.row(support[j]) = map.row(j);
+    const auto& mu = candidate.chemical_over_rt[0];
+    const Eigen::VectorXd plane = r.transfer.transpose() * Eigen::Map<const Eigen::VectorXd>(mu.data(), mu.size());
+    report.plane_over_rt.assign(plane.data(), plane.data() + plane.size());
+    auto& q = report.present_phases[0];
+    q["reservoir_reachability_residual"] = reach;
+    q["reservoir_plane_residual_over_rt"] = 0.0;
+    for (auto i : support) q["reservoir_plane_residual_over_rt"] = std::max(q["reservoir_plane_residual_over_rt"], std::abs(plane[i] - mu[i]));
+    if (!(q["reservoir_plane_residual_over_rt"] <= c.problem.solver_options.value(policy::row)))
+        throw std::invalid_argument("vapor reservoir plane residual exceeds row criterion");
+    auto amount = candidate.physical.composition[0];
+    for (auto& n : amount) n *= candidate.physical.amount[0];
+    auto balance = matvec(c.B, amount);
+    q["reservoir_inventory_error_mol"] = largest_difference(balance, c.balance);
+    q["amount_mol"] = candidate.physical.amount[0];
+    if (!(q["reservoir_inventory_error_mol"] <= policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total)))
+        throw std::invalid_argument("closed vapor fails original inventory");
+}
+
 // For a relaxed trial the frozen slope can classify no descent only within plane arithmetic error.
 void donor_descent(const CompiledSystem& c, const Candidate& candidate, StabilityTrial& trial,
-    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool credited = false) {
+    StabilityReport& report, const StabilityOptions& options, const DriverLimits* limits, bool relaxed, bool credited = false,
+    const Reservoir* reservoir = nullptr) {
     const auto& at = candidate.physical;
     const auto& w = trial.composition;
     auto& q = trial.quantities;
-    double capacity = 0.0;
+    std::vector<double> withdrawal = w;
+    double mole_change = 1.0, capacity = 0.0;
+    const auto& support = reservoir ? c.problem.phases[0].support : trial.phase.support;
+    if (reservoir) {
+        Eigen::Map<Eigen::VectorXd>(withdrawal.data(), w.size()) =
+            reservoir->transfer * Eigen::Map<const Eigen::VectorXd>(w.data(), w.size());
+        mole_change = std::accumulate(withdrawal.begin(), withdrawal.end(), 0.0);
+    }
     for (std::size_t p = 0; p < at.amount.size(); ++p) {
         if (!(at.amount[p] > 0.0)) continue;
         double beta = std::numeric_limits<double>::infinity();
-        for (auto i : trial.phase.support) {
-            if (at.composition[p][i] <= 0.0) { beta = 0.0; break; }
-            beta = std::min(beta, at.amount[p] * at.composition[p][i] / w[i]);
-        }
+        if (reservoir && mole_change > 0.0) beta = at.amount[p] / mole_change;
+        for (auto i : support) if (withdrawal[i] > 0.0)
+            beta = std::min(beta, at.amount[p] * at.composition[p][i] / withdrawal[i]);
         if (std::isfinite(beta) && beta > capacity) { capacity = beta; trial.donor = p; }
     }
     if (!trial.donor) {
         trial.evidence = options.evaluate_supplied_trials ? "evaluated_without_positive_donor" : "negative_plane_without_positive_donor";
+        if (reservoir) trial.message += "; nonpositive or unbounded vapor transfer capacity";
         if (options.evaluate_supplied_trials) trial.message = "no_positive_full_support_donor";
         return;
     }
@@ -1001,17 +1067,28 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     const auto& donor = candidate.quantities[p];
     double chemical = 0.0, magnitude = std::abs(q.at("g_over_rt"));
     double standard_error = 0.0;
-    for (auto i : trial.phase.support) {
-        const double term = w[i] * candidate.chemical_over_rt[p][i];
+    for (auto i : support) {
+        const double term = withdrawal[i] * candidate.chemical_over_rt[p][i];
         chemical += term; magnitude += std::abs(term);
         if (!options.standard_uncertainty_over_rt.empty())
             standard_error += 2.0 * w[i] * options.standard_uncertainty_over_rt[i];
     }
-    const double slope = q.at("g_over_rt") - chemical + donor.at("pressure_row");
+    double exchange_error = 0.0, transfer_norm = 1.0;
+    if (reservoir) {
+        const auto& original = reservoir->system;
+        q["withdrawal_inventory_error"] = largest_difference(matvec(original.B, withdrawal), matvec(original.B, w));
+        exchange_error = q["withdrawal_plane_error_over_rt"] = std::abs(q.at("g_over_rt") - q.at("tpd_over_rt") - chemical);
+        transfer_norm = std::accumulate(withdrawal.begin(), withdrawal.end(), 0.0, [](double a, double b) { return a + std::abs(b); });
+        if (!(q["withdrawal_inventory_error"] <= policy::ADDITION_MATERIAL_BALANCE.value
+                && exchange_error <= original.problem.solver_options.value(policy::row)))
+            throw std::invalid_argument("vapor transfer does not close the inventory or plane");
+    }
+    const double pressure = mole_change * donor.at("pressure_row");
+    const double slope = q.at("g_over_rt") - chemical + pressure;
     const double gamma = (w.size() + 3.0) * std::numeric_limits<double>::epsilon();
-    const double arithmetic = gamma * (magnitude + std::abs(donor.at("pressure_row"))) / (1.0 - gamma);
+    const double arithmetic = gamma * (magnitude + std::abs(pressure)) / (1.0 - gamma);
     const double uncertainty = energy_estimate(q) + (1.0 + std::abs(at.volume[p]))
-        * at.derivative[p].gradient_floor + arithmetic + standard_error;
+        * at.derivative[p].gradient_floor * transfer_norm + arithmetic + standard_error + exchange_error;
     q["donor_capacity_mol"] = capacity;
     q["donor_chemical_contraction_over_rt"] = chemical;
     q["donor_pressure_row"] = donor.at("pressure_row");
@@ -1040,17 +1117,21 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
     const double limit = policy::ADDITION_MATERIAL_BALANCE.value * std::max(1.0, c.feed_total);
     // The donor after it gives `moved` mol of composition `y`: its amount and composition, with the split's conservation checks.
     const auto give = [&](double moved, const std::vector<double>& y, Quantities& split) {
-        const double remaining = at.amount[p] - moved;
+        const double remaining = at.amount[p] - moved * mole_change;
         std::vector<double> x(w.size(), 0.0), error(w.size(), 0.0);
         double sum = 0.0, charge = 0.0, inventory_error = 0.0;
+        if (reservoir) for (auto i : trial.phase.support) error[i] = moved * std::exp(std::log(w[i]));
         for (auto i : c.problem.phases[p].support) {
             const double n = at.amount[p] * at.composition[p][i] - moved * y[i];
             if (!(n > 0.0 && remaining > 0.0)) throw std::invalid_argument("split destroys donor support");
             x[i] = n / remaining; sum += x[i]; charge += z[i] * x[i];
-            error[i] = remaining * x[i] + moved * y[i] - at.amount[p] * at.composition[p][i];
-            inventory_error = std::max(inventory_error, std::abs(error[i]));
+            if (reservoir) error[i] += remaining * std::exp(std::log(x[i])) - reservoir->system.n_feed[i];
+            else {
+                error[i] = remaining * x[i] + moved * y[i] - at.amount[p] * at.composition[p][i];
+                inventory_error = std::max(inventory_error, std::abs(error[i]));
+            }
         }
-        const auto moiety_error = matvec(c.B, error);
+        const auto moiety_error = matvec(reservoir ? reservoir->system.B : c.B, error);
         split["component_error_mol"] = inventory_error;
         split["moiety_error_mol"] = maximum_abs(moiety_error);
         split["normalization_residual"] = sum - 1.0; split["charge_residual"] = charge;
@@ -1078,7 +1159,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
         Quantities split{{"beta_mol", beta}, {"admitted", 0.0}};
         if (limits) limits->check();
         try {
-            const auto [remaining, x] = give(beta, w, split);
+            const auto [remaining, x] = give(beta, withdrawal, split);
             ++report.work["finite_split_evaluations"];
             if (credited) spend_credit(*limits, report.work);
             const double donor_volume = 1.0 / declared_root(*c.model, at.temperature, at.pressure, x, c.problem.phases[p].kind).molar_density;
@@ -1090,7 +1171,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
             const double error_estimate = remaining * energy_estimate(changed) + beta * energy_estimate(q)
                 + at.amount[p] * energy_estimate(donor) + candidate.feasibility_estimate
                 + gamma * (std::abs(remaining * changed.at("g_over_rt")) + std::abs(beta * q.at("g_over_rt"))
-                    + std::abs(at.amount[p] * donor.at("g_over_rt"))) / (1.0 - gamma) + beta * standard_error;
+                    + std::abs(at.amount[p] * donor.at("g_over_rt"))) / (1.0 - gamma) + beta * (standard_error + exchange_error);
             split["delta_g_over_rt"] = delta; split["error_estimate_over_rt"] = error_estimate;
             split["admitted"] = 1.0;
             if (descent_resolved(q.at("tpd_over_rt"), delta, error_estimate)) {
@@ -1101,7 +1182,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
                 write(trial.split_coordinates, remaining, x, donor_volume, trial.phase.support, beta, w);
                 // ALG-STABILITY: the same split with the neutral `bound_species` left in the donor: transfers beta w_i on
                 // the retained species, none on the omitted ones; same volumes, no density or energy evaluation.
-                if (!trial.optimizer.bound_species.empty()) try {
+                if (!reservoir && !trial.optimizer.bound_species.empty()) try {
                     auto y = w;
                     auto support = trial.phase.support;
                     for (auto j : trial.optimizer.bound_species) {
@@ -1336,7 +1417,7 @@ void dominant_charge_pair_midpoint(std::vector<double>& x, const std::vector<std
 StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResult& result,
     const StabilityOptions& requested, const std::vector<std::pair<PhaseSpec, std::vector<double>>>& removed,
     std::vector<std::string>* unsearched = nullptr, const DriverLimits* limits = nullptr, bool diagnostics = false,
-    std::optional<GibbsDifferenceReference>* reference = nullptr, DriverLimits* recovery = nullptr) {
+    std::optional<GibbsDifferenceReference>* reference = nullptr, DriverLimits* recovery = nullptr, Reservoir* reservoir = nullptr) {
     auto options = requested;
     if (options.prepared_trials) {
         const auto& set = *options.prepared_trials;
@@ -1356,11 +1437,13 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     if (options.evaluate_supplied_trials && !options.trials && !options.prepared_trials)
         throw std::invalid_argument("supplied trial evaluation requires explicit trials");
     std::set<std::size_t> outside;
-    const auto supports = stability_supports(c, options, options.evaluate_supplied_trials ? &outside : nullptr);
+    const auto supports = stability_supports(reservoir ? reservoir->system : c, options, options.evaluate_supplied_trials ? &outside : nullptr);
     if (options.evaluate_supplied_trials) report.trials.reserve(supports.size());
     const auto& z = c.model->parameters().charge_number;
     check_standard_uncertainty(options, z.size());
-    const auto candidate = stability_candidate(c, result, report);
+    const auto candidate = stability_candidate(c, result, report, reservoir ? limits : nullptr,
+        reservoir ? &*reservoir->system.fixed_standard : nullptr);
+    if (reservoir) reservoir_plane(*reservoir, c, candidate, report);
     const auto& at = candidate.physical;
     const auto& form = c.model->parameters().permittivity_form;
     std::vector<double> shift = report.standard_over_rt;
@@ -1489,9 +1572,15 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 for (auto i : phase.support) seed[i] = std::exp(-shift[i] - maximum);
                 seeds.emplace_back("ideal-gas", std::move(seed));
             }
+            const auto ordinary = seeds.size();
             for (const auto& [previous, composition] : removed)
                 if (previous.kind == phase.kind && previous.support == phase.support)
                     seeds.emplace_back("removed-phase", composition);
+            if (reservoir) {
+                if (phase.declared_composition_guess) seeds.emplace_back("declared-liquid", phase.composition_guess);
+                if (!reservoir->retry.empty()) seeds.emplace_back("physical-mol-liquid", reservoir->retry);
+                std::rotate(seeds.begin(), seeds.begin() + ordinary, seeds.end());
+            }
             if (retry) seeds.clear();
             for (const auto& slot : slots) if (const auto& original = report.trials[slot.trial]; retry
                     && original.phase.kind == phase.kind && original.phase.support == phase.support) {
@@ -1545,6 +1634,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     std::optional<DensityRoot> root;
                     while (!root) {
                         if (slot) spend_credit(*recovery, report.work);
+                        if (reservoir) spend_credit(*limits, report.work);
                         root = stability_root(*c.model, at.temperature, at.pressure, seed, phase.kind);
                         core::retain_first(trial.optimizer.first_numerical_failure, root->first_numerical_failure);
                         if (condensed) try { condensed_admission(root, quotient); }
@@ -1570,7 +1660,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     if (!fast) { finish_report(); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
-                const auto native = c.has_ions || c.has_reaction || options.evaluate_supplied_trials ? nullptr
+                const auto native = reservoir || c.has_ions || c.has_reaction || options.evaluate_supplied_trials ? nullptr
                     : c.model->has_association() ? tangent_plane_trial<true> : tangent_plane_trial<false>;
                 CompiledSystem optimized;  // the shared driver's trial; none for a converged Michelsen trial (rank 0)
                 const auto compile = [&]() -> CompiledSystem& {
@@ -1627,7 +1717,18 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                                     trial.optimizer.convergence.stop == core::Stop::converged;
                 advance(SuppliedStage::Composition, nullptr, 0.0, repair ? &trial.pivot_only : nullptr);
                 trial.composition = data.composition;
-                const double volume = data.volume;
+                double volume = data.volume;
+                if (reservoir) {
+                    spend_credit(*limits, report.work);
+                    const auto root = declared_root(*c.model, at.temperature, at.pressure, trial.composition, PhaseKind::Liquid);
+                    trial.quantities["liquid_root_residual"] = root.convergence.residual;
+                    const double shift = trial.quantities["liquid_root_log_displacement"] = std::abs(std::log(volume * root.molar_density));
+                    if (!(shift <= policy::DENSITY_ANCHOR_LOG_WINDOW.value))
+                        throw std::invalid_argument("trial endpoint outside its liquid pressure-root window");
+                    volume = 1.0 / root.molar_density;
+                    point.volume = volume;
+                    spend_credit(*limits, report.work);
+                }
                 if (phase.kind == PhaseKind::Vapor && std::any_of(phase.support.begin(), phase.support.end(),
                         [&](auto i) { return z[i] != 0; })) {
                     auto& q = trial.quantities;
@@ -1714,8 +1815,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 }
                 // A distinct reacting gas-side trial uses the relaxed split if the frozen check leaves it indeterminate.
                 const bool reacting = explicit_negative && c.has_reaction && trial.optimizer.success;
-                if (options.evaluate_supplied_trials || negative)
-                    donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident, slot);
+                if (options.evaluate_supplied_trials || negative || reservoir)
+                    donor_descent(c, candidate, trial, report, options, limits, reacting && gas && !coincident, slot || reservoir, reservoir);
                 if (reacting && gas && !coincident && trial.evidence == "indeterminate") {
                     auto shared = std::find_if(splits.begin(), splits.end(), [&](const auto& s) {
                         return same_split_trial(s.first, trial);
@@ -1734,13 +1835,47 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         donor_descent(c, candidate, trial, report, options, limits, false, slot);
                         trial.message += "; reaction-relaxed split: " + d.cause;
                     } else classify_split(c, report, trial, d);
+                } else if (reservoir && trial.resolved_descent) {
+                    auto coordinates = trial.split_coordinates;
+                    if (reservoir->liquid == 0)
+                        std::rotate(coordinates.begin(), coordinates.end() - phase.support.size() - 2, coordinates.end());
+                    const auto& declared = reservoir->system;
+                    core::Scope restart("vanished_liquid_restart");
+                    auto audit = structural_result(declared, restart);
+                    auto seed = add_multipliers(declared, coordinates, &audit);
+                    auto split = continue_compiled(declared, {}, restart, limits, {}, false, audit, {}, std::move(seed));
+                    count_driver(report.work, split, "vanished_liquid_restarts");
+                    q["restart_residual"] = split.convergence.residual;
+                    q["restart_liquid_amount_mol"] = split.success ? split.amounts[reservoir->liquid] : split.vanished_amount;
+                    q["restart_g_over_rt_mol"] = split.objective;
+                    if (split.success && split.requested_tolerance_met.value_or(false)) {
+                        const auto& donor = candidate.quantities[0];
+                        double delta = -at.amount[0] * donor.at("g_over_rt");
+                        double error = at.amount[0] * energy_estimate(donor) + candidate.feasibility_estimate;
+                        StabilityReport endpoint;
+                        const auto admitted = stability_candidate(declared, split, endpoint, limits, &*declared.fixed_standard);
+                        for (std::size_t p = 0; p < split.phase_count; ++p) {
+                            const auto& energy = admitted.quantities[p];
+                            const double n = admitted.physical.amount[p];
+                            delta += n * energy.at("g_over_rt");
+                            error += n * energy_estimate(energy);
+                        }
+                        error += admitted.feasibility_estimate;
+                        q["restart_delta_g_over_rt_mol"] = delta;
+                        q["restart_error_over_rt_mol"] = error;
+                        if (descent_resolved(q.at("tpd_over_rt"), delta, error)) {
+                            reservoir->restart = std::move(split);
+                            stopped = true;
+                        }
+                    }
+                    if (!stopped) trial.message += "; positive-amount restart unresolved: " + split.message;
                 } else if (reacting && !trial.diagnostic_cause.empty() && trial.evidence == "no_resolved_descent") {
                     trial.evidence = "indeterminate";  // without an admitted side the frozen slope decides nothing
                     trial.message += "; " + trial.diagnostic_cause;
                 }
             } catch (const std::exception& error) {
                 trial.message += "; " + std::string(error.what());
-                trial.evidence = "unresolved";
+                if (!trial.resolved_descent) trial.evidence = "unresolved";
                 if (recovery && !retry && !midpoint && !quotient && dynamic_cast<const CondensedRefusal*>(&error))
                     slots.push_back({report.trials.size(), start, seed});
             }
@@ -1766,7 +1901,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
         }
     }
     report.completed = !stopped;
-    if (stopped && !fast) report.message = "search-incomplete: trial budget exhausted";
+    if (stopped && !fast) report.message = reservoir && reservoir->restart.success
+        ? "vanished liquid split admitted" : "search-incomplete: trial budget exhausted";
     // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
     // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
     const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), undecided_trial);
@@ -2217,32 +2353,65 @@ StabilityReport recovery_stability(const CompiledSystem& input, const DriverLimi
 
 // ALG-STABILITY: can the declared vanished phase appear? The parent is the declaration without it, accepted only on
 // success; one explicit trial of its kind and declared support, its existing seeds, every solve charged to `limits`.
-StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_t phase, const DriverLimits& limits) {
+StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_t phase, const DriverLimits& limits,
+    const std::vector<double>& first, EquilibriumResult& result) {
     auto declaration = input.problem;
     const auto vanished = declaration.phases[phase];
     declaration.phases.erase(declaration.phases.begin() + static_cast<std::ptrdiff_t>(phase));
     const std::string kind = vanished.kind == PhaseKind::Vapor ? "vapor" : "liquid";
     StabilityReport report;
-    EquilibriumResult parent;  // also a failed parent's work
+    EquilibriumResult parent, restart;
+    const auto& z = input.model->parameters().charge_number;
+    const bool reactive_liquid = vanished.kind == PhaseKind::Liquid && input.has_reaction && input.problem.phases.size() == 2
+        && input.pinned_count == 0 && declaration.phases[0].kind == PhaseKind::Vapor
+        && std::any_of(vanished.support.begin(), vanished.support.end(), [&](auto i) { return z[i] != 0; });
     try {
+        if (reactive_liquid) {
+            const auto& support = declaration.phases[0].support;
+            if (!std::all_of(support.begin(), support.end(), [&](auto i) { return z[i] == 0; }))
+                throw std::invalid_argument("charged vapor reservoir unresolved");
+            for (const auto& reaction : declaration.reactions)
+                if (std::all_of(reaction.stoichiometry.begin(), reaction.stoichiometry.end(), [&](const double& coefficient) {
+                    const auto i = &coefficient - reaction.stoichiometry.data();
+                    return coefficient == 0.0 || std::binary_search(support.begin(), support.end(), i);
+                })) throw std::invalid_argument("retained vapor reactions unresolved");
+            declaration.reactions.clear();
+            declaration.source_reference.reset();
+            declaration.standard_gibbs_j_per_mol = input.standard_gibbs;
+        }
         const auto compiled = compile_problem(*input.model, declaration);
-        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits);
+        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, !reactive_liquid);
         if (!parent.success) throw std::runtime_error(parent.message);
         StabilityOptions options;
         options.trials = std::vector<PhaseSpec>{vanished};
-        report = test_snapshot(compiled, parent, options, {}, nullptr, &limits);
+        if (reactive_liquid) {
+            const auto& retry = result.vanished_composition;
+            const std::vector<double> distinct = first == retry ? std::vector<double>{} : retry;
+            Reservoir reservoir{input, phase, distinct, restart, {}};
+            std::vector<std::pair<PhaseSpec, std::vector<double>>> removed;
+            if (!first.empty()) removed.emplace_back(vanished, first);
+            std::vector<std::string> unsearched;
+            report = test_snapshot(compiled, parent, options, removed, &unsearched, &limits, false, nullptr, nullptr, &reservoir);
+            for (const auto& seed : unsearched) report.message += "; unsearched " + seed;
+        } else report = test_snapshot(compiled, parent, options, {}, nullptr, &limits);
         std::optional<double> raw;  // descending trials, or all when none descends or is unresolved; not clipped
         std::string support;
         for (const auto& t : report.trials) if (t.resolved_descent || report.no_descent_in_trial_set)
             raw = std::min(raw.value_or(t.quantities.at("tpd_over_rt")), t.quantities.at("tpd_over_rt"));
         for (const auto i : report.trials.empty() ? vanished.support : report.trials.front().phase.support) support += (support.empty() ? "" : ", ") + std::to_string(i);
-        report.message = report.no_descent_in_trial_set ? "no descent against " + kind + " trials of support {" + support
+        if (!restart.success) report.message = report.no_descent_in_trial_set ? "no descent against " + kind + " trials of support {" + support
                 + "} in this finite search: minimum TPD/RT = " + core::optional_number(raw) + "; not a stability certificate"
             : raw ? "a " + kind + " trial descends from the surviving declaration: TPD/RT = " + core::optional_number(raw)
             : kind + " trial search unresolved: " + report.message;
     } catch (const std::bad_alloc&) { throw; }
     catch (const std::exception& error) {  // before the first trial: the trials' own catches keep theirs
         report.message = (parent.success ? kind + " trial search unresolved: " : "surviving declaration unresolved: ") + error.what();
+    }
+    if (restart.success) {
+        restart.iterations = result.iterations;
+        restart.evaluations = result.evaluations;
+        restart.hessian_calls = result.hessian_calls;
+        result = std::move(restart);
     }
     count_driver(report.work, parent, "parent_declarations");
     core::retain_first(report.first_numerical_failure, parent.first_numerical_failure, true);
