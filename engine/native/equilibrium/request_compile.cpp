@@ -238,8 +238,8 @@ void admit_conditions(const CompiledSystem& compiled) {
 
 
 
-// Reaction-aware feed-relative pin admission: individual [0, 1] domain always; the exact
-// sum rules only when the declared reaction space conserves total moles.
+// Reaction-aware feed-relative pin admission: individual [0, 1] domain always; the sum
+// rules only when the declared reaction space conserves total moles.
 void admit_pins(CompiledSystem& compiled) {
     double pin_sum = 0.0;
     std::size_t pinned = 0;
@@ -253,11 +253,12 @@ void admit_pins(CompiledSystem& compiled) {
         ++pinned;
     }
     if (!compiled.conserves_total_moles || pinned == 0) return;
-    if (pin_sum > 1.0) {
+    const double tolerance = policy::COMPOSITION_SUM_TOLERANCE.value;
+    if (pin_sum - 1.0 > tolerance) {
         throw std::invalid_argument("pinned phase fractions exceed one: S_pin="
                                     + core::optional_number(pin_sum));
     }
-    if (pinned == compiled.problem.phases.size() && pin_sum != 1.0) {
+    if (pinned == compiled.problem.phases.size() && std::abs(pin_sum - 1.0) > tolerance) {
         throw std::invalid_argument("all-pinned phase fractions must sum to one: S_pin="
                                     + core::optional_number(pin_sum));
     }
