@@ -1810,7 +1810,8 @@ static EquilibriumResult run_driver_once(
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver, nlp->amount_limited(), declared.feasibility_cell(),
-            declared.problem.pressure.free, !declared.has_reaction && declared.problem.phases.size() > 1);
+            declared.problem.pressure.free, !declared.has_reaction && declared.problem.phases.size() > 1,
+            reporting.positive_liquid_restart);
         } catch (...) { nlp->publish_observations(result); capture_driver(*nlp, result, record, observations); throw; }
     }();
     if (!newton) {

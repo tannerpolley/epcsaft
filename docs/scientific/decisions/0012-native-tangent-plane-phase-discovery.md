@@ -242,6 +242,20 @@ solved. Every other declared solve, continuation, fitting and ASL keep zero tria
 work. [ALG-EQUILIBRIUM](../../../engine/docs/science/algorithms.md#neutral-recovery)
 owns the procedure, budget and accounting.
 
+## Vanished reactive liquid at fixed temperature and pressure
+
+[Issue #296](https://github.com/tannerpolley/epcsaft/issues/296) adopts the
+neutral vapor reservoir plane and signed transfer on the original reaction
+invariants. The bounded search covers two free phases with reachable neutral
+vapor inventories and no retained vapor reaction. The exact trial driver tests
+the original ionic liquid support. A returned endpoint that misses the liquid
+pressure-root window stays undecided. A finite balanced Gibbs decrease supplies
+a positive seed for the original split. Use the adaptive Ipopt barrier only in
+that restart, because the original barrier/filter steps drove the row 45 liquid
+toward zero before the balances closed. The shared driver and physical admission
+still decide the returned split. [ALG-STABILITY](../../../engine/docs/science/algorithms.md#alg-stability)
+owns the calculation.
+
 ## Addendum: optimizer end point kept over a displaced polish (2026-11-17, #49)
 
 The owner adopted this addendum on 2026-11-17. A negative tangent-plane distance at a feasible trial point is sufficient for descent (D9/D10). The trial polish solves interior stationarity rows and can move to a stationary point of another basin. An optimized trial therefore reports the optimizer's end point when the optimizer's exit is optimal, the polished point is not coincident with it (`PHASE_COINCIDENCE_DISTANCE`), its distance is negative and the polished distance is not lower. At any other optimizer exit the end point is not shown to be feasible, and the trial keeps its polished result. Rejected: a polish held on the optimizer's active bounds, which would leave unconverged the trials that converge below the composition box; a curvature test, which a displaced polish that reaches a different minimum would pass; a test of the polished distance's sign, which a polish reaching the parent's own composition can pass by rounding. Evidence: 64 of 3,644 trials on the Engine MEA reference with solvent-only permittivity, none of 3,939 with density–temperature permittivity; every recorded optimizer exit is optimal. The kept point is a finite-search witness of the declared model; it carries no claim that the trial phase is inside a permittivity correlation's fitted range.

@@ -18,3 +18,12 @@ The reaction stoichiometry, the R1 and R3 laws and the neutral reference come
 from the existing MEA declaration in `tests/native_inputs.py`. The document's
 `reaction_correlations` replace the R2, R4 and R5 coefficients using Amine's
 `shared_evaluation.py::_engine_reaction_records` conversions.
+
+`vanished-liquid.json` retains the 21 distinct inputs and the 36 original
+liquid-disappearance starts from the 72-state A7 replay in #286. The supplied
+composition seed comes from the 353.15 K, 45 kPa anchor. For rows 41, 45 and
+49, the packet gives the split from the sibling start and its Gibbs decrease
+against a closed vapor in the same reaction standards. The reduced Gibbs
+secants in the order 10⁻⁵ and 10⁻⁴ mol use the sibling liquid composition
+and inventory-balanced vapor withdrawal from the #296 diagnosis.
+[Reference replay and diagnosis](https://github.com/tannerpolley/epcsaft/issues/296)

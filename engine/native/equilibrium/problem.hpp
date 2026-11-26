@@ -1046,9 +1046,9 @@ EPC_API StabilityReport stability_test(const CompiledSystem&, const EquilibriumR
 EPC_API std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const CompiledSystem&);
 EPC_API EquilibriumResult discover_phases(const HelmholtzModel&, const EquilibriumProblem&);
 
-// Set only for an attempt whose declared failure is reported directly to a named caller.
 struct EquilibriumAttemptReporting final {
     const std::vector<std::string>* composition_bound_species = nullptr;
+    bool positive_liquid_restart = false;
 };
 EPC_API EquilibriumResult solve_equilibrium(
     const HelmholtzModel& model,

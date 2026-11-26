@@ -1577,7 +1577,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (previous.kind == phase.kind && previous.support == phase.support)
                     seeds.emplace_back("removed-phase", composition);
             if (reservoir) {
-                if (phase.declared_composition_guess) seeds.emplace_back("declared-liquid", phase.composition_guess);
+                if (phase.declared_composition_guess && !phase.composition_guess.empty()) seeds.emplace_back("declared-liquid", phase.composition_guess);
                 if (!reservoir->retry.empty()) seeds.emplace_back("physical-mol-liquid", reservoir->retry);
                 std::rotate(seeds.begin(), seeds.begin() + ordinary, seeds.end());
             }
@@ -1723,7 +1723,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     const auto root = declared_root(*c.model, at.temperature, at.pressure, trial.composition, PhaseKind::Liquid);
                     trial.quantities["liquid_root_residual"] = root.convergence.residual;
                     const double shift = trial.quantities["liquid_root_log_displacement"] = std::abs(std::log(volume * root.molar_density));
-                    if (!(shift <= policy::DENSITY_ANCHOR_LOG_WINDOW.value))
+                    if (!(shift <= policy::DENSITY_ANCHOR_LOG_WINDOW.value && root.convergence.residual <= root.convergence.criterion->value))
                         throw std::invalid_argument("trial endpoint outside its liquid pressure-root window");
                     volume = 1.0 / root.molar_density;
                     point.volume = volume;
@@ -1843,7 +1843,8 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     core::Scope restart("vanished_liquid_restart");
                     auto audit = structural_result(declared, restart);
                     auto seed = add_multipliers(declared, coordinates, &audit);
-                    auto split = continue_compiled(declared, {}, restart, limits, {}, false, audit, {}, std::move(seed));
+                    auto split = continue_compiled(declared, {}, restart, limits, {}, false, audit, {}, std::move(seed),
+                        {}, false, {.positive_liquid_restart = true});
                     count_driver(report.work, split, "vanished_liquid_restarts");
                     q["restart_residual"] = split.convergence.residual;
                     q["restart_liquid_amount_mol"] = split.success ? split.amounts[reservoir->liquid] : split.vanished_amount;
@@ -1863,6 +1864,9 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                         error += admitted.feasibility_estimate;
                         q["restart_delta_g_over_rt_mol"] = delta;
                         q["restart_error_over_rt_mol"] = error;
+                        const auto& liquid = admitted.physical.composition[reservoir->liquid];
+                        q["restart_liquid_tpd_over_rt"] = admitted.quantities[reservoir->liquid].at("g_over_rt")
+                            - std::inner_product(liquid.begin(), liquid.end(), report.plane_over_rt.begin(), 0.0);
                         if (descent_resolved(q.at("tpd_over_rt"), delta, error)) {
                             reservoir->restart = std::move(split);
                             stopped = true;
@@ -2371,10 +2375,12 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
             if (!std::all_of(support.begin(), support.end(), [&](auto i) { return z[i] == 0; }))
                 throw std::invalid_argument("charged vapor reservoir unresolved");
             for (const auto& reaction : declaration.reactions)
-                if (std::all_of(reaction.stoichiometry.begin(), reaction.stoichiometry.end(), [&](const double& coefficient) {
-                    const auto i = &coefficient - reaction.stoichiometry.data();
-                    return coefficient == 0.0 || std::binary_search(support.begin(), support.end(), i);
-                })) throw std::invalid_argument("retained vapor reactions unresolved");
+                if (std::count_if(reaction.stoichiometry.begin(), reaction.stoichiometry.end(), [](double v) { return v != 0.0; })
+                    == std::count_if(support.begin(), support.end(), [&](auto i) { return reaction.stoichiometry[i] != 0.0; }))
+                    throw std::invalid_argument("retained vapor reactions unresolved");
+            for (std::size_t i = 0; i < input.n_feed.size(); ++i)
+                if (input.n_feed[i] > 0.0 && !std::binary_search(support.begin(), support.end(), i))
+                    throw std::invalid_argument("feed outside neutral vapor support; vapor inventory reconstruction unresolved");
             declaration.reactions.clear();
             declaration.source_reference.reset();
             declaration.standard_gibbs_j_per_mol = input.standard_gibbs;

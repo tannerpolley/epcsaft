@@ -109,7 +109,7 @@ inline void observe_ipopt(IpoptDiagnostics& d, core::Scope* scope, const IpoptIt
 inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus> run_ipopt(
     const Ipopt::SmartPtr<Ipopt::TNLP>& nlp, double tolerance, int iterations,
     double seconds, bool exact, double objective_factor, std::map<std::string, double>* consumed = nullptr,
-    double requested_row = 0.0, const std::function<bool(double)>& warm = {}, std::string* solver = nullptr, bool amount_limited = false, bool feasibility = false, bool free_pressure = false, bool nonreacting_multiphase = false) {
+    double requested_row = 0.0, const std::function<bool(double)>& warm = {}, std::string* solver = nullptr, bool amount_limited = false, bool feasibility = false, bool free_pressure = false, bool nonreacting_multiphase = false, bool positive_liquid_restart = false) {
     const double dual_tolerance = tolerance * std::max(1.0, 1.0 / objective_factor);
     if (!(tolerance > 0.0) || !std::isfinite(tolerance) || !(dual_tolerance > 0.0) || !std::isfinite(dual_tolerance))
         throw std::invalid_argument("EQUILIBRIUM_ROW_RESIDUAL=" + core::optional_number(requested_row)
@@ -178,6 +178,7 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
         if (linear_solver() == "ma57") admit(options->SetStringValue("mu_strategy", free_pressure ? "adaptive" : "monotone"), "mu_strategy");
         else admit(options->SetStringValue("recalc_y", "yes"), "recalc_y");
     }
+    if (positive_liquid_restart) admit(options->SetStringValue("mu_strategy", "adaptive"), "mu_strategy");
     // Lock both triggers before Initialize reads a diagnostic file: rollback invalidates the saved amount base.
     if (amount_limited) for (const auto* name : {"watchdog_shortened_iter_trigger", "resto.watchdog_shortened_iter_trigger"})
         admit(options->SetIntegerValue(name, 0, false), name);
