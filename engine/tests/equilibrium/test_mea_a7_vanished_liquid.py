@@ -116,6 +116,16 @@ def test_a7_liquid_split_after_disappearance(
         assert result.objective == pytest.approx(cold.objective, abs=error, rel=0)
 
 
+def test_a7_seeded_optimizer_error(solve: Flash, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    start = solve(a7_flash(353.15, 25145.45289322468, 0.5), "cold")
+    options = tmp_path / "ipopt.opt"
+    options.write_text("diverging_iterates_tol 0.1\n")
+    monkeypatch.setenv("EPCSAFT_IPOPT_OPTIONS_FILE", str(options))
+    result = solve({"inputs": (353.15, 8381.817631074895, 5e7, 1e8, 7.929776437398854e8)}, start)
+    assert result.solver_status == "DIVERGING_ITERATES" and result.topology_phase == 0
+    assert not result.success and result.vanished_phase_stability is None
+
+
 def closed_vapor(report: _core.StabilityReport, case: dict[str, Any]) -> dict[str, float]:
     (vapor,) = report.present_phases
     assert vapor["volume_m3_per_mol"] > 0.0

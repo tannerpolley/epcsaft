@@ -1566,9 +1566,11 @@ For a reacting Gibbs declaration whose selected primary attempt is rejected by `
 
 For a public fixed-T/P flash, a failed physical-mol retry can leave the primary
 disappearance as the reported outcome when the surviving declaration closes
-and its finite trial set finds no descent. The report retains the retry
-diagnostics and work. See [ALG-STABILITY](#alg-stability) for trial and restart
-admission.
+and its finite trial set finds no descent. If the retry's disappearance stands
+and the phases differ, test the retry's phase when eligible and attach its
+report. Count the work of both searches. The result
+retains the retry diagnostics. See [ALG-STABILITY](#alg-stability) for trial
+and restart admission.
 
 The one Ipopt driver uses exact weighted Lagrangian curvature for every admitted
 specification, including pinned/free-intensive and incipient bubble/dew cases.
@@ -2179,9 +2181,10 @@ could have solved can be refused. The public flash can test a vanished declared 
 at fixed T and P, after the physical-mol retry. The surviving declaration
 must close before a trial on the vanished phase's support is tested.
 The vanished-vapor search uses the surviving liquid and its existing seeds.
-A previous-result start also permits vanished-liquid recovery in a failed
-public flash with disappearance evidence for a reacting ionic liquid and a
-surviving vapor. Continuation keeps its branch-following admission.
+A failed public flash with a previous-result start permits vanished-liquid
+recovery when the primary stop qualifies for a physical-mol retry and the
+phase evidence identifies a reacting ionic liquid and a surviving vapor.
+Continuation keeps its branch-following admission.
 
 For a vanished reacting ionic liquid with a neutral vapor, require a
 vapor-supported feed, unique vapor inventories, and no reaction carried

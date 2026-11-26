@@ -2696,16 +2696,18 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     // ALG-STABILITY: a vanished declared phase at fixed T and P is named from the surviving declaration under that
     // allowance. The reservoir may follow a conserved transfer to the declared split.
     const auto retry_phase = result.topology_event == TopologyEvent::PhaseDisappeared ? result.topology_phase : std::nullopt;
-    const auto phase = vanished_phase && (recover || reservoir_applicable(compiled, *vanished_phase))
-        ? vanished_phase : retry_phase;
-    if (!result.success && phase && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
-        && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty()
-        && (recover || (select_endpoint && start && !limits && reservoir_applicable(compiled, *phase)))) {
+    const auto can_test_phase = [&](std::size_t phase) {
+        return recover || (retry && select_endpoint && start && !limits && reservoir_applicable(compiled, phase));
+    };
+    const auto phase = vanished_phase && can_test_phase(*vanished_phase) ? vanished_phase : retry_phase;
+    const auto test_vanished_phase = [&](std::size_t trial_phase) {
         auto probe = allowance();
-        auto report = vanished_phase_stability(compiled, *phase, probe, vanished, result);
+        auto report = vanished_phase_stability(compiled, trial_phase, probe,
+            trial_phase == vanished_phase ? vanished : std::vector<double>{}, result);
         if (limits) limits->consumed += probe.consumed;
-        if (!result.success && primary_disappearance && phase == vanished_phase && phase != retry_phase
-            && report.no_descent_in_trial_set) {
+        const bool restore_primary = !result.success && primary_disappearance && trial_phase == vanished_phase
+            && trial_phase != retry_phase && report.no_descent_in_trial_set;
+        if (restore_primary) {
             auto& primary = *primary_disappearance;
             primary.iterations = result.iterations;
             primary.evaluations = result.evaluations;
@@ -2720,8 +2722,19 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
         result.iterations += static_cast<std::size_t>(w["iterations"] + w["trial_tangent_plane_iterations"]);
         result.evaluations += static_cast<std::size_t>(w["evaluations"] + w["trial_tangent_plane_evaluations"]);
         result.hessian_calls += static_cast<std::size_t>(w["hessian_calls"] + w["trial_tangent_plane_hessian_evaluations"]);
-        result.message += "; " + report.message;
-        result.vanished_phase_stability = std::make_shared<const StabilityReport>(std::move(report));
+        const bool selected_report = result.success || restore_primary || !retry_phase || trial_phase == retry_phase;
+        if (selected_report) {
+            result.message += "; " + report.message;
+            result.vanished_phase_stability = std::make_shared<const StabilityReport>(std::move(report));
+        } else {
+            result.message += "; trial search for " + compiled.problem.phases[trial_phase].name + ": " + report.message;
+        }
+        return selected_report;
+    };
+    if (!result.success && phase && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
+        && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty() && can_test_phase(*phase)) {
+        if (!test_vanished_phase(*phase) && retry_phase && can_test_phase(*retry_phase))
+            test_vanished_phase(*retry_phase);
     }
     if (result.success || !recover || one_component_two_density_eligible(compiled) || admission_refused || (limits && (limits->expired() || limits->iterations_spent()))
         || !recovery_eligible(compiled) || result.retry != Retry::Source) return selected(std::move(result), limits);
