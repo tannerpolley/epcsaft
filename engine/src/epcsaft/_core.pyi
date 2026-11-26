@@ -6188,7 +6188,7 @@ class SaturationNode:
     action_diagnostics: Optional[SolvedStateActionDiagnostics]
 
 class SaturationSearch:
-    """Finite grid/search evidence; unique within the declared search, without interval or global certification."""
+    """Finite grid search evidence for the declared interval or the prefix required by a source cap."""
     grid: list[float]
     nodes: list[SaturationNode]
     rejected_starts: list[SaturationNode]

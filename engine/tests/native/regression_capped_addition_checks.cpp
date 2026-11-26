@@ -41,7 +41,7 @@ void check_saturation_capped_addition() {
               field("cap_mol_per_mol", row.loading_cap),
               field("search_iterations", center.saturation->iterations)});
   agree("capped-addition/loading", "saturation_loading", "mol_CO2/mol_MEA",
-        *center.saturation_loading, 1.0175305291914531, 1e-8, 0, inputs);
+        *center.saturation_loading, 1.0175305291914531, 1e-10, 0, inputs);
   agree("capped-addition/endpoint", "endpoint_loading", "mol_CO2/mol_MEA",
         alpha, *center.saturation_loading, 0, 0, inputs);
 
@@ -59,23 +59,39 @@ void check_saturation_capped_addition() {
   CHECK(sequence.evaluate({0.001}, true, next));
   CHECK(fresh.evaluate({0.001}, true, independent));
   const auto& nodes = next.saturation_predictions[0]->saturation->nodes;
-  CHECK(nodes.back().prior_start == "accepted");
+  CHECK(nodes.back().loading == 1.1);
   CHECK(nodes.front().state.model_identity == first.saturation_predictions[0]->saturation->nodes.front().state.model_identity);
   CHECK(std::abs(next.predictions[0] / independent.predictions[0] - 1) <= 1e-12);
   CHECK(std::abs(next.residual_optimizer_gradient[0] / independent.residual_optimizer_gradient[0] - 1) <= 1e-12);
 
-  // The dilute node is a poor start for the last loading. The ordinary continuation must still recover it.
-  auto displaced = center;
-  displaced.saturation = std::make_shared<SaturationSearch>(*center.saturation);
-  displaced.saturation->nodes.back().state = low.nodes.front().state;
-  const auto recovered = predict(model, row, {}, {}, nullptr, &displaced);
-  CHECK(recovered.value && recovered.saturation->events == center.saturation->events);
-  CHECK(std::abs(*recovered.value / *center.value - 1) <= 1e-12);
+  auto capped = row;
+  capped.loading_cap = 0.035;
+  capped.loading_bounds[0] = 0.001;
+  capped.loading_grid.insert(capped.loading_grid.begin(), {0.001, 0.01});
+  const auto source = predict(model, capped);
+  CHECK(source.status == ObservationStatus::Available && source.value);
+  CHECK(source.cap_branch == "source_cap" && !source.saturation_loading);
+  CHECK(source.endpoint_loading == capped.loading_cap && source.saturation->nodes.back().loading == 0.05);
+  auto fixed = row;
+  fixed.kind = ObservationKind::AdditionEnthalpy;
+  fixed.feed_amount = row.basis_amount * capped.loading_cap;
+  fixed.final_problem = fixed.problem;
+  fixed.final_problem.feed.values[0] += fixed.feed_amount;
+  const auto reference_cap = predict(model, fixed);
+  CHECK(reference_cap.value == source.value);
+  const auto derivative = differentiate_group(model, {&capped}, source, coordinates).front();
+  CHECK(derivative.status == ObservationStatus::Available);
+  CHECK(derivative.value == differentiate_group(model, {&fixed}, reference_cap, coordinates).front().value);
+
+  capped.loading_grid = {0.001, 0.6};
+  capped.loading_bounds = {0.001, 0.6};
+  capped.loading_cap = 0.6;
+  const auto recovered = predict(model, capped);
+  CHECK(recovered.status == ObservationStatus::Available && recovered.endpoint_loading == 0.6);
   CHECK(recovered.saturation->rejected_starts.size() == 1);
   const auto& rejected = recovered.saturation->rejected_starts.front();
-  const auto& retried = recovered.saturation->nodes.back();
-  CHECK(rejected.loading == retried.loading && rejected.driver_attempts > 0 && retried.driver_attempts > 0);
-  CHECK(retried.prior_start.find("fallback:") == 0 && rejected.prior_start == retried.prior_start);
+  CHECK(rejected.loading == 0.6 && !rejected.state.success);
+  CHECK(recovered.saturation->nodes.back().state.success);
 
   auto bubble = row.final_problem;
   bubble.feed.values = row.problem.feed.values;
@@ -160,9 +176,7 @@ void check_saturation_capped_addition() {
         const auto continued = predict(perturbed, row, {}, {}, nullptr, &center);
         CHECK(continued.value && continued.cap_branch == prediction.cap_branch);
         CHECK(continued.saturation->events == prediction.saturation->events);
-        CHECK(continued.saturation->nodes.size() == row.loading_grid.size());
-        CHECK(std::any_of(continued.saturation->nodes.begin(), continued.saturation->nodes.end(),
-                          [](const auto& node) { return node.prior_start == "accepted"; }));
+        CHECK(continued.saturation->nodes.back().loading == 1.1);
         CHECK(std::abs(*continued.value / *prediction.value - 1) <= 1e-12);
       }
       const auto compiled =

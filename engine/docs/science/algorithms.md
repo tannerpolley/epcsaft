@@ -1934,15 +1934,11 @@ and [pure stoichiometric solids](#pure-stoichiometric-solids).
 The saturation-loading search declares a positive increasing grid with
 both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
-element potentials initialized anew. At a fit point that meets the parameter-nearness criterion, the preceding admitted
-search can supply a start at the same loading once ordinary continuation has passed
-the first pressure event and established its correction seed. Each node records whether
-that start passed the current model’s solve, uncertainty and sampled slope
-checks, including the pressure increment from the preceding node. The search
-retains a rejected node and retries with the ordinary grid start within the
-remaining budget. Trials with identical EOS parameter values, including held
-diameters, can retain the immutable model’s reference series and derivative
-tapes while fitting new reaction coefficients.
+element potentials initialized anew. For a saturation-capped addition, a failed
+node started from its predecessor is retained and the same declared node is
+solved cold within the remaining work allowance. Fit trials with identical EOS
+parameters can retain the model’s reference series and derivative tapes while
+fitting new reaction coefficients.
 Native pressure estimates resolve signs; native exact feed actions and the
 augmented defining-row loading projection establish sampled local regularity.
 Each strict sign bracket or pressure-uncertain node event receives one bounded
@@ -1957,7 +1953,20 @@ estimates and zero comparison allowance. Every pair in a duplicate group must
 agree; multiple strict brackets refuse independently of candidate deduplication.
 Candidate corrections/comparisons precede the sampled slope audit. All nodes
 and required events must be examined, with one admitted root group and no
-refusal, before publication. “Unique within the declared search” excludes
+refusal, before publication of a full-interval root. A capped addition examines nodes
+through the first pressure event or the first loading at or above its source
+cap. With no event through the cap, the endpoint is the source cap and the
+saturation loading is unavailable. A sampled slope reversal is relevant to this
+decision in a cell that brackets the target or when a participating node’s
+pressure interval includes the target. For two resolved pressures below target,
+a positive left slope and a negative right slope indicate an interior maximum.
+Its pressure estimate is the intersection of the two endpoint tangents. With
+pressure mismatches $r_L,r_R<0$, exact loading slopes $s_L>0>s_R$ and cell
+width $h$, the estimate reaches the target when $-r_L/s_L+r_R/s_R\le h$.
+Equality also refuses the row with `unresolved_slope_reversal`. The tangents
+bound the pressure from above throughout a concave cell. In a cell with an
+inflection their intersection supplies only a screening estimate.
+“Unique within the declared search” excludes
 between-node and undiscovered-branch claims. EqID `finite_addition_enthalpy`
 owns the heat, moving denominator and switch derivative.
 

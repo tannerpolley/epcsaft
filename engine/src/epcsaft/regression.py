@@ -673,8 +673,9 @@ def saturation_capped_addition_enthalpy(parameters: Parameters, initial: Problem
     -----
     The grid and successive native seeds define a finite search. Unsampled
     tangencies, paired crossings or multiple roots within a cell, turns between
-    nodes and undiscovered branches can escape detection. Availability means
-    unique within the declared search. At an exact cap switch the classical
+    nodes and undiscovered branches can escape detection. The search stops at
+    the first detected crossing or the first node reaching the cap. Without
+    a crossing through the cap, only the source loading is known. At an exact cap switch the classical
     gradient is unavailable. Native results retain search and action causes.
     """
     result = addition_enthalpy(parameters, initial, bubble, feed, basis_amount, T, P,
