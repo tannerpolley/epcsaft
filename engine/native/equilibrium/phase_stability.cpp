@@ -1132,7 +1132,7 @@ void donor_descent(const CompiledSystem& c, const Candidate& candidate, Stabilit
             }
         }
         const auto moiety_error = matvec(reservoir ? reservoir->system.B : c.B, error);
-        split["component_error_mol"] = inventory_error;
+        if (!reservoir) split["component_error_mol"] = inventory_error;
         split["moiety_error_mol"] = maximum_abs(moiety_error);
         split["normalization_residual"] = sum - 1.0; split["charge_residual"] = charge;
         if (std::abs(sum - 1.0) > policy::COMPOSITION_SUM_TOLERANCE.value || std::abs(charge) > policy::COMPOSITION_SUM_TOLERANCE.value
@@ -1577,7 +1577,11 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (previous.kind == phase.kind && previous.support == phase.support)
                     seeds.emplace_back("removed-phase", composition);
             if (reservoir) {
-                if (phase.declared_composition_guess && !phase.composition_guess.empty()) seeds.emplace_back("declared-liquid", phase.composition_guess);
+                if (phase.declared_composition_guess && !phase.composition_guess.empty()) {
+                    std::vector<double> guess(z.size());
+                    for (std::size_t j = 0; j < phase.support.size(); ++j) guess[phase.support[j]] = phase.composition_guess[j];
+                    seeds.emplace_back("declared-liquid", std::move(guess));
+                }
                 if (!reservoir->retry.empty()) seeds.emplace_back("physical-mol-liquid", reservoir->retry);
                 std::rotate(seeds.begin(), seeds.begin() + ordinary, seeds.end());
             }
@@ -2355,6 +2359,14 @@ StabilityReport recovery_stability(const CompiledSystem& input, const DriverLimi
     return report;
 }
 
+bool reservoir_applicable(const CompiledSystem& input, std::size_t phase) {
+    if (!input.has_reaction || input.problem.phases.size() != 2 || input.pinned_count != 0) return false;
+    const auto& phases = input.problem.phases;
+    const auto& z = input.model->parameters().charge_number;
+    return phases[phase].kind == PhaseKind::Liquid && phases[1 - phase].kind == PhaseKind::Vapor
+        && std::any_of(phases[phase].support.begin(), phases[phase].support.end(), [&](auto i) { return z[i] != 0; });
+}
+
 // ALG-STABILITY: can the declared vanished phase appear? The parent is the declaration without it, accepted only on
 // success; one explicit trial of its kind and declared support, its existing seeds, every solve charged to `limits`.
 StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_t phase, const DriverLimits& limits,
@@ -2366,11 +2378,9 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
     StabilityReport report;
     EquilibriumResult parent, restart;
     const auto& z = input.model->parameters().charge_number;
-    const bool reservoir_applicable = vanished.kind == PhaseKind::Liquid && input.has_reaction && input.problem.phases.size() == 2
-        && input.pinned_count == 0 && declaration.phases[0].kind == PhaseKind::Vapor
-        && std::any_of(vanished.support.begin(), vanished.support.end(), [&](auto i) { return z[i] != 0; });
+    const bool use_reservoir = reservoir_applicable(input, phase);
     try {
-        if (reservoir_applicable) {
+        if (use_reservoir) {
             const auto& support = declaration.phases[0].support;
             if (!std::all_of(support.begin(), support.end(), [&](auto i) { return z[i] == 0; }))
                 throw std::invalid_argument("charged vapor reservoir unresolved");
@@ -2386,11 +2396,11 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
             declaration.standard_gibbs_j_per_mol = input.standard_gibbs;
         }
         const auto compiled = compile_problem(*input.model, declaration);
-        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, !reservoir_applicable);
+        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, !use_reservoir);
         if (!parent.success) throw std::runtime_error(parent.message);
         StabilityOptions options;
         options.trials = std::vector<PhaseSpec>{vanished};
-        if (reservoir_applicable) {
+        if (use_reservoir) {
             const auto& retry = result.vanished_composition;
             const std::vector<double> distinct = first == retry ? std::vector<double>{} : retry;
             Reservoir reservoir{input, phase, distinct, restart, {}};

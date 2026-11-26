@@ -101,6 +101,7 @@ def test_a7_vanished_liquid_split(row: str, solve: Flash, evidence: Any) -> None
     q = witness.quantities
     transfer = witness.split_checks[-1]
     assert transfer["beta_mol"] > 0 and transfer["admitted"] == 1
+    assert "component_error_mol" not in transfer
     assert transfer["moiety_error_mol"] <= TOLERANCES["ADDITION_MATERIAL_BALANCE"] * vapor["amount_mol"]
     assert transfer["delta_g_over_rt"] < -transfer["error_estimate_over_rt"]
     assert q["restart_residual"] <= ROW_CRITERION
@@ -144,11 +145,14 @@ def test_a7_vanished_liquid_trials(row: str, start: str, solve: Flash, evidence:
     else:
         assert not result.success and not result.amounts
         assert report.descent in ("no_witness", "undecided")
+        required = {"positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2"}
+        assert required <= {trial.seed for trial in report.trials}
         if report.descent == "undecided":
             assert report.undecided
             assert all("liquid pressure-root window" in report.trials[i].message for i in report.undecided)
         else:
             assert report.no_descent_in_trial_set
+            assert len(admitted) == len(report.trials)
     evidence.observe(f"A7/{row}/{start}", vapor=vapor, outcome=report.descent, work=report.work,
                      trials=[{"seed": t.seed, "outcome": t.evidence, "message": t.message,
                               "quantities": t.quantities, "transfers": t.split_checks} for t in report.trials])
