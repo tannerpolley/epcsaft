@@ -6,9 +6,9 @@ import pytest
 
 from epcsaft import (
     Mixture, ParameterActionDirection, ParameterError, ParameterFamily, Parameters, PressureActionDirection, Pure, _core,
-    regression,
+    WorkLimit, regression,
 )
-from epcsaft.equilibrium import Amounts, Continuation, Discover, Phase, Problem, asl_record, solve_equilibrium
+from epcsaft.equilibrium import Amounts, Continuation, Discover, EquilibriumWorkLimits, Phase, Problem, asl_record, solve_equilibrium
 
 from tests.native_inputs import ETHANE, ROWS, bubble, budget, aqueous_electrolyte, associating_binary, p3_forms, parameters, record, same, surface_model
 
@@ -72,6 +72,21 @@ def test_saturation_capped_prediction() -> None:
     assert search.candidates[search.accepted].state.success
     assert all(node.action_diagnostics is not None for node in search.nodes)
     assert prediction.endpoint_loading == pytest.approx(0.25, rel=1e-10)
+    assert prediction.solved is not None and prediction.final_solved is not None
+    assert prediction.component_ids == list(model.component_ids)
+    assert prediction.solved.attempt in (_core.Attempt.Cold, _core.Attempt.Newton, _core.Attempt.PhysicalAmounts)
+    liquid = Problem(T=liquid.T, P=pressure, feed=liquid.feed, phases=[Phase("L", kind="liquid", support=model.component_ids)])
+    with_support = regression.saturation_capped_addition_enthalpy(
+        model.parameters, liquid, boundary, {"s1": 1.0}, basis_amount=1.0, loading_cap=0.4,
+        loading_bounds=(0.1, 0.4), loading_grid=[0.1, 0.2, 0.3, 0.4], T=353.15, P=pressure,
+        phase="liquid", observed=0.0, form="difference", scale=1.0,
+    )
+    restarted = regression.predict(model, with_support, start=prediction)
+    assert restarted.value == pytest.approx(prediction.value, rel=1e-10)
+    refused = regression.predict(model, row, work_limits=EquilibriumWorkLimits(seconds=0))
+    assert refused.refused_operation == regression.RefusedOperation.loading_search
+    assert refused.refusal_convergence is not None and refused.refusal_convergence.limit == WorkLimit.deadline
+    assert math.isnan(refused.refusal_convergence.residual) and refused.refusal_convergence.criterion is None
 
 
 def coordinates(start: Any) -> list[Any]:

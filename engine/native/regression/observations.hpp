@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+namespace epcsaft::equilibrium { struct EquilibriumWorkLimits; }
+
 namespace epcsaft::regression {
 
 // The built-in observation inventory. Values come from the shared owners only:
@@ -122,6 +124,8 @@ struct Prediction final {
     ObservationStatus status = ObservationStatus::Nonfinite;
     std::string message;
     std::optional<double> residual;  // the declared form, unweighted
+    std::vector<std::string> component_ids;
+    std::optional<equilibrium::RefusedOperation> refused_operation;
     std::optional<core::Convergence> convergence, refusal_convergence;  // the latter belongs to a blocking operation
     std::optional<core::Convergence> first_numerical_failure;
     // Pressure closure: the branch the closure resolved (Unspecified when one stable root exists) and the count.
@@ -199,10 +203,12 @@ EPC_API Prediction predict(
     const Prediction* previous = nullptr, const HelmholtzModel* previous_model = nullptr,
     bool same_parameters = false,
     std::chrono::steady_clock::time_point deadline = std::chrono::steady_clock::time_point::max(),
-    const std::vector<const Observation*>& admission = {}, bool recover_bubble = false
+    const std::vector<const Observation*>& admission = {}, bool recover_bubble = false,
+    const Prediction* earlier = nullptr, const equilibrium::DriverLimits* limits = nullptr
 );
 EPC_API Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
-    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied = {});
+    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied = {}, const Prediction* start = nullptr,
+    const equilibrium::EquilibriumWorkLimits* limits = nullptr, std::vector<std::string> component_ids = {});
 EPC_API PredictionGradient differentiate(
     const HelmholtzModel& model, const Observation& observation, const Prediction& prediction
 );

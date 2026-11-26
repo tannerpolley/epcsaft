@@ -31,6 +31,63 @@ void check_reactive_cp() {
         ob.form=ResidualForm::Difference;ob.scale=1;const auto p=predict(truth_model,ob);
         CHECK(p.status==ObservationStatus::Available&&p.value);ob.observed=*p.value;request.observations.push_back(ob);
     }
+    {
+        using namespace epcsaft::equilibrium;
+        using Limit = core::WorkLimit;
+        const auto& row = request.observations[2];
+        const std::vector<std::string> ids{"A", "B"};
+        const auto base = predict_validated(truth_model, row, {}, nullptr, nullptr, ids);
+        CHECK(base.solved && base.value);
+        const auto same = predict_validated(truth_model, row, {}, &base, nullptr, ids);
+        CHECK(same.value && std::abs(*same.value / *base.value - 1) <= 1e-10);
+        EquilibriumWorkLimits limits;
+        limits.attempt_iterations = 1;
+        const auto polished = predict_validated(truth_model, row, {}, nullptr, &limits);
+        CHECK(polished.value && polished.solved && polished.solved->iterations == 1
+            && polished.solved->attempt == Attempt::Cold && !polished.refusal_convergence
+            && std::abs(*polished.value / *base.value - 1) <= 1e-10);
+        limits.attempt_iterations = 800;
+        const auto larger = predict_validated(truth_model, row, {}, nullptr, &limits);
+        CHECK(larger.solved && larger.solved->solver_settings.at("max_iter") == 800 && larger.value == base.value);
+        limits = {}; limits.seconds = 0;
+        check_prediction_limit(predict_validated(truth_model, row, {}, nullptr, &limits),
+            RefusedOperation::central_solve, Limit::deadline, false);
+        const auto no_calorics = predict_validated(HelmholtzModel(request.parameters), row);
+        CHECK(no_calorics.status == ObservationStatus::ThermochemistryUnavailable
+            && no_calorics.refused_operation == RefusedOperation::thermochemistry && no_calorics.refusal_convergence
+            && std::isnan(no_calorics.refusal_convergence->residual) && !no_calorics.refusal_convergence->criterion);
+        auto changed = row;
+        changed.problem.reactions[0].correlation->b = 220;
+        CHECK(!same_reaction(row.problem.reactions[0], changed.problem.reactions[0]));
+        auto parameters = request.parameters; parameters.dispersion_energy_over_k = {195.25, 195.25};
+        const HelmholtzModel other(parameters, request.coordinates.active_parameters(), request.thermochemistry);
+        const auto cold = predict_validated(other, changed);
+        const auto started = predict_validated(other, changed, {}, &base, nullptr, ids);
+        CHECK(cold.value && started.value && std::abs(*cold.value / *started.value - 1) <= 1e-10
+            && started.solved->attempt != Attempt::PhysicalAmounts);
+        auto reject = [&](const Observation& item, const Prediction& seed, const auto& components) {
+            IpoptLog log;
+            CHECK(recording_support::refusal([&] { (void)predict_validated(other, item, {}, &seed, nullptr, components); })
+                .find("start:") == 0 && log.rows.empty());
+        };
+        reject(changed, base, std::vector<std::string>{"B", "A"});
+        auto unavailable = base; unavailable.status = ObservationStatus::CentralSolveUnavailable;
+        reject(changed, unavailable, ids);
+        auto zero = base; zero.solved->mole_fractions.front() = 0;
+        reject(changed, zero, ids);
+        auto altered = base;
+        auto declaration = *base.solved->declaration;
+        for (auto change : {0, 1, 2, 3, 4}) {
+            auto incompatible = declaration;
+            if (change == 0) incompatible.feed.values.front() *= 2;
+            if (change == 1) incompatible.temperature.value += 1;
+            if (change == 2) incompatible.reactions[0].stoichiometry.front() -= 1;
+            if (change == 3) incompatible.reactions[0].reference->reference_pressure_pa = 3e6;
+            if (change == 4) incompatible.phases[0].support.front() = incompatible.phases[0].support.back();
+            altered.solved->declaration = std::make_shared<EquilibriumProblem>(std::move(incompatible));
+            reject(changed, altered, ids);
+        }
+    }
     request.weights.assign(5,1);request.parameters.dispersion_energy_over_k={195.25,195.25};
     for(auto& ob:request.observations) ob.problem.reactions[0].correlation->b=220;
     const auto start=request.coordinates.start(request.parameters,request.observations,request.thermochemistry);

@@ -1615,8 +1615,13 @@ Both the inner target and its feed-scaled dual target must be finite and positiv
 an unrepresentable combined request is rejected before Ipopt initialization.
 The result's `solver_settings` reports consumed `tol`, `acceptable_tol`,
 `constr_viol_tol`, `dual_inf_tol` and `bound_push` after any diagnostic file is read.
-Newton-only results have no consumed Ipopt settings. No starts, bounds,
-barrier settings, complementarity tolerance or iteration budget change.
+The same record reports the effective `max_iter` when an optimizer run is
+made. Newton-only results have no consumed Ipopt settings. The per-run cap is
+`EQUILIBRIUM_MAX_ITERATIONS` (200) by default. An explicit prediction
+`attempt_iterations` replaces this cap, subject to the remaining shared
+iteration allowance. Smaller caps of internal seed and trial operations
+remain in force. The final classified rows still govern admission after
+polish, including when Ipopt reached its cap.
 A caller-valued criterion is owned
 by the convergence record so copies into results, traces and exceptions keep
 it alive. The result reports `requested_tolerance_met` exactly as recomputed
@@ -1969,7 +1974,12 @@ both interval endpoints. It solves ordinary free-pressure bubble nodes in order,
 starting cold and then carrying the preceding admitted physical state with
 element potentials initialized anew. For a saturation-capped addition, a failed
 node started from its predecessor is retained and the same declared node is
-solved cold within the remaining work allowance. Fit trials with identical EOS
+solved cold within the remaining work allowance. With an earlier prediction,
+a visited node starts from the earlier solved state at the same loading,
+including at the first node. If that started solve is refused, the cold
+re-solve and its rejected predecessor both spend the same search allowance.
+The node's `prior_start` identifies its seed and `state.attempt` identifies
+the attempt that supplied its result. Fit trials with identical EOS
 parameters can retain the model’s reference series and derivative tapes while
 fitting new reaction coefficients.
 Native pressure estimates resolve signs; native exact feed actions and the
@@ -3469,6 +3479,35 @@ selects native constrained estimation; a failed least-squares check never select
 it automatically. The same native sequence owns declared starts and shared
 iteration/elapsed budgets for both methods.
 
+`regression.predict` accepts an optional `start` and `EquilibriumWorkLimits`
+for bubble pressure, reacting heat capacity and saturation-capped heat.
+A start uses the solved physical state from an available earlier
+prediction. Component order, phase layout and effective supports, feed,
+fixed intensives and reaction structure must match. EOS parameters and
+fitted reaction coefficients may change. Prescribed-liquid starts require
+the same model. A capped search also requires an identical loading
+definition, pressure target, cap and grid. The earlier search seeds its
+corresponding nodes, and the earlier initial endpoint seeds the initial
+solve. A source-capped final endpoint uses the earlier final state when its
+declaration matches. Source recovery is skipped for a supplied start.
+
+The explicit iteration total is shared by central, search, recovery and
+endpoint solves. Search and recovery evaluation and Hessian allowances are
+four and two times the remaining declared total, respectively. Without a
+declared total, their existing local allowances apply. The accepted
+saturation candidate also supplies the final endpoint when saturation caps
+the row. The deadline in `seconds` bounds equilibrium solves. Final
+projection, solved-state actions and the feed density closure can finish
+after that deadline. `attempts` and `attempt_seconds` are unsupported here.
+
+The returned prediction holds the solved state and, for capped heat, the
+final state and search. Worker replies retain refusal records and search
+evidence. Predictions from a fit result may lack the states needed as a
+start. Incompatible starts and invalid declarations raise `ParameterError`.
+An existing `EosError` or `ConvergenceError` raised during prevalidation,
+compilation outside a solve handler, or projection still crosses the
+Python boundary.
+
 A `Stability` observation declares a liquid parent and Full optimized
 `StabilityOptions`, with a zero target, Difference form, positive dimensionless
 scale and positive caller weight. Its Ceres residual is
@@ -3709,6 +3748,38 @@ A specific publication refusal takes precedence over the composition-bound
 diagnostic.
 
 ### Diagnose an observed refusal
+
+For bubble-pressure, reacting heat-capacity and saturation-capped addition
+predictions, `refused_operation` identifies the blocking operation and
+`refusal_convergence` gives its operands. A record without a measured
+residual carries NaN and no criterion. Where a work gate denied the
+refused operation, `limit` identifies that gate.
+
+| Limit | Work denied |
+|---|---|
+| `deadline` | Equilibrium solve deadline |
+| `iterations` | Shared iteration allowance |
+| `attempt_iterations` | Ipopt cap of one run |
+| `evaluations` | Recovery or loading-search evaluation allowance |
+| `hessian_calls` | Recovery or loading-search Hessian callback allowance |
+| `attempts` | Loading-search attempt allowance |
+| `recovery_path` | Source continuation's own work allowance |
+| `none` | No such gate recorded for the operation |
+
+A gate denial identifies the work that was refused. Whether the row can
+converge is determined by the retry. The density closure owns its own
+iteration maximum. Read either a named `limit` or `stop == budget_exhausted`
+as a budget termination. A density closure with a measured stalled rate
+keeps that numerical stop. A density bracket whose residual meets the
+criterion while the bracket remains open can raise a runtime error with
+no operands attached.
+
+The solved-state action refusal record uses its own classified residual
+and binding row tolerance, or the coefficient's backward error and its
+limit. The forward-error refusal has `stop == ill_conditioned` and records
+the bound $2\,\mathrm{cond}_\infty(RJC)\,\eta_k$ and its limit. The
+classified-row action gate has no floor. The central solve's convergence
+record and the action diagnostics retain the central floor separately.
 
 The first numerical refusal and final convergence answer different questions.
 A successful substitution, cold replacement or polish can retain a rejected

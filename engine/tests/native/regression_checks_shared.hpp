@@ -41,6 +41,27 @@ using recording_support::field;
 using recording_support::fields;
 using recording_support::number;
 
+struct IpoptLog {
+    std::vector<equilibrium::IpoptIterationRecord> rows;
+    IpoptLog() { equilibrium::ipopt_iteration_log() = &rows; }
+    ~IpoptLog() { equilibrium::ipopt_iteration_log() = nullptr; }
+    std::size_t iterations() const {
+        std::size_t total = 0;
+        for (std::size_t i = 0; i < rows.size(); ++i)
+            if (i + 1 == rows.size() || rows[i].run != rows[i + 1].run) total += rows[i].iteration.iteration;
+        return total;
+    }
+};
+
+inline void check_prediction_limit(const Prediction& prediction, equilibrium::RefusedOperation operation,
+    core::WorkLimit limit, bool measured) {
+    CHECK(prediction.status != ObservationStatus::Available && prediction.refused_operation == operation
+        && prediction.refusal_convergence && prediction.refusal_convergence->limit == limit);
+    const auto& record = *prediction.refusal_convergence;
+    if (measured) CHECK(record.criterion && std::isfinite(record.residual) && record.residual > record.criterion->value);
+    else CHECK(std::isnan(record.residual));
+}
+
 constexpr double EPS = std::numeric_limits<double>::epsilon();
 // The work budget every fit in this program runs under; FitControls has no default budget.
 inline FitControls budgeted_controls() {

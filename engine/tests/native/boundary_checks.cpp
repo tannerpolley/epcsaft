@@ -538,6 +538,9 @@ void check_s15c() {
     const auto ordinary = epcsaft::equilibrium::solve_compiled(epcsaft::equilibrium::compile_problem(model, problem));
     CHECK(result.message.rfind(ordinary.message + "; recovery: ", 0) == 0);
     CHECK(result.message.find("phases_coalesced") != std::string::npos);
+    auto work = RECOVERY_CAPS;
+    const auto refused = epcsaft::equilibrium::recover_from_source(epcsaft::equilibrium::compile_problem(model, problem), work);
+    CHECK(!refused.success && !work.exhausted && work.refused == epcsaft::core::WorkLimit::none);
     CHECK(result.iterations > ordinary.iterations && result.iterations - ordinary.iterations <= RECOVERY_CAPS.iterations);
     CHECK(result.evaluations > ordinary.evaluations && result.evaluations - ordinary.evaluations <= RECOVERY_CAPS.evaluation_cap);
     CHECK(result.hessian_calls > ordinary.hessian_calls && result.hessian_calls - ordinary.hessian_calls <= RECOVERY_CAPS.hessian_cap);
@@ -1053,18 +1056,32 @@ void check_recovery() {
     bool exhausted = reached.success && public_dew.success && public_dew.pressure == reached.pressure
         && public_dew.iterations == ordinary.iterations + full.consumed && public_dew.evaluations == ordinary.evaluations + full.evaluations
         && public_dew.hessian_calls == ordinary.hessian_calls + full.hessian_calls;
+    using Limit = epcsaft::core::WorkLimit;
     std::vector<double> spent;
-    for (int cut = 0; cut < 3; ++cut) {
-        auto l = limits(cut == 0 ? full.consumed / 2 : RECOVERY_CAPS.iterations, cut == 1 ? full.evaluations / 2 : RECOVERY_CAPS.evaluation_cap,
-            cut == 2 ? full.hessian_calls / 2 : RECOVERY_CAPS.hessian_cap, never);
+    std::size_t hessian_half_attempts = 0;
+    for (int cut = 0; cut < 3; ++cut) for (std::size_t quarter : {1, 2, 3}) {
+        auto l = limits(cut == 0 ? full.consumed * quarter / 4 : RECOVERY_CAPS.iterations,
+            cut == 1 ? full.evaluations * quarter / 4 : RECOVERY_CAPS.evaluation_cap,
+            cut == 2 ? full.hessian_calls * quarter / 4 : RECOVERY_CAPS.hessian_cap, never);
         const auto refused = epcsaft::equilibrium::recover_from_source(target, l);
-        exhausted = exhausted && !refused.success && !refused.has_state() && l.exhausted && l.consumed <= l.iterations
-            && l.evaluations <= l.evaluation_cap && l.hessian_calls <= l.hessian_cap;
-        spent.insert(spent.end(), {double(l.consumed), double(l.evaluations), double(l.hessian_calls)});
+        const auto gate = std::array{Limit::iterations, Limit::evaluations, Limit::hessian_calls}[cut];
+        exhausted = exhausted && !refused.success && !refused.has_state() && l.exhausted && l.refused == gate
+            && l.consumed <= l.iterations && l.evaluations <= l.evaluation_cap && l.hessian_calls <= l.hessian_cap;
+        if (cut == 2 && quarter == 2) hessian_half_attempts = l.attempts;
+        spent.insert(spent.end(), {double(l.consumed), double(l.evaluations), double(l.hessian_calls), double(l.refused)});
+    }
+    auto coincident = limits(RECOVERY_CAPS.iterations, RECOVERY_CAPS.evaluation_cap, full.hessian_calls / 2, never);
+    coincident.attempt_cap = hessian_half_attempts;
+    CHECK(!epcsaft::equilibrium::recover_from_source(target, coincident).success
+        && coincident.attempts == hessian_half_attempts && coincident.refused == Limit::hessian_calls);
+    if (hessian_half_attempts >= 2) {
+        auto fewer = limits(RECOVERY_CAPS.iterations, RECOVERY_CAPS.evaluation_cap, full.hessian_calls / 2, never);
+        fewer.attempt_cap = hessian_half_attempts - 1;
+        CHECK(!epcsaft::equilibrium::recover_from_source(target, fewer).success && fewer.refused == Limit::attempts);
     }
     auto late = limits(RECOVERY_CAPS.iterations, RECOVERY_CAPS.evaluation_cap, RECOVERY_CAPS.hessian_cap, std::chrono::steady_clock::now());
     exhausted = exhausted && !epcsaft::equilibrium::recover_from_source(target, late).success
-        && late.consumed == 0 && late.evaluations == 0 && late.hessian_calls == 0;
+        && late.refused == Limit::deadline && late.consumed == 0 && late.evaluations == 0 && late.hessian_calls == 0;
     record_bool("e4-r/exhausted",
         exhausted, recording_support::fields({recording_support::field("full", std::vector<double>{double(full.consumed),
             double(full.evaluations), double(full.hessian_calls)}), recording_support::field("cut", spent)}));

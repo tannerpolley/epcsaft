@@ -93,6 +93,19 @@ class Stop:
     nonfinite: Stop
     """A required value or diagnostic is nonfinite."""
 
+    ill_conditioned: Stop
+
+class WorkLimit:
+    none: WorkLimit
+    deadline: WorkLimit
+    iterations: WorkLimit
+    attempt_iterations: WorkLimit
+    evaluations: WorkLimit
+    hessian_calls: WorkLimit
+    attempts: WorkLimit
+    recovery_path: WorkLimit
+
+
 class Category:
     """Provenance category of a numerical criterion.
 
@@ -150,6 +163,7 @@ class Convergence:
     """Number of iterations performed, a count."""
     evaluations: int
     """Number of evaluations performed, a count; its scope is the producing calculation."""
+    limit: WorkLimit
     stop: Stop
     """Stopping reason; convergence to a floor is distinct from meeting the requested tolerance."""
     @property
@@ -3451,8 +3465,17 @@ class HeldSpecies:
     complementarity: float
     response: float | None
 
+
+class Attempt:
+    Cold: Attempt
+    Warm: Attempt
+    Newton: Attempt
+    PhysicalAmounts: Attempt
+
+
 class EquilibriumResult:
     held_species: list[HeldSpecies]
+    attempt: Attempt
     domain_violations: list[OutsideDomain] | None
     critical_search: CriticalSearch | None
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
@@ -4734,8 +4757,31 @@ class Observation:
     unless explicitly declared as such by the measurement model.
     """
 
+class RefusedOperation:
+    declaration: RefusedOperation
+    central_solve: RefusedOperation
+    source_recovery: RefusedOperation
+    loading_search: RefusedOperation
+    search_node_solve: RefusedOperation
+    search_node_action: RefusedOperation
+    search_node_estimate: RefusedOperation
+    search_candidate_solve: RefusedOperation
+    search_candidate_estimate: RefusedOperation
+    search_candidate_admission: RefusedOperation
+    search_root_selection: RefusedOperation
+    solved_state_action: RefusedOperation
+    thermochemistry: RefusedOperation
+    density_closure: RefusedOperation
+    observation_form: RefusedOperation
+
+
 class Prediction:
     """One native observation prediction with physical units and failure evidence."""
+    solved: Optional[EquilibriumResult]
+    final_solved: Optional[EquilibriumResult]
+    component_ids: list[str]
+    refusal_convergence: Optional[Convergence]
+    refused_operation: Optional[RefusedOperation]
     supplied_available: bool
     supplied_stability: Optional[StabilityReport]
     stability: Optional[StabilityMeasure]
@@ -5466,7 +5512,9 @@ class FitResult:
     unavailable for minimax.
     """
 
-def predict(model: HelmholtzModel, observation: Observation, supplied_trials: Optional[PreparedSuppliedTrials] = None) -> Prediction:
+def predict(model: HelmholtzModel, observation: Observation, supplied_trials: Optional[PreparedSuppliedTrials] = None,
+            component_ids: Sequence[str] = (), *, start: Optional[Prediction] = None,
+            work_limits: Optional[EquilibriumWorkLimits] = None) -> Prediction:
     """Evaluate one declared physical observation natively.
 
     Parameters
@@ -6206,6 +6254,9 @@ class SaturationNode:
 
 class SaturationSearch:
     """Finite grid search evidence for the declared interval or the prefix required by a source cap."""
+    loading_cap: Optional[float]
+    refusal_convergence: Optional[Convergence]
+    refused_operation: Optional[RefusedOperation]
     grid: list[float]
     nodes: list[SaturationNode]
     rejected_starts: list[SaturationNode]

@@ -34,6 +34,53 @@ void check_saturation_capped_addition() {
   CHECK(center.saturation->accepted && center.cap_branch == "saturation_cap");
   CHECK(center.solved->residual_norm() <= 1e-10 &&
         center.final_solved->residual_norm() <= 1e-10);
+  {
+    using Limit = core::WorkLimit;
+    const auto never = std::chrono::steady_clock::time_point::max();
+    const auto& full = *center.saturation;
+    for (auto gate : {Limit::evaluations, Limit::attempts}) {
+      auto work = DriverLimits::recovery_allowance(never, policy::EQUILIBRIUM_RECOVERY_WORK.value);
+      if (gate == Limit::evaluations) work.evaluation_cap = full.evaluations / 2;
+      else work.attempt_cap = full.attempts - 1;
+      const auto cut = search_loading(model, row.final_problem, full.declaration, full.grid, &work, never, full.loading_cap);
+      CHECK(!cut.accepted && cut.refused_operation == RefusedOperation::loading_search
+          && cut.refusal_convergence && cut.refusal_convergence->limit == gate
+          && std::any_of(cut.causes.begin(), cut.causes.end(), [](const auto& cause) {
+            return cause.find("budget_exhausted") != std::string::npos;
+          }));
+    }
+    EquilibriumWorkLimits late; late.seconds = 0;
+    check_prediction_limit(predict_validated(model, row, {}, nullptr, &late), RefusedOperation::loading_search, Limit::deadline, false);
+    const auto reject = [&](const Observation& changed, const std::string& prefix) {
+      IpoptLog log;
+      try {
+        (void)predict_validated(model, changed, {}, &center, &late);
+        CHECK(false);
+      } catch (const std::invalid_argument& failure) {
+        CHECK(std::string(failure.what()).find(prefix) == 0 && log.rows.empty());
+      }
+    };
+    reject(invalid, "observation positive basis and cap");
+    CHECK(recording_support::refusal([&] { (void)predict_validated(model, invalid, {}, nullptr, &late); }) ==
+          "observation positive basis and cap");
+    auto changed = row;
+    std::swap(changed.final_problem.phases[0], changed.final_problem.phases[1]);
+    reject(changed, "start: loading node");
+    (void)predict_validated(model, changed, {}, nullptr, &late);
+    changed = row; changed.loading_grid[1] = (row.loading_grid[0] + row.loading_grid[1]) / 2;
+    reject(changed, "start: loading search declaration differs");
+    changed = row; changed.loading_cap = (row.loading_cap + row.loading_bounds[0]) / 2;
+    reject(changed, "start: loading search declaration differs");
+    for (bool change_pressure : {false, true}) {
+      auto affine = full.declaration;
+      if (change_pressure) affine.pressure *= 1.01;
+      else affine.direction.front() *= 1.01;
+      IpoptLog log;
+      CHECK(recording_support::refusal([&] {
+        (void)search_loading(model, row.final_problem, affine, full.grid, nullptr, never, full.loading_cap, &full);
+      }) == "start: loading search declaration differs" && log.rows.empty());
+    }
+  }
   const double alpha = *center.endpoint_loading;
   const auto inputs =
       fields({field("T_K", row.temperature), field("P_Pa", row.pressure),
@@ -72,6 +119,24 @@ void check_saturation_capped_addition() {
   CHECK(source.status == ObservationStatus::Available && source.value);
   CHECK(source.cap_branch == "source_cap" && !source.saturation_loading);
   CHECK(source.endpoint_loading == capped.loading_cap && source.saturation->nodes.back().loading == 0.05);
+  {
+      IpoptLog log;
+      const auto never = std::chrono::steady_clock::time_point::max();
+      DriverLimits work{std::numeric_limits<std::size_t>::max(), never};
+      const auto prediction = predict(model, capped, {}, {}, nullptr, nullptr, nullptr, false, never, {}, true, nullptr, &work);
+      CHECK(prediction.value == source.value && prediction.final_solved && prediction.solved
+          && work.consumed == log.iterations() && log.rows.back().iteration.iteration == prediction.final_solved->iterations
+          && work.consumed == prediction.saturation->iterations + prediction.solved->iterations + prediction.final_solved->iterations);
+      // A zero-iteration Ipopt run at the last endpoint still admits the polished state.
+      EquilibriumWorkLimits limited;
+      limited.iterations = work.consumed - prediction.final_solved->iterations;
+      const auto polished = predict_validated(model, capped, {}, nullptr, &limited);
+      CHECK(polished.final_solved && polished.final_solved->solver_settings.at("max_iter") == 0
+          && polished.value && std::abs(*polished.value / *source.value - 1) <= 1e-10);
+      limited.iterations = work.consumed - 1;
+      const auto below = predict_validated(model, capped, {}, nullptr, &limited);
+      CHECK(below.value && std::abs(*below.value / *source.value - 1) <= 1e-10);
+  }
   auto fixed = row;
   fixed.kind = ObservationKind::AdditionEnthalpy;
   fixed.feed_amount = row.basis_amount * capped.loading_cap;
@@ -430,6 +495,76 @@ void check_merkley_saturation_loading() {
     CHECK(evaluator.evaluate(std::vector<double>(8, 0), false, start));
     const std::vector<double> trial_two = {0, -0.013512156522612428, -20.453703287524615, -3.9026605768041516,
         0.15355058202903896, 0, -0.5013581788020577, -9.360489808605179};
+    {
+        using Limit = core::WorkLimit;
+        IpoptLog log;
+        const HelmholtzModel base_model(request.coordinates.apply(request.parameters, std::vector<double>(8, 0)),
+            request.coordinates.active_parameters(), thermal);
+        const HelmholtzModel moved(request.coordinates.apply(request.parameters, trial_two),
+            request.coordinates.active_parameters(), thermal);
+        const auto base = predict_validated(base_model, row);
+        const auto never = std::chrono::steady_clock::time_point::max();
+        DriverLimits work{std::numeric_limits<std::size_t>::max(), never};
+        log.rows.clear();
+        const auto cold = predict(moved, row, {}, {}, nullptr, nullptr, nullptr, false, never, {}, true, nullptr, &work);
+        CHECK(cold.value && cold.cap_branch == "saturation_cap" && work.consumed == log.iterations());
+        const auto& candidate = cold.saturation->candidates.at(*cold.saturation->accepted).state;
+        CHECK(cold.final_solved->coordinates == candidate.coordinates && cold.final_solved->iterations == candidate.iterations);
+        CHECK(work.consumed == cold.saturation->iterations + cold.solved->iterations);
+        EquilibriumWorkLimits limited; limited.iterations = work.consumed - 1;
+        const auto polished = predict_validated(moved, row, {}, nullptr, &limited);
+        CHECK(polished.value && std::abs(*polished.value / *cold.value - 1) <= 1e-10);
+        limited.iterations = cold.saturation->iterations;
+        const auto interrupted = predict_validated(moved, row, {}, nullptr, &limited);
+        CHECK(interrupted.status != ObservationStatus::Available && interrupted.refused_operation == RefusedOperation::loading_search
+            && interrupted.refusal_convergence && interrupted.refusal_convergence->limit == Limit::iterations);
+        const auto restarted = predict_validated(moved, row, {}, &base);
+        CHECK(restarted.value && std::abs(*restarted.value / *cold.value - 1) <= 1e-10);
+        const auto same = predict_validated(moved, row, {}, &cold);
+        CHECK(same.value && std::abs(*same.value / *cold.value - 1) <= 1e-10);
+        std::size_t rejected = 0;
+        for (std::size_t i = 0; i < std::min(base.saturation->nodes.size(), restarted.saturation->nodes.size()); ++i) {
+            const auto& node = restarted.saturation->nodes[i];
+            const bool replaced = node.prior_start == "cold_after_refused_earlier_prediction";
+            CHECK((replaced || node.prior_start == "earlier_prediction") && node.state.attempt != Attempt::PhysicalAmounts);
+            rejected += replaced;
+        }
+        CHECK(restarted.saturation->rejected_starts.size() == rejected
+            && restarted.saturation->nodes.front().state.iterations < cold.saturation->nodes.front().state.iterations);
+        auto pressure = solved(ObservationKind::EquilibriumPressure, bubble);
+        pressure.problem.pressure = FreeValue::variable(100000.0);
+        pressure.problem.phases.back().composition_guess.clear();
+        pressure.problem.feed.values = {1.368, 8.615384615384617, 0, 0, 0, 0, 1, 0};
+        for (bool total : {false, true}) {
+            EquilibriumWorkLimits limits;
+            (total ? limits.iterations : limits.attempt_iterations) = 7;
+            const auto refusal = predict_validated(model, pressure, {}, nullptr, &limits);
+            check_prediction_limit(refusal, RefusedOperation::central_solve, total ? Limit::iterations : Limit::attempt_iterations, true);
+            if (!total) CHECK(refusal.refusal_convergence->iterations == 7);
+        }
+        const auto bubble_cold = predict_validated(moved, pressure);
+        const auto bubble_started = predict_validated(moved, pressure, {}, &bubble_cold);
+        CHECK(bubble_cold.value && bubble_started.value && std::abs(*bubble_started.value / *bubble_cold.value - 1) <= 1e-10);
+        EquilibriumWorkLimits late; late.seconds = 0;
+        check_prediction_limit(predict_validated(model, pressure, {}, nullptr, &late),
+            RefusedOperation::central_solve, Limit::deadline, false);
+        const auto target = compile_problem(model, pressure.problem);
+        EquilibriumResult failed;
+        failed.retry = Retry::Source; failed.linear_solver = "ma57";
+        auto wrapper_work = DriverLimits::recovery_allowance(never, 1);
+        auto control_work = wrapper_work;
+        std::optional<core::Convergence> recovery;
+        const auto recovered = recover_from_source(target, failed, &wrapper_work, &recovery);
+        const auto control = recover_from_source(target, failed, &control_work);
+        CHECK(recovery && recovery->limit == Limit::iterations && recovered.message == control.message);
+        const auto bubble_base = predict_validated(model, pressure);
+        const auto numerical = predict_validated(moved, pressure, {}, &bubble_base);
+        CHECK(numerical.refusal_convergence && numerical.refusal_convergence->limit == Limit::none);
+        std::optional<core::Convergence> first;
+        CHECK(!retain_limit(first, *numerical.refusal_convergence) && !first);
+        CHECK(retain_limit(first, *recovery) && first->limit == Limit::iterations);
+        CHECK(!retain_limit(first, *numerical.refusal_convergence) && first->limit == Limit::iterations);
+    }
     const bool admitted = evaluator.evaluate(trial_two, false, trial);
     CHECK(truth("merkley-saturation-loading/admitted", admitted,
                 fields({field("cause", admitted ? "" : failures.failures.at(0).message)})));

@@ -86,7 +86,7 @@ FIELDS(equilibrium::SolvedStateActionDiagnostics, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::IpoptPoint, a, b, c, d, e, f, g, h, i)
 FIELDS(equilibrium::IpoptDiagnostics, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::SaturationNode, a, b, c, d, e, f, g, h, i, j, k, l)
-FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t)
+FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w)
 FIELDS(equilibrium::EquilibriumResult::HeldSpecies, phase, species, fraction, chemical_row, complementarity, response)
 auto fields(equilibrium::EquilibriumResult& v) {
     return std::tie(v.declaration, v.success, v.message, v.solver_status, v.temperature, v.pressure,
@@ -94,10 +94,10 @@ auto fields(equilibrium::EquilibriumResult& v) {
         v.coordinates, v.phase_count, v.iterations, v.evaluations, v.hessian_calls, v.convergence,
         v.first_numerical_failure, v.last_rank, v.rank_records, v.requested_tolerance_met,
         v.topology_event, v.topology_phase, v.topology_pair, v.solver_settings, v.numerical_estimates,
-        v.ipopt_diagnostics, v.recovered_ipopt_diagnostics, v.held_species);
+        v.ipopt_diagnostics, v.recovered_ipopt_diagnostics, v.held_species, v.attempt);
 }
 auto fields(Prediction& v) {
-    return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,
+    return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure, v.refusal_convergence, v.refused_operation,
         v.saturation, v.saturation_loading, v.endpoint_loading, v.added_amount, v.cap_branch,
         v.stability, v.pressure_reference, v.stability_raw_gradient, v.analytical_osmotic_coefficient, v.analytical_osmotic_cause);
 }
@@ -124,10 +124,10 @@ struct Wire final {
         else std::apply(*this, fields(value));
     }
     void one(core::Convergence& v) {
-        (*this)(v.residual, v.floor, v.amplification, v.contraction, v.iterations, v.evaluations,
-            v.stop, v.cause, v.rank, v.backward_error);
-        std::string name = v.criterion ? v.criterion->name : "";
-        double target = v.criterion ? v.criterion->value : 0;
+        auto& [residual, criterion, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error, limit] = v;
+        (*this)(residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error, limit);
+        std::string name = criterion ? criterion->name : "";
+        double target = criterion ? criterion->value : 0;
         (*this)(name, target);
         if (!out) {
             v.criterion.reset();

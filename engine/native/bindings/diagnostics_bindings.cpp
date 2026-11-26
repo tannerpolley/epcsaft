@@ -33,10 +33,12 @@ void register_diagnostics(nb::module_& module) {
     using namespace epcsaft;
     auto stops = nb::enum_<core::Stop>(module, "Stop");
     for (int value = static_cast<int>(core::Stop::converged);
-         value <= static_cast<int>(core::Stop::nonfinite); ++value) {
+         value <= static_cast<int>(core::Stop::ill_conditioned); ++value) {
         const auto stop = static_cast<core::Stop>(value);
         stops.value(core::stop_name(stop), stop);
     }
+    nb::enum_<core::WorkLimit>(module, "WorkLimit")
+        EPCSAFT_VALUES(core::WorkLimit, none, deadline, iterations, attempt_iterations, evaluations, hessian_calls, attempts, recovery_path);
     nb::enum_<policy::Category>(module, "Category")
         EPCSAFT_VALUES(policy::Category, ThermodynamicConstraint, AlgorithmTolerance);
     nb::class_<policy::Tolerance>(module, "Tolerance")
@@ -55,7 +57,7 @@ void register_diagnostics(nb::module_& module) {
             // A value copy outlives the record that may own a caller-valued criterion.
             return nb::cast(*record.criterion);
         })
-        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error)
+        EPCSAFT_READONLY(core::Convergence, residual, floor, amplification, contraction, iterations, evaluations, stop, cause, rank, backward_error, limit)
         .def_prop_ro("residual_over_criterion", [](const core::Convergence& record) -> nb::object {
             if (record.criterion == nullptr) return nb::none();
             return nb::float_(record.residual / record.criterion->value);

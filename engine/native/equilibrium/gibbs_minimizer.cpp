@@ -858,8 +858,9 @@ void GibbsMinimizer::finalize_solution(
 
 namespace {
 
-void reject_elapsed(EquilibriumResult& result, core::Scope& scope) {
+void reject_elapsed(EquilibriumResult& result, core::Scope& scope, const DriverLimits* limits = nullptr) {
     auto& record = result.convergence;
+    if (limits) limits->retain_denial(record);
     if (!record.criterion) core::stopping_criterion(record, result.declaration->solver_options, policy::row);
     record.stop = core::classify(record.residual, *record.criterion, record.floor,
                                 record.contraction, true, record.amplification);
@@ -873,6 +874,27 @@ static EquilibriumProblem public_declaration(const CompiledSystem& compiled) {
     if (declaration.prescribed_liquid_composition)
         for (auto& phase : declaration.phases) phase.amount = AmountSpec::free();
     return declaration;
+}
+
+std::string start_difference(const std::optional<EquilibriumResult>& start, const CompiledSystem& target) {
+    if (!start || !start->has_state() || !start->declaration) return "solved state unavailable";
+    const auto declaration = public_declaration(target);
+    if (auto reason = declared_state_difference(*start->declaration, declaration, true); !reason.empty()) return reason;
+    if (declaration.prescribed_liquid_composition && start->model_identity != target.model->identity())
+        return "prescribed liquid requires the same model";
+    const auto n = target.n_feed.size();
+    for (std::size_t p = 0; p < declaration.phases.size(); ++p) {
+        const auto& support = declaration.phases[p].support;
+        if (!valid_previous_phase(*start, p, n) || std::any_of(support.begin(), support.end(),
+            [&](auto j) { return !(start->mole_fractions[p * n + j] > 0.0); })) return "invalid density or fraction on phase support";
+    }
+    return {};
+}
+
+bool retain_limit(std::optional<core::Convergence>& first, const core::Convergence& record) {
+    if (record.limit == core::WorkLimit::none || (first && first->limit != core::WorkLimit::none)) return false;
+    first = record;
+    return true;
 }
 
 bool same_result_origin(const CompiledSystem& compiled, const EquilibriumResult& result) {
@@ -1107,7 +1129,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     if (!compiled.feasibility_cell() || moiety_only) physical_weights = constraint_weights(compiled, prepared, full, moiety_only);
     if (!compiled.feasibility_cell()) result.constraint_multipliers = physical_weights;
     result.coordinates = full;
-    if (expired()) { result.message = "elapsed work budget exhausted"; reject_elapsed(result, scope); return result; }
+    if (expired()) { result.message = "elapsed work budget exhausted"; reject_elapsed(result, scope, limits); return result; }
     if (compiled.ideal) {
         const auto info = inspect_sensitivity(compiled, full);
         result.jacobian_rank = info.rank;
@@ -1207,7 +1229,7 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         return result;
     }
     if (expired()) { result.message = "elapsed work budget exhausted";
-        reject_elapsed(result, scope); return result; }
+        reject_elapsed(result, scope, limits); return result; }
     scope.probe("returned_temperature", *result.temperature);
     scope.probe("returned_pressure", *result.pressure);
     scope.probe("returned_amounts", result.amounts);
@@ -1745,11 +1767,11 @@ static EquilibriumResult run_driver_once(
     // A feasibility cell has a constant objective and is Newton-polished below, so it stops there.
     const double inner_tolerance = row_tolerance
         * (declared.feasibility_cell() ? 1.0 : policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value);
-    if (limits && limits->attempt_cap && limits->attempts >= limits->attempt_cap) limits->exhausted = true;
+    if (limits && limits->attempt_cap && limits->attempts >= limits->attempt_cap) limits->exhausted = limits->deny(core::WorkLimit::attempts);
     const auto expired = [&] { return limits && limits->expired(); };
     if (expired()) { result.message = "elapsed work budget exhausted before driver";
         result.convergence.residual = std::numeric_limits<double>::quiet_NaN();
-        reject_elapsed(result, scope); return association_result(std::move(result), observations); }
+        reject_elapsed(result, scope, limits); return association_result(std::move(result), observations); }
     if (core::CalculationWork::stop_at("driver attempt")) return result;
     if (limits) ++limits->attempts;
     if (declared.problem.spinodal) {
@@ -1768,12 +1790,13 @@ static EquilibriumResult run_driver_once(
         if (enabled) result.attempt = Attempt::Warm;
         return enabled;
     }) : std::function<bool(double)>{};
+    const auto run_cap = limits ? limits->attempt_iterations : static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value);
+    const auto remaining = limits ? limits->iterations - std::min(limits->iterations, limits->consumed) : run_cap;
     const auto [initialized, returned] = [&] {
         if (newton) return std::make_pair(Ipopt::Solve_Succeeded, Ipopt::Solve_Succeeded);
         if (const char* file = std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) result.diagnostic_options_file = file;
         try { nlp->begin_ipopt(); return run_ipopt(nlp, inner_tolerance,
-            ipopt_iteration_cap ? ipopt_iteration_cap : static_cast<int>(limits ? std::min(limits->iterations - limits->consumed,
-                static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value)) : policy::EQUILIBRIUM_MAX_ITERATIONS.value),
+            ipopt_iteration_cap ? ipopt_iteration_cap : static_cast<int>(std::min(remaining, run_cap)),
             limits ? std::max(0.0, std::chrono::duration<double>(limits->deadline - std::chrono::steady_clock::now()).count()) : 0.0,
             true, 1.0 / declared.feed_total, &result.solver_settings, row_tolerance,
             warm_start, &result.linear_solver, nlp->amount_limited(), declared.feasibility_cell(),
@@ -1803,7 +1826,7 @@ static EquilibriumResult run_driver_once(
     const auto limited_result = [&] {
         observations.merge(result.rank_records); StageWork::publish_observations(result, record);
         auto limited = failed(core::CalculationWork::stopped() ? "" : "elapsed work budget exhausted");
-        reject_elapsed(limited, scope); return limited;
+        reject_elapsed(limited, scope, limits); return limited;
     };
     if (expired() || core::CalculationWork::stop_at("optimizer endpoint")) return limited_result();
     std::vector<double> point = nlp->solution();
@@ -2082,6 +2105,13 @@ static EquilibriumResult run_driver_once(
             record.convergence.cause = std::move(convergence.cause);
             result = failed(std::move(result.message));
         }
+        if (result.convergence.limit == core::WorkLimit::none && !ipopt_iteration_cap) {
+            // A diagnostic options file that overrides max_iter stops the run itself; no caller limit denied the work.
+            if (status == Ipopt::MAXITER_EXCEEDED && result.iterations == result.solver_settings.at("max_iter")
+                && result.solver_settings.at("max_iter") == static_cast<double>(std::min(remaining, run_cap)))
+                result.convergence.limit = limits && remaining <= run_cap ? core::WorkLimit::iterations : core::WorkLimit::attempt_iterations;
+            if (status == Ipopt::CPUTIME_EXCEEDED) result.convergence.limit = core::WorkLimit::deadline;
+        }
         result.message += ipopt_failure;
         if (result.first_numerical_failure) result.message += "; trial preparation failed: " + core::describe(*result.first_numerical_failure);
         result.retry = retry_after(result.attempt, declared.has_reaction, non_error, fatal, status, result.topology_event, result.convergence.stop, result.candidate);
@@ -2167,8 +2197,7 @@ EquilibriumResult run_driver(
     std::shared_ptr<const OptimizerState> warm, bool predicted, bool refine_trial, Retry runs, EquilibriumAttemptReporting reporting
 ) {
     const auto restart = initial;
-    DriverLimits shared = limits ? *limits : DriverLimits{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value),
-        std::chrono::steady_clock::time_point::max()};
+    DriverLimits shared{static_cast<std::size_t>(policy::EQUILIBRIUM_MAX_ITERATIONS.value), std::chrono::steady_clock::time_point::max()};
     const auto* work = limits ? limits : warm ? &shared : nullptr;
     const auto primary = [&]() -> EquilibriumResult {
     if (!warm || kind == Attempt::Newton) return run_driver_once(compiled, std::move(initial), std::move(result), scope, attempt, limits, kind, {}, predicted, refine_trial, reporting);
@@ -2547,6 +2576,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     auto seeded = start.has_value() || original ? std::nullopt : speciated_start(compiled, limits, stages, true);
     if (prescribed && use_start) seeded = start_point(compiled, *start, compiled.generic_point());
     EquilibriumResult result;
+    std::optional<core::Convergence> limit_record;
     bool admission_refused = false;
     bool short_split_refused = false;
     const auto admit_branches = [&](EquilibriumResult& candidate, core::Scope& trace) {
@@ -2581,6 +2611,7 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
                     std::move(stages).report(result); return result;
                 }
                 result = structural;
+                result.limit_record = limit_record;
                 stages.report_observations(result);
                 result.message = error.what();
                 result.failure = std::current_exception();
@@ -2621,10 +2652,12 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
             short_split_refused = true;
         }
         result = run_driver(compiled, std::move(initial), structural, scope, nullptr, limits, Attempt::Cold, warm, false, false, Retry::None, reporting);
+        if (!result.success) retain_limit(limit_record, solve_refusal(result));
         if (result.failure && attempt == 0) continue;  // the seeded attempt's failure falls back to the declared start
         if (result.failure) {
             if (short_split_refused) std::move(stages).report(result);
             else stages.report_observations(result);
+            result.limit_record = std::move(limit_record);
             return result;
         }
         if (result.success && !admit_branches(result, scope)) admission_refused = true;
@@ -2634,6 +2667,8 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     const bool retry = result.retry == Retry::PhysicalAmounts && !admission_refused;
     result = recover_physical_amounts(compiled, std::move(result), retry,
         scope, nullptr, limits, nullptr, true, nullptr, 0, nullptr, Work::Accumulated, reporting);
+    if (!result.success) retain_limit(limit_record, solve_refusal(result));
+    if (!result.success) result.limit_record = std::move(limit_record);
     result.rejected_reduction = rejected;
     // ALG-EQUILIBRIUM recovery work: its own caps, within any caller remainder.
     const auto allowance = [&] {

@@ -23,6 +23,30 @@ namespace {
 
 using equilibrium::SolvedStateObservable;
 using Kind = equilibrium::SolvedStateObservableKind;
+using Operation = equilibrium::RefusedOperation;
+using equilibrium::DriverLimits;
+
+std::optional<DriverLimits> recovery_work(const DriverLimits* allowance) {
+    if (!allowance) return {};
+    constexpr auto unbounded_iterations = std::numeric_limits<std::size_t>::max();
+    constexpr auto local_cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    const bool bounded = allowance->iterations != unbounded_iterations;
+    const auto remaining = allowance->iterations - std::min(allowance->consumed, allowance->iterations);
+    auto work = DriverLimits::recovery_allowance(allowance->deadline, bounded ? remaining : local_cap);
+    work.attempt_iterations = allowance->attempt_iterations;
+    const auto scaled = [&](std::size_t cap) {
+        const auto ratio = cap / local_cap;
+        return bounded ? std::min(remaining, unbounded_iterations / ratio) * ratio : cap;
+    };
+    work.evaluation_cap = scaled(work.evaluation_cap); work.hessian_cap = scaled(work.hessian_cap);
+    return work;
+}
+
+void charge_recovery(const DriverLimits& allowance, const DriverLimits& used) {
+    allowance.consumed += used.consumed; allowance.evaluations += used.evaluations;
+    allowance.hessian_calls += used.hessian_calls; allowance.attempts += used.attempts;
+    allowance.deny(used.refused);
+}
 
 void require(bool condition, const char* what) {
     if (!condition) throw std::invalid_argument(std::string("observation ") + what);
@@ -428,15 +452,54 @@ static Prediction unavailable_solve(Prediction result, const std::exception& fai
 }
 
 Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
-    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied) {
+    std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied, const Prediction* start,
+    const equilibrium::EquilibriumWorkLimits* limits, std::vector<std::string> component_ids) {
+    using Clock = std::chrono::steady_clock;
+    const auto kind = observation.kind;
+    const bool restartable = kind == ObservationKind::EquilibriumPressure
+        || (kind == ObservationKind::PartialPressure && observation.problem.pressure.free)
+        || kind == ObservationKind::EquilibriumIsobaricHeatCapacity || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
+    if ((start || limits) && !restartable) throw std::invalid_argument("prediction kind does not accept a start or work limits");
     if (supplied && observation.kind != ObservationKind::Stability)
         throw std::invalid_argument("supplied stability trials require a stability observation");
+    std::optional<equilibrium::DriverLimits> work;
+    if (limits) {
+        if (limits->attempts || limits->attempt_seconds) throw std::invalid_argument("prediction does not read attempts or attempt_seconds");
+        auto deadline = Clock::time_point::max();
+        const auto now = Clock::now();
+        if (limits->seconds) {
+            if (!std::isfinite(*limits->seconds) || *limits->seconds < 0.0)
+                throw std::invalid_argument("work seconds must be finite and nonnegative");
+            if (*limits->seconds < std::chrono::duration<double>(deadline - now).count())
+                deadline = now + std::chrono::duration_cast<Clock::duration>(std::chrono::duration<double>(*limits->seconds));
+        }
+        work = equilibrium::DriverLimits{limits->iterations.value_or(std::numeric_limits<std::size_t>::max()), deadline};
+        if (limits->attempt_iterations) {
+            if (*limits->attempt_iterations > static_cast<std::size_t>(std::numeric_limits<int>::max()))
+                throw std::invalid_argument("attempt_iterations exceeds the Ipopt option range");
+            work->attempt_iterations = *limits->attempt_iterations;
+        }
+    }
     Prediction result;
     try {
         validate(observation, model);
+        if (start && start->status != ObservationStatus::Available) throw std::invalid_argument("start: unavailable prediction");
+        if (start && !start->solved) throw std::invalid_argument("start: prediction carries no solved state (worker replies omit it)");
+        if (start && start->component_ids != component_ids) throw std::invalid_argument("start: component order differs");
         result = predict(model, observation, {}, {}, nullptr, nullptr, nullptr, false,
-            std::chrono::steady_clock::time_point::max(), {}, true);
-    } catch (const std::domain_error& failure) { result = unavailable_solve({}, failure); }
+            Clock::time_point::max(), {}, true, start, work ? &*work : nullptr);
+    } catch (const std::domain_error& failure) {
+        result = unavailable_solve({}, failure);
+        result.refused_operation = Operation::declaration;
+    }
+    if (restartable) {
+        result.component_ids = std::move(component_ids);
+        if (result.status != ObservationStatus::Available) {
+            if (!result.refused_operation) result.refused_operation = result.status == ObservationStatus::ThermochemistryUnavailable
+                ? Operation::thermochemistry : Operation::observation_form;
+            if (!result.refusal_convergence) result.refusal_convergence = core::refusal(result.message);
+        }
+    }
     if (supplied) {
         result.supplied_stability = std::make_shared<equilibrium::StabilityReport>();
         auto& report = *result.supplied_stability;
@@ -452,7 +515,8 @@ Prediction predict(
     const std::optional<equilibrium::EquilibriumResult>& start,
     std::optional<equilibrium::CompiledSystem> prepared, ReferenceCache* references,
     const Prediction* previous, const HelmholtzModel* previous_model, bool same_parameters,
-    std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission, bool recover_bubble
+    std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission, bool recover_bubble,
+    const Prediction* earlier, const equilibrium::DriverLimits* limits
 ) {
     if (references) references->bind(model);
     core::Scope density_scope("fit_density_anchor");
@@ -574,14 +638,24 @@ Prediction predict(
     if (observation.kind == ObservationKind::SaturationCappedAdditionEnthalpy) {
         validate(observation, model, prepared ? &*prepared : nullptr);
         const auto initial = equilibrium::compile_problem(model, observation.problem);
+        if (earlier) {
+            if (auto reason = equilibrium::start_difference(earlier->solved, initial); !reason.empty())
+                throw std::invalid_argument("start: " + reason);
+            if (!earlier->saturation) throw std::invalid_argument("start: loading search unavailable");
+        }
         equilibrium::AffineLoading affine{initial.n_feed, observation.composition,
             observation.loading_bounds[0], observation.loading_bounds[1], 0, observation.pressure};
         for (auto& value : affine.direction) value *= observation.basis_amount;
+        auto work = recovery_work(limits);
+        if (work) work->attempt_cap = policy::EQUILIBRIUM_RECOVERY_WORK.value;
         auto search = std::make_shared<equilibrium::SaturationSearch>(equilibrium::search_loading(
-            model, observation.final_problem, affine, observation.loading_grid, nullptr, deadline, observation.loading_cap));
+            model, observation.final_problem, affine, observation.loading_grid, work ? &*work : nullptr,
+            deadline, observation.loading_cap, earlier ? earlier->saturation.get() : nullptr));
+        if (work) charge_recovery(*limits, *work);
         Prediction seed; seed.saturation = search; seed.first_numerical_failure = search->first_numerical_failure;
         if (!search->complete || !search->causes.empty()) {
             seed.status = ObservationStatus::CentralSolveUnavailable;
+            seed.refusal_convergence = search->refusal_convergence; seed.refused_operation = search->refused_operation;
             for (const auto& cause : search->causes) seed.message += "saturation:" + cause + ";";
             return seed;
         }
@@ -601,7 +675,8 @@ Prediction predict(
         fixed.final_problem = observation.problem; fixed.final_problem.feed.kind = equilibrium::FeedKind::Amounts;
         fixed.final_problem.feed.values = initial.n_feed;
         for (std::size_t i = 0; i < observation.composition.size(); ++i) fixed.final_problem.feed.values[i] += fixed.feed_amount * fixed.composition[i];
-        auto result = predict(model, fixed, start, prepared, references, &seed);
+        auto result = predict(model, fixed, earlier ? earlier->solved : start, prepared, references, &seed,
+            nullptr, false, deadline, {}, false, earlier, limits);
         result.saturation = search; result.saturation_loading = seed.saturation_loading;
         result.endpoint_loading = seed.endpoint_loading; result.added_amount = seed.added_amount; result.cap_branch = seed.cap_branch;
         core::retain_first(result.first_numerical_failure, seed.first_numerical_failure, true);
@@ -627,7 +702,8 @@ Prediction predict(
                     return e.center;
                 }
             }
-            auto value = feed ? predict(model, item) : predict(model, item, start, std::move(prepared));
+            auto value = feed ? predict(model, item) : predict(model, item, start, std::move(prepared),
+                nullptr, nullptr, nullptr, false, deadline, {}, false, nullptr, limits);
             if (share && value.status == ObservationStatus::Available) {
                 identity = std::make_shared<const char>();
                 references->heat.push_back({item, identity, seed, value, {}});
@@ -641,6 +717,8 @@ Prediction predict(
             core::retain_first(p.first_numerical_failure, initial.first_numerical_failure, true);
             core::retain_first(initial.first_numerical_failure, p.first_numerical_failure);
             if (p.status == ObservationStatus::Available) return false;
+            if (!p.refused_operation && p.status == ObservationStatus::ThermochemistryUnavailable)
+                p.refused_operation = Operation::thermochemistry;
             p.message = std::string(source) + ":" + observation_status_name(p.status) + ": " + p.message;
             return true;
         };
@@ -657,7 +735,12 @@ Prediction predict(
             final.compiled = equilibrium::compile_problem(model, *final.solved->declaration);
             final.solved_request = std::make_shared<const equilibrium::EquilibriumProblem>(item.problem);
             project_prediction(model, item, final);
-        } else final = predict(model, item, compatible ? initial.solved : std::nullopt, std::move(compiled));
+        } else {
+            const auto seed = earlier && equilibrium::start_difference(earlier->final_solved, compiled).empty()
+                ? earlier->final_solved : (compatible ? initial.solved : std::nullopt);
+            final = predict(model, item, seed, std::move(compiled),
+                nullptr, nullptr, nullptr, false, deadline, {}, false, nullptr, limits);
+        }
         if (failed(final, "final")) return final;
         item.kind = ObservationKind::FeedEnthalpy;
         auto feed = endpoint(true, initial.feed_heat_endpoint);
@@ -683,6 +766,7 @@ Prediction predict(
         try {
             state = close(observation.composition, previous && previous->state ? &*previous->state : nullptr);
         } catch (const std::runtime_error& failure) {
+            result.refused_operation = Operation::density_closure;
             return unavailable_solve(std::move(result), failure, ObservationStatus::DensityUnavailable, "prediction density");
         }
         result.convergence = state.density_convergence;
@@ -729,6 +813,8 @@ Prediction predict(
         return result;
     }
     equilibrium::EquilibriumResult solved;
+    std::optional<core::Convergence> recovery_refusal;
+    auto operation = Operation::declaration;
     auto problem = observation.problem;
     try {
         if (observation.kind == ObservationKind::Stability && observation.pressure_reference) {
@@ -754,17 +840,36 @@ Prediction predict(
         }
         if (!result.compiled) result.compiled = equilibrium::compile_problem(model, problem);
         for (const auto* row : admission) validate_compiled(*row, model, &*result.compiled);
-        solved = equilibrium::solve_compiled(*result.compiled, start);
-        if (!solved.success && recover_bubble && observation.kind == ObservationKind::EquilibriumPressure && result.compiled->has_reaction)
-            solved = equilibrium::recover_from_source(*result.compiled, std::move(solved));
+        if (earlier)
+            if (auto reason = equilibrium::start_difference(earlier->solved, *result.compiled); !reason.empty())
+                throw std::invalid_argument("start: " + reason);
+        operation = Operation::central_solve;
+        solved = equilibrium::try_solve_compiled(*result.compiled, earlier ? earlier->solved : start, nullptr, limits);
+        if (solved.failure) std::rethrow_exception(solved.failure);
+        if (!solved.success && !earlier && recover_bubble && observation.kind == ObservationKind::EquilibriumPressure && result.compiled->has_reaction) {
+            auto work = recovery_work(limits);
+            solved = equilibrium::recover_from_source(*result.compiled, std::move(solved), work ? &*work : nullptr, &recovery_refusal);
+            if (work) charge_recovery(*limits, *work);
+        }
     } catch (const std::exception& failure) {
         if (!dynamic_cast<const std::runtime_error*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
-        return unavailable_solve(std::move(result), failure);
+        result = unavailable_solve(std::move(result), failure);
+        result.refused_operation = operation;
+        if (solved.limit_record) result.refusal_convergence = std::move(solved.limit_record);
+        if (limits) {
+            if (!result.refusal_convergence) result.refusal_convergence = core::refusal(result.message);
+            limits->retain_denial(*result.refusal_convergence);
+        }
+        return result;
     }
     result.convergence = solved.convergence;
     core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
     if (!solved.success) core::retain_first(result.first_numerical_failure, solved.convergence);
-    if (!solved.success) result.refusal_convergence = solved.terminal_numerical_failure.value_or(solved.convergence);
+    if (!solved.success || !solved.has_state() || solved.topology_event != equilibrium::TopologyEvent::None) {
+        result.refused_operation = recovery_refusal ? Operation::source_recovery : operation;
+        result.refusal_convergence = recovery_refusal.value_or(equilibrium::solve_refusal(solved));
+        if (limits) limits->retain_denial(*result.refusal_convergence);
+    }
     result.requested_tolerance_met = solved.requested_tolerance_met;
     result.message = solved.solver_status + ": " + solved.message;
     // The driver sets the topology fields before its acceptance gate, so a vanished or
@@ -782,6 +887,8 @@ Prediction predict(
     for (std::size_t s = 0; s < observation.problem.solids.size(); ++s)
         if (observation.problem.solids[s].amount.kind == equilibrium::AmountKind::Free && !(solved.solid_amounts.at(s) > 0.0)) {
             result.status = ObservationStatus::TopologyEvent;
+            result.refused_operation = operation;
+            result.refusal_convergence = solved.convergence;
             result.message = "solid " + observation.problem.solids[s].name + " is absent at the solved state";
             return result;
         }
@@ -902,6 +1009,9 @@ static void project_solved(const HelmholtzModel& model, const Observation& obser
                 || entry.status == equilibrium::SolvedStateActionStatus::OutsideInterval
                 || entry.status == equilibrium::SolvedStateActionStatus::ReferenceUnavailable
                 ? ObservationStatus::ThermochemistryUnavailable : ObservationStatus::ActionUnavailable;
+            result.refused_operation = result.status == ObservationStatus::ActionUnavailable
+                ? Operation::solved_state_action : Operation::thermochemistry;
+            result.refusal_convergence = entry.refusal;
             result.message = std::string(equilibrium::solved_state_status_name(entry.status)) + ": " + entry.diagnostic_message.value_or("");
             return;
         }

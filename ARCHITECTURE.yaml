@@ -11,7 +11,7 @@ version: 17
 # Hard ceilings in executable formatter-normalized runtime lines. docs/scientific/code-budgets.md owns
 # the counting and the band rule.
 # JSON flow mapping is valid YAML and lets the counter use only the stdlib.
-code_budgets: {"core": 1763, "contributions": 2018, "properties": 8095, "equilibrium": 18670, "regression": 5883, "surface": 964, "bindings": 2991, "python": 3055, "total": 43439}
+code_budgets: {"core": 1788, "contributions": 2018, "properties": 8095, "equilibrium": 18859, "regression": 6053, "surface": 964, "bindings": 3007, "python": 3094, "total": 43878}
 
 # Project map: every project file resolves to one owner and one artifact role by
 # the longest matching path prefix. Owners are components or Engine layers.

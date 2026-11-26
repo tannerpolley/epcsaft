@@ -1238,6 +1238,10 @@ void check_e5_refusals() {
     const auto displaced_action = epcsaft::equilibrium::solved_state_actions(compiled, displaced, base).results.front();
     CHECK(displaced_action.status == SolvedStateActionStatus::DefiningEquationsNotSatisfied
         && displaced_action.value && !displaced_action.action);
+    const auto& refusal = displaced_action.refusal;
+    CHECK(refusal && refusal->residual == compiled.classified_residual_norm(displaced.coordinates)
+        && refusal->criterion && refusal->criterion->value == epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value
+        && !refusal->floor && refusal->stop == epcsaft::core::Stop::stalled && refusal->limit == epcsaft::core::WorkLimit::none);
     auto exact = equilibrium_support::flash(2);
     exact.phases = {equilibrium_support::phase("L", PhaseKind::Liquid, AmountSpec::pinned(0.5)), equilibrium_support::phase("V", PhaseKind::Vapor, AmountSpec::pinned(0.5))};
     exact.temperature = FreeValue::variable(300.0); exact.pressure = FreeValue::variable(1.0e5);

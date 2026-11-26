@@ -460,6 +460,7 @@ struct FirstCoefficient final {
 };
 
 struct Path final {
+    std::optional<double> refused_backward_error;
     RowSeries series;
     SolvedStateActionStatus status = SolvedStateActionStatus::Available;
     std::optional<std::string> diagnostic_message;
@@ -537,7 +538,9 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         if (status == SolvedStateActionStatus::NonfiniteJacobian) { path.status = status; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
         // The first refused coefficient names the cause; 2 cond eta is the first-order forward bound.
-        if (path.status == SolvedStateActionStatus::Available) path.status = status;
+        if (path.status != SolvedStateActionStatus::Available || status == SolvedStateActionStatus::Available) continue;
+        path.status = status;
+        path.refused_backward_error = residual;
     }
     return path;
 }
@@ -1094,11 +1097,13 @@ static SolvedStateActionBatch evaluate_action(
             item.action.reset();
             item.status = first.status;
             item.diagnostic_message = first.diagnostic_message;
+            item.refusal = first.refusal;
             if (first.status != SolvedStateActionStatus::Available || !first.action) continue;
             item.value = enthalpy_target ? delta / (feed * *first.action) : *first.action / (feed * delta);
             item.status = second.status;
             item.diagnostic_message = second.diagnostic_message;
             item.property_diagnostics = second.property_diagnostics;
+            item.refusal = second.refusal;
             if (second.status == SolvedStateActionStatus::Available && second.action)
                 item.action = (enthalpy_target ? -delta * *second.action / (feed * *first.action * *first.action)
                                                : *second.action / (feed * delta)) - *item.value * dfeed / feed;
@@ -1366,8 +1371,9 @@ static SolvedStateActionBatch evaluate_action(
         }
     }
     // Admission of the central state, in the owner's precedence.
+    const auto* row = problem.solver_options.criterion(policy::row);
     if (!shared->topology_checked) {
-        if (!(shared->classified_residual <= std::min(problem.solver_options.value(policy::row), policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
+        if (!(shared->classified_residual <= std::min(row->value, policy::EQUILIBRIUM_ROW_RESIDUAL.value))) {
             shared->central_gate = SolvedStateActionStatus::DefiningEquationsNotSatisfied;
         } else {
             const auto topology = check_topology(compiled, central.coordinates);
@@ -1427,12 +1433,35 @@ static SolvedStateActionBatch evaluate_action(
     // A central-state gate precedes the selected dependency: it overrides every
     // state-dependent row's status, keeping the mapped value and property diagnostics.
     const auto apply_state_gate = [&](SolvedStateActionStatus status,
-                                      std::optional<std::string> diagnostic_message = std::nullopt) {
+                                      std::optional<std::string> diagnostic_message = std::nullopt,
+                                      std::optional<double> backward = {}) {
+        auto refusal = core::refusal(solved_state_status_name(status));
+        if (status == SolvedStateActionStatus::DefiningEquationsNotSatisfied) {
+            refusal.residual = shared->classified_residual;
+            refusal.criterion = {problem.solver_options.owners[policy::row],
+                row->value < policy::EQUILIBRIUM_ROW_RESIDUAL.value ? row : &policy::EQUILIBRIUM_ROW_RESIDUAL};
+        }
+        if (status == SolvedStateActionStatus::NonfiniteJacobian) refusal.stop = core::Stop::nonfinite;
+        if (status == SolvedStateActionStatus::RankDeficient) refusal.stop = core::Stop::singular;
+        if (status == SolvedStateActionStatus::RankDeficient || backward) {
+            refusal.rank = std::make_shared<core::NumericalRank>(core::NumericalRank{
+                "RJC", central.coordinates.size(), *batch.diagnostics.rank, center.lu.threshold()});
+            refusal.rank->observation.condition = batch.diagnostics.condition_estimate.value_or(INFINITY);
+        }
+        if (backward) {
+            const bool forward = status == SolvedStateActionStatus::IllConditioned;
+            if (forward) refusal.stop = core::Stop::ill_conditioned;
+            refusal.backward_error = backward;
+            refusal.residual = forward ? 2.0 * *batch.diagnostics.condition_estimate * *backward : *backward;
+            refusal.criterion = {std::shared_ptr<const policy::Tolerance>{}, forward
+                ? &policy::EQUILIBRIUM_ACTION_FORWARD_ERROR : &policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR};
+        }
         for (auto& item : batch.results) {
             if (!state_dependent(item.observable, problem)) continue;
             item.status = status;
             item.action.reset();
             item.diagnostic_message = diagnostic_message;
+            item.refusal = refusal;
         }
         return batch;
     };
@@ -1490,7 +1519,8 @@ static SolvedStateActionBatch evaluate_action(
         const auto path = follow(compiled, center, control, order, batch.diagnostics, plane, parameter_directions > 1, parameter_union,
             first, retain ? &retained : nullptr);
         if (path.status != SolvedStateActionStatus::Available)
-            return apply_state_gate(path.status, path.diagnostic_message);
+            return apply_state_gate(path.status, path.diagnostic_message,
+                path.status == SolvedStateActionStatus::NonfiniteJacobian ? std::nullopt : path.refused_backward_error);
         if (retain) first_coefficients->emplace(std::move(key), std::move(retained));
         std::vector<PhaseMap> maps;
         for (std::size_t phase = 0; phase < problem.phases.size(); ++phase) maps.push_back(phase_map(model, path.series.phase[phase], path.series.temperature, components));

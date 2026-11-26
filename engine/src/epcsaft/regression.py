@@ -19,7 +19,7 @@ from ._log import logged
 from ._core import (
     MinimaxRequest, MinimaxResult, MinimaxRow, ObservationEvaluation, HydrationHold, HoldResult, EvaluatedCoordinates, CheckMetric, CheckGroup, CheckResult,
     CoordinateTarget, Coordinate, CoordinateSet, FitControls, FitCovariance, FitResult, Observation, PredictionUncertainty, ObservationKind,
-    ObservationStatus, Prediction, PredictionGradient, ResidualForm, TrialFailure, reaction_log10_reciprocal,
+    ObservationStatus, Prediction, PredictionGradient, RefusedOperation, ResidualForm, TrialFailure, reaction_log10_reciprocal,
     MeasuredInputKind, MeasuredInput, MeasurementGroup, MeasurementUncertainty, InputReconciliation,
 )
 from .eos import Mixture, Pure, ThermochemistryRecord, _branch
@@ -66,7 +66,7 @@ _KINDS = {
     "concentration": ObservationKind.PhaseConcentration,
 }
 __all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "PredictionUncertainty", "Observation", "ObservationKind",
-           "ObservationStatus", "Prediction", "PredictionGradient", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
+           "ObservationStatus", "Prediction", "PredictionGradient", "RefusedOperation", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
            "predict", "log_linear", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
@@ -740,7 +740,10 @@ def addition_enthalpy(parameters: Parameters, initial: Problem, final: Problem, 
     return result
 
 
-def predict(model: Mixture | Pure, item: Observation, *, supplied_trials: _core.PreparedSuppliedTrials | None = None) -> Prediction:
+def predict(
+    model: Mixture | Pure, item: Observation, *, supplied_trials: _core.PreparedSuppliedTrials | None = None,
+    start: Prediction | None = None, work_limits: _core.EquilibriumWorkLimits | None = None,
+) -> Prediction:
     """Evaluate one observation using the model's shared native calculations.
 
     Parameters
@@ -752,6 +755,12 @@ def predict(model: Mixture | Pure, item: Observation, *, supplied_trials: _core.
 
     supplied_trials : PreparedSuppliedTrials, optional
         Evaluate this bank against the admitted stability parent and return its report in supplied_stability.
+    start : Prediction, optional
+        Available prediction of the same declared state, possibly at other parameter values.
+        Supported for bubble pressure, reacting heat capacity and saturation-capped heat.
+    work_limits : EquilibriumWorkLimits, optional
+        Per-run and shared optimizer iteration limits and a deadline for the
+        equilibrium solves of the same observation kinds.
 
     Returns
     -------
@@ -769,7 +778,7 @@ def predict(model: Mixture | Pure, item: Observation, *, supplied_trials: _core.
     Inspect the returned prediction cause before consuming its value. Failed
     trials are not observations of zero (ALG-FIT).
     """
-    return _core.predict(model._model, item, supplied_trials)
+    return _core.predict(model._model, item, supplied_trials, model.component_ids, start=start, work_limits=work_limits)
 
 
 def differentiate(model: Mixture | Pure | Parameters, item: Observation | Sequence[Coordinate],

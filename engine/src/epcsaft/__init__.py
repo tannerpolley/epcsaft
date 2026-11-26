@@ -68,6 +68,7 @@ ReactionThermochemistry = _core.ReactionThermochemistry
 reaction_thermochemistry_density = _core.reaction_thermochemistry_density
 
 Stop = _core.Stop
+WorkLimit = _core.WorkLimit
 Convergence = _core.Convergence
 ConvergenceError = _core.ConvergenceError
 tolerances = _core.tolerances
@@ -191,6 +192,7 @@ __all__ = (
     "VirialCoefficientActions",
     "VirialCoefficients",
     "Stop",
+    "WorkLimit",
     "ThermochemistryPacket",
     "ThermochemistryRecord",
     "ThermochemistryStatus",

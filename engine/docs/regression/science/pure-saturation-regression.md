@@ -118,6 +118,13 @@ outside-interval or nonfinite thermochemistry for total $c_p$ is
 `thermochemistry_unavailable`, with the Ideal status name as its cause. Every
 declared component requires its own thermal interval, including zero fractions.
 
+For bubble pressure, reacting heat capacity and saturation-capped heat,
+`regression.predict` accepts an earlier available `Prediction` as `start`
+and optional `work_limits`. Returned refusals identify `refused_operation`
+and carry `refusal_convergence` with the work gate and measured residual
+and criterion where available. See [ALG-FIT](../../science/algorithms.md#alg-fit)
+for admission, work accounting and the returned states.
+
 Residual forms: `Difference` $r=(y-y_{obs})/s$ with a positive
 nondimensionalisation scale $s$ in the observation's unit (not an
 uncertainty), and `LogRatio` $r=\ln(y/y_{obs})$ for positive quantities, which
