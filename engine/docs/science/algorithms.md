@@ -1384,14 +1384,20 @@ unattainable request would otherwise return the optimizer's last iterate. A sele
 point whose classified rows meet the caller criterion is accepted after any
 non-error optimizer stop (success, acceptable point, tiny step, square feasible point,
 restoration failure or budget); invalid-number, diverging, step-computation and infeasibility stops stay
-unavailable, and a floor-limited point also needs optimizer success. A failed Ipopt
+unavailable, and a floor-limited point also needs optimizer success.
+Ipopt's `LOCAL_INFEASIBILITY` and `ERROR_IN_STEP_COMPUTATION` are stalls
+that carry the exact return name and the rows at the evaluated point. If Ipopt
+supplies no endpoint, those rows are from the fallback start. A topology event
+retains its leading message and a computed rank refusal retains its own verdict.
+A continuation corrector with a bare optimizer stall can halve the step within
+the existing retry limits. A failed Ipopt
 initialization, a fatal application return (invalid problem or option, exception,
 memory, internal error) or an unassigned status is not a stop: it leaves no
 candidate to classify and is recorded `infeasible` like an unrun structural solve
 (or `left_domain` when the fallback start's reference is unavailable), even when the
 fallback start's rows meet the criterion. Its `solver_status`
 carries both exact Ipopt names, e.g. `UNASSIGNED; Initialize returned Invalid_Option`,
-so a solver failure stays distinct from a `LOCAL_INFEASIBILITY` stop; the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
+and the message repeats them. One non-error rule gates the polish, row classification and acceptance. No additional step or
 relaxed criterion is used. Recompute diagnostics at the selected point, and
 apply the unchanged caller criterion and all final physical/branch checks.
 A feasibility cell carries chemical and pressure rows as optimizer equality

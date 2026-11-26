@@ -1093,6 +1093,11 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     }
     if (!accepted) {
         if (!topology_ok) {
+            if (result.convergence.cause == result.solver_status && !result.convergence.cause.empty()
+                && cause != "phases_coalesced" && cause != "phase_disappeared") {
+                if (cause == "present_solid_rank" || cause == "log_charge_rank") result.convergence.stop = core::Stop::singular;
+                result.convergence.cause = cause;
+            }
             infeasible(cause.c_str());
             result.message = cause == "phases_coalesced" && compiled.problem.prescribed_liquid_composition ? "unresolved separation: " + topology_failure
                 : cause == "phases_coalesced" ? topology_sentence(compiled, topology) + "; " + topology_failure
@@ -1994,8 +1999,10 @@ static EquilibriumResult run_driver_once(
     switch (status) {
     case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
     case Ipopt::DIVERGING_ITERATES: convergence.stop = core::Stop::left_domain; break;
-    case Ipopt::ERROR_IN_STEP_COMPUTATION: convergence.stop = core::Stop::singular; break;
+    case Ipopt::ERROR_IN_STEP_COMPUTATION:
     case Ipopt::LOCAL_INFEASIBILITY:
+        // Keep the default stalled stop for an optimizer refusal, even if the evaluated rows meet the criterion.
+        convergence.cause = result.solver_status; break;
     case Ipopt::TOO_FEW_DEGREES_OF_FREEDOM: convergence.stop = core::Stop::infeasible; break;
     default:
         // No candidate after a fatal return: infeasible like an unrun structural solve, whatever the start's rows.

@@ -495,12 +495,12 @@ void fit_failure_records() {
         && !failed_solve.pressure && failed_solve.amounts.empty() && failed_solve.mole_fractions.empty()
         && failed_solve.molar_densities.empty() && !failed_solve.terminal_numerical_failure
         && failed_solve.topology_event == TopologyEvent::PhasesCoalesced);
-    // At 700 K both solvers find coincident phases. MA57 records infeasible while
-    // MUMPS records singular after Ipopt returns ERROR_IN_STEP_COMPUTATION.
+    // Both solvers find coincident phases. A step-computation error carries the optimizer's return.
     CHECK((failed_solve.convergence.stop == core::Stop::infeasible
             && failed_solve.convergence.cause == "phases_coalesced")
         || (failed_solve.linear_solver == "mumps" && failed_solve.solver_status == "ERROR_IN_STEP_COMPUTATION"
-            && failed_solve.convergence.stop == core::Stop::singular));
+            && failed_solve.convergence.stop == core::Stop::stalled
+            && failed_solve.convergence.cause == "ERROR_IN_STEP_COMPUTATION"));
 
     struct Refusal {
         const char* stage;

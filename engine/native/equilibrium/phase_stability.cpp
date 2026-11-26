@@ -2273,7 +2273,7 @@ std::pair<EquilibriumResult, std::vector<StabilityReport>> cooling_onset(const C
     // topology event; a rejected publication (coalesced, vanished), an unavailable phase spectrum and a
     // structurally rank-deficient declaration (no solve run) return unchanged.
     if (!failed.success && failed.candidate != equilibrium::Candidate::Unstable
-        && !(c.feasible && failed.convergence.stop == core::Stop::infeasible && failed.convergence.cause.empty()
+        && !(c.feasible && failed.convergence.stop == core::Stop::stalled && failed.convergence.cause == "LOCAL_INFEASIBILITY"
              && failed.topology_event == TopologyEvent::None))
         return {std::move(failed), {}};
     std::vector<StabilityReport> reports; StageWork work; std::vector<double> composition;

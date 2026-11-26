@@ -79,7 +79,7 @@ class Stop:
     met.
     """
     stalled: Stop
-    """Residual contraction does not support further progress."""
+    """Residual contraction does not support further progress, or Ipopt stopped with the named return in cause."""
     budget_exhausted: Stop
     """An iteration, evaluation or elapsed-time limit was reached."""
     left_domain: Stop
