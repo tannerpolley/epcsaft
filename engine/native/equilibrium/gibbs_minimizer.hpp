@@ -269,7 +269,7 @@ EPC_API EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& m
 enum class ContinuationStop {
     reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
     phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
-    step_too_small, budget_exhausted, critical_endpoint, turning_point
+    step_too_small, budget_exhausted, critical_endpoint, turning_point, held_species
 };
 
 EPC_API const char* continuation_stop_name(ContinuationStop stop) noexcept;
@@ -346,7 +346,7 @@ NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& 
 std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
-    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}
+    const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}, bool check_forward = false
 );
 
 EPC_API std::vector<double> sensitivity(

@@ -1196,6 +1196,32 @@ positive finite composition of every supported species; exact absence is the
 compiled support. No composition cutoff applies, so the polish reaches
 positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
 (for example MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
+For a stalled cold Gibbs minimization, ALG-TERMINATION can nominate a supported
+species for a separate polish in the same chart. The optimizer box is unchanged.
+For each nominee replace the chemical row by $\ln x_{pi}-\ln x_h=0$, with
+$x_h=2^{-511}$ (`EQUILIBRIUM_HELD_FRACTION`). Read the physical chemical row
+$a_{pi}$ at the polished point. Release a nominee with $a_{pi}\leq0$.
+One release round retains its last accepted iterate and requires each released
+raw row to meet the caller's criterion. A remaining held cell must retain a
+positive row and pass the physical product in EqID
+`fluid_species_amount_complementarity`, using the actual returned fraction.
+
+On the returned classified system, the scaled infinity norm of the first-order
+response of the other primal coordinates to a unit perturbation of $\ln x_h$
+must be at most `EQUILIBRIUM_POLISH_CORRECTION`. The response solve requires a
+finite Jacobian, full rank and the implicit linear-solve check. A phase whose
+solvent-only permittivity takes a ratio of held solvents is hold-dependent.
+The reduced-Hessian projection still includes held coordinates. A negative
+direction can therefore refuse even a stationary classified point. The response
+describes only the linearized dependence at the point. The held species' root
+remains unresolved below the hold. The result carries its phase, species,
+fraction, chemical row, complementarity product and response.
+
+The nominal pair product is $x_h^2=2^{-1022}$, the smallest normal double.
+The chemical row's logarithm is above its clamp for $V_p<2^{511}$ m³/mol.
+$N_px_h$ is normal for $N_p\ge 2^{-511}$ mol. $N_px_h^2$ may be subnormal.
+Continuation refuses a supplied or internally computed held seed by name.
+
 A trace moiety row is taken relative to its own size in the polish's progress
 measure, admission, stops, Newton system and forward-error bound, and in the
 classified residual. Its size $s_k$ is the larger of the moiety's feed
@@ -2017,7 +2043,9 @@ Explicit `stability_test` calls retain diagnostic root-side evidence and
 structural support and composition/volume comparisons for indeterminate trials
 before `stability_measure` returns unavailable. Comparisons refer to the
 conservation-repaired stability candidate, including zero-pinned phases and
-original retained volumes. Direct discovery, recovery and vanished-support
+original retained volumes. The candidate identity uses the returned classified
+rows, including any held equations. The chemical potentials, plane and Gibbs
+energies use the physical composition at the hold. Direct discovery, recovery and vanished-support
 searches do not request this enrichment. Anchor refusal retains partial
 quantities and its cause without changing trial evidence. Existing ordered
 `split_checks` supply Gibbs changes and paired extensive errors. Search kind
@@ -3460,6 +3488,12 @@ residuals and Jacobians consistently, then apply the declared bounded fitting
 method. Initialization, bounds, loss, covariance assumptions and budget are
 scientific inputs to the fit. A failed state is a failed evaluation, never a
 successful zero residual. Fitted values remain candidate parameters.
+A phase composition, concentration, partial pressure or activity observation
+that selects only held cells returns `held_species` without a prediction,
+residual or derivative. Both operands of a phase-amount ratio use this rule
+in their respective phases. Sums with a present species and bulk observables
+keep their physical values.
+
 
 `FitResult.rank_records` publishes the existing SVD decision for the complete
 weighted optimizer observation Jacobian, including admitted measured-input
@@ -3659,12 +3693,13 @@ $\kappa\max(1, |\ell_i|)$ of the lower log bound $\ell_i$, where $\kappa$ is the
 consumed `bound_push`, and whose returned classified chemical row exceeds
 the row criterion. The trial list proposes omissions for phase discovery.
 
-Use the same selector for a caller's declared Helmholtz Gibbs minimization
-with species identifiers, including its cold physical-mol retry. Name each
-selected species and phase in the generic stall message. A specific
-publication refusal takes precedence. The clauses describe end-point
-geometry and an unresolved chemical row. They establish neither the cause
-of the stall nor the physical stability of the declaration.
+Use the same selector for a declared Helmholtz Gibbs minimization, including
+its cold physical-mol retry and discovery's declared additions. A selected cell
+is nominated for the held polish in ALG-EQUILIBRIUM. Species identifiers affect
+reporting only. Newton attempts, warm attempts, stability trials, feasibility
+cells and reaction-relaxed internal splits are outside the held-polish entry.
+A specific publication refusal takes precedence over the composition-bound
+diagnostic.
 
 ### Diagnose an observed refusal
 

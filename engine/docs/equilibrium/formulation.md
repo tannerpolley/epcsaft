@@ -99,7 +99,9 @@ solvent-mass/standard-molality factor for every solute. `basis`,
 `reference_pressure_pa` and the `species` solvent/molality fields identify
 these conventions. Ionic values use the EOS single-ion convention; only
 charge-neutral combinations have convention-independent meaning. Values come
-from the state and reference owner, independently of targets and residuals.
+from the state and reference owner, independently of targets and residuals. In a phase with a held
+species, a reaction involving that species has no zero-affinity identity at
+the hold. The returned activities use the physical composition at the hold.
 
 `species.causes` names unavailable component quantities; `cause` names an
 unavailable quotient. A finite log value survives activity exponentiation

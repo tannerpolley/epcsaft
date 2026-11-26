@@ -718,6 +718,7 @@ BoundaryAttempt admit_result(
     scope.probe("driver_result_present", 1.0);
     if (std::isfinite(result.convergence.residual)) scope.probe("row_residual", result.convergence.residual);
     if (!result.has_state()) return refuse(stop_of(result, outcome.terminal), result.message);
+    if (!result.held_species.empty()) return refuse(ContinuationStop::held_species, result.message);
     const double recomputed = supplied ? compiled.classified_residual_norm(result.coordinates)
         : maximum_abs(result.classified_residuals);
     if (!(result.requested_tolerance_met.value_or(false)) || !(recomputed <= compiled.problem.solver_options.value(policy::row)))
@@ -1687,6 +1688,7 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
     case ContinuationStop::budget_exhausted: return "budget_exhausted";
     case ContinuationStop::critical_endpoint: return "critical_endpoint";
     case ContinuationStop::turning_point: return "turning_point";
+    case ContinuationStop::held_species: return "held_species";
     }
     return "unknown";
 }
@@ -1694,6 +1696,8 @@ const char* continuation_stop_name(ContinuationStop stop) noexcept {
 // `limits` (recovery, #565) also caps attempted steps at max_steps; a supplied start with `anchors` is admitted on them.
 static ContinuationResult continue_path(const HelmholtzModel& model, const ContinuationRequest& request,
                                         const DriverLimits* limits, std::vector<double> anchors, StageWork* output = nullptr) {
+    if (request.start_result && !request.start_result->held_species.empty())
+        return finish({}, ContinuationStop::held_species, "supplied start holds a species");
     if (!request.start_problem.solids.empty() || !request.target_problem.solids.empty())
         throw std::invalid_argument("continuation is not admitted with solids");
     if (request.start_problem.envelope) return trace_envelope(model, request);
@@ -1801,7 +1805,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         if (admitted.convergence.has_value()) initial.finish(*admitted.convergence);
         if (!admitted.accepted) {
             reject(result, admitted, 0.0);
-            return finish(std::move(result), ContinuationStop::initial_failure, admitted.message);
+            return finish(std::move(result), admitted.stop == ContinuationStop::held_species ? admitted.stop : ContinuationStop::initial_failure, admitted.message);
         }
         result.path_values.push_back(0.0);
         if (parameter_path) result.parameter_values.push_back(parameter_start);
@@ -1877,7 +1881,7 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         transfer = false;
         core::retain_failure(observations.first_numerical_failure, attempt.message, "continuation admission");
         reject(result, attempt, q_try);
-        if (attempt.terminal) return finish(std::move(result), attempt.stop, attempt.message);
+        if (attempt.terminal || attempt.stop == ContinuationStop::held_species) return finish(std::move(result), attempt.stop, attempt.message);
         if (local_retries == 0) q_failed = q_try;
         const double halved = dq / 2.0;
         if (halved < options.minimum_step || local_retries >= options.max_retries_per_step) {
@@ -2032,6 +2036,7 @@ std::optional<BubbleBranchEnd> classify_branch_end(
 
 EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope,
     std::optional<std::size_t> branch_end_work_limit) {
+    if (!seed.held_species.empty()) throw std::invalid_argument("held_species: bubble source holds a species");
     if (seed.model_identity != target.model->identity() || !seed.declaration || !seed.has_state()
         || !seed.requested_tolerance_met.value_or(false) || !supports_work_limit(*seed.declaration))
         throw std::invalid_argument("bubble source must be admitted on the target model");

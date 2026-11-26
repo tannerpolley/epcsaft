@@ -276,6 +276,7 @@ struct Row final {
     RowKind kind = RowKind::Chemical;
     std::size_t phase = 0;
     std::size_t index = 0;
+    std::optional<std::size_t> held_column{};
 };
 
 // max |v_i|, infinite if any entry is nonfinite.
@@ -645,7 +646,6 @@ void admit_solid_declarations(const HelmholtzModel&, const std::optional<Neutral
 std::vector<SolidLogK> solid_log_k(const HelmholtzModel&, double temperature, double pressure,
     const std::optional<NeutralReferenceDeclaration>&, const std::vector<SolidSpec>&, const ReferenceJets& jets);
 // The classified declaration of a solved point: a free solid is present exactly when its amount is positive.
-CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point);
 
 // Conserved inventory only: maximum is mol in amount mode, dimensionless in fraction mode.
 // witness is n/N_feed, or (y, tau=N_feed/N); finite_witness uses the same chart.
@@ -875,6 +875,8 @@ struct EquilibriumResult final {
     std::vector<Row> rows;
     // ALG-TERMINATION: the species a default cold trial attempt left at their composition bounds, rows unconverged.
     std::vector<std::size_t> bound_species;
+    struct HeldSpecies { std::size_t phase, species; double fraction, chemical_row, complementarity, response; };
+    std::vector<HeldSpecies> held_species;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;
     std::size_t generic_nullity = 0;
@@ -901,6 +903,8 @@ struct EquilibriumResult final {
 
     double residual_norm() const noexcept { return maximum_abs(residuals); }
 };
+
+CompiledSystem classify_result(CompiledSystem compiled, const EquilibriumResult& result);
 
 // Ordered critical starts and every returned candidate; finite search certifies no stability or uniqueness.
 struct CriticalSearch final {
@@ -1351,7 +1355,7 @@ EPC_API SolvedStateActionBatch solved_state_actions(
 );
 // The ASL reader resets this workspace before replacing its compiled system or result.
 struct SolvedStateActionWorkspace;
-SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
+EPC_API SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace);
 // Independent first-order directions at one accepted center; each response retains its own status.
 struct SolvedStateCaloricCenter;

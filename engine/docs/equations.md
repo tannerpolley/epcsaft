@@ -3297,6 +3297,20 @@ $$
 n_s\ge 0,\qquad \mathrm{SI}_s\le 0,\qquad n_s\,\mathrm{SI}_s=0.
 $$
 
+## `fluid_species_amount_complementarity`
+
+- Section: Declared fluid equilibrium
+- Status: Exact derivation
+- Source: KKT conditions of the declared Gibbs minimum with nonnegative phase-component amounts and the balance and charge multipliers of `chemical_potential_stationarity`
+- Description: The dimensionless chemical row is the physical chemical potential over RT minus the moiety and charge multiplier terms. Its product with phase-component amount per mole of feed is the physical complementarity residual.
+- Change note: For a held species, the classified point solves a fixed log-fraction row. A positive physical row establishes the bound sign, and the actual product must meet the caller's row criterion. The stationarity claim applies to the classified program at the fixed fraction.
+
+$$
+a_{pi}=\frac{\mu_{pi}}{RT}-\sum_k B_{ki}\lambda_k-z_i\phi_p,\qquad
+n_{pi}=N_px_{pi}\ge0,\qquad a_{pi}\ge0,\qquad
+c_{pi}=\frac{N_px_{pi}}{N_{\mathrm{feed}}}a_{pi}=0.
+$$
+
 ## `solid_material_balance`
 
 - Section: Equilibrium pure stoichiometric solids

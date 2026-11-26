@@ -87,13 +87,14 @@ FIELDS(equilibrium::IpoptPoint, a, b, c, d, e, f, g, h, i)
 FIELDS(equilibrium::IpoptDiagnostics, a, b, c, d, e, f, g, h, i, j)
 FIELDS(equilibrium::SaturationNode, a, b, c, d, e, f, g, h, i, j, k, l)
 FIELDS(equilibrium::SaturationSearch, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t)
+FIELDS(equilibrium::EquilibriumResult::HeldSpecies, phase, species, fraction, chemical_row, complementarity, response)
 auto fields(equilibrium::EquilibriumResult& v) {
     return std::tie(v.declaration, v.success, v.message, v.solver_status, v.temperature, v.pressure,
         v.amounts, v.mole_fractions, v.molar_densities, v.packing_fractions, v.residuals, v.classified_residuals,
         v.coordinates, v.phase_count, v.iterations, v.evaluations, v.hessian_calls, v.convergence,
         v.first_numerical_failure, v.last_rank, v.rank_records, v.requested_tolerance_met,
         v.topology_event, v.topology_phase, v.topology_pair, v.solver_settings, v.numerical_estimates,
-        v.ipopt_diagnostics, v.recovered_ipopt_diagnostics);
+        v.ipopt_diagnostics, v.recovered_ipopt_diagnostics, v.held_species);
 }
 auto fields(Prediction& v) {
     return std::tie(v.solver_options, v.value, v.unit, v.status, v.message, v.residual, v.first_numerical_failure,

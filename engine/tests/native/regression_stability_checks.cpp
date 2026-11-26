@@ -1,8 +1,38 @@
 #include "regression_checks_shared.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "fixtures/mea-flash.hpp"
 #include "water_isobutanol.hpp"
 
 namespace regression_checks {
+void check_held_species_observations() {
+    auto [parameters, problem] = mea_flash_fixture::declaration(313.15, 3491.5333681323896, 0.4);
+    const HelmholtzModel model(std::move(parameters));
+    Observation mea;
+    mea.kind = ObservationKind::PhaseMoleFraction;
+    mea.problem = problem;
+    mea.species = {1};
+    auto water = mea;
+    water.kind = ObservationKind::PartialPressure;
+    water.species = {2};
+    auto ratio = water;
+    ratio.kind = ObservationKind::PhaseAmountRatio;
+    ratio.denominator_species = {1};
+    const auto held = predict(model, mea), available = predict(model, water);
+    CHECK(held.status == ObservationStatus::HeldSpecies && !held.value && !held.residual);
+    CHECK(available.status == ObservationStatus::Available && available.value && available.residual);
+    std::printf("fit MEA=%s water_partial_pressure=%.17g Pa\n", held.message.c_str(), *available.value);
+    FitRequest request;
+    request.parameters = model.parameters();
+    request.coordinates.coordinates = {{{{ParameterFamily::Kij, {2, 18}}}, -0.02424240226792941, .2, -1, 1}};
+    request.observations = {ratio};
+    FitResult failures;
+    ObservationEvaluation evaluation;
+    ObservationEvaluator evaluator(request, failures, {0});
+    CHECK(!evaluator.evaluate(request.coordinates.start(request.parameters), true, evaluation));
+    CHECK(evaluation.statuses[0] == ObservationStatus::HeldSpecies && !std::isfinite(evaluation.predictions[0]));
+    std::printf("fit ratio=%s\n", failures.failures.back().message.c_str());
+}
+
 void check_equilibrium_optimizer_point() {
     using namespace epcsaft::equilibrium;
     const HelmholtzModel model(properties_support::identical_ethane_pair());

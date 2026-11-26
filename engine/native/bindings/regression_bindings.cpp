@@ -119,7 +119,7 @@ m._serve_fit(channel)
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
         EPCSAFT_VALUES(ObservationStatus, NotEvaluated, ReferenceUnavailable, Available, ThermochemistryUnavailable,
             DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass, NonpositiveLogArgument,
-            ActionUnavailable, Nonfinite, InadmissibleTrial);
+            ActionUnavailable, Nonfinite, InadmissibleTrial, HeldSpecies);
     nb::class_<Observation>(module, "Observation")
         .def(nb::init<>())
         EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, analytical_solute_molality, finite_solute_molalities,

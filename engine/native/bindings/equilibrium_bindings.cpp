@@ -287,6 +287,8 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(BranchEndCondition, LoadingFold, VaporMechanicalLimit, VaporKindRefused);
     nb::class_<BubbleBranchEnd>(module, "BubbleBranchEnd")
         EPCSAFT_READONLY(BubbleBranchEnd, condition, feed_bracket_mol, limiting_feed_mol, limiting_pressure_pa);
+    nb::class_<EquilibriumResult::HeldSpecies>(module, "HeldSpecies")
+        EPCSAFT_READONLY(EquilibriumResult::HeldSpecies, phase, species, fraction, chemical_row, complementarity, response);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.", nb::dynamic_attr())
         EPCSAFT_DOMAIN_VIOLATIONS
         .def_prop_ro("critical_search", [](const EquilibriumResult& r) { return r.critical_search ? nb::cast(*r.critical_search) : nb::none(); })
@@ -298,6 +300,7 @@ void register_equilibrium(nb::module_& module) {
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         .def_ro("branch_end", &EquilibriumResult::branch_end)
         .def_ro("electric_potential_difference_v", &EquilibriumResult::electric_potential_difference_v)
+        .def_ro("held_species", &EquilibriumResult::held_species)
         EPCSAFT_READONLY(EquilibriumResult, terminal_numerical_failure, last_full_evaluation, phase_pressures, discovery, success, message, solver_status, temperature, pressure, amounts,
             mole_fractions, molar_densities, packing_fractions,
             // Dimensionless reduced-energy balance/charge stationarity coordinates of the solution.
@@ -365,7 +368,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_VALUES(TopologyEvent, PhaseDisappeared, PhasesCoalesced, BranchEnd);
     auto continuation_stops = nb::enum_<ContinuationStop>(module, "ContinuationStop");
     for (int value = static_cast<int>(ContinuationStop::reached_target);
-         value <= static_cast<int>(ContinuationStop::turning_point); ++value) {
+         value <= static_cast<int>(ContinuationStop::held_species); ++value) {
         const auto stop = static_cast<ContinuationStop>(value);
         continuation_stops.value(continuation_stop_name(stop), stop);
     }
