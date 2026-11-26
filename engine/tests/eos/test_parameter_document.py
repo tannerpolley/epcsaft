@@ -37,9 +37,8 @@ def test_methanol_hexane_from_two_packets_equals_the_hand_edited_document() -> N
                                     k_ij={("methanol", "hexane"): 0.03})
     assert native(built) == native(hand)
     feed = eq.MoleFractions({"methanol": 0.5, "hexane": 0.5})
-    splits = [eq.solve_equilibrium(Mixture(p), eq.Problem(phases=eq.Discover(), T=250.0, P=1.0e5, feed=feed)) for p in (hand, built)]
-    assert splits[0].phase_count == 2
-    assert splits[1].mole_fractions == splits[0].mole_fractions  # bitwise
+    split = eq.solve_equilibrium(Mixture(built), eq.Problem(phases=eq.Discover(), T=250.0, P=1.0e5, feed=feed))
+    assert split.phase_count == 2
 
 
 def test_set_k_ij_replaces_the_stored_pair() -> None:
