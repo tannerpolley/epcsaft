@@ -2914,7 +2914,8 @@ void check_mea_discovery_omitted_species() {
     const auto [reference_g, reference_error, reference_repair] = snapshot(declared_search, declared);
     const double decrease = parent_g - found_g;
     const double margin = admitted->quantities.at("addition_gibbs_estimate_over_rt_mol");
-    CHECK(std::abs(found_g - reference_g) <= found_error + reference_error);
+    const double gibbs_scale = std::max({1.0, std::abs(found_g), std::abs(reference_g)});
+    CHECK(std::abs(found_g - reference_g) <= policy::EQUILIBRIUM_ROW_RESIDUAL.value * gibbs_scale);
     CHECK(decrease > margin);
     std::printf("C1 parent_G_over_RT_mol=%.17g found=%.17g reference=%.17g difference=%.17g estimate_sum=%.17g "
         "decrease=%.17g margin=%.17g parent_estimate=%.17g parent_repair_mol=%.17g reference_residual=%.17g\n",

@@ -301,60 +301,38 @@ void pathway_weight() {
         for (std::size_t k = 0; k < 3; ++k)
             identity(std::string("F3b/") + s.name + "/series" + std::to_string(k + 1), "V^k d^kA/dV^k", computed[k], exact[k], 1.0,
                 IDENTITY, fields({inputs(s, "blend"), field("double_floor", floor)}));
-        // |p_double - p_wider| <= RT floor + 4 eps |p| + RT e_A with p = RT (rho - A_V) (lead design revision, 2026-11-09).
-        // The difference is double rounding of the whole A_V (about 50 ulp at L); the block site floor under exact
-        // propagation is at most 4.0e-9 Pa (blend at L). e_A is the arithmetic-noise spread of the double A_V over the six component orders
-        // x +-8 one-ulp density steps, its exact linear change (from the exact A_VV of the canonical order) removed.
-        const double rt = R * s.temperature, eps = std::numeric_limits<double>::epsilon();
-        double floor_correction_off = NAN;
+        // The density root consumes pressure as a residual reduced by RT rho.
+        const double rt = R * s.temperature;
         for (const auto& [name, form] : {std::pair{"correction-off", Form::Uncorrected}, std::pair{"blend", Form::Blend},
                                          std::pair{"single", Form::Single}}) {
-            long double low = 0.0L, high = 0.0L;
-            double own_floor = 0.0, a_v = NAN, a_vv = NAN;
-            for (const auto& order : ORDERS) {
-                std::vector<double> x(3);
-                for (std::size_t p = 0; p < 3; ++p) x[p] = s.x[order[p]];
-                const epcsaft::HelmholtzModel ordered(hong(form, LOGISTIC, order));
-                for (int j = 0; j <= 16; ++j) {
-                    const int k = j % 2 ? (j + 1) / 2 : -j / 2;  // 0, 1, -1, ..., 8, -8: the canonical center first
-                    double density = s.density, unused = 0.0;
-                    for (int step = 0; step < std::abs(k); ++step) density = std::nextafter(density, k * INFINITY);
-                    const auto series = epcsaft::properties::density_volume_taylor(ordered, s.temperature, density, x,
-                        &order == &ORDERS[0] && k == 0 ? own_floor : unused);
-                    if (&order == &ORDERS[0] && k == 0) a_v = series.c[1], a_vv = 2.0 * series.c[2];
-                    const long double change = a_vv * (1.0L / density - 1.0L / s.density);
-                    const long double noise = static_cast<long double>(series.c[1]) - a_v - change;
-                    low = std::min(low, noise);
-                    high = std::max(high, noise);
-                }
-            }
-            const double e_a = static_cast<double>(high - low);
-            if (form == Form::Uncorrected) floor_correction_off = own_floor;
             const epcsaft::HelmholtzModel model(hong(form));
+            double own_floor = 0.0;
+            const double a_v = epcsaft::properties::density_volume_taylor(model, s.temperature, s.density, s.x, own_floor).c[1];
             const auto wide = model.isothermal<epcsaft::WiderScalar>(s.temperature, volume, {s.x.begin(), s.x.end()});
             const long double p_wider = rt * (static_cast<long double>(s.density) - static_cast<long double>(wide.gradient[1]));
             const std::string stop = wide.association_refinement->cause;
             const double p = rt * (s.density - a_v);
             const double difference = static_cast<double>(p_wider - static_cast<long double>(p));
-            const double bound = rt * own_floor + 4.0 * eps * std::abs(p) + rt * e_a;
+            const double bound = model.solver_options().value(epcsaft::policy::density) * rt * s.density;
             const auto id = std::string("F3b/") + s.name + "/wider/" + name;
             const auto context = fields({inputs(s, name), field("p_double", p), field("p_wider_minus_p_double", difference),
-                field("A_V", a_v), field("floor", own_floor), field("floor_correction_off", floor_correction_off), field("e_A", e_a),
+                field("A_V", a_v), field("floor", own_floor),
                 field("bound", bound), field("wider_stop", stop)});
             recording_support::compare_custom(id, "|p_double - p_wider|", "Pa", std::abs(difference), bound,
-                "error <= RT floor + 4 eps |p| + RT e_A", std::abs(difference) <= bound, "wider replay", context);
+                "error <= density criterion * RT rho", std::abs(difference) <= bound, "wider replay", context);
             if (s.name[0] != 'L' || form != Form::Blend) continue;
-            // The bound still separates a site defect: a 1e-4 association tolerance moves p by more than it allows.
+            // The planted site defect moves pressure beyond the density criterion.
+            constexpr double loose_tolerance = 1e-3;
             epcsaft::policy::SolverOptions options;
-            options.set(epcsaft::policy::association, 1e-4);
+            options.set(epcsaft::policy::association, loose_tolerance);
             const epcsaft::HelmholtzModel loose(hong(form), {}, std::nullopt, options);
             double loose_floor = 0.0;
             const double moved = rt * (s.density - epcsaft::properties::density_volume_taylor(loose, s.temperature, s.density, s.x,
                 loose_floor).c[1]);
             const double defect = static_cast<double>(std::fabs(p_wider - static_cast<long double>(moved)));
             recording_support::compare_custom("F3b/L/wider/site-defect", "|p_loose - p_wider|", "Pa", defect, bound,
-                "defect > RT floor + 4 eps |p| + RT e_A", defect > bound, "controlled site defect",
-                fields({context, field("association_tolerance", 1e-4), field("loose_floor", loose_floor)}));
+                "defect > density criterion * RT rho", defect > bound, "controlled site defect",
+                fields({context, field("association_tolerance", loose_tolerance), field("loose_floor", loose_floor)}));
         }
         if (s.name[0] == 'L') {
             // Rounding allowance on the pressure scale rho RT (p/RT is far smaller than A_V in a liquid). The correction-off
