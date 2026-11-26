@@ -17,8 +17,9 @@ Use Numerical Verification-Driven Development:
   limit or justified reference case, at a tolerance at least as tight as the
   claim.
 - A performance or refactoring change shows equivalence within 1e-10 of the
-  quantity's scale, the largest magnitude of the vector it belongs to (owner,
-  2026-10-06). Compare derived quantities that amplify cancellation through
+  quantity's scale, the largest magnitude of the vector it belongs to, with a
+  quantity-specific absolute floor where that scale is zero or below the
+  quantity's working precision (owner, 2026-10-06). Compare derived quantities that amplify cancellation through
   their solved values. Require bit identity for a guaranteed copy, such as
   packet transport, cache reuse or an unchanged default path. A tighter
   tolerance needs a specific claim that requires it.
