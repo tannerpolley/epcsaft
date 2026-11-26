@@ -3258,6 +3258,13 @@ void check_mdea_endpoint_gibbs() {
     const auto& q = declared.quantities;
     const double D = q.at("endpoint_gibbs_change_over_rt_mol"), E = q.at("endpoint_error_over_rt_mol");
     CHECK(std::abs(D - target) <= E + target_error);
+    auto negative = options;
+    negative.standard_uncertainty_over_rt.assign(comparison.feed.values.size(), 0.0);
+    negative.standard_uncertainty_over_rt.front() = -1e-12;
+    std::string refused;
+    try { conserved_split_difference(compiled, parent, split_system, split, 0, negative); }
+    catch (const std::exception& error) { refused = error.what(); }
+    CHECK(refused == "invalid standard-term uncertainty estimates");
     StabilityOptions no_trials;
     no_trials.trial_budget = 0;
     check_endpoint_energies(report, stability_test(split_system, split, no_trials),
@@ -3440,7 +3447,7 @@ void check_associating_isomer_gibbs() {
     const auto adjusted = conserved_split_difference(fc, fr, shifted, shifted_result, 0, {});
     const auto& terms = adjusted.quantities;
     CHECK(terms.at("integral_qualified") == 1.0);
-    CHECK(adjusted.status != GibbsDifferenceStatus::Decrease);
+    CHECK(adjusted.status == GibbsDifferenceStatus::Overlap);
     const double integral = terms.at("gibbs_change_over_rt_mol");
     const double error_with_reference = terms.at("complete_error_over_rt_mol");
     const double reference_error = terms.at("reference_error_over_rt_mol");

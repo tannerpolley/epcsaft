@@ -633,6 +633,12 @@ struct GibbsDifferenceReference final {
   double repair_error = 0;
   std::string cause;
 };
+void check_standard_uncertainty(const StabilityOptions& options, std::size_t species) {
+    const auto& u = options.standard_uncertainty_over_rt;
+    if (!u.empty() && (u.size() != species || !std::all_of(u.begin(), u.end(), [](double x) { return std::isfinite(x) && x >= 0.0; })))
+        throw std::invalid_argument("invalid standard-term uncertainty estimates");
+}
+
 std::vector<double> plane_row_errors(const CompiledSystem& c, const EquilibriumResult& result, const char* missing) {
     std::vector<SolvedStateObservable> plane;
     for (std::size_t i = 0; i < c.n_feed.size(); ++i)
@@ -649,8 +655,10 @@ std::vector<double> plane_row_errors(const CompiledSystem& c, const EquilibriumR
     return rows;
 }
 
-void retain_plane_value_errors(StabilityReport& report, const StabilityOptions& options, const std::vector<double>& rows) {
-    for (auto& t : report.trials) {
+std::vector<double> retain_plane_value_errors(StabilityReport& report, const StabilityOptions& options, const std::vector<double>& rows) {
+    std::vector<double> numerical_errors(report.trials.size(), NAN);
+    for (std::size_t j = 0; j < report.trials.size(); ++j) {
+        auto& t = report.trials[j];
         auto& q = t.quantities;
         const auto tpd = q.find("tpd_over_rt");
         if (tpd == q.end() || !std::isfinite(tpd->second)) continue;
@@ -659,10 +667,12 @@ void retain_plane_value_errors(StabilityReport& report, const StabilityOptions& 
             numerical += t.composition[i] * (rows[i] + std::numeric_limits<double>::epsilon() * std::abs(report.plane_over_rt[i]));
         for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
             if (q.count(name)) numerical += std::abs(q.at(name));
-        q["numerical_plane_value_error_over_rt"] = numerical;
+        numerical_errors[j] = numerical;
+        if (options.plane_value_errors) q["numerical_plane_value_error_over_rt"] = numerical;
         q["plane_value_error_estimate_over_rt"] = options.standard_uncertainty_over_rt.empty() ? numerical
             : std::inner_product(t.composition.begin(), t.composition.end(), options.standard_uncertainty_over_rt.begin(), numerical);
     }
+    return numerical_errors;
 }
 
 // ALG-STABILITY: cache the original solved-state row uncertainty and supported
@@ -872,6 +882,7 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
 
 GibbsDifference conserved_split_difference(const CompiledSystem& parent_system, const EquilibriumResult& parent,
     const CompiledSystem& split_system, const EquilibriumResult& split, std::size_t donor, const StabilityOptions& options) {
+    check_standard_uncertainty(options, parent_system.n_feed.size());
     return conserved_split_difference(parent_system, conserved_split_reference(parent_system, parent),
         split_system, split, donor, options);
 }
@@ -1344,11 +1355,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     const auto supports = stability_supports(c, options, options.evaluate_supplied_trials ? &outside : nullptr);
     if (options.evaluate_supplied_trials) report.trials.reserve(supports.size());
     const auto& z = c.model->parameters().charge_number;
-    if (!options.standard_uncertainty_over_rt.empty()
-        && (options.standard_uncertainty_over_rt.size() != z.size()
-            || !std::all_of(options.standard_uncertainty_over_rt.begin(), options.standard_uncertainty_over_rt.end(),
-                [](double x) { return std::isfinite(x) && x >= 0.0; })))
-        throw std::invalid_argument("invalid standard-term uncertainty estimates");
+    check_standard_uncertainty(options, z.size());
     const auto candidate = stability_candidate(c, result, report);
     const auto& at = candidate.physical;
     const auto& form = c.model->parameters().permittivity_form;
@@ -2094,12 +2101,14 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
     auto rows = parent ? parent->row_errors : std::vector<double>{};
     if (options.plane_value_errors && rows.empty()) { out.cause = parent->cause; return out; }
+    std::vector<double> numerical_errors;
     try {
         if (rows.empty()) rows = plane_row_errors(c, result, "parent plane uncertainty unavailable");
-        if (!options.plane_value_errors) retain_plane_value_errors(out.report, options, rows);
+        if (!options.plane_value_errors) numerical_errors = retain_plane_value_errors(out.report, options, rows);
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
     const auto error = [&](std::size_t j) { return out.report.trials[j].quantities.at("plane_value_error_estimate_over_rt"); };
-    const auto numerical = [&](std::size_t j) { return out.report.trials[j].quantities.at("numerical_plane_value_error_over_rt"); };
+    const auto numerical = [&](std::size_t j) { return options.plane_value_errors
+        ? out.report.trials[j].quantities.at("numerical_plane_value_error_over_rt") : numerical_errors[j]; };
     const auto best = *out.minimizing_trial; out.uncertainty = error(best);
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
         const auto& t = out.report.trials[j];
@@ -2127,6 +2136,7 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             if (q.at("root_density_side") == static_cast<double>(DensityBranch::Unspecified)) {
                 out.cause = density_refusal; return out;
             }
+            q["numerical_plane_value_error_over_rt"] = numerical(j);
         }
         for (auto i : out.minima) for (auto j : out.minima) {
             const auto& a = out.report.trials[i];
