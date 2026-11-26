@@ -2366,11 +2366,11 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
     StabilityReport report;
     EquilibriumResult parent, restart;
     const auto& z = input.model->parameters().charge_number;
-    const bool reactive_liquid = vanished.kind == PhaseKind::Liquid && input.has_reaction && input.problem.phases.size() == 2
+    const bool reservoir_applicable = vanished.kind == PhaseKind::Liquid && input.has_reaction && input.problem.phases.size() == 2
         && input.pinned_count == 0 && declaration.phases[0].kind == PhaseKind::Vapor
         && std::any_of(vanished.support.begin(), vanished.support.end(), [&](auto i) { return z[i] != 0; });
     try {
-        if (reactive_liquid) {
+        if (reservoir_applicable) {
             const auto& support = declaration.phases[0].support;
             if (!std::all_of(support.begin(), support.end(), [&](auto i) { return z[i] == 0; }))
                 throw std::invalid_argument("charged vapor reservoir unresolved");
@@ -2379,18 +2379,18 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
                     == std::count_if(support.begin(), support.end(), [&](auto i) { return reaction.stoichiometry[i] != 0.0; }))
                     throw std::invalid_argument("retained vapor reactions unresolved");
             for (std::size_t i = 0; i < input.n_feed.size(); ++i)
-                if (input.n_feed[i] > 0.0 && !std::binary_search(support.begin(), support.end(), i))
+                if (input.n_feed[i] > 0.0 && std::find(support.begin(), support.end(), i) == support.end())
                     throw std::invalid_argument("feed outside neutral vapor support; vapor inventory reconstruction unresolved");
             declaration.reactions.clear();
             declaration.source_reference.reset();
             declaration.standard_gibbs_j_per_mol = input.standard_gibbs;
         }
         const auto compiled = compile_problem(*input.model, declaration);
-        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, !reactive_liquid);
+        parent = try_solve_compiled(compiled, std::nullopt, nullptr, &limits, {}, !reservoir_applicable);
         if (!parent.success) throw std::runtime_error(parent.message);
         StabilityOptions options;
         options.trials = std::vector<PhaseSpec>{vanished};
-        if (reactive_liquid) {
+        if (reservoir_applicable) {
             const auto& retry = result.vanished_composition;
             const std::vector<double> distinct = first == retry ? std::vector<double>{} : retry;
             Reservoir reservoir{input, phase, distinct, restart, {}};
