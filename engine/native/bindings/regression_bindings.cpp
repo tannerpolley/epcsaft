@@ -1,4 +1,5 @@
 #include "regression/fit.hpp"
+#include "equilibrium/gibbs_minimizer.hpp"
 
 #include "core/trace.hpp"
 
@@ -154,13 +155,18 @@ m._serve_fit(channel)
         EPCSAFT_READONLY(equilibrium::SaturationComparison, left, right, identity, operands);
     nb::class_<equilibrium::SaturationNode>(module, "SaturationNode")
         EPCSAFT_READONLY(equilibrium::SaturationNode, loading, mismatch, slope, state, estimates, action_cause, prior_start, driver_attempts, action_seconds, estimate_seconds, local_estimates, action_diagnostics);
+    using equilibrium::RefusedOperation;
+    nb::enum_<RefusedOperation>(module, "RefusedOperation")
+        EPCSAFT_VALUES(RefusedOperation, declaration, central_solve, source_recovery, loading_search, search_node_solve,
+            search_node_action, search_node_estimate, search_candidate_solve, search_candidate_estimate, search_candidate_admission,
+            search_root_selection, solved_state_action, thermochemistry, density_closure, observation_form);
     nb::class_<equilibrium::SaturationSearch>(module, "SaturationSearch")
         EPCSAFT_READONLY(equilibrium::SaturationSearch, grid, nodes, rejected_starts, events, candidates, comparisons, causes, groups,
-            accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits);
+            accepted, first_numerical_failure, brackets, iterations, evaluations, hessian_calls, attempts, complete, declaration, work_at_entry, uniqueness_scope, detection_limits, loading_cap, refusal_convergence, refused_operation);
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)
         EPCSAFT_READONLY(Prediction, analytical_osmotic_coefficient, analytical_osmotic_cause, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met, first_numerical_failure, stability, supplied_stability, supplied_available, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch);
+            requested_tolerance_met, first_numerical_failure, stability, supplied_stability, supplied_available, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, solved, final_solved, component_ids, refusal_convergence, refused_operation);
     nb::class_<PredictionGradient>(module, "PredictionGradient")
         EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, central_value);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
@@ -239,10 +245,13 @@ m._serve_fit(channel)
             iteration_costs, initial_cost, final_cost, covariance, prediction_uncertainty, reconciliation, rank_records, first_numerical_failure)
         EPCSAFT_REPR(FitResult, "status", "usable", "final_cost", "iterations", "physical");
     module.def("predict", [](const HelmholtzModel& model, const Observation& observation,
-            std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied) {
+            std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied, std::vector<std::string> component_ids,
+            const Prediction* start, const equilibrium::EquilibriumWorkLimits* limits) {
         core::Scope scope("predict");
-        return predict_validated(model, observation, std::move(supplied));
-    }, nb::arg("model"), nb::arg("observation"), nb::arg("supplied_trials") = nullptr);
+        return predict_validated(model, observation, std::move(supplied), start, limits, std::move(component_ids));
+    }, nb::arg("model"), nb::arg("observation"), nb::arg("supplied_trials") = nullptr,
+        nb::arg("component_ids") = std::vector<std::string>{}, nb::kw_only(),
+        nb::arg("start") = nullptr, nb::arg("work_limits") = nullptr);
     module.def("differentiate", [](const HelmholtzModel& model, const Observation& observation) {
         core::Scope scope("differentiate");
         return differentiate(model, observation, predict_validated(model, observation));

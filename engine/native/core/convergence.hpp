@@ -24,7 +24,10 @@ enum class Stop : std::uint8_t {
     singular,
     infeasible,
     nonfinite,
+    ill_conditioned,
 };
+
+enum class WorkLimit : std::uint8_t { none, deadline, iterations, attempt_iterations, evaluations, hessian_calls, attempts, recovery_path };
 
 struct ConditioningObservation {
     std::string operation{}, basis{}, norm{}, method{}, cause = "not_evaluated", point_kind = "last_linearization", criterion{};
@@ -65,7 +68,16 @@ struct Convergence final {
     std::string cause;
     std::shared_ptr<NumericalRank> rank;
     std::optional<double> backward_error;
+    WorkLimit limit = WorkLimit::none;
 };
+
+inline Convergence refusal(std::string cause, WorkLimit limit = WorkLimit::none) {
+    Convergence record;
+    record.residual = NAN;
+    record.cause = std::move(cause);
+    record.limit = limit;
+    return record;
+}
 
 inline void stopping_criterion(Convergence& record, const policy::SolverOptions& options, std::size_t i) {
     record.criterion = {options.owners.at(i), options.criterion(i)};
@@ -130,6 +142,7 @@ inline const char* stop_name(Stop stop) noexcept {
     case Stop::left_domain: return "left_domain";
     case Stop::singular: return "singular";
     case Stop::infeasible: return "infeasible";
+    case Stop::ill_conditioned: return "ill_conditioned";
     case Stop::nonfinite: return "nonfinite";
     }
     return "unknown";

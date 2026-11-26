@@ -186,6 +186,8 @@ inline std::pair<Ipopt::ApplicationReturnStatus, Ipopt::ApplicationReturnStatus>
     if (consumed) for (const auto* name : {"tol", "acceptable_tol", "constr_viol_tol", "dual_inf_tol"}) {
         double value = 0.0; admit(options->GetNumericValue(name, value, ""), name); (*consumed)[name] = value;
     }
+    Ipopt::Index cap = iterations;
+    if (consumed && options->GetIntegerValue("max_iter", cap, "")) (*consumed)["max_iter"] = cap;
     if (consumed) options->GetNumericValue("bound_push", (*consumed)["bound_push"], "");  // populated when unset; false then
     if (initialized == Ipopt::Solve_Succeeded && warm) {
         double cap = 0.0;

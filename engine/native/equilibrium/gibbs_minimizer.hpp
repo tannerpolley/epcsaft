@@ -103,10 +103,10 @@ bool discovery_newton_eligible(const CompiledSystem&);
 EPC_API EquilibriumResult newton_attempt(const CompiledSystem&, const std::vector<double>& initial,
     const EquilibriumResult& structural, const DriverLimits* limits = nullptr, std::vector<double>* attempt = nullptr);
 bool supports_split_seed(const CompiledSystem& compiled);
-std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true);
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint = true, bool structural = false);
 // The same declared thermodynamic state: declaration_difference without seeds or labels, plus feed values
 // and fixed T and P. Empty when equal; shared by previous-result starts and stability tests.
-std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b);
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool structural = false);
 
 // The producer's candidate-topology predicate on full coordinates: first vanished free phase
 // in declaration order, else the first coincident pair; shared by the driver and continuation.
@@ -163,16 +163,26 @@ struct DriverLimits final {
         return {iterations, deadline, 0, true, static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_EVALUATIONS.value),
             static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_HESSIAN_CALLS.value)};
     }
-    bool iterations_spent() const { return consumed >= iterations; }
-    bool caps_spent() const { return evaluations >= evaluation_cap || hessian_calls >= hessian_cap; }
+    using Limit = core::WorkLimit;
+    mutable Limit refused = Limit::none;
+    std::size_t attempt_iterations = policy::EQUILIBRIUM_MAX_ITERATIONS.value;
+
+    bool deny(Limit gate) const {
+        if (refused == Limit::none) refused = gate;
+        return true;
+    }
+    bool iterations_spent() const { return consumed >= iterations && deny(Limit::iterations); }
+    void retain_denial(core::Convergence& record) const { if (record.limit == Limit::none) record.limit = refused; }
+    bool caps_spent() const { return (evaluations >= evaluation_cap && deny(Limit::evaluations)) || (hessian_calls >= hessian_cap && deny(Limit::hessian_calls)); }
     bool expired() const {
-        exhausted = exhausted || (recovery && iterations_spent()) || (attempt_cap && attempts > attempt_cap);
-        return exhausted || std::chrono::steady_clock::now() >= deadline;
+        exhausted = exhausted || (recovery && iterations_spent()) || (attempt_cap && attempts > attempt_cap && deny(Limit::attempts));
+        return exhausted || (std::chrono::steady_clock::now() >= deadline && deny(Limit::deadline));
     }
     void check(const char* cause = "elapsed work budget exhausted") const { if (expired()) throw BudgetExhausted(cause); }
     // Before one evaluation or Hessian callback: false, refusing it, once any recovery cap is spent.
     bool spend(std::size_t& used, std::size_t cap) const {
-        exhausted = exhausted || (recovery && (used >= cap || iterations_spent()));
+        exhausted = exhausted || (recovery && ((used >= cap && deny(&used == &evaluations ? Limit::evaluations
+            : &used == &hessian_calls ? Limit::hessian_calls : Limit::iterations)) || iterations_spent()));
         return !exhausted && ++used;
     }
 };
@@ -181,7 +191,14 @@ EquilibriumResult solve_from_feed_increment(const CompiledSystem&, const Equilib
 // ALG-EQUILIBRIUM source recovery: the finite pure-temperature schedule or mixture source/continuation;
 // all child calculations spend `limits`. A refusal has no state and retains the recovery cause.
 EPC_API EquilibriumResult recover_from_source(const CompiledSystem& target, const DriverLimits& limits);
-EquilibriumResult recover_from_source(const CompiledSystem&, EquilibriumResult);
+EPC_API EquilibriumResult recover_from_source(const CompiledSystem&, EquilibriumResult,
+    const DriverLimits* = nullptr, std::optional<core::Convergence>* = nullptr);
+EPC_API std::string start_difference(const std::optional<EquilibriumResult>&, const CompiledSystem&);
+EPC_API bool retain_limit(std::optional<core::Convergence>&, const core::Convergence&);
+inline const core::Convergence& solve_refusal(const EquilibriumResult& result) {
+    if (result.limit_record) return *result.limit_record;
+    return result.terminal_numerical_failure ? *result.terminal_numerical_failure : result.convergence;
+}
 // #987: the finite trial search of a coalesced fixed-T/P flash before recovery, charged to `limits`.
 EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const DriverLimits& limits);
 // The public explicit test with `recovery` funding its second pass over condensed-domain refusals (#21).

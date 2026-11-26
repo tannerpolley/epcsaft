@@ -289,6 +289,7 @@ void register_equilibrium(nb::module_& module) {
         EPCSAFT_READONLY(BubbleBranchEnd, condition, feed_bracket_mol, limiting_feed_mol, limiting_pressure_pa);
     nb::class_<EquilibriumResult::HeldSpecies>(module, "HeldSpecies")
         EPCSAFT_READONLY(EquilibriumResult::HeldSpecies, phase, species, fraction, chemical_row, complementarity, response);
+    nb::enum_<Attempt>(module, "Attempt") EPCSAFT_VALUES(Attempt, Cold, Warm, Newton, PhysicalAmounts);
     nb::class_<EquilibriumResult>(module, "EquilibriumResult", "Phases in declared order; K, Pa, mol, mol/m^3; per-phase-per-component lists are phase-major in component_ids order.", nb::dynamic_attr())
         EPCSAFT_DOMAIN_VIOLATIONS
         .def_prop_ro("critical_search", [](const EquilibriumResult& r) { return r.critical_search ? nb::cast(*r.critical_search) : nb::none(); })
@@ -296,7 +297,7 @@ void register_equilibrium(nb::module_& module) {
         .def_prop_ro("recovery_stability", [](const EquilibriumResult& r) { return r.recovery_stability ? nb::cast(*r.recovery_stability) : nb::none(); })
         .def_prop_ro("vanished_phase_stability", [](const EquilibriumResult& r) { return r.vanished_phase_stability ? nb::cast(*r.vanished_phase_stability) : nb::none(); })
         .def_prop_ro("solver_options", [](const EquilibriumResult& v) { return v.declaration ? bindings::solver_options_view(v.declaration->solver_options, PROPERTY_SCOPE) : nb::list(); })
-        EPCSAFT_READONLY(EquilibriumResult, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
+        EPCSAFT_READONLY(EquilibriumResult, attempt, solver_settings, diagnostic_options_file, linear_solver, first_numerical_failure, rank_records, ipopt_diagnostics, recovered_ipopt_diagnostics)
         .def_ro("neutral_reference_diagnostics", &EquilibriumResult::reference_diagnostics)
         .def_ro("branch_end", &EquilibriumResult::branch_end)
         .def_ro("electric_potential_difference_v", &EquilibriumResult::electric_potential_difference_v)

@@ -135,21 +135,22 @@ struct SolidSpec final {
 inline ReactionSpec solid_law(const SolidSpec& s) { return {s.name, s.stoichiometry, s.equilibrium_constant, std::nullopt, s.correlation, s.reference}; }
 
 // Exact declaration equality, shared by fitting admission/grouping and continuation.
-inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool compare_temperature_bounds = true) {
-    const auto correlation = [](const auto& v) {
-        return std::tie(v.a, v.b, v.c, v.d, v.reference_temperature, v.standard_state_id, v.e, v.f);
+inline bool same_reaction(const ReactionSpec& x, const ReactionSpec& y, bool compare_temperature_bounds = true, bool structural = false) {
+    const auto optional_equal = [](const auto& a, const auto& b, const auto& equal) {
+        return a.has_value() == b.has_value() && (!a || equal(*a, *b));
     };
-    const auto reference = [](const auto& v) { return std::tie(v.reference_pressure_pa, v.source_basis); };
-    const auto optional_equal = [](const auto& a, const auto& b, const auto& fields) {
-        return a.has_value() == b.has_value() && (!a || fields(*a) == fields(*b));
-    };
-    return std::tie(x.name, x.stoichiometry, x.equilibrium_constant, x.affinity_j_per_mol)
-        == std::tie(y.name, y.stoichiometry, y.equilibrium_constant, y.affinity_j_per_mol)
-        && optional_equal(x.correlation, y.correlation, correlation)
-        && (!compare_temperature_bounds || !x.correlation
-            || std::tie(x.correlation->temperature_min, x.correlation->temperature_max)
-                == std::tie(y.correlation->temperature_min, y.correlation->temperature_max))
-        && optional_equal(x.reference, y.reference, reference);
+    const auto target = [structural](double a, double b) { return structural || a == b; };
+    return x.name == y.name && x.stoichiometry == y.stoichiometry
+        && optional_equal(x.equilibrium_constant, y.equilibrium_constant, target)
+        && optional_equal(x.affinity_j_per_mol, y.affinity_j_per_mol, target)
+        && optional_equal(x.reference, y.reference, [](const auto& a, const auto& b) {
+            return a.reference_pressure_pa == b.reference_pressure_pa && a.source_basis == b.source_basis;
+        }) && optional_equal(x.correlation, y.correlation, [&](const auto& a, const auto& b) {
+            return a.standard_state_id == b.standard_state_id && (structural
+                || (std::tie(a.a, a.b, a.c, a.d, a.reference_temperature, a.e, a.f)
+                    == std::tie(b.a, b.b, b.c, b.d, b.reference_temperature, b.e, b.f)
+                    && (!compare_temperature_bounds || std::tie(a.temperature_min, a.temperature_max) == std::tie(b.temperature_min, b.temperature_max))));
+        });
 }
 
 // Explicit finite TPD search options; unset supports select the ALG-STABILITY defaults.
@@ -832,7 +833,7 @@ struct EquilibriumResult final {
     Candidate candidate = Candidate::Absent;
     std::shared_ptr<const CriticalSearch> critical_search;
     std::shared_ptr<const EquilibriumResult> rejected_reduction;
-    std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation;
+    std::optional<core::Convergence> terminal_numerical_failure, last_full_evaluation, limit_record;
     std::vector<double> phase_pressures;
     std::optional<core::Convergence> first_numerical_failure;
     std::vector<core::NumericalRank> rank_records;
@@ -1110,7 +1111,15 @@ struct SaturationNode final {
     EquilibriumNumericalEstimates local_estimates;
     std::shared_ptr<SolvedStateActionDiagnostics> action_diagnostics;
 };
+enum class RefusedOperation : std::uint8_t {
+    declaration, central_solve, source_recovery, loading_search, search_node_solve, search_node_action, search_node_estimate,
+    search_candidate_solve, search_candidate_estimate, search_candidate_admission, search_root_selection,
+    solved_state_action, thermochemistry, density_closure, observation_form
+};
 struct SaturationSearch final {
+    std::optional<double> loading_cap;
+    std::optional<core::Convergence> refusal_convergence;
+    std::optional<RefusedOperation> refused_operation;
     std::vector<double> grid;
     std::vector<SaturationNode> nodes, rejected_starts;
     std::vector<std::array<std::size_t, 2>> events;
@@ -1131,7 +1140,8 @@ void compare_loading_candidates(SaturationSearch&, equilibrium::ComparisonEligib
 EPC_API void admit_loading_search(SaturationSearch&, std::optional<double> loading_cap = {});
 EPC_API SaturationSearch search_loading(const HelmholtzModel&, EquilibriumProblem, const AffineLoading&,
     const std::vector<double>&, const DriverLimits* = nullptr,
-    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), std::optional<double> loading_cap = {});
+    std::chrono::steady_clock::time_point = std::chrono::steady_clock::time_point::max(), std::optional<double> loading_cap = {},
+    const SaturationSearch* earlier = nullptr);
 
 // ---- Solved-state derivative actions: native records, no public promise.
 
@@ -1271,6 +1281,7 @@ struct SolvedStateActionResult final {
     SolvedStateActionStatus status = SolvedStateActionStatus::CentralSolveUnavailable;
     std::optional<PropertyActionDiagnostics> property_diagnostics;
     std::optional<std::string> diagnostic_message;
+    std::optional<core::Convergence> refusal;
 };
 
 struct SolvedStateActionDiagnostics final {

@@ -1272,6 +1272,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
             limits->evaluations = budget.evaluations;
             limits->hessian_calls = budget.hessian_calls;
             limits->exhausted = budget.exhausted;
+            limits->deny(budget.refused);
         }
         if (stages) stages->add(seed);
         if (failure) std::rethrow_exception(failure);
@@ -1458,7 +1459,7 @@ std::vector<double> boundary_start(const CompiledSystem& compiled, bool speciate
 // Every field that is not a path lever must be identical at both endpoints. Without `endpoint`, free T/P
 // seeds and the labels that leave the state and its rows unchanged (phase names, row_tolerance, the
 // support_declared and topology_declared flags) are not compared.
-std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint) {
+std::string declaration_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool endpoint, bool structural) {
     if (a.prescribed_liquid_composition != b.prescribed_liquid_composition) return "prescribed liquid composition differs";
     if (a.critical.has_value() != b.critical.has_value() || a.spinodal.has_value() != b.spinodal.has_value())
         return "null-mode declaration differs";
@@ -1483,9 +1484,9 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     for (std::size_t r = 0; r < a.reactions.size(); ++r) {
         const auto& x = a.reactions[r];
         const auto& y = b.reactions[r];
-        if (!same_reaction(x, y)) return "reaction " + reaction_name(x, r) + " differs";
+        if (!same_reaction(x, y, true, structural)) return "reaction " + reaction_name(x, r) + " differs";
     }
-    if (a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
+    if (structural ? a.standard_gibbs_j_per_mol.size() != b.standard_gibbs_j_per_mol.size() : a.standard_gibbs_j_per_mol != b.standard_gibbs_j_per_mol) return "standard Gibbs input differs";
     if (a.solids.size() != b.solids.size()) return "solid count differs";
     for (std::size_t s = 0; s < a.solids.size(); ++s)
         if (a.solids[s].stoichiometry != b.solids[s].stoichiometry || a.solids[s].amount.kind != b.solids[s].amount.kind)
@@ -1500,8 +1501,8 @@ std::string declaration_difference(const EquilibriumProblem& a, const Equilibriu
     return "";
 }
 
-std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b) {
-    auto difference = declaration_difference(a, b, false);
+std::string declared_state_difference(const EquilibriumProblem& a, const EquilibriumProblem& b, bool structural) {
+    auto difference = declaration_difference(a, b, false, structural);
     if (a.feed.values != b.feed.values) difference = "feed values differ";
     if (!b.temperature.free && a.temperature.value != b.temperature.value) difference = "fixed temperature differs";
     if (!b.pressure.free && a.pressure.value != b.pressure.value) difference = "fixed pressure differs";
@@ -2217,6 +2218,7 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
         }
         auto path = [&] { core::Scope span("continue_equilibrium"); return continue_path(model, request, &limits, found.molar_densities, &observations); }();
         if (!path.success) {
+            if (path.stop == ContinuationStop::budget_exhausted) limits.deny(core::WorkLimit::recovery_path);
             refused.message = "from source at " + core::optional_number(*found.temperature) + " K: " + path.message;
             return publish(std::move(refused));
         }
@@ -2238,7 +2240,8 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, const Driver
     }
 }
 
-EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumResult failed) {
+EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumResult failed,
+    const DriverLimits* allowance, std::optional<core::Convergence>* refusal) {
     if (failed.success || std::getenv("EPCSAFT_IPOPT_OPTIONS_FILE")) return failed;
     if (target.has_reaction) {
         const auto& p = target.problem;
@@ -2246,9 +2249,11 @@ EquilibriumResult recover_from_source(const CompiledSystem& target, EquilibriumR
             || !p.topology_declared || p.prescribed_liquid_composition || p.solver_options.nested_solve
             || core::CalculationWork::active_limit()) return failed;
     } else if (!one_component_two_density_eligible(target)) return failed;
-    const auto cap = static_cast<std::size_t>(policy::EQUILIBRIUM_RECOVERY_WORK.value);
-    auto work = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(), cap);
+    auto own = DriverLimits::recovery_allowance(std::chrono::steady_clock::time_point::max(), policy::EQUILIBRIUM_RECOVERY_WORK.value);
+    const auto& work = allowance ? *allowance : own;
     auto recovered = recover_from_source(target, work);
+    if (refusal && !recovered.success && work.refused != core::WorkLimit::none)
+        *refusal = core::refusal(recovered.message, work.refused);
     StageWork observations; observations.observe(failed); observations.observe(recovered);
     std::move(observations).publish_observations(recovered.success ? recovered : failed);
     failed.iterations += work.consumed; failed.evaluations += work.evaluations; failed.hessian_calls += work.hessian_calls;
@@ -2305,9 +2310,10 @@ void compare_loading_candidates(SaturationSearch& out, ComparisonEligibility eli
     if (out.groups.size() > 1 || out.brackets > 1) out.causes.push_back("multiple_roots");
 }
 
+static int sign(double value) { return (value > 0) - (value < 0); }
+
 static unsigned loading_slope_reversals(const SaturationNode& node, const SaturationNode* previous) {
     if (!std::isfinite(node.mismatch)) return 0;
-    const auto sign = [](double value) { return (value > 0) - (value < 0); };
     unsigned count = !std::isfinite(node.slope) || node.slope == 0;
     if (previous) {
         const double delta = node.mismatch - previous->mismatch;
@@ -2347,7 +2353,7 @@ void admit_loading_search(SaturationSearch& out, std::optional<double> loading_c
 }
 
 SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem declaration, const AffineLoading& affine,
-    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline, std::optional<double> loading_cap) {
+    const std::vector<double>& grid, const DriverLimits* supplied, std::chrono::steady_clock::time_point deadline, std::optional<double> loading_cap, const SaturationSearch* earlier) {
     using Clock = std::chrono::steady_clock;
     if (grid.size() < 2 || grid.front() != affine.lower || grid.back() != affine.upper)
         throw std::invalid_argument("saturation grid must include both declared bounds");
@@ -2358,34 +2364,63 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     auto own = DriverLimits::recovery_allowance(deadline, cap);
     own.attempt_cap = cap;
     const auto& work = supplied ? *supplied : own;
-    SaturationSearch out; out.grid = grid; out.declaration = affine;
+    SaturationSearch out; out.grid = grid; out.declaration = affine; out.loading_cap = loading_cap;
+    using Operation = RefusedOperation;
+    const auto refuse_search = [&](Operation operation, core::Convergence record) {
+        work.retain_denial(record);
+        if (out.refusal_convergence) {
+            if (!retain_limit(out.refusal_convergence, record)) return;
+        } else out.refusal_convergence = record;
+        out.refused_operation = record.limit != core::WorkLimit::none && record.limit == work.refused ? Operation::loading_search : operation;
+    };
     if (loading_cap) out.uniqueness_scope = "first detected crossing through the source cap";
     out.work_at_entry = {work.consumed, work.evaluations, work.hessian_calls, work.attempts};
-    const auto fail = [&](const std::string& cause) { out.causes.push_back(cause); };
-    const auto fail_at = [&](double alpha, const std::string& cause) { fail("loading " + core::optional_number(alpha) + ": " + cause); };
-    const auto solve = [&](double loading, double lower, double upper, double target,
-                           const std::optional<EquilibriumResult>& start, bool composed) {
-        if (work.attempt_cap && work.attempts >= work.attempt_cap) work.exhausted = true;
-        work.check();
+    const auto fail = [&](std::string cause) { out.causes.push_back(std::move(cause)); };
+    const auto node_problem = [&](double loading) {
         auto problem = declaration;
         problem.feed.kind = FeedKind::Amounts;
         problem.feed.values = affine.initial;
         for (std::size_t i = 0; i < problem.feed.values.size(); ++i)
             problem.feed.values[i] += loading * affine.direction[i];
         problem.loading.reset();
+        return problem;
+    };
+    const auto prior_state = [&](std::size_t i) {
+        return earlier && i < earlier->nodes.size() && earlier->nodes[i].state.has_state() ? std::make_optional(earlier->nodes[i].state) : std::nullopt;
+    };
+    if (earlier) {
+        const auto& old = earlier->declaration;
+        if (!core::bitwise_equal(earlier->grid, grid) || earlier->loading_cap != loading_cap
+            || !core::bitwise_equal(old.initial, affine.initial) || !core::bitwise_equal(old.direction, affine.direction)
+            || !core::bitwise_equal(old.lower, affine.lower) || !core::bitwise_equal(old.upper, affine.upper)
+            || !core::bitwise_equal(old.pressure, affine.pressure)) throw std::invalid_argument("start: loading search declaration differs");
+        for (std::size_t i = 0; i < std::min(earlier->nodes.size(), grid.size()); ++i)
+            if (auto start = prior_state(i))
+                if (auto reason = start_difference(start, compile_problem(model, node_problem(grid[i]))); !reason.empty())
+                    throw std::invalid_argument("start: loading node " + std::to_string(i) + ": " + reason);
+    }
+    const auto solve = [&](double loading, double lower, double upper, double target,
+                           const std::optional<EquilibriumResult>& start, bool composed) {
+        if (work.attempt_cap && work.attempts >= work.attempt_cap) work.exhausted = work.deny(core::WorkLimit::attempts);
+        work.check();
+        auto problem = node_problem(loading);
         if (composed) { problem.loading = affine; problem.loading->seed = loading;
             problem.loading->lower = lower; problem.loading->upper = upper; problem.loading->pressure = target; }
         auto compiled = compile_problem(model, problem);
         auto state = try_solve_compiled(compiled, start, nullptr, &work);
-        if (composed && state.failure) std::rethrow_exception(state.failure);
+        if (composed && state.failure) {
+            if (auto limit = state.limit_record) refuse_search(Operation::search_candidate_solve, std::move(*limit));
+            std::rethrow_exception(state.failure);
+        }
         if (!out.first_numerical_failure) out.first_numerical_failure = state.first_numerical_failure;
         return std::make_pair(std::move(compiled), std::move(state));
     };
     const auto usable = [](const NumericalEstimate& e) {
         return e.available && e.resolved && std::isfinite(e.absolute) && e.absolute >= 0;
     };
-    const auto sign = [](double value) { return (value > 0) - (value < 0); };
+    auto operation = Operation::search_node_solve;
     const auto evaluate_node = [&](double alpha, std::optional<EquilibriumResult> start, std::string prior_start) -> std::optional<std::string> {
+        operation = Operation::search_node_solve;
         const auto before = work.attempts;
         if (start) start->multipliers.clear();
         auto [c, state] = solve(alpha, affine.lower, affine.upper, affine.pressure,
@@ -2393,6 +2428,8 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         auto& n = out.nodes.emplace_back();
         n.driver_attempts = work.attempts - before;
         n.state = std::move(state); n.loading = alpha; n.prior_start = std::move(prior_start);
+        if (!n.state.success && (!n.state.failure || n.state.limit_record))
+            refuse_search(operation, solve_refusal(n.state));
         if (n.state.failure) {
             try { std::rethrow_exception(n.state.failure); }
             catch (const std::bad_alloc&) { throw; }
@@ -2415,17 +2452,19 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         SolvedStateActionDirection direction; direction.feed_amounts_mol = affine.direction;
         direction.active_parameters.resize(model.active_parameters().size());
         begun = Clock::now();
+        operation = Operation::search_node_action;
         const auto action = solved_state_first_actions(c, n.state,
             {{SolvedStateObservableKind::Pressure}}, {direction});
         n.action_seconds = std::chrono::duration<double>(Clock::now() - begun).count();
         if (!action.empty()) n.action_diagnostics = std::make_shared<SolvedStateActionDiagnostics>(action[0].diagnostics);
-        if (action.empty() || action[0].results.empty() || !action[0].results[0].action || action[0].results[0].status != SolvedStateActionStatus::Available) {
-            n.action_cause = action.empty() || action[0].results.empty() ? "action_unavailable" : solved_state_status_name(action[0].results[0].status);
-            if (!action.empty() && !action[0].results.empty())
-                n.action_cause += ":" + action[0].results[0].diagnostic_message.value_or("");
+        const auto* entry = action.empty() || action[0].results.empty() ? nullptr : &action[0].results[0];
+        if (!entry || !entry->action || entry->status != SolvedStateActionStatus::Available) {
+            n.action_cause = entry ? std::string(solved_state_status_name(entry->status)) + ":" + entry->diagnostic_message.value_or("")
+                : "action_unavailable";
+            refuse_search(operation, entry && entry->refusal ? *entry->refusal : core::refusal(n.action_cause));
             return n.action_cause;
         }
-        n.slope = *action[0].results[0].action;
+        n.slope = *entry->action;
         auto local = c.problem;
         local.loading = affine; local.loading->seed = alpha; local.loading->pressure = *n.state.pressure;
         const auto augmented = compile_problem(model, local);
@@ -2437,20 +2476,27 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
         const auto local_errors = estimate(augmented, mapped);
         n.estimates.loading = local_errors.loading;
         n.local_estimates = local_errors;
-        if (!usable(local_errors.loading)) { return local_errors.cause; }
-        if (!usable(n.estimates.pressure)) { return n.estimates.cause; }
-        return {};
+        operation = Operation::search_node_estimate;
+        if (!usable(local_errors.loading)) return local_errors.cause;
+        return usable(n.estimates.pressure) ? std::nullopt : std::make_optional(n.estimates.cause);
     };
     try {
         for (double alpha : grid) {
             const auto i = out.nodes.size();
-            auto cause = evaluate_node(alpha, i ? std::make_optional(out.nodes[i - 1].state) : std::nullopt, "not_supplied");
-            if (loading_cap && i && cause && !out.nodes.back().state.success) {
+            const auto prior = prior_state(i);
+            auto cause = evaluate_node(alpha, prior ? prior : i ? std::make_optional(out.nodes[i - 1].state) : std::nullopt,
+                prior ? "earlier_prediction" : "not_supplied");
+            if (loading_cap && (i || prior) && cause && !out.nodes.back().state.success) {
+                if (out.refusal_convergence && out.refusal_convergence->limit == core::WorkLimit::none) out.refusal_convergence.reset();
                 out.rejected_starts.push_back(std::move(out.nodes.back()));
                 out.nodes.pop_back();
-                cause = evaluate_node(alpha, std::nullopt, "cold_after_refused_continuation");
+                cause = evaluate_node(alpha, std::nullopt, prior ? "cold_after_refused_earlier_prediction" : "cold_after_refused_continuation");
             }
-            if (cause) { fail_at(alpha, *cause); fail("unexamined_gap"); break; }
+            if (cause) {
+                refuse_search(operation, core::refusal(*cause));
+                fail("loading " + core::optional_number(alpha) + ": " + *cause); fail("unexamined_gap"); break;
+            }
+            out.refusal_convergence.reset(); out.refused_operation.reset();
             const auto& node = out.nodes.back();
             if (loading_pressure_event(node)) out.events.push_back({i ? i - 1 : i, std::min(i + 1, grid.size() - 1)});
             else if (i) {
@@ -2468,16 +2514,20 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                 auto start_node = event[0];
                 for (std::size_t i = event[0]; i <= event[1] && i < out.nodes.size(); ++i)
                     if (loading_pressure_event(out.nodes[i])) { seed = grid[i]; start_node = i; }
+                operation = Operation::search_candidate_solve;
                 auto [c, state] = solve(seed, lo, hi, affine.pressure, out.nodes[start_node].state, true);
                 SaturationCandidate candidate; candidate.state = std::move(state);
                 if (!candidate.state.success || !candidate.state.has_state()) {
+                    refuse_search(operation, solve_refusal(candidate.state));
                     fail(candidate.state.message); fail("unexamined_gap"); out.candidates.push_back(std::move(candidate)); continue;
                 }
+                operation = Operation::search_candidate_estimate;
                 const auto estimates = equilibrium_numerical_estimates(c, candidate.state);
                 candidate.state.numerical_estimates = estimates;
                 const auto alpha = candidate.state.coordinates[c.loading_column()];
                 if (!usable(estimates.loading) || estimates.densities.size() != candidate.state.phase_count
                     || estimates.composition.size() != candidate.state.mole_fractions.size()) {
+                    refuse_search(Operation::search_candidate_estimate, core::refusal(estimates.cause));
                     fail(estimates.cause); fail("unexamined_gap"); out.candidates.push_back(std::move(candidate)); continue;
                 }
                 candidate.admitted = true;
@@ -2494,9 +2544,16 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
                     for (std::size_t j = 0; j < c.n_feed.size(); ++j)
                         append(candidate.state.mole_fractions[p * c.n_feed.size() + j], estimates.composition[p * c.n_feed.size() + j]);
                 }
-                if (alpha < lo || alpha > hi || c.classified_residual_norm(candidate.state.coordinates) > policy::EQUILIBRIUM_ROW_RESIDUAL.value
-                    || std::abs(*candidate.state.pressure / affine.pressure - 1) > policy::EQUILIBRIUM_ROW_RESIDUAL.value)
-                    { candidate.admitted = false; fail("central_residual_refused"); fail("unexamined_gap"); }
+                const auto& criterion = policy::EQUILIBRIUM_ROW_RESIDUAL;
+                double residual = NAN;
+                if (alpha < lo || alpha > hi || (residual = c.classified_residual_norm(candidate.state.coordinates)) > criterion.value
+                    || (residual = std::abs(*candidate.state.pressure / affine.pressure - 1)) > criterion.value) {
+                    auto record = core::refusal("central_residual_refused");
+                    record.residual = residual;
+                    if (std::isfinite(residual)) record.criterion = {std::shared_ptr<const policy::Tolerance>{}, &criterion};
+                    refuse_search(Operation::search_candidate_admission, std::move(record));
+                    candidate.admitted = false; fail("central_residual_refused"); fail("unexamined_gap");
+                }
                 out.candidates.push_back(std::move(candidate));
             }
             out.complete = out.candidates.size() == out.events.size()
@@ -2505,9 +2562,14 @@ SaturationSearch search_loading(const HelmholtzModel& model, EquilibriumProblem 
     } catch (const std::bad_alloc&) { throw; }
     catch (const std::exception& error) {
         core::retain_failure(out.first_numerical_failure, error, "saturation search");
-        fail(dynamic_cast<const BudgetExhausted*>(&error) ? "budget_exhausted" : error.what()); fail("unexamined_gap");
+        const bool budget = dynamic_cast<const BudgetExhausted*>(&error);
+        const auto* failure = dynamic_cast<const core::ConvergenceFailure*>(&error);
+        refuse_search(operation, failure ? failure->record : core::refusal(error.what()));
+        fail(budget ? "budget_exhausted" : error.what()); fail("unexamined_gap");
     }
     admit_loading_search(out, loading_cap);
+    if (!out.causes.empty() && !out.refusal_convergence)
+        refuse_search(Operation::search_root_selection, core::refusal(out.causes.front()));
     out.iterations = work.consumed; out.evaluations = work.evaluations;
     out.hessian_calls = work.hessian_calls; out.attempts = work.attempts;
     return out;
