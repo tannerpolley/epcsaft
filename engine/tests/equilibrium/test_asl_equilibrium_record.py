@@ -293,6 +293,7 @@ def test_vapor_support_refusals() -> None:
 # with a declared liquid + vapor pair at 353.15 K and 45 kPa; q = (T, P, u_CO2, u_MEA, u_water), the loading of the
 # Hilliard (2008) Cp row. Both phases guess the anchor's own solved compositions.
 R_Q0 = (353.15, 45000.0, 0.358, 1.0, 7.929776437398854)
+R_MEA_IDENTITY_GAP = 0.01
 
 
 @functools.cache
@@ -312,17 +313,22 @@ def reference_mea(thermochemistry: bool = True) -> tuple[Mixture, Any]:
 def reference_record(thermochemistry: bool = True) -> str:
     model, target = reference_mea(thermochemistry)
     options = eq.Continuation(initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8)
-    return eq.asl_record(model, target(R_Q0), options, [0.0] * C, np.eye(C, 3).tolist(), list(R_Q0[2:]), 1, 0.01)
+    return eq.asl_record(model, target(R_Q0), options, [0.0] * C, np.eye(C, 3).tolist(), list(R_Q0[2:]), 1, R_MEA_IDENTITY_GAP)
 
 
 def test_reference_continuation_fallback() -> None:
     model, target = reference_mea()
     q = (353.15, 41000.0, *R_Q0[2:])
-    assert not eq.solve_equilibrium(model, target(q)).success
+    cold = eq.solve_equilibrium(model, target(q))
+    assert cold.success and cold.requested_tolerance_met, cold.message
+    cold_gap = cold.mole_fractions[1] - cold.mole_fractions[C + 1]
+    assert cold_gap <= R_MEA_IDENTITY_GAP, cold_gap
     options = eq.Continuation(initial_step=0.25, minimum_step=1e-3, max_steps=64, max_retries_per_step=8)
     path = eq.continue_equilibrium(model, target(R_Q0), target(q), options, eq.solve_equilibrium(model, target(R_Q0)))
     assert path.success, path.message
     x = path.states[-1].mole_fractions
+    continued_gap = x[1] - x[C + 1]
+    assert continued_gap > R_MEA_IDENTITY_GAP, continued_gap
     seeded = target(q)
     seeded.phases[0].composition_guess = list(x[:C])
     seeded.phases[1].composition_guess = list(x[C:C + 3])

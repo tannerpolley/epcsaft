@@ -172,6 +172,13 @@ fixed parameter entries, retained through selection, reordering, fitting-worker
 transport and optimizer identity. `bulk_relative_permittivity` owns the sum or
 quotient; it reuses the existing component laws and automatic differentiation.
 
+The `solvent-normalized` quotient and the mass-normalized `solvent-only` rule
+ignore the ion fractions and apply to dilute electrolytes. The published
+Debye–Hückel-only evidence reaches about 5–10 mol/kg in the tested salts
+(Held2014, Eq. (23), p. 2890 and Table 5; Held2008, p. 92; Uyan2015,
+Eq. (5), p. 93). At zero solvent both quotients are undefined. See the
+[permittivity model choices](full-eos.md#6-bulk-dielectric-and-debye-huckel) for the
+source conditions.
 
 `BornDiameter`, `DebyeHuckelDiameter` and `PackingDiameter` own positive
 Angstrom values in charged component slots. `IonSuppressionCoefficient` owns

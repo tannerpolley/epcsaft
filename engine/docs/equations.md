@@ -2532,7 +2532,7 @@ $$
 
 - Section: Electrolyte dielectric and Debye--Huckel relations
 - Status: Source equation
-- Source: [Figiel2025], Eq.~(12); [AscaniHeld2021], Eq.~(13)
+- Source: [Held2014], Eq.~(23), p.~2890; [Uyan2015], Eq.~(5), p.~93; also used within [Figiel2025], Eq.~(12), and [AscaniHeld2021], Eq.~(13)
 - Description: Mass-weighted relative permittivity of the salt-free solvent mixture.
 - Change note: Uses component molar masses and includes exactly the neutral components with declared permittivity correlations.
 
