@@ -434,10 +434,10 @@ are dilute-electrolyte rules. The source evidence for ignoring ions in the
 permittivity comes from Debye–Hückel-only models. Held2014 reports results up
 to 5 mol/kg at 298.15 K (Table 5), and Held2008 shows aqueous densities to
 6 mol/kg and vapor pressures to 10 mol/kg (p. 92). The resulting range of
-about 5–10 mol/kg describes the tested salt systems. Both ratios have no
-solvent-free limit: their numerator and denominator vanish, and their
-composition derivatives can grow inversely with the total solvent mole
-fraction.
+about 5–10 mol/kg describes the tested salt systems. Both ratios are undefined
+at zero solvent, where their numerator and denominator vanish, and generally
+have no path-independent limit for mixed solvents. Their composition
+derivatives can grow inversely with the total solvent mole fraction.
 
 `solvent-volume-weighting` uses the [Novak solvent-volume rule](../equations.md#solvent_volume_weighted_bulk_permittivity).
 Declare `solvent_molar_volume` component coefficients in `liter / mole` for exactly the neutral species
