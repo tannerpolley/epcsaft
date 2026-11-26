@@ -719,10 +719,19 @@ BoundaryAttempt admit_result(
     if (std::isfinite(result.convergence.residual)) scope.probe("row_residual", result.convergence.residual);
     if (!result.has_state()) return refuse(stop_of(result, outcome.terminal), result.message);
     if (!result.held_species.empty()) return refuse(ContinuationStop::held_species, result.message);
-    const double recomputed = supplied ? compiled.classified_residual_norm(result.coordinates)
-        : maximum_abs(result.classified_residuals);
-    if (!(result.requested_tolerance_met.value_or(false)) || !(recomputed <= compiled.problem.solver_options.value(policy::row)))
-        return refuse(ContinuationStop::stalled, "available state misses the caller row tolerance: " + result.message);
+    if (supplied) {
+        const auto at = compiled.prepare(result.coordinates);
+        const auto rows = compiled.evaluate_at(at);
+        core::Convergence checked;
+        core::stopping_criterion(checked, compiled.problem.solver_options, policy::row);
+        checked.residual = maximum_abs(compiled.classified_residuals(at, rows.values));
+        checked.floor = rows.floor;
+        checked.stop = core::classify(checked.residual, *checked.criterion, checked.floor, {}, false);
+        if (checked.stop != core::Stop::converged && checked.stop != core::Stop::converged_to_floor) {
+            outcome.convergence = checked;
+            return refuse(ContinuationStop::stalled, "supplied state: " + core::describe(checked));
+        }
+    }
     const auto topology = check_topology(compiled, result.coordinates);
     if (topology.event != TopologyEvent::None) {
         result.topology_event = topology.event;
@@ -2039,8 +2048,7 @@ std::optional<BubbleBranchEnd> classify_branch_end(
 EquilibriumResult solve_from_feed_increment(const CompiledSystem& target, const EquilibriumResult& seed, core::Scope& scope,
     std::optional<std::size_t> branch_end_work_limit) {
     if (!seed.held_species.empty()) throw std::invalid_argument("held_species: bubble source holds a species");
-    if (seed.model_identity != target.model->identity() || !seed.declaration || !seed.has_state()
-        || !seed.requested_tolerance_met.value_or(false) || !supports_work_limit(*seed.declaration))
+    if (seed.model_identity != target.model->identity() || !seed.declaration || !seed.has_state() || !supports_work_limit(*seed.declaration))
         throw std::invalid_argument("bubble source must be admitted on the target model");
     if (const auto difference = declaration_difference(*seed.declaration, target.problem, true); !difference.empty())
         throw std::invalid_argument("bubble source: " + difference);

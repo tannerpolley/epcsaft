@@ -1947,7 +1947,6 @@ std::vector<core::DifferenceCheck> solved_state_difference(const CompiledSystem&
         // Availability first: a failed result keeps phase_count but clears its state arrays.
         const std::string cause = !neighbor.success ? (neighbor.convergence.cause.empty()
             ? core::stop_name(neighbor.convergence.stop) : neighbor.convergence.cause)
-            : !neighbor.requested_tolerance_met.value_or(false) ? "requested_tolerance_not_met"
             : neighbor.topology_event != TopologyEvent::None ? "topology_event" : "";
         bool same = cause.empty() && neighbor.phase_count == central.phase_count
             && neighbor.molar_densities.size() == central.molar_densities.size()

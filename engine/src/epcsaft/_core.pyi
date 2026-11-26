@@ -6122,7 +6122,7 @@ class EquilibriumStartsResult:
     """Ordered start outcomes and actual budget use."""
     domain_violations: list[OutsideDomain] | None
     selected: Optional[int]
-    """Index of the first result with success=True and requested_tolerance_met=True, or None without such a result; a retained floor-admitted state need not be selected."""
+    """Index of the first result that meets the requested tolerance, otherwise the first published result, or None if no result was published."""
     results: list[Optional[EquilibriumResult]]
     """One optional result per declared start in input order; None preserves an unrun/refused
     attempt with causes.

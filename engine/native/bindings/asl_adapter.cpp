@@ -211,8 +211,6 @@ std::optional<EquilibriumFailure> central_failure(const EquilibriumContext& cont
     if (result.topology_event == eq::TopologyEvent::PhaseDisappeared)
         return failure(ActionStatus::PhaseBoundaryNotDifferentiable);
     if (!result.has_state()) return failure(ActionStatus::CentralSolveUnavailable);
-    if (!result.requested_tolerance_met.value_or(false))
-        return failure(ActionStatus::DefiningEquationsNotSatisfied);
     if (result.topology_event != eq::TopologyEvent::None || result.phase_count != context.anchor.phases.size()
         || result.mole_fractions.size() != result.phase_count * count || result.amounts.size() != result.phase_count
         || result.solid_amounts.size() != context.anchor.solids.size()
@@ -363,7 +361,9 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         auto status = item.status;
         if (status == ActionStatus::Available && (!item.value || !item.action
             || !std::isfinite(*item.value) || !std::isfinite(*item.action))) status = ActionStatus::Nonfinite;
-        if (status != ActionStatus::Available) {
+        const bool floor_value = coordinates.front() == -1 && status == ActionStatus::DefiningEquationsNotSatisfied
+            && !context.central.requested_tolerance_met.value_or(false) && item.value && std::isfinite(*item.value);
+        if (status != ActionStatus::Available && !floor_value) {
             const auto& d = batch.diagnostics;
             throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or("")
                 + "; power-of-two column-then-row equilibrated defining Jacobian rank "
