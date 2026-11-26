@@ -115,7 +115,7 @@ bool same_solved_problem(const EquilibriumProblem& a, const EquilibriumProblem& 
 bool same_stability_options(const StabilityOptions& a, const StabilityOptions& b) {
     const auto fields = [](const StabilityOptions& options) {
         return std::tie(options.mode, options.evaluate_supplied_trials, options.trials, options.declaration_budget,
-            options.trial_budget, options.standard_uncertainty_over_rt, options.retry_condensed_refusals);
+            options.trial_budget, options.standard_uncertainty_over_rt, options.retry_condensed_refusals, options.plane_value_errors);
     };
     return a.prepared_trials == b.prepared_trials && InputEquality::same(fields(a), fields(b))
         && (!a.trials || std::equal(a.trials->begin(), a.trials->end(), b.trials->begin(), same_phase_seed));

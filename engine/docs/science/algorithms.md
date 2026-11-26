@@ -2020,9 +2020,25 @@ conservation-repaired stability candidate, including zero-pinned phases and
 original retained volumes. Direct discovery, recovery and vanished-support
 searches do not request this enrichment. Anchor refusal retains partial
 quantities and its cause without changing trial evidence. Existing ordered
-`split_checks` supply Gibbs changes and paired extensive errors; no diagnostic
-changes descent admission or availability. Search kind and composition
-proximity alone do not establish physical phase identity.
+`split_checks` supply Gibbs changes and paired extensive errors. Search kind
+and composition proximity alone do not establish physical phase identity.
+
+`StabilityReport.descent` reports `resolved_descent` if any recorded trial is a
+witness. A completed, nonempty optimized search with every trial decided and
+no witness reports `no_witness`. All remaining reports return `undecided`.
+`StabilityReport.undecided` indexes trials with neither a witness, an evaluated
+point, nor a successful optimizer that found no resolved descent. Supplied
+points and refined grid reports do not establish the optimized finite-set
+no-witness result. A finite bank gives no global stability certificate.
+
+`StabilityOptions.plane_value_errors` requests per-trial uncertainty on the
+explicit Full optimized report. Each finite `tpd_over_rt` then carries
+`numerical_plane_value_error_over_rt` and `plane_value_error_estimate_over_rt`,
+both dimensionless per mole of trial phase. The complete estimate also includes
+the declared standard uncertainties. Both estimates share the fitted scalar's
+calculation and the solved-state row uncertainties. The request defaults to
+false. Trials that never evaluated their energy, or whose parent row estimates
+are unavailable, have neither key.
 
 ### Stability requirements in parameter fitting
 
@@ -2034,6 +2050,10 @@ remain separate: reported zero is no certificate of a nonnegative exact distance
 A parent refusal, incomplete or empty schedule, unsuccessful final trial
 optimizer, or undetermined trial evidence makes the requirement unavailable.
 A retained descending witness does not waive these availability conditions.
+Final fit acceptance fails on a witness in any requirement, even when its
+scalar is unavailable. An unavailable scalar leaves the candidate usable only
+as retained values and leaves acceptance unavailable if no requirement or
+other fit check has already failed. The in-fit cost uses the scalar.
 
 The original parent standards and conserved-plane multipliers precede supported
 amount repair. Their exact fitted-coordinate actions follow the defining-row
@@ -2616,9 +2636,32 @@ from 32 to at most 128 panels where both of the last two refinements pass. The i
 are accumulated in `long double`, before adding the fixed trial and inventory
 terms. Both final refinements require $Q_N=|I_N-I_{N/2}|/15\le F_N+F_{N/2}$,
 where $F_N$ contains only integration numerical estimates. The terminal $Q_N$
-remains in the complete error, and a failure at 128 panels keeps the refinement cause. Failed local admissions return unavailable with
-a cause; otherwise $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease,
-and the remaining interval overlaps zero.
+remains in the complete error. When the repaired split uses species standards
+$s_i^{\mathrm{split}}$ that differ from the parent's $s_i$, the trial term is
+on the split standard and the donor path is on the parent standard. The
+integral error adds $\beta'\sum_i |w_i| |s_i^{\mathrm{split}}-s_i|$ last.
+This term is reported as `reference_error_over_rt_mol` when the repaired split
+inventory is available. Failed local admissions retain their causes. For a
+qualified ladder, $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease, and
+the remaining interval overlaps zero.
+
+At the 128-panel cap with incomplete refinement, compare the integral
+$D_{128}$ with the extensive endpoint difference
+$D_{\rm dir}=n_{d'}g_{d'}+\beta'g_{t'}-n_dg_d$. The three Gibbs energies
+are reduced molar values at the repaired states. The endpoint estimate
+$E_{\rm dir}$ sums the amount-weighted energy estimates, summation roundoff,
+the two candidates' feasibility estimates, the absolute inventory-plane
+defect, the parent row error, the declared standard error, and the repair
+error. The summation term is
+$\gamma(|n_{d'}g_{d'}|+|\beta'g_{t'}|+|n_dg_d|)/(1-\gamma)$ with
+$\gamma=(n_s+3)\epsilon_{\rm double}$. A witness requires bitwise
+equal split and parent standards, finite centers and finite nonnegative
+errors, both interval upper bounds below zero, and
+$|D_{128}-D_{\rm dir}|\le E_{128}+E_{\rm dir}$. The trial publishes the
+endpoint center and error for this witness and retains the refinement cause.
+The split check retains the integral center, complete error, and
+`integral_qualified` alongside the endpoint quantities. Unqualified intervals
+that fail the test remain indeterminate.
 
 An explicit optimized Full search uses this comparison for a reacting trial
 whose optimizer succeeded, whose raw plane is negative and whose anchored root

@@ -172,6 +172,7 @@ struct StabilityOptions final {
     std::optional<std::size_t> trial_budget;
     std::vector<double> standard_uncertainty_over_rt;
     bool retry_condensed_refusals = false;  // #21: the explicit test's guarded second pass, on request only
+    bool plane_value_errors = false;
 };
 struct DiscoveryRecord;
 struct StabilityReport;
@@ -958,9 +959,13 @@ struct StabilityTrial final {
     bool resolved_descent = false;
     bool pivot_only = false;
 };
+enum class StabilityDescent { ResolvedDescent, NoWitness, Undecided };
 struct StabilityReport final {
     EPC_API std::map<std::string, std::size_t> evidence_counts(const std::vector<std::size_t>& multiplicities = {}) const;
     EPC_API std::map<std::string, std::size_t> unresolved_reasons() const;
+    EPC_API StabilityDescent descent() const;
+    EPC_API const char* descent_name() const;
+    EPC_API std::vector<std::size_t> undecided() const;
     EPC_API std::vector<StabilityTrial> witnesses() const;
     EPC_API std::vector<StabilityTrial> supplied_minima() const;
     std::optional<core::Convergence> first_numerical_failure;

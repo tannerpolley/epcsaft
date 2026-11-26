@@ -35,10 +35,28 @@ std::map<std::string, std::size_t> StabilityReport::evidence_counts(const std::v
         counts[trials[i].evidence] += multiplicities.empty() ? 1 : multiplicities[i];
     return counts;
 }
+static bool undecided_trial(const StabilityTrial& t) {
+    return !t.resolved_descent && t.evidence != "evaluated" && (t.evidence != "no_resolved_descent" || !t.optimizer.success);
+}
+StabilityDescent StabilityReport::descent() const {
+    if (std::any_of(trials.begin(), trials.end(), [](const auto& t) { return t.resolved_descent; }))
+        return StabilityDescent::ResolvedDescent;
+    return no_descent_in_trial_set ? StabilityDescent::NoWitness : StabilityDescent::Undecided;
+}
+const char* StabilityReport::descent_name() const {
+    const auto sign = descent();
+    return sign == StabilityDescent::ResolvedDescent ? "resolved_descent"
+        : sign == StabilityDescent::NoWitness ? "no_witness" : "undecided";
+}
+std::vector<std::size_t> StabilityReport::undecided() const {
+    std::vector<std::size_t> indices;
+    for (std::size_t i = 0; i < trials.size(); ++i) if (undecided_trial(trials[i])) indices.push_back(i);
+    return indices;
+}
 std::map<std::string, std::size_t> StabilityReport::unresolved_reasons() const {
     std::map<std::string, std::size_t> reasons;
     for (const auto& t : trials)
-        if (!t.resolved_descent && t.evidence != "evaluated" && (t.evidence != "no_resolved_descent" || !t.optimizer.success)) ++reasons[t.message];
+        if (undecided_trial(t)) ++reasons[t.message];
     return reasons;
 }
 std::vector<StabilityTrial> StabilityReport::witnesses() const {
@@ -67,6 +85,16 @@ double present_phase_residual_distance(double chemical_contraction, double press
 bool descent_resolved(double tpd, double slope, double error_estimate) {
     return std::isfinite(tpd) && std::isfinite(slope) && std::isfinite(error_estimate)
         && error_estimate >= 0.0 && tpd < 0.0 && slope < -error_estimate;
+}
+bool capped_gibbs_descent(double integral, double integral_error, double endpoint, double endpoint_error) {
+    return descent_resolved(integral, integral, integral_error) && descent_resolved(endpoint, endpoint, endpoint_error)
+        && std::abs(integral - endpoint) <= integral_error + endpoint_error;
+}
+CappedGibbsDescent capped_gibbs_descent(double integral, double integral_error, double endpoint, double endpoint_error,
+    const std::vector<double>& split_standard, const std::vector<double>& parent_standard) {
+    if (!core::bitwise_equal(split_standard, parent_standard)) return CappedGibbsDescent::StandardsDiffer;
+    return capped_gibbs_descent(integral, integral_error, endpoint, endpoint_error)
+        ? CappedGibbsDescent::Resolved : CappedGibbsDescent::Unresolved;
 }
 namespace {
 using Quantities = std::map<std::string, double>;
@@ -605,6 +633,38 @@ struct GibbsDifferenceReference final {
   double repair_error = 0;
   std::string cause;
 };
+std::vector<double> plane_row_errors(const CompiledSystem& c, const EquilibriumResult& result, const char* missing) {
+    std::vector<SolvedStateObservable> plane;
+    for (std::size_t i = 0; i < c.n_feed.size(); ++i)
+        plane.push_back({.kind = SolvedStateObservableKind::SpeciesStandardMinusPlane, .component = i, .plane_uncertainty = true});
+    SolvedStateActionDirection zero;
+    zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
+    zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
+    const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
+    std::vector<double> rows;
+    for (const auto& action : actions.results) {
+        if (!action.numerical_error) throw std::domain_error(action.diagnostic_message.value_or(missing));
+        rows.push_back(*action.numerical_error);
+    }
+    return rows;
+}
+
+void retain_plane_value_errors(StabilityReport& report, const StabilityOptions& options, const std::vector<double>& rows) {
+    for (auto& t : report.trials) {
+        auto& q = t.quantities;
+        const auto tpd = q.find("tpd_over_rt");
+        if (tpd == q.end() || !std::isfinite(tpd->second)) continue;
+        double numerical = energy_estimate(q);
+        for (std::size_t i = 0; i < t.composition.size(); ++i)
+            numerical += t.composition[i] * (rows[i] + std::numeric_limits<double>::epsilon() * std::abs(report.plane_over_rt[i]));
+        for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
+            if (q.count(name)) numerical += std::abs(q.at(name));
+        q["numerical_plane_value_error_over_rt"] = numerical;
+        q["plane_value_error_estimate_over_rt"] = options.standard_uncertainty_over_rt.empty() ? numerical
+            : std::inner_product(t.composition.begin(), t.composition.end(), options.standard_uncertainty_over_rt.begin(), numerical);
+    }
+}
+
 // ALG-STABILITY: cache the original solved-state row uncertainty and supported
 // repair once.
 GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, const EquilibriumResult &result) {
@@ -612,19 +672,7 @@ GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, cons
     try {
 
         out.physical = stability_candidate(c, result, out.report).physical;
-        std::vector<SolvedStateObservable> o;
-        for (size_t i = 0; i < c.n_feed.size(); ++i)
-            o.push_back({.kind = SolvedStateObservableKind::SpeciesStandardMinusPlane, .component = i, .plane_uncertainty = true});
-        SolvedStateActionDirection zero;
-        zero.feed_amounts_mol.assign(c.n_feed.size(), 0);
-        zero.active_parameters.assign(c.model->active_parameters().size(), 0);
-        auto actions = solved_state_first_actions(c, result, o, {zero}).front();
-
-        for (auto &a : actions.results) {
-            if (!a.numerical_error) throw std::domain_error(a.diagnostic_message.value_or("parent row uncertainty unavailable"));
-            out.row_errors.push_back(*a.numerical_error);
-        }
-
+        out.row_errors = plane_row_errors(c, result, "parent row uncertainty unavailable");
         out.repair_error = repair_effect(c, c.prepare(result.coordinates), out.physical, out.report.plane_over_rt,
                                          out.repair_quantities, "parent_repair_");
     } catch (const std::exception &error) {
@@ -645,16 +693,21 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
         const auto split = stability_candidate(split_c, result, split_report);
         out.coordinates = split_report.candidate_coordinates;
         out.quantities = parent.repair_quantities;
+        const auto &r = parent.physical, &er = split.physical;
+        const auto &s = parent.report;
+        const auto &split_standard = split_report.standard_over_rt;
+        const size_t ns = c.n_feed.size();
+        long double reference_error = 0;
+        for (size_t i = 0; i < ns; ++i)
+            reference_error += std::abs(er.composition.back()[i]) * std::abs((long double)split_standard[i] - s.standard_over_rt[i]);
+        reference_error *= er.amount.back();
+        out.quantities["reference_error_over_rt_mol"] = reference_error;
         const double repair =
             parent.repair_error + repair_effect(split_c, split_c.prepare(result.coordinates), split.physical,
                                                 parent.report.plane_over_rt, out.quantities, "split_repair_");
         // Affine donor path in extensive species amounts and volume; exact native
         // gradients.
         const auto &m = *c.model;
-        const auto &r = parent.physical;
-        const auto &er = split.physical;
-        const auto &s = parent.report;
-        const size_t ns = c.n_feed.size();
         double rt = GAS_CONSTANT_J_PER_MOL_K * r.temperature;
         std::vector<long double> n0(ns), dn(ns);
         long double v0 = r.amount[donor] * r.volume[donor], dv = er.amount[0] * er.volume[0] - v0;
@@ -671,6 +724,17 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                 standard_error += weight * options.standard_uncertainty_over_rt[i];
             plane_mag += weight * std::abs(s.plane_over_rt[i]);
         }
+        const auto &donor_q = s.present_phases[donor], &remaining_q = split.quantities.front(), &trial_q = split.quantities.back();
+        const long double initial_g = (long double)r.amount[donor] * donor_q.at("g_over_rt"),
+            remaining_g = (long double)er.amount.front() * remaining_q.at("g_over_rt"),
+            trial_g = (long double)er.amount.back() * trial_q.at("g_over_rt");
+        const double endpoint = remaining_g + trial_g - initial_g,
+            energy = r.amount[donor] * energy_estimate(donor_q) + er.amount.front() * energy_estimate(remaining_q)
+                + er.amount.back() * energy_estimate(trial_q),
+            gamma = (ns + 3) * std::numeric_limits<double>::epsilon(),
+            summation = gamma / (1 - gamma) * (std::abs(initial_g) + std::abs(remaining_g) + std::abs(trial_g)),
+            feasibility = donor_q.at("feasibility_estimate_over_rt") + split.feasibility_estimate,
+            endpoint_error = energy + summation + feasibility + std::abs(plane_defect) + parent_error + standard_error + repair;
         long double last = NAN, last_floor = NAN, last_quadrature = NAN;
         bool previous_refined = false;
         // Simpson ladder: first eligible rung from 32 panels with two consecutive refinements, capped at 128.
@@ -746,10 +810,16 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
             bool refined = std::isfinite(quadrature) && quadrature <= integration_floor + last_floor;
 
             long double complete = integration_floor + trialerror + quadrature + std::abs(plane_defect) + parent_error +
-                                   standard_error + repair;
+                                   standard_error + repair + reference_error;
             const bool qualified = previous_refined && refined;
             if (steps >= 32 && (qualified || steps == 128)) {
                 out.quantities.merge(Quantities{{"gibbs_change_over_rt_mol", (double)delta},
+                                                {"integral_qualified", qualified},
+                                                {"endpoint_gibbs_change_over_rt_mol", endpoint},
+                                                {"endpoint_error_over_rt_mol", endpoint_error},
+                                                {"endpoint_energy_error_over_rt_mol", energy},
+                                                {"endpoint_summation_error_over_rt_mol", summation},
+                                                {"endpoint_feasibility_error_over_rt_mol", feasibility},
                                                 {"quadrature_panels", (double)steps},
                                                 {"previous_quadrature_error_over_rt_mol", (double)last_quadrature},
                                                 {"integration_floor_over_rt_mol", (double)integration_floor},
@@ -768,10 +838,16 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                                                 {"chart_error_over_rt_mol", (double)charterror}});
                 if (!qualified) {
                     out.cause = "incomplete Gibbs integral refinement";
+                    const auto decision = capped_gibbs_descent(delta, complete, endpoint, endpoint_error, split_standard, s.standard_over_rt);
+                    if (decision == CappedGibbsDescent::StandardsDiffer)
+                        out.cause += "; split and parent standards differ";
+                    else if (decision == CappedGibbsDescent::Resolved)
+                        out.status = GibbsDifferenceStatus::Decrease;
                     return out;
                 }
                 for (const auto &[name, value] : out.quantities)
-                    if (!std::isfinite(value) || (name.find("error_") != std::string::npos && value < 0)) {
+                    if (name.rfind("endpoint_", 0) != 0
+                        && (!std::isfinite(value) || (name.find("error_") != std::string::npos && value < 0))) {
                         out.cause = "unavailable Gibbs difference estimate: " + name;
                         return out;
                     }
@@ -1106,8 +1182,8 @@ void classify_split(const CompiledSystem& c, const StabilityReport& report, Stab
         : d.status == GibbsDifferenceStatus::NoDecrease ? "no_resolved_descent" : "indeterminate";
     trial.resolved_descent = d.status == GibbsDifferenceStatus::Decrease;
     if (d.status == GibbsDifferenceStatus::Overlap) trial.message += "; reaction-relaxed split: split Gibbs difference overlaps zero";
-    if (d.status == GibbsDifferenceStatus::Unavailable) trial.message += "; reaction-relaxed split: " + d.cause;
-    else {
+    if (!d.cause.empty()) trial.message += "; reaction-relaxed split: " + d.cause;
+    if (d.status != GibbsDifferenceStatus::Unavailable) {
         // Parent phases in their order with the repaired local donor substituted, then the repaired trial.
         std::size_t offset = 0, width = c.problem.phases[*trial.donor].support.size() + 2;
         for (std::size_t p = 0; p < *trial.donor; ++p) offset += c.problem.phases[p].support.size() + 2;
@@ -1116,8 +1192,9 @@ void classify_split(const CompiledSystem& c, const StabilityReport& report, Stab
         trial.split_coordinates.insert(trial.split_coordinates.end(), d.coordinates.begin() + width, d.coordinates.end());
         auto& q = trial.quantities;
         q["split_beta_mol"] = check["beta_mol"] = d.coordinates.end()[-2];
-        q["split_delta_g_over_rt"] = d.quantities.at("gibbs_change_over_rt_mol");
-        q["split_error_estimate_over_rt"] = d.quantities.at("complete_error_over_rt_mol");
+        const bool integral = check.at("integral_qualified");
+        q["split_delta_g_over_rt"] = check.at(integral ? "gibbs_change_over_rt_mol" : "endpoint_gibbs_change_over_rt_mol");
+        q["split_error_estimate_over_rt"] = check.at(integral ? "complete_error_over_rt_mol" : "endpoint_error_over_rt_mol");
     }
     trial.split_checks.push_back(std::move(check));
 }
@@ -1279,6 +1356,18 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     for (std::size_t i = 0; i < shift.size(); ++i) shift[i] -= report.plane_over_rt[i];
     std::optional<GibbsDifferenceReference> own;
     auto& parent = reference ? *reference : own;
+    const auto finish_report = [&] {
+        if (diagnostics && options.plane_value_errors && !options.evaluate_supplied_trials && !report.trials.empty()) {
+            if (!parent) {
+                parent.emplace();
+                try { parent->row_errors = plane_row_errors(input, result, "parent plane uncertainty unavailable"); }
+                catch (const std::exception& error) { parent->cause = error.what(); }
+            }
+            if (parent->row_errors.empty()) report.message += "; parent plane error: " + parent->cause;
+            else retain_plane_value_errors(report, options, parent->row_errors);
+        }
+        report_work(report.work, work);
+    };
     std::vector<std::pair<StabilityTrial, GibbsDifference>> splits;
     // #21: after the completed schedule, one guarded pass over its condensed-domain refusals, funded by `recovery`.
     // A slot refused before optimization restarts from the parent restriction, a refused end point from its own seed.
@@ -1467,7 +1556,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 if (spent || trial_budget_exhausted()) {
                     if (slot) throw BudgetExhausted(spent ? "recovery allowance exhausted" : "trial budget exhausted");
                     report.message = std::string("search-incomplete: ") + (spent ? "work" : "trial") + " budget exhausted";
-                    if (!fast) { report_work(report.work, work); return report; }
+                    if (!fast) { finish_report(); return report; }
                     stopped = true; unsearched->push_back(identity + "/" + seed_name); continue;
                 }
                 const auto native = c.has_ions || c.has_reaction || options.evaluate_supplied_trials ? nullptr
@@ -1669,19 +1758,16 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
     if (stopped && !fast) report.message = "search-incomplete: trial budget exhausted";
     // The one trial classification (#987): a trial without a resolved descent supplies no-descent evidence only from a
     // converged point; an unconverged driver point, a failure or an unresolved descent is unresolved.
-    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), [&](const auto& t) {
-        if (options.evaluate_supplied_trials) return t.evidence != "evaluated";
-        return t.evidence == "unresolved" || t.evidence == "indeterminate" || t.evidence == "negative_plane_without_positive_donor"
-            || (t.evidence == "no_resolved_descent" && !t.optimizer.success); });
+    const auto unresolved = std::count_if(report.trials.begin(), report.trials.end(), undecided_trial);
     const auto descending = std::count_if(report.trials.begin(), report.trials.end(), [](const auto& t) { return t.resolved_descent; });
-    report.no_descent_in_trial_set = report.completed && !report.trials.empty() && !descending && !unresolved;
+    report.no_descent_in_trial_set = !options.evaluate_supplied_trials && report.completed && !report.trials.empty() && !descending && !unresolved;
     if (report.message.empty()) report.message = descending ? "numerically resolved descending split with estimated uncertainty"
         : "no witness in the recorded trial set";
     report.message += "; unresolved trials " + std::to_string(unresolved);
     if (options.evaluate_supplied_trials) report.message = "supplied trial evaluation; unavailable trials " + std::to_string(unresolved);
     if (!options.trials && !options.prepared_trials && std::all_of(supports.front().support.begin(), supports.front().support.end(),
         [&](auto j) { return z[j] != 0; })) report.message += "; no neutral species";
-    report_work(report.work, work);
+    finish_report();
     return report;
 }
 
@@ -2006,39 +2092,18 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             if (!t.quantities.count("root_density_side") && !retain_density_side(*c.model, at.temperature, at.pressure, t.composition,
                 t.quantities.at("volume_m3_per_mol"), t.phase.kind, t.quantities)) { out.cause = density_refusal; return out; }
     } catch (const std::exception& error) { out.cause = error.what(); return out; }
-    auto rows = parent ? parent->row_errors : std::vector<double>{};  // the split's original plane errors, when made
-    if (rows.size() != c.n_feed.size()) {
-        rows.clear();
-        std::vector<SolvedStateObservable> plane;
-        for (std::size_t i = 0; i < c.n_feed.size(); ++i) plane.push_back({.kind = SolvedStateObservableKind::SpeciesStandardMinusPlane, .component = i, .plane_uncertainty = true});
-        SolvedStateActionDirection zero; zero.feed_amounts_mol.assign(c.n_feed.size(), 0.0);
-        zero.active_parameters.assign(c.model->active_parameters().size(), 0.0);
-        const auto actions = solved_state_first_actions(c, result, plane, {zero}).front();
-        for (const auto& action : actions.results) {
-            if (!action.numerical_error) {
-                out.cause = action.diagnostic_message.value_or("parent plane uncertainty unavailable");
-                return out;
-            }
-            rows.push_back(*action.numerical_error);
-        }
-    }
-    std::vector<double> error(out.report.trials.size()), numerical(error.size());
-    for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
-        auto& t = out.report.trials[j];
-        numerical[j] = energy_estimate(t.quantities);
-        for (std::size_t i = 0; i < t.composition.size(); ++i)
-            numerical[j] += t.composition[i] * (rows[i] + std::numeric_limits<double>::epsilon() * std::abs(out.report.plane_over_rt[i]));
-        for (const auto* name : {"donor_correction_over_rt", "feasibility_error_estimate_over_rt"})
-            if (t.quantities.count(name)) numerical[j] += std::abs(t.quantities.at(name));
-        error[j] = numerical[j];
-        if (!options.standard_uncertainty_over_rt.empty())
-            error[j] = std::inner_product(t.composition.begin(), t.composition.end(), options.standard_uncertainty_over_rt.begin(), error[j]);
-        t.quantities["plane_value_error_estimate_over_rt"] = error[j];
-    }
-    const auto best = *out.minimizing_trial; out.uncertainty = error[best];
+    auto rows = parent ? parent->row_errors : std::vector<double>{};
+    if (options.plane_value_errors && rows.empty()) { out.cause = parent->cause; return out; }
+    try {
+        if (rows.empty()) rows = plane_row_errors(c, result, "parent plane uncertainty unavailable");
+        if (!options.plane_value_errors) retain_plane_value_errors(out.report, options, rows);
+    } catch (const std::exception& error) { out.cause = error.what(); return out; }
+    const auto error = [&](std::size_t j) { return out.report.trials[j].quantities.at("plane_value_error_estimate_over_rt"); };
+    const auto numerical = [&](std::size_t j) { return out.report.trials[j].quantities.at("numerical_plane_value_error_over_rt"); };
+    const auto best = *out.minimizing_trial; out.uncertainty = error(best);
     for (std::size_t j = 0; j < out.report.trials.size(); ++j) {
         const auto& t = out.report.trials[j];
-        if (t.quantities.at("tpd_over_rt") - *out.raw_minimum > error[j] + error[best]) continue;
+        if (t.quantities.at("tpd_over_rt") - *out.raw_minimum > error(j) + error(best)) continue;
         out.minima.push_back(j);
         out.coincident_supports |= t.phase.support != out.report.trials[best].phase.support;
     }
@@ -2056,13 +2121,12 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
                     && std::abs(q.at("normalization_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
                 out.cause = stationarity; return out;
             }
-            if (!(std::abs(q.at("trial_identity_defect_over_rt")) <= numerical[j])) {
+            if (!(std::abs(q.at("trial_identity_defect_over_rt")) <= numerical(j))) {
                 out.cause = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
             }
             if (q.at("root_density_side") == static_cast<double>(DensityBranch::Unspecified)) {
                 out.cause = density_refusal; return out;
             }
-            q["numerical_plane_value_error_over_rt"] = numerical[j];
         }
         for (auto i : out.minima) for (auto j : out.minima) {
             const auto& a = out.report.trials[i];
@@ -2070,11 +2134,11 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             const auto& low = a.phase.support, &high = b.phase.support;
             if (low.size() > high.size() || (low.size() == high.size() && j <= i)) continue;
             if (a.quantities.at("root_density_side") != b.quantities.at("root_density_side") || !coincident_trial_point(a, b)
-                || std::abs(a.quantities.at("tpd_over_rt") - b.quantities.at("tpd_over_rt")) > error[i] + error[j]
+                || std::abs(a.quantities.at("tpd_over_rt") - b.quantities.at("tpd_over_rt")) > error(i) + error(j)
                 || !std::includes(high.begin(), high.end(), low.begin(), low.end())) {
                 out.cause = out.event = tie; return out;
             }
-            if (const auto cause = low == high ? nullptr : omitted_species_cause(c, out.report, a, b, rows, numerical[i] + numerical[j])) {
+            if (const auto cause = low == high ? nullptr : omitted_species_cause(c, out.report, a, b, rows, numerical(i) + numerical(j))) {
                 out.cause = out.event = cause; return out;
             }
         }

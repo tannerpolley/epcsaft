@@ -63,12 +63,20 @@ Reduced molar energy above the candidate conserved supporting plane on normalize
 Source: Michelsen1982 Part I; Perdomo2025 §3.3; equilibrium formulation
 
 **Numerically resolved descending split**:
-Positive-donor inventory-conserving split with negative computed slope and finite Gibbs decrease exceeding propagated uncertainty estimates; numerical verification, not proof.
+Positive-donor, inventory-conserving split with a finite Gibbs decrease exceeding its propagated uncertainty estimate. The frozen comparison also requires a resolved negative donor slope. This is numerical verification on the declared model.
 Source: equilibrium formulation; #223 adopted D9
 
 **Stability requirement**:
-A declared finite-search condition on a candidate parameter set: a resolved descending trial violates it; a completed search without a witness supplies bounded numerical evidence only. Failed or undetermined searches supply no stable value.
+A declared finite-search condition on a candidate parameter set: a resolved descending trial violates it; a completed search without a witness supplies bounded numerical evidence only. The fitted scalar requires sufficient trial, identity and rank evidence. Final fit acceptance uses any resolved witness even when the scalar is unavailable.
 Source: EqID `tangent_plane_distance`; ALG-STABILITY; ALG-FIT
+
+**Finite-search descent conclusion**:
+`StabilityReport.descent` identifies a resolved descent witness, a completed optimized trial set without a witness, or an undecided search. `StabilityReport.undecided` indexes the trials without decided evidence.
+Source: ALG-STABILITY; #266
+
+**Endpoint Gibbs difference**:
+The change in extensive Gibbs energy divided by $RT$ from a repaired donor to the repaired donor and added phase, in mol on the declared feed basis. Its uncertainty estimate accompanies the reaction-relaxed integral.
+Source: ALG-STABILITY; #266
 
 **Proved instability witness**:
 Feasible Gibbs descent with justified total numerical error and feasibility bounds; association floors alone are insufficient.

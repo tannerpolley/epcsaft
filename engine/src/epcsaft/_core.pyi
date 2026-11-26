@@ -2441,6 +2441,8 @@ class StabilityOptions:
     """Optional count limiting trial searches."""
     standard_uncertainty_over_rt: list[float]
     """Optional length-n dimensionless species-standard uncertainty estimates in component order."""
+    plane_value_errors: bool
+    """Include both tangent-plane value error estimates for finite energies in an optimized Full report."""
     retry_condensed_refusals: bool
     """stability_test only, default False: after the completed schedule, retry each charged Liquid trial refused by
     condensed-domain admission once, guarded to its liquid side under one recovery work allowance (ALG-STABILITY).
@@ -2528,6 +2530,10 @@ class StabilityReport:
     """Finite tangent-plane trial evidence for one candidate."""
     def evidence_counts(self, multiplicities: list[int] = ...) -> dict[str, int]: ...
     unresolved_reasons: dict[str, int]
+    descent: str
+    """One of resolved_descent, no_witness, or undecided."""
+    undecided: list[int]
+    """Indices of trials without a usable sign outcome."""
     witnesses: list[StabilityTrial]
     supplied_minima: list[StabilityTrial]
     no_descent_in_trial_set: bool
