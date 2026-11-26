@@ -1767,6 +1767,8 @@ void check_shift_minimax() {
     // One temperature identifies only the combination that sets ln K there, so compare ln K at 180 K and t.
     const auto lnK = [](const FitResult& r) { return reaction_log_value(r.chart.reaction_laws.at("iso"), 180.0); };
     CHECK(ordinary.physical == sequence.at(0).physical && ordinary.iterations == sequence.at(0).iterations);
+    // The supplied shift must reach the fit: from it, the work differs from the zero start.
+    CHECK(ordinary.residual_evaluations != solved_point.residual_evaluations || ordinary.jacobian_evaluations != solved_point.jacobian_evaluations);
     for (const auto* result : {&ordinary, &sequence.at(0)}) {
         CHECK(result->minimax && result->minimax->availability == "available");
         five("start/lnK_180K", lnK(*result), lnK(reference));

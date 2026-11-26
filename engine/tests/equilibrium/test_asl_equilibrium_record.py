@@ -551,6 +551,7 @@ def test_halite_columns_match_central_differences() -> None:
     # Compare the analytic zero at the derivative reference's working precision.
     zero = 1e-10 * np.abs(exact[3][2]).max()
     assert max(np.abs(exact[1][2][3]).max(), np.abs(exact[3][2][3]).max()) <= zero
+    floor = eps ** 2 * np.abs(exact[3][2]).max()  # the differences keep their own resolution; only the zero above is relaxed
     water = exact[0]
     # The two identities below hold exactly in the equations. The amount is the solved endpoint, which moves by ulps with
     # Ipopt's bounds and linear solver (MA57 one ulp, MUMPS two), so it meets the equilibrium-row criterion
@@ -567,7 +568,7 @@ def test_halite_columns_match_central_differences() -> None:
                 pairs += [(hessian[a, b], plus[row][1][a], minus[row][1][a], 1e-5) for a in range(7)]
                 noise = 1e-13 if b == 3 else 10 * eps
                 for exact_value, fp, fm, tau in pairs:
-                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + noise * (abs(fp) + abs(fm)) / (2 * h) + zero, (row, b, h)
+                    assert abs((fp - fm) / (2 * h) - exact_value) <= tau * abs(exact_value) + noise * (abs(fp) + abs(fm)) / (2 * h) + floor, (row, b, h)
 
 
 def test_halite_onset_and_interval_name_the_cause_and_recover() -> None:
@@ -583,7 +584,7 @@ def test_halite_onset_and_interval_name_the_cause_and_recover() -> None:
             callback.evaluate([*q, text, "0"])
         assert str(failure.value).startswith("epcsaft_equilibrium:" + cause), str(failure.value)
         assert callback.evaluate([*H_Q0, text, "0"]).hex() == start.hex()
-    assert callback.evaluate([*H_Q0[:3], 6.30, *H_Q0[4:], text, "0"]) == pytest.approx(1.0953908938e-3, rel=1e-10, abs=0.0)
+    assert callback.evaluate([*H_Q0[:3], 6.30, *H_Q0[4:], text, "0"]) > 0.0  # tests/equilibrium/test_pure_solid.py owns the solubility
 
 
 def test_halite_temperature_ipopt(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
