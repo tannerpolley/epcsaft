@@ -480,7 +480,8 @@ reaction invariants. With original balance rows \(B\), vapor columns
 \(a^\mathsf{T}\bar\mu_v\) is the plane work per mole added. Evaluate
 both phases in the original standards and require a balanced, positive transfer
 with a resolved decrease in extensive Gibbs energy before following it to a split.
-The finite search and its pressure-root checks bound the reported outcome.
+The finite search distinguishes a trial that returns to the admitted vapor
+from a distinct endpoint, which must pass its liquid pressure-root check.
 [ALG-STABILITY](../science/algorithms.md#alg-stability) owns admission and restart.
 
 Discover once at initialization, then declare the returned phases for subsequent
