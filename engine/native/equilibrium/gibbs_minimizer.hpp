@@ -349,7 +349,7 @@ NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& 
 }
 
 // J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
-std::vector<double> solve_implicit(
+EPC_API std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
     const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}

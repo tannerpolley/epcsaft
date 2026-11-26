@@ -66,14 +66,12 @@ struct EquilibratedRows {
     Eigen::MatrixXd jacobian;
     Eigen::VectorXd row, column;
     Eigen::FullPivLU<Eigen::MatrixXd> lu;
-    std::optional<const char*> scaled_failure;
+    void equilibrate() {
+        std::tie(row, column) = power_of_two_equilibration(jacobian);
+        jacobian = row.asDiagonal() * jacobian * column.asDiagonal();
+    }
 
-    SolvedStateActionStatus factor(const Eigen::MatrixXd& physical) {
-        if (!square_and_numeric(physical)) return SolvedStateActionStatus::NonfiniteJacobian;
-        std::tie(row, column) = power_of_two_equilibration(physical);
-        jacobian = row.asDiagonal() * physical * column.asDiagonal();
-        scaled_failure = jacobian.allFinite() ? std::nullopt : std::optional("scaled Jacobian is nonfinite");
-        if (scaled_failure) return SolvedStateActionStatus::NonfiniteJacobian;
+    SolvedStateActionStatus factor() {
         lu = jacobian.fullPivLu();
         return lu.rank() == jacobian.rows() ? SolvedStateActionStatus::Available : SolvedStateActionStatus::RankDeficient;
     }
@@ -131,7 +129,7 @@ std::vector<double> solve_implicit(
     if (!valid_point(prepared.point)) throw std::invalid_argument("invalid sensitivity point");
     if (!all_numeric(column)) throw std::invalid_argument("invalid parameter derivative");
     if (jacobian.empty()) jacobian = compiled.jacobian_at(prepared);
-    const auto refuse = [&](const char* cause, core::Stop stop, const Eigen::FullPivLU<Eigen::MatrixXd>* factor, std::optional<double> backward = std::nullopt) {
+    const auto refuse = [&](const char* cause, core::Stop stop, const auto* factor, std::optional<double> backward = std::nullopt) {
         if (failure) { core::Convergence r; r.cause = cause;
             if (factor) r.rank = std::make_shared<core::NumericalRank>(core::numerical_rank(*factor, "implicit defining rows"));
             r.residual = backward.value_or(NAN); r.backward_error = backward; r.stop = stop;
@@ -140,20 +138,20 @@ std::vector<double> solve_implicit(
         }
         return std::vector<double>{};
     };
-    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, nullptr);
+    if (jacobian.size() != rows * dimension || rows != dimension) return refuse("implicit Jacobian shape", core::Stop::infeasible, static_cast<const Eigen::FullPivLU<Eigen::MatrixXd>*>(nullptr));
     const auto matrix = dense_matrix(jacobian, rows, dimension);
-    EquilibratedRows rows_factor;
-    const auto status = rows_factor.factor(matrix);
-    if (status == SolvedStateActionStatus::NonfiniteJacobian)
-        return refuse(rows_factor.scaled_failure.value_or("implicit nonfinite Jacobian"), core::Stop::nonfinite, nullptr);
-    if (status == SolvedStateActionStatus::RankDeficient) return refuse("implicit Jacobian rank", core::Stop::singular, &rows_factor.lu);
+    const auto [row_scale, column_scale] = power_of_two_equilibration(matrix);
+    const Eigen::MatrixXd equilibrated = row_scale.asDiagonal() * matrix * column_scale.asDiagonal();
+    const auto lu = equilibrated.fullPivLu();
+    if (!matrix.allFinite() || static_cast<std::size_t>(lu.rank()) != dimension)
+        return refuse(matrix.allFinite() ? "implicit Jacobian rank" : "implicit nonfinite Jacobian", matrix.allFinite() ? core::Stop::singular : core::Stop::nonfinite, &lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
-    const Eigen::MatrixXd result = rows_factor.column.asDiagonal() * rows_factor.lu.solve(rows_factor.row.asDiagonal() * right);
-    const double error = backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
-        matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff());
+    const Eigen::MatrixXd result = column_scale.asDiagonal() * lu.solve(row_scale.asDiagonal() * right);
+    const double error = std::max(0.0, backward_error((matrix * result.col(0) - right.col(0)).cwiseAbs().maxCoeff(),
+        matrix.cwiseAbs().rowwise().sum().maxCoeff(), result.cwiseAbs().maxCoeff(), right.cwiseAbs().maxCoeff()));
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
-        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &rows_factor.lu,
+        return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &lu,
             result.allFinite() ? std::optional<double>(error) : std::nullopt);
     scope.probe("max_solution", result.cwiseAbs().maxCoeff());
     scope.probe("backward_error", error);
@@ -173,14 +171,17 @@ bool check_held_responses(const CompiledSystem& compiled, const std::function<Ei
             }) >= 2)
                 return held_refusal(result, core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
     }
-    const auto physical = jacobian();
-    if (physical.rows() != physical.cols())
-        return held_refusal(result, core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
     EquilibratedRows factor;
-    const auto matrix = factor.factor(physical);
-    if (matrix != Status::Available)
-        return held_refusal(result, matrix == Status::RankDeficient ? core::Stop::singular : core::Stop::nonfinite,
-            "held_response_unavailable", factor.scaled_failure.value_or(solved_state_status_name(matrix)));
+    factor.jacobian = jacobian();
+    if (factor.jacobian.rows() != factor.jacobian.cols())
+        return held_refusal(result, core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
+    if (!factor.jacobian.allFinite())
+        return held_refusal(result, core::Stop::nonfinite, "held_response_unavailable", "nonfinite_jacobian");
+    factor.equilibrate();
+    if (!factor.jacobian.allFinite())
+        return held_refusal(result, core::Stop::nonfinite, "held_response_unavailable", "scaled Jacobian is nonfinite");
+    if (factor.factor() == Status::RankDeficient)
+        return held_refusal(result, core::Stop::singular, "held_response_unavailable", "rank_deficient");
     const double condition = factor.condition();
     auto record = result.held_species.begin();
     for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
@@ -1399,8 +1400,11 @@ static SolvedStateActionBatch evaluate_action(
         if (!shared->matrix_checked) {
             const std::size_t n = central.coordinates.size();
             const auto jacobian = compiled.jacobian_at(center.prepared);
-            shared->matrix_gate = center.factor(dense_matrix(jacobian, compiled.rows.size(), n));
-            if (shared->matrix_gate != SolvedStateActionStatus::NonfiniteJacobian) {
+            center.jacobian = dense_matrix(jacobian, compiled.rows.size(), n);
+            shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
+            if (square_and_numeric(center.jacobian)) {
+                center.equilibrate();
+                shared->matrix_gate = center.factor();
                 batch.diagnostics.state_factorizations = 1;
                 shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
                 if (shared->matrix_gate == SolvedStateActionStatus::Available) shared->diagnostics.condition_estimate = center.condition();
@@ -1433,7 +1437,7 @@ static SolvedStateActionBatch evaluate_action(
         return batch;
     };
     if (gate != SolvedStateActionStatus::Available)
-        return apply_state_gate(gate, gate == SolvedStateActionStatus::NonfiniteJacobian ? center.scaled_failure : std::nullopt);
+        return apply_state_gate(gate);
     if (plane_uncertainty) {
         const auto n = central.coordinates.size();
         Eigen::MatrixXd projection = Eigen::MatrixXd::Zero(components, n);

@@ -1209,7 +1209,9 @@ positive row and pass the physical product in EqID
 On the returned classified system, the scaled infinity norm of the first-order
 response of the other primal coordinates to a unit perturbation of $\ln x_h$
 must be at most `EQUILIBRIUM_POLISH_CORRECTION`. The response solve requires a
-finite Jacobian, full rank and the implicit linear-solve check. A phase with two
+finite Jacobian, full rank and the implicit linear-solve check. If equilibration
+produces a nonfinite scaled Jacobian, the held response is refused with that
+cause before factorization. A phase with two
 or more held dielectric solvents is hold-dependent when its permittivity uses
 a solvent ratio. This includes normalized solvent mole and volume weighting.
 The reduced-Hessian projection still includes held coordinates. A negative
@@ -3041,8 +3043,6 @@ EqID: `repeated_direction_energy_gradient`; the other contractions come from
 `residual_energy_action` (E3 and E4 of the extensive residual Helmholtz energy,
 which also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised.
-If equilibration produces a nonfinite scaled Jacobian, the action reports that
-cause and refuses before factorization, with rank unavailable.
 The first-sensitivity solve and rank inspection use this same equilibration and
 relative pivot threshold. First sensitivities solve $A z = -R F_\theta v$ and
 return $y = C z$, retaining the backward-error check in the original equations; each

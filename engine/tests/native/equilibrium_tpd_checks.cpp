@@ -274,13 +274,22 @@ void check_action_scaled_jacobian_overflow() {
     const auto action = solved_state_actions(overflow, center,
         {{{SolvedStateObservableKind::PhaseAmount, 0}}, {{0.0, 1.0, {0.0, 0.0}, {}}}});
     const auto& item = action.results.at(0);
-    std::printf("Jacobian column maximum=%a, central residual=%.17g, action=%s, cause=%s, LU factorizations=%zu, rank=%s\n", column_max,
+    std::printf("Jacobian column maximum=%a, central residual=%.17g, action=%s, cause=%s, LU factorizations=%zu, rank=%zu\n", column_max,
         action.diagnostics.central_residual.value_or(NAN),
         solved_state_status_name(item.status), item.diagnostic_message.value_or("").c_str(),
-        action.diagnostics.state_factorizations, action.diagnostics.rank ? "available" : "absent");
-    CHECK(item.status == SolvedStateActionStatus::NonfiniteJacobian && !item.action
-        && item.diagnostic_message == "scaled Jacobian is nonfinite"
-        && action.diagnostics.state_factorizations == 0 && !action.diagnostics.rank);
+        action.diagnostics.state_factorizations, action.diagnostics.rank.value_or(center.coordinates.size()));
+    CHECK(item.status == SolvedStateActionStatus::RankDeficient && !item.action && !item.diagnostic_message
+        && action.diagnostics.state_factorizations == 1 && action.diagnostics.rank
+        && *action.diagnostics.rank < center.coordinates.size());
+
+    std::optional<core::Convergence> failure;
+    const auto response = solve_implicit(overflow, overflow.prepare(center.coordinates),
+        std::vector<double>(center.coordinates.size(), 1.0), &failure, jacobian);
+    CHECK(response.empty() && failure && failure->stop == core::Stop::singular
+        && failure->cause == "implicit Jacobian rank" && failure->rank
+        && failure->rank->rank == *action.diagnostics.rank);
+    std::printf("implicit stop=%s, cause=%s, rank=%zu/%zu\n", core::stop_name(failure->stop),
+        failure->cause.c_str(), failure->rank->rank, failure->rank->dimension);
 }
 
 void check_budget_retry() {
@@ -2640,17 +2649,20 @@ void check_mea_below_bubble_hold() {
     const Eigen::VectorXd scale = Eigen::VectorXd::Ones(3);
     Eigen::MatrixXd jacobian = Eigen::MatrixXd::Identity(3, 3);
     const auto matrix = [&] { return jacobian; };
-    const auto response_case = [&](core::Stop stop, const char* cause, std::optional<double> response) {
+    const auto response_case = [&](core::Stop stop, const char* cause, std::optional<double> response,
+                                   const char* message = nullptr) {
         EquilibriumResult witness;
         witness.held_species.push_back({0, 1, held.fraction, held.chemical_row, held.complementarity});
         CHECK(!check_held_responses(matrix_system, matrix, scale, witness));
         std::printf("response witness %s, %s, response=%s\n", core::stop_name(witness.convergence.stop),
             witness.message.c_str(), core::optional_number(witness.held_species[0].response).c_str());
         CHECK(witness.convergence.stop == stop && witness.convergence.cause == cause
-            && witness.held_species[0].response == response);
+            && witness.held_species[0].response == response && (!message || witness.message == message));
     };
     jacobian(2, 2) = NAN;
     response_case(core::Stop::nonfinite, "held_response_unavailable", {});
+    jacobian(2, 2) = 0x1p-1024;
+    response_case(core::Stop::nonfinite, "held_response_unavailable", {}, "scaled Jacobian is nonfinite");
     jacobian(2, 2) = 0;
     response_case(core::Stop::singular, "held_response_unavailable", {});
     jacobian(2, 2) = 1;
