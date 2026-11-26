@@ -1892,13 +1892,15 @@ static ContinuationResult continue_path(const HelmholtzModel& model, const Conti
         transfer = false;
         core::retain_failure(observations.first_numerical_failure, attempt.message, "continuation admission");
         reject(result, attempt, q_try);
-        if (attempt.terminal || attempt.stop == ContinuationStop::held_species) return finish(std::move(result), attempt.stop, attempt.message);
+        // A held corrector state is refused as a seed but is a rejected step: past a fold it lands on another branch.
+        if (attempt.terminal) return finish(std::move(result), attempt.stop, attempt.message);
         if (local_retries == 0) q_failed = q_try;
         const double halved = dq / 2.0;
         if (halved < options.minimum_step || local_retries >= options.max_retries_per_step) {
             // ALG-EQUILIBRIUM turning point: w = 1/(1 + |dy/ds|^2) of the last two accepted states vanishes by the first failed s.
             const double fold = q + (q - q_before) * w / (w_before - w);
-            const auto stop = halved < options.minimum_step ? ContinuationStop::step_too_small : ContinuationStop::budget_exhausted;
+            const auto stop = attempt.stop == ContinuationStop::held_species ? attempt.stop
+                : halved < options.minimum_step ? ContinuationStop::step_too_small : ContinuationStop::budget_exhausted;
             if (!(w_before > w && w > 0.0 && fold <= q_failed)) return finish(std::move(result), stop, attempt.message);
             return finish(std::move(result), ContinuationStop::turning_point, "path component of the tangent vanishes at s "
                 + core::optional_number(fold) + "; " + continuation_stop_name(stop) + ": " + attempt.message);
