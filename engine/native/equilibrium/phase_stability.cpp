@@ -1814,7 +1814,7 @@ std::pair<StabilityReport, bool> supplied_trial_measure(const CompiledSystem& c,
     StabilityReport report;
     try { report = stability_test(c, parent, options); }
     catch (const std::exception& error) { report.message = error.what(); }
-    const bool available = parent.requested_tolerance_met.value_or(false) && report.completed
+    const bool available = parent.has_state() && report.completed
         && report.trials.size() == supplied->trials.size() && std::all_of(report.trials.begin(), report.trials.end(),
             [](const auto& t) { return t.evidence == "evaluated"; });
     return {std::move(report), available};

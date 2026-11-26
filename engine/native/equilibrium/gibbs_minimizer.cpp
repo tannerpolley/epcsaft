@@ -2884,6 +2884,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
     const auto deadline = deadline_at(begun, limits.seconds);
     deadline_at(begun, limits.attempt_seconds);  // validate even an unattempted set
     EquilibriumStartsResult out;
+    std::optional<std::size_t> first_published;
     out.results.resize(starts.size()); out.causes.assign(starts.size(), "unattempted");
     out.attempt_seconds.resize(starts.size(), 0.0);
     const auto exhausted = [&] { return Clock::now() >= deadline
@@ -3018,7 +3019,10 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
                 }
                 scope.finish(result.convergence);
                 out.causes[i] = result.message; out.results[i] = std::move(result);
-                if (out.results[i]->success && out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
+                if (out.results[i]->success) {
+                    if (out.results[i]->requested_tolerance_met.value_or(false)) out.selected = i;
+                    else if (!first_published) first_published = i;
+                }
             } catch (const std::exception& error) {
                 const bool budget = dynamic_cast<const BudgetExhausted*>(&error);
                 out.causes[i] = std::string(audit ? "driver/post-driver: " : "initialization: ") + error.what();
@@ -3035,6 +3039,7 @@ EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& model,
         }
     } else out.budget_exhausted = true;
     out.budget_exhausted = out.budget_exhausted || (!out.selected && exhausted());
+    if (!out.selected) out.selected = first_published;
     out.seconds = std::chrono::duration<double>(Clock::now() - begun).count();
     out.overrun_seconds = limits.seconds ? std::max(0.0, out.seconds - *limits.seconds) : 0.0;
     if (limits.attempt_seconds) for (const double t : out.attempt_seconds)
