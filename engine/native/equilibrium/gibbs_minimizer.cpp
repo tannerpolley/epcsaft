@@ -1015,10 +1015,11 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     for (std::size_t phase = 0; !compiled.ideal && phase < compiled.problem.phases.size(); ++phase) {
         volumes.push_back(model->parameters().ideal_gas ? prepared.volume[phase] / sum(prepared.composition[phase])
             : model->packing_fraction_coefficient(temperature, compositions[phase]) / std::exp(topology.log_packing[phase]));
-        const double deficit = michelsen_deficit(
-            compiled, compositions[phase], phase, result.residuals);
-        scope.probe("michelsen_deficit", deficit, static_cast<std::uint32_t>(phase));
         // The deficit is a probe only: a vanished phase's coordinates are undetermined.
+        scope.observe([&] {
+            scope.probe("michelsen_deficit", michelsen_deficit(compiled, compositions[phase], phase, result.residuals),
+                        static_cast<std::uint32_t>(phase));
+        });
         if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
             topology_ok = false;
             cause = "phase_disappeared";

@@ -91,7 +91,8 @@ SolvedStateActionStatus linear_solve_status(double error, double condition) {
 
 SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point
+    const std::vector<double>& point,
+    bool estimate_condition
 ) {
     core::Scope scope("inspect_implicit_sensitivity");
     const std::size_t rows = compiled.rows.size();
@@ -108,7 +109,7 @@ SensitivityInfo inspect_sensitivity(
     SensitivityInfo result;
     result.rank = static_cast<std::size_t>(lu.rank());
     result.threshold = lu.threshold();
-    result.condition_estimate = condition_estimate(matrix);
+    if (estimate_condition || scope.on()) result.condition_estimate = condition_estimate(matrix);
     result.nonsingular = square_and_numeric(matrix) && result.rank == dimension;
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
@@ -153,7 +154,7 @@ std::vector<double> solve_implicit(
     if (!result.allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value))
         return refuse(result.allFinite() ? "implicit backward error" : "implicit nonfinite response", result.allFinite() ? core::Stop::stalled : core::Stop::nonfinite, &lu,
             result.allFinite() ? std::optional<double>(error) : std::nullopt);
-    scope.probe("max_solution", result.cwiseAbs().maxCoeff());
+    scope.observe([&] { scope.probe("max_solution", result.cwiseAbs().maxCoeff()); });
     scope.probe("backward_error", error);
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));

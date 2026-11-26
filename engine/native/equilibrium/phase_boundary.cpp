@@ -792,7 +792,7 @@ BoundaryAttempt advance(const CompiledSystem& start, const CompiledSystem& curre
         // (owner decision 2026-09-16), the branch end at that accepted state.
         const auto jacobian = current.jacobian(y);
         const bool numeric = std::all_of(jacobian.begin(), jacobian.end(), [](double v) { return std::isfinite(v); });
-        const auto info = inspect_sensitivity(current, y);
+        const auto info = inspect_sensitivity(current, y, true);
         attempt.stop = numeric ? ContinuationStop::singular_jacobian : ContinuationStop::nonfinite;
         attempt.message = numeric
             ? "implicit tangent is unavailable at the accepted state (rank " + std::to_string(info.rank) + " of "

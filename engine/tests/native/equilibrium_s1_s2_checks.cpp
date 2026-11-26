@@ -1320,7 +1320,7 @@ void check_ideal_mole_fraction() {
             field("model", IDEAL_MOLE_FRACTION_STANDARD_STATE_ID), field("species", sulfide ? "water,MDEA,H2S,OH-,H3O+,HS-,S--,MDEAH+" : "water,MDEA,CO2,OH-,H3O+,HCO3-,CO3--,MDEAH+"),
             field("feed_mol", problem.feed.values), field("n_mol", n), field("x", result.mole_fractions),
             field("rows", result.residuals), field("classified_rows", result.classified_residuals),
-            field("rank", result.jacobian_rank), field("condition", inspect_sensitivity(compiled, result.coordinates).condition_estimate), field("iterations", result.iterations), field("evaluations", result.evaluations),
+            field("rank", result.jacobian_rank), field("condition", inspect_sensitivity(compiled, result.coordinates, true).condition_estimate), field("iterations", result.iterations), field("evaluations", result.evaluations),
             field("hessian_calls", result.hessian_calls)});
         for (std::size_t r = 0; r < 4; ++r) {
             const auto& spec = problem.reactions[r]; double logQ = 0.0;

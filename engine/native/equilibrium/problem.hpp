@@ -1076,13 +1076,14 @@ EPC_API EquilibriumResult solve_saturation(const CompiledSystem&);
 bool one_component_two_density_eligible(const CompiledSystem&);
 struct SensitivityInfo final {
     std::size_t rank = 0;
-    double condition_estimate = 0.0, threshold = 0.0;
+    double condition_estimate = NAN, threshold = 0.0;
     bool nonsingular = false;
 };
 
 EPC_API SensitivityInfo inspect_sensitivity(
     const CompiledSystem& compiled,
-    const std::vector<double>& point
+    const std::vector<double>& point,
+    bool estimate_condition = false
 );
 struct SolvedStateActionDiagnostics;
 // All operands are generated from one exact trial declaration in declared phase order.
