@@ -1,6 +1,7 @@
 """Conserved liquid transfer from the A7 neutral vapor at archived flash inputs."""
 import json
 import math
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -13,12 +14,13 @@ from tests.native_inputs import MEA, nominally_unloaded_mea
 REFERENCE = Path(__file__).resolve().parents[2] / "data" / "reference" / "mea-a7"
 DECLARATIONS = json.loads((REFERENCE / "vanished-liquid.json").read_text())
 CASES = DECLARATIONS["rows"]
+Flash = Callable[[dict[str, Any], str], _core.EquilibriumResult]
 ROW_CRITERION = 1e-10
 TOLERANCES = {t.name: t.value for t in _core.tolerances()}
 
 
 @pytest.fixture(scope="module")
-def solve():
+def solve() -> Flash:
     model = Mixture(Parameters.from_json(REFERENCE / "parameters.json"))
     _, reactions, _, _, _ = nominally_unloaded_mea(False)
     correlations = {
@@ -28,6 +30,7 @@ def solve():
     # Use the A7 correlations in the existing reference-temperature and log bases.
     for reaction in reactions:
         law = reaction.correlation
+        assert law is not None
         if reaction.name == "R2":
             row = correlations["R2"]
             law.a, law.b, law.c, law.d = (
@@ -41,7 +44,7 @@ def solve():
     reference = NeutralReference(solvent="water", standard_molality_mol_per_kg=1.,
                                  solute_molality_ratios=dict(zip(MEA[:2] + MEA[3:], (1., 1., 5., 2., 1., 1., 1., 1.))))
 
-    def flash(case, start):
+    def flash(case: dict[str, Any], start: str) -> _core.EquilibriumResult:
         T, P, *feed = case["inputs"]
         x, y = DECLARATIONS["anchor_guesses"] if start == "seeded" else ([], [])
         return solve_equilibrium(model, Problem(
@@ -53,8 +56,7 @@ def solve():
     return flash
 
 
-def closed_vapor(report, case):
-    assert report is not None
+def closed_vapor(report: _core.StabilityReport, case: dict[str, Any]) -> dict[str, float]:
     (vapor,) = report.present_phases
     assert vapor["volume_m3_per_mol"] > 0.0
     assert vapor["amount_mol"] == pytest.approx(sum(case["inputs"][2:]), rel=ROW_CRITERION)
@@ -65,7 +67,7 @@ def closed_vapor(report, case):
     return vapor
 
 
-def liquid_trials(report):
+def liquid_trials(report: _core.StabilityReport) -> list[_core.StabilityTrial]:
     return [
         trial for trial in report.trials if trial.quantities.get("liquid_root_residual", math.inf)
         <= TOLERANCES["DENSITY_ROOT_RESIDUAL"] and trial.quantities["liquid_root_log_displacement"]
@@ -74,7 +76,7 @@ def liquid_trials(report):
 
 
 @pytest.mark.parametrize("row", [row for row, case in CASES.items() if "split" in case])
-def test_a7_vanished_liquid_split(row: str, solve, evidence: Any):
+def test_a7_vanished_liquid_split(row: str, solve: Flash, evidence: Any) -> None:
     case = CASES[row]
     reference = case["split"]
     states = {start: solve(case, start) for start in ("cold", "seeded")}
@@ -92,6 +94,7 @@ def test_a7_vanished_liquid_split(row: str, solve, evidence: Any):
         assert actual == pytest.approx(independent, rel=ROW_CRITERION, abs=ROW_CRITERION)
         assert independent == pytest.approx(reference[name], rel=ROW_CRITERION, abs=ROW_CRITERION)
     report = recovered.vanished_phase_stability
+    assert report is not None
     vapor = closed_vapor(report, case)
     (witness,) = [t for t in liquid_trials(report) if "restart_liquid_tpd_over_rt" in t.quantities]
     assert witness.resolved_descent and report.descent == "resolved_descent"
@@ -127,10 +130,11 @@ def test_a7_vanished_liquid_split(row: str, solve, evidence: Any):
 @pytest.mark.parametrize(("row", "start"), [
     (row, start) for row, case in CASES.items() if "split" not in case for start in case["vanished"]
 ])
-def test_a7_vanished_liquid_trials(row: str, start: str, solve, evidence: Any):
+def test_a7_vanished_liquid_trials(row: str, start: str, solve: Flash, evidence: Any) -> None:
     case = CASES[row]
     result = solve(case, start)
     report = result.vanished_phase_stability
+    assert report is not None
     vapor = closed_vapor(report, case)
     admitted = liquid_trials(report)
     assert admitted and all(list(t.phase.support) == list(range(len(MEA))) for t in admitted)
