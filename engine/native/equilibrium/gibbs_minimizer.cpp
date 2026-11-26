@@ -2106,7 +2106,9 @@ static EquilibriumResult run_driver_once(
             result = failed(std::move(result.message));
         }
         if (result.convergence.limit == core::WorkLimit::none && !ipopt_iteration_cap) {
-            if (status == Ipopt::MAXITER_EXCEEDED && result.iterations == result.solver_settings.at("max_iter"))
+            // A diagnostic options file that overrides max_iter stops the run itself; no caller limit denied the work.
+            if (status == Ipopt::MAXITER_EXCEEDED && result.iterations == result.solver_settings.at("max_iter")
+                && result.solver_settings.at("max_iter") == static_cast<double>(std::min(remaining, run_cap)))
                 result.convergence.limit = limits && remaining <= run_cap ? core::WorkLimit::iterations : core::WorkLimit::attempt_iterations;
             if (status == Ipopt::CPUTIME_EXCEEDED) result.convergence.limit = core::WorkLimit::deadline;
         }

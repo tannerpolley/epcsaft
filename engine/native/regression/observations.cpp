@@ -483,8 +483,9 @@ Prediction predict_validated(const HelmholtzModel& model, const Observation& obs
     Prediction result;
     try {
         validate(observation, model);
-        if (start && (start->status != ObservationStatus::Available || start->component_ids != component_ids))
-            throw std::invalid_argument("start: unavailable prediction or component order differs");
+        if (start && start->status != ObservationStatus::Available) throw std::invalid_argument("start: unavailable prediction");
+        if (start && !start->solved) throw std::invalid_argument("start: prediction carries no solved state (worker replies omit it)");
+        if (start && start->component_ids != component_ids) throw std::invalid_argument("start: component order differs");
         result = predict(model, observation, {}, {}, nullptr, nullptr, nullptr, false,
             Clock::time_point::max(), {}, true, start, work ? &*work : nullptr);
     } catch (const std::domain_error& failure) {
