@@ -471,6 +471,18 @@ reference transfer and gauge, at the solved T/P snapshot.
 Only explicit `Discover()` requests run discovery. Only explicit
 `stability_test(...)` calls test an accepted declared result. Declared solves,
 continuation, parameter fitting and ASL never invoke either implicitly.
+The fixed-T/P phase-disappearance exception has its own finite search. When
+a reacting ionic liquid vanishes and the neutral vapor closes, the vapor
+chemical potentials \(\bar\mu_v\) determine a plane on the original
+reaction invariants. With original balance rows \(B\), vapor columns
+\(B_v\), and an electroneutral liquid composition \(w\), a withdrawal
+\(a\) per mole of liquid satisfies \(B_v a = B w\). The contraction
+\(a^\mathsf{T}\bar\mu_v\) is the plane work per mole added. Evaluate
+both phases in the original standards and require a balanced, positive transfer
+with a resolved decrease in extensive Gibbs energy before following it to a split.
+The finite search and its pressure-root checks bound the reported outcome.
+[ALG-STABILITY](../science/algorithms.md#alg-stability) owns admission and restart.
+
 Discover once at initialization, then declare the returned phases for subsequent
 calculations. Explicit testing of pinned/free-intensive results releases pins
 only for diagnosing Gibbs descent at their solved fixed T/P; it says nothing

@@ -881,7 +881,7 @@ solve_equilibrium(model, request, start)
         refused: the record is kept; attempt 0 repeats from the declared start (attempt 1);
         a refusal on either attempt switches off the physical-amount retry and the neutral recovery
       result = recover_physical_amounts(result)                  # reacting PhaseDisappeared or exhausted budget
-      PhaseDisappeared at fixed T, P: vanished_phase_stability (phase_stability.cpp) names the phase
+      PhaseDisappeared at fixed T, P: vanished_phase_stability (phase_stability.cpp) tests the surviving declaration
       neutral recovery (Retry::Source): recovery_stability (phase_stability.cpp),
         then recover_from_source (phase_boundary.cpp)
     one-component two-density eligible and failed: recover_from_source (phase_boundary.cpp)
@@ -2169,20 +2169,37 @@ lower-objective single-phase declaration before [neutral recovery](#neutral-reco
 (owner, 2026-11-03). A completed search without a descent means "no witness in the
 recorded trial set", never a global certificate: a split outside the finite trial
 set is not excluded, and a refused solve does not run recovery, so a case recovery
-could have solved can be refused. The same public flash, when both amount-chart
-attempts end with a vanished phase, solves the declaration without that phase and,
-only if it succeeds, tests it with one explicit trial of the vanished phase's kind and
-declared support (its existing seeds, no default trial set) under an allowance built
-like recovery's; the parent and trials are charged to it and to the result's work, and
-the report is `result.vanished_phase_stability`. The split stays refused and the
-message adds one of: the parent's failure ("surviving declaration unresolved"); "no
-descent against <kind> trials of support {…} in this finite search: minimum TPD/RT =
-<raw>; not a stability certificate"; a resolved descent with its TPD/RT; or "<kind>
-trial search unresolved" for an unresolved, incomplete or budget-limited search. The
-TPD/RT is the raw minimum over resolved trials, not clipped at zero. Calls outside these exceptions preserve callback
-arithmetic/order and counted work; the exception adds the search's work and, on a
-refusal, omits recovery's. Returned
-solved-state actions use the fixed discovered declaration without searching.
+could have solved can be refused. The public flash can test a vanished declared phase
+at fixed T and P, after the physical-mol retry. The surviving declaration
+must close before a trial on the vanished phase's support is tested.
+The vanished-vapor search uses the surviving liquid and its existing seeds.
+
+For a vanished reacting ionic liquid with a neutral vapor, require a
+vapor-supported feed, unique vapor inventories, and no reaction carried
+entirely on the vapor support. Close the vapor and use the original reaction
+standards for the plane and all Gibbs comparisons. Factor the scaled vapor
+columns of the original balance matrix to map electroneutral liquid
+compositions to signed vapor withdrawals. Refuse a direction outside the
+vapor inventory span. Search with exact curvature, starting from the first
+vanished composition, the declared liquid guess if supplied, the distinct
+physical-mol endpoint, and the ordinary liquid seeds. Each reconstructed
+endpoint must pass the liquid pressure-root check to contribute a decision.
+
+Restart the original fixed-T/P declaration when a positive transfer passes the
+represented inventory checks and lowers common-standard Gibbs energy beyond the
+estimated error. Only this positive-amount restart uses Ipopt's adaptive barrier
+strategy. In the A7 row 45 diagnosis, the ordinary barrier/filter accepted steps
+that reduced the amount toward zero while Gibbs energy rose and the equality
+constraints remained open. The adaptive strategy recovered the admitted split
+from the same transfer. Publish the split only after the usual admission,
+requested row closure, and a resolved Gibbs decrease against the closed vapor.
+
+One allowance covers the surviving declaration, trials, finite-transfer checks
+and restart. Report them in `result.vanished_phase_stability`. A failed restart
+leaves the witness and the original split refusal. A completed, decided finite
+search without descent reports the minimum raw TPD/RT. Failed parent closure,
+unresolved trial endpoints and exhausted work are named in the report. Returned
+solved-state actions use the fixed declaration without searching.
 Qualification must compare the retained before/after declared numerical values
 bit-for-bit, with identical iteration/evaluation/Hessian-call counts under the
 same compiler, dependencies, inputs, options and thread limits. Report explicit

@@ -539,6 +539,9 @@ def test_reference_mea_vanished_vapor_is_named_from_the_surviving_liquid(
     assert not result.success and str(result.topology_event).endswith("PhaseDisappeared"), result.message
     assert report is not None and report.no_descent_in_trial_set, result.message
     assert "no descent against vapor trials" in result.message and "Michelsen deficit" not in result.message
+    assert [t.seed for t in report.trials] == [
+        "positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2", "ideal-gas",
+    ]
     raw = min(t.quantities["tpd_over_rt"] for t in report.trials)
     assert abs(raw - tpd) <= 1e-3, raw
     spent = tuple(int(report.work[k]) for k in ("iterations", "evaluations", "hessian_calls"))

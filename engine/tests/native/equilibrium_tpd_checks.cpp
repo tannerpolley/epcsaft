@@ -2477,6 +2477,27 @@ void check_reference_parameter_coverage() {
     CHECK(slope(wide_first, 0, {0}) == first);
 }
 
+void check_vanished_water_liquid_seed() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    // Water autoionization in the full model, with only water and its ions on the liquid support.
+    problem.pressure = FreeValue::fixed(20000.0);
+    problem.feed.values = {0., 0., 1., 0., 0., 0., 0., 0., 0.};
+    problem.reactions.resize(1);
+    problem.phases[0].support = {2, 7, 8};
+    problem.phases[0].composition_guess = {0.98, 0.01, 0.01};
+    problem.phases.push_back(PhaseSpec{"V", PhaseKind::Vapor, {2}, true});
+    const auto result = solve_equilibrium(model, problem);
+    CHECK(result.vanished_phase_stability);
+    const auto& trials = result.vanished_phase_stability->trials;
+    const auto declared = std::find_if(trials.begin(), trials.end(), [](const auto& trial) { return trial.seed == "declared-liquid"; });
+    CHECK(declared != trials.end());
+    CHECK(declared->phase.support == (std::vector<std::size_t>{2, 7, 8}));
+    CHECK(declared->optimizer.success && declared->quantities.count("liquid_root_residual"));
+    CHECK(declared->evidence == "no_resolved_descent");
+}
+
 void check_mea_below_bubble_hold() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
