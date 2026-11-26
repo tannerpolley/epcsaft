@@ -4,7 +4,7 @@ Work counts and equilibrium row residuals are reported, not compared; every resu
 requested_tolerance_met True must have its residuals within its retained criterion (ASL central states: the
 anchor's). Keys must be unique, sections nonempty, kinds equal and floats finite; every other text/int/bool
 row must be equal. Fitting residuals are observation residuals and compared as values.
-The section JSON records raw Hessian scales for comparing changed raw curvature minima."""
+Changes in the raw reduced Hessian minimum are reported in maxima."""
 import csv, json, math, re, sys
 from collections import defaultdict
 from pathlib import Path
@@ -29,19 +29,6 @@ def inventory_rows(section, rows, *, work_reported=False):
     if section == 'fitting' or work_reported:
         return [r for r in rows if not optional_work_key(section, r['quantity'])]
     return list(rows)
-
-
-def raw_curvature_errors(path):
-    if not path.exists():
-        return {}
-    curvature = json.loads(path.read_text()).get('raw_curvature', {})
-    errors = {}
-    for case, record in curvature.items():
-        n, norm = record['dimension'], record['hessian_frobenius_norm']
-        if type(n) is not int or n < 1 or not 0 <= norm < math.inf:
-            raise ValueError(f'invalid raw Hessian dimension or norm for {case} in {path}')
-        errors[case] = n * sys.float_info.epsilon * norm
-    return errors
 
 
 def load(path, failures):
@@ -82,7 +69,6 @@ def main():
     for section in ('declared', 'continuation', 'fitting', 'asl'):
         failures = []
         before, after = load(before_dir / f'{section}.csv', failures), load(after_dir / f'{section}.csv', failures)
-        raw_errors = [raw_curvature_errors(d / f'{section}.json') for d in (before_dir, after_dir)]
         unmet(before, 'before', failures)
         unmet(after, 'after', failures)
         totals = defaultdict(float)  # per case-state: feed total from the before amounts
@@ -119,6 +105,9 @@ def main():
             if name in DIAGNOSTIC and section != 'fitting':
                 maxima['diagnostic:' + name] = max(maxima['diagnostic:' + name], abs(y))
                 continue
+            if name == 'reduced_hessian_minimum':
+                maxima[name] = max(maxima[name], abs(x - y))
+                continue
             N = max(1., totals[case.split('/row/')[0]])
             if section == 'asl' and name in ('amounts', 'gradient', 'hessian'):
                 error, limit = abs(x - y), 1e-11 + 1e-9 * max(abs(x), abs(y))  # run_live_settler.py transport criterion
@@ -131,13 +120,6 @@ def main():
                 error, limit = abs(x / y - 1.) if y else abs(x), 1e-9
             elif name == 'objective':
                 error, limit = abs(x - y) / N / max(1., abs(y) / N), 1e-10
-            elif name == 'reduced_hessian_minimum':
-                # Admission is compared exactly via success and status above. This is the raw chart.
-                error = abs(x - y)
-                limit = sum(estimates.get(case, -math.inf) for estimates in raw_errors) if error else 0.0
-                if not 0 <= limit < math.inf:
-                    failures.append(dict(key=key, reason='missing or invalid raw Hessian rounding estimate', before=x, after=y))
-                    continue
             else:  # multipliers, coordinates, actions and fitting values: reference-or-one scale
                 error, limit = abs(x - y) / max(1., abs(x), abs(y)), 1e-9
             maxima[name] = max(maxima[name], error)

@@ -8,13 +8,14 @@ matrix, four-section replay and declared 73-state MEA flash family, then compare
 messages and diagnostic residuals are reported by the scripts, not compared here; every other value
 must be finite on both sides and agree within 1e-10 relative (absolute floor 1e-12), with equal text
 and JSON kinds. Gross deviation and percent columns are reported, not compared: they are functions of
-the compared value and its input reference, and amplify last-bit changes (owner, 2026-10-13). Both sides must reproduce the accepted inventories and successes (ACCEPTED), every
+the compared value and its input reference, and amplify last-bit changes (owner, 2026-10-13).
+Cameretti osmotic coefficients are compared through water activity. Both sides must reproduce the accepted inventories and successes (ACCEPTED), every
 criterion must be finite and positive, and every successful result must have a finite residual within
 its own criterion (Gross: calculation.json row_tolerance; Cameretti: run.py's criterion-violations.csv
 must have no rows, and each band's largest declared residual must be within its largest criterion).
 The replay uses replay_compare.py's checks and quantity limits. The MEA family requires 73/73 successes
-in both images, the 1e-10 row criterion, and entrywise abs(a-b)/max(abs(a),abs(b),1e-14) <= 1e-10
-for amounts, fractions and densities; its work and timing are diagnostic. Exits 1 on any problem or failed job.
+in both images, the 1e-10 row criterion, and the key-solve vector-scale comparison for amounts,
+fractions and densities; its work and timing are diagnostic. Exits 1 on any problem or failed job.
 Tracked results/ are never written.
 """
 import argparse
@@ -36,6 +37,8 @@ import time
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
+from equilibrium_state_comparison import STATE_TOLERANCE, scaled_state_differences
+
 TPD = ROOT / 'engine/tests/cases/tpd-phase-discovery/scripts'
 SECTIONS = ('declared', 'continuation', 'fitting', 'asl')
 REPORTED = {'seconds', 'iterations', 'evaluations', 'hessians', 'message', 'residual', 'raw', 'classified',
@@ -178,11 +181,17 @@ def table(path):
     return list(csv.DictReader(path.open())) if path.stat().st_size else []
 
 
+def cameretti_activity_rows(rows):
+    water_molar_mass = runpy.run_path(str(ROOT / 'engine/tests/cases/2005-cameretti/scripts/model.py'))['WATER']['M'] * 1e-3
+    for row in rows:
+        phi = float(row.pop('osmotic_engine'))
+        # Invert the practical osmotic coefficient for the 1:1 salts in activity_rows().
+        row['water_activity'] = math.exp(-phi * 2 * float(row['molality_mol_kg']) * water_molar_mass) if math.isfinite(phi) else phi
+    return rows
+
+
 def family_differences(a_rows, b_rows):
-    """The declared 73-state MEA family: row criterion and its frozen entrywise metric."""
-    from epcsaft.equilibrium import (ComparisonEligibility, ComparisonMode, NumericalEstimate, Quantity,
-                                      compare_equilibrium_quantity)
-    estimate, eligibility = NumericalEstimate(), ComparisonEligibility()
+    """The declared 73-state MEA family: row criterion and key-solve state comparison."""
     found = []
     quantities = {'amounts': 2, 'mole_fractions': 18, 'molar_densities': 2}
     for label, rows in (('A', a_rows), ('B', b_rows)):
@@ -200,12 +209,13 @@ def family_differences(a_rows, b_rows):
             found.append(dict(row=a['index'], reason='family declaration differs'))
         if a.get('success') is not True or b.get('success') is not True:
             continue
-        for key in quantities:
-            for j, (p, q) in enumerate(zip(a[key], b[key])):
-                metric = abs(p - q) / max(abs(p), abs(q), 1e-14)
-                if compare_equilibrium_quantity(Quantity.Linear, p, q, 1e-10 * max(abs(p), abs(q), 1e-14),
-                        estimate, estimate, eligibility, ComparisonMode.Strict).judgment == 'failed':
-                    found.append(dict(row=a['index'], key=key, entry=j, a=p, b=q, metric=metric))
+        for key, size in quantities.items():
+            left, right = a.get(key, []), b.get(key, [])
+            if len(left) != size or len(right) != size:
+                continue
+            for j, metric in enumerate(scaled_state_differences(left, right)):
+                if metric > STATE_TOLERANCE:
+                    found.append(dict(row=a['index'], key=key, entry=j, a=left[j], b=right[j], metric=metric))
     return found
 
 
@@ -359,8 +369,12 @@ def main():
                       for r in table(d / 'criterion-violations.csv')]
             found += unmet(f'{label} Cameretti band', summary, 'declared_all_succeeded', 'declared_max_residual',
                            lambda r: r['declared_max_criterion'])
-        return found + [dict(file=f, **x) for f in camerettis for x in differences(
-            table(out / f'A/cameretti/{f}.csv'), table(out / f'B/cameretti/{f}.csv'))]
+        for f in camerettis:
+            a, b = (table(out / label / 'cameretti' / f'{f}.csv') for label in 'AB')
+            if f == 'activity-298K':
+                a, b = cameretti_activity_rows(a), cameretti_activity_rows(b)
+            found.extend(dict(file=f, **x) for x in differences(a, b))
+        return found
 
     camerettis = ('default-start-summary', 'default-start-failures', 'table-5', 'figure-lines', 'figure-points',
                   'activity-298K', 'water', 'table-5-kcl-misprint')

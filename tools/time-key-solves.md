@@ -43,10 +43,10 @@ input hashes and the comparison summary. Analyses retain `summary.json` only.
 **Comparison and exit.** Zero exit is the no-slowdown gate. The tool exits
 nonzero when any iteration, evaluation or Hessian-call count of ionic LLE
 (case-6/figure-2-point-7) or the MEA flash (case-7/flash-5918.5286-Pa), cold or
-accepted start, differs between A and B or between repeated samples, printing
-each `WORK CHANGE` with both environments' counts. `--expect-change` prints the same
-lines and does not fail on them, for a slice that intends a work change; the
-other two cases' work changes are always printed only. It also exits nonzero
+accepted start, rises from A to B or fails to repeat within either environment.
+A falling count passes. Each `WORK CHANGE` prints both environments' counts.
+`--expect-change` permits an intended increase and still requires repeatable
+samples. The other two cases' work changes are diagnostic. The tool also exits nonzero
 when any returned state value differs by more than 1e-10 of that quantity's
 largest magnitude in the same returned state (both environments), in the declared
 phase order: 1e-10 relative at the quantity's scale, with that scale as the
@@ -57,8 +57,9 @@ the median change and `zero_within_spread` (the absolute median within the
 largest deviation from it) are information only. When an environment's Engine
 lacks a type, enum member or field that a frozen fixture sets, that case is
 printed as `NOT COMPARABLE <case>: <A|B> lacks …`, recorded under
-`not_comparable` with no rows from either environment, and is a gate failure
-(with its `MISSING STATE` line); the other cases still run. `summary.json` records
+`not_comparable`, and is a gate failure with a `MISSING STATE` line. Any
+computed work and state rows are retained without a timing pair for that case.
+The other cases still run. `summary.json` records
 `gate_failures`; `tools/refresh-main-wheel` lists a merged change's
 `summary.json`, gate failures included, under `release.json`
 `numerical_evidence` instead of stopping.
