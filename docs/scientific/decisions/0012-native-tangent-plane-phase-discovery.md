@@ -274,9 +274,12 @@ scalar is unavailable. Evaluated supplied points do not supply the optimized
 finite-set no-witness conclusion. Trial energy uncertainty can be requested on
 the direct Full optimized report.
 
-A reaction-relaxed integral that reaches 128 panels without qualifying can
-establish descent when the repaired endpoint difference and integral have
-overlapping negative intervals on bitwise equal standards. The integral error
+A reaction-relaxed search can stop the integral before full refinement when
+the repaired endpoint difference and integral have finite, overlapping,
+strictly negative intervals on bitwise equal standards. It reports the
+repaired endpoint and its own error as the witness. The same comparison
+applies at the 128-panel cap if refinement is incomplete. The public
+two-system value comparison runs the original ladder. The integral error
 accounts for a split-reference difference wherever the split inventory is
 available. A qualified integral uses its own estimated interval. Final fit
 acceptance fails when any stability observation has a witness, regardless of

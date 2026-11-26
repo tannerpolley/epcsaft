@@ -3421,7 +3421,7 @@ void check_bubble_branch_end() {
     }
 }
 
-// PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and refine to 128 panels.
+// PZ penalty row: both reaction-relaxed supports converge from support-ordered guesses and resolve descent.
 void check_reaction_relaxed_pz_row() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
@@ -3451,11 +3451,12 @@ void check_reaction_relaxed_pz_row() {
     for (const auto& [index, D0] : {std::pair{1, -5.143629455678e-3}, std::pair{6, -5.143629455531e-3}}) {
         const auto& t = measure.report.trials.at(index);
         const auto& check = t.split_checks.at(0);
-        const double D = check.at("gibbs_change_over_rt_mol"), E = check.at("complete_error_over_rt_mol");
-        CHECK(t.resolved_descent && check.at("quadrature_panels") == 128 && D + E < 0.0);
+        const double D = t.quantities.at("split_delta_g_over_rt"), E = t.quantities.at("split_error_estimate_over_rt");
+        CHECK(t.resolved_descent && D + E < 0.0);
         recording_support::compare("reaction-relaxed-pz-row/" + std::to_string(t.phase.support.size()),
             "split Gibbs change over RT", "mol", D, D0, recording_support::Rule::Absolute, E, 0.0,
-            "default Full search, Engine-formed conserved split", recording_support::fields({}));
+            "default Full search, Engine-formed conserved split",
+            recording_support::fields({recording_support::field("quadrature_panels", check.at("quadrature_panels"))}));
         check_split_admission(model, compiled, q, t);
         sum += E;
         difference = D - difference;
@@ -3558,6 +3559,7 @@ void check_mdea_endpoint_gibbs() {
         if (t.phase.kind == PhaseKind::Liquid && t.phase.support == liquid.support && t.seed == "near-pure-0") {
             undecided.push_back(i);
             CHECK(t.evidence == "indeterminate" && !t.split_checks.empty());
+            CHECK(t.message.find("rank-deficient log-charge equations") != std::string::npos);
             for (const auto& check : t.split_checks) CHECK(!check.count("reference_error_over_rt_mol"));
         }
         if (t.quantities.count("tpd_over_rt")) {
@@ -3566,7 +3568,9 @@ void check_mdea_endpoint_gibbs() {
         }
         if (t.phase.support != vapor.support || !witnesses.erase({t.phase.kind, t.seed})) continue;
         const auto& check = t.split_checks.at(0);
-        CHECK(check.at("quadrature_panels") == 128 && check.at("integral_qualified") == 0);
+        recording_support::observe("mdea-endpoint-gibbs/" + std::to_string(i), "terminal Simpson panels", "1",
+            check.at("quadrature_panels"), std::nullopt, "Full search, Engine-formed conserved split");
+        CHECK(check.at("integral_qualified") == 0);
         CHECK(check.at("reference_error_over_rt_mol") == 0);
         CHECK(t.resolved_descent && t.message.find("incomplete Gibbs integral refinement") != std::string::npos);
         const double endpoint = check.at("endpoint_gibbs_change_over_rt_mol"), error = check.at("endpoint_error_over_rt_mol");
