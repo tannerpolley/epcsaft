@@ -1023,6 +1023,10 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         if (topology.event == TopologyEvent::PhaseDisappeared && topology.phase == phase) {
             topology_ok = false;
             cause = "phase_disappeared";
+            if (compiled.has_reaction && compiled.problem.phases[phase].kind == PhaseKind::Liquid) {
+                result.vanished_composition = compositions[phase];
+                result.vanished_amount = amounts[phase];
+            }
         }
     }
     for (const double distance : topology.distances) scope.probe("phase_distance", distance);
@@ -2673,8 +2677,10 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     if (!result.declaration) result = structural;
     std::move(stages).report(result);
     const bool retry = result.retry == Retry::PhysicalAmounts && !admission_refused;
+    auto vanished = result.vanished_composition;
+    const auto vanished_phase = result.topology_phase;
     result = recover_physical_amounts(compiled, std::move(result), retry,
-        scope, nullptr, limits, nullptr, true, nullptr, 0, nullptr, Work::Accumulated, reporting);
+        scope, original ? &*original : nullptr, limits, nullptr, true, nullptr, 0, nullptr, Work::Accumulated, reporting);
     if (!result.success) retain_limit(limit_record, solve_refusal(result));
     if (!result.success) result.limit_record = std::move(limit_record);
     result.rejected_reduction = rejected;
@@ -2687,11 +2693,12 @@ EquilibriumResult continue_compiled(const CompiledSystem& declared, const std::o
     };
     // ALG-STABILITY: a vanished declared phase at fixed T and P is named from the surviving declaration under that
     // allowance; the declared split stays refused.
-    if (!result.success && recover && result.topology_event == TopologyEvent::PhaseDisappeared && result.topology_phase
-        && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
+    if (!result.success && recover && (result.topology_event == TopologyEvent::PhaseDisappeared || !vanished.empty())
+        && (result.topology_phase || vanished_phase) && compiled.problem.phases.size() > 1 && !compiled.problem.temperature.free && !compiled.problem.pressure.free
         && !compiled.ideal && !model.parameters().ideal_gas && compiled.problem.solids.empty()) {
         auto probe = allowance();
-        auto report = vanished_phase_stability(compiled, *result.topology_phase, probe);
+        const auto phase = vanished.empty() ? *result.topology_phase : *vanished_phase;
+        auto report = vanished_phase_stability(compiled, phase, probe, vanished, result);
         if (limits) limits->consumed += probe.consumed;
         // Driver plus tangent-plane work, as the report keeps them; the original solve's work is the remainder.
         auto& w = report.work;

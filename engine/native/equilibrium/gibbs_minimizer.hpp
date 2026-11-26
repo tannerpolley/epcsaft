@@ -204,7 +204,8 @@ EPC_API StabilityReport recovery_stability(const CompiledSystem& compiled, const
 // The public explicit test with `recovery` funding its second pass over condensed-domain refusals (#21).
 EPC_API StabilityReport recovered_stability_test(const CompiledSystem&, const EquilibriumResult&, const StabilityOptions&, DriverLimits recovery);
 // ALG-STABILITY: one trial of the vanished phase's kind and support from the declaration without it, charged to `limits`.
-StabilityReport vanished_phase_stability(const CompiledSystem& compiled, std::size_t phase, const DriverLimits& limits);
+StabilityReport vanished_phase_stability(const CompiledSystem&, std::size_t phase, const DriverLimits&,
+    const std::vector<double>& first, EquilibriumResult& result);
 EPC_API EquilibriumResult refine_selected_endpoint(const CompiledSystem&, EquilibriumResult, core::Scope&, const DriverLimits* = nullptr);
 enum class GibbsDifferenceStatus { Decrease, NoDecrease, Overlap, Unavailable };
 struct GibbsDifference final {
