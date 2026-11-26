@@ -967,8 +967,8 @@ static std::string topology_sentence(const CompiledSystem& compiled, const Topol
     return pair + at + distance + "; the declared split was rejected; Discover() searches other phase sets";
 }
 
-static void held_refusal(EquilibriumResult& result, const char* cause, std::string message) {
-    result.convergence.stop = core::Stop::stalled;
+static void held_refusal(EquilibriumResult& result, core::Stop stop, const char* cause, std::string message) {
+    result.convergence.stop = stop;
     result.convergence.cause = cause;
     result.message = std::move(message);
 }
@@ -1051,18 +1051,17 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
     Eigen::FullPivLU<Matrix> numerical;
     const auto factor = [&] { if (physical.empty()) physical = compiled.jacobian_at(prepared); numerical.compute(Eigen::Map<const Matrix>(compiled.numerical_rows(prepared, physical, full.size()).data(), n, n)); };
     if (result.candidate == Candidate::Admitted && topology_ok && !result.held_species.empty()) {
-        const auto held_failure = [&](const char* cause, std::string message) {
-            held_refusal(result, cause, std::move(message));
+        const auto held_failure = [&](core::Stop stop, const char* cause, std::string message) {
+            held_refusal(result, stop, cause, std::move(message));
             refuse(result);
             return std::move(result);
         };
-        const auto& parameters = model->parameters();
-        if (parameters.permittivity_form.is(PermittivityForm::IonSuppression))
+        if (const auto& parameters = model->parameters(); parameters.permittivity_form.is(PermittivityForm::IonSuppression))
             for (std::size_t p = 0; p < compiled.shape.size(); ++p)
                 if (std::count_if(result.held_species.begin(), result.held_species.end(), [&](const auto& cell) {
                     return cell.phase == p && dielectric_solvent_component(cell.species, parameters);
                 }) >= 2)
-                    return held_failure("hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
+                    return held_failure(core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
         physical = compiled.jacobian_at(prepared);
         const auto scale = coordinate_scale(compiled, prepared, n);
         std::vector<double> direction(compiled.rows.size());
@@ -1070,17 +1069,19 @@ EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhaseP
         for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
             const auto& row = compiled.rows[r];
             if (!row.held_column) continue;
+            std::optional<core::Convergence> failure;
             direction[r] = -1;
-            const auto response = solve_implicit(compiled, prepared, direction, nullptr, physical, true);
+            const auto response = solve_implicit(compiled, prepared, direction, &failure, physical, true);
             direction[r] = 0;
             const auto cell = "species " + std::to_string(row.index) + " in phase " + compiled.problem.phases[row.phase].name;
-            if (response.empty())
-                return held_failure("held_response_unavailable", cell + ": nonfinite, rank-deficient or unresolved response solve");
+            if (failure)
+                return held_failure(failure->stop, "held_response_unavailable", cell + ": " + core::describe(*failure));
             auto& held = *record++;
             for (std::size_t k = 0; k < compiled.primal_size; ++k)
                 if (k != *row.held_column) held.response = std::max(held.response, std::abs(response[k] / scale[k]));
-            if (!(held.response <= policy::EQUILIBRIUM_POLISH_CORRECTION.value))
-                return held_failure("hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(held.response));
+            const auto stop = core::classify(held.response, policy::EQUILIBRIUM_POLISH_CORRECTION, {}, {}, false);
+            if (stop != core::Stop::converged)
+                return held_failure(stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(held.response));
         }
     }
     if (!compiled.log_charge_rows.empty()) {
@@ -2046,26 +2047,30 @@ static EquilibriumResult run_driver_once(
             }
         }
     }
+    const auto box_stop = convergence.stop;
+    const auto classify_row = [&](double residual) { return core::classify(residual, *convergence.criterion, {}, {}, false); };
     for (bool release_round = false; !nominated.empty(); release_round = true) {
         if (!polish(release_round)) return limited_result();
         prepared = classified->prepare(full, false, &result.first_numerical_failure);
         evaluation = classified->evaluate_at(prepared);
         retain_rows(*classified);
         result.requested_tolerance_met = convergence.residual <= row_tolerance;
-        scope.probe(release_round ? "held_release_end" : "held_polish_end", {maximum_abs(result.residuals), convergence.residual, result.objective});
-        if (!release_round && (!*result.requested_tolerance_met || !(maximum_abs(result.residuals) <= row_tolerance))) {
-            held_refusal(result, "held_polish_stalled", "classified polish did not resolve its rows");
+        const double raw = maximum_abs(result.residuals);
+        scope.probe(release_round ? "held_release_end" : "held_polish_end", {raw, convergence.residual, result.objective});
+        convergence.stop = classify_row(release_round ? convergence.residual : std::max(raw, convergence.residual));
+        if (!release_round && convergence.stop != core::Stop::converged) {
+            held_refusal(result, convergence.stop, "held_polish_stalled", "classified polish did not resolve its rows");
             break;
         }
-        convergence.stop = *result.requested_tolerance_met ? core::Stop::converged : core::Stop::stalled;
         result.message = core::describe(convergence);
         for (const auto row : nominated) {
             auto& r = classified->rows[row];
             const double x = prepared.composition[r.phase][r.index], a = classified->chemical_row(prepared, r.phase, r.index, x);
             const auto cell = "species " + (names ? (*names)[r.index] : std::to_string(r.index)) + " in phase " + compiled.problem.phases[r.phase].name;
             if (!r.held_column) {
-                if (!(std::abs(a) <= row_tolerance))
-                    held_refusal(result, "held_release_unresolved", cell + ": row unresolved after release from the hold: " + core::optional_number(a));
+                const auto stop = classify_row(std::abs(a));
+                if (stop != core::Stop::converged)
+                    held_refusal(result, stop, "held_release_unresolved", cell + ": row unresolved after release from the hold: " + core::optional_number(a));
                 continue;
             }
             if (a <= 0 && !release_round) {
@@ -2073,8 +2078,9 @@ static EquilibriumResult run_driver_once(
                 continue;
             }
             const double product = (prepared.amount[r.phase] * x / compiled.feed_total_at(prepared)) * a;
-            if (!(a > 0) || !(product <= row_tolerance))
-                held_refusal(result, "held_complementarity", cell + ": held classification did not settle in one release round: " + core::optional_number(a));
+            const auto stop = a <= 0 ? box_stop : classify_row(product);
+            if (stop != core::Stop::converged)
+                held_refusal(result, stop, "held_complementarity", cell + ": held classification did not settle in one release round: " + core::optional_number(a));
             else {
                 result.held_species.push_back({r.phase, r.index, x, a, product, 0.0});
                 result.message += "; " + cell + " held, root unresolved below the hold";
