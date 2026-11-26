@@ -489,10 +489,10 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
     branch through the 45 kPa state turns at its fold, 40,867 Pa. The shipped liquid guess carries H3O+ 1.1e-11 and
     OH- 1.7e-10, below the optimizer box: started there, the barrier alone moved both ions to x ~ 0.25 in one step at
     41 kPa, and the solve stalled at a salt-rich liquid at 41, 43 and 44 kPa. Each cold solve must return the state
-    reached from the 45 kPa solution's compositions; below the fold none exists and the solve must refuse. At 41 and
-    42 kPa that start lies on the boundary between this branch and a salt-rich point with liquid MEA held at the
-    composition box (row residual ~8.5e-6): which one Ipopt reaches changes with its bound relaxation alone, so there
-    the cold solve is checked without it."""
+    reached from the 45 kPa solution's compositions; below the fold this branch has no state and the shipped guess reaches the
+    salt-rich point with liquid MEA held. At 41 and 42 kPa that start lies on the boundary between this branch and a
+    salt-rich point with liquid MEA held at the composition box (row residual ~8.5e-6): which one Ipopt reaches changes
+    with its bound relaxation alone, so there the cold solve is checked without it."""
     model, reactions, reference, guess, _ = nominally_unloaded_mea()
 
     def solve(pressure: float, liquid: list[float], vapor: list[float]) -> Any:
@@ -514,8 +514,8 @@ def test_reference_mea_cold_guess_finds_liquid_vapor_branch() -> None:
         assert near.success, (pressure, near.message)
         for a, b in zip(cold.amounts, near.amounts):
             assert math.isclose(a, b, rel_tol=1e-8, abs_tol=0.0), (pressure, list(cold.amounts), list(near.amounts))
-    below = solve(40e3, *shipped)
-    assert not below.success and not below.amounts, below.message
+    below = solve(40e3, *shipped)  # the shipped guess reaches the salt-rich state with liquid MEA held (#277, #299)
+    assert below.success and [(h.phase, h.species) for h in below.held_species] == [(0, 1)], below.message
 
 
 @pytest.mark.parametrize(("pressure", "tpd", "relaxed", "diagnostic"), [
