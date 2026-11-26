@@ -1861,6 +1861,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                     auto split = continue_compiled(declared, {}, restart, limits, {}, false, audit, {}, std::move(seed),
                         {}, false, {.positive_liquid_restart = true});
                     count_driver(report.work, split, "vanished_liquid_restarts");
+                    const auto unresolved = "; positive-amount restart unresolved: " + split.message;  // split may move below
                     q["restart_residual"] = split.convergence.residual;
                     q["restart_liquid_amount_mol"] = split.success ? split.amounts[reservoir->liquid] : split.vanished_amount;
                     q["restart_g_over_rt_mol"] = split.objective;
@@ -1887,7 +1888,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                             stopped = true;
                         }
                     }
-                    if (!stopped) trial.message += "; positive-amount restart unresolved: " + split.message;
+                    if (!stopped) trial.message += unresolved;
                 } else if (reacting && !trial.diagnostic_cause.empty() && trial.evidence == "no_resolved_descent") {
                     trial.evidence = "indeterminate";  // without an admitted side the frozen slope decides nothing
                     trial.message += "; " + trial.diagnostic_cause;
