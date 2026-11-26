@@ -1873,12 +1873,14 @@ density change can exceed the window while its predictor error does not.
 Intensive and feed paths keep the previous-density window alone, which also
 limits their step near a critical point, where a long step's corrector can
 exhaust a recovery's work. Finite step failures
-(left domain, stalled, missing anchored root) halve the step from the last
+(left domain, stalled, missing anchored root, a corrector state with a held
+species) halve the step from the last
 accepted coordinates up to the caller's retry allowance and minimum step;
 invalid paths, nonfinite operands, infeasible solves, a singular implicit
 tangent at the accepted state (halving cannot change it), typed
 disappearance/coalescence and a corrected density outside the branch window
 are terminal. A path that ends at the minimum step or the retry allowance
+reports `held_species` when its last rejected corrector held a species, and
 reports `turning_point` instead when the squared path component of the unit
 tangent, $w = 1/(1 + \lVert dy/ds \rVert^2)$, extrapolated linearly in `s` from
 the last two accepted states, reaches zero no later than the first failed
