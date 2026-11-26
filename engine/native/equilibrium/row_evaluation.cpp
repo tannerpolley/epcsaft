@@ -665,7 +665,9 @@ CppAD::ADFun<double> record_geometry(
                 continue;
             }
             if (item.phase != phase) continue;
-            if (item.kind == RowKind::Chemical) {
+            if (item.held_column)
+                row_values[row] = u[*item.held_column] - std::log(policy::EQUILIBRIUM_HELD_FRACTION.value);
+            else if (item.kind == RowKind::Chemical) {
                 const std::size_t species = item.index;
                 AD value = add_standard(CppAD::log(x[species]) - CppAD::log(volume), species);
                 for (std::size_t balance = 0; balance < compiled.rank; ++balance)
@@ -1425,7 +1427,9 @@ PointEvaluationValues<Base> CompiledSystem::evaluate_at(const PhasePointValues<B
             result.values.push_back(0.0); continue;
         }
         Base value = 0.0;
-        if (row.kind == RowKind::Chemical) {
+        if (row.held_column)
+            value = point[*row.held_column] - Base(std::log(policy::EQUILIBRIUM_HELD_FRACTION.value));
+        else if (row.kind == RowKind::Chemical) {
             value = chemical_row(prepared, row.phase, row.index, x[row.phase][row.index]);
         } else if (row.kind == RowKind::Pressure) {
             const auto& derivative = prepared.derivative[row.phase];
@@ -1641,7 +1645,9 @@ RowUncertaintyValues<Base> CompiledSystem::row_uncertainty_at(const PhasePointVa
     for (std::size_t i = 0; i < rows.size(); ++i) {
         const auto& row = rows[i]; const auto p = row.phase, species = row.index;
         Base& terms = out.terms[i]; Base& inner = out.inner[i];
-        if (row.kind == RowKind::Chemical) {
+        if (row.held_column)
+            terms = wide_math::abs(at.point[*row.held_column]) + std::abs(std::log(policy::EQUILIBRIUM_HELD_FRACTION.value));
+        else if (row.kind == RowKind::Chemical) {
             terms = wide_math::abs(wide_math::log(at.composition[p][species] / at.volume[p]))
                 + wide_math::abs(at.derivative[p].gradient[2 + species]) + wide_math::abs(at.standard.derivative[0][species]);
             inner = gradient_error[p][2 + species];
@@ -1690,9 +1696,16 @@ double CompiledSystem::solid_affinity(const PhasePoint& prepared, std::size_t so
     return value;
 }
 
-CompiledSystem classify_solids(CompiledSystem compiled, const std::vector<double>& point) {
+CompiledSystem classify_result(CompiledSystem compiled, const EquilibriumResult& result) {
+    const auto& point = result.coordinates;
     for (auto& solid : compiled.solids)
         solid.present = solid.column && *solid.column < point.size() && point[*solid.column] > 0.0;
+    for (const auto& held : result.held_species) {
+        const auto& support = compiled.problem.phases[held.phase].support;
+        for (auto& row : compiled.rows)
+            if (row.kind == RowKind::Chemical && row.phase == held.phase && row.index == held.species)
+                row.held_column = compiled.shape[held.phase].x[std::find(support.begin(), support.end(), held.species) - support.begin()];
+    }
     return compiled;
 }
 
@@ -1706,7 +1719,7 @@ std::vector<double> CompiledSystem::classified_residuals(
     if (feasibility_cell() || values.size() != rows.size()) return result;
     for (std::size_t row = 0; row < rows.size(); ++row) {
         const auto& item = rows[row];
-        if (item.kind == RowKind::Chemical) {
+        if (item.kind == RowKind::Chemical && !item.held_column) {
             result[row] *= prepared.amount[item.phase] * prepared.composition[item.phase][item.index] / feed_total;
         } else if (item.kind == RowKind::Pressure) {
             result[row] *= prepared.amount[item.phase] / feed_total;
@@ -1836,7 +1849,9 @@ std::vector<Base> CompiledSystem::jacobian_at(const PhasePointValues<Base>& prep
     for (std::size_t row_index = 0; row_index < rows.size(); ++row_index) {
         const auto& row = rows[row_index];
         if (constraints_only && stationarity_row(row.kind)) continue;
-        if (row.kind == RowKind::Chemical) {
+        if (row.held_column)
+            at(row_index, *row.held_column) = 1;
+        else if (row.kind == RowKind::Chemical) {
             const auto& derivative = derivatives[row.phase];
             const std::size_t width = derivative.gradient.size();
             const auto& phase = problem.phases[row.phase];
@@ -2247,7 +2262,7 @@ RowSeries CompiledSystem::row_series(
             const auto species = slopes(targets);
             if (plane) for (std::size_t i = 0; i < components; ++i) result.standard_minus_plane[i][k] += species[i];
             for (std::size_t row = 0; row < rows.size(); ++row)
-                if (rows[row].kind == RowKind::Chemical)
+                if (rows[row].kind == RowKind::Chemical && !rows[row].held_column)
                     result.rows[k][row] += species[rows[row].index];
         }
     }
@@ -2376,7 +2391,7 @@ RowSeries CompiledSystem::row_series(
             for (std::size_t row = 0; row < rows.size(); ++row) {
                 if (rows[row].phase != phase) continue;
                 if (rows[row].kind == RowKind::Chemical) {
-                    result.rows[k][row] += series.gradient[k][2 + rows[row].index];
+                    if (!rows[row].held_column) result.rows[k][row] += series.gradient[k][2 + rows[row].index];
                 } else if (rows[row].kind == RowKind::Pressure) {
                     for (std::size_t j = 0; j <= k; ++j)
                         result.rows[k][row] -= series.point[j][1] * series.gradient[k - j][1];

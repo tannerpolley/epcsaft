@@ -58,11 +58,13 @@ void check_measurement_reuse();
 void check_measurement_admission();
 void check_prediction_reaction_law();
 void check_measurement_correlation();
+void check_held_species_observations();
 }  // namespace regression_checks
 
 int main(int argc, char** argv) {
     using namespace regression_checks;
     return recording_support::run(argc, argv, {
+        {{"native.regression.held-species-observations", "held-species-observations"}, check_held_species_observations},
         {{"native.regression.mdea-stability-acceptance", "mdea-stability-acceptance"}, check_mdea_stability_acceptance, "mdea-stability-acceptance"},
         {{"native.regression.equilibrium-estimate-admission", "equilibrium-estimate-admission"}, check_equilibrium_estimate_admission},
         {{"native.regression.compiled-result-origin", "compiled-result-origin"}, check_compiled_result_origin},

@@ -378,7 +378,7 @@ Candidate stability_candidate(const CompiledSystem& c, const EquilibriumResult& 
     Candidate candidate;
     auto& at = candidate.physical;
     at = c.prepare(result.coordinates);
-    const auto raw = c.evaluate_at(at);
+    const auto raw = result.held_species.empty() ? c.evaluate_at(at) : classify_result(c, result).evaluate_at(at);
     if (raw.values != result.residuals) throw std::invalid_argument("stability result/input identity mismatch");
     report.standard_over_rt = at.standard.derivative[0];
     report.plane_over_rt.assign(c.n_feed.size(), 0.0);

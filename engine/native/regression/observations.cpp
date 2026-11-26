@@ -85,6 +85,7 @@ const char* observation_status_name(ObservationStatus status) noexcept {
     case ObservationStatus::ActionUnavailable: return "action_unavailable";
     case ObservationStatus::Nonfinite: return "nonfinite";
     case ObservationStatus::InadmissibleTrial: return "inadmissible_trial";
+    case ObservationStatus::HeldSpecies: return "held_species";
     }
     return "unknown";
 }
@@ -876,6 +877,15 @@ static void project_solved(const HelmholtzModel& model, const Observation& obser
     bool missing_mass = false;
     const auto phase = observation.phase;
     const double* fractions = solved.mole_fractions.data() + phase * components;
+    const auto held = [&](std::size_t p, const std::vector<std::size_t>& species) {
+        if (std::count_if(solved.held_species.begin(), solved.held_species.end(), [&](const auto& cell) {
+            return cell.phase == p && std::find(species.begin(), species.end(), cell.species) != species.end();
+        }) != static_cast<std::ptrdiff_t>(species.size())) return false;
+        result.status = ObservationStatus::HeldSpecies;
+        result.message = "phase " + compiled.problem.phases[p].name + " holds species";
+        for (const auto i : species) result.message += " " + std::to_string(i);
+        return true;
+    };
     double value = 0.0;
     switch (observation.kind) {
     case ObservationKind::EquilibriumIsobaricHeatCapacity:
@@ -910,6 +920,7 @@ static void project_solved(const HelmholtzModel& model, const Observation& obser
     case ObservationKind::PhaseMoleFraction:
     case ObservationKind::PhaseConcentration:
     case ObservationKind::PartialPressure:
+        if (held(phase, observation.species)) return;
         for (const auto species : observation.species) value += fractions[species];
         result.unit = observation.kind == ObservationKind::PartialPressure ? "Pa" : "1";
         if (observation.kind == ObservationKind::PartialPressure) value *= *solved.pressure;
@@ -920,6 +931,7 @@ static void project_solved(const HelmholtzModel& model, const Observation& obser
         break;
     case ObservationKind::PhaseSolventActivity:
     case ObservationKind::PhaseSoluteActivity: {
+        if (held(phase, observation.species)) return;
         const auto species = observation.species[0];
         const auto solvent = observation.solvent.value_or(species);
         if (!project_solvent_reference(model, solved, solvent, result)) return;
@@ -989,15 +1001,14 @@ static void project_solved(const HelmholtzModel& model, const Observation& obser
         }
         break;
     case ObservationKind::PhaseAmountRatio:
+        if (held(phase, observation.species) || held(observation.denominator_phase, observation.denominator_species)) return;
         result.unit = "1";
         value = component_amount(solved, phase, observation.species)
               / component_amount(solved, observation.denominator_phase, observation.denominator_species);
         break;
     case ObservationKind::PhaseFraction: {
         result.unit = "1";
-        double total = 0.0;
-        for (const auto amount : solved.amounts) total += amount;
-        value = solved.amounts[phase] / total;
+        value = solved.amounts[phase] / std::accumulate(solved.amounts.begin(), solved.amounts.end(), 0.0);
         break;
     }
     case ObservationKind::AssociationSiteFraction: {

@@ -17,6 +17,14 @@
 namespace epcsaft {
 
 template <class ParameterSet>
+bool uses_solvent_ratio(const ParameterSet& parameters) {
+    const auto form = parameters.permittivity_form;
+    if (solvent_weighted_permittivity(form)) return parameters.permittivity_solvent_normalized;
+    return form.is(PermittivityForm::IonSuppression) || form.is(PermittivityForm::ComponentMixing)
+        || form.is(PermittivityForm::DensityTemperature) || density_temperature_ion_suppression(form);
+}
+
+template <class ParameterSet>
 inline bool dielectric_solvent_component(
     std::size_t component,
     const ParameterSet& parameters
@@ -136,7 +144,7 @@ Scalar bulk_relative_permittivity(
             numerator += weight * relative_permittivity[i];
             denominator += weight;
         }
-        if (parameters.permittivity_solvent_normalized) {
+        if (uses_solvent_ratio(parameters)) {
             if (!(permittivity_primal(scalar_lead(denominator)) > 0.0))
                 throw std::invalid_argument("permittivity has no solvent denominator");
             return numerator / denominator;

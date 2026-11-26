@@ -1,5 +1,6 @@
 #include "equilibrium/gibbs_minimizer.hpp"
 
+#include "contributions/electrolyte.hpp"
 #include "core/bitwise_equal.hpp"
 #include "core/trace.hpp"
 #include "core/linear_error.hpp"
@@ -59,6 +60,31 @@ power_of_two_equilibration(const Matrix& a) {
     const auto power = [](Real value) { using std::exp2, std::log2, std::round; return value > 0 ? Real(exp2(-round(log2(value)))) : Real(1); };
     const Eigen::Matrix<Real, Eigen::Dynamic, 1> column = a.cwiseAbs().colwise().maxCoeff().transpose().unaryExpr(power);
     return {(a * column.asDiagonal()).cwiseAbs().rowwise().maxCoeff().unaryExpr(power), column};
+}
+
+struct EquilibratedRows {
+    Eigen::MatrixXd jacobian;
+    Eigen::VectorXd row, column;
+    Eigen::FullPivLU<Eigen::MatrixXd> lu;
+    void equilibrate() {
+        std::tie(row, column) = power_of_two_equilibration(jacobian);
+        jacobian = row.asDiagonal() * jacobian * column.asDiagonal();
+    }
+
+    SolvedStateActionStatus factor() {
+        lu = jacobian.fullPivLu();
+        return lu.rank() == jacobian.rows() ? SolvedStateActionStatus::Available : SolvedStateActionStatus::RankDeficient;
+    }
+
+    double norm() const { return jacobian.cwiseAbs().rowwise().sum().maxCoeff(); }
+    double condition() const { return norm() * lu.inverse().cwiseAbs().rowwise().sum().maxCoeff(); }
+};
+
+SolvedStateActionStatus linear_solve_status(double error, double condition) {
+    if (!std::isfinite(error)) return SolvedStateActionStatus::NonfiniteJacobian;
+    if (error > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) return SolvedStateActionStatus::LinearSolveResidual;
+    return 2.0 * condition * error <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value
+        ? SolvedStateActionStatus::Available : SolvedStateActionStatus::IllConditioned;
 }
 
 }  // namespace
@@ -132,6 +158,53 @@ std::vector<double> solve_implicit(
     scope.probe("equations", static_cast<double>(rows));
     scope.probe("dimension", static_cast<double>(dimension));
     return {result.data(), result.data() + rows};
+}
+
+bool check_held_responses(const CompiledSystem& compiled, const std::function<Eigen::MatrixXd()>& jacobian,
+    const Eigen::VectorXd& scale, EquilibriumResult& result) {
+    using Status = SolvedStateActionStatus;
+    if (const auto& parameters = compiled.model->parameters(); uses_solvent_ratio(parameters)
+        && std::any_of(parameters.charge_number.begin(), parameters.charge_number.end(), [](int z) { return z != 0; })) {
+        for (std::size_t p = 0; p < compiled.shape.size(); ++p)
+            if (std::count_if(result.held_species.begin(), result.held_species.end(), [&](const auto& cell) {
+                return cell.phase == p && dielectric_solvent_component(cell.species, parameters);
+            }) >= 2)
+                return held_refusal(result, core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
+    }
+    EquilibratedRows factor;
+    factor.jacobian = jacobian();
+    if (factor.jacobian.rows() != factor.jacobian.cols())
+        return held_refusal(result, core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
+    if (!factor.jacobian.allFinite())
+        return held_refusal(result, core::Stop::nonfinite, "held_response_unavailable", "nonfinite_jacobian");
+    factor.equilibrate();
+    if (!factor.jacobian.allFinite())
+        return held_refusal(result, core::Stop::nonfinite, "held_response_unavailable", "scaled Jacobian is nonfinite");
+    if (factor.factor() == Status::RankDeficient)
+        return held_refusal(result, core::Stop::singular, "held_response_unavailable", "rank_deficient");
+    const double condition = factor.condition();
+    auto record = result.held_species.begin();
+    for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
+        const auto& row = compiled.rows[r];
+        if (!row.held_column) continue;
+        const Eigen::VectorXd right = factor.row[r] * Eigen::VectorXd::Unit(scale.size(), r);
+        const Eigen::VectorXd scaled = factor.lu.solve(right), response = factor.column.cwiseProduct(scaled).cwiseQuotient(scale);
+        const double error = backward_error((factor.jacobian * scaled - right).lpNorm<Eigen::Infinity>(),
+            factor.norm(), scaled.lpNorm<Eigen::Infinity>(), right.lpNorm<Eigen::Infinity>());
+        const auto status = response.allFinite() ? linear_solve_status(error, condition) : Status::NonfiniteJacobian;
+        const auto cell = "species " + std::to_string(row.index) + " in phase " + compiled.problem.phases[row.phase].name;
+        if (status != Status::Available)
+            return held_refusal(result, status == Status::NonfiniteJacobian ? core::Stop::nonfinite : core::Stop::singular,
+                "held_response_unavailable", cell + ": " + solved_state_status_name(status));
+        double norm = 0;
+        for (std::size_t k = 0; k < compiled.primal_size; ++k)
+            if (k != *row.held_column) norm = std::max(norm, std::abs(response[k]));
+        (record++)->response = norm;
+        const auto stop = core::classify(norm, policy::EQUILIBRIUM_POLISH_CORRECTION, {}, {}, false);
+        if (stop != core::Stop::converged)
+            return held_refusal(result, stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(norm));
+    }
+    return true;
 }
 
 std::vector<double> sensitivity(
@@ -376,11 +449,8 @@ bool caloric_property(PropertyObservable property) {
     return static_cast<std::size_t>(property) < CALORIC_PROPERTY_COUNT && property_family(property) != 1;
 }
 
-struct Center final {
+struct Center final : EquilibratedRows {
     PhasePoint prepared;
-    Eigen::MatrixXd jacobian;  // equilibrated R J C with power-of-two diagonals row, column
-    Eigen::VectorXd row, column;
-    Eigen::FullPivLU<Eigen::MatrixXd> lu;
 };
 
 struct FirstCoefficient final {
@@ -462,14 +532,12 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
     for (std::size_t k = 1; k <= order; ++k) {
         double residual = 0.0;
         for (std::size_t row = 0; row < n; ++row) residual = std::max(residual, std::abs(center.row(static_cast<Eigen::Index>(row)) * path.series.rows[k][row]));
-        residual = backward_error(residual, center.jacobian.cwiseAbs().rowwise().sum().maxCoeff(), solution_norm[k], right_norm[k]);
-        if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
+        residual = backward_error(residual, center.norm(), solution_norm[k], right_norm[k]);
+        const auto status = linear_solve_status(residual, *diagnostics.condition_estimate);
+        if (status == SolvedStateActionStatus::NonfiniteJacobian) { path.status = status; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
         // The first refused coefficient names the cause; 2 cond eta is the first-order forward bound.
-        if (path.status != SolvedStateActionStatus::Available) continue;
-        if (residual > policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value) path.status = SolvedStateActionStatus::LinearSolveResidual;
-        else if (!(2.0 * *diagnostics.condition_estimate * residual <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value))
-            path.status = SolvedStateActionStatus::IllConditioned;
+        if (path.status == SolvedStateActionStatus::Available) path.status = status;
     }
     return path;
 }
@@ -1333,18 +1401,13 @@ static SolvedStateActionBatch evaluate_action(
             const std::size_t n = central.coordinates.size();
             const auto jacobian = compiled.jacobian_at(center.prepared);
             center.jacobian = dense_matrix(jacobian, compiled.rows.size(), n);
-            if (!square_and_numeric(center.jacobian)) {
-                shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
-            } else {
-                std::tie(center.row, center.column) = power_of_two_equilibration(center.jacobian);
-                center.jacobian = center.row.asDiagonal() * center.jacobian * center.column.asDiagonal();
-                center.lu = center.jacobian.fullPivLu();
+            shared->matrix_gate = SolvedStateActionStatus::NonfiniteJacobian;
+            if (square_and_numeric(center.jacobian)) {
+                center.equilibrate();
+                shared->matrix_gate = center.factor();
                 batch.diagnostics.state_factorizations = 1;
                 shared->diagnostics.rank = static_cast<std::size_t>(center.lu.rank());
-                // cond_inf(R J C), the norm of the backward error it multiplies in the forward bound.
-                if (*shared->diagnostics.rank < n) shared->matrix_gate = SolvedStateActionStatus::RankDeficient;
-                else shared->diagnostics.condition_estimate = center.jacobian.cwiseAbs().rowwise().sum().maxCoeff()
-                    * center.lu.inverse().cwiseAbs().rowwise().sum().maxCoeff();
+                if (shared->matrix_gate == SolvedStateActionStatus::Available) shared->diagnostics.condition_estimate = center.condition();
             }
             shared->matrix_checked = true;
         }
@@ -1479,8 +1542,8 @@ static SolvedStateActionBatch actions_at(const CompiledSystem& compiled, const E
     const SolvedStateActionRequest& request, std::optional<PhasePoint>* prepared, core::Scope& scope) {
     validate_request(compiled, central, request);
     std::optional<ActionCenter> shared;
-    if (compiled.solids.empty()) return evaluate_action(compiled, central, request, shared, scope, {}, prepared);
-    return evaluate_action(classify_solids(compiled, central.coordinates), central, request, shared, scope, {}, prepared);
+    if (compiled.solids.empty() && central.held_species.empty()) return evaluate_action(compiled, central, request, shared, scope, {}, prepared);
+    return evaluate_action(classify_result(compiled, central), central, request, shared, scope, {}, prepared);
 }
 
 SolvedStateActionBatch solved_state_actions(
@@ -1511,7 +1574,7 @@ SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compi
         workspace->point = central.coordinates;
     }
     const auto& problem = compiled.problem;
-    const bool fixed_feed_actions = compiled.solids.empty() && compiled.model->active_parameters().empty()
+    const bool fixed_feed_actions = compiled.solids.empty() && central.held_species.empty() && compiled.model->active_parameters().empty()
         && !problem.temperature.free && !problem.pressure.free && !compiled.has_caloric_condition()
         && request.directions.size() <= 2
         && std::all_of(request.directions.begin(), request.directions.end(), [](const auto& d) {
@@ -1561,7 +1624,7 @@ std::vector<SolvedStateActionBatch> solved_state_first_actions(
 
     std::vector<SolvedStateActionBatch> batches;
     batches.reserve(requests.size());
-    const auto classified = compiled.solids.empty() ? std::nullopt : std::optional(classify_solids(compiled, central.coordinates));
+    const auto classified = compiled.solids.empty() && central.held_species.empty() ? std::nullopt : std::optional(classify_result(compiled, central));
     // Solids share one first-order source reference. Reacting directions share only when their T/P requests agree.
     const auto group = [&](const SolvedStateActionDirection& d) {
         return compiled.reference_diagnostics.empty() ? 0 : (d.temperature_k != 0.0) + 2 * (d.pressure_pa != 0.0);
@@ -1639,7 +1702,7 @@ template PhysicalProjection<double> physical_projection(const CompiledSystem&, c
 template PhysicalProjection<WiderScalar> physical_projection(const CompiledSystem&, const PhasePointValues<WiderScalar>&);
 
 template <typename Base>
-EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false, bool plane_rows = false,
+EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& declared, const EquilibriumResult& result, const std::vector<Base>& internal, const PhasePointValues<Base>* prepared = nullptr, bool replay = true, const DriverLimits* limits = nullptr, bool counted = false, bool plane_rows = false,
     const std::vector<double>& prescribed_errors = {}) {
     core::Capture isolated(false);
     core::CalculationWork excluded(counted);
@@ -1649,6 +1712,8 @@ EquilibriumNumericalEstimates numerical_estimates(const CompiledSystem& c, const
     using Matrix = Eigen::Matrix<Base, Eigen::Dynamic, Eigen::Dynamic>;
     if (!result.has_state() || !result.declaration) { out.cause = "original_state_unavailable"; return out; }
     try {
+        const auto classified = declared.solids.empty() && result.held_species.empty() ? std::nullopt : std::optional(classify_result(declared, result));
+        const auto& c = classified ? *classified : declared;
         const auto prepare = [&](const std::vector<Base>& point, bool state_only) {
             if (limits && (!limits->spend(limits->evaluations, limits->evaluation_cap) || limits->expired()))
                 throw std::runtime_error("work budget exhausted during returned-point estimate");

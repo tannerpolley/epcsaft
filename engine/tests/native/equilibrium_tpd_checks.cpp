@@ -1,9 +1,11 @@
 // #223: phase removal, tangent-plane and normalized reaction-affinity identities.
 #include "equilibrium_checks_shared.hpp"
 #include "core/exact_zero_dot.hpp"
+#include "core/bitwise_equal.hpp"
 #include "core/linear_error.hpp"
 #include "equilibrium/stability_grid.hpp"
 #include "surface/parameter_builder.hpp"
+#include "fixtures/mea-flash.hpp"
 
 #include <condition_variable>
 #include "regression/observations.hpp"
@@ -241,6 +243,53 @@ void check_candidate_publication() {
     const auto absent = publish_candidate(compiled, prepared, candidate, scope);
     CHECK(!absent.has_state());
     CHECK(!absent.success && absent.amounts.empty());
+}
+
+void check_action_scaled_jacobian_overflow() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::neutral_binary());
+    // Rescale one moiety and move its central multiplier contribution into the constant standards.
+    // The physical center stays fixed and the corresponding Jacobian column has maximum 2^-1024.
+    auto vapor = equilibrium_support::flash(2);
+    vapor.phases[0].kind = PhaseKind::Vapor;
+    auto overflow = compile_problem(model, vapor);
+    auto center = solve_compiled(overflow);
+    CHECK(center.success);
+    const auto column = overflow.primal_size;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * *center.temperature;
+    const double scale = 0x1p-1024;
+    for (const double coefficient : overflow.B[0])
+        vapor.standard_gibbs_j_per_mol.push_back(-rt * center.coordinates[column] * coefficient);
+    overflow = compile_problem(model, vapor);
+    for (auto& coefficient : overflow.B[0]) coefficient *= scale;
+    overflow.balance[0] *= scale;
+    center.declaration = std::make_shared<const EquilibriumProblem>(overflow.problem);
+    center.coordinates[column] = 0.0;
+    const auto jacobian = overflow.jacobian(center.coordinates);
+    double column_max = 0.0;
+    for (std::size_t i = 0; i < overflow.rows.size(); ++i)
+        column_max = std::max(column_max, std::abs(jacobian[i * center.coordinates.size() + column]));
+    CHECK(std::all_of(jacobian.begin(), jacobian.end(), [](double value) { return std::isfinite(value); }) && column_max == scale);
+    const auto action = solved_state_actions(overflow, center,
+        {{{SolvedStateObservableKind::PhaseAmount, 0}}, {{0.0, 1.0, {0.0, 0.0}, {}}}});
+    const auto& item = action.results.at(0);
+    std::printf("Jacobian column maximum=%a, central residual=%.17g, action=%s, cause=%s, LU factorizations=%zu, rank=%zu\n", column_max,
+        action.diagnostics.central_residual.value_or(NAN),
+        solved_state_status_name(item.status), item.diagnostic_message.value_or("").c_str(),
+        action.diagnostics.state_factorizations, action.diagnostics.rank.value_or(center.coordinates.size()));
+    CHECK(item.status == SolvedStateActionStatus::RankDeficient && !item.action && !item.diagnostic_message
+        && action.diagnostics.state_factorizations == 1 && action.diagnostics.rank
+        && *action.diagnostics.rank < center.coordinates.size());
+
+    std::optional<core::Convergence> failure;
+    const auto response = solve_implicit(overflow, overflow.prepare(center.coordinates),
+        std::vector<double>(center.coordinates.size(), 1.0), &failure, jacobian);
+    CHECK(response.empty() && failure && failure->stop == core::Stop::singular
+        && failure->cause == "implicit Jacobian rank" && failure->rank
+        && failure->rank->rank == *action.diagnostics.rank);
+    std::printf("implicit stop=%s, cause=%s, rank=%zu/%zu\n", core::stop_name(failure->stop),
+        failure->cause.c_str(), failure->rank->rank, failure->rank->dimension);
 }
 
 void check_budget_retry() {
@@ -2428,31 +2477,261 @@ void check_reference_parameter_coverage() {
     CHECK(slope(wide_first, 0, {0}) == first);
 }
 
-void check_mea_composition_bound_message() {
+void check_mea_below_bubble_hold() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
-#include "fixtures/mea-nominally-unloaded.inc"
-    problem.pressure = FreeValue::fixed(47000.0);
-    problem.feed.values = {0.358, 1.0, 7.929776437398854, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    PhaseSpec vapour;
-    vapour.name = "V";
-    vapour.kind = PhaseKind::Vapor;
-    vapour.support = {0, 1, 2};
-    vapour.support_declared = true;
-    vapour.composition_guess = {0.01, 0.002, 0.988};
-    problem.phases.push_back(vapour);
-    problem.solver_options.values[policy::row] = 1e-10;
+    using Kind = SolvedStateObservableKind;
+    auto [parameters, problem] = mea_flash_fixture::declaration(313.15, 3491.5333681323896, 0.4);
+    const HelmholtzModel model(std::move(parameters));
+    const auto compiled = compile_problem(model, problem);
+    const auto state = solve_compiled(compiled);
+    std::printf("%s\n", state.message.c_str());
+    CHECK(state.success && state.phase_count == 2 && state.held_species.size() == 1);
+    const auto& held = state.held_species.front();
+    CHECK(held.phase == 0 && held.species == 1);
+    const double tolerance = problem.solver_options.value(policy::row);
+    std::printf("MEA x=%.17g row=%.17g complementarity=%.17g response=%.17g; CO2 x=%.17g\n",
+        held.fraction, held.chemical_row, held.complementarity, held.response.value_or(NAN), state.mole_fractions[0]);
+    CHECK(held.fraction == std::exp(std::log(policy::EQUILIBRIUM_HELD_FRACTION.value)));
+    const double nominal_hold = policy::EQUILIBRIUM_HELD_FRACTION.value;
+    CHECK(nominal_hold * nominal_hold == std::numeric_limits<double>::min());
+    CHECK(std::abs(held.chemical_row / 207950.3873609833 - 1) <= 1e-8);
+    CHECK(held.complementarity > 0 && held.complementarity <= tolerance
+        && held.response && *held.response > 0 && *held.response <= policy::EQUILIBRIUM_POLISH_CORRECTION.value);
+    const auto at = compiled.prepare(state.coordinates);
+    const double product = at.amount[0] * at.composition[0][1] / compiled.feed_total_at(at) * held.chemical_row;
+    CHECK(held.complementarity == product);
+    CHECK(std::abs(std::log(state.mole_fractions[0] / 6.2485917e-12)) <= 1e-6);
 
-    const auto result = solve_equilibrium(model, problem, std::nullopt, parameters.component_ids);
-    std::printf("C2 %s\n", result.message.c_str());
-    CHECK(!result.success && result.convergence.stop == core::Stop::stalled);
-    const auto first_clause = result.message.find("; species ");
-    CHECK(first_clause != std::string::npos);
-    CHECK(result.message.substr(first_clause) ==
-        "; species carbon-dioxide in phase L ended near its lower composition bound with an unresolved chemical row"
-        "; species monoethanolamine in phase L ended near its lower composition bound with an unresolved chemical row"
-        "; amount chart physical_mol; retry after start_amount: phase V vanished: its amount reached at most "
-        "PHASE_DISAPPEARANCE_AMOUNT of the feed; the declared split was rejected");
+    // Discovery's declaration driver records the endpoint alongside the result, before phase removal.
+    const auto declaration_attempt = [](const CompiledSystem& system, std::vector<double>& attempt) {
+        core::Scope scope("held-declaration-attempt");
+        return run_driver(system, boundary_start(system), structural_result(system, scope), scope,
+            &attempt, nullptr, Attempt::Cold, {}, false, false, Retry::None);
+    };
+    std::vector<double> attempt;
+    const auto addition = declaration_attempt(compiled, attempt);
+    CHECK(addition.success && addition.coordinates == attempt && addition.held_species.size() == 1);
+    CHECK(std::exp(attempt[compiled.shape[0].x[1]]) == addition.held_species[0].fraction);
+    const auto endpoint_floor = compiled.evaluate_at(at).floor;
+    std::printf("saved MEA log fraction=%.17g, retained floor=%.17g, evaluated floor=%.17g\n",
+        attempt[compiled.shape[0].x[1]], state.convergence.floor.value_or(NAN), endpoint_floor);
+    CHECK(endpoint_floor > 0 && state.convergence.floor == endpoint_floor);
+
+    auto swapped_problem = problem;
+    swapped_problem.pressure.value = 4888.1467153853455;
+    const auto swapped = compile_problem(model, swapped_problem);
+    const auto swapped_result = solve_compiled(swapped);
+    CHECK(!swapped_result.success && swapped_result.message.find("swapped phase labels") != std::string::npos);
+    const auto swapped_addition = declaration_attempt(swapped, attempt);
+    const auto topology = check_topology(swapped, attempt);
+    const auto ordinary = swapped.prepare(attempt);
+    const auto ordinary_rows = swapped.evaluate_at(ordinary);
+    std::printf("refused candidate saved MEA x=%.17g, G/RT=%.17g, residual=%.17g\n",
+        topology.compositions[0][1], ordinary_rows.objective, swapped_addition.convergence.residual);
+    CHECK(attempt[swapped.shape[0].x[1]] != std::log(nominal_hold));
+    CHECK(!swapped_addition.success && swapped_addition.message.find("swapped phase labels") != std::string::npos
+        && swapped_addition.held_species.empty() && swapped_result.held_species.empty());
+    CHECK(swapped_addition.objective == ordinary_rows.objective && swapped_addition.residuals == ordinary_rows.values
+        && swapped_addition.classified_residuals == swapped.classified_residuals(ordinary, ordinary_rows.values)
+        && swapped_addition.convergence.residual == maximum_abs(swapped_addition.classified_residuals));
+
+    problem.phases[0].support.erase(problem.phases[0].support.begin() + 1);
+    const auto reduced = compile_problem(model, problem);
+    const auto reference = solve_compiled(reduced);
+    CHECK(reference.success);
+    const auto compare = [](const auto& actual, const auto& expected, const char* label, double absolute) {
+        CHECK(actual.size() == expected.size());
+        for (std::size_t i = 0; i < actual.size(); ++i) {
+            if (absolute > 0 && i == 1) continue;
+            const double error = std::abs(actual[i] - expected[i]);
+            std::printf("%s[%zu] actual=%.17g reference=%.17g difference=%.17g\n", label, i, actual[i], expected[i], error);
+            CHECK(error <= std::max(absolute, 1e-10 * std::abs(expected[i])));
+        }
+    };
+    compare(state.amounts, reference.amounts, "amount", 0);
+    compare(state.molar_densities, reference.molar_densities, "density", 0);
+    compare(state.mole_fractions, reference.mole_fractions, "fraction", 1e-14);
+
+    SolvedStateActionDirection feed{0., 0., {0.4, 0., 0., 0., 0., 0., 0., 0., 0.}, {}};
+    auto temperature = feed, reaction = feed;
+    temperature.temperature_k = 1; temperature.feed_amounts_mol[0] = reaction.feed_amounts_mol[0] = 0;
+    reaction.reaction_coefficients.resize(5); reaction.reaction_coefficients[0][0] = 1;
+    const std::vector<SolvedStateObservable> observables{{Kind::PhaseAmount, 0}, {Kind::PhaseAmount, 1},
+        {Kind::PhaseComponentAmount, 0, 2}, {Kind::PhaseComponentAmount, 0, 3}, {Kind::PhaseComponentAmount, 0, 4}};
+    const SolvedStateActionRequest along_feed{{{Kind::PhaseComponentAmount, 0, 1},
+        {Kind::PhaseComponentAmount, 0, 2}}, {feed}};
+    const auto plain = solved_state_actions(compiled, state, along_feed).results;
+    std::shared_ptr<SolvedStateActionWorkspace> workspace;
+    const auto prepared = solved_state_actions_prepared(compiled, state, along_feed, workspace).results;
+    for (std::size_t i = 0; i < plain.size(); ++i) CHECK(plain[i].action && plain[i].action == prepared[i].action);
+    const auto fraction = solved_state_actions_prepared(compiled, state,
+        {{{Kind::PhaseAmount, 0}, {Kind::PhaseMoleFraction, 0, 1}}, {feed}}, workspace).results;
+    CHECK(fraction[0].action && fraction[1].action);
+    const double derivative = *fraction[0].action;
+    const double fraction_derivative = *fraction[1].action, amount_derivative = *prepared[0].action;
+    std::printf("feed dN_L=%.17g dx_MEA=%.17g dn_MEA=%.17g x_MEA*dN_L=%.17g\n",
+        derivative, fraction_derivative, amount_derivative, held.fraction * derivative);
+    CHECK(std::abs(fraction_derivative) <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value * held.fraction);
+    CHECK(derivative != 0 && std::abs(amount_derivative / (held.fraction * derivative) - 1) <= 1e-10);
+    const auto actions = solved_state_first_actions(compiled, state, observables, {temperature, reaction, feed});
+    const auto reduced_actions = solved_state_first_actions(reduced, reference, observables, {temperature, reaction, feed});
+    for (std::size_t d = 0; d < actions.size(); ++d) {
+        for (std::size_t i = 0; i < actions[d].results.size(); ++i) {
+            const auto& a = actions[d].results[i];
+            const auto& b = reduced_actions[d].results[i];
+            std::printf("action[%zu,%zu] held=%s reference=%s\n", d, i,
+                solved_state_status_name(a.status), solved_state_status_name(b.status));
+            CHECK(a.action && b.action);
+            const double error = std::abs(*a.action - *b.action);
+            const double budget = a.numerical_error.value_or(NAN) + b.numerical_error.value_or(NAN);
+            std::printf("actual=%.17g reference=%.17g difference=%.17g relative=%.17g error_budget=%s\n",
+                *a.action, *b.action, error, error / std::abs(*b.action), core::optional_number(budget).c_str());
+            if (!(error <= 1e-10 * std::abs(*b.action))) CHECK(std::isfinite(budget) && error <= budget);
+        }
+    }
+
+    PhaseSpec trial{"charged liquid", PhaseKind::Liquid, {1, 2, 3, 4}, true};
+    trial.composition_guess = {0, 0.5, 0.25, 0.125, 0.125, 0, 0, 0, 0};
+    StabilityOptions stability;
+    stability.evaluate_supplied_trials = true;
+    stability.trials = std::vector<PhaseSpec>{trial};
+    const auto report = stability_test(compiled, state, stability);
+    CHECK(report.completed && report.present_phases.size() == 2 && report.trials.size() == 1);
+    const auto& evaluated = report.trials.front();
+    std::printf("stability %s, trial %s\n", report.message.c_str(), evaluated.message.c_str());
+    CHECK(evaluated.donor == 0 && evaluated.quantities.count("donor_chemical_contraction_over_rt") == 1);
+    const auto repair = compiled.prepare(report.candidate_coordinates);
+    double chemical = evaluated.quantities.at("donor_chemical_contraction_over_rt");
+    for (auto i : {2, 3, 4})
+        chemical -= evaluated.composition[i] * (std::log(repair.composition[0][i] / repair.volume[0])
+            + repair.derivative[0].gradient[2 + i] + report.standard_over_rt[i]);
+    const double gap = chemical / evaluated.composition[1] - report.plane_over_rt[1];
+    std::printf("stability donor MEA chemical potential minus plane=%.17g\n", gap);
+    CHECK(std::abs(gap / held.chemical_row - 1) <= 1e-8);
+
+    ContinuationRequest path{compiled.problem, compiled.problem, state};
+    path.target_problem.pressure.value += 1;
+    path.options.initial_step = 0.1; path.options.minimum_step = 1e-6; path.options.max_steps = 10;
+    const auto continuation = continue_equilibrium(model, path);
+    std::printf("continuation %s; attempts=%zu\n", continuation.message.c_str(), continuation.attempts);
+    CHECK(continuation.stop == ContinuationStop::held_species && continuation.attempts == 0);
+    path.start_result.reset();
+    const auto internal_path = continue_equilibrium(model, path);
+    std::printf("cold continuation %s; attempts=%zu\n", internal_path.message.c_str(), internal_path.attempts);
+    CHECK(internal_path.stop == ContinuationStop::held_species && internal_path.attempts == 0
+        && internal_path.last_result && internal_path.last_result->held_species.size() == 1);
+
+    const HelmholtzModel path_model(model.parameters(), {{ParameterFamily::Kij, {2, 18}}});
+    path.start_result = solve_equilibrium(path_model, compiled.problem);
+    CHECK(path.start_result->success && !path.start_result->held_species.empty());
+    path.target_problem = path.start_problem;
+    path.parameter_targets = {path_model.active_parameter_values()[0] + 0.01};
+    const auto parameter_path = continue_equilibrium(path_model, path);
+    std::printf("parameter continuation %s; attempts=%zu\n", parameter_path.message.c_str(), parameter_path.attempts);
+    CHECK(parameter_path.stop == ContinuationStop::held_species && parameter_path.attempts == 0);
+
+    auto all_solvents = compiled;
+    for (auto& row : all_solvents.rows)
+        if (row.kind == RowKind::Chemical && row.phase == 0 && (row.index == 1 || row.index == 2))
+            row.held_column = compiled.shape[0].x[row.index];
+    auto point = state.coordinates;
+    point[compiled.shape[0].x[2]] = point[compiled.shape[0].x[1]];
+    auto candidate = state;
+    candidate.candidate = Candidate::Admitted;
+    candidate.held_species = {{0, 1, held.fraction, held.chemical_row, held.complementarity},
+        {0, 2, held.fraction, NAN, NAN}};
+    core::Scope scope("hold-all-solvents");
+    const auto refused = publish_candidate(all_solvents, all_solvents.prepare(point, true), std::move(candidate), scope, nullptr);
+    std::printf("all solvents %s, responses=%s/%s\n", refused.message.c_str(),
+        core::optional_number(refused.held_species[0].response).c_str(), core::optional_number(refused.held_species[1].response).c_str());
+    CHECK(!refused.success && refused.convergence.cause == "hold_dependent"
+        && !refused.held_species[0].response && !refused.held_species[1].response);
+
+    // A held log-fraction row followed by a coupled primal row and a multiplier row.
+    auto matrix_system = compiled;
+    matrix_system.rows = {{RowKind::Chemical, 0, 1, 0}, {RowKind::Chemical, 0, 2, {}}, {RowKind::Chemical, 0, 3, {}}};
+    matrix_system.primal_size = 2;
+    const Eigen::VectorXd scale = Eigen::VectorXd::Ones(3);
+    Eigen::MatrixXd jacobian = Eigen::MatrixXd::Identity(3, 3);
+    const auto matrix = [&] { return jacobian; };
+    const auto response_case = [&](core::Stop stop, const char* cause, std::optional<double> response,
+                                   const char* message = nullptr) {
+        EquilibriumResult witness;
+        witness.held_species.push_back({0, 1, held.fraction, held.chemical_row, held.complementarity});
+        CHECK(!check_held_responses(matrix_system, matrix, scale, witness));
+        std::printf("response witness %s, %s, response=%s\n", core::stop_name(witness.convergence.stop),
+            witness.message.c_str(), core::optional_number(witness.held_species[0].response).c_str());
+        CHECK(witness.convergence.stop == stop && witness.convergence.cause == cause
+            && witness.held_species[0].response == response && (!message || witness.message == message));
+    };
+    jacobian(2, 2) = NAN;
+    response_case(core::Stop::nonfinite, "held_response_unavailable", {});
+    jacobian(2, 2) = 0x1p-1024;
+    response_case(core::Stop::nonfinite, "held_response_unavailable", {}, "scaled Jacobian is nonfinite");
+    jacobian(2, 2) = 0;
+    response_case(core::Stop::singular, "held_response_unavailable", {});
+    jacobian(2, 2) = 1;
+    jacobian(1, 0) = -1;
+    response_case(core::Stop::stalled, "hold_dependent", 1);
+
+    jacobian.setIdentity();
+    matrix_system.rows[1].held_column = 1;
+    auto weighting = model.parameters();
+    weighting.permittivity_solvent = {0, 1, 1, 0, 0, 0, 0, 0, 0};
+    weighting.solvent_molar_volume_m3_per_mol = {0, 6e-5, 1.8e-5, 0, 0, 0, 0, 0, 0};
+    for (const auto form : {PermittivityForm::SolventMoleWeighting, PermittivityForm::SolventVolumeWeighting}) {
+        weighting.permittivity_form = form;
+        for (const bool normalized : {true, false}) {
+            if (!normalized && form == PermittivityForm::SolventVolumeWeighting) continue;  // The model requires normalized volume weights.
+            weighting.permittivity_solvent_normalized = normalized;
+            const HelmholtzModel weighted(weighting);
+            matrix_system.model = &weighted;
+            auto witness = refused;
+            witness.convergence.cause.clear();
+            const bool accepted = check_held_responses(matrix_system, matrix, scale, witness);
+            std::printf("solvent form=%d normalized=%d accepted=%d cause=%s\n",
+                static_cast<int>(form), normalized, accepted, witness.convergence.cause.c_str());
+            if (normalized)
+                CHECK(!accepted && witness.convergence.cause == "hold_dependent"
+                    && !witness.held_species[0].response && !witness.held_species[1].response);
+            else
+                CHECK(accepted && witness.held_species[0].response == 0 && witness.held_species[1].response == 0);
+        }
+    }
+}
+
+void check_mea_packet3_trace_root() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-published-state-19.inc"
+    auto packet = model.parameters();
+    packet.born_c_shell = packet.born_c_dielectric = 0.;
+    const HelmholtzModel packet3(packet);
+    problem.temperature = FreeValue::fixed(318.15);
+    problem.pressure = FreeValue::fixed(8877.7929);
+    problem.phases = {PhaseSpec{"L", PhaseKind::Liquid}};
+    problem.source_reference.reset();
+    problem.feed.values[0] = 1e-6 * 9.7292821;
+    problem.solver_options.values[policy::row] = 1e-10;
+    const double lnk[] = {-605.348, -587.8, -948.2312, -25.1014, -298.6415};
+    for (std::size_t i = 0; i < problem.reactions.size(); ++i) {
+        problem.reactions[i].reference.reset();
+        problem.reactions[i].correlation = ReactionLogPolynomial{lnk[i], 0., 0., 0., 318.15, 250., 450., EOS_STANDARD_STATE_ID};
+    }
+    const auto state = solve_equilibrium(packet3, problem, {}, parameters.component_ids);
+    CHECK(state.success && state.held_species.empty());
+    std::printf("packet 3 carbon dioxide x=%.17g, classified residual=%.17g\n", state.mole_fractions[0], state.convergence.residual);
+    CHECK(state.mole_fractions[0] > 0 && state.mole_fractions[0] < 1e-20);
+    // Base 25026a72, same native toolchain and declaration as the candidate.
+    const std::vector<double> baseline{
+        -0x1.821abd251b2e8p+5, -0x1.7d7c63017435bp+1, -0x1.86a138c99426ep-3,
+        -0x1.65161a9097186p+1, -0x1.a864c573167c8p+4, -0x1.db812db2488b8p+4,
+        -0x1.000be50d86d45p+4, -0x1.cf9e0b72749bbp+3, -0x1.6515f383fada3p+1,
+        0x1.5ad161ca1f735p+6, -0x1.9ce57ed48a7eap-1, -0x1.e00b9bee0eb5ep+7,
+        -0x1.bd3e6f792993cp+7, -0x1.7ac53de9042f8p+8, -0x1.04f8d2d310b8p+6
+    };
+    CHECK(core::bitwise_equal(state.coordinates, baseline));
 }
 
 static epcsaft::equilibrium::EquilibriumProblem mea_liquid_split(epcsaft::equilibrium::EquilibriumProblem problem) {

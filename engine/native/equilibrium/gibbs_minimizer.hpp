@@ -207,6 +207,12 @@ EPC_API GibbsDifference conserved_split_difference(
     const StabilityOptions &);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void refuse(EquilibriumResult& result, Candidate as = Candidate::Refused);
+inline bool held_refusal(EquilibriumResult& result, core::Stop stop, const char* cause, std::string message) {
+    result.convergence.stop = stop;
+    result.convergence.cause = cause;
+    result.message = std::move(message);
+    return false;
+}
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
 EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr,
     const PhasePoint* cached_prepared = nullptr, const PointEvaluation* cached_rows = nullptr);
@@ -269,7 +275,7 @@ EPC_API EquilibriumStartsResult solve_equilibrium_starts(const HelmholtzModel& m
 enum class ContinuationStop {
     reached_target, initial_failure, invalid_path, singular_jacobian, branch_lost,
     phase_disappeared, phases_coalesced, left_domain, infeasible, nonfinite, stalled,
-    step_too_small, budget_exhausted, critical_endpoint, turning_point
+    step_too_small, budget_exhausted, critical_endpoint, turning_point, held_species
 };
 
 EPC_API const char* continuation_stop_name(ContinuationStop stop) noexcept;
@@ -343,11 +349,13 @@ NewtonTrial damped_newton_step(const std::vector<Base>& point, const Direction& 
 }
 
 // J dy = -F_theta for one column F_theta at a prepared point; empty when J is singular or the solve is not admitted.
-std::vector<double> solve_implicit(
+EPC_API std::vector<double> solve_implicit(
     const CompiledSystem& compiled,
     const PhasePoint& prepared,
     const std::vector<double>& column, std::optional<core::Convergence>* failure = nullptr, std::vector<double> jacobian = {}
 );
+EPC_API bool check_held_responses(const CompiledSystem&, const std::function<Eigen::MatrixXd()>&,
+    const Eigen::VectorXd&, EquilibriumResult&);
 
 EPC_API std::vector<double> sensitivity(
     const CompiledSystem& compiled,

@@ -37,7 +37,7 @@ inline bool electrolyte_observation(ObservationKind kind) {
 enum class ResidualForm { Difference, LogRatio };
 enum class ObservationStatus {
     NotEvaluated, Available, ReferenceUnavailable, DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass,
-    ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial
+    ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial, HeldSpecies
 };
 EPC_API const char* observation_status_name(ObservationStatus status) noexcept;
 

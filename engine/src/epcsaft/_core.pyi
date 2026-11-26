@@ -3443,7 +3443,16 @@ class BubbleBranchEnd:
     limiting_feed_mol: list[float]
     limiting_pressure_pa: float
 
+class HeldSpecies:
+    phase: int
+    species: int
+    fraction: float
+    chemical_row: float
+    complementarity: float
+    response: float | None
+
 class EquilibriumResult:
+    held_species: list[HeldSpecies]
     domain_violations: list[OutsideDomain] | None
     critical_search: CriticalSearch | None
     """Failure-only pure critical starts and all candidate results, absent on an unchanged declared success."""
@@ -3641,6 +3650,7 @@ class ContinuationStop:
     """A step/work/retry budget was exhausted."""
     critical_endpoint: ContinuationStop
     """Envelope tracing reached its declared critical stopping condition."""
+    held_species: ContinuationStop
     turning_point: ContinuationStop
     """Steps failed where the tangent's path component extrapolates to zero: a fold of the declared branch."""
 
@@ -4632,6 +4642,7 @@ class ObservationStatus:
     """A required exact native action was refused."""
     Nonfinite: ObservationStatus
     """A required prediction, residual or column is nonfinite."""
+    HeldSpecies: ObservationStatus
     InadmissibleTrial: ObservationStatus
     """Native admission or evaluation raised at this trial; the original explanation is retained."""
 
