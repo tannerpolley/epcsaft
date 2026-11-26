@@ -1955,7 +1955,8 @@ static EquilibriumResult run_driver_once(
         result.convergence.residual = maximum_abs(result.classified_residuals);
         result.convergence.floor = evaluation.floor > 0.0 ? std::optional<double>(evaluation.floor) : std::nullopt;
     };
-    if (expired()) { save_attempt(); return limited_result(); }
+    save_attempt();
+    if (expired()) return limited_result();
     scope.probe("hessian_calls", static_cast<double>(nlp->hessian_calls()));
     scope.probe("prepared_points", static_cast<double>(nlp->prepared_points()));
     core::Convergence& convergence = result.convergence;
@@ -1964,6 +1965,7 @@ static EquilibriumResult run_driver_once(
     core::stopping_criterion(convergence, compiled.problem.solver_options, policy::row);
     convergence.amplification = nlp->regularization_size();
     result.iterations = convergence.iterations = nlp->iterations();
+    result.evaluations = convergence.evaluations = nlp->evaluations();
     result.hessian_calls = nlp->hessian_calls();
     switch (status) {
     case Ipopt::INVALID_NUMBER_DETECTED: convergence.stop = core::Stop::nonfinite; break;
@@ -1993,6 +1995,7 @@ static EquilibriumResult run_driver_once(
     std::vector<std::size_t> nominated;
     if ((list_trial_species || (names && gibbs) || hold_eligible) && cold_geometry && !newton && status == Ipopt::SUCCESS
         && !optimizer_point.empty() && result.diagnostic_options_file.empty() && convergence.stop == core::Stop::stalled) {
+        const bool fixed_topology = hold_eligible && check_topology(compiled, full).event == TopologyEvent::None;
         const auto box = composition_box(compiled);
         const auto push = result.solver_settings.at("bound_push");
         for (std::size_t row = 0; row < compiled.rows.size(); ++row) {
@@ -2007,12 +2010,12 @@ static EquilibriumResult run_driver_once(
                 if (list_trial_species) result.bound_species.push_back(r.index);
                 else if (names) result.message += "; species " + (*names)[r.index] + " in phase " + phase.name
                     + " ended near its lower composition bound with an unresolved chemical row";
-                if (hold_eligible) {
-                    if (!classified) classified = declared;
-                    classified->rows[row].held_column = column;
-                    full[column] = std::log(policy::EQUILIBRIUM_HELD_FRACTION.value);
-                    nominated.push_back(row);
-                }
+                if (!fixed_topology) continue;
+                if (nominated.empty()) record = result;
+                if (!classified) classified = declared;
+                classified->rows[row].held_column = column;
+                full[column] = std::log(policy::EQUILIBRIUM_HELD_FRACTION.value);
+                nominated.push_back(row);
             }
         }
     }
@@ -2035,21 +2038,17 @@ static EquilibriumResult run_driver_once(
             auto& r = classified->rows[row];
             const double x = prepared.composition[r.phase][r.index], a = classified->chemical_row(prepared, r.phase, r.index, x);
             const auto cell = "species " + (names ? (*names)[r.index] : std::to_string(r.index)) + " in phase " + compiled.problem.phases[r.phase].name;
-            if (!r.held_column) {
-                const auto stop = classify_row(std::abs(a));
-                if (stop != core::Stop::converged)
-                    held_refusal(result, stop, "held_release_unresolved", cell + ": row unresolved after release from the hold: " + core::optional_number(a));
-                continue;
-            }
-            if (a <= 0 && !release_round) {
+            const bool held = r.held_column.has_value();
+            if (held && a <= 0 && !release_round) {
                 r.held_column.reset();
                 continue;
             }
-            const double product = (prepared.amount[r.phase] * x / compiled.feed_total_at(prepared)) * a;
-            const auto stop = a <= 0 ? core::Stop::stalled : classify_row(product);
+            const double product = held ? (prepared.amount[r.phase] * x / compiled.feed_total_at(prepared)) * a : 0.0;
+            const auto stop = held && a <= 0 ? core::Stop::stalled : classify_row(held ? product : std::abs(a));
             if (stop != core::Stop::converged)
-                held_refusal(result, stop, "held_complementarity", cell + ": held classification did not settle in one release round: " + core::optional_number(a));
-            else {
+                held_refusal(result, stop, held ? "held_complementarity" : "held_release_unresolved", cell
+                    + (held ? ": held classification did not settle in one release round: " : ": row unresolved after release from the hold: ") + core::optional_number(a));
+            else if (held) {
                 result.held_species.push_back({r.phase, r.index, x, a, product});
                 result.message += "; " + cell + " held, root unresolved below the hold";
             }
@@ -2057,7 +2056,6 @@ static EquilibriumResult run_driver_once(
         if (release_round || result.held_species.size() == nominated.size() || convergence.stop != core::Stop::converged) break;
         result.held_species.clear();
     }
-    save_attempt();
     result.evaluations = convergence.evaluations = nlp->evaluations() + polish_evaluations;
     scope.finish(convergence);
     const bool admitted = non_error && (!newton || (!capped && in_bounds && corrected))
@@ -2072,7 +2070,18 @@ static EquilibriumResult run_driver_once(
     observations.merge(result.rank_records); StageWork::publish_observations(result, record);
     publishing = true;
     result = publish_candidate(classified ? *classified : compiled, prepared, std::move(result), scope, limits);
+    if (result.success && !nominated.empty()) {
+        auto branch = check_density_branches(declared, result, {}, true, scope, limits);
+        if (branch.accepted) save_attempt();
+        else { result.message = std::move(branch.message); refuse(result); }
+    }
     if (!result.success) {
+        if (!nominated.empty()) {
+            record.candidate = result.candidate;
+            if (convergence.stop != core::Stop::converged) record.convergence.stop = convergence.stop;
+            record.convergence.cause = std::move(convergence.cause);
+            result = failed(std::move(result.message));
+        }
         result.message += ipopt_failure;
         if (result.first_numerical_failure) result.message += "; trial preparation failed: " + core::describe(*result.first_numerical_failure);
         result.retry = retry_after(result.attempt, declared.has_reaction, non_error, fatal, status, result.topology_event, result.convergence.stop, result.candidate);

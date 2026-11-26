@@ -2524,11 +2524,17 @@ void check_mea_below_bubble_hold() {
     const auto swapped_result = solve_compiled(swapped);
     CHECK(!swapped_result.success && swapped_result.message.find("swapped phase labels") != std::string::npos);
     const auto swapped_addition = declaration_attempt(swapped, attempt);
-    CHECK(swapped_addition.coordinates == attempt && swapped_addition.held_species.size() == 1);
     const auto topology = check_topology(swapped, attempt);
-    CHECK(topology.event == swapped_result.topology_event && topology.log_packing[0] < topology.log_packing[1]);
-    CHECK(std::exp(attempt[swapped.shape[0].x[1]]) == swapped_addition.held_species[0].fraction);
-    std::printf("saved swapped candidate packing L=%.17g V=%.17g\n", std::exp(topology.log_packing[0]), std::exp(topology.log_packing[1]));
+    const auto ordinary = swapped.prepare(attempt);
+    const auto ordinary_rows = swapped.evaluate_at(ordinary);
+    std::printf("refused candidate saved MEA x=%.17g, G/RT=%.17g, residual=%.17g\n",
+        topology.compositions[0][1], ordinary_rows.objective, swapped_addition.convergence.residual);
+    CHECK(attempt[swapped.shape[0].x[1]] != std::log(nominal_hold));
+    CHECK(!swapped_addition.success && swapped_addition.message.find("swapped phase labels") != std::string::npos
+        && swapped_addition.held_species.empty() && swapped_result.held_species.empty());
+    CHECK(swapped_addition.objective == ordinary_rows.objective && swapped_addition.residuals == ordinary_rows.values
+        && swapped_addition.classified_residuals == swapped.classified_residuals(ordinary, ordinary_rows.values)
+        && swapped_addition.convergence.residual == maximum_abs(swapped_addition.classified_residuals));
 
     problem.phases[0].support.erase(problem.phases[0].support.begin() + 1);
     const auto reduced = compile_problem(model, problem);

@@ -1197,7 +1197,8 @@ compiled support. No composition cutoff applies, so the polish reaches
 positive roots below the optimizer box and below `EQUILIBRIUM_BOX_FLOOR`
 (for example MEA at loading 1e-6, 318.15 K, CO₂ 1.1e-21).
 For a stalled cold Gibbs minimization, ALG-TERMINATION can nominate a supported
-species for a separate polish in the same chart. The optimizer box is unchanged.
+species for a separate polish in the same chart when the ordinary polished
+endpoint shows neither disappearance nor coalescence. The optimizer box is unchanged.
 For each nominee replace the chemical row by $\ln x_{pi}-\ln x_h=0$, with
 $x_h=2^{-511}$ (`EQUILIBRIUM_HELD_FRACTION`). Read the physical chemical row
 $a_{pi}$ at the polished point. Release a nominee with $a_{pi}\leq0$.
@@ -1220,6 +1221,8 @@ describes only the linearized dependence at the point. The held species' root
 remains unresolved below the hold. The result carries its phase, species,
 fraction, chemical row, complementarity product and response. The response is
 unavailable if its solve did not produce a checked value.
+A refused held attempt retains its cause and the ordinary polished endpoint's
+rows and Gibbs objective. Discovery saves those same ordinary coordinates.
 
 The nominal pair product is $x_h^2=2^{-1022}$, the smallest normal double.
 The chemical row's logarithm is above its clamp for $V_p<2^{511}$ m³/mol.
