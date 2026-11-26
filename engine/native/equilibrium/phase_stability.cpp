@@ -32,11 +32,11 @@ std::map<std::string, std::size_t> StabilityReport::evidence_counts(const std::v
         throw std::invalid_argument("one multiplicity is required for each recorded trial");
     std::map<std::string, std::size_t> counts;
     for (std::size_t i = 0; i < trials.size(); ++i)
-        counts[trials[i].evidence] += multiplicities.empty() ? 1 : multiplicities[i];
+        counts[trials[i].evidence_name()] += multiplicities.empty() ? 1 : multiplicities[i];
     return counts;
 }
 static bool undecided_trial(const StabilityTrial& t) {
-    return !t.resolved_descent && t.evidence != "evaluated" && t.evidence != "returned_to_parent"
+    return !t.resolved_descent && t.evidence != "evaluated" && t.disposition != StabilityTrial::Disposition::ReturnedToParent
         && (t.evidence != "no_resolved_descent" || !t.optimizer.success);
 }
 StabilityDescent StabilityReport::descent() const {
@@ -1727,7 +1727,7 @@ StabilityReport test_snapshot(const CompiledSystem& input, const EquilibriumResu
                 trial.composition = data.composition;
                 double volume = data.volume;
                 if (reservoir && repair && coincident_trial_point(trial.composition, volume, at.composition[0], at.volume[0])) {
-                    trial.evidence = "returned_to_parent";
+                    trial.disposition = StabilityTrial::Disposition::ReturnedToParent;
                     trial.message += "; trial endpoint returned to the surviving vapor";
                     trial.quantities["volume_m3_per_mol"] = volume;
                     report.trials.push_back(std::move(trial));
@@ -2421,10 +2421,11 @@ StabilityReport vanished_phase_stability(const CompiledSystem& input, std::size_
             report = test_snapshot(compiled, parent, options, removed, &unsearched, &limits, false, nullptr, nullptr, &reservoir);
             for (const auto& seed : unsearched) report.message += "; unsearched " + seed;
         } else report = test_snapshot(compiled, parent, options, {}, nullptr, &limits);
-        std::optional<double> raw;  // descending trials, or all when none descends or is unresolved; not clipped
+        std::optional<double> raw;  // descending trials, or all scored trials in a completed no-witness search
         std::string support;
-        for (const auto& t : report.trials) if (t.resolved_descent || (report.no_descent_in_trial_set && t.evidence != "returned_to_parent"))
-            raw = std::min(raw.value_or(t.quantities.at("tpd_over_rt")), t.quantities.at("tpd_over_rt"));
+        for (const auto& t : report.trials)
+            if (t.resolved_descent || (report.no_descent_in_trial_set && t.disposition != StabilityTrial::Disposition::ReturnedToParent))
+                raw = std::min(raw.value_or(t.quantities.at("tpd_over_rt")), t.quantities.at("tpd_over_rt"));
         for (const auto i : report.trials.empty() ? vanished.support : report.trials.front().phase.support) support += (support.empty() ? "" : ", ") + std::to_string(i);
         if (!restart.success) report.message = report.no_descent_in_trial_set ? "no descent against " + kind + " trials of support {" + support
                 + "} in this finite search: minimum TPD/RT = " + core::optional_number(raw) + "; not a stability certificate"

@@ -336,7 +336,8 @@ void register_equilibrium(nb::module_& module) {
     nb::class_<StabilityPhaseComparison>(module, "StabilityPhaseComparison")
         EPCSAFT_READONLY(StabilityPhaseComparison, phase, added_species, missing_species, composition_max_distance, volume_log_distance);
     nb::class_<StabilityTrial>(module, "StabilityTrial")
-        EPCSAFT_READONLY(StabilityTrial, phase, seed, evidence, message, optimizer, raw_coordinates, raw_residuals,
+        .def_prop_ro("evidence", &StabilityTrial::evidence_name)
+        EPCSAFT_READONLY(StabilityTrial, phase, seed, message, optimizer, raw_coordinates, raw_residuals,
             composition, split_coordinates, basis, row_transformation, quantities, split_checks, present_phase_comparisons, diagnostic_cause, donor,
             resolved_descent);
     nb::class_<StabilityReport>(module, "StabilityReport")

@@ -145,14 +145,23 @@ def test_a7_vanished_liquid_trials(row: str, start: str, solve: Flash, evidence:
     assert not result.success and not result.amounts
     assert report.completed and report.work["trial_invocations"] > 0
     assert report.descent == "no_witness" and report.no_descent_in_trial_set and not report.undecided
-    required = {"positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2"}
-    assert required <= {trial.seed for trial in trials}
+    expected = {"positive-neutral-base", "near-pure-0", "near-pure-1", "near-pure-2", "physical-mol-liquid"}
+    if start == "seeded":
+        expected.add("declared-liquid")
+    # Only the physical-mol retry supplies a vanished liquid on these archived starts.
+    if (row, start) not in {("16", "cold"), ("18", "cold"), ("62", "seeded")}:
+        expected.add("removed-phase")
+    assert {trial.seed for trial in trials} == expected
+    assert len(trials) == len(expected)
     admitted = liquid_trials(report)
     returned = [t for t in trials if t.evidence == "returned_to_parent"]
     assert admitted and len(admitted) + len(returned) == len(trials)
     assert all(t.evidence == "returned_to_parent" for t in trials if t.seed == "near-pure-0")
     assert all(list(t.phase.support) == list(range(len(MEA))) and t.optimizer.success for t in trials)
-    assert all(t.evidence == "no_resolved_descent" for t in admitted)
+    for trial in admitted:
+        assert trial.evidence == "no_resolved_descent"
+        q = trial.quantities
+        assert q["tpd_over_rt"] > q["descent_error_estimate_over_rt"] >= 0.0, trial.seed
     parent_x = [n / vapor["amount_mol"] for n in case["inputs"][2:]] + [0.0] * (len(MEA) - 3)
     coincidence = TOLERANCES["PHASE_COINCIDENCE_DISTANCE"]
     for trial in returned:

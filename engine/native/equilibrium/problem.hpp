@@ -951,8 +951,11 @@ struct StabilityPhaseComparison final {
     double composition_max_distance = 0.0, volume_log_distance = 0.0;
 };
 struct StabilityTrial final {
+    enum class Disposition { Distinct, ReturnedToParent };
+    Disposition disposition = Disposition::Distinct;
     PhaseSpec phase;
     std::string seed, evidence, message;
+    std::string evidence_name() const { return disposition == Disposition::ReturnedToParent ? "returned_to_parent" : evidence; }
     EquilibriumResult optimizer;
     std::vector<double> raw_coordinates, raw_residuals, composition, split_coordinates;
     std::vector<double> reduced_split_coordinates;  // the split without `optimizer.bound_species` in the added phase
