@@ -2676,8 +2676,9 @@ Its maximum relative coordinate displacement and scaled sampled Hessian change
 must both be at most $\sqrt{\epsilon_{double}}$. The remainder uses the absolute
 Hessian envelope and variation at the raw, midpoint and corrected phase states;
 this is a local estimate, not a bound between samples.
-Composite Simpson integration doubles from 4 panels and stops at the first rung
-from 32 to at most 128 panels where both of the last two refinements pass. The integral differences
+Composite Simpson integration doubles from 4 panels. The original ladder stops
+at the first rung from 32 panels where both of the last two refinements pass,
+or at the 128-panel cap. The integral differences
 are accumulated in `long double`, before adding the fixed trial and inventory
 terms. Both final refinements require $Q_N=|I_N-I_{N/2}|/15\le F_N+F_{N/2}$,
 where $F_N$ contains only integration numerical estimates. The terminal $Q_N$
@@ -2690,8 +2691,8 @@ inventory is available. Failed local admissions retain their causes. For a
 qualified ladder, $D+E<0$ resolves decrease, $D-E>0$ resolves no decrease, and
 the remaining interval overlaps zero.
 
-At the 128-panel cap with incomplete refinement, compare the integral
-$D_{128}$ with the extensive endpoint difference
+For the reaction-relaxed search, compare each unqualified rung with a finite
+complete estimate against the extensive endpoint difference
 $D_{\rm dir}=n_{d'}g_{d'}+\beta'g_{t'}-n_dg_d$. The three Gibbs energies
 are reduced molar values at the repaired states. The endpoint estimate
 $E_{\rm dir}$ sums the amount-weighted energy estimates, summation roundoff,
@@ -2702,11 +2703,15 @@ $\gamma(|n_{d'}g_{d'}|+|\beta'g_{t'}|+|n_dg_d|)/(1-\gamma)$ with
 $\gamma=(n_s+3)\epsilon_{\rm double}$. A witness requires bitwise
 equal split and parent standards, finite centers and finite nonnegative
 errors, both interval upper bounds below zero, and
-$|D_{128}-D_{\rm dir}|\le E_{128}+E_{\rm dir}$. The trial publishes the
-endpoint center and error for this witness and retains the refinement cause.
-The split check retains the integral center, complete error, and
-`integral_qualified` alongside the endpoint quantities. Unqualified intervals
-that fail the test remain indeterminate.
+$|D_N-D_{\rm dir}|\le E_N+E_{\rm dir}$ at rung $N$. When these conditions
+hold, stop at that rung and publish the endpoint center and its own error
+as the witness. The split check retains the unqualified integral and its
+complete error. The trial retains the incomplete refinement cause. If the comparison
+fails, continue to the original refinement exit or the 128-panel cap. At
+the cap, an unqualified integral uses the same endpoint comparison and
+stays indeterminate if that comparison fails. The public two-system value
+comparison refines to the original stopping rung before any endpoint
+comparison.
 
 An explicit optimized Full search uses this comparison for a reacting trial
 whose optimizer succeeded, whose raw plane is negative and whose anchored root

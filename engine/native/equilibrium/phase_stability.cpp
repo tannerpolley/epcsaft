@@ -692,7 +692,7 @@ GibbsDifferenceReference conserved_split_reference(const CompiledSystem &c, cons
 }
 GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsDifferenceReference &parent,
                                            const CompiledSystem &split_c, const EquilibriumResult &result,
-                                           std::size_t donor, const StabilityOptions &options) {
+                                           std::size_t donor, const StabilityOptions &options, bool allow_early_descent) {
     GibbsDifference out;
     try {
         if (!parent.cause.empty()) {
@@ -821,8 +821,11 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
 
             long double complete = integration_floor + trialerror + quadrature + std::abs(plane_defect) + parent_error +
                                    standard_error + repair + reference_error;
-            const bool qualified = previous_refined && refined;
-            if (steps >= 32 && (qualified || steps == 128)) {
+            const bool qualified = steps >= 32 && previous_refined && refined;
+            const bool terminal = qualified || steps == 128;
+            const bool early_descent = !terminal && allow_early_descent &&
+                capped_gibbs_descent(delta, complete, endpoint, endpoint_error, split_standard, s.standard_over_rt) == CappedGibbsDescent::Resolved;
+            if (terminal || early_descent) {
                 out.quantities.merge(Quantities{{"gibbs_change_over_rt_mol", (double)delta},
                                                 {"integral_qualified", qualified},
                                                 {"endpoint_gibbs_change_over_rt_mol", endpoint},
@@ -848,7 +851,8 @@ GibbsDifference conserved_split_difference(const CompiledSystem &c, const GibbsD
                                                 {"chart_error_over_rt_mol", (double)charterror}});
                 if (!qualified) {
                     out.cause = "incomplete Gibbs integral refinement";
-                    const auto decision = capped_gibbs_descent(delta, complete, endpoint, endpoint_error, split_standard, s.standard_over_rt);
+                    const auto decision = early_descent ? CappedGibbsDescent::Resolved
+                        : capped_gibbs_descent(delta, complete, endpoint, endpoint_error, split_standard, s.standard_over_rt);
                     if (decision == CappedGibbsDescent::StandardsDiffer)
                         out.cause += "; split and parent standards differ";
                     else if (decision == CappedGibbsDescent::Resolved)
@@ -884,7 +888,7 @@ GibbsDifference conserved_split_difference(const CompiledSystem& parent_system, 
     const CompiledSystem& split_system, const EquilibriumResult& split, std::size_t donor, const StabilityOptions& options) {
     check_standard_uncertainty(options, parent_system.n_feed.size());
     return conserved_split_difference(parent_system, conserved_split_reference(parent_system, parent),
-        split_system, split, donor, options);
+        split_system, split, donor, options, false);
 }
 
 // EqID michelsen_modified_tangent_plane: J_ij = F_ij + 1 + p_i p_j / p_V, p_i = 1/v - F_iV, p_V = -F_VV - 1/v^2.
@@ -1180,7 +1184,7 @@ GibbsDifference relaxed_split(const CompiledSystem& c, const PhasePoint& at, con
         count_driver(work, split, "split_driver_invocations");
         if (!split.success) throw std::runtime_error(split.message);
         limits.check();
-        out = conserved_split_difference(c, parent, compiled, split, p, options);
+        out = conserved_split_difference(c, parent, compiled, split, p, options, true);
     } catch (const std::exception& error) { out.cause = error.what(); }
     return out;
 }
