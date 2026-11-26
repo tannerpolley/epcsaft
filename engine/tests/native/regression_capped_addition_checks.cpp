@@ -380,3 +380,66 @@ void check_phase_bulk_relative_permittivity() {
     }
 }
 }  // namespace regression_checks
+
+namespace regression_checks {
+void check_merkley_saturation_loading() {
+    using namespace epcsaft::equilibrium;
+    using Family = ParameterFamily;
+#include "fixtures/mdea-411-bubble.inc"
+#include "fixtures/mdea-thermochemistry.inc"
+    // Amine-Thermodynamics 152ad1bb, normalized MDEA-1, Merkley fit:126, trial 2.
+    FitRequest request;
+    request.parameters = model.parameters();
+    request.thermochemistry = thermal;
+    request.coordinates.coordinates = {
+        {{{Family::TemperatureLawCoefficient, {0}}}, -0.06711345443725586, 0.01, -0.5, -0.06711345443725586},
+        {{{Family::TemperatureLawCoefficient, {1}}}, 0.0012092080101259242, 0.001, -0.01, 0.01},
+        {{{Family::Kij, {7, 56}}}, 0.25261865658522437, 0.01, -0.5, 0.5},
+        {{{Family::Kij, {15, 57}}}, -0.00956762026107625, 0.01, -0.5, 0.5},
+        {{{Family::KijReciprocalTemperatureSlope, {15, 57}}}, -15.929380742416088, 10, -1000, 1000},
+        {{{Family::Kij, {23, 58}}}, 1, 0.01, -1, 1},
+        {{{Family::SigmaConstant, {7}}, {Family::DebyeHuckelDiameter, {7}}, {Family::BornDiameter, {7}}},
+         3.6552722619123172, 0.1, 3, 4.5},
+        {{{Family::DispersionEnergyOverK, {7}}}, 635.4895968646832, 10, 50, 950},
+    };
+    auto& row = request.observations.emplace_back();
+    row.kind = ObservationKind::SaturationCappedAdditionEnthalpy;
+    row.temperature = 333.15;
+    row.pressure = 1121000;
+    row.observed = -55400;
+    row.scale = 3000;
+    row.branch = DensityBranch::Vapor;
+    row.basis_amount = row.feed_amount = 1;
+    row.composition = {1, 0, 0, 0, 0, 0, 0, 0};
+    row.loading_cap = 0.941;
+    row.loading_bounds = {0.05, 1.5};
+    for (int i = 1; i <= 30; ++i) row.loading_grid.push_back(i * 0.05);
+    bubble.temperature = FreeValue::fixed(row.temperature);
+    bubble.pressure = FreeValue::variable(row.pressure);
+    bubble.feed.values = {0.5, 9.9217608607804, 0, 0, 0, 0, 1, 0};
+    bubble.phases.back().composition_guess = {0.9, 0.1, 1e-5};
+    row.final_problem = bubble;
+    row.problem = bubble;
+    row.problem.phases.resize(1);
+    row.problem.feed.values[0] = 0;
+    row.problem.pressure = FreeValue::fixed(row.pressure);
+    request.weights = {1};
+    FitResult failures;
+    ObservationEvaluator evaluator(request, failures, {0});
+    ObservationEvaluation start, trial;
+    CHECK(evaluator.evaluate(std::vector<double>(8, 0), false, start));
+    const std::vector<double> trial_two = {0, -0.013512156522612428, -20.453703287524615, -3.9026605768041516,
+        0.15355058202903896, 0, -0.5013581788020577, -9.360489808605179};
+    const bool admitted = evaluator.evaluate(trial_two, false, trial);
+    CHECK(truth("merkley-saturation-loading/admitted", admitted,
+                fields({field("cause", admitted ? "" : failures.failures.at(0).message)})));
+    const auto& result = *trial.saturation_predictions.at(0);
+    CHECK(result.saturation && result.saturation->complete && result.saturation->accepted);
+    const double tolerance = bubble.solver_options.value(policy::row);
+    const auto inputs = fields({field("T_K", row.temperature), field("P_Pa", row.pressure), field("cap", row.loading_cap)});
+    CHECK(result.endpoint_loading && reference_scale_agrees("merkley-saturation-loading/root", "endpoint_loading",
+          "mol_CO2/mol_MDEA", *result.endpoint_loading, 0.908550536030039, 0, tolerance, inputs));
+    CHECK(result.value && reference_scale_agrees("merkley-saturation-loading/heat", "signed_addition_enthalpy",
+          "J/mol_CO2", *result.value, -58263.86274105281, 0, tolerance, inputs));
+}
+}  // namespace regression_checks

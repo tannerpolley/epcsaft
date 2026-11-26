@@ -135,19 +135,7 @@ document.entries.push_back({"association/carbon-dioxide/b/water/a/volume", "asso
 document.entries.push_back({"no_cross_association/methyldiethanolamine/carbon-dioxide", "no_cross_association", {6, 0}, 0.0, "dimensionless"});
 document.entries.push_back({"no_cross_association/protonated-methyldiethanolamine/carbon-dioxide", "no_cross_association", {7, 0}, 0.0, "dimensionless"});
 
-const ThermochemistryRecord thermal{100000.0, {
-    {{298.0, 1200.0, true, true,
-        {IdealShomate{{24.99735, 55.18696, -33.69137, 7.948387, -0.136638, -403.6075, 228.2431, -393.5224},
-            -393510.0}, 100000.0}}},
-    {{273.15, 400.0, true, true,
-        {IdealShomate{{38.20344032987093, -35.39032930235045, 88.5441906376632, -58.385365975467586,
-            -0.034496604106251993, -252.4259791152223, 242.00412252690168, -241.826}, -241826.0}, 100000.0}}},
-    {}, {}, {}, {},
-    {{293.0, 423.0, true, true,
-        {IdealPolynomial{{198.77937643331074, 0.6267026135868604, -0.0007369604796696283,
-            1.4073022391475026e-06}, 313.15, 0.0, 0.0}, 100000.0}}},
-    {}
-}};
+#include "mdea-thermochemistry.inc"
 const HelmholtzModel model(build_parameters(document), {}, thermal);
 
 regression::Observation observation;
