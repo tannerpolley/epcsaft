@@ -66,12 +66,14 @@ struct EquilibratedRows {
     Eigen::MatrixXd jacobian;
     Eigen::VectorXd row, column;
     Eigen::FullPivLU<Eigen::MatrixXd> lu;
+    std::optional<const char*> scaled_failure;
 
     SolvedStateActionStatus factor(const Eigen::MatrixXd& physical) {
         if (!square_and_numeric(physical)) return SolvedStateActionStatus::NonfiniteJacobian;
         std::tie(row, column) = power_of_two_equilibration(physical);
         jacobian = row.asDiagonal() * physical * column.asDiagonal();
-        if (!jacobian.allFinite()) return SolvedStateActionStatus::NonfiniteJacobian;
+        scaled_failure = jacobian.allFinite() ? std::nullopt : std::optional("scaled Jacobian is nonfinite");
+        if (scaled_failure) return SolvedStateActionStatus::NonfiniteJacobian;
         lu = jacobian.fullPivLu();
         return lu.rank() == jacobian.rows() ? SolvedStateActionStatus::Available : SolvedStateActionStatus::RankDeficient;
     }
@@ -142,7 +144,8 @@ std::vector<double> solve_implicit(
     const auto matrix = dense_matrix(jacobian, rows, dimension);
     EquilibratedRows rows_factor;
     const auto status = rows_factor.factor(matrix);
-    if (status == SolvedStateActionStatus::NonfiniteJacobian) return refuse("implicit nonfinite Jacobian", core::Stop::nonfinite, nullptr);
+    if (status == SolvedStateActionStatus::NonfiniteJacobian)
+        return refuse(rows_factor.scaled_failure.value_or("implicit nonfinite Jacobian"), core::Stop::nonfinite, nullptr);
     if (status == SolvedStateActionStatus::RankDeficient) return refuse("implicit Jacobian rank", core::Stop::singular, &rows_factor.lu);
     // One column, kept a matrix so that Eigen takes the same solve path.
     const Eigen::MatrixXd right = -Eigen::Map<const Eigen::VectorXd>(column.data(), static_cast<Eigen::Index>(column.size()));
@@ -162,28 +165,22 @@ std::vector<double> solve_implicit(
 bool check_held_responses(const CompiledSystem& compiled, const std::function<Eigen::MatrixXd()>& jacobian,
     const Eigen::VectorXd& scale, EquilibriumResult& result) {
     using Status = SolvedStateActionStatus;
-    const auto refuse = [&](core::Stop stop, const char* cause, std::string message) {
-        result.convergence.stop = stop;
-        result.convergence.cause = cause;
-        result.message = std::move(message);
-        return false;
-    };
     if (const auto& parameters = compiled.model->parameters(); uses_solvent_ratio(parameters)
         && std::any_of(parameters.charge_number.begin(), parameters.charge_number.end(), [](int z) { return z != 0; })) {
         for (std::size_t p = 0; p < compiled.shape.size(); ++p)
             if (std::count_if(result.held_species.begin(), result.held_species.end(), [&](const auto& cell) {
                 return cell.phase == p && dielectric_solvent_component(cell.species, parameters);
             }) >= 2)
-                return refuse(core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
+                return held_refusal(result, core::Stop::infeasible, "hold_dependent", "phase " + compiled.problem.phases[p].name + " uses a ratio of held solvents");
     }
     const auto physical = jacobian();
     if (physical.rows() != physical.cols())
-        return refuse(core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
+        return held_refusal(result, core::Stop::infeasible, "held_response_unavailable", "classified Jacobian is not square");
     EquilibratedRows factor;
     const auto matrix = factor.factor(physical);
     if (matrix != Status::Available)
-        return refuse(matrix == Status::RankDeficient ? core::Stop::singular : core::Stop::nonfinite,
-            "held_response_unavailable", solved_state_status_name(matrix));
+        return held_refusal(result, matrix == Status::RankDeficient ? core::Stop::singular : core::Stop::nonfinite,
+            "held_response_unavailable", factor.scaled_failure.value_or(solved_state_status_name(matrix)));
     const double condition = factor.condition();
     auto record = result.held_species.begin();
     for (std::size_t r = 0; r < compiled.rows.size(); ++r) {
@@ -191,21 +188,20 @@ bool check_held_responses(const CompiledSystem& compiled, const std::function<Ei
         if (!row.held_column) continue;
         const Eigen::VectorXd right = factor.row[r] * Eigen::VectorXd::Unit(scale.size(), r);
         const Eigen::VectorXd scaled = factor.lu.solve(right), response = factor.column.cwiseProduct(scaled).cwiseQuotient(scale);
-        const auto status = linear_solve_status(backward_error((factor.jacobian * scaled - right).lpNorm<Eigen::Infinity>(),
-            factor.norm(), scaled.lpNorm<Eigen::Infinity>(), right.lpNorm<Eigen::Infinity>()), condition);
+        const double error = backward_error((factor.jacobian * scaled - right).lpNorm<Eigen::Infinity>(),
+            factor.norm(), scaled.lpNorm<Eigen::Infinity>(), right.lpNorm<Eigen::Infinity>());
+        const auto status = response.allFinite() ? linear_solve_status(error, condition) : Status::NonfiniteJacobian;
         const auto cell = "species " + std::to_string(row.index) + " in phase " + compiled.problem.phases[row.phase].name;
-        if (!response.allFinite() || status != Status::Available) {
-            const auto failure = response.allFinite() ? status : Status::NonfiniteJacobian;
-            return refuse(failure == Status::NonfiniteJacobian ? core::Stop::nonfinite : core::Stop::singular,
-                "held_response_unavailable", cell + ": " + solved_state_status_name(failure));
-        }
+        if (status != Status::Available)
+            return held_refusal(result, status == Status::NonfiniteJacobian ? core::Stop::nonfinite : core::Stop::singular,
+                "held_response_unavailable", cell + ": " + solved_state_status_name(status));
         double norm = 0;
         for (std::size_t k = 0; k < compiled.primal_size; ++k)
             if (k != *row.held_column) norm = std::max(norm, std::abs(response[k]));
         (record++)->response = norm;
         const auto stop = core::classify(norm, policy::EQUILIBRIUM_POLISH_CORRECTION, {}, {}, false);
         if (stop != core::Stop::converged)
-            return refuse(stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(norm));
+            return held_refusal(result, stop, "hold_dependent", "state depends on the held fraction of " + cell + ": " + core::optional_number(norm));
     }
     return true;
 }
@@ -536,11 +532,11 @@ Path follow(const CompiledSystem& compiled, const Center& center, const std::vec
         double residual = 0.0;
         for (std::size_t row = 0; row < n; ++row) residual = std::max(residual, std::abs(center.row(static_cast<Eigen::Index>(row)) * path.series.rows[k][row]));
         residual = backward_error(residual, center.norm(), solution_norm[k], right_norm[k]);
-        if (!std::isfinite(residual)) { path.status = SolvedStateActionStatus::NonfiniteJacobian; return path; }
+        const auto status = linear_solve_status(residual, *diagnostics.condition_estimate);
+        if (status == SolvedStateActionStatus::NonfiniteJacobian) { path.status = status; return path; }
         diagnostics.maximum_linear_residual = std::max(diagnostics.maximum_linear_residual.value_or(0.0), residual);
         // The first refused coefficient names the cause; 2 cond eta is the first-order forward bound.
-        if (path.status != SolvedStateActionStatus::Available) continue;
-        path.status = linear_solve_status(residual, *diagnostics.condition_estimate);
+        if (path.status == SolvedStateActionStatus::Available) path.status = status;
     }
     return path;
 }
@@ -1437,7 +1433,7 @@ static SolvedStateActionBatch evaluate_action(
         return batch;
     };
     if (gate != SolvedStateActionStatus::Available)
-        return apply_state_gate(gate);
+        return apply_state_gate(gate, gate == SolvedStateActionStatus::NonfiniteJacobian ? center.scaled_failure : std::nullopt);
     if (plane_uncertainty) {
         const auto n = central.coordinates.size();
         Eigen::MatrixXd projection = Eigen::MatrixXd::Zero(components, n);

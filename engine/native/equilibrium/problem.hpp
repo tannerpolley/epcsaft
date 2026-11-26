@@ -875,7 +875,7 @@ struct EquilibriumResult final {
     std::vector<Row> rows;
     // ALG-TERMINATION: the species a default cold trial attempt left at their composition bounds, rows unconverged.
     std::vector<std::size_t> bound_species;
-    struct HeldSpecies { std::size_t phase, species; double fraction, chemical_row, complementarity; std::optional<double> response; };
+    struct HeldSpecies { std::size_t phase, species; double fraction, chemical_row, complementarity; std::optional<double> response{}; };
     std::vector<HeldSpecies> held_species;
     std::size_t unknown_count = 0;
     std::size_t jacobian_rank = 0;

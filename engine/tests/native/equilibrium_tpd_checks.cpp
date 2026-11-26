@@ -245,6 +245,44 @@ void check_candidate_publication() {
     CHECK(!absent.success && absent.amounts.empty());
 }
 
+void check_action_scaled_jacobian_overflow() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+    const HelmholtzModel model(properties_support::neutral_binary());
+    // Rescale one moiety and move its central multiplier contribution into the constant standards.
+    // The physical center stays fixed and the corresponding Jacobian column has maximum 2^-1024.
+    auto vapor = equilibrium_support::flash(2);
+    vapor.phases[0].kind = PhaseKind::Vapor;
+    auto overflow = compile_problem(model, vapor);
+    auto center = solve_compiled(overflow);
+    CHECK(center.success);
+    const auto column = overflow.primal_size;
+    const double rt = GAS_CONSTANT_J_PER_MOL_K * *center.temperature;
+    const double scale = 0x1p-1024;
+    for (const double coefficient : overflow.B[0])
+        vapor.standard_gibbs_j_per_mol.push_back(-rt * center.coordinates[column] * coefficient);
+    overflow = compile_problem(model, vapor);
+    for (auto& coefficient : overflow.B[0]) coefficient *= scale;
+    overflow.balance[0] *= scale;
+    center.declaration = std::make_shared<const EquilibriumProblem>(overflow.problem);
+    center.coordinates[column] = 0.0;
+    const auto jacobian = overflow.jacobian(center.coordinates);
+    double column_max = 0.0;
+    for (std::size_t i = 0; i < overflow.rows.size(); ++i)
+        column_max = std::max(column_max, std::abs(jacobian[i * center.coordinates.size() + column]));
+    CHECK(std::all_of(jacobian.begin(), jacobian.end(), [](double value) { return std::isfinite(value); }) && column_max == scale);
+    const auto action = solved_state_actions(overflow, center,
+        {{{SolvedStateObservableKind::PhaseAmount, 0}}, {{0.0, 1.0, {0.0, 0.0}, {}}}});
+    const auto& item = action.results.at(0);
+    std::printf("Jacobian column maximum=%a, central residual=%.17g, action=%s, cause=%s, LU factorizations=%zu, rank=%s\n", column_max,
+        action.diagnostics.central_residual.value_or(NAN),
+        solved_state_status_name(item.status), item.diagnostic_message.value_or("").c_str(),
+        action.diagnostics.state_factorizations, action.diagnostics.rank ? "available" : "absent");
+    CHECK(item.status == SolvedStateActionStatus::NonfiniteJacobian && !item.action
+        && item.diagnostic_message == "scaled Jacobian is nonfinite"
+        && action.diagnostics.state_factorizations == 0 && !action.diagnostics.rank);
+}
+
 void check_budget_retry() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;
@@ -2586,11 +2624,12 @@ void check_mea_below_bubble_hold() {
     point[compiled.shape[0].x[2]] = point[compiled.shape[0].x[1]];
     auto candidate = state;
     candidate.candidate = Candidate::Admitted;
-    candidate.held_species[0].response.reset();
-    candidate.held_species.push_back({0, 2, held.fraction, NAN, NAN, {}});
+    candidate.held_species = {{0, 1, held.fraction, held.chemical_row, held.complementarity},
+        {0, 2, held.fraction, NAN, NAN}};
     core::Scope scope("hold-all-solvents");
     const auto refused = publish_candidate(all_solvents, all_solvents.prepare(point, true), std::move(candidate), scope, nullptr);
-    std::printf("all solvents %s\n", refused.message.c_str());
+    std::printf("all solvents %s, responses=%s/%s\n", refused.message.c_str(),
+        core::optional_number(refused.held_species[0].response).c_str(), core::optional_number(refused.held_species[1].response).c_str());
     CHECK(!refused.success && refused.convergence.cause == "hold_dependent"
         && !refused.held_species[0].response && !refused.held_species[1].response);
 
@@ -2603,7 +2642,7 @@ void check_mea_below_bubble_hold() {
     const auto matrix = [&] { return jacobian; };
     const auto response_case = [&](core::Stop stop, const char* cause, std::optional<double> response) {
         EquilibriumResult witness;
-        witness.held_species.push_back({0, 1, held.fraction, held.chemical_row, held.complementarity, {}});
+        witness.held_species.push_back({0, 1, held.fraction, held.chemical_row, held.complementarity});
         CHECK(!check_held_responses(matrix_system, matrix, scale, witness));
         std::printf("response witness %s, %s, response=%s\n", core::stop_name(witness.convergence.stop),
             witness.message.c_str(), core::optional_number(witness.held_species[0].response).c_str());

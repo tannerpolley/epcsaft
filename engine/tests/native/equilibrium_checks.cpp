@@ -50,6 +50,7 @@ void check_exact_zero_trace_dot();
 void check_liquid_trial_charge_permutation();
 void check_trace_ion_curvature();
 void check_candidate_publication();
+void check_action_scaled_jacobian_overflow();
 void check_budget_retry();
 void check_physical_amount_work();
 void check_reaction_relaxed_split();
@@ -156,6 +157,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.plane-admission", "TPD", "Automatic_fast"}, check_tangent_plane_admission},
         {{"native.equilibrium.trace-ion-curvature", "trace-ion-curvature", "Automatic_fast"}, check_trace_ion_curvature},
         {{"native.equilibrium.candidate-publication", "candidate-publication", "Automatic_fast"}, check_candidate_publication},
+        {{"native.equilibrium.action-scaled-jacobian-overflow", "action-scaled-jacobian-overflow", "Automatic_fast"}, check_action_scaled_jacobian_overflow},
         {{"native.equilibrium.budget-retry", "budget-retry", "Automatic_fast"}, check_budget_retry},
         {{"native.equilibrium.associating-isomer-gibbs", "associating-isomer-gibbs", "Automatic_fast"}, check_associating_isomer_gibbs},
         {{"native.equilibrium.reaction-relaxed-split", "reaction-relaxed-split", "Automatic_fast"}, check_reaction_relaxed_split},

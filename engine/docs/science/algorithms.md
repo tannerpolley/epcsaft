@@ -3041,6 +3041,8 @@ EqID: `repeated_direction_energy_gradient`; the other contractions come from
 `residual_energy_action` (E3 and E4 of the extensive residual Helmholtz energy,
 which also contracts E5 for the critical rows' curvature). The central Jacobian is equilibrated once to A = R J C with exact
 power-of-two diagonals (column maxima, then row maxima) and factorised.
+If equilibration produces a nonfinite scaled Jacobian, the action reports that
+cause and refuses before factorization, with rank unavailable.
 The first-sensitivity solve and rank inspection use this same equilibration and
 relative pivot threshold. First sensitivities solve $A z = -R F_\theta v$ and
 return $y = C z$, retaining the backward-error check in the original equations; each

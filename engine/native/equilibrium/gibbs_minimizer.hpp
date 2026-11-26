@@ -207,6 +207,12 @@ EPC_API GibbsDifference conserved_split_difference(
     const StabilityOptions &);
 // The driver internals the stability search (phase_stability.cpp) shares.
 void refuse(EquilibriumResult& result, Candidate as = Candidate::Refused);
+inline bool held_refusal(EquilibriumResult& result, core::Stop stop, const char* cause, std::string message) {
+    result.convergence.stop = stop;
+    result.convergence.cause = cause;
+    result.message = std::move(message);
+    return false;
+}
 double largest_difference(const std::vector<double>& left, const std::vector<double>& right);
 EPC_API std::vector<double> add_multipliers(const CompiledSystem& compiled, const std::vector<double>& point, EquilibriumResult* observations = nullptr,
     const PhasePoint* cached_prepared = nullptr, const PointEvaluation* cached_rows = nullptr);

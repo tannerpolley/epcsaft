@@ -966,12 +966,6 @@ static std::string topology_sentence(const CompiledSystem& compiled, const Topol
     return pair + at + distance + "; the declared split was rejected; Discover() searches other phase sets";
 }
 
-static void held_refusal(EquilibriumResult& result, core::Stop stop, const char* cause, std::string message) {
-    result.convergence.stop = stop;
-    result.convergence.cause = cause;
-    result.message = std::move(message);
-}
-
 EquilibriumResult publish_candidate(const CompiledSystem& compiled, const PhasePoint& prepared,
     EquilibriumResult result, core::Scope& scope, const DriverLimits* limits) {
     const auto* model = compiled.model;
@@ -2056,7 +2050,7 @@ static EquilibriumResult run_driver_once(
             if (stop != core::Stop::converged)
                 held_refusal(result, stop, "held_complementarity", cell + ": held classification did not settle in one release round: " + core::optional_number(a));
             else {
-                result.held_species.push_back({r.phase, r.index, x, a, product, {}});
+                result.held_species.push_back({r.phase, r.index, x, a, product});
                 result.message += "; " + cell + " held, root unresolved below the hold";
             }
         }
