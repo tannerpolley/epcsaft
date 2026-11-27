@@ -1394,8 +1394,12 @@ static SolvedStateActionBatch evaluate_action(
         bool changes_inventory = compiled.inventory_restrictions.empty();
         for (const auto& control : controls) {
             const std::vector<double> feed(control.begin() + 2, control.begin() + 2 + compiled.n_feed.size());
-            for (const auto& restriction : compiled.inventory_restrictions)
-                changes_inventory = changes_inventory || !exact_zero_dot(restriction, feed);
+            for (const auto& restriction : compiled.inventory_restrictions) {
+                if (exact_zero_dot(restriction, feed)) continue;
+                changes_inventory = true;
+                // A discarded charge balance constrains feed directions even with every species retained.
+                nonzero_z = nonzero_z || std::equal(restriction.begin(), restriction.end(), charges.begin(), charges.end());
+            }
         }
         for (const std::size_t species : compiled.removed_species)
             for (const auto& control : controls)

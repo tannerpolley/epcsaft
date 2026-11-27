@@ -10,7 +10,8 @@ import pytest
 from epcsaft import Mixture, Parameters, _core
 from epcsaft.equilibrium import (
     Amounts, EquilibriumStart, EquilibriumWorkLimits, Free, NeutralReference, Phase, Pinned, Problem, Reaction,
-    compile_problem, solve_equilibrium, solve_equilibrium_starts,
+    SolvedStateActionDirection, SolvedStateActionRequest, SolvedStateActionStatus, SolvedStateObservable,
+    SolvedStateObservableKind, compile_problem, solve_equilibrium, solve_equilibrium_starts, solved_state_actions,
 )
 from tests.native_inputs import MEA, nominally_unloaded_mea
 
@@ -70,7 +71,7 @@ def a7_flash(T: float, P: float, loading: float) -> dict[str, Any]:
     return {"inputs": (T, P, loading, 1.0, 7.929776437398854)}
 
 
-def test_a7_dew_point(a7: tuple[Mixture, list[Reaction], NeutralReference]) -> None:
+def test_a7_dew_point(a7: tuple[Mixture, list[Reaction], NeutralReference], evidence: Any) -> None:
     model, reactions, reference = a7
     feed = [0.3, 1.0, 7.929776437398854]
     problem = Problem(T=353.15, P=Free(), feed=Amounts(dict(zip(MEA[:3], feed, strict=True))),
@@ -94,6 +95,18 @@ def test_a7_dew_point(a7: tuple[Mixture, list[Reaction], NeutralReference]) -> N
         assert abs(vapor_amount * x - n) <= ROW_CRITERION * sum(feed)
     charge = math.fsum(x * z for x, z in zip(result.mole_fractions[:9], [0, 0, 0, 1, -1, -1, -2, 1, -1], strict=True))
     assert abs(charge) <= ROW_CRITERION
+    pressure = SolvedStateObservable(SolvedStateObservableKind.Pressure)
+    for species, expected in (("carbon-dioxide", SolvedStateActionStatus.Available),
+                              ("protonated-monoethanolamine", SolvedStateActionStatus.IonicInsertion)):
+        direction = SolvedStateActionDirection(0.0, 0.0, [float(name == species) for name in MEA], [])
+        (action,) = solved_state_actions(compiled, result, SolvedStateActionRequest([pressure], [direction])).results
+        evidence.observe(f"A7/dew-pressure-action/{species}", status=action.status.name, action_Pa_per_mol=action.action)
+        assert action.status == expected
+        if expected == SolvedStateActionStatus.Available:
+            # Neighboring native dew solves in the #276 review give -2769 Pa/mol to 1 Pa/mol.
+            assert action.action == pytest.approx(-2769.0, abs=1.0)
+        else:
+            assert action.action is None
 
 
 # Pressures from the issue #306 round-8 map, in Pa, on the 1 mol MEA feed basis.
