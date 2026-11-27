@@ -332,6 +332,27 @@ static void reuse_layout(CompiledSystem& compiled, const CompiledSystem& prepare
     compiled.primal_size = prepared.primal_size;
 }
 
+static void omit_redundant_charge_balance(CompiledSystem& compiled, const std::vector<int>& z) {
+    for (const auto& phase : compiled.problem.phases)
+        if (!phase.is_zero_pinned() && std::any_of(phase.support.begin(), phase.support.end(),
+            [&](std::size_t i) { return z[i] != 0; })) return;
+    const std::vector<double> charge(z.begin(), z.end());
+    if (!exact_zero_dot(charge, compiled.n_feed)) return;
+    const Eigen::Map<const Eigen::VectorXd> target(charge.data(), charge.size());
+    Eigen::MatrixXd basis(z.size(), compiled.rank);
+    for (std::size_t k = 0; k < compiled.rank; ++k)
+        basis.col(k) = Eigen::Map<const Eigen::VectorXd>(compiled.B[k].data(), charge.size());
+    const Eigen::VectorXd coefficients = basis.fullPivLu().solve(target);
+    if (!(basis * coefficients).isApprox(target)) return;
+    Eigen::Index omitted;
+    coefficients.cwiseAbs().maxCoeff(&omitted);
+    // Removing the inventory row also fixes its multiplier to zero.
+    compiled.B.erase(compiled.B.begin() + omitted);
+    compiled.balance.erase(compiled.balance.begin() + omitted);
+    --compiled.rank;
+    compiled.inventory_restrictions.push_back(charge);
+}
+
 static CompiledSystem compile_prescribed_liquid(const HelmholtzModel& model, const EquilibriumProblem& request,
                                                 const CompiledSystem* prepared = nullptr) {
     if (model.parameters().ideal_gas || !request.topology_declared || request.phases.size() != 2
@@ -579,6 +600,8 @@ static CompiledSystem compile_with_basis(
         }
     }
     if (!trial_basis && !compiled.removed_species.empty()) restrict_inventory_balances(compiled, covered);
+    if (!trial_basis && compiled.has_reaction && compiled.has_ions && compiled.rank && request.solids.empty())
+        omit_redundant_charge_balance(compiled, z);
     const auto same_support = [](const auto& a, const auto& b) { return a.support == b.support; };
     if (prepared && (compiled.rank != prepared->rank || !std::equal(compiled.problem.phases.begin(), compiled.problem.phases.end(), prepared->problem.phases.begin(), same_support)))
         return compile_problem(model, request);

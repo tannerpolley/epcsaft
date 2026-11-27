@@ -827,6 +827,16 @@ trial chemistry does not establish a global physical-inventory certificate.
 Numerical qualification checks the reduced Jacobian at the solved endpoint,
 separate mechanical branches and the unchanged raw/classified residual criteria.
 
+Omit the local charge row and multiplier of the first ion-bearing phase with
+a free or positive amount, subject to the charged-vapor restriction.
+When all ion-bearing phases are pinned at zero, retain their local charge rows
+and multipliers. For a reacting declaration without solids, with zero feed
+charge and charge in the conserved basis, omit one inventory row with a nonzero
+coefficient in the charge direction and fix its multiplier to zero. The phases
+carrying inventory then contain only neutral species, so global charge is an
+identity. Feed and support feasibility use the full inventory before this
+reduction.
+
 ### Execution of one solve
 
 This is the call order of one `solve_equilibrium` request on current source; the
