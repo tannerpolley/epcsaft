@@ -2673,6 +2673,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         bool newton_accepted = false;
         const auto before = calls;
         std::vector<double> retry_attempt;
+        std::optional<std::size_t> primary_removal;
         try {
             if (seed.empty()) seed = boundary_start(c, true, nullptr, &newton_work);
             else seed = add_multipliers(c, seed, &audit);
@@ -2689,12 +2690,15 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 auto retried = fast ? result : recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
                     &retry_attempt, true, &calls, budget, &invoked, Work::Invocation);
                 if (calls != before) {
+                    if (!retried.success && !attempt.empty() && result.topology_event != TopologyEvent::None
+                        && (retry_attempt.empty() || retried.topology_event == TopologyEvent::None))
+                        primary_removal = record->declarations.size();
                     count_driver(record->work, result, "declaration_invocations");
                     StageWork(newton_work).report(result);
                     record->declarations.push_back(result); record->declaration_roles.push_back(role);
                     record->declaration_attempt_coordinates.push_back(attempt);
                     result = std::move(retried);
-                    if (!retry_attempt.empty()) attempt = retry_attempt;
+                    if (!primary_removal && !retry_attempt.empty()) attempt = retry_attempt;
                 }
                 if (result.success && calls == before) {
                     const auto branch = check_density_branches(c, result, {}, true, scope);
@@ -2710,6 +2714,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!newton_accepted && calls == before) std::move(newton_work).report(result);
         record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
         record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
+        if (primary_removal) return record->declarations[*primary_removal];
         return result;
     };
     EquilibriumResult best;
@@ -2800,6 +2805,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!fast) std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
             return current.trials[i].quantities.at("donor_slope_over_rt") < current.trials[j].quantities.at("donor_slope_over_rt"); });
         bool added = false;
+        std::vector<std::tuple<PhaseKind, std::vector<std::size_t>, const std::vector<double>*>> attempted_additions;
         for (auto i : descending) {
             if (calls >= budget) break;
             auto next = best_compiled.problem;
@@ -2837,8 +2843,20 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             const bool omitting = reduced_system.has_value();
             auto system = omitting ? std::move(*reduced_system) : compile_problem(model, next);
+            const auto& effective = system.problem.phases.back();
+            const auto& seed = omitting ? trial.reduced_split_coordinates : trial.split_coordinates;
+            // The donor declaration is fixed for this round and the added amount is free.
+            const bool duplicate = std::any_of(attempted_additions.begin(), attempted_additions.end(), [&](const auto& prior) {
+                const auto& [kind, support, coordinates] = prior;
+                return kind == effective.kind && support == effective.support && core::bitwise_equal(*coordinates, seed);
+            });
+            if (duplicate) {
+                trial.message += "; addition: identical declaration and seed already attempted in this round";
+                continue;
+            }
+            attempted_additions.emplace_back(effective.kind, effective.support, &seed);
             std::vector<double> attempt;
-            auto result = invoke(system, omitting ? trial.reduced_split_coordinates : trial.split_coordinates, "addition", attempt);
+            auto result = invoke(system, seed, "addition", attempt);
             if (omitting && result.topology_event != TopologyEvent::None) {
                 trial.message += "; addition: reduced declaration encountered a topology event";
                 continue;

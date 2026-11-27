@@ -2428,24 +2428,11 @@ void check_mea_trace_ion_discovery() {
     problem.feed.values[0] = 1.859375 * row.basis_amount;
     problem.phases.clear(); problem.topology_declared = false; problem.discovery = StabilityOptions{};
     problem.pressure = FreeValue::fixed(7533583.1305387868);
-    auto result = discover_phases(model, problem);
-    if (!result.success && result.linear_solver == "mumps") {
-        // At the exact pressure MUMPS can exhaust the finite search on vanishing additions.
-        CHECK(result.message == "resolved descent with exhausted declaration budget");
-        CHECK(!result.has_state() && !result.temperature && !result.pressure && result.amounts.empty()
-              && result.mole_fractions.empty() && result.molar_densities.empty());
-        CHECK(result.discovery && result.discovery->candidate.has_state());
-        const auto& attempts = result.discovery->declarations;
-        CHECK(std::any_of(attempts.begin(), attempts.end(), [](const auto& attempt) {
-            return !attempt.success && attempt.topology_event == TopologyEvent::PhaseDisappeared;
-        }));
-        // One representable pressure below this pin, MUMPS reaches the same two-liquid branch.
-        problem.pressure = FreeValue::fixed(std::nextafter(problem.pressure.value, 0.0));
-        result = discover_phases(model, problem);
-    }
+    const auto result = discover_phases(model, problem);
     CHECK(result.success && result.phase_count == 2 && result.residual_norm() <= 1e-10);
     for (std::size_t p = 0; p < 2; ++p)
-        CHECK(result.declaration->phases[p].kind == PhaseKind::Liquid && result.mole_fractions[9 * p + 2] > 0.5);
+        CHECK(result.declaration->phases[p].kind == PhaseKind::Liquid && result.amounts[p] > 0.0
+            && result.mole_fractions[9 * p + 2] > 0.5);
     (void)thermal; (void)coordinates;
 }
 
