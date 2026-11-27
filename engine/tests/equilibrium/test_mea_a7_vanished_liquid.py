@@ -100,7 +100,7 @@ def test_a7_dew_point(a7: tuple[Mixture, list[Reaction], NeutralReference], evid
                               ("protonated-monoethanolamine", SolvedStateActionStatus.IonicInsertion)):
         direction = SolvedStateActionDirection(0.0, 0.0, [float(name == species) for name in MEA], [])
         (action,) = solved_state_actions(compiled, result, SolvedStateActionRequest([pressure], [direction])).results
-        evidence.observe(f"A7/dew-pressure-action/{species}", status=action.status.name, action_Pa_per_mol=action.action)
+        evidence.observe(f"A7/dew-pressure-action/{species}", status=str(action.status), action_Pa_per_mol=action.action)
         assert action.status == expected
         if expected == SolvedStateActionStatus.Available:
             # Neighboring native dew solves in the #276 review give -2769 Pa/mol to 1 Pa/mol.
