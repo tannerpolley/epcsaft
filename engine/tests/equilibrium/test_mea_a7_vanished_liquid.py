@@ -8,7 +8,10 @@ from typing import Any
 import pytest
 
 from epcsaft import Mixture, Parameters, _core
-from epcsaft.equilibrium import Amounts, NeutralReference, Phase, Problem, solve_equilibrium
+from epcsaft.equilibrium import (
+    Amounts, EquilibriumStart, EquilibriumWorkLimits, Free, NeutralReference, Phase, Pinned, Problem, Reaction,
+    compile_problem, solve_equilibrium, solve_equilibrium_starts,
+)
 from tests.native_inputs import MEA, nominally_unloaded_mea
 
 REFERENCE = Path(__file__).resolve().parents[2] / "data" / "reference" / "mea-a7"
@@ -20,7 +23,7 @@ TOLERANCES = {t.name: t.value for t in _core.tolerances()}
 
 
 @pytest.fixture(scope="module")
-def solve() -> Flash:
+def a7() -> tuple[Mixture, list[Reaction], NeutralReference]:
     model = Mixture(Parameters.from_json(REFERENCE / "parameters.json"))
     _, reactions, _, _, _ = nominally_unloaded_mea(False)
     correlations = {
@@ -43,6 +46,12 @@ def solve() -> Flash:
         reaction.correlation = law
     reference = NeutralReference(solvent="water", standard_molality_mol_per_kg=1.,
                                  solute_molality_ratios=dict(zip(MEA[:2] + MEA[3:], (1., 1., 5., 2., 1., 1., 1., 1.))))
+    return model, reactions, reference
+
+
+@pytest.fixture(scope="module")
+def solve(a7: tuple[Mixture, list[Reaction], NeutralReference]) -> Flash:
+    model, reactions, reference = a7
 
     def flash(case: dict[str, Any], start: str | _core.EquilibriumResult) -> _core.EquilibriumResult:
         T, P, *feed = case["inputs"]
@@ -59,6 +68,32 @@ def solve() -> Flash:
 
 def a7_flash(T: float, P: float, loading: float) -> dict[str, Any]:
     return {"inputs": (T, P, loading, 1.0, 7.929776437398854)}
+
+
+def test_a7_dew_point(a7: tuple[Mixture, list[Reaction], NeutralReference]) -> None:
+    model, reactions, reference = a7
+    feed = [0.3, 1.0, 7.929776437398854]
+    problem = Problem(T=353.15, P=Free(), feed=Amounts(dict(zip(MEA[:3], feed, strict=True))),
+        phases=[Phase("L", kind="liquid", support=MEA, amount=Pinned(0.0)),
+                Phase("V", kind="vapor", support=MEA[:3])],
+        reactions=reactions, neutral_reference=reference, row_tolerance=ROW_CRITERION)
+    compiled = compile_problem(model, problem)
+    assert compiled.jacobian_rank == len(compiled.coordinate_labels()) == 20
+    # Rounded pressure and liquid composition from the neighboring 0.2-loading dew state.
+    start = EquilibriumStart(pressure=8000.0,
+        compositions=[[1e-5, 0.510, 0.175, 0.1575, 0.1563, 0.00114, 1e-11, 1e-9, 2e-10], []])
+    attempts = solve_equilibrium_starts(model, problem, [start], EquilibriumWorkLimits())
+    (result,) = attempts.results
+    assert result is not None and result.success and result.requested_tolerance_met
+    # The round-8 fixed-pressure map places the neutral vapor at 4.337 kPa and the split at 13.011 kPa.
+    assert result.pressure is not None and 4337.0 < result.pressure < 13012.0
+    assert result.molar_densities[0] > result.molar_densities[1] > 0.0
+    liquid_amount, vapor_amount = result.amounts
+    assert liquid_amount == 0.0
+    for x, n in zip(result.mole_fractions[9:12], feed, strict=True):
+        assert abs(vapor_amount * x - n) <= ROW_CRITERION * sum(feed)
+    charge = math.fsum(x * z for x, z in zip(result.mole_fractions[:9], [0, 0, 0, 1, -1, -1, -2, 1, -1], strict=True))
+    assert abs(charge) <= ROW_CRITERION
 
 
 # Pressures from the issue #306 round-8 map, in Pa, on the 1 mol MEA feed basis.
