@@ -2125,6 +2125,9 @@ It adds no trial schedule or thermodynamic owner. The reported signed measure
 is the raw minimum $\tau$ on a resolved descending branch, and zero on a
 completed search with no witness. The raw minimum and its numerical uncertainty
 remain separate: reported zero is no certificate of a nonnegative exact distance.
+A completed no-witness search has zero measure and zero local action even when
+the raw minimum cannot be ranked. The rank cause remains in the measure's
+event and no raw-minimum action is assigned to the unranked group.
 A parent refusal, incomplete or empty schedule, unsuccessful final trial
 optimizer, or undetermined trial evidence makes the requirement unavailable.
 A retained descending witness does not waive these availability conditions.
@@ -2146,14 +2149,18 @@ molar basis. Split errors retain their extensive basis.
 
 Repeated stationary trials use the existing composition and volume coincidence
 rule. When plausible minima span different supports, every pair must coincide
-on a resolved anchored density side and have equal or nested supports.
+and have equal or nested supports. Their anchored roots must have the same
+resolved density side or both be sole stable roots without an assigned side
+in the finite density search. The tangent-plane value and envelope action use
+the anchored state, independently of the phase label.
 Each reconstructed endpoint must satisfy its existing chemical and pressure
 row criterion, with a separate primal–dual value check. Removing trace species
 and renormalizing must preserve composition, charge and compiled moieties at
 their arithmetic tolerances. The absolute contribution of this projection to
 the frozen standard-minus-plane term must fit within the paired numerical
-value estimates. Distinct minima with overlapping value intervals remain
-unresolved ties. Pivot-only reconstruction leaves stationarity unqualified.
+value estimates. Distinct minima with overlapping value intervals leave the
+rank unresolved and a descending scalar unavailable. Pivot-only reconstruction
+leaves stationarity unqualified.
 
 For a coincident group spanning different supports, the exact fixed-support
 actions must agree in every pair. Compare the linearized reduced-value gap

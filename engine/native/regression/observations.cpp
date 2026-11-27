@@ -1428,6 +1428,12 @@ std::vector<PredictionGradient> differentiate_group(
         }
         const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
+        // The fitted zero has an exact action even if the raw minimum cannot be ranked or differentiated.
+        if (measure.report.no_descent_in_trial_set) {
+            out.value.assign(width, 0.0);
+            out.status = ObservationStatus::Available;
+            if (!measure.event.empty()) return {out};
+        }
         using Kind = equilibrium::SolvedStateObservableKind;
         if (row.pressure_reference) {
             const auto& reference = *prediction.pressure_reference;
@@ -1493,7 +1499,7 @@ std::vector<PredictionGradient> differentiate_group(
             prior.push_back(std::move(current));
         }
         out.raw_minimum = std::move(prior[std::find(minima.begin(), minima.end(), best) - minima.begin()]);
-        out.value = *measure.value == 0.0 ? std::vector<double>(width, 0.0) : out.raw_minimum;
+        if (!measure.report.no_descent_in_trial_set) out.value = out.raw_minimum;
         out.status = ObservationStatus::Available; return {out};
     }
     if (addition(observations.front()->kind)) {
