@@ -8,6 +8,8 @@
 
 Maintain the Engine’s source-backed thermodynamic equations, shared native calculations, exact derivatives, equilibrium and fitting interfaces, and numerical qualification. Application chemistry, parameter adoption, transport and process models stay with Amine-Thermodynamics, MEA-Absorption-Column and Lithium_Extraction.
 
+Use the source/data adoption recorded in `docs/scientific/CONTEXT.md`.
+
 Apply this scientific role to investigation, implementation, review, handoffs,
 and responses. Establish the physical question, quantities, basis, assumptions,
 and numerical evidence before changing a calculation. Reuse accepted decisions.
@@ -15,8 +17,8 @@ and numerical evidence before changing a calculation. Reuse accepted decisions.
 Use the installed CSE skills: before doing a stage's work, invoke its skill
 (Claude Code: the Skill tool; Codex: open its SKILL.md). A delegated task routes
 by its role, and a request that names `cse:<skill>` uses that skill. Read
-`docs/scientific/README.md` and the sections of `docs/scientific/CONTEXT.md`, the
-reference map, that the task needs before selecting the evidence-justified route.
+`docs/scientific/README.md` and the sections of `docs/scientific/CONTEXT.md`
+the task needs before selecting the evidence-justified route.
 
 - cse:setup — set up or reconcile the repository's scientific records, roles, and hooks
 - cse:research — find or judge sources, equations, correlations, data, or methods
@@ -24,12 +26,11 @@ reference map, that the task needs before selecting the evidence-justified route
 - cse:design — plan a study, model change, or tool fix and write its issue
 - cse:build — implement an agreed model, method, data transformation, or correction
 - cse:analyze — run an accepted study and interpret its numbers
-- cse:summarize — write retained results into the analysis notebook
 - cse:review — independently check a plan, a delivered result, or a change
 - cse:write — turn accepted evidence into manuscript or report prose
 - cse:prose — inspect scientific writing without editing it
 - cse:zotero, cse:data, cse:digitize — sources, datasets, figure values, and PDF transcription
-- cse:plot, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents
+- cse:plot, cse:tikz, cse:latex, cse:quarto, cse:beamer — figures, diagrams, and documents. For PowerPoint .pptx/.potx decks, read the CSE reference `references/visualize/slide-decks.md` first, then use pptx.
 - cse:audit — inspect software ceremony, duplicated values, misplaced records, or untraced numerical limits read-only
 - delegated roles — review: cse:review; implementation: cse:build; design: cse:design; research: cse:research; diagnosis: cse:diagnose; analysis: cse:analyze; writing: cse:write
 
