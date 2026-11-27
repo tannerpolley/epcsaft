@@ -1,4 +1,5 @@
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "equilibrium/phase_addition.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "equilibrium/stability_grid.hpp"
 #include "contributions/helmholtz.hpp"
@@ -2805,7 +2806,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!fast) std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
             return current.trials[i].quantities.at("donor_slope_over_rt") < current.trials[j].quantities.at("donor_slope_over_rt"); });
         bool added = false;
-        std::vector<std::tuple<PhaseKind, std::vector<std::size_t>, const std::vector<double>*>> attempted_additions;
+        std::vector<PhaseAddition> attempted_additions;
         for (auto i : descending) {
             if (calls >= budget) break;
             auto next = best_compiled.problem;
@@ -2845,16 +2846,12 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             auto system = omitting ? std::move(*reduced_system) : compile_problem(model, next);
             const auto& effective = system.problem.phases.back();
             const auto& seed = omitting ? trial.reduced_split_coordinates : trial.split_coordinates;
-            // The donor declaration is fixed for this round and the added amount is free.
-            const bool duplicate = std::any_of(attempted_additions.begin(), attempted_additions.end(), [&](const auto& prior) {
-                const auto& [kind, support, coordinates] = prior;
-                return kind == effective.kind && support == effective.support && core::bitwise_equal(*coordinates, seed);
-            });
-            if (duplicate) {
+            // Omission changes topology recovery and which chemical rows must pass after the solve.
+            auto omitted_species = omitting ? std::set<std::size_t>(omitted.begin(), omitted.end()) : std::set<std::size_t>{};
+            if (!remember_phase_addition(attempted_additions, {effective.kind, effective.support, &seed, std::move(omitted_species)})) {
                 trial.message += "; addition: identical declaration and seed already attempted in this round";
                 continue;
             }
-            attempted_additions.emplace_back(effective.kind, effective.support, &seed);
             std::vector<double> attempt;
             auto result = invoke(system, seed, "addition", attempt);
             if (omitting && result.topology_event != TopologyEvent::None) {

@@ -3,6 +3,7 @@
 #include "core/exact_zero_dot.hpp"
 #include "core/bitwise_equal.hpp"
 #include "core/linear_error.hpp"
+#include "equilibrium/phase_addition.hpp"
 #include "equilibrium/stability_grid.hpp"
 #include "surface/parameter_builder.hpp"
 #include "fixtures/mea-flash.hpp"
@@ -2862,6 +2863,19 @@ void check_electric_potential_difference_phase_order() {
     const double reverse_v = reverse.electric_potential_difference_v.value();
     CHECK(forward_v * reverse_v < 0.0);
     check_electrochemical_identity(compiled, reverse, "electric-potential-difference/reverse");
+}
+
+void check_phase_addition_omitted_species() {
+    using namespace epcsaft::equilibrium;
+    const std::vector<double> seed{-0.2, -1.7, 0.1, -3.0};
+    const auto same_seed = seed;
+    std::vector<PhaseAddition> attempted;
+    CHECK(remember_phase_addition(attempted, {PhaseKind::Liquid, {0, 2}, &seed, {1}}));
+    // The unreduced addition can try removal after a topology event.
+    CHECK(remember_phase_addition(attempted, {PhaseKind::Liquid, {0, 2}, &same_seed, {}}));
+    // A different omission changes the chemical rows checked after the solve.
+    CHECK(remember_phase_addition(attempted, {PhaseKind::Liquid, {0, 2}, &same_seed, {3}}));
+    CHECK(!remember_phase_addition(attempted, {PhaseKind::Liquid, {0, 2}, &same_seed, {1}}));
 }
 
 void check_mea_discovery_omitted_species() {
