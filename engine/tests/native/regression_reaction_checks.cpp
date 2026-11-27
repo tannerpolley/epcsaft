@@ -1162,7 +1162,9 @@ void check_addition_endpoint_retry() {
     auto refused = center;
     refused.solved->success = false;
     const auto rejected = evaluate(refused, &cache);
-    CHECK(rejected.status == ObservationStatus::ActionUnavailable && rejected.message.rfind("initial:", 0) == 0);
+    // The invalid retained state is refused before evaluating the initial endpoint action.
+    CHECK(rejected.status == ObservationStatus::ActionUnavailable && rejected.value.empty());
+    CHECK(rejected.message == "prediction model or state mismatch");
     const auto retry = evaluate(center, &cache);
     HelmholtzModel cold(parameters, coordinates.active_parameters(), addition_record());
     const auto fresh = differentiate_group(cold, {&row}, predict(cold, row), coordinates).front();
