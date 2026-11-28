@@ -680,10 +680,10 @@ def test_first_order_names_compute_no_hessian() -> None:
 
 
 def test_pynumero_equilibrium_derivative_orders() -> None:
-    import idaes
-    import pyomo.environ as pyo
-    from pyomo.contrib.pynumero.asl import AmplInterface
-    from pyomo.contrib.pynumero.interfaces.pyomo_nlp import PyomoNLP
+    import idaes  # type: ignore[import-untyped]
+    import pyomo.environ as pyo  # type: ignore[import-untyped]
+    from pyomo.contrib.pynumero.asl import AmplInterface  # type: ignore[import-untyped]
+    from pyomo.contrib.pynumero.interfaces.pyomo_nlp import PyomoNLP  # type: ignore[import-untyped]
 
     from epcsaft.idaes import asl_library
     from epcsaft.pynumero import EquilibriumPyomoNLP
@@ -704,7 +704,7 @@ def test_pynumero_equilibrium_derivative_orders() -> None:
     default = PyomoNLP(model)
     x1, x2 = np.array([0.0]), np.array([1.0])
 
-    def equal(got, want):
+    def equal(got: Any, want: Any) -> None:
         np.testing.assert_allclose(got, want, atol=1e-10 * np.max(np.abs(want)), rtol=0.0)
 
     expected = []
