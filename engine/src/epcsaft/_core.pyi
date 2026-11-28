@@ -4613,6 +4613,8 @@ class ObservationKind:
     """Sum of selected species concentrations in one phase, mol/m^3."""
     LogLinear: ObservationKind
     """Weighted sum of log quantities on one solved equilibrium."""
+    CountercurrentConcentration: ObservationKind
+    """Terminal aqueous component amount per declared outlet volume, mol/m^3."""
     PhaseAmountRatio: ObservationKind
     """Selected numerator component amount divided by selected denominator amount, dimensionless;
     denominator must be nonzero.
@@ -4669,6 +4671,16 @@ class ObservationStatus:
     InadmissibleTrial: ObservationStatus
     """Native admission or evaluation raised at this trial; the original explanation is retained."""
 
+class _Countercurrent:
+    stages: list[EquilibriumProblem]
+    fixed_feeds: list[list[float]]
+    aqueous_transfer: list[list[float]]
+    organic_transfer: list[list[float]]
+    volume_m3: float
+    link_tolerance: float
+    max_sweeps: int
+    def __init__(self) -> None: ...
+
 class Observation:
     """Inputs, reported value and residual convention for one fitting row.
 
@@ -4687,6 +4699,7 @@ class Observation:
     """Return minus the base-10 logarithm of the solute activity."""
     log_terms: list[tuple[float, Observation]]
     """Coefficients and selectors for positive quantities of one solved problem."""
+    countercurrent: _Countercurrent | None
 
     basis_amount: float
     loading_cap: float
@@ -4779,6 +4792,7 @@ class Prediction:
     """One native observation prediction with physical units and failure evidence."""
     solved: Optional[EquilibriumResult]
     final_solved: Optional[EquilibriumResult]
+    countercurrent_stages: list[EquilibriumResult | None]
     component_ids: list[str]
     refusal_convergence: Optional[Convergence]
     refused_operation: Optional[RefusedOperation]
@@ -4830,7 +4844,8 @@ class PredictionGradient:
     These are prediction columns, not residual or weighted columns. A missing derivative is not a numerical zero.
     """
     central_value: Optional[float]
-    """Central site fraction retained when its first action is unavailable."""
+    """Central observation value retained where available on action refusal."""
+    refusal_convergence: Optional[Convergence]
     parameter_actions: list[ResidualEnergyAction]
     raw_minimum: list[float]
 

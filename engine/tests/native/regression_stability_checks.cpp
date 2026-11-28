@@ -272,11 +272,13 @@ void check_stability_requirement() {
     CHECK(differentiate(active, capped, active_center).status == ObservationStatus::ActionUnavailable);
     auto tied = row; tied.problem.phases[0].composition_guess = {.999, .001};
     liquid.name = "L2"; liquid.composition_guess = {.3, .7}; tied.problem.phases.push_back(liquid);
-    const auto tie = predict(model, tied);
-    CHECK(tie.stability && !tie.stability->available && !tie.stability->event.empty() && !tie.value);
+    const auto tie = predict(active, tied);
+    CHECK(tie.stability && tie.stability->available && !tie.stability->event.empty() && tie.value == 0.0);
     CHECK(tie.stability->report.no_descent_in_trial_set && tie.stability->minima.size() >= 2);
     CHECK(tie.stability->report.descent() == StabilityDescent::NoWitness);
-    CHECK(differentiate(model, tied, tie).status != ObservationStatus::Available);
+    const auto tie_action = differentiate(active, tied, tie);
+    CHECK(tie_action.status == ObservationStatus::Available && tie_action.value == std::vector{0.0}
+        && tie_action.raw_minimum.empty());
     std::cout << std::setprecision(17) << "distinct tie " << *tie.stability->raw_minimum << ' '
         << *tie.stability->uncertainty << ' ' << tie.stability->minima.size() << '\n';
     {
@@ -297,7 +299,7 @@ void check_stability_requirement() {
     const auto event = stability_transition(0, {}, initial, {}, transition);
     const auto action = differentiate(model, uncertain, transition);
     CHECK(event.kind.find("resolution") != std::string::npos);
-    CHECK(action.status != ObservationStatus::Available);
+    CHECK(action.status == ObservationStatus::Available);
     std::cout << "{\"case\":\"resolution-transition\",\"event\":" << recording_support::json_string(event.kind)
         << ",\"previous_classification\":" << recording_support::json_string(event.previous_classification)
         << ",\"classification\":" << recording_support::json_string(event.classification)
@@ -306,6 +308,41 @@ void check_stability_requirement() {
         << ",\"previous_m\":" << *initial.stability->value
         << ",\"available\":" << (transition.stability->available ? "true" : "false")
         << ",\"action_status\":" << recording_support::json_string(observation_status_name(action.status)) << "}\n";
+
+    // Symmetric demixing gives two distinct pure trial phases with equal descending TPDs.
+    auto symmetric = properties_support::identical_ethane_pair();
+    symmetric.k_ij[1] = symmetric.k_ij[2] = 0.6;
+    const HelmholtzModel demixing(symmetric, {{ParameterFamily::DispersionEnergyOverK, {0}}});
+    Observation mixed;
+    mixed.kind = ObservationKind::Stability;
+    mixed.problem.temperature = FreeValue::fixed(350.0);
+    mixed.problem.pressure = FreeValue::fixed(5e7);
+    mixed.problem.feed.values = {0.5, 0.5};
+    mixed.problem.phases = {PhaseSpec{"L", PhaseKind::Liquid}};
+    PhaseSpec a{"A", PhaseKind::Liquid}, b{"B", PhaseKind::Liquid};
+    a.support = {0}; b.support = {1}; a.support_declared = b.support_declared = true;
+    mixed.stability_options.trials = std::vector{a, b};
+    const auto ambiguous = predict(demixing, mixed);
+    CHECK(ambiguous.stability && !ambiguous.value && !ambiguous.stability->available
+        && ambiguous.stability->report.descent() == StabilityDescent::ResolvedDescent);
+    const auto& group = *ambiguous.stability;
+    CHECK(group.minima.size() == 2 && group.cause == "distinct stationary minima have overlapping value intervals");
+    const auto ambiguity = differentiate(demixing, mixed, ambiguous);
+    CHECK(ambiguity.status != ObservationStatus::Available && ambiguity.value.empty());
+    std::vector<double> gradients;
+    for (const auto& support : {a, b}) {
+        auto single = mixed;
+        single.stability_options.trials = std::vector{support};
+        const auto control = predict(demixing, single);
+        CHECK(control.value && *control.value < 0.0 && control.stability->report.descent() == StabilityDescent::ResolvedDescent);
+        CHECK(std::abs(*control.value - *group.raw_minimum) <= *group.uncertainty + *control.stability->uncertainty);
+        const auto exact = differentiate(demixing, single, control);
+        CHECK(exact.status == ObservationStatus::Available && exact.value.size() == 1);
+        gradients.push_back(exact.value.front());
+    }
+    CHECK(std::abs(gradients[0] - gradients[1]) > FIRST_ORDER);
+    std::cout << "mixed-support tie " << *group.raw_minimum << " +/- " << *group.uncertainty
+        << " actions " << gradients[0] << ' ' << gradients[1] << " per K\n";
 }
 
 void check_mdea_stability_acceptance() {
@@ -317,7 +354,7 @@ void check_mdea_stability_acceptance() {
     row.problem = cap;
     row.stability_options.plane_value_errors = true;
     const auto ranked = predict(model, row);
-    CHECK(ranked.stability && !ranked.stability->available && !ranked.stability->cause.empty());
+    CHECK(ranked.stability && ranked.stability->available && ranked.value == 0.0 && ranked.stability->raw_minimum);
     const auto& bank = ranked.stability->report;
     CHECK(bank.completed && bank.trials.size() == 14 && bank.undecided().empty());
     CHECK(bank.descent() == StabilityDescent::NoWitness);
@@ -363,6 +400,27 @@ void check_mdea_stability_acceptance() {
         evaluation.stability_cost, expected, recording_support::Rule::ReferenceScale,
         0.0, 4 * std::numeric_limits<double>::epsilon(), "Vapor {0, 1, 6}, unit weight, scale 2");
     CHECK(evaluation.cost == evaluation.stability_cost && evaluation.data_cost == 0.0);
+
+    // MDEA Endpoint A, comparison:221:problem. Trace ions vanish within composition resolution.
+    row.problem.temperature = FreeValue::fixed(313.15);
+    row.problem.feed.values[0] = 1.041;
+    row.scale = 1.0;
+    row.stability_options.trials.reset();
+    request.observations = {row};
+    request.coordinates.coordinates = {
+        {{{ParameterFamily::DispersionEnergyOverK, {7}}}, 243.52151216647658, 10.0, 50.0, 950.0, {}}
+    };
+    ObservationEvaluator sole_root(request, failures, {0});
+    CHECK(sole_root.evaluate({0.0}, true, evaluation));
+    const auto& measure = *evaluation.stability_predictions.front()->stability;
+    CHECK(measure.coincident_supports && measure.report.descent() == StabilityDescent::ResolvedDescent);
+    for (auto j : measure.minima) {
+        const auto& trial = measure.report.trials[j];
+        const auto root = solve_density(model, 313.15, 5e5, trial.composition, DensityBranch::Vapor, std::nullopt);
+        CHECK(root.stable_root_count == 1 && !root.negative_slope_density && root.pressure_density_derivative > 0.0);
+    }
+    CHECK(std::abs(*measure.value - (-0.4224570053173693)) <= *measure.uncertainty);
+    CHECK(std::abs(evaluation.optimizer_gradient.front() - (-0.11273332916618692)) <= *measure.uncertainty);
 }
 
 void check_nested_support_tangent_plane_action() {

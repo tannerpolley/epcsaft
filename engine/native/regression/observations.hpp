@@ -23,7 +23,7 @@ enum class ObservationKind {
     MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy, TransferGibbsEnergy, BulkRelativePermittivity,
     Density, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity, PhaseDensity, EquilibriumPressure, EquilibriumTemperature, PhaseMoleFraction,
     PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, LogEquilibriumConstant, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, SystemEnthalpy, FeedEnthalpy, Stability,
-    PhaseBulkRelativePermittivity, AssociationSiteFraction, PhaseSoluteActivity, PhaseConcentration, LogLinear
+    PhaseBulkRelativePermittivity, AssociationSiteFraction, PhaseSoluteActivity, PhaseConcentration, LogLinear, CountercurrentConcentration
 };
 inline bool addition(ObservationKind kind) {
     return kind == ObservationKind::AdditionEnthalpy || kind == ObservationKind::SaturationCappedAdditionEnthalpy;
@@ -42,6 +42,13 @@ enum class ObservationStatus {
     ThermochemistryUnavailable, NonpositiveLogArgument, ActionUnavailable, Nonfinite, InadmissibleTrial, HeldSpecies
 };
 EPC_API const char* observation_status_name(ObservationStatus status) noexcept;
+
+struct Countercurrent final {
+    std::vector<equilibrium::EquilibriumProblem> stages;
+    std::vector<std::vector<double>> fixed_feeds, aqueous_transfer, organic_transfer;  // transfer columns by outlet component
+    double volume_m3 = 0.0, link_tolerance = 0.0;
+    std::size_t max_sweeps = 0;
+};
 
 struct Observation final {
     ObservationKind kind = ObservationKind::Density;
@@ -83,6 +90,7 @@ struct Observation final {
     std::optional<std::size_t> solvent{};
     bool negative_log10 = false;
     std::vector<std::pair<double, Observation>> log_terms{};  // selectors on this row's problem
+    std::optional<Countercurrent> countercurrent;
 };
 
 struct HydrationHold final {
@@ -112,7 +120,13 @@ EPC_API EvaluatedCoordinates evaluate_coordinates(const Parameters& parameters, 
 
 struct Prediction final {
     class ElectrolyteCenter;
+    struct CountercurrentCenter final {
+        Countercurrent declaration;
+        std::vector<std::optional<equilibrium::CompiledSystem>> compiled;
+        std::vector<std::optional<equilibrium::EquilibriumResult>> solved;
+    };
     std::shared_ptr<const ElectrolyteCenter> electrolyte_center;
+    std::shared_ptr<const CountercurrentCenter> countercurrent;
     policy::SolverOptions solver_options;
     std::optional<InfiniteDilutionReference> reference, second_reference;
     std::optional<ElectrolyteActivity> activity;

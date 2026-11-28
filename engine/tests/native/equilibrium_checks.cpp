@@ -68,6 +68,7 @@ void check_reaction_relaxed_pz_row();
 void check_mea_census_state_3();
 void check_mea_trace_ion_discovery();
 void check_reference_parameter_coverage();
+void check_phase_addition_omitted_species();
 void check_mea_discovery_omitted_species();
 void check_electric_potential_difference();
 void check_prescribed_liquid_coincidence();
@@ -173,6 +174,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.mea-census-state-3", "mea-census-state-3", "Automatic_fast"}, check_mea_census_state_3},
         {{"native.equilibrium.mea-trace-ion-discovery", "mea-trace-ion-discovery", "Automatic_fast"}, check_mea_trace_ion_discovery},
         {{"native.equilibrium.reference-parameter-coverage", "reference-parameter-coverage", "Automatic_fast"}, check_reference_parameter_coverage},
+        {{"native.equilibrium.phase-addition-omitted-species", "phase-addition-omitted-species", "Automatic_fast"}, check_phase_addition_omitted_species},
         {{"native.equilibrium.mea-discovery-omitted-species", "mea-discovery-omitted-species", "Automatic_fast"}, check_mea_discovery_omitted_species},
         {{"native.equilibrium.prescribed-liquid-coincidence", "prescribed-liquid-coincidence", "Automatic_fast"}, check_prescribed_liquid_coincidence},
         {{"native.equilibrium.electric-potential-difference", "electric-potential-difference", "Automatic_fast"}, check_electric_potential_difference},

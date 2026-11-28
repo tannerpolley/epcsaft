@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 
 from epcsaft import Mixture, Parameters, _core, regression
+from epcsaft import equilibrium as eq
 from epcsaft.equilibrium import Amounts, Phase, Problem, Reaction, solve_equilibrium
 from tests.native_inputs import parameters, same
 
@@ -84,6 +85,102 @@ def _coordinates() -> list[regression.Coordinate]:
 
 def _shifted(point: Sequence[float]) -> tuple[float, float]:
     return BASE_LOG_K[0] + 0.5 * (point[0] + point[1]), BASE_LOG_K[1] - 0.25 * point[1]
+
+
+def _countercurrent(p: Parameters, point: float, *, salt: float = 0.05, observed: float = 1.0,
+                    tolerance: float = 1e-11, count: int = 2, max_sweeps: int = 80) -> regression.Observation:
+    solvent = {"s0": 1.0, "s1": 1.0}
+    return regression.countercurrent_concentration(
+        p, [_problem(_shifted((0.0, point)), salt) for _ in range(count)],
+        fixed_feeds=[{**solvent, "s2": salt, "s3": salt}, *([solvent] * (count - 1))],
+        aqueous_transfer={"s2": {"s2": 1.0, "s3": 1.0}},
+        organic_transfer={"s4": {"s4": 1.0}, "s5": {"s5": 1.0}},
+        species="s2", volume_m3=0.001, link_tolerance=tolerance, max_sweeps=max_sweeps,
+        observed=observed, form="difference", scale=observed,
+    )
+
+
+def _countercurrent_value(p: Parameters, point: float, tolerance: float = 1e-11) -> float:
+    prediction = regression.predict(Mixture(p), _countercurrent(p, point, tolerance=tolerance))
+    assert prediction.status == regression.ObservationStatus.Available, prediction.message
+    assert prediction.value is not None and prediction.convergence is not None
+    assert prediction.convergence.residual <= tolerance
+    entering, terminal = prediction.countercurrent_stages
+    assert entering is not None and entering.success and terminal is not None and terminal.success
+    raffinate = terminal.amounts[0] * terminal.mole_fractions[2]
+    extract = entering.amounts[1] * sum(entering.mole_fractions[10:12])
+    assert abs(raffinate + extract - 0.05) <= 1e-9
+    for stage in (entering, terminal):
+        assert abs(stage.amounts[0] * (stage.mole_fractions[2] - stage.mole_fractions[3])) <= 1e-9
+    assert prediction.value == pytest.approx(raffinate / 0.001)
+    return prediction.value
+
+
+def test_countercurrent_concentration_one_stage(evidence: Any) -> None:
+    p = _parameters()
+    model = Mixture(p)
+    point = 0.0
+    predicted = regression.predict(model, _countercurrent(p, point, count=1))
+    direct = solve_equilibrium(model, _problem(BASE_LOG_K))
+    assert direct.success and predicted.status == regression.ObservationStatus.Available
+    expected = direct.amounts[0] * direct.mole_fractions[2] / 0.001
+    same(evidence, "countercurrent/one-stage", predicted.value, expected, 1e-9, 0.0)
+    compiled = eq.compile_problem(model, _problem(BASE_LOG_K))
+    observable = eq.SolvedStateObservable(eq.SolvedStateObservableKind.PhaseComponentAmount, 0, 2)
+    direction = eq.SolvedStateActionDirection(0.0, 0.0, [0.0] * 6, [],
+                                              reaction_coefficients=[[0.5, 0, 0, 0], [-0.25, 0, 0, 0]])
+    batch, = eq.solved_state_first_actions(compiled, direct, [observable], [direction])
+    assert batch.results[0].action is not None
+    action, = regression.differentiate(p, [_coordinates()[1]], [_countercurrent(p, point, count=1)],
+                                       optimizer=[point]).optimizer_gradient
+    same(evidence, "countercurrent/one-stage-action", action, batch.results[0].action / 0.001, 1e-9, 0.0)
+
+
+def test_countercurrent_concentration_linked_actions(evidence: Any) -> None:
+    p = _parameters()
+    coordinate = _coordinates()[1]
+    row = _countercurrent(p, 0.0)
+    result = regression.differentiate(p, [coordinate], [row], optimizer=[0.0])
+    action, = result.optimizer_gradient
+    center = regression.predict(Mixture(p), row)
+    entering = center.countercurrent_stages[0]
+    assert entering is not None and entering.success
+    linked_salt = entering.amounts[0] * entering.mole_fractions[2]
+    fixed = {"s0": 1.0, "s1": 1.0, "s2": linked_salt, "s3": linked_salt}
+    terminal = regression.countercurrent_concentration(
+        p, [_problem(BASE_LOG_K)], fixed_feeds=[fixed], aqueous_transfer={}, organic_transfer={},
+        species="s2", volume_m3=0.001, link_tolerance=1e-11, max_sweeps=1,
+        observed=1.0, form="difference", scale=1.0,
+    )
+    fixed_action, = regression.differentiate(p, [coordinate], [terminal], optimizer=[0.0]).optimizer_gradient
+    for step in (0.001, 0.0005):
+        plus, minus = [_countercurrent_value(p, q) for q in (step, -step)]
+        refined = [_countercurrent_value(p, q, 2.5e-12) for q in (step, -step)]
+        floor = sum(abs(value - tight) + math.ulp(value) for value, tight in zip((plus, minus), refined)) / (2 * step)
+        finite = (plus - minus) / (2 * step)
+        limit = 0.0002 * abs(action) + floor
+        same(evidence, f"countercurrent/linked-action/{step}", action, finite, limit, 0.0,
+             fixed_terminal_feed=fixed_action)
+        assert abs(fixed_action - finite) > limit
+
+
+def test_countercurrent_concentration_fit_and_refusal(evidence: Any) -> None:
+    p, target = _parameters(), 0.12
+    model = Mixture(p)
+    rows = []
+    for salt in (0.04, 0.06):
+        prediction = regression.predict(model, _countercurrent(p, target, salt=salt))
+        assert prediction.status == regression.ObservationStatus.Available and prediction.value is not None, prediction.message
+        rows.append(_countercurrent(p, 0.0, salt=salt, observed=prediction.value))
+    controls = regression.FitControls(maximum_iterations=20, maximum_elapsed_time_seconds=90.0, workers=2)
+    fitted = regression.fit(p, [_coordinates()[1]], rows, controls=controls)
+    assert fitted.usable and fitted.status == "converged", fitted.message
+    same(evidence, "countercurrent/fit-shift", fitted.optimizer[0], target, 1e-6, 0.0, residuals=fitted.residuals)
+
+    refused = regression.predict(model, _countercurrent(p, 0.0, max_sweeps=1))
+    assert refused.status == regression.ObservationStatus.CentralSolveUnavailable
+    assert refused.value is None and refused.refusal_convergence is not None
+    assert refused.refusal_convergence.residual > 1e-11
 
 
 def test_reactive_lle_log_observations_and_actions(evidence: Any) -> None:

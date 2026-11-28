@@ -1,15 +1,18 @@
 #include "regression/observations.hpp"
 
 #include "core/bitwise_equal.hpp"
+#include "core/linear_error.hpp"
 #include "core/numerical_policy.hpp"
 #include "core/retained.hpp"
 #include "core/trace.hpp"
 #include "equilibrium/gibbs_minimizer.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "properties/thermochemistry.hpp"
+#include <Eigen/LU>
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <set>
 #include <sstream>
 #include <numeric>
@@ -160,6 +163,7 @@ static bool same_electrolyte_inputs(const Observation& left, const Observation& 
 }
 
 bool same_state(const Observation& left, const Observation& right) {
+    if (left.countercurrent || right.countercurrent) return false;
     if (left.kind == ObservationKind::Stability || right.kind == ObservationKind::Stability) return false;
     if (electrolyte_observation(left.kind) || electrolyte_observation(right.kind)) {
         const auto activity = [](ObservationKind kind) {
@@ -267,12 +271,13 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
     require(observation.solvent.has_value() == (k == ObservationKind::PhaseSoluteActivity)
         && (!observation.negative_log10 || observation.solvent), "solute activity reference");
     require((k == ObservationKind::LogLinear) == !observation.log_terms.empty(), "log-linear terms");
+    require((k == ObservationKind::CountercurrentConcentration) == observation.countercurrent.has_value(), "countercurrent stages");
     if (k == ObservationKind::PhaseSoluteActivity)
         require(observation.form == ResidualForm::Difference, "solute log activity uses Difference");
     if (k == ObservationKind::LogLinear) for (const auto& [weight, term] : observation.log_terms) {
         require(std::isfinite(weight) && weight != 0.0 && term.log_terms.empty() && term.kind != ObservationKind::LogLinear
             && term.kind != ObservationKind::Stability && term.kind != ObservationKind::LogEquilibriumConstant
-            && !addition(term.kind) && !pressure_closed(term.kind) && !electrolyte_observation(term.kind)
+            && !addition(term.kind) && !pressure_closed(term.kind) && !electrolyte_observation(term.kind) && !term.countercurrent
             && equilibrium::same_problem_state(observation.problem, term.problem),
             "log-linear terms must select positive quantities of one solved problem");
         (void)validate_declaration(term, model);
@@ -289,6 +294,45 @@ bool validate_declaration(const Observation& observation, const HelmholtzModel& 
             || (std::isfinite(observation.scale) && observation.scale > 0.0), "scale");
     require(!observation.mass_basis || observation.kind == ObservationKind::Density
             || observation.kind == ObservationKind::PhaseDensity, "mass basis is defined only for a density");
+    if (observation.countercurrent) {
+        const auto& linked = *observation.countercurrent;
+        const auto finite = [&](const auto& row) { return row.size() == components
+            && std::all_of(row.begin(), row.end(), [](double v) { return std::isfinite(v); }); };
+        require(!linked.stages.empty() && linked.fixed_feeds.size() == linked.stages.size()
+            && std::all_of(linked.fixed_feeds.begin(), linked.fixed_feeds.end(), finite), "countercurrent fixed feed for every stage");
+        require(std::isfinite(linked.volume_m3) && linked.volume_m3 > 0.0 && std::isfinite(linked.link_tolerance)
+            && linked.link_tolerance > 0.0 && linked.max_sweeps > 0, "countercurrent positive volume, link tolerance and sweep budget");
+        const auto& charges = model.parameters().charge_number;
+        for (const auto* transfer : {&linked.aqueous_transfer, &linked.organic_transfer}) {
+            require(transfer->size() == components, "countercurrent transfer width");
+            for (const auto& column : *transfer) {
+                require(finite(column), "countercurrent finite transfer column");
+                double charge = 0.0, magnitude = 0.0;
+                for (std::size_t j = 0; j < components; ++j) {
+                    charge += column[j] * charges[j];
+                    magnitude += std::abs(column[j]);
+                }
+                require(std::isfinite(magnitude) && std::abs(charge) <= policy::COMPOSITION_SUM_TOLERANCE.value * magnitude,
+                    "countercurrent electroneutral transfer column");
+            }
+        }
+        for (const auto& stage : linked.stages) {
+            require(stage.topology_declared && !stage.discovery && !stage.spinodal && !stage.critical && !stage.envelope
+                && !stage.loading && !stage.azeotrope && stage.solids.empty() && !stage.prescribed_liquid_composition
+                && !stage.temperature.free && !stage.pressure.free && !stage.temperature.absent && !stage.pressure.absent
+                && !stage.enthalpy_j && !stage.entropy_j_per_k && !stage.volume_m3 && !stage.internal_energy_j
+                && stage.feed.kind == equilibrium::FeedKind::Amounts && stage.phases.size() == 2
+                && stage.phases[0].name != stage.phases[1].name
+                && std::all_of(stage.phases.begin(), stage.phases.end(), [](const auto& phase) {
+                    return phase.kind == equilibrium::PhaseKind::Liquid && phase.is_free() && phase.support_declared
+                        && !phase.support.empty() && phase.declared_composition_guess;
+                }), "countercurrent stage needs fixed T/P, a molar feed and two declared liquid phases with starts");
+        }
+        const auto& support = linked.stages.back().phases.front().support;
+        require(observation.species.size() == 1 && std::find(support.begin(), support.end(), observation.species[0]) != support.end(),
+            "countercurrent terminal component must be in the aqueous support");
+        return false;
+    }
     require(!observation.finite_solute_molalities || observation.kind == ObservationKind::MeanIonicActivityCoefficient,
             "full solute molalities require mean ionic activity");
     if (observation.finite_solute_molalities)
@@ -451,6 +495,113 @@ static Prediction unavailable_solve(Prediction result, const std::exception& fai
     return result;
 }
 
+static double stage_amount(const equilibrium::EquilibriumResult& stage, std::size_t phase, std::size_t species, std::size_t components) {
+    return stage.amounts[phase] * stage.mole_fractions[phase * components + species];
+}
+
+static Prediction predict_countercurrent(const HelmholtzModel& model, const Observation& row, const Prediction* prior,
+    std::chrono::steady_clock::time_point deadline) {
+    const auto& linked = *row.countercurrent;
+    const auto count = linked.stages.size(), components = model.parameters().component_count();
+    auto center = std::make_shared<Prediction::CountercurrentCenter>();
+    center->declaration = linked;
+    center->compiled.resize(count);
+    center->solved.resize(count);
+    Prediction result;
+    result.countercurrent = center;
+    result.unit = "mol/m^3";
+    const DriverLimits limits{std::numeric_limits<std::size_t>::max(), deadline};
+    const auto solve_stage = [&](std::size_t i, const std::vector<double>& feed) {
+        const auto label = "countercurrent stage " + std::to_string(i + 1) + ": ";
+        try {
+            auto problem = linked.stages[i];
+            problem.feed.values = feed;
+            limits.check();
+            auto compiled = equilibrium::compile_problem(model, problem);
+            auto solved = equilibrium::try_solve_compiled(compiled, center->solved[i], nullptr, &limits);
+            core::retain_first(result.first_numerical_failure, solved.first_numerical_failure);
+            if (solved.failure) std::rethrow_exception(solved.failure);
+            center->solved[i] = std::move(solved);
+            const auto& state = *center->solved[i];
+            if (state.success && state.has_state() && state.phase_count == 2 && state.topology_event == equilibrium::TopologyEvent::None
+                && state.amounts[0] > 0.0 && state.amounts[1] > 0.0) {
+                center->compiled[i] = std::move(compiled);
+                return true;
+            }
+            result.status = state.topology_event == equilibrium::TopologyEvent::None
+                ? ObservationStatus::CentralSolveUnavailable : ObservationStatus::TopologyEvent;
+            result.message = label + state.solver_status + ": " + state.message;
+            result.refusal_convergence = equilibrium::solve_refusal(state);
+        } catch (const std::exception& failure) {
+            const bool runtime = dynamic_cast<const std::runtime_error*>(&failure);
+            if (!runtime && !dynamic_cast<const std::invalid_argument*>(&failure) && !dynamic_cast<const std::domain_error*>(&failure)) throw;
+            result = unavailable_solve(std::move(result), failure,
+                runtime ? ObservationStatus::CentralSolveUnavailable : ObservationStatus::InadmissibleTrial);
+            result.message = label + result.message;
+        }
+        result.refused_operation = Operation::central_solve;
+        if (!result.refusal_convergence) result.refusal_convergence = core::refusal(result.message);
+        limits.retain_denial(*result.refusal_convergence);
+        core::retain_first(result.first_numerical_failure, *result.refusal_convergence);
+        return false;
+    };
+    if (prior && prior->status == ObservationStatus::Available && prior->countercurrent
+        && prior->countercurrent->solved.size() == count)
+        center->solved = prior->countercurrent->solved;
+    else if (count > 1)
+        for (std::size_t i = 0; i < count; ++i)
+            if (!solve_stage(i, linked.stages[i].feed.values)) return result;
+    const auto linked_feed = [&](std::size_t i) {
+        auto feed = linked.fixed_feeds[i];
+        const auto transfer = [&](std::size_t from, std::size_t phase, const auto& map) {
+            for (auto j : linked.stages[from].phases[phase].support) {
+                const double amount = stage_amount(*center->solved[from], phase, j, components);
+                for (std::size_t k = 0; k < components; ++k) feed[k] += map[j][k] * amount;
+            }
+        };
+        if (i > 0) transfer(i - 1, 0, linked.aqueous_transfer);
+        if (i + 1 < count) transfer(i + 1, 1, linked.organic_transfer);
+        return feed;
+    };
+    core::Convergence closure;
+    auto criterion = policy::COUNTERCURRENT_LINK_TOLERANCE;
+    criterion.value = linked.link_tolerance;
+    closure.criterion = std::make_shared<const policy::Tolerance>(criterion);
+    std::size_t worst_stage = 0;
+    for (std::size_t sweep = 0; sweep < linked.max_sweeps; ++sweep) {
+        for (std::size_t i = 0; i < count; ++i)
+            if (!solve_stage(i, linked_feed(i))) return result;
+        closure.iterations = sweep + 1;
+        closure.residual = 0.0;
+        for (std::size_t i = 0; i < count; ++i) {
+            const auto feed = linked_feed(i);
+            for (std::size_t j = 0; j < components; ++j) {
+                const double discrepancy = std::abs(feed[j] - center->compiled[i]->n_feed[j]);
+                const double error = std::isfinite(discrepancy) ? discrepancy : INFINITY;
+                if (error > closure.residual) { closure.residual = error; worst_stage = i; }
+            }
+        }
+        closure.stop = core::classify(closure.residual, criterion, {}, {}, closure.iterations == linked.max_sweeps);
+        if (closure.stop == core::Stop::converged) {
+            result.convergence = closure;
+            result.requested_tolerance_met = true;
+            finish(result, row, stage_amount(*center->solved.back(), 0, row.species[0], components) / linked.volume_m3);
+            return result;
+        }
+        if (closure.stop == core::Stop::nonfinite) break;
+    }
+    result.message = closure.cause = "countercurrent stage " + std::to_string(worst_stage + 1)
+        + (closure.stop == core::Stop::nonfinite ? ": nonfinite feed link discrepancy"
+                                                 : ": feed links exceed the declared tolerance");
+    if (closure.stop == core::Stop::budget_exhausted) closure.limit = core::WorkLimit::iterations;
+    result.refusal_convergence = result.convergence = closure;
+    result.requested_tolerance_met = false;
+    result.status = ObservationStatus::CentralSolveUnavailable;
+    result.refused_operation = Operation::central_solve;
+    core::retain_first(result.first_numerical_failure, closure);
+    return result;
+}
+
 Prediction predict_validated(const HelmholtzModel& model, const Observation& observation,
     std::shared_ptr<const equilibrium::PreparedSuppliedTrials> supplied, const Prediction* start,
     const equilibrium::EquilibriumWorkLimits* limits, std::vector<std::string> component_ids) {
@@ -518,6 +669,7 @@ Prediction predict(
     std::chrono::steady_clock::time_point deadline, const std::vector<const Observation*>& admission, bool recover_bubble,
     const Prediction* earlier, const equilibrium::DriverLimits* limits
 ) {
+    if (observation.countercurrent) return predict_countercurrent(model, observation, previous, deadline);
     if (references) references->bind(model);
     core::Scope density_scope("fit_density_anchor");
     const auto prior = [&](const State* old, const auto& x, const auto& old_x, DensityBranch branch) -> std::optional<double> {
@@ -1321,10 +1473,157 @@ PredictionGradient differentiate(
     return gradient;
 }
 
+static std::vector<ReactionCoordinate> reaction_coordinates(const CoordinateSet& coordinates) {
+    std::vector<ReactionCoordinate> reactions;
+    for (const auto& c : coordinates.coordinates) if (c.reaction) reactions.push_back(*c.reaction);
+    return reactions;
+}
+
+static std::vector<equilibrium::SolvedStateActionDirection> parameter_directions(
+    const equilibrium::EquilibriumProblem& problem, const std::vector<ReactionCoordinate>& reactions,
+    std::size_t active_width, std::size_t components) {
+    const std::size_t parameter_width = active_width + reactions.size();
+    // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
+    std::vector<equilibrium::SolvedStateActionDirection> directions(parameter_width);
+    for (std::size_t k = 0; k < parameter_width; ++k) {
+        directions[k].feed_amounts_mol.assign(components, 0.0);
+        directions[k].active_parameters.assign(active_width, 0.0);
+        if (k < active_width) directions[k].active_parameters[k] = 1.0;
+        else {
+            directions[k].reaction_coefficients.assign(problem.reactions.size(), {});
+            const auto& target = reactions[k - active_width];
+            for (std::size_t j = 0; j < problem.reactions.size(); ++j)
+                if (const double multiplier = target.multiplier(problem.reactions[j].name); multiplier != 0.0) {
+                    auto& coefficients = directions[k].reaction_coefficients[j];
+                    coefficients = reaction_direction(target);
+                    for (auto& coefficient : coefficients) coefficient *= multiplier;
+                }
+            directions[k].solid_log_k.assign(problem.solids.size(), 0.0);
+            for (std::size_t s = 0; s < problem.solids.size(); ++s)
+                if (const double multiplier = target.multiplier(problem.solids[s].name); multiplier != 0.0) {
+                    const auto d = reaction_direction(target);
+                    const auto& law = problem.solids[s].correlation;
+                    directions[k].solid_log_k[s] = multiplier * reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
+                        law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
+                }
+        }
+    }
+    return directions;
+}
+
+static PredictionGradient differentiate_countercurrent(const HelmholtzModel& model, const Observation& row, const Prediction& prediction,
+    const CoordinateSet& coordinates, const std::vector<ObservationInputDirection>& inputs) {
+    PredictionGradient result;
+    result.central_value = prediction.value;
+    if (!inputs.empty() || prediction.status != ObservationStatus::Available || !prediction.countercurrent) {
+        result.message = inputs.empty() ? "countercurrent central state unavailable" : "countercurrent input actions are not declared";
+        return result;
+    }
+    const auto& linked = *row.countercurrent;
+    const auto& center = *prediction.countercurrent;
+    const auto components = model.parameters().component_count(), count = linked.stages.size();
+    const auto& declared = center.declaration;
+    if (center.solved.front()->model_identity != model.identity() || count != declared.stages.size()
+        || linked.fixed_feeds != declared.fixed_feeds || linked.aqueous_transfer != declared.aqueous_transfer
+        || linked.organic_transfer != declared.organic_transfer
+        || !std::equal(linked.stages.begin(), linked.stages.end(), declared.stages.begin(), equilibrium::same_problem_state)) {
+        result.message = "countercurrent prediction model or stage declarations differ";
+        return result;
+    }
+    const auto active = model.active_parameters().size();
+    const auto reactions = reaction_coordinates(coordinates);
+    const auto width = active + reactions.size();
+    const auto at = [components](std::size_t stage, std::size_t phase, std::size_t species) {
+        return static_cast<Eigen::Index>((stage * 2 + phase) * components + species);
+    };
+    const auto dimension = at(count, 0, 0);
+    Eigen::MatrixXd jacobian = Eigen::MatrixXd::Identity(dimension, dimension);
+    Eigen::MatrixXd right = Eigen::MatrixXd::Zero(dimension, static_cast<Eigen::Index>(width));
+    for (std::size_t i = 0; width > 0 && i < count; ++i) {
+        const auto& problem = center.compiled[i]->problem;
+        auto directions = parameter_directions(problem, reactions, active, components);
+        std::vector<Eigen::Index> columns;
+        const auto append_links = [&](std::size_t from, std::size_t phase, const auto& map) {
+            for (auto j : center.compiled[from]->problem.phases[phase].support) {
+                if (std::all_of(map[j].begin(), map[j].end(), [](double v) { return v == 0.0; })) continue;
+                equilibrium::SolvedStateActionDirection direction;
+                direction.feed_amounts_mol = map[j];
+                direction.active_parameters.assign(active, 0.0);
+                directions.push_back(std::move(direction));
+                columns.push_back(at(from, phase, j));
+            }
+        };
+        if (i > 0) append_links(i - 1, 0, linked.aqueous_transfer);
+        if (i + 1 < count) append_links(i + 1, 1, linked.organic_transfer);
+        std::vector<SolvedStateObservable> amounts;
+        for (std::size_t phase = 0; phase < 2; ++phase)
+            for (auto j : problem.phases[phase].support) amounts.push_back(observable(Kind::PhaseComponentAmount, phase, j));
+        const auto batches = equilibrium::solved_state_first_actions(*center.compiled[i], *center.solved[i], amounts, directions);
+        for (std::size_t d = 0; d < directions.size(); ++d) {
+            for (std::size_t a = 0; a < amounts.size(); ++a) {
+                const auto& action = batches[d].results[a];
+                if (!action.action || !std::isfinite(*action.action) || action.status != equilibrium::SolvedStateActionStatus::Available) {
+                    result.message = "countercurrent stage " + std::to_string(i + 1) + " action: "
+                        + action.diagnostic_message.value_or(equilibrium::solved_state_status_name(action.status));
+                    result.refusal_convergence = result.first_numerical_failure = action.refusal;
+                    return result;
+                }
+                const auto r = at(i, amounts[a].phase, amounts[a].component);
+                if (d < width) right(r, static_cast<Eigen::Index>(d)) = *action.action;
+                else jacobian(r, columns[d - width]) -= *action.action;
+            }
+        }
+    }
+    // s = S(b + M s, q): the assembled Jacobian is I - S_f M; right contains S_q.
+    result.status = ObservationStatus::Available;
+    if (width == 0) return result;
+    const auto refuse = [&](std::string cause, core::Stop stop) {
+        result.value.clear();
+        result.status = ObservationStatus::ActionUnavailable;
+        result.message = "countercurrent action: " + cause;
+        result.refusal_convergence = core::refusal(result.message);
+        result.refusal_convergence->stop = stop;
+    };
+    if (!jacobian.allFinite()) {
+        refuse("nonfinite linking Jacobian", core::Stop::nonfinite);
+        return result;
+    }
+    const auto factor = jacobian.fullPivLu();
+    if (factor.rank() != dimension) {
+        refuse("rank-deficient linking Jacobian", core::Stop::singular);
+        result.refusal_convergence->rank = std::make_shared<core::NumericalRank>(core::numerical_rank(factor, "countercurrent links"));
+        return result;
+    }
+    const double norm = jacobian.cwiseAbs().rowwise().sum().maxCoeff();
+    const double condition = norm * factor.inverse().cwiseAbs().rowwise().sum().maxCoeff();
+    const Eigen::MatrixXd response = factor.solve(right);
+    for (Eigen::Index q = 0; q < right.cols(); ++q) {
+        const auto defect = core::compensated_defect(jacobian, response.col(q), right.col(q));
+        const double error = core::backward_error(defect.cwiseAbs().maxCoeff(), norm,
+            response.col(q).cwiseAbs().maxCoeff(), right.col(q).cwiseAbs().maxCoeff());
+        if (!response.col(q).allFinite() || !(error <= policy::EQUILIBRIUM_ACTION_BACKWARD_ERROR.value)
+            || !(2.0 * condition * error <= policy::EQUILIBRIUM_ACTION_FORWARD_ERROR.value)) {
+            refuse("linking action exceeds linear solve tolerance", core::Stop::stalled);
+            result.refusal_convergence->backward_error = error;
+            result.refusal_convergence->amplification = condition;
+            return result;
+        }
+        const double projected = response(at(count - 1, 0, row.species[0]), q) / linked.volume_m3;
+        if (!std::isfinite(projected)) {
+            refuse("nonfinite terminal concentration action", core::Stop::nonfinite);
+            return result;
+        }
+        result.value.push_back(projected);
+    }
+    return result;
+}
+
 std::vector<PredictionGradient> differentiate_group(
     const HelmholtzModel& model, const std::vector<const Observation*>& observations, const Prediction& prediction, const CoordinateSet& coordinates,
     const std::vector<ObservationInputDirection>& inputs, const std::function<void(const double*, double*)>& optimizer_action, ReferenceCache* references
 ) {
+    if (observations.front()->countercurrent)
+        return {differentiate_countercurrent(model, *observations.front(), prediction, coordinates, inputs)};
     if (references) references->bind(model);
     if (prediction.solved && std::any_of(observations.begin(), observations.end(), [&](const auto* row) {
         return !admits_solved_prediction(model, *row, prediction);
@@ -1387,36 +1686,11 @@ std::vector<PredictionGradient> differentiate_group(
     }
     const auto& parameters = model.parameters();
     const auto components = parameters.component_count();
-    const std::size_t active_width = model.active_parameters().size();
-    std::vector<ReactionCoordinate> reactions;
-    for (const auto& c : coordinates.coordinates) if (c.reaction) reactions.push_back(*c.reaction);
-    const std::size_t parameter_width = active_width + reactions.size(), width = parameter_width + inputs.size();
     const auto& problem = prediction.compiled ? prediction.compiled->problem : observations.front()->problem;
-    // One unit direction per active parameter at one shared center (one factorization, one reference ladder).
-    std::vector<equilibrium::SolvedStateActionDirection> directions(parameter_width);
-    for (std::size_t k = 0; k < parameter_width; ++k) {
-        directions[k].feed_amounts_mol.assign(components, 0.0);
-        directions[k].active_parameters.assign(active_width, 0.0);
-        if (k < active_width) directions[k].active_parameters[k] = 1.0;
-        else {
-            directions[k].reaction_coefficients.assign(problem.reactions.size(), {});
-            const auto& target = reactions[k - active_width];
-            for (std::size_t j = 0; j < problem.reactions.size(); ++j)
-                if (const double multiplier = target.multiplier(problem.reactions[j].name); multiplier != 0.0) {
-                    auto& coefficients = directions[k].reaction_coefficients[j];
-                    coefficients = reaction_direction(target);
-                    for (auto& coefficient : coefficients) coefficient *= multiplier;
-                }
-            directions[k].solid_log_k.assign(problem.solids.size(), 0.0);
-            for (std::size_t s = 0; s < problem.solids.size(); ++s)
-                if (const double multiplier = target.multiplier(problem.solids[s].name); multiplier != 0.0) {
-                    const auto d = reaction_direction(target);
-                    const auto& law = problem.solids[s].correlation;
-                    directions[k].solid_log_k[s] = multiplier * reaction_log_value(ReactionLogPolynomial{d[0], d[1], d[2], d[3],
-                        law ? law->reference_temperature : 1.0, 0, 0, {}}, problem.temperature.value);
-                }
-        }
-    }
+    const auto active_width = model.active_parameters().size();
+    auto reactions = reaction_coordinates(coordinates);
+    auto directions = parameter_directions(problem, reactions, active_width, components);
+    const auto parameter_width = directions.size(), width = parameter_width + inputs.size();
     for (const auto& input : inputs) directions.push_back(input.state);
     if (observations.front()->kind == ObservationKind::Stability) {
         PredictionGradient out;
@@ -1428,6 +1702,12 @@ std::vector<PredictionGradient> differentiate_group(
         }
         const auto& measure = *prediction.stability;
         if (!measure.available) { out.message = measure.cause + measure.event; return {out}; }
+        // The fitted zero has an exact action even if the raw minimum cannot be ranked or differentiated.
+        if (measure.report.no_descent_in_trial_set) {
+            out.value.assign(width, 0.0);
+            out.status = ObservationStatus::Available;
+            if (!measure.event.empty()) return {out};
+        }
         using Kind = equilibrium::SolvedStateObservableKind;
         if (row.pressure_reference) {
             const auto& reference = *prediction.pressure_reference;
@@ -1493,7 +1773,7 @@ std::vector<PredictionGradient> differentiate_group(
             prior.push_back(std::move(current));
         }
         out.raw_minimum = std::move(prior[std::find(minima.begin(), minima.end(), best) - minima.begin()]);
-        out.value = *measure.value == 0.0 ? std::vector<double>(width, 0.0) : out.raw_minimum;
+        if (!measure.report.no_descent_in_trial_set) out.value = out.raw_minimum;
         out.status = ObservationStatus::Available; return {out};
     }
     if (addition(observations.front()->kind)) {

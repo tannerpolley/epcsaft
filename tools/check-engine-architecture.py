@@ -81,7 +81,6 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
     found = sorted(build_dir.glob("libepcsaft_native.a"))
     if len(found) != 1:
         return [f"expected one native archive in {build_dir}, found {found}"]
-    findings = []
     out = subprocess.run(
         ["nm", "--defined-only", str(found[0])],
         capture_output=True,
@@ -96,7 +95,7 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
         }
     )
     if leaked:
-        findings.append(f"{found[0].name} exports Python symbols: {leaked[:5]}")
+        return [f"{found[0].name} exports Python symbols: {leaked[:5]}"]
     ninja = (build_dir / "build.ninja").read_text().splitlines()
     def link(name):
         return next((line.split(" |", 1)[0].split()[3:] for line in ninja
@@ -104,16 +103,13 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
     archive_objects = link("libepcsaft_native.a")
     shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
     if not archive_objects or archive_objects != shared_objects:
-        findings.append("native shared library and private archive do not reuse one PIC object set")
-    info = build_dir / "meson-info"
-    test_commands = {test["cmd"][0] for test in json.loads((info / "intro-tests.json").read_text())}
-    # Uninstalled test executables need the archive to access symbols hidden by the shared library.
-    test_executables = {
-        Path(filename).relative_to(build_dir).as_posix()
-        for target in json.loads((info / "intro-targets.json").read_text())
-        if target["type"] == "executable" and not target["installed"]
-        for filename in target["filename"]
-        if filename in test_commands
+        return ["native shared library and private archive do not reuse one PIC object set"]
+    meson_info = build_dir / "meson-info"
+    test_commands = {test["cmd"][0] for test in json.loads((meson_info / "intro-tests.json").read_text())}
+    private_tests = {
+        Path(target["filename"][0]).relative_to(build_dir).as_posix()
+        for target in json.loads((meson_info / "intro-targets.json").read_text())
+        if target["type"] == "executable" and not target["installed"] and target["filename"][0] in test_commands
     }
     support_consumers = []
     for line in ninja:
@@ -122,15 +118,15 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
             inputs = line.split()[3:]
             if "libnanobind_support.a" in inputs and output != "libcore_export_check.so":  # #41 relink of _core
                 support_consumers.append(output)
-            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so" and output not in test_executables:
-                findings.append(f"private archive used outside ASL or uninstalled tests: {output}")
+            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so" and output not in private_tests:
+                return [f"private archive used outside ASL and uninstalled native tests: {output}"]
     if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
-        findings.append(f"nanobind support must link only into _core: {support_consumers}")
+        return [f"nanobind support must link only into _core: {support_consumers}"]
     dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
     exports = subprocess.check_output(["nm", "-D", "--defined-only", str(build_dir / "libepcsaft_asl.so")], text=True)
     if "libepcsaft_native.so" in dynamic or [line.split()[-1] for line in exports.splitlines()] != ["funcadd_ASL"]:
-        findings.append("ASL private native copy is not localized")
-    return findings
+        return ["ASL private native copy is not localized"]
+    return []
 
 
 def rule_include_direction() -> list[str]:

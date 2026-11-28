@@ -68,7 +68,7 @@ _KINDS = {
 __all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "PredictionUncertainty", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "RefusedOperation", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
-           "predict", "log_linear", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
+           "predict", "log_linear", "countercurrent_concentration", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
            "measured_input", "measurement_group", "saturation_pressure_observation")
@@ -626,6 +626,47 @@ def log_linear(terms: Sequence[tuple[float, Observation]], *, observed: float,
     return _finish(result, observed, form, scale, False)
 
 
+def countercurrent_concentration(
+    parameters: Parameters, stages: Sequence[Problem], *, fixed_feeds: Sequence[Mapping[str, float]],
+    aqueous_transfer: Mapping[str, Mapping[str, float]], organic_transfer: Mapping[str, Mapping[str, float]],
+    species: str, volume_m3: float, link_tolerance: float, max_sweeps: int, observed: float,
+    form: str, scale: float | None = None,
+) -> Observation:
+    """Declare a terminal aqueous concentration in mol/m³ through linked stage balances.
+
+    Supply fixed-T/P stages in aqueous-flow order with aqueous then organic
+    phase, explicit supports, and physical initial feeds and phase guesses.
+    Each stage feed is its signed fixed offset in mol plus the prior aqueous and next
+    organic transfers. Each transfer maps an outlet species to feed species
+    coefficients in mol/mol. Omitted coefficients are zero. The terminal
+    species amount is divided by the declared terminal aqueous volume.
+    Link tolerance is the maximum inlet and outlet discrepancy in mol.
+    Named reaction coordinates apply to each stage declaring the reaction.
+    """
+    ids = parameters.component_ids
+
+    def amounts(mapping: Mapping[str, float]) -> list[float]:
+        row = [0.0] * len(ids)
+        for name, value in mapping.items():
+            row[_index(ids, name, "feed component")] = value
+        return row
+
+    def columns(mapping: Mapping[str, Mapping[str, float]]) -> list[list[float]]:
+        transfer = [[0.0] * len(ids) for _ in ids]
+        for name, column in mapping.items():
+            transfer[_index(ids, name, "outlet component")] = amounts(column)
+        return transfer
+
+    linked = _core._Countercurrent()
+    linked.stages, linked.fixed_feeds = [stage._native(parameters) for stage in stages], [amounts(feed) for feed in fixed_feeds]
+    linked.aqueous_transfer, linked.organic_transfer = columns(aqueous_transfer), columns(organic_transfer)
+    linked.volume_m3, linked.link_tolerance, linked.max_sweeps = volume_m3, link_tolerance, max_sweeps
+    result = Observation()
+    result.kind, result.countercurrent = ObservationKind.CountercurrentConcentration, linked
+    result.species = [_index(ids, species, "terminal aqueous component")]
+    return _finish(result, observed, form, scale, False)
+
+
 def saturation_capped_addition_enthalpy(parameters: Parameters, initial: Problem, bubble: Problem,
         feed: Mapping[str, float], *, basis_amount: float, loading_cap: float,
         loading_bounds: tuple[float, float], loading_grid: Sequence[float], T: float, P: float,
@@ -982,6 +1023,7 @@ def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
 def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mapping[str, float], *,
                 ions: tuple[str, str], stoichiometry: tuple[int, int], molality: float,
                 species: str | None = None, reference: Mapping[str, float] | None = None,
+                solute_molalities: Mapping[str, float] | None = None,
                 observed: float, form: str, scale: float | None = None) -> Observation:
     """Declare a liquid electrolyte or single-ion-energy observation.
 
@@ -1007,13 +1049,19 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
     stoichiometry : tuple of int
         Positive dimensionless formula counts in ion order.
     molality : float
-        Formula molality in mol/kg solvent.
+        Formula molality in mol/kg solvent. With full solute molalities, use
+        total selected cation molality divided by its formula count.
     species : str, optional
         Selected ion for a single-ion energy observation.
     reference : mapping of str to float, optional
         Dimensionless second solvent-reference composition for transfer energy;
         for bulk permittivity, a second full composition requests the relative
         permittivity at x divided by the relative permittivity at reference.
+    solute_molalities : mapping of str to float, optional
+        Full liquid composition in mol of each solute per kg of solvent, for
+        ``mean_ionic_activity_coefficient``. Omitted species are zero. Include
+        all counterions and background solutes, and set x to the pure neutral
+        reference solvent. The result is the selected formula's molal γ±.
     observed : float
         Value in the unit selected by kind.
     form : {'difference', 'log_ratio'}
@@ -1052,6 +1100,10 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
         for name in reference:
             _index(parameters.component_ids, name, "reference component")
         result.reference_composition = [reference.get(name, 0.0) for name in parameters.component_ids]
+    if solute_molalities is not None:
+        for name in solute_molalities:
+            _index(parameters.component_ids, name, "solute")
+        result.finite_solute_molalities = [solute_molalities.get(name, 0.0) for name in parameters.component_ids]
     return result
 
 

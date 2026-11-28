@@ -1,4 +1,5 @@
 #include "equilibrium/gibbs_minimizer.hpp"
+#include "equilibrium/phase_addition.hpp"
 #include "equilibrium/stoichiometry.hpp"
 #include "equilibrium/stability_grid.hpp"
 #include "contributions/helmholtz.hpp"
@@ -2278,6 +2279,11 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
     }
     constexpr auto tie = "distinct stationary minima have overlapping value intervals";
     constexpr auto stationarity = "stationarity unavailable at reconstructed trial minimum";
+    if (out.report.no_descent_in_trial_set) {
+        out.value = 0.0;
+        out.available = true;
+    }
+    auto& rank_refusal = out.available ? out.event : out.cause;
     if (out.coincident_supports) {
         for (auto j : out.minima) {
             auto& t = out.report.trials[j];
@@ -2288,13 +2294,10 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
                 || core::classify(row->second, *stop.criterion, {}, {}, false) != core::Stop::converged
                 || !(std::abs(q.at("charge_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value
                     && std::abs(q.at("normalization_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
-                out.cause = stationarity; return out;
+                rank_refusal = stationarity; return out;
             }
             if (!(std::abs(q.at("trial_identity_defect_over_rt")) <= numerical(j))) {
-                out.cause = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
-            }
-            if (q.at("root_density_side") == static_cast<double>(DensityBranch::Unspecified)) {
-                out.cause = density_refusal; return out;
+                rank_refusal = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
             }
             q["numerical_plane_value_error_over_rt"] = numerical(j);
         }
@@ -2303,23 +2306,24 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             const auto& b = out.report.trials[j];
             const auto& low = a.phase.support, &high = b.phase.support;
             if (low.size() > high.size() || (low.size() == high.size() && j <= i)) continue;
+            // An unspecified anchored side comes from the sole stable root in the finite search.
             if (a.quantities.at("root_density_side") != b.quantities.at("root_density_side") || !coincident_trial_point(a, b)
                 || std::abs(a.quantities.at("tpd_over_rt") - b.quantities.at("tpd_over_rt")) > error(i) + error(j)
                 || !std::includes(high.begin(), high.end(), low.begin(), low.end())) {
-                out.cause = out.event = tie; return out;
+                rank_refusal = out.event = tie; return out;
             }
             if (const auto cause = low == high ? nullptr : omitted_species_cause(c, out.report, a, b, rows, numerical(i) + numerical(j))) {
-                out.cause = out.event = cause; return out;
+                rank_refusal = out.event = cause; return out;
             }
         }
     } else for (auto j : out.minima) if (!same_stationary_trial(out.report.trials[j], out.report.trials[best], false)) {
-        out.cause = out.event = tie; return out;
+        rank_refusal = out.event = tie; return out;
     }
     if (std::any_of(out.minima.begin(), out.minima.end(), [&](auto j) { return out.report.trials[j].pivot_only; })) {
-        out.cause = stationarity;
+        rank_refusal = stationarity;
         return out;
     }
-    out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;
+    if (!out.value) out.value = out.raw_minimum;
     out.available = true;
     return out;
 }
@@ -2673,6 +2677,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         bool newton_accepted = false;
         const auto before = calls;
         std::vector<double> retry_attempt;
+        std::optional<std::size_t> primary_removal;
         try {
             if (seed.empty()) seed = boundary_start(c, true, nullptr, &newton_work);
             else seed = add_multipliers(c, seed, &audit);
@@ -2689,12 +2694,15 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
                 auto retried = fast ? result : recover_physical_amounts(c, result, result.retry == Retry::PhysicalAmounts, scope, &seed, nullptr,
                     &retry_attempt, true, &calls, budget, &invoked, Work::Invocation);
                 if (calls != before) {
+                    if (!retried.success && !attempt.empty() && result.topology_event != TopologyEvent::None
+                        && (retry_attempt.empty() || retried.topology_event == TopologyEvent::None))
+                        primary_removal = record->declarations.size();
                     count_driver(record->work, result, "declaration_invocations");
                     StageWork(newton_work).report(result);
                     record->declarations.push_back(result); record->declaration_roles.push_back(role);
                     record->declaration_attempt_coordinates.push_back(attempt);
                     result = std::move(retried);
-                    if (!retry_attempt.empty()) attempt = retry_attempt;
+                    if (!primary_removal && !retry_attempt.empty()) attempt = retry_attempt;
                 }
                 if (result.success && calls == before) {
                     const auto branch = check_density_branches(c, result, {}, true, scope);
@@ -2710,6 +2718,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!newton_accepted && calls == before) std::move(newton_work).report(result);
         record->declarations.push_back(result); record->declaration_roles.push_back(role + (calls != before ? "-physical-mol" : ""));
         record->declaration_attempt_coordinates.push_back(calls != before ? retry_attempt : attempt);
+        if (primary_removal) return record->declarations[*primary_removal];
         return result;
     };
     EquilibriumResult best;
@@ -2800,6 +2809,7 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
         if (!fast) std::stable_sort(descending.begin(), descending.end(), [&](auto i, auto j) {
             return current.trials[i].quantities.at("donor_slope_over_rt") < current.trials[j].quantities.at("donor_slope_over_rt"); });
         bool added = false;
+        std::vector<PhaseAddition> attempted_additions;
         for (auto i : descending) {
             if (calls >= budget) break;
             auto next = best_compiled.problem;
@@ -2837,8 +2847,16 @@ EquilibriumResult discover_phases(const HelmholtzModel& model, const Equilibrium
             }
             const bool omitting = reduced_system.has_value();
             auto system = omitting ? std::move(*reduced_system) : compile_problem(model, next);
+            const auto& effective = system.problem.phases.back();
+            const auto& seed = omitting ? trial.reduced_split_coordinates : trial.split_coordinates;
+            // Omission changes topology recovery and which chemical rows must pass after the solve.
+            auto omitted_species = omitting ? std::set<std::size_t>(omitted.begin(), omitted.end()) : std::set<std::size_t>{};
+            if (!remember_phase_addition(attempted_additions, {effective.kind, effective.support, &seed, std::move(omitted_species)})) {
+                trial.message += "; addition: identical declaration and seed already attempted in this round";
+                continue;
+            }
             std::vector<double> attempt;
-            auto result = invoke(system, omitting ? trial.reduced_split_coordinates : trial.split_coordinates, "addition", attempt);
+            auto result = invoke(system, seed, "addition", attempt);
             if (omitting && result.topology_event != TopologyEvent::None) {
                 trial.message += "; addition: reduced declaration encountered a topology event";
                 continue;
