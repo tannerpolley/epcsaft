@@ -384,16 +384,19 @@ foreach native_check : ['association_refinement', 'stability_trial']
   endif
 endforeach
 
-asl_pressure_chart_checks = executable(
-  'asl_pressure_chart_checks',
-  'tests/native/asl_pressure_chart_checks.cpp',
-  cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
-  dependencies: native_deps + quadmath_dep,
-  include_directories: native_inc,
-  link_with: epcsaft_private,
-  build_by_default: false,
-)
-test('regression/Explicit/asl-pressure-chart', asl_pressure_chart_checks)
+foreach asl_check : ['pressure_chart', 'equilibrium']
+  name = 'asl_' + asl_check + '_checks'
+  asl_checks = executable(
+    name,
+    'tests/native/' + name + '.cpp',
+    cpp_args: native_warnings + (windows ? ['-DEPCSAFT_NATIVE_STATIC'] : []),
+    dependencies: native_deps + quadmath_dep,
+    include_directories: native_inc,
+    link_with: epcsaft_private,
+    build_by_default: false,
+  )
+  test('regression/Explicit/asl-' + asl_check.replace('_', '-'), asl_checks)
+endforeach
 
 specification_checks = executable(
   'specification_checks',
