@@ -581,18 +581,19 @@ static Prediction predict_countercurrent(const HelmholtzModel& model, const Obse
                 if (error > closure.residual) { closure.residual = error; worst_stage = i; }
             }
         }
-        if (closure.residual <= linked.link_tolerance) {
-            closure.stop = core::Stop::converged;
+        closure.stop = core::classify(closure.residual, criterion, {}, {}, closure.iterations == linked.max_sweeps);
+        if (closure.stop == core::Stop::converged) {
             result.convergence = closure;
             result.requested_tolerance_met = true;
             finish(result, row, stage_amount(*center->solved.back(), 0, row.species[0], components) / linked.volume_m3);
             return result;
         }
+        if (closure.stop == core::Stop::nonfinite) break;
     }
     result.message = closure.cause = "countercurrent stage " + std::to_string(worst_stage + 1)
-        + ": feed links exceed the declared tolerance";
-    closure.stop = core::Stop::budget_exhausted;
-    closure.limit = core::WorkLimit::iterations;
+        + (closure.stop == core::Stop::nonfinite ? ": nonfinite feed link discrepancy"
+                                                 : ": feed links exceed the declared tolerance");
+    if (closure.stop == core::Stop::budget_exhausted) closure.limit = core::WorkLimit::iterations;
     result.refusal_convergence = result.convergence = closure;
     result.requested_tolerance_met = false;
     result.status = ObservationStatus::CentralSolveUnavailable;
