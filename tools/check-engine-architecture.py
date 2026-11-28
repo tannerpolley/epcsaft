@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import subprocess
 import sys
@@ -103,6 +104,13 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
     shared_objects = [word for word in link("libepcsaft_native.so") if word.endswith(".o")]
     if not archive_objects or archive_objects != shared_objects:
         return ["native shared library and private archive do not reuse one PIC object set"]
+    meson_info = build_dir / "meson-info"
+    test_commands = {test["cmd"][0] for test in json.loads((meson_info / "intro-tests.json").read_text())}
+    private_tests = {
+        Path(target["filename"][0]).relative_to(build_dir).as_posix()
+        for target in json.loads((meson_info / "intro-targets.json").read_text())
+        if target["type"] == "executable" and not target["installed"] and target["filename"][0] in test_commands
+    }
     support_consumers = []
     for line in ninja:
         if line.startswith("build ") and ": cpp_LINKER " in line:
@@ -110,8 +118,8 @@ def rule_archive_is_python_free(build_dir: Path) -> list[str]:
             inputs = line.split()[3:]
             if "libnanobind_support.a" in inputs and output != "libcore_export_check.so":  # #41 relink of _core
                 support_consumers.append(output)
-            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so":
-                return [f"private archive used outside ASL: {output}"]
+            if "libepcsaft_native.a" in inputs and output != "libepcsaft_asl.so" and output not in private_tests:
+                return [f"private archive used outside ASL and uninstalled native tests: {output}"]
     if len(support_consumers) != 1 or not support_consumers[0].startswith("_core."):
         return [f"nanobind support must link only into _core: {support_consumers}"]
     dynamic = subprocess.check_output(["readelf", "-d", str(build_dir / "libepcsaft_asl.so")], text=True)
