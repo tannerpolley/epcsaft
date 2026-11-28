@@ -548,72 +548,74 @@ const PropertyContext::Branch& evaluate_property(PropertyContext& context, std::
             std::vector<std::vector<double>>(rows, std::vector<double>(n * (n + 1) / 2)),
             std::vector<std::pair<int, std::string>>(rows, {3, ""}), -1, live};
     } else if (branch.order != 0 || !live[0]) anchor = branch.values[0];
-    const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
-        // With live T, its first action uses the cold root, even after a value-only request.
-        const auto batch = context.model->pressure_actions(q[0], q[1], x,
-            phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, observables, directions, anchor,
-            !anchor && live[0] && (order == 0 || state.cold_root) ? &state.cold_root : nullptr);
-        if (batch.density_status != Status::Available || !batch.molar_density) {
-            const auto& m = batch.density_message;
-            std::string root = batch.density_convergence ? "inner_iteration_failure" : "unavailable_derivative";
-            if (m.find("ambiguous") != std::string::npos) root = "ambiguous_branch";
-            if (m.find("no stable density root") != std::string::npos || m.find("density domain is empty") != std::string::npos)
-                root = "no_density_root";
-            throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
-                + std::to_string(static_cast<int>(batch.density_status)) + ":density:"
-                + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
-                    : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
-        }
-        const auto requested = phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor;
-        const auto returned = batch.diagnostics.returned_branch;
-        if ((!anchor && context.require_phase_identity && returned == epcsaft::DensityBranch::Unspecified)
-            || (returned != epcsaft::DensityBranch::Unspecified && returned != requested))
-            throw std::runtime_error("epcsaft_property:branch_mismatch:requested=" + std::to_string(static_cast<int>(requested))
-                + ":returned=" + std::to_string(static_cast<int>(returned)) + ":T=" + epcsaft::core::optional_number(q[0])
-                + ":P=" + epcsaft::core::optional_number(q[1]) + ":stable_root_count="
-                + (batch.diagnostics.stable_root_count ? std::to_string(*batch.diagnostics.stable_root_count) : "absent"));
-        const auto fail = [&](std::size_t row, int k, Status status) {
-            if (k < branch.failures[row].first)
-                branch.failures[row] = {k, "epcsaft_property:" + cause(status, status == Status::MissingThermochemistry ? "MissingThermochemistry" : status == Status::OutsideInterval ? "OutsideInterval" : "unavailable_derivative") + ":"
-                    + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
-                    + ((status == Status::ThermalBoundary || status == Status::OutsideInterval) ? ": thermochemistry interval at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
-                    + ((status == Status::OutsideInterval || status == Status::MissingThermochemistry) ? "" : "; site rank " + std::to_string(batch.diagnostics.site_rank)
-                    + "; pivot ratio " + epcsaft::core::optional_number(batch.diagnostics.site_pivot_ratio)
-                    + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual))
-                    + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
-        };
-        std::vector<double> actions(rows);
-        const bool first = !anchor && branch.order < 0;
-        if (!anchor) anchor = *batch.molar_density;
-        if (first) branch.values[0] = *anchor;
-        if (!directions.empty()) actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
-        for (std::size_t row = 1; row < rows; ++row) {
-            const auto& item = batch.results[row - 1];
-            if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
-            if (first && !item.value) fail(row, 0, item.status);
-            actions[row] = item.action.value_or(0.0);
-            if (!directions.empty() && (item.status != Status::Available || !item.action)) fail(row, static_cast<int>(directions.size()), item.status);
-        }
-        return actions;
-    };
-    for (std::size_t k = 0; branch.order < 1 && k < (order >= 1 ? n : 1); ++k) {
-        if (k == 0 && (order == 0 || !live[0])) {
-            if (!anchor) run({});
-            continue;
-        }
-        if (!live[k]) continue;
-        const auto actions = run({basis[k]});
-        for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
-    }
-    std::size_t packed = 0;
-    for (std::size_t j = 0; order >= 2 && j < n; ++j)
-        for (std::size_t i = 0; i <= j; ++i, ++packed) {
-            if (!live[i] || !live[j]) continue;
-            const auto actions = run({basis[i], basis[j]});
-            for (std::size_t row = 0; row < rows; ++row)
-                branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2 && i < rows) + (j >= 2 && j < rows))
-                    - (i >= 2 && j < rows ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
-        }
+    const auto requested = phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor;
+    // With live T, its first action uses the cold root, even after a value-only request.
+    context.model->pressure_actions(q[0], q[1], x, requested, observables, anchor,
+        !anchor && live[0] && (order == 0 || state.cold_root) ? &state.cold_root : nullptr,
+        [&](const HelmholtzModel::PressureAction& evaluate) {
+            const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
+                const auto batch = evaluate(directions);
+                if (batch.density_status != Status::Available || !batch.molar_density) {
+                    const auto& m = batch.density_message;
+                    std::string root = batch.density_convergence ? "inner_iteration_failure" : "unavailable_derivative";
+                    if (m.find("ambiguous") != std::string::npos) root = "ambiguous_branch";
+                    if (m.find("no stable density root") != std::string::npos || m.find("density domain is empty") != std::string::npos)
+                        root = "no_density_root";
+                    throw std::runtime_error("epcsaft_property:" + cause(batch.density_status, root) + ":"
+                        + std::to_string(static_cast<int>(batch.density_status)) + ":density:"
+                        + (batch.diagnostics.first_numerical_failure ? epcsaft::core::describe(*batch.diagnostics.first_numerical_failure)
+                            : batch.density_convergence ? epcsaft::core::describe(*batch.density_convergence) : "") + "; " + m);
+                }
+                const auto returned = batch.diagnostics.returned_branch;
+                if ((!anchor && context.require_phase_identity && returned == epcsaft::DensityBranch::Unspecified)
+                    || (returned != epcsaft::DensityBranch::Unspecified && returned != requested))
+                    throw std::runtime_error("epcsaft_property:branch_mismatch:requested=" + std::to_string(static_cast<int>(requested))
+                        + ":returned=" + std::to_string(static_cast<int>(returned)) + ":T=" + epcsaft::core::optional_number(q[0])
+                        + ":P=" + epcsaft::core::optional_number(q[1]) + ":stable_root_count="
+                        + (batch.diagnostics.stable_root_count ? std::to_string(*batch.diagnostics.stable_root_count) : "absent"));
+                const auto fail = [&](std::size_t row, int k, Status status) {
+                    if (k < branch.failures[row].first)
+                        branch.failures[row] = {k, "epcsaft_property:" + cause(status, status == Status::MissingThermochemistry ? "MissingThermochemistry" : status == Status::OutsideInterval ? "OutsideInterval" : "unavailable_derivative") + ":"
+                            + std::to_string(static_cast<int>(status)) + ":" + std::to_string(row)
+                            + ((status == Status::ThermalBoundary || status == Status::OutsideInterval) ? ": thermochemistry interval at T=" + epcsaft::core::optional_number(q[0]) + " K" : "")
+                            + ((status == Status::OutsideInterval || status == Status::MissingThermochemistry) ? "" : "; site rank " + std::to_string(batch.diagnostics.site_rank)
+                            + "; pivot ratio " + epcsaft::core::optional_number(batch.diagnostics.site_pivot_ratio)
+                            + "; association residual " + epcsaft::core::optional_number(batch.diagnostics.association_residual))
+                            + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
+                };
+                std::vector<double> actions(rows);
+                const bool first = !anchor && branch.order < 0;
+                if (!anchor) anchor = *batch.molar_density;
+                if (first) branch.values[0] = *anchor;
+                if (!directions.empty()) actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
+                for (std::size_t row = 1; row < rows; ++row) {
+                    const auto& item = batch.results[row - 1];
+                    if (first && item.value) branch.values[row] = *item.value;  // an owned thermochemistry endpoint keeps its value
+                    if (first && !item.value) fail(row, 0, item.status);
+                    actions[row] = item.action.value_or(0.0);
+                    if (!directions.empty() && (item.status != Status::Available || !item.action)) fail(row, static_cast<int>(directions.size()), item.status);
+                }
+                return actions;
+            };
+            for (std::size_t k = 0; branch.order < 1 && k < (order >= 1 ? n : 1); ++k) {
+                if (k == 0 && (order == 0 || !live[0])) {
+                    if (!anchor) run({});
+                    continue;
+                }
+                if (!live[k]) continue;
+                const auto actions = run({basis[k]});
+                for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
+            }
+            std::size_t packed = 0;
+            for (std::size_t j = 0; order >= 2 && j < n; ++j)
+                for (std::size_t i = 0; i <= j; ++i, ++packed) {
+                    if (!live[i] || !live[j]) continue;
+                    const auto actions = run({basis[i], basis[j]});
+                    for (std::size_t row = 0; row < rows; ++row)
+                        branch.hessians[row][packed] = actions[row] / std::pow(sum, (i >= 2 && i < rows) + (j >= 2 && j < rows))
+                            - (i >= 2 && j < rows ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
+                }
+        });
     branch.order = order;
     if (found != states.end()) states.erase(found);
     states.push_front(std::move(state));
