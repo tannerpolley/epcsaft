@@ -28,7 +28,7 @@ class _AmplInterface:
     def __getattr__(self, name):
         return getattr(self._exact, name)
 
-    def eval_hes_lag(self, x, lam, hes_lag, obj_factor=1.0):
+    def eval_hes_lag(self, x, lam, hes_lag, obj_factor):
         # PyNumero's sphes uses the exact reader's current point, as set by objval/conval.
         self._exact.eval_f(x)
         self._exact.eval_g(x, self._constraints)
