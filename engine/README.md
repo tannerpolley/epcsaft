@@ -519,6 +519,14 @@ pairs are neither computed nor written, and every other entry is unchanged.
 and record, share their cached state and return the same value and gradient. Every Hessian entry ASL reads is NaN because
 these names compute only values and first derivatives. Use them with solvers that read only those orders, such as Ipopt
 with `hessian_approximation limited-memory`. The function name in the problem file selects the order at each call site.
+
+With Pyomo 6.10.1, construct `epcsaft.pynumero.EquilibriumPyomoNLP(model)` in place of
+`PyomoNLP(model)` to defer the derivatives of the three exact equilibrium callbacks. The opt-in
+uses separate ASL readers for objective and constraint values, first derivatives, and exact
+Hessians. The readers share the same native cache. A value-only request solves the declared
+equilibrium and evaluates the selected observable. Its call does not prepare or factor the
+sensitivity system. The Jacobian and Hessian calls compute exact actions as needed.
+
 The equilibrium functions share one solved state per record and `q`, and each fills only its own
 rows: an enthalpy refusal fails only the enthalpy function. Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap

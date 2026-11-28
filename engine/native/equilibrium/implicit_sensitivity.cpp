@@ -1184,7 +1184,11 @@ static SolvedStateActionBatch evaluate_action(
             return batch;
         };
         try {
-            if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases, true);
+            if (order == 0 && central.prepared_endpoint && central.prepared_endpoint->point == central.coordinates)
+                common.center.prepared = *central.prepared_endpoint;
+            else if (order == 0)
+                common.center.prepared = compiled.prepare_values(central.coordinates, true, nullptr, {}, {}, false, true);
+            else if (!site_phases.empty()) common.center.prepared = compiled.prepare(central.coordinates, false, nullptr, {}, site_phases, true);
             else {
                 if (prepared && !*prepared) *prepared = compiled.prepare(central.coordinates, false, nullptr, {}, {}, true);
                 common.center.prepared = prepared ? **prepared : compiled.prepare(central.coordinates, false, nullptr, {}, {},
@@ -1200,12 +1204,14 @@ static SolvedStateActionBatch evaluate_action(
         }
         // The gate quantity is the classified residual the driver certifies; the unscaled
         // rows stay in the central result's diagnostics.
-        const auto evaluation = compiled.evaluate_at(common.center.prepared);
-        common.classified_residual = maximum_abs(compiled.classified_residuals(common.center.prepared, evaluation.values));
+        if (order != 0) {
+            const auto evaluation = compiled.evaluate_at(common.center.prepared);
+            common.classified_residual = maximum_abs(compiled.classified_residuals(common.center.prepared, evaluation.values));
+            if (evaluation.floor > 0.0) common.diagnostics.central_floor = evaluation.floor;
+        } else common.classified_residual = maximum_abs(central.classified_residuals);
         common.diagnostics.equation_count = compiled.rows.size();
         common.diagnostics.state_dimension = compiled.unknown_count();
         if (std::isfinite(common.classified_residual)) common.diagnostics.central_residual = common.classified_residual;
-        if (evaluation.floor > 0.0) common.diagnostics.central_floor = evaluation.floor;
     }
     auto& center = shared->center;
     batch.diagnostics = shared->diagnostics;
@@ -1257,9 +1263,9 @@ static SolvedStateActionBatch evaluate_action(
         return o.kind == SolvedStateObservableKind::SystemEnthalpy || other_caloric(o);
     };
     const bool needs_calorics = std::any_of(request.observables.begin(), request.observables.end(), caloric);
-    const bool zero = std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
+    const bool zero = order == 0 || std::any_of(magnitude.begin(), magnitude.end(), [](double m) { return m == 0.0; });
     if (reference_problem && needs_calorics) {
-        const auto need = caloric_need(problem, request, zero, shared->caloric);
+        const auto need = order == 0 ? CaloricNeed{1, 0, 0} : caloric_need(problem, request, zero, shared->caloric);
         std::vector<std::size_t> pairs;  // the coordinates the directions move, as row_series
         for (std::size_t k = 0; parameter_directions > 1 && !zero && k < model.active_parameters().size(); ++k)
             if (std::any_of(request.directions.begin(), request.directions.end(), [k](const auto& d) { return d.active_parameters[k] != 0.0; }))
@@ -1268,7 +1274,7 @@ static SolvedStateActionBatch evaluate_action(
             shared->caloric = need;
             shared->pairs = pairs;
             ReferenceJets jets;
-            jets.temperature_order = std::max<std::size_t>(need[0], 2);  // with the heat-capacity column
+            jets.temperature_order = need[0];
             jets.pressure_order = need[2] ? jets.temperature_order : 0;
             if (need[1]) jets.request_every_parameter(model);
             jets.pairs = pairs;
@@ -1364,6 +1370,7 @@ static SolvedStateActionBatch evaluate_action(
     } else {
         batch.results = shared->central_results;
     }
+    if (order == 0) return batch;
     for (auto& item : batch.results) {
         item.order = order;
         if (!state_dependent(item.observable, problem)) {
@@ -1596,6 +1603,15 @@ struct SolvedStateActionWorkspace final {
     std::optional<ActionCenter> amount_center;
     FirstCoefficients first_coefficients;
 };
+
+SolvedStateActionResult solved_state_enthalpy_value(const CompiledSystem& compiled, const EquilibriumResult& central) {
+    core::Scope scope("solved_state_enthalpy_value");
+    std::optional<ActionCenter> shared;
+    const auto value = [&](const auto& system) {
+        return evaluate_action(system, central, {{{SolvedStateObservableKind::SystemEnthalpy}}, {}}, shared, scope, {}, nullptr).results.front();
+    };
+    return compiled.solids.empty() && central.held_species.empty() ? value(compiled) : value(classify_result(compiled, central));
+}
 
 SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::shared_ptr<SolvedStateActionWorkspace>& workspace) {
