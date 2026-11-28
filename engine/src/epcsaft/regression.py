@@ -982,6 +982,7 @@ def fitted_parameters(start: Parameters, result: FitResult) -> Parameters:
 def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mapping[str, float], *,
                 ions: tuple[str, str], stoichiometry: tuple[int, int], molality: float,
                 species: str | None = None, reference: Mapping[str, float] | None = None,
+                solute_molalities: Mapping[str, float] | None = None,
                 observed: float, form: str, scale: float | None = None) -> Observation:
     """Declare a liquid electrolyte or single-ion-energy observation.
 
@@ -1007,13 +1008,19 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
     stoichiometry : tuple of int
         Positive dimensionless formula counts in ion order.
     molality : float
-        Formula molality in mol/kg solvent.
+        Formula molality in mol/kg solvent. With full solute molalities, use
+        total selected cation molality divided by its formula count.
     species : str, optional
         Selected ion for a single-ion energy observation.
     reference : mapping of str to float, optional
         Dimensionless second solvent-reference composition for transfer energy;
         for bulk permittivity, a second full composition requests the relative
         permittivity at x divided by the relative permittivity at reference.
+    solute_molalities : mapping of str to float, optional
+        Full liquid composition in mol of each solute per kg of solvent, for
+        ``mean_ionic_activity_coefficient``. Omitted species are zero. Include
+        all counterions and background solutes, and set x to the pure neutral
+        reference solvent. The result is the selected formula's molal γ±.
     observed : float
         Value in the unit selected by kind.
     form : {'difference', 'log_ratio'}
@@ -1052,6 +1059,10 @@ def electrolyte(parameters: Parameters, kind: str, T: float, P: float, x: Mappin
         for name in reference:
             _index(parameters.component_ids, name, "reference component")
         result.reference_composition = [reference.get(name, 0.0) for name in parameters.component_ids]
+    if solute_molalities is not None:
+        for name in solute_molalities:
+            _index(parameters.component_ids, name, "solute")
+        result.finite_solute_molalities = [solute_molalities.get(name, 0.0) for name in parameters.component_ids]
     return result
 
 
