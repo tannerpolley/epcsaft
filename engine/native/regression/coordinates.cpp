@@ -124,7 +124,9 @@ double admit_reaction_law(const ReactionCoordinate& target, std::size_t componen
     };
     for (const auto& observation : observations) {
         if (pressure_closed(observation.kind) || electrolyte_observation(observation.kind)) continue;
-        admit_problem(observation.problem);
+        if (observation.countercurrent)
+            for (const auto& stage : observation.countercurrent->stages) admit_problem(stage);
+        else admit_problem(observation.problem);
         if (addition(observation.kind)) admit_problem(observation.final_problem);
         if (observation.pressure_reference) admit_problem(*observation.pressure_reference);
     }
@@ -243,7 +245,9 @@ std::map<std::string, ReactionLogPolynomial> CoordinateSet::apply(std::vector<Ob
     const auto order = tie();
     std::vector<equilibrium::EquilibriumProblem*> problems;
     for (auto& observation : observations) {
-        problems.push_back(&observation.problem);
+        if (observation.countercurrent)
+            for (auto& stage : observation.countercurrent->stages) problems.push_back(&stage);
+        else problems.push_back(&observation.problem);
         for (auto& term : observation.log_terms) problems.push_back(&term.second.problem);
         if (addition(observation.kind)) problems.push_back(&observation.final_problem);
         if (observation.pressure_reference) problems.push_back(&*observation.pressure_reference);
