@@ -184,6 +184,7 @@ struct EquilibriumContext final {
         std::optional<eq::CompiledSystem> compiled;
         eq::EquilibriumResult central;
         std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
+        std::optional<double> enthalpy_value;
         struct Rows final {
             std::vector<double> values;
             std::vector<std::vector<double>> gradients, hessians;
@@ -401,15 +402,15 @@ eq::SolvedStateActionBatch actions(const EquilibriumContext& context, Equilibriu
 }
 
 // A solver only sees an evaluation error; name the typed cause and the trial real arguments.
-double report_failure(arglist* arguments, const char* callback) {
+double report_failure(arglist* arguments, const char* callback, bool value_only = false) {
     std::fprintf(stderr, "%s failure: %s controls=", callback, callback_error.c_str());
     for (int i = 0; arguments != nullptr && arguments->ra != nullptr && i < arguments->nr; ++i)
         std::fprintf(stderr, "%s%.17g", i != 0 ? "," : "", arguments->ra[i]);
     std::fputc('\n', stderr);
     invalidate(arguments);
     if (arguments != nullptr) {
-        if (arguments->hes != nullptr) callback_error.insert(0, "\"");
-        else if (arguments->derivs != nullptr) callback_error.insert(0, "'");
+        if (!value_only && arguments->hes != nullptr) callback_error.insert(0, "\"");
+        else if (!value_only && arguments->derivs != nullptr) callback_error.insert(0, "'");
         arguments->Errmsg = callback_error.data();
     }
     return invalid_value;
@@ -417,13 +418,21 @@ double report_failure(arglist* arguments, const char* callback) {
 
 // kind 0: (q, record, phase, component), mol; kind 1: (q, record), the system enthalpy in J; kind 2: (q, record, solid), mol
 // of the solid's formula unit. Kinds 0 and 2 read one batch; every kind shares one solved state per record and q. Without
-// `second`, no Hessian pair is computed and its read entries keep the NaN written on entry.
-double equilibrium_observable(arglist* arguments, int kind, bool second = true) {
+// the exact order, no Hessian pair is computed and its read entries keep the NaN written on entry.
+enum class EquilibriumOrder { Value, First, Exact };
+
+Prepared<EquilibriumContext>& equilibrium_contexts() {
     static Prepared<EquilibriumContext> prepared;
+    return prepared;
+}
+
+double equilibrium_observable(arglist* arguments, int kind, EquilibriumOrder order = EquilibriumOrder::Exact) {
+    auto& prepared = equilibrium_contexts();
     std::lock_guard<std::mutex> lock(prepared.mutex);
+    const bool value_only = order == EquilibriumOrder::Value;
     std::string observable = "request";
     if (arguments != nullptr) arguments->Errmsg = nullptr;
-    invalidate(arguments);
+    if (!value_only) invalidate(arguments);
     try {
         using Kind = eq::SolvedStateObservableKind;
         const Kind kinds[3] = {Kind::PhaseComponentAmount, Kind::SystemEnthalpy, Kind::SolidAmount};
@@ -446,6 +455,24 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         auto& state = select_state(context, q, observable);
         auto& rows = state.rows[kind == 1];  // the amount batch also holds the solid amounts
         const auto row = kind == 2 ? phases * count + p : p * count + c;
+        if (value_only) {
+            if (rows.filled[0]) return rows.values[row];
+            const auto& central = state.central;
+            if (central.requested_tolerance_met.value_or(false)
+                && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+                throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
+            if (kind == 0) return central.amounts[p] * central.mole_fractions[row];
+            if (kind == 2) return central.solid_amounts[p];
+            // A value carries no sensitivity rank certificate. Only actions() may set filled[0].
+            if (!state.enthalpy_value) {
+                const auto item = eq::solved_state_enthalpy_value(*state.compiled, central);
+                if (item.status != ActionStatus::Available)
+                    throw EquilibriumFailure(item.status, observable, item.diagnostic_message.value_or(""));
+                if (!item.value) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
+                state.enthalpy_value = *item.value;
+            }
+            return *state.enthalpy_value;
+        }
         // Each live gradient column and Hessian pair is one batch, computed once per state and kind.
         const auto fill = [&](const std::vector<int>& coordinates, char& filled, std::vector<std::vector<double>>& out, std::size_t entry, real* to) {
             if (std::any_of(coordinates.begin(), coordinates.end(), [&](int i) { return !live(arguments, i); })) return;
@@ -457,7 +484,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
             to[entry] = out[row][entry];
         };
         for (int i = 0; arguments->derivs != nullptr && i < n; ++i) fill({i}, rows.filled[1 + i], rows.gradients, i, arguments->derivs);
-        for (int j = 0, packed = 0; second && arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
+        for (int j = 0, packed = 0; order == EquilibriumOrder::Exact && arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
             fill({i, j}, rows.filled[1 + n + packed], rows.hessians, packed, arguments->hes);
         if (!rows.filled[0]) actions(context, state, {-1}, kind == 1);
         return rows.values[row];  // On the caller's declared absolute batch basis.
@@ -469,7 +496,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
     } catch (...) {
         callback_error = "epcsaft_equilibrium:untyped:" + observable;
     }
-    return report_failure(arguments, "epcsaft_equilibrium");
+    return report_failure(arguments, "epcsaft_equilibrium", value_only);
 }
 
 // Pressure-chart property callback (#73): q = (T, P, w_1..w_C, theta_1..theta_m), u = Pw with P = I - zz'/z'z the charge-null projector
@@ -750,9 +777,12 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
         {"epcsaft_equilibrium_phase_component_amount", [](arglist* a) { return equilibrium_observable(a, 0); }, -5},
         {"epcsaft_equilibrium_system_enthalpy", [](arglist* a) { return equilibrium_observable(a, 1); }, -3},
         {"epcsaft_equilibrium_solid_amount", [](arglist* a) { return equilibrium_observable(a, 2); }, -4},
-        {"epcsaft_equilibrium_phase_component_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 0, false); }, -5},
-        {"epcsaft_equilibrium_system_enthalpy_first_order", [](arglist* a) { return equilibrium_observable(a, 1, false); }, -3},
-        {"epcsaft_equilibrium_solid_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 2, false); }, -4},
+        {"epcsaft_equilibrium_phase_component_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 0, EquilibriumOrder::First); }, -5},
+        {"epcsaft_equilibrium_system_enthalpy_first_order", [](arglist* a) { return equilibrium_observable(a, 1, EquilibriumOrder::First); }, -3},
+        {"epcsaft_equilibrium_solid_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 2, EquilibriumOrder::First); }, -4},
+        {"epcsaft_equilibrium_phase_component_amount_value", [](arglist* a) { return equilibrium_observable(a, 0, EquilibriumOrder::Value); }, -5},
+        {"epcsaft_equilibrium_system_enthalpy_value", [](arglist* a) { return equilibrium_observable(a, 1, EquilibriumOrder::Value); }, -3},
+        {"epcsaft_equilibrium_solid_amount_value", [](arglist* a) { return equilibrium_observable(a, 2, EquilibriumOrder::Value); }, -4},
         {"epcsaft_pressure_property", [](arglist* a) { return pressure_property(a, true); }, -7},
         {"epcsaft_pressure_property_first_order", [](arglist* a) { return pressure_property(a, false); }, -7}};
     for (const auto& [name, function, count] : functions)

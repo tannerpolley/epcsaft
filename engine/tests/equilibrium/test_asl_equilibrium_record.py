@@ -669,9 +669,70 @@ def test_first_order_names_compute_no_hessian() -> None:
     for function, text, q, away, strings, want in cases:
         n = len(q)
         raw(function, [*away, text, *strings], 0)  # the record now holds another state
+        value, _, _ = raw(function + "_value", [*q, text, *strings], 0)
+        assert value == pytest.approx(want[0], rel=1e-10, abs=0.0)
         v, g, h = raw(function + "_first_order", [*q, text, *strings], 2)
         check_equilibrium_row([v, *g[:n]], want[:1 + n], function)
         assert np.isnan(h[:n * (n + 1) // 2]).all(), function
         if function == FUNCTION:
             v, g, h = raw(function, [*q, text, *strings], 2)
             check_equilibrium_row([v, *g[:n], *h[:n * (n + 1) // 2]], want, function)
+
+
+def test_pynumero_equilibrium_derivative_orders() -> None:
+    import idaes
+    import pyomo.environ as pyo
+    from pyomo.contrib.pynumero.asl import AmplInterface
+    from pyomo.contrib.pynumero.interfaces.pyomo_nlp import PyomoNLP
+
+    from epcsaft.idaes import asl_library
+    from epcsaft.pynumero import EquilibriumPyomoNLP
+
+    if not AmplInterface.available():
+        library = Path(idaes.bin_directory) / "libpynumero_ASL.so"
+        if not library.is_file():
+            pytest.skip("PyNumero ASL library unavailable")
+        AmplInterface.libname = str(library)
+
+    model = pyo.ConcreteModel()
+    model.u = pyo.Var(initialize=0.0, bounds=(-1.0, 2.0))
+    model.amount = pyo.ExternalFunction(library=str(asl_library()), function=FUNCTION)
+    model.balance = pyo.Constraint(
+        expr=model.amount(TP0[0] + model.u, TP0[1], *G0, *THETA0, record(water_isobutanol()), "0", "1") == 0.0
+    )
+    model.cost = pyo.Objective(expr=model.u**3)
+    default = PyomoNLP(model)
+    x1, x2 = np.array([0.0]), np.array([1.0])
+
+    def equal(got, want):
+        np.testing.assert_allclose(got, want, atol=1e-10 * np.max(np.abs(want)), rtol=0.0)
+
+    expected = []
+    for x in (x1, x2):
+        default.set_primals(x)
+        default.set_duals(np.array([2.0]))
+        default.set_obj_factor(0.5)
+        expected.append((default.evaluate_jacobian().data, default.evaluate_hessian_lag().data))
+    assert abs(expected[0][0][0] - expected[1][0][0]) > 1e-10 * abs(expected[1][0][0])
+    assert abs(expected[0][1][0] - expected[1][1][0]) > 1e-10 * abs(expected[1][1][0])
+
+    for i in (0, 1):
+        deferred = EquilibriumPyomoNLP(model)
+        deferred.set_duals(np.array([2.0]))
+        deferred.set_obj_factor(0.5)
+        deferred.set_primals(x1)
+        deferred.evaluate_constraints()
+        x = (x1, x2)[i]
+        if i == 1:
+            deferred.set_primals(x)
+        equal(deferred.evaluate_jacobian().data, expected[i][0])
+        equal(deferred.evaluate_hessian_lag().data, expected[i][1])
+
+    deferred.set_primals(x1)
+    deferred.evaluate_constraints()
+    equal(deferred.evaluate_jacobian().data, expected[0][0])
+    equal(deferred.evaluate_hessian_lag().data, expected[0][1])
+    deferred.set_duals(np.array([1.0]))
+    default.set_primals(x1)
+    default.set_duals(np.array([1.0]))
+    equal(deferred.evaluate_hessian_lag().data, default.evaluate_hessian_lag().data)
