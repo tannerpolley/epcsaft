@@ -2541,7 +2541,7 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     double temperature, double pressure, const std::vector<double>& mole_fractions,
     DensityBranch branch, const std::vector<PropertyObservable>& observables,
     const std::vector<PressureActionDirection>& directions,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density, std::optional<DensityRoot>* cold_root
 ) const {
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     require(std::isfinite(pressure) && pressure > 0.0, "pressure");
@@ -2572,7 +2572,9 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     };
     DensityRoot root;
     try {
-        root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
+        root = cold_root && *cold_root ? **cold_root
+            : solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
+        if (cold_root && !*cold_root) *cold_root = root;
     } catch (const DensityStructureError& error) {
         auto batch = unavailable(error);
         batch.density_convergence = error.first_numerical_failure;

@@ -602,13 +602,39 @@ def test_constant_arguments_keep_the_other_columns() -> None:
             assert all(full[1][i] != 0.0 for i in constant), (q, row)
 
 
-def test_constant_temperature_at_thermochemistry_endpoint() -> None:
-    """A2: at 350 K, the end of the cp interval, only the T action is refused; with T constant the enthalpy row returns
-    its value and the other gradient entries."""
-    from epcsaft.idaes import PropertyExternalFunction, asl_library
+@pytest.mark.parametrize("constant_first", [True, False])
+def test_constant_temperature_at_thermochemistry_endpoint(constant_first: bool) -> None:
+    """At 350 K the T action is refused, and the value and the other gradient entries remain available."""
+    from epcsaft.idaes import PropertyExternalFunction
     callback = PropertyExternalFunction(library=str(asl_library()), function="epcsaft_pressure_property")
     args = [350.0, 1.0e6, 0.3, 0.7, 0.0, 150.03, property_asl_record(methane_ethane()), "1", "1"]
-    v, g, _ = callback._evaluate(args, [True, *[False] * 8], 1)
-    assert np.isfinite(v) and g[0] == 0.0 and all(np.isfinite(g[1:6])) and g[1] != 0.0
-    with pytest.raises(RuntimeError, match=r"thermochemistry interval at T=350 K"):
-        callback._evaluate(args, [False] * 9, 1)
+    if not constant_first:
+        args[2:4] = [0.4, 0.6]  # a fresh state for the reverse request order
+    value_before, _, _ = callback._evaluate(args, [False] * 9, 0)
+    for constant in (constant_first, not constant_first):
+        if constant:
+            v, g, _ = callback._evaluate(args, [True, *[False] * 8], 1)
+            assert v.hex() == value_before.hex() and g[0] == 0.0 and all(np.isfinite(g[1:6])) and g[1] != 0.0
+        else:
+            with pytest.raises(RuntimeError, match=r"thermochemistry interval at T=350 K"):
+                callback._evaluate(args, [False] * 9, 1)
+    assert callback._evaluate(args, [False] * 9, 0)[0].hex() == value_before.hex()
+
+
+def test_pressure_property_first_order() -> None:
+    """Order promotion preserves the gradient and a first-order request leaves each live pair NaN."""
+    from epcsaft.idaes import PropertyExternalFunction
+    library = str(asl_library())
+    exact = PropertyExternalFunction(library=library, function="epcsaft_pressure_property")
+    first = PropertyExternalFunction(library=library, function="epcsaft_pressure_property_first_order")
+    text = property_asl_record(methane_ethane())
+    args = [250.0, 1.0e6, 0.72, 1.28, 0.0, 150.03, text, "2", "1"]
+    fixed = [True, True, *[False] * 7]
+    n = 6
+    before = first._evaluate(args, fixed, 2)
+    value, gradient, hessian = exact._evaluate(args, fixed, 2)
+    assert np.isfinite(hessian[8]) and hessian[8] != 0.0  # packed mixed amount entry (2, 3)
+    after = first._evaluate(args, fixed, 2)
+    for v, g, h in (before, after):
+        assert [x.hex() for x in [v, *g[2:n]]] == [x.hex() for x in [value, *gradient[2:n]]]
+        assert all(np.isnan(h[j * (j + 1) // 2 + i]) for j in range(2, n) for i in range(2, j + 1))

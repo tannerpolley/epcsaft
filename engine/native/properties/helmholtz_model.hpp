@@ -562,11 +562,13 @@ public:
         const std::vector<PropertyObservable>&,
         const std::vector<DensityActionDirection>&
     ) const;
+    // A cold root can be retained and reused only on the same model, T, P, composition and branch.
     EPC_API PropertyActionBatch pressure_actions(
         double, double, const std::vector<double>&, DensityBranch,
         const std::vector<PropertyObservable>&,
         const std::vector<PressureActionDirection>&,
-        std::optional<double> = std::nullopt
+        std::optional<double> = std::nullopt,
+        std::optional<DensityRoot>* cold_root = nullptr
     ) const;
     // Each first-order pressure_actions result along `direction` against central differences of its value at +-step
     // on the anchored central root (verification only). Supported: T, P and a zero-sum composition direction.

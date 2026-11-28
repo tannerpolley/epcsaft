@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <list>
 #include <memory>
 #include <sstream>
 #include <mutex>
@@ -471,7 +472,13 @@ struct PropertyContext final {
         std::vector<std::pair<int, std::string>> failures;  // per row: lowest failing order (3: none) and cause
         int order = -1;
         std::vector<bool> live;  // per q column: whether its derivatives are read
-    } branches[2], solid_rows;  // liquid (highest stable root), vapor (lowest); solid rows need no density root
+    } solid_rows;  // solid rows need no density root
+    struct State final {
+        std::size_t phase;
+        Branch rows;
+        std::optional<epcsaft::DensityRoot> cold_root;
+    };
+    std::list<State> states;
     std::vector<eq::SolidSpec> solids;
     std::optional<epcsaft::NeutralReferenceDeclaration> reference;
 };
@@ -493,9 +500,17 @@ std::unique_ptr<PropertyContext> prepare_property(const char* raw) {
     return context;
 }
 
-void evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, const std::vector<bool>& live, int order) {
-    auto& branch = context.branches[phase];
-    if (bitwise_equal(branch.q, q) && branch.live == live && branch.order >= order) return;
+const PropertyContext::Branch& evaluate_property(PropertyContext& context, std::size_t phase, const std::vector<double>& q, const std::vector<bool>& live, int order) {
+    auto& states = context.states;
+    const auto found = std::find_if(states.begin(), states.end(), [&](const auto& state) {
+        return state.phase == phase && state.rows.live == live && bitwise_equal(state.rows.q, q);
+    });
+    if (found != states.end() && found->rows.order >= order) {
+        states.splice(states.begin(), states, found);
+        return states.front().rows;
+    }
+    auto state = found == states.end() ? PropertyContext::State{phase, {}, {}} : *found;
+    auto& branch = state.rows;
     using Status = epcsaft::PropertyActionStatus;
     const std::size_t c = context.model->parameters().component_count(), rows = 2 + c, n = q.size();
     const auto active = context.model->active_parameters();
@@ -528,16 +543,16 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
     };
     // The first, exhaustive root search at this q owns branch identity and every value; later directions start from its root.
     std::optional<double> anchor;
-    branch.q = q;
-    branch.live = live;
-    branch.order = -1;
-    branch.values.assign(rows, 0.0);
-    branch.failures.assign(rows, {3, std::string()});
-    branch.gradients.assign(rows, std::vector<double>(n));
-    branch.hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
+    if (branch.order < 0) {
+        branch = {q, std::vector<double>(rows), std::vector<std::vector<double>>(rows, std::vector<double>(n)),
+            std::vector<std::vector<double>>(rows, std::vector<double>(n * (n + 1) / 2)),
+            std::vector<std::pair<int, std::string>>(rows, {3, ""}), -1, live};
+    } else if (branch.order != 0 || !live[0]) anchor = branch.values[0];
     const auto run = [&](const std::vector<epcsaft::PressureActionDirection>& directions) {
+        // With live T, its first action uses the cold root, even after a value-only request.
         const auto batch = context.model->pressure_actions(q[0], q[1], x,
-            phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, observables, directions, anchor);
+            phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor, observables, directions, anchor,
+            !anchor && live[0] && (order == 0 || state.cold_root) ? &state.cold_root : nullptr);
         if (batch.density_status != Status::Available || !batch.molar_density) {
             const auto& m = batch.density_message;
             std::string root = batch.density_convergence ? "inner_iteration_failure" : "unavailable_derivative";
@@ -568,8 +583,9 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
                     + (batch.diagnostics.first_numerical_failure ? "; " + epcsaft::core::describe(*batch.diagnostics.first_numerical_failure) : "")};
         };
         std::vector<double> actions(rows);
-        const bool first = !anchor;
-        if (first) anchor = branch.values[0] = *batch.molar_density;
+        const bool first = !anchor && branch.order < 0;
+        if (!anchor) anchor = *batch.molar_density;
+        if (first) branch.values[0] = *anchor;
         if (!directions.empty()) actions[0] = directions.size() == 1 ? batch.density_action.at(0) : batch.density_mixed_action.value();
         for (std::size_t row = 1; row < rows; ++row) {
             const auto& item = batch.results[row - 1];
@@ -580,9 +596,12 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
         }
         return actions;
     };
-    for (std::size_t k = 0; k < (order >= 1 ? n : 1); ++k) {
-        if (k > 0 && !live[k]) continue;
-        if (k == 0 && (order == 0 || !live[0])) { run({}); continue; }  // values only: no T action is read
+    for (std::size_t k = 0; branch.order < 1 && k < (order >= 1 ? n : 1); ++k) {
+        if (k == 0 && (order == 0 || !live[0])) {
+            if (!anchor) run({});
+            continue;
+        }
+        if (!live[k]) continue;
         const auto actions = run({basis[k]});
         for (std::size_t row = 0; row < rows; ++row) branch.gradients[row][k] = actions[row] / std::pow(sum, k >= 2 && k < rows);
     }
@@ -596,6 +615,10 @@ void evaluate_property(PropertyContext& context, std::size_t phase, const std::v
                     - (i >= 2 && j < rows ? (sigma[j - 2] * branch.gradients[row][i] + sigma[i - 2] * branch.gradients[row][j]) / sum : 0.0);
         }
     branch.order = order;
+    if (found != states.end()) states.erase(found);
+    states.push_front(std::move(state));
+    if (states.size() > 128) states.pop_back();
+    return states.front().rows;
 }
 
 // EqID solid_standard_gibbs on the record basis: l_s = ln K^rho_s(T, P0) + V_s (P - P0)/RT - dnu ln(P/(RT rho0)), rho0 =
@@ -659,7 +682,7 @@ void evaluate_solids(PropertyContext& context, const std::vector<double>& q, con
     }
 }
 
-double pressure_property(arglist* arguments) {
+double pressure_property(arglist* arguments, bool second) {
     static Prepared<PropertyContext> prepared;
     std::lock_guard<std::mutex> lock(prepared.mutex);
     if (arguments != nullptr) arguments->Errmsg = nullptr;
@@ -677,18 +700,18 @@ double pressure_property(arglist* arguments) {
             if (!std::isfinite(q[i]) || (i < 2 + c && q[i] < 0.0) || (i < 2 && q[i] == 0.0))
                 reject("T and P must be finite and positive, weights finite and nonnegative, parameters finite");
         if (!(std::accumulate(q.begin() + 2, q.begin() + 2 + c, 0.0) > 0.0)) reject("weights must have a positive sum");
-        const int order = arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
+        const int order = second && arguments->hes != nullptr ? 2 : (arguments->derivs != nullptr ? 1 : 0);
         const bool solid = row >= 2 + c;
         std::vector<bool> used(n);
         for (int i = 0; i < n; ++i) used[i] = live(arguments, i);
-        solid ? evaluate_solids(context, q, used, order) : evaluate_property(context, phase, q, used, order);
-        const auto& branch = solid ? context.solid_rows : context.branches[phase];
+        if (solid) evaluate_solids(context, q, used, order);
+        const auto& branch = solid ? context.solid_rows : evaluate_property(context, phase, q, used, order);
         const auto r = solid ? row - 2 - c : row;
         if (branch.failures[r].first <= order) throw std::runtime_error(branch.failures[r].second);
         for (int j = 0, packed = 0; j < n; ++j) {  // only the entries ASL reads
             if (arguments->derivs != nullptr && used[j]) arguments->derivs[j] = branch.gradients[r][j];
             for (int i = 0; i <= j; ++i, ++packed)
-                if (arguments->hes != nullptr && used[i] && used[j]) arguments->hes[packed] = branch.hessians[r][packed];
+                if (second && arguments->hes != nullptr && used[i] && used[j]) arguments->hes[packed] = branch.hessians[r][packed];
         }
         return branch.values[r];
     } catch (const std::invalid_argument& error) {
@@ -712,7 +735,8 @@ extern "C" void funcadd_ASL(AmplExports* exports) {
         {"epcsaft_equilibrium_phase_component_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 0, false); }, -5},
         {"epcsaft_equilibrium_system_enthalpy_first_order", [](arglist* a) { return equilibrium_observable(a, 1, false); }, -3},
         {"epcsaft_equilibrium_solid_amount_first_order", [](arglist* a) { return equilibrium_observable(a, 2, false); }, -4},
-        {"epcsaft_pressure_property", pressure_property, -7}};
+        {"epcsaft_pressure_property", [](arglist* a) { return pressure_property(a, true); }, -7},
+        {"epcsaft_pressure_property_first_order", [](arglist* a) { return pressure_property(a, false); }, -7}};
     for (const auto& [name, function, count] : functions)
         exports->Addfunc(name, function, FUNCADD_REAL_VALUED | FUNCADD_STRING_ARGS, count, nullptr, exports);
 }

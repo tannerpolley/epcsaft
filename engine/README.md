@@ -511,11 +511,11 @@ A real argument that is a constant of the caller's problem, which ASL marks in `
 (a fixed T, P, feed or parameter), costs no derivative work: its gradient column and Hessian
 pairs are neither computed nor written, and every other entry is unchanged.
 `epcsaft_equilibrium_phase_component_amount_first_order`, `epcsaft_equilibrium_system_enthalpy_first_order`
-and `epcsaft_equilibrium_solid_amount_first_order` take their exact counterparts' arguments and record, share their
-solved state per record and `q`, and return the same value and gradient but compute no second derivative: every
-Hessian entry ASL reads is NaN, meaning "not computed". They are for a solver that reads no Hessian (Ipopt's
-`hessian_approximation limited-memory`); a caller chooses per call site by the function name in its problem file.
-Both functions share one solved state per record and `q`, and each fills only its own
+`epcsaft_equilibrium_solid_amount_first_order` and `epcsaft_pressure_property_first_order` take their exact counterparts' arguments
+and record, share their cached state and return the same value and gradient. Every Hessian entry ASL reads is NaN because
+these names compute only values and first derivatives. Use them with solvers that read only those orders, such as Ipopt
+with `hessian_approximation limited-memory`. The function name in the problem file selects the order at each call site.
+The equilibrium functions share one solved state per record and `q`, and each fills only its own
 rows: an enthalpy refusal fails only the enthalpy function. Each new `q` is first solved directly from the record's declared guesses in the
 model at theta and kept only if the record's two-phase, tolerance and identity-gap
 checks admit it. Otherwise it continues from the immutable anchor: a parameter
