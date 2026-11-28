@@ -45,7 +45,7 @@ struct Callback final {
     std::array<double, 15> hessian{};
     std::array<char, 5> fixed{0, 1, 0, 0, 0};  // live T: at fixed T and P the reactive LLE has no degree of freedom, so the feed Hessian is zero
 
-    double operator()(int order, int row = 0) {
+    std::pair<double, std::string> call(int order, EquilibriumOrder registered, int row = 0) {
         int map[]{0, 1, 2, 3, 4, -1, -2, -3};
         const char* ordinals[]{"0", "1", "2"};
         const char* strings[]{record.c_str(), ordinals[row / 3], ordinals[row % 3]};
@@ -54,8 +54,13 @@ struct Callback final {
         args.dig = fixed.data();
         if (order >= 1) args.derivs = gradient.data();
         if (order >= 2) args.hes = hessian.data();
-        const double result = equilibrium_observable(&args, 0);
-        CHECK(args.Errmsg == nullptr && std::isfinite(result));
+        const double result = equilibrium_observable(&args, 0, registered);
+        return {result, args.Errmsg == nullptr ? "" : args.Errmsg};
+    }
+
+    double operator()(int order, int row = 0) {
+        const auto [result, error] = call(order, EquilibriumOrder::Exact, row);
+        CHECK(error.empty() && std::isfinite(result));
         return result;
     }
 };
@@ -93,10 +98,61 @@ void check_interleaved_cache() {
     CHECK(spans(trace, "solved_state_actions") == 0);
 }
 
+void check_value_order() {
+    Callback callback;
+    callback.q[2] += 0.0047;
+    std::array<double, 6> values;
+    {
+        epcsaft::core::Capture trace(true);
+        for (int row = 0; row < 6; ++row) {
+            const auto result = callback.call(2, EquilibriumOrder::Value, row);  // conval supplies both buffers
+            values[row] = result.first;
+            CHECK(std::isfinite(values[row]) && result.second.empty());
+            CHECK(callback.call(2, EquilibriumOrder::Value, row).first == values[row]);
+        }
+        CHECK(spans(trace, "solve_equilibrium") > 0);
+        CHECK(spans(trace, "solved_state_actions") == 0);
+    }
+    {
+        epcsaft::core::Capture trace(true);
+        const auto [first, error] = callback.call(2, EquilibriumOrder::First);
+        CHECK(values.front() == first && error.empty());
+        CHECK(std::isfinite(callback.gradient[2]) && std::isnan(callback.hessian[5]));
+        CHECK(spans(trace, "solve_equilibrium") == 0);
+        CHECK(spans(trace, "solved_state_actions") == 4); // four live first directions
+        for (int row = 0; row < 6; ++row) CHECK(callback(2, row) == values[row]);
+        CHECK(std::isfinite(callback.hessian[5]));
+        CHECK(spans(trace, "solve_equilibrium") == 0);
+    }
+}
+
+void check_legacy_rank_refusal() {
+    Callback callback;
+    callback.q[2] += 0.0053;
+    auto& prepared = equilibrium_contexts;
+    constexpr auto row = "phase[0].amount[0]";
+    auto& context = prepared.find(callback.record, "equilibrium", [&] { return prepare_equilibrium(callback.record.c_str(), row); });
+    auto& state = select_state(context, {callback.q.begin(), callback.q.end()}, row);
+    // Start from an admitted state and duplicate one defining row. Both rows
+    // are satisfied at q, but the implicit Jacobian has lost a rank.
+    auto& compiled = *state.compiled;
+    compiled.rows[0] = compiled.rows[1];
+    state.central.rows[0] = compiled.rows[0];
+    callback.fixed.fill(1);
+    const auto cold = callback.call(2, EquilibriumOrder::Exact);
+    CHECK(std::isnan(cold.first) && cold.second.find("rank_deficient") != std::string::npos);
+    const auto value = callback.call(2, EquilibriumOrder::Value);
+    CHECK(std::isfinite(value.first) && value.second.empty());
+    const auto after = callback.call(2, EquilibriumOrder::Exact);
+    CHECK(std::isnan(after.first) && after.second == cold.second);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.regression.asl-reactive-lle-interleaved-cache", "ASLReactiveLLEInterleavedCache"}, check_interleaved_cache},
+        {{"native.regression.asl-equilibrium-value-order", "ASLEquilibriumValueOrder"}, check_value_order},
+        {{"native.regression.asl-equilibrium-legacy-rank-refusal", "ASLEquilibriumLegacyRankRefusal"}, check_legacy_rank_refusal},
     });
 }

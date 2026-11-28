@@ -1370,6 +1370,7 @@ EPC_API SolvedStateActionBatch solved_state_actions(
     const EquilibriumResult& central,
     const SolvedStateActionRequest& request
 );
+SolvedStateActionResult solved_state_enthalpy_value(const CompiledSystem& compiled, const EquilibriumResult& central);
 // The ASL reader resets this workspace before replacing its compiled system or result.
 struct SolvedStateActionWorkspace;
 EPC_API SolvedStateActionBatch solved_state_actions_prepared(const CompiledSystem& compiled, const EquilibriumResult& central,
