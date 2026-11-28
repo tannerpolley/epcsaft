@@ -304,11 +304,11 @@ $$
 - Section: Born solvation relations
 - Status: Source equation
 - Source: [Figiel2025], Eqs.~(8)--(10), parameterized to include its uncorrected limit
-- Description: Ion-specific outer Born shell diameter with one explicit fixed correction coefficient.
+- Description: Ion-specific outer Born shell diameter with one explicit fixed correction coefficient. The set S contains the ions and declared solvents in the subset average.
 - Change note: The fitted Born diameter, solvation factor, and model-definition coefficient remain distinct inputs.
 
 $$
-f_{\mathrm{mix}}=\frac{\sum_kx_kf_k}{\sum_kx_k},\qquad
+f_{\mathrm{mix}}=\frac{\sum_{k\in S}x_kf_k}{\sum_{k\in S}x_k},\qquad
 D_i=d_i^{Born}\left(1+c_{\mathrm{shell}}\frac{f_{\mathrm{mix}}-1}{|z_i|}\right).
 $$
 

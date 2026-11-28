@@ -38,7 +38,7 @@ FIELDS(core::ConditioningObservation, operation, basis, norm, method, cause, poi
     precision_bits, attempt, stage, iteration, threshold, condition, matrix_norm, error, criterion_value, coordinates,
     row_scale, column_scale, controls, phase, component, export_displacement, available)
 FIELDS(core::NumericalRank, basis, dimension, rank, threshold, observation, first_conditioning_warning)
-FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, A, B, solvent_molar_volume, C, D, E, F, G, H, I, J, K, L, M, N)
+FIELDS(FixedParameters, ideal_gas, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, born_solvation_membership, v, w, x, y, z, A, B, solvent_molar_volume, C, D, E, F, G, H, I, J, K, L, M, N)
 FIELDS(IdealPolynomial, a, b, c, d)
 FIELDS(IdealCorrelation, a, b)
 FIELDS(IdealInterval, a, b, c, d, e)

@@ -648,13 +648,20 @@ root solve. No cross-family diameter tie or coupled hold is qualified here.
 Figiel2025 defines a fitted `d_i^Born` and the shell thickness
 
 ```text
-f_mix = sum_k x_k f_k / sum_k x_k,
+f_mix = sum_(k in S) x_k f_k / sum_(k in S) x_k,
 Delta d_i = [(f_mix - 1)/|z_i|] d_i^Born,
 D_i = d_i^Born + Delta d_i.
 ```
 
-For the admitted systems the sum contains only solvents and ions and therefore
-`sum_k x_k = 1`. Ion values `f_i = 1` are source records, not defaults.
+The optional component field `fixed.born_solvent.value` takes magnitude 1
+for a declared solvent or 0 for a non-solvent, with unit `dimensionless`.
+With any declaration, S contains the declared solvents and every ion.
+Without declarations, S contains every component. Ion factors use their
+recorded values. Figiel specifies `f_i = 1`.
+
+When the subset has zero mole fraction, the Engine sets `f_mix = 1`.
+Such a phase has zero Born energy and uses the unexpanded shell for ion
+insertion. This allows neutral phases whose support contains only non-solvents.
 
 ### Corrected Eq. (7)
 

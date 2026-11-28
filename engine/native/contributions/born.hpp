@@ -2,6 +2,7 @@
 
 #include "core/parameters.hpp"
 #include "core/physical_constants.hpp"
+#include "core/scalar.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -42,10 +43,25 @@ Scalar born_contribution(
 
     Fixed fraction_sum = Fixed(0.0);
     Fixed weighted_solvation = Fixed(0.0);
-    for (std::size_t component = 0; component < mole_fractions.size(); ++component) {
+    const auto accumulate = [&](std::size_t component) {
         const Fixed solvation_factor = Fixed(parameters.solvation_factor[component]);
         fraction_sum += mole_fractions[component];
         weighted_solvation += mole_fractions[component] * solvation_factor;
+    };
+    const auto& membership = parameters.born_solvation_membership;
+    if (membership.empty()) {
+        for (std::size_t component = 0; component < mole_fractions.size(); ++component)
+            accumulate(component);
+    } else {
+        for (std::size_t component = 0; component < mole_fractions.size(); ++component)
+            if (membership[component]) accumulate(component);
+        // A solvent-free, ion-free phase uses the unexpanded Born shell for ion insertion.
+        if constexpr (std::is_arithmetic_v<Fixed> || std::is_same_v<Fixed, WiderScalar> || is_taylor<Fixed>) {
+            if (fraction_sum == Fixed(0.0)) weighted_solvation = fraction_sum = Fixed(1.0);
+        } else {
+            weighted_solvation = CppAD::CondExpEq(fraction_sum, Fixed(0.0), Fixed(1.0), weighted_solvation);
+            fraction_sum = CppAD::CondExpEq(fraction_sum, Fixed(0.0), Fixed(1.0), fraction_sum);
+        }
     }
     if constexpr (std::is_same_v<Scalar, double>) {
         if (!(fraction_sum > 0.0) || !std::isfinite(weighted_solvation))

@@ -79,6 +79,25 @@ def test_cation_mixing_with_zero_dodecane_preserves_aqueous_state() -> None:
     assert old.cation_mixing == new.cation_mixing != 0
 
 
+def test_born_solvent_entries_follow_the_selected_components(tmp_path: Path) -> None:
+    packet_id = "mea-co2-h2o-nine-species-estimation/3"
+    doc = packet(packet_id)
+    water = next(c for c in doc["components"] if c["component_id"] == "water")
+    water["fixed"]["born_solvent"] = {"value": {"magnitude": 1, "unit": "dimensionless"}}
+    names = ["carbon-dioxide", "water"]
+
+    def markers(p: Parameters) -> list[Any]:
+        return [(index, magnitude, unit) for _, field, index, magnitude, unit in native(p)[-1]
+                if field == "born_solvent"]
+
+    assert markers(Parameters.from_mapping(doc, components=names)) == [((1,), 1.0, "dimensionless")]
+    assert markers(Parameters.from_mapping(doc, components=names[:1])) == [((0,), 0.0, "dimensionless")]
+    target = tmp_path / packet_id / "parameters/parameters.json"
+    target.parent.mkdir(parents=True)
+    target.write_text(json.dumps(doc))
+    assert markers(Parameters.from_packets(tmp_path, [(packet_id, names[:1])])) == [((0,), 0.0, "dimensionless")]
+
+
 def test_entries_read_before_reassignment_stay_valid() -> None:
     """#1100: entries are copies; a list read earlier once dangled after the setter replaced the vector and aborted the process."""
     d: Any = Parameters.from_mapping(packet("gross-sadowski-2001/3"), components=["methane", "ethane"])._document

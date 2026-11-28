@@ -10,6 +10,7 @@ void reference_taylor_batch_model();
 void thread_exit_hessian();
 void residual_cv_temperature_extraction();
 void born_parameter_columns();
+void born_solvation_subset();
 void reference_f8();
 void reference_f9();
 void reference_taylor_signed_zero();
@@ -56,6 +57,7 @@ int main(int argc, char** argv) {
         {{"native.properties.thread-exit", "ThreadExit"}, thread_exit_hessian},
         {{"native.properties.residual-cv-temperature-extraction", "ResidualCvTemperature"}, residual_cv_temperature_extraction},
         {{"native.properties.born-parameter", "BornParameter"}, born_parameter_columns},
+        {{"native.properties.born-solvation", "BornSolvation"}, born_solvation_subset},
         {{"native.properties.reference-f8", "F8"}, reference_f8, "F8"},
         {{"native.properties.reference-f9", "F9"}, reference_f9, "F9"},
         {{"native.properties.reference-taylor-signed-zero", "reference-taylor-signed-zero"}, reference_taylor_signed_zero},
