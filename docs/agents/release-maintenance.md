@@ -26,6 +26,8 @@ corresponding-source set with the archive, exact dependency sources, Boost
 headers, notices, patch and recipe, and verify its inner and outer checksums.
 The committed recipe keeps the previous published archive hash until the new
 asset exists; the local test recipe and source-set recipe use the candidate hash.
+After publication, a follow-up PR sets the committed recipe hash to the
+published archive's SHA-256.
 Tags, uploads, releases and Windows probe branches require release authority.
 
 After merges, `tools/refresh-main-wheel` compares retained previous/candidate
