@@ -11,7 +11,7 @@ an installation with a native pressure closure.
 ## Conda package
 
 Prebuilt packages are distributed through conda. PyPI has no ePC-SAFT package.
-Install release 0.1.1 from the `tannerwpolley` channel. Linux (linux-64) and
+Install release 0.1.2 from the `tannerwpolley` channel. Linux (linux-64) and
 Windows (win-64) support Python 3.12, 3.13 and 3.14. There is no published macOS
 package.
 
@@ -19,7 +19,7 @@ Replace `python=3.13` below with `python=3.12` or `python=3.14` to choose
 another supported version:
 
 ```bash
-conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=0.1.1
+conda create -n epcsaft -c conda-forge -c tannerwpolley python=3.13 epcsaft=0.1.2
 conda activate epcsaft
 python -c 'import epcsaft; print(epcsaft.__file__)'
 ```

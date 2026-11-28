@@ -1,5 +1,5 @@
 {
-  "title": "ePC-SAFT: an electrolyte equation-of-state engine with exact derivatives for phase and reaction equilibrium and parameter estimation",
+  "title": "ePC-SAFT 0.1.2",
   "upload_type": "software",
   "creators": [
     {
@@ -9,7 +9,7 @@
     }
   ],
   "license": "GPL-3.0",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "GPL version 3 with the additional permission under section 7 for linking with EPL-licensed Ipopt; see LICENSE. Retained third-party data have separate terms in NOTICE.",
   "doi": "10.5281/zenodo.23634228",
   "related_identifiers": [
