@@ -495,13 +495,14 @@ void register_equilibrium(nb::module_& module) {
         nb::arg("fraction"), nb::arg("floor"));
     module.def("equilibrium_asl_record", [](const ParameterDocument& document, const HelmholtzModel& model, const EquilibriumProblem& problem,
             const ContinuationOptions& continuation, std::vector<double> offset, std::vector<std::vector<double>> matrix,
-            std::vector<double> anchor, std::size_t identity_component, double minimum_gap) {
-        AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap};
+            std::vector<double> anchor, std::size_t identity_component, double minimum_gap, bool warm_start) {
+        AslFeedMap map{std::move(offset), std::move(anchor), std::move(matrix), identity_component, minimum_gap, warm_start};
         map.validate(problem, model.parameters());
         compile_problem(model, problem);
         return asl_record(document, model.active_parameters(), model.thermochemistry(), problem, continuation, map, model.solver_options());
     }, nb::arg("document"), nb::arg("model"), nb::arg("problem"), nb::arg("continuation"), nb::arg("feed_offset"),
-       nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"));
+       nb::arg("feed_matrix"), nb::arg("anchor_controls"), nb::arg("identity_component"), nb::arg("minimum_gap"),
+       nb::kw_only(), nb::arg("warm_start") = false);
     module.def("linear_solver", [] { return linear_solver(); });  // the process-level record
     module.def("compile_problem", nb::overload_cast<const HelmholtzModel&, const EquilibriumProblem&, const std::vector<std::string>&>(&compile_problem),
         nb::arg("model"), nb::arg("problem"), nb::arg("component_ids") = std::vector<std::string>{}, nb::keep_alive<0, 1>());

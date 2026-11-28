@@ -1029,7 +1029,7 @@ def compile_problem(model: _Model | IdealMoleFraction, problem: Problem | _core.
 
 def asl_record(model: Mixture, problem: Problem, continuation: _core.ContinuationOptions, feed_offset: Sequence[float],
                feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
-               identity_component: int, minimum_gap: float) -> str:
+               identity_component: int, minimum_gap: float, *, warm_start: bool | None = None) -> str:
     """Serialize the admitted two-liquid equilibrium and affine feed map for ASL.
 
     Parameters
@@ -1050,6 +1050,9 @@ def asl_record(model: Mixture, problem: Problem, continuation: _core.Continuatio
         Component index used to preserve two-phase identity.
     minimum_gap : float
         Positive dimensionless mole-fraction separation required for that identity.
+    warm_start : bool, optional
+        Reuse a nearby solved feed for reactive liquid–liquid equilibrium without solids. Defaults to false.
+        A warm start can reach a different stationary split than cold, so qualify it per use.
 
     Returns
     -------
@@ -1067,7 +1070,7 @@ def asl_record(model: Mixture, problem: Problem, continuation: _core.Continuatio
     """
     document = _record_document(model.parameters)
     return _core.equilibrium_asl_record(document, model._model, problem._native(model), continuation, feed_offset, feed_matrix,
-                                        anchor_controls, identity_component, minimum_gap)
+                                        anchor_controls, identity_component, minimum_gap, warm_start=bool(warm_start))
 
 
 solved_state_actions = _core.solved_state_actions

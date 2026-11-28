@@ -455,6 +455,10 @@ record = eq.asl_record(model, problem, continuation, feed_offset,
 print(len(record))                                            # characters in the encoded record
 ```
 
+For reactive liquid–liquid equilibrium without solids, `asl_record(..., warm_start=True)` allows the callback to reuse
+a nearby solution from the same record at the same T, P and active parameter values. The option defaults to false.
+A warm start can reach a different stationary split than cold, so qualify it per use.
+
 Controls and returned amounts are mol on the caller's declared batch basis. The system enthalpy is the total
 enthalpy of the same solved state in J on that basis: neutral species take their ideal-gas part from the model
 thermochemistry and ions theirs from the reaction references, so its zero is the declared thermochemistry's formation

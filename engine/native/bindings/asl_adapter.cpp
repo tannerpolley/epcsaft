@@ -185,6 +185,7 @@ struct EquilibriumContext final {
         eq::EquilibriumResult central;
         std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
         std::optional<double> enthalpy_value;
+        bool action_refused = false;  // Disqualify the seed until eviction, even if another read succeeds.
         struct Rows final {
             std::vector<double> values;
             std::vector<std::vector<double>> gradients, hessians;
@@ -285,6 +286,37 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
     return result.states.back();
 }
 
+bool solve_from_previous(const EquilibriumContext& context, EquilibriumContext::State& state,
+                         const eq::EquilibriumProblem& target, const std::string& observable) {
+    const eq::EquilibriumResult* seed = nullptr;
+    double distance = std::numeric_limits<double>::infinity();
+    for (const auto& previous : context.states) {
+        const auto& result = previous.central;
+        if (previous.action_refused || previous.model != state.model || !bitwise_equal(previous.q[0], state.q[0])
+            || !bitwise_equal(previous.q[1], state.q[1]) || !result.requested_tolerance_met.value_or(false) || !result.optimizer_state)
+            continue;
+        const auto& feed = previous.compiled->n_feed;
+        const double delta = std::inner_product(feed.begin(), feed.end(), target.feed.values.begin(), 0.0,
+            std::plus<>(), [](double a, double b) { return std::abs(a - b); });
+        if (delta < distance) {
+            distance = delta;
+            seed = &result;
+        }
+    }
+    if (!seed) return false;
+    try {
+        auto warm = eq::solve_equilibrium_retaining_compiled(*state.model, target, state.compiled, *seed);
+        if (warm.attempt == eq::Attempt::Warm && warm.requested_tolerance_met.value_or(false)
+            && !central_failure(context, warm, observable)) {
+            state.central = std::move(warm);
+            return true;
+        }
+    } catch (const std::bad_alloc&) { throw; }
+    catch (const std::exception&) { /* The declared cold solve owns the refusal. */ }
+    state.compiled.reset();
+    return false;
+}
+
 // q = (T, P, feed controls, theta). Keep each solved state with the model that owns its compiled system.
 EquilibriumContext::State solve_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
@@ -310,7 +342,7 @@ EquilibriumContext::State solve_state(EquilibriumContext& context, const std::ve
     auto& direct_compiled = state.compiled;
     const bool shifted = state.model != context.model;
     if (!moved && !shifted) central = context.anchor_result;
-    else {
+    else if (!context.map.warm_start || !solve_from_previous(context, state, target, observable)) {
         std::optional<EquilibriumFailure> refused;
         std::string direct;  // the direct solve's refusal; empty when it succeeds
         try {
@@ -362,7 +394,7 @@ EquilibriumContext::State& select_state(EquilibriumContext& context, const std::
 // ponytail: a caller reading both kinds at a new q pays both batches; the upgrade is
 // one combined batch with per-row failure orders, as PropertyContext::Branch::failures keeps, which could also fill the
 // amount rows from an enthalpy call when they are all available.
-eq::SolvedStateActionBatch actions(const EquilibriumContext& context, EquilibriumContext::State& state, const std::vector<int>& coordinates, int kind) {
+eq::SolvedStateActionBatch actions(const EquilibriumContext& context, EquilibriumContext::State& state, const std::vector<int>& coordinates, int kind) try {
     eq::SolvedStateActionRequest request;
     if (kind == 1) request.observables.push_back({eq::SolvedStateObservableKind::SystemEnthalpy});
     for (std::size_t phase = 0; kind == 0 && phase < context.anchor.phases.size(); ++phase)
@@ -399,6 +431,9 @@ eq::SolvedStateActionBatch actions(const EquilibriumContext& context, Equilibriu
     }
     state.rows[kind].filled[0] = 1;
     return batch;
+} catch (...) {
+    if (context.map.warm_start) state.action_refused = true;
+    throw;
 }
 
 // A solver only sees an evaluation error; name the typed cause and the trial real arguments.
@@ -456,8 +491,10 @@ double equilibrium_observable(arglist* arguments, int kind, EquilibriumOrder ord
             if (rows.filled[0]) return rows.values[row];
             const auto& central = state.central;
             if (central.requested_tolerance_met.value_or(false)
-                && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+                && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value) {
+                if (context.map.warm_start) state.action_refused = true;
                 throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
+            }
             if (kind == 0) {
                 // Match the action's composition normalization before multiplying by the phase amount.
                 const auto& x = central.prepared_endpoint->composition[p];

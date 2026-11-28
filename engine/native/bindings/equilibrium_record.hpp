@@ -15,6 +15,7 @@ struct AslFeedMap {
     std::vector<std::vector<double>> matrix;
     std::size_t identity_component = 0;
     double minimum_gap = 0.0;
+    bool warm_start = false;
     std::vector<double> amounts(const std::vector<double>& q, bool direction = false) const {
         auto result = direction ? std::vector<double>(offset.size(), 0.0) : offset;
         for (std::size_t i = 0; i < result.size(); ++i)
@@ -35,6 +36,9 @@ struct AslFeedMap {
         require(pair ? identity_component < n && std::isfinite(minimum_gap) && minimum_gap > 0.0
                      : problem.phases.size() == 1 && !problem.solids.empty() && !identity_component && minimum_gap == 0.0,
                 "two phases with an identity component and a positive gap, or one phase beside solids with neither");
+        if (warm_start)
+            require(pair && problem.phases[0].kind == PhaseKind::Liquid && problem.phases[1].kind == PhaseKind::Liquid
+                    && !problem.reactions.empty() && problem.solids.empty(), "warm start requires reactive liquid-liquid equilibrium without solids");
         for (const auto& solid : problem.solids) require(solid.amount.kind == AmountKind::Free, "every solid amount free");
         require(problem.topology_declared, "declared topology");
         // At least one liquid; a vapor's declared support holds only zero-charge components.
@@ -278,6 +282,7 @@ template <class A> void equilibrium_record(A& a, ParameterDocument& d, std::vect
     thermochemistry(a, t);
     a.tag("continuation_options"); a.number(options.initial_step); a.number(options.minimum_step);
     a.whole(options.max_steps, SIZE_MAX); a.whole(options.max_retries_per_step, SIZE_MAX);  // continue_equilibrium validates both
+    map.warm_start = a.present("warm_start", map.warm_start);
     a.tag("feed_offset"); list(a, map.offset, numbers(a));
     a.tag("feed_matrix"); list(a, map.matrix, [&a](std::vector<double>& row) { list(a, row, numbers(a)); });
     a.tag("anchor_controls"); list(a, map.anchor, numbers(a));
