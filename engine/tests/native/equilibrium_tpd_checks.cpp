@@ -3270,6 +3270,57 @@ void check_mdea_bubble_recovery() {
     }
 }
 
+void check_mdea_trace_loading_bubble() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mdea-trace-loading-bubble.inc"
+    const double tolerance = bubble.solver_options.value(policy::row);
+    const auto seed = solve_equilibrium(model, bubble);
+    CHECK(seed.has_state() && seed.requested_tolerance_met.value_or(false));
+    CHECK(close_with_tolerance(*seed.pressure, 7345.449781136624, tolerance));
+    CHECK(close_with_tolerance(seed.amounts.at(0), 212.7659574469743, tolerance));
+    CHECK(seed.amounts.at(1) == 0.0);
+
+    ContinuationRequest path{bubble, bubble, seed, {0.1, 1e-5, 200, 20}, {}};
+    auto& target = path.target_problem;
+    target.feed.values[0] = 0.0015723437500000002;
+    {
+        core::Capture capture(true);
+        const auto warm = solve_equilibrium(model, target, seed);
+        std::printf("direct warm start: %s, %s\n", warm.solver_status.c_str(), warm.message.c_str());
+        CHECK(!warm.success && !warm.has_state());
+        CHECK(warm.convergence.stop == core::Stop::stalled && warm.solver_status != "INVALID_NUMBER_DETECTED");
+        CHECK(!warm.terminal_numerical_failure);
+        // The existing warm retry records an Ipopt restoration stop in this field.
+        CHECK(!warm.first_numerical_failure
+            || warm.first_numerical_failure->cause == "Ipopt callback: warm attempt stopped on restoration");
+        for (const auto* attempt : {&warm.ipopt_diagnostics, &warm.recovered_ipopt_diagnostics})
+            CHECK(!*attempt || (*attempt)->application_return != Ipopt::Invalid_Number_Detected);
+        CHECK(std::isfinite(warm.convergence.residual) && warm.convergence.residual > tolerance);
+        CHECK(warm.hessian_calls > 0 && !warm.residuals.empty() && std::isfinite(maximum_abs(warm.residuals)));
+        CHECK(!capture.trace().incomplete);
+        CHECK(std::none_of(capture.trace().spans.begin(), capture.trace().spans.end(), [](const auto& span) {
+            return span.convergence && span.convergence->stop == core::Stop::nonfinite;
+        }));
+    }
+    const auto continued = continue_equilibrium(model, path);
+    std::printf("continuation: %s, %zu accepted steps\n", continued.message.c_str(), continued.accepted_steps);
+    CHECK(continued.success && continued.stop == ContinuationStop::reached_target && continued.accepted_steps > 0);
+    CHECK(!continued.states.empty());
+    const auto& endpoint = continued.states.back();
+    const auto cold = solve_equilibrium(model, target);
+    for (const auto* state : {&endpoint, &cold}) {
+        CHECK(state->has_state() && state->requested_tolerance_met.value_or(false));
+        std::printf("%s: P=%.17g Pa, liquid=%.17g mol, vapor=%.17g mol, residual=%.17g\n",
+            state == &endpoint ? "continued" : "cold", *state->pressure,
+            state->amounts.at(0), state->amounts.at(1), state->convergence.residual);
+        CHECK(state->convergence.residual <= tolerance);
+        CHECK(state->amounts.at(1) == 0.0);
+    }
+    CHECK(close_with_tolerance(*endpoint.pressure, *cold.pressure, tolerance));
+    CHECK(close_with_tolerance(endpoint.amounts.at(0), cold.amounts.at(0), tolerance));
+}
+
 void check_mdea_bubble_refusal_work() {
     using namespace epcsaft;
     using namespace epcsaft::equilibrium;

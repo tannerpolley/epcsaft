@@ -1796,6 +1796,9 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
             if (parameters_.charge_number[i] != 0 && amounts[i] > 0.0 && s * v > amounts[i])
                 s = std::ldexp(1.0, std::ilogb(amounts[i] / v));
         }
+        // Combine the inverse scale with each repeated direction's norm so s*s cannot underflow.
+        for (std::size_t i = 0; i < order; ++i)
+            if (i != repeated->first) norms[i] /= s;
         for (const double sign : {1.0, -1.0}) {
             std::vector<std::vector<double>> series(6, std::vector<double>(width, 0.0));
             series[0] = point;
@@ -1804,7 +1807,7 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
                 series[3][i] = sign * normalized[repeated->first][i];
             coefficient += sign * tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
-                &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, sign < 0 ? 3 : 0).front() / (s * s);
+                &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, sign < 0 ? 3 : 0).front();
             ++result.diagnostics.directional_paths;
         }
     } else if (shared && order == 3) {

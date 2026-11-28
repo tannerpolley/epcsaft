@@ -62,6 +62,7 @@ void check_piperazine_a12s_bubble_stability();
 void check_mdea_bubble_work_limit();
 void check_mdea_bubble_recovery();
 void check_mdea_bubble_refusal_work();
+void check_mdea_trace_loading_bubble();
 void check_bubble_branch_end();
 void check_reaction_relaxed_search();
 void check_reaction_relaxed_pz_row();
@@ -167,6 +168,7 @@ int main(int argc, char** argv) {
         {{"native.equilibrium.piperazine-a12s-bubble-stability", "piperazine-a12s-bubble-stability", "Automatic_fast"}, check_piperazine_a12s_bubble_stability},
         {{"native.equilibrium.mdea-bubble-work-limit", "mdea-bubble-work-limit", "Automatic_fast"}, check_mdea_bubble_work_limit},
         {{"native.equilibrium.mdea-bubble-recovery", "mdea-bubble-recovery", "Automatic_fast"}, check_mdea_bubble_recovery},
+        {{"native.equilibrium.mdea-trace-loading-bubble", "mdea-trace-loading-bubble", "Automatic_fast"}, check_mdea_trace_loading_bubble},
         {{"native.equilibrium.mdea-bubble-refusal-work", "mdea-bubble-refusal-work", "Automatic_fast"}, check_mdea_bubble_refusal_work},
         {{"native.equilibrium.bubble-branch-end", "bubble-branch-end", "Automatic_fast"}, check_bubble_branch_end},
         {{"native.equilibrium.reaction-relaxed-search", "reaction-relaxed-search", "Automatic_fast"}, check_reaction_relaxed_search},
