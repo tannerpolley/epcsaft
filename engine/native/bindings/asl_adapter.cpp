@@ -421,13 +421,10 @@ double report_failure(arglist* arguments, const char* callback, bool value_only 
 // the exact order, no Hessian pair is computed and its read entries keep the NaN written on entry.
 enum class EquilibriumOrder { Value, First, Exact };
 
-Prepared<EquilibriumContext>& equilibrium_contexts() {
-    static Prepared<EquilibriumContext> prepared;
-    return prepared;
-}
+Prepared<EquilibriumContext> equilibrium_contexts;
 
 double equilibrium_observable(arglist* arguments, int kind, EquilibriumOrder order = EquilibriumOrder::Exact) {
-    auto& prepared = equilibrium_contexts();
+    auto& prepared = equilibrium_contexts;
     std::lock_guard<std::mutex> lock(prepared.mutex);
     const bool value_only = order == EquilibriumOrder::Value;
     std::string observable = "request";
@@ -461,7 +458,11 @@ double equilibrium_observable(arglist* arguments, int kind, EquilibriumOrder ord
             if (central.requested_tolerance_met.value_or(false)
                 && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value)
                 throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
-            if (kind == 0) return central.amounts[p] * central.mole_fractions[row];
+            if (kind == 0) {
+                // Match the action's composition normalization before multiplying by the phase amount.
+                const auto& x = central.prepared_endpoint->composition[p];
+                return central.amounts[p] * (x[c] * (1.0 / std::accumulate(x.begin(), x.end(), 0.0)));
+            }
             if (kind == 2) return central.solid_amounts[p];
             // A value carries no sensitivity rank certificate. Only actions() may set filled[0].
             if (!state.enthalpy_value) {

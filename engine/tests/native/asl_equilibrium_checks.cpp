@@ -101,24 +101,27 @@ void check_interleaved_cache() {
 void check_value_order() {
     Callback callback;
     callback.q[2] += 0.0047;
-    double value;
+    std::array<double, 6> values;
     {
         epcsaft::core::Capture trace(true);
-        const auto result = callback.call(2, EquilibriumOrder::Value);  // conval supplies both buffers
-        value = result.first;
-        CHECK(std::isfinite(value) && result.second.empty());
-        CHECK(callback.call(2, EquilibriumOrder::Value).first == value);
+        for (int row = 0; row < 6; ++row) {
+            const auto result = callback.call(2, EquilibriumOrder::Value, row);  // conval supplies both buffers
+            values[row] = result.first;
+            CHECK(std::isfinite(values[row]) && result.second.empty());
+            CHECK(callback.call(2, EquilibriumOrder::Value, row).first == values[row]);
+        }
         CHECK(spans(trace, "solve_equilibrium") > 0);
         CHECK(spans(trace, "solved_state_actions") == 0);
     }
     {
         epcsaft::core::Capture trace(true);
         const auto [first, error] = callback.call(2, EquilibriumOrder::First);
-        CHECK(std::abs(value - first) <= 1e-10 * std::abs(first) && error.empty());
+        CHECK(values.front() == first && error.empty());
         CHECK(std::isfinite(callback.gradient[2]) && std::isnan(callback.hessian[5]));
         CHECK(spans(trace, "solve_equilibrium") == 0);
         CHECK(spans(trace, "solved_state_actions") == 4); // four live first directions
-        CHECK(callback(2) == first && std::isfinite(callback.hessian[5]));
+        for (int row = 0; row < 6; ++row) CHECK(callback(2, row) == values[row]);
+        CHECK(std::isfinite(callback.hessian[5]));
         CHECK(spans(trace, "solve_equilibrium") == 0);
     }
 }
@@ -126,7 +129,7 @@ void check_value_order() {
 void check_legacy_rank_refusal() {
     Callback callback;
     callback.q[2] += 0.0053;
-    auto& prepared = equilibrium_contexts();
+    auto& prepared = equilibrium_contexts;
     constexpr auto row = "phase[0].amount[0]";
     auto& context = prepared.find(callback.record, "equilibrium", [&] { return prepare_equilibrium(callback.record.c_str(), row); });
     auto& state = select_state(context, {callback.q.begin(), callback.q.end()}, row);
