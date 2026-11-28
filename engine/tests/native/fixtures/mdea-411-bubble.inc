@@ -1,42 +1,4 @@
 // #239 native reproducer with the frozen #411 endpoint parameters shared by the Kim test.
 #include "kim_pure_water.inc"
 const HelmholtzModel model(build_parameters(document));
-EquilibriumProblem bubble;
-bubble.pressure = FreeValue::variable(100000.0);
-bubble.source_reference = NeutralReferenceDeclaration{1, {0.125, 0.0, 0.125, 0.03125, 0.125, 0.0625, 0.125, 0.125}, 1.0, {}};
-PhaseSpec phase_0;
-phase_0.name = "L";
-phase_0.kind = PhaseKind::Liquid;
-phase_0.support = {0, 1, 2, 3, 4, 5, 6, 7};
-phase_0.support_declared = true;
-PhaseSpec phase_1;
-phase_1.name = "V";
-phase_1.kind = PhaseKind::Vapor;
-phase_1.support = {0, 1, 6};
-phase_1.support_declared = true;
-phase_1.amount = AmountSpec::pinned(0.0);
-bubble.phases = {phase_0, phase_1};
-ReactionSpec reaction_0;
-reaction_0.name = "R1";
-reaction_0.stoichiometry = {0.0, -2.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0};
-reaction_0.correlation = ReactionLogPolynomial{3.7290977365566675, -13445.9, -22.4773, 0.0, 313.15, 288.71, 422.04, "aqueous-mole-fraction-infinite-dilution-water-v1"};
-reaction_0.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
-bubble.reactions.push_back(reaction_0);
-ReactionSpec reaction_1;
-reaction_1.name = "R2";
-reaction_1.stoichiometry = {-1.0, -2.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0};
-reaction_1.correlation = ReactionLogPolynomial{24.109329984336796, -12092.1, -36.7816, 0.0, 313.15, 288.71, 422.04, "aqueous-molality-infinite-dilution-water-v1"};
-reaction_1.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::CommonMolalityInfiniteDilution};
-bubble.reactions.push_back(reaction_1);
-ReactionSpec reaction_2;
-reaction_2.name = "R3";
-reaction_2.stoichiometry = {0.0, -1.0, -1.0, 1.0, 1.0, 0.0, 0.0, 0.0};
-reaction_2.correlation = ReactionLogPolynomial{12.145792981306897, -12431.7, -35.4819, 0.0, 313.15, 288.71, 422.04, "aqueous-mole-fraction-infinite-dilution-water-v1"};
-reaction_2.reference = ReactionReference{std::nullopt, ReferenceSourceBasis::RawMoleFractionInfiniteDilution};
-bubble.reactions.push_back(reaction_2);
-ReactionSpec reaction_3;
-reaction_3.name = "MDEA-dissociation";
-reaction_3.stoichiometry = {0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0, -1.0};
-reaction_3.correlation = ReactionLogPolynomial{-16.398914976729678, -819.7, 10.976, 0.0, 313.15, 288.71, 422.04, "aqueous-molality-infinite-dilution-water-v1"};
-reaction_3.reference = ReactionReference{100000.0, ReferenceSourceBasis::CommonMolalityInfiniteDilution};
-bubble.reactions.push_back(reaction_3);
+#include "mdea-bubble.inc"
