@@ -39,6 +39,12 @@ constexpr double invalid_value = std::numeric_limits<double>::quiet_NaN();
 // ASL reads no partial with respect to a real argument it marks in `dig` (a constant of the problem); those stay untouched.
 bool live(const arglist* arguments, int i) { return arguments->dig == nullptr || arguments->dig[i] == 0; }
 
+template<class State>
+void remember_state(std::list<State>& states, State state, std::size_t capacity) {
+    states.push_front(std::move(state));
+    if (states.size() > capacity) states.pop_back();
+}
+
 void invalidate(arglist* arguments) {
     if (arguments == nullptr) return;
     for (int j = 0, packed = 0; j < arguments->nr; ++j) {
@@ -167,21 +173,24 @@ private:
 
 struct EquilibriumContext final {
     std::string record;
-    // The record's model at theta0, which owns anchor_result, and the model at another theta.
-    std::unique_ptr<HelmholtzModel> model, shifted;
+    std::shared_ptr<const HelmholtzModel> model;
     eq::EquilibriumProblem anchor;
     eq::ContinuationOptions options;
     eq::AslFeedMap map;
     eq::EquilibriumResult anchor_result;
-    std::optional<eq::CompiledSystem> compiled;
-    eq::EquilibriumResult central;
-    std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
-    std::vector<double> feed;  // the q of `compiled` and `central`; a null `compiled` is no valid solved state
-    struct Rows final {
-        std::vector<double> values;
-        std::vector<std::vector<double>> gradients, hessians;
-        std::vector<char> filled;  // at `feed`: [0] the values, then each gradient column, then each packed Hessian pair
-    } rows[2];  // 0: the F C phase-component amounts, then the S solid amounts; 1: the system enthalpy
+    struct State final {
+        std::vector<double> q;
+        std::shared_ptr<const HelmholtzModel> model;  // owns the model used by compiled and central
+        std::optional<eq::CompiledSystem> compiled;
+        eq::EquilibriumResult central;
+        std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
+        struct Rows final {
+            std::vector<double> values;
+            std::vector<std::vector<double>> gradients, hessians;
+            std::vector<char> filled;  // values, gradient columns, then packed Hessian pairs
+        } rows[2];  // 0: phase-component and solid amounts; 1: system enthalpy
+    };
+    std::list<State> states;
 };
 
 std::string conditioning_warnings(const std::vector<epcsaft::core::NumericalRank>& records) {
@@ -233,17 +242,8 @@ std::unique_ptr<EquilibriumContext> prepare_equilibrium(const char* raw, const s
     auto& problem = context->anchor;
     eq::equilibrium_record(reader, document, active, thermochemistry, problem, context->options, context->map);
     reader.finish();
-    context->model = std::make_unique<HelmholtzModel>(epcsaft::build_parameters(document), active, thermochemistry, problem.solver_options);
+    context->model = std::make_shared<HelmholtzModel>(epcsaft::build_parameters(document), active, thermochemistry, problem.solver_options);
     context->map.validate(problem, context->model->parameters());
-    const std::size_t counts[2] = {problem.phases.size() * document.component_ids.size() + problem.solids.size(), 1};
-    const std::size_t n = 2 + context->map.anchor.size() + active.size();
-    for (int kind = 0; kind < 2; ++kind) {
-        auto& rows = context->rows[kind];
-        rows.values.resize(counts[kind]);
-        rows.gradients.assign(counts[kind], std::vector<double>(n));
-        rows.hessians.assign(counts[kind], std::vector<double>(n * (n + 1) / 2));
-        rows.filled.assign(1 + n + n * (n + 1) / 2, 0);
-    }
     context->anchor_result = eq::solve_equilibrium(*context->model, problem);
     if (auto failure = central_failure(*context, context->anchor_result, observable)) throw *failure;
     context->record = raw;
@@ -265,10 +265,10 @@ ActionStatus continuation_status(eq::ContinuationStop stop) {
 
 // One native continuation leg from the current central state to `to`; its stop is logged and named after the direct failure.
 eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const HelmholtzModel& model, const eq::EquilibriumProblem& to,
-    const std::vector<double>& targets, const std::string& direct, const char* name, const std::string& observable) {
+    const eq::EquilibriumResult& from, const std::vector<double>& targets, const std::string& direct, const char* name, const std::string& observable) {
     const auto cause = direct + "; " + name + ": ";
     eq::ContinuationResult result;
-    try { result = eq::continue_equilibrium(model, {context.anchor, to, context.central, context.options, targets}); }
+    try { result = eq::continue_equilibrium(model, {context.anchor, to, from, context.options, targets}); }
     catch (const std::exception& later) { throw EquilibriumFailure(ActionStatus::CentralSolveUnavailable, observable, cause + later.what()); }
     if (!result.success || result.stop != eq::ContinuationStop::reached_target || result.states.empty()) {
         std::fprintf(stderr, "epcsaft_equilibrium diagnostic: %s stop=%s reached=%.17g message=%s\n", name,
@@ -284,36 +284,40 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
     return result.states.back();
 }
 
-// q = (T, P, feed controls, theta). A new q first solves directly in the model at theta; on failure a parameter leg at the
-// anchor (T, P, feed) precedes one leg moving T, P and the feed together, since a parameter path moves nothing else. With
-// solids there is no continuation: the direct failure keeps its status, and a T outside a solid's law is OutsideInterval.
-void select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
+// q = (T, P, feed controls, theta). Keep each solved state with the model that owns its compiled system.
+EquilibriumContext::State solve_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
-    context.action_workspace.reset();
-    context.compiled.reset();  // it points at its model
-    if (bitwise_equal(theta, context.model->active_parameter_values())) context.shifted.reset();
-    if (!bitwise_equal(theta, (context.shifted ? *context.shifted : *context.model).active_parameter_values())) try {
-        context.shifted = model_at(*context.model, theta);  // rebuilt against the current model's own values
+    EquilibriumContext::State state;
+    state.q = q;
+    if (bitwise_equal(theta, context.model->active_parameter_values())) state.model = context.model;
+    else try {
+        const auto same_parameters = std::find_if(context.states.begin(), context.states.end(), [&](const auto& previous) {
+            return bitwise_equal(theta, previous.model->active_parameter_values());
+        });
+        if (same_parameters != context.states.end()) state.model = same_parameters->model;
+        else state.model = model_at(*context.model, theta);
     } catch (const std::invalid_argument& error) { throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, error.what()); }
-    const auto& model = context.shifted ? *context.shifted : *context.model;
+    const auto& model = *state.model;
     auto target = context.anchor;
     target.temperature = eq::FreeValue::fixed(q[0]), target.pressure = eq::FreeValue::fixed(q[1]);
     target.feed.values = context.map.amounts(feed);
     for (const double amount : target.feed.values)
         if (!std::isfinite(amount) || amount < 0.0) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
     const bool moved = !bitwise_equal(feed, context.map.anchor) || q[0] != context.anchor.temperature.value || q[1] != context.anchor.pressure.value;
-    std::optional<eq::CompiledSystem> direct_compiled;
-    if (!moved && !context.shifted) context.central = context.anchor_result;
+    auto& central = state.central;
+    auto& direct_compiled = state.compiled;
+    const bool shifted = state.model != context.model;
+    if (!moved && !shifted) central = context.anchor_result;
     else {
         std::optional<EquilibriumFailure> refused;
         std::string direct;  // the direct solve's refusal; empty when it succeeds
         try {
-            if (target.solids.empty()) context.central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
-            else context.central = eq::solve_equilibrium(model, target);
+            if (target.solids.empty()) central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
+            else central = eq::solve_equilibrium(model, target);
         }
         catch (const std::exception& error) { direct = error.what(); }
-        if (direct.empty() && (refused = central_failure(context, context.central, observable))) direct = refused->what();
+        if (direct.empty() && (refused = central_failure(context, central, observable))) direct = refused->what();
         if (!direct.empty()) {
             direct_compiled.reset();
             for (const auto& solid : context.anchor.solids)
@@ -324,24 +328,40 @@ void select_state(EquilibriumContext& context, const std::vector<double>& q, con
                 throw std::runtime_error(direct);
             }
             const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
-                context.central = continuation_leg(context, path, to, targets, direct, name, observable);
+                central = continuation_leg(context, path, to, central, targets, direct, name, observable);
             };
-            context.central = context.anchor_result;
-            if (context.shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
+            central = context.anchor_result;
+            if (shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
             if (moved) leg(model, target, std::vector<double>{}, "continuation");
         }
     }
-    if (auto failure = central_failure(context, context.central, observable)) throw *failure;
-    context.compiled.emplace(direct_compiled ? std::move(*direct_compiled) : eq::compile_problem(model, target));
-    context.feed = q;
-    for (auto& rows : context.rows) std::fill(rows.filled.begin(), rows.filled.end(), 0);
+    if (auto failure = central_failure(context, central, observable)) throw *failure;
+    if (!direct_compiled) direct_compiled.emplace(eq::compile_problem(model, target));
+    const std::size_t counts[2] = {target.phases.size() * model.parameters().component_count() + target.solids.size(), 1};
+    const std::size_t n = 2 + controls + theta.size();
+    for (int kind = 0; kind < 2; ++kind) {
+        auto& rows = state.rows[kind];
+        rows.values.resize(counts[kind]);
+        rows.gradients.assign(counts[kind], std::vector<double>(n));
+        rows.hessians.assign(counts[kind], std::vector<double>(n * (n + 1) / 2));
+        rows.filled.assign(1 + n + n * (n + 1) / 2, 0);
+    }
+    return state;
+}
+
+EquilibriumContext::State& select_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
+    auto& states = context.states;
+    const auto found = std::find_if(states.begin(), states.end(), [&](const auto& state) { return bitwise_equal(state.q, q); });
+    if (found != states.end()) states.splice(states.begin(), states, found);
+    else remember_state(states, solve_state(context, q, observable), 8);  // four interleaved stages and their preceding inputs
+    return states.front();
 }
 
 // One native batch of one kind's rows; an unavailable row fails only its own kind's callback.
 // ponytail: a caller reading both kinds at a new q pays both batches; the upgrade is
 // one combined batch with per-row failure orders, as PropertyContext::Branch::failures keeps, which could also fill the
 // amount rows from an enthalpy call when they are all available.
-eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vector<int>& coordinates, int kind) {
+eq::SolvedStateActionBatch actions(const EquilibriumContext& context, EquilibriumContext::State& state, const std::vector<int>& coordinates, int kind) {
     eq::SolvedStateActionRequest request;
     if (kind == 1) request.observables.push_back({eq::SolvedStateObservableKind::SystemEnthalpy});
     for (std::size_t phase = 0; kind == 0 && phase < context.anchor.phases.size(); ++phase)
@@ -356,14 +376,14 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
         const auto theta = e.begin() + 2 + controls;
         request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
-    auto batch = eq::solved_state_actions_prepared(*context.compiled, context.central, request, context.action_workspace);
+    auto batch = eq::solved_state_actions_prepared(*state.compiled, state.central, request, state.action_workspace);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
         const auto& item = batch.results[row];
         auto status = item.status;
         if (status == ActionStatus::Available && (!item.value || !item.action
             || !std::isfinite(*item.value) || !std::isfinite(*item.action))) status = ActionStatus::Nonfinite;
         const bool floor_value = coordinates.front() == -1 && status == ActionStatus::DefiningEquationsNotSatisfied
-            && !context.central.requested_tolerance_met.value_or(false) && item.value && std::isfinite(*item.value);
+            && !state.central.requested_tolerance_met.value_or(false) && item.value && std::isfinite(*item.value);
         if (status != ActionStatus::Available && !floor_value) {
             const auto& d = batch.diagnostics;
             throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or("")
@@ -374,9 +394,9 @@ eq::SolvedStateActionBatch actions(EquilibriumContext& context, const std::vecto
                 + (item.property_diagnostics && item.property_diagnostics->first_numerical_failure
                     ? "; " + epcsaft::core::describe(*item.property_diagnostics->first_numerical_failure) : ""));
         }
-        context.rows[kind].values[row] = *item.value;
+        state.rows[kind].values[row] = *item.value;
     }
-    context.rows[kind].filled[0] = 1;
+    state.rows[kind].filled[0] = 1;
     return batch;
 }
 
@@ -423,14 +443,14 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
             if (!std::isfinite(q[i])) throw EquilibriumFailure(ActionStatus::Nonfinite, observable);
             if (i < controls && (i < 2 ? q[i] <= 0.0 : q[i] < 0.0)) throw EquilibriumFailure(ActionStatus::OutsideInterval, observable);
         }
-        if (!context.compiled || !bitwise_equal(context.feed, q)) select_state(context, q, observable);
-        auto& rows = context.rows[kind == 1];  // the amount batch also holds the solid amounts
+        auto& state = select_state(context, q, observable);
+        auto& rows = state.rows[kind == 1];  // the amount batch also holds the solid amounts
         const auto row = kind == 2 ? phases * count + p : p * count + c;
         // Each live gradient column and Hessian pair is one batch, computed once per state and kind.
         const auto fill = [&](const std::vector<int>& coordinates, char& filled, std::vector<std::vector<double>>& out, std::size_t entry, real* to) {
             if (std::any_of(coordinates.begin(), coordinates.end(), [&](int i) { return !live(arguments, i); })) return;
             if (!filled) {
-                const auto batch = actions(context, coordinates, kind == 1);
+                const auto batch = actions(context, state, coordinates, kind == 1);
                 for (std::size_t r = 0; r < rows.values.size(); ++r) out[r][entry] = *batch.results[r].action;
                 filled = 1;
             }
@@ -439,7 +459,7 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         for (int i = 0; arguments->derivs != nullptr && i < n; ++i) fill({i}, rows.filled[1 + i], rows.gradients, i, arguments->derivs);
         for (int j = 0, packed = 0; second && arguments->hes != nullptr && j < n; ++j) for (int i = 0; i <= j; ++i, ++packed)
             fill({i, j}, rows.filled[1 + n + packed], rows.hessians, packed, arguments->hes);
-        if (!rows.filled[0]) actions(context, {-1}, kind == 1);
+        if (!rows.filled[0]) actions(context, state, {-1}, kind == 1);
         return rows.values[row];  // On the caller's declared absolute batch basis.
     } catch (const EquilibriumFailure& error) {
         callback_error = error.what();
@@ -448,10 +468,6 @@ double equilibrium_observable(arglist* arguments, int kind, bool second = true) 
         callback_error = "epcsaft_equilibrium:untyped:" + observable + ": " + error.what();
     } catch (...) {
         callback_error = "epcsaft_equilibrium:untyped:" + observable;
-    }
-    for (const auto& item : prepared.contexts) {  // every record re-solves at its next call
-        item->action_workspace.reset();
-        item->compiled.reset();
     }
     return report_failure(arguments, "epcsaft_equilibrium");
 }
@@ -619,8 +635,7 @@ const PropertyContext::Branch& evaluate_property(PropertyContext& context, std::
         });
     branch.order = order;
     if (found != states.end()) states.erase(found);
-    states.push_front(std::move(state));
-    if (states.size() > 128) states.pop_back();
+    remember_state(states, std::move(state), 128);
     return states.front().rows;
 }
 
