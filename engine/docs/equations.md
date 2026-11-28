@@ -2329,19 +2329,17 @@ $$
 - Section: Helmholtz derivatives / Reference derivatives
 - Status: Exact derivation
 - Source: Taylor expansion of the neutral reaction contraction and implicit pressure closure
-- Description: One fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies gradient coefficients along a pressure-closed, fixed-composition base path. Temperature and EOS coordinates can move. Orders one and two also supply the lower reference slopes. The degree-seven/nine evaluations are bounded reference calculations, not unrestricted energy derivative surfaces.
-- Change note: The same central unweighted site Jacobian eliminates association through degree nine. At an ion-free reference, a separate tape reuses the regular scalar contributions and Born radial work while excluding the analytically zero DH insertion; ordinary state admission is unchanged. Two amount insertions start above the extracted degree. No zero-concentration ionic Hessian is evaluated. Coefficients retain factorials until mixed extraction, and physical normalization is restored once. Mask pure-selected species from the solvent insertion and add their pure-state insertions. Fixed-source system-pressure derivatives are zero.
+- Description: A fixed-volume amount insertion in the extensive reduced residual Helmholtz energy supplies contraction coefficients along a pressure-closed, fixed-amount path. Temperature, source pressure and EOS coordinates can move.
+- Change note: A linear volume insertion supplies the trial pressure coefficients. At each degree the central unweighted site Jacobian eliminates the base and insertion site responses. The central pressure slope closes volume and the committed coefficients supply the residual checks. At an ion-free reference the scalar contributions retain the Born radial insertion and the analytically zero Debye–Hückel insertion. The signed degree-one and degree-three replays supply explicit numerical errors for the contraction and its first temperature derivative. Coefficients retain factorials until mixed extraction, and physical normalization is restored once. Mask pure-selected species from the solvent insertion and add their pure-state insertions. Fixed-source system-pressure derivatives are zero.
 
 $$
-z(t)=z_0+\sum_{j=1}^{r}z_jt^j,\quad r\in\{0,1,2,3,4\},\qquad
-[t^k]D\psi(z(t))[u]=\frac12[t^{r+1+k}]
-\{\psi(z(t)+ut^{r+1})-\psi(z(t)-ut^{r+1})\},\quad 0\le k\le r,\\
-D^4\psi[u,v,v,v]=\frac{3!}{2}[t^7]\{\psi(z_0+vt+ut^4)-\psi(z_0+vt-ut^4)\},\\
-D^5\psi[u,v,v,v,v]=\frac{4!}{2}[t^9]\{\psi(z_0+vt+ut^5)-\psi(z_0+vt-ut^5)\},\\
-p(t)=RT(t)\{V(t)^{-1}-D\psi(z(t))[e_V]\},\qquad
-V_k=\frac{[t^k]P_{src}(t)-[t^k]p(z(t))|_{V_k=0}}{p_V(z_0)},\\
-C(t)=-\Delta\nu\ln(V(t)\rho_0)+D\psi(z(t))[\nu],\qquad
-z_{j,n}=0\quad(j>0).
+\begin{aligned}
+z(t)&=z_0+\sum_{j=1}^{r}z_j t^j,\qquad r\in\{0,1,2,3,4\},\qquad z_{j,n}=0\quad(j>0),\\
+[t^k]D\psi(z(t))[u]&=[t^k\epsilon]\psi(z(t)+\epsilon u),\qquad \epsilon^2=0,\\
+p(t)&=RT(t)\{V(t)^{-1}-D\psi(z(t))[e_V]\},\qquad
+V_k=\frac{[t^k]P_{\mathrm{src}}(t)-[t^k]p(z(t))|_{V_k=0}}{p_V(z_0)},\\
+C(t)&=-\Delta\nu\ln(V(t)\rho_0)+D\psi(z(t))[\nu].
+\end{aligned}
 $$
 
 ## `reference_mixed_temperature_pressure_derivatives`
@@ -2349,12 +2347,13 @@ $$
 - Section: Properties / Reaction references
 - Status: Exact derivation
 - Source: Differentiation of `neutral_reaction_reference_transfer` with the single-insertion construction
-- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. The only repeated parameter derivatives are the fixed-T/P pairs of `standard_state_transfer_parameter_derivative`; no dilution-composition derivatives are consumed.
+- Description: Raw SI derivatives through fourth temperature/pressure order, and through third temperature/pressure order with one active EOS-coordinate partial. Requested EOS-coordinate pairs include repeated and distinct coordinates through second temperature/pressure order.
 - Change note: Each column differentiates the returned analytic reference at the ion-free solvent state using `reference_single_insertion_taylor`. Columns retain independent action diagnostics and causes. The existing scaled comparison with `reference_limit_terminal_pair` is qualification evidence only; no terminal sequence is evaluated in runtime.
 
 $$
 C_{ab}=\partial_T^a\partial_{P_{src}}^b C,\quad a+b\le4,\qquad
 C_{ab,\theta}=\partial_T^a\partial_{P_{src}}^b\partial_\theta C,\quad a+b\le3,\\
+C_{ab,\theta_i\theta_j}=\partial_T^a\partial_{P_{src}}^b\partial_{\theta_i}\partial_{\theta_j} C,\quad a+b\le2,\\
 C_T=\frac{h^{res}+RT}{RT^2},\qquad C_P=-\frac{v}{RT}\quad\text{(identical neutral species, }C=-\Lambda\text{)}.
 $$
 

@@ -3284,14 +3284,17 @@ even with zero net charge, is refused as IonicReferenceBackground. Reaction
 reference declarations retain their single neutral solvent and source-basis rules.
 
 Properties uses EqID `reference_single_insertion_taylor` for values and every
-consumed derivative. The separate solvent-reference tape retains the shared Born
-radial coefficient and regular contributions, with a zero DH insertion. It never
-enters the ordinary-state tape cache or relaxes ordinary ionic-insertion admission.
-The existing association Jacobian and implicit pressure coefficients supply all
-T/P derivatives through order four, one parameter through T/P order three, and
-two parameters through T/P order two for the coordinate pairs an action requests.
-One amount insertion appears at degree r+1; extraction through degree 2r+1
-cannot contain two such insertions. No ionic-concentration Hessian is required.
+consumed derivative. A Taylor series in the base direction carries one linear
+insertion. For volume closure, solve the trial base and volume-insertion site
+coefficients with the central association Jacobian. Commit the volume coefficient
+using the central pressure slope, correct the affected site coefficients, and
+check the achieved residuals. The fixed-volume amount insertion uses the closed
+path and extends its site response through the requested order. The shared
+contributions supply the Born radial coefficient at zero ionic strength,
+where the first Debye–Hückel insertion is zero. The signed tape calculation
+handles zero dispersion energies, where the Taylor square root has a zero
+central denominator, and supplies explicit wider error estimates. Ordinary
+ionic-insertion admission remains unchanged.
 Within one reaction-reference batch, an exact state, exact direction, order,
 insertion mode and error request share the pressure-closed volume path and site
 factorization. The batch is bound to its immutable model and active values;

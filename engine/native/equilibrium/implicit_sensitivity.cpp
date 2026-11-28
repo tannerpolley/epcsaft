@@ -1035,7 +1035,8 @@ static SolvedStateActionBatch evaluate_action(
     const CompiledSystem& compiled, const EquilibriumResult& central,
     const SolvedStateActionRequest& request, std::optional<ActionCenter>& shared, core::Scope& scope,
     const CaloricNeed& covering, std::optional<PhasePoint>* prepared, const std::vector<std::size_t>& parameter_union = {},
-    FirstCoefficients* first_coefficients = nullptr, bool batch_parameters = false
+    FirstCoefficients* first_coefficients = nullptr, bool batch_parameters = false,
+    const std::vector<SolvedStateObservable>* overwritten = nullptr
 ) {
     const auto& problem = compiled.problem;
     const auto& model = *compiled.model;
@@ -1068,8 +1069,11 @@ static SolvedStateActionBatch evaluate_action(
             if (o.kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) o.kind = kind;
         // Once the thermal column is retained, a lone Cp row consumes only the mixed derivative.
         const bool mixed_only = request.observables.size() == 1 && shared && !shared->preparation_failed && shared->thermal_enthalpy.has_value();
+        const auto* thermal_result = shared && shared->thermal_enthalpy ? &shared->thermal_enthalpy->results.front() : nullptr;
+        const auto* replaced = !enthalpy_target && thermal_result && thermal_result->status == SolvedStateActionStatus::Available
+            && thermal_result->action ? &request.observables : nullptr;
         auto ordinary = mixed_only ? SolvedStateActionBatch{} :
-            evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union, nullptr, batch_parameters);
+            evaluate_action(compiled, central, enthalpy, shared, scope, covering, prepared, parameter_union, nullptr, batch_parameters, replaced);
         SolvedStateActionDirection thermal{enthalpy_target ? 0.0 : 1.0, 0.0, std::vector<double>(compiled.n_feed.size()),
                                            std::vector<double>(model.active_parameters().size())};
         if (enthalpy_target) thermal.enthalpy_j = feed * GAS_CONSTANT_J_PER_MOL_K * central.temperature.value_or(1.0);
@@ -1539,6 +1543,13 @@ static SolvedStateActionBatch evaluate_action(
         for (std::size_t i = 0; i < batch.results.size(); ++i) {
             auto& item = batch.results[i];
             if (item.observable.kind == SolvedStateObservableKind::PhaseProperty || !state_dependent(item.observable, problem)) continue;
+            if (overwritten && (*overwritten)[i].kind == SolvedStateObservableKind::EquilibriumIsobaricHeatCapacity) {
+                // density_actions reads one more Helmholtz order than the enthalpy action degree.
+                if (std::any_of(maps.begin(), maps.end(), [](const auto& map) {
+                    return std::any_of(map.amount.begin(), map.amount.end(), [](double v) { return v != 0.0; });
+                })) batch.diagnostics.maximum_energy_order = std::max(batch.diagnostics.maximum_energy_order, order + 1);
+                continue;
+            }
             try {
                 const auto series = observe(item, path.series, maps);
                 accumulated[i] += weight * series[order];

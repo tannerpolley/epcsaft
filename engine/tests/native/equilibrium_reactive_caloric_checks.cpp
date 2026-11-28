@@ -1039,6 +1039,27 @@ inline void dependency_checks() {
             CHECK(action.results[2].status == SolvedStateActionStatus::Available);
             CHECK(action.results[3].status == SolvedStateActionStatus::Available && action.results[3].action);
             CHECK(std::abs(*action.results[3].action) > 1e-11);
+            // The supplied species records determine the thermal enthalpy action, but
+            // their completion cannot follow this independent reaction-law direction.
+            using Kind = SolvedStateObservableKind;
+            const std::vector<Observable> group{{Kind::EquilibriumIsobaricHeatCapacity},
+                {Kind::PhaseMolarDensity}, {Kind::PhaseMoleFraction, 0, 0}, {Kind::PhaseMoleFraction, 0, 1}};
+            const auto batches = solved_state_first_actions(complete, state, group, {zero_direction, source});
+            CHECK(batches[0].results[0].status == SolvedStateActionStatus::Available);
+            CHECK(batches[1].results[0].status == SolvedStateActionStatus::ReferenceUnavailable);
+            CHECK(batches[0].results[0].value == batches[1].results[0].value && !batches[1].results[0].action);
+            for (std::size_t j = 1; j < group.size(); ++j)
+                CHECK(batches[1].results[j].status == SolvedStateActionStatus::Available && batches[1].results[j].action);
+            for (const auto& batch : batches) {
+                const auto& d = batch.diagnostics;
+                std::printf("apparent-cp-batch %zu %zu %zu %zu %zu %zu %a %a %a %a\n",
+                    d.equation_count, d.state_dimension, d.maximum_energy_order, d.state_factorizations, d.linear_solves,
+                    d.rank.value_or(0), d.condition_estimate.value_or(NAN), d.maximum_linear_residual.value_or(NAN),
+                    d.central_residual.value_or(NAN), d.central_floor.value_or(NAN));
+                for (const auto& item : batch.results)
+                    std::printf("apparent-cp-item %zu %s %a %a %s\n", item.order, solved_state_status_name(item.status),
+                        item.value.value_or(NAN), item.action.value_or(NAN), item.diagnostic_message.value_or("").c_str());
+            }
         }
     }
     auto endpoint_records = c.records;
