@@ -592,8 +592,12 @@ Parameters build_parameters(const ParameterDocument& document) {
 
     if (!result.born_solvation_membership.empty()) {
         auto& membership = result.born_solvation_membership;
-        for (std::size_t i = 0; i < components; ++i)
-            if (result.charge_number[i] != 0) membership[i] = 1;
+        for (std::size_t i = 0; i < components; ++i) {
+            if (result.charge_number[i] == 0) continue;
+            if (result.solvation_factor[i] != 1.0)
+                reject("component/" + document.component_ids[i] + "/solvation_factor must equal 1 when born_solvent is declared");
+            membership[i] = 1;
+        }
         if (std::all_of(membership.begin(), membership.end(), [](int member) { return member == 1; }))
             membership.clear();
     }

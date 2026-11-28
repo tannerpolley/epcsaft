@@ -655,13 +655,13 @@ D_i = d_i^Born + Delta d_i.
 
 The optional component field `fixed.born_solvent.value` takes magnitude 1
 for a declared solvent or 0 for a non-solvent, with unit `dimensionless`.
-With any declaration, S contains the declared solvents and every ion.
-Without declarations, S contains every component. Ion factors use their
-recorded values. Figiel specifies `f_i = 1`.
+With any declaration, S contains the declared solvents and every ion, and
+the Engine requires Figiel's `f_i = 1` for each ion. Without declarations,
+S contains every component and the Engine uses the recorded ion factors.
 
 When the subset has zero mole fraction, the Engine sets `f_mix = 1`.
-Such a phase has zero Born energy and uses the unexpanded shell for ion
-insertion. This allows neutral phases whose support contains only non-solvents.
+Such a phase has zero Born energy. A single inserted ion gives `f_mix = 1`
+along the insertion direction, so its derivative uses the unexpanded shell.
 
 ### Corrected Eq. (7)
 

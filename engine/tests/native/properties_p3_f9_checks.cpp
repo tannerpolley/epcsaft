@@ -978,7 +978,7 @@ void born_solvation_subset() {
     // CO2, MEA, water, MEAH+, MEACOO-, HCO3-, then the three absent ions.
     const std::vector<double> n{0.025, 0.080, 0.815, 0.040, 0.030, 0.010, 0., 0., 0.};
     const std::size_t width = n.size() + 2;
-    const auto inputs = recording_support::fields({recording_support::field("T_K", temperature),
+    auto inputs = recording_support::fields({recording_support::field("T_K", temperature),
         recording_support::field("V_m3", volume), recording_support::field("n_mol", n)});
     const auto compare = [&](const std::string& id, double actual, double expected, double tolerance, const char* source) {
         recording_support::compare("born-solvation/" + id, "reduced Born energy or derivative", "coordinate basis",
@@ -1003,6 +1003,20 @@ void born_solvation_subset() {
         parameters.entries.push_back({{}, "born_solvent", {i}, 1.0, "dimensionless"});
     const HelmholtzModel all_solvents(build_parameters(parameters));
     check_identical("all-components", evaluate(all_solvents), evaluate(model));
+
+    auto nonunit_ion = parameters;
+    for (auto& entry : nonunit_ion.entries)
+        if (entry.identity == "component/protonated-monoethanolamine/solvation_factor") entry.magnitude = 1.5;
+    std::string refusal;
+    try {
+        (void)build_parameters(nonunit_ion);
+    } catch (const std::invalid_argument& error) {
+        refusal = error.what();
+    }
+    CHECK(refusal == "component/protonated-monoethanolamine/solvation_factor must equal 1 when born_solvent is declared");
+    nonunit_ion.entries.erase(std::remove_if(nonunit_ion.entries.begin(), nonunit_ion.entries.end(),
+        [](const auto& entry) { return entry.field == "born_solvent"; }), nonunit_ion.entries.end());
+    CHECK(build_parameters(nonunit_ion).solvation_factor[3] == 1.5);
 
     parameters.entries.pop_back();
     const auto p = build_parameters(parameters);
@@ -1093,6 +1107,8 @@ void born_solvation_subset() {
     CppAD::ADFun<double> tape(ax, outputs);
     std::vector<double> vapor(n.size(), 0.0);
     vapor[0] = 1.0;
+    inputs = recording_support::fields({recording_support::field("T_K", temperature),
+        recording_support::field("mole_fractions", vapor), recording_support::field("bulk_relative_permittivity", bulk)});
     compare("pure-co2/direct", born_contribution(temperature, vapor, changed_p, bulk), 0.0, 0.0, "empty subset");
     compare("pure-co2/tape", tape.Forward(0, vapor)[0], 0.0, 0.0, "empty subset");
     const double insertion = -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
