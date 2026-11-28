@@ -3,7 +3,7 @@
 
 namespace {
 
-std::string reactive_record() {
+std::string reactive_record(bool warm_start = false) {
     // The same manufactured reactive LLE as e5-3, expressed in the ASL record's declared coordinates.
     const auto p = equilibrium_support::synthetic_reactive_ternary();
     epcsaft::ParameterDocument doc;
@@ -35,7 +35,8 @@ std::string reactive_record() {
         phase.support = {0, 1, 2};
         phase.support_declared = true;
     }
-    return eq::asl_record(doc, {}, {}, problem, {}, {{0, 0, 0}, problem.feed.values, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}, 1, 0.1}, {});
+    return eq::asl_record(doc, {}, {}, problem, {}, {{0, 0, 0}, problem.feed.values, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+                                                    1, 0.1, warm_start}, {});
 }
 
 struct Callback final {
@@ -45,17 +46,20 @@ struct Callback final {
     std::array<double, 15> hessian{};
     std::array<char, 5> fixed{0, 1, 0, 0, 0};  // live T: at fixed T and P the reactive LLE has no degree of freedom, so the feed Hessian is zero
 
-    double operator()(int order, int row = 0) {
+    double operator()(int order, int row = 0, bool enthalpy = false) {
         int map[]{0, 1, 2, 3, 4, -1, -2, -3};
         const char* ordinals[]{"0", "1", "2"};
         const char* strings[]{record.c_str(), ordinals[row / 3], ordinals[row % 3]};
         arglist args{};
-        args.n = 8; args.nr = 5; args.at = map; args.ra = q.data(); args.sa = strings;
+        args.n = enthalpy ? 6 : 8; args.nr = 5; args.at = map; args.ra = q.data(); args.sa = strings;
         args.dig = fixed.data();
         if (order >= 1) args.derivs = gradient.data();
         if (order >= 2) args.hes = hessian.data();
-        const double result = equilibrium_observable(&args, 0);
-        CHECK(args.Errmsg == nullptr && std::isfinite(result));
+        const double result = equilibrium_observable(&args, enthalpy ? 1 : 0);
+        if (enthalpy) {
+            CHECK(args.Errmsg != nullptr && std::isnan(result));
+            CHECK(std::string_view(args.Errmsg).find("missing_thermochemistry:system.enthalpy") != std::string_view::npos);
+        } else CHECK(args.Errmsg == nullptr && std::isfinite(result));
         return result;
     }
 };
@@ -93,10 +97,93 @@ void check_interleaved_cache() {
     CHECK(spans(trace, "solved_state_actions") == 0);
 }
 
+void check_warm_start() {
+    Callback cold, warm{reactive_record(true)};
+    cold.q[2] += 0.006;
+    warm.q = cold.q;
+    warm(0);
+    cold(0);
+    cold.q[2] += 0.001;
+    warm.q = cold.q;
+
+    std::array<double, 6> cold_amounts{}, warm_amounts{};
+    {
+        epcsaft::core::Capture trace(true);
+        cold(1);
+        for (int i = 0; i < 6; ++i) cold_amounts[i] = cold(0, i);
+        CHECK(spans(trace, "solve_equilibrium") == 1);
+        CHECK(spans(trace, "equilibrium_warm_attempt") == 0);
+    }
+    {
+        epcsaft::core::Capture trace(true);
+        warm(1);
+        for (int i = 0; i < 6; ++i) warm_amounts[i] = warm(0, i);
+        CHECK(spans(trace, "solve_equilibrium") == 1);
+        CHECK(spans(trace, "equilibrium_warm_attempt") == 1);
+    }
+    const auto scale = *std::max_element(cold_amounts.begin(), cold_amounts.end());
+    for (std::size_t i = 0; i < cold_amounts.size(); ++i) {
+        const bool agrees = std::abs(warm_amounts[i] - cold_amounts[i]) <= 1e-10 * scale;
+        recording_support::compare_custom("reactive-lle/warm/" + std::to_string(i), "phase_component_amount", "mol",
+            warm_amounts[i], cold_amounts[i], "1e-10 of cold amount scale", agrees, "reactive-liquid-liquid-equilibrium");
+        CHECK(agrees);
+    }
+}
+
+void check_cold_fallback() {
+    const auto cold = prepare_equilibrium(reactive_record().c_str(), "phase_component_amount");
+    const auto warm = prepare_equilibrium(reactive_record(true).c_str(), "phase_component_amount");
+    std::vector<double> q{298.15, 1e5, 0.053, 0.475, 0.475};
+    auto& seed = select_state(*warm, q, "phase_component_amount").central;
+    CHECK(seed.optimizer_state);
+    auto one_liquid = warm->anchor;
+    one_liquid.phases.resize(1);
+    const auto incompatible = eq::solve_equilibrium(*warm->model, one_liquid);
+    CHECK(incompatible.optimizer_state);
+    seed.optimizer_state = incompatible.optimizer_state;  // Force refusal by the native optimizer layout check.
+    q[2] += 0.001;
+    const auto& reference = select_state(*cold, q, "phase_component_amount").central;
+    epcsaft::core::Capture trace(true);
+    const auto& result = select_state(*warm, q, "phase_component_amount").central;
+    CHECK(std::any_of(trace.trace().events.begin(), trace.trace().events.end(), [](const auto& event) {
+        return std::string_view(event.name) == "warm_ineligible" && event.reason == "layout changed";
+    }));
+    CHECK(spans(trace, "solve_equilibrium") == 2);
+    CHECK(result.attempt == eq::Attempt::Cold);
+    CHECK(bitwise_equal(result.amounts, reference.amounts));
+    CHECK(bitwise_equal(result.mole_fractions, reference.mole_fractions));
+}
+
+void check_refused_action_seed() {
+    Callback warm{reactive_record(true)};
+    warm.q[0] += 1.0;  // Different T isolates this sequence from other traces at the same record.
+    warm.q[2] += 0.001;
+    warm(1, 0, true);  // Equilibrium exists, but the requested enthalpy action lacks thermochemistry.
+    {
+        epcsaft::core::Capture trace(true);
+        warm(0);
+        CHECK(spans(trace, "solve_equilibrium") == 0);
+    }
+    warm.q[2] += 0.001;
+    {
+        epcsaft::core::Capture trace(true);
+        warm(0);
+        CHECK(spans(trace, "solve_equilibrium") == 1);
+        CHECK(spans(trace, "equilibrium_warm_attempt") == 0);
+    }
+    warm.q[2] += 0.001;
+    epcsaft::core::Capture trace(true);
+    warm(0);
+    CHECK(spans(trace, "equilibrium_warm_attempt") == 1);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
         {{"native.regression.asl-reactive-lle-interleaved-cache", "ASLReactiveLLEInterleavedCache"}, check_interleaved_cache},
+        {{"native.regression.asl-reactive-lle-warm-start", "ASLReactiveLLEWarmStart"}, check_warm_start},
+        {{"native.regression.asl-reactive-lle-cold-fallback", "ASLReactiveLLEColdFallback"}, check_cold_fallback},
+        {{"native.regression.asl-reactive-lle-refused-action-seed", "ASLReactiveLLERefusedActionSeed"}, check_refused_action_seed},
     });
 }

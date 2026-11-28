@@ -4215,7 +4215,7 @@ def compile_problem(model: HelmholtzModel, problem: EquilibriumProblem, componen
 def equilibrium_asl_record(document: ParameterDocument, model: HelmholtzModel, problem: EquilibriumProblem,
                            continuation: ContinuationOptions, feed_offset: Sequence[float],
                            feed_matrix: Sequence[Sequence[float]], anchor_controls: Sequence[float],
-                           identity_component: int, minimum_gap: float) -> str:
+                           identity_component: int, minimum_gap: float, *, warm_start: bool = False) -> str:
     """Serialize ``document`` with the model's native declarations and the feed map; ``epcsaft.equilibrium.asl_record`` owns the arguments."""
     ...
 def property_asl_record(document: ParameterDocument, model: HelmholtzModel, require_phase_identity: bool,

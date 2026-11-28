@@ -35,8 +35,15 @@ OPTIONS = eq.Continuation(initial_step=0.05, minimum_step=1e-3, max_steps=200, m
 FUNCTION, ENTHALPY, SOLID = "epcsaft_equilibrium_phase_component_amount", "epcsaft_equilibrium_system_enthalpy", "epcsaft_equilibrium_solid_amount"
 
 
-def record(model: Mixture, T: float = 298.15) -> str:
-    return eq.asl_record(model, water_isobutanol_problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1)
+def record(model: Mixture, T: float = 298.15, **options: bool) -> str:
+    return eq.asl_record(model, water_isobutanol_problem(G0, T), OPTIONS, [0.0, 0.0], [[1.0, 0.0], [0.0, 1.0]], list(G0), 1, 0.1, **options)
+
+
+def test_asl_warm_start_is_opt_in_for_reactive_lle() -> None:
+    model = water_isobutanol()
+    assert record(model) == record(model, warm_start=False)
+    with pytest.raises(ValueError, match="warm start requires reactive liquid-liquid equilibrium"):
+        record(model, warm_start=True)
 
 
 def fgh(text: str, q: Any, row: int | None, order: int, components: int = 2, phases: int = 2, fixed: Any = None) -> tuple[float, Any, Any]:
