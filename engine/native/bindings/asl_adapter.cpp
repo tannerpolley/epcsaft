@@ -544,10 +544,11 @@ const PropertyContext::Branch& evaluate_property(PropertyContext& context, std::
     // The first, exhaustive root search at this q owns branch identity and every value; later directions start from its root.
     std::optional<double> anchor;
     if (branch.order < 0) {
-        branch = {q, std::vector<double>(rows), std::vector<std::vector<double>>(rows, std::vector<double>(n)),
-            std::vector<std::vector<double>>(rows, std::vector<double>(n * (n + 1) / 2)),
-            std::vector<std::pair<int, std::string>>(rows, {3, ""}), -1, live};
+        branch = {q, std::vector<double>(rows), {}, {}, std::vector<std::pair<int, std::string>>(rows, {3, ""}), -1, live};
     } else if (branch.order != 0 || !live[0]) anchor = branch.values[0];
+    // Derivative rows are allocated at the first request of their order; a cached value-only state holds none.
+    if (order >= 1 && branch.gradients.empty()) branch.gradients.assign(rows, std::vector<double>(n));
+    if (order >= 2 && branch.hessians.empty()) branch.hessians.assign(rows, std::vector<double>(n * (n + 1) / 2));
     const auto requested = phase == 0 ? epcsaft::DensityBranch::Liquid : epcsaft::DensityBranch::Vapor;
     // With live T, its first action uses the cold root, even after a value-only request.
     context.model->pressure_actions(q[0], q[1], x, requested, observables, anchor,

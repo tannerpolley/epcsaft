@@ -2264,7 +2264,8 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     auto& center = shared ? *shared : local;
     auto& [density, association_status, association_refusal, association, factorization, central, paths] = center;
     // The anchored solve can return a bitwise different density from the cold selection.
-    if (!core::bitwise_equal(density, molar_density)) {
+    const bool fresh = !core::bitwise_equal(density, molar_density);
+    if (fresh) {
         center = {};
         density = molar_density;
         std::optional<core::Convergence> first;
@@ -2296,6 +2297,11 @@ PropertyActionBatch HelmholtzModel::directional_actions(
     }
     PropertyActionBatch result;
     result.diagnostics = central;
+    if (!fresh) {  // shared setup work is charged once, to the action that did it; rank and conditioning carry over
+        auto& d = result.diagnostics;
+        d.site_factorizations = d.site_solves = d.pressure_factorizations = d.pressure_solves = 0;
+        d.thermal_evaluations = d.recordings = d.directional_paths = d.forward_sweeps = 0;
+    }
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
     context.association = association ? &*association : nullptr;
