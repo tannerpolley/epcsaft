@@ -54,7 +54,8 @@ FIELDS(equilibrium::SolidSpec, a, b, c, d, e, f, g)
 FIELDS(NeutralReferenceDeclaration, a, b, c, d)
 FIELDS(equilibrium::CriticalDeclaration, a, b)
 FIELDS(equilibrium::AffineLoading, a, b, c, d, e, f)
-FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10, log_terms)
+FIELDS(Countercurrent, stages, fixed_feeds, aqueous_transfer, organic_transfer, volume_m3, link_tolerance, max_sweeps)
+FIELDS(Observation, a, b, c, d, e, f, g, analytical_solute_molality, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10, log_terms, countercurrent)
 // Declaration validation refuses prepared trials before worker serialization.
 auto fields(equilibrium::StabilityOptions& item) {
     auto& [a, b, prepared, c, d, e, f, g, plane_value_errors] = item;

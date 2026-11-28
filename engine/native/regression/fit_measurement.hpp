@@ -37,6 +37,7 @@ struct MeasurementChart final {
                 membership[row] = g;
                 const auto& item = request.observations[row];
                 require(item.kind != ObservationKind::Stability, "stability requirements are not measurements");
+                require(!item.countercurrent, "countercurrent input uncertainty is not declared");
                 require(!addition(item.kind) && item.kind != ObservationKind::SolvationGibbsEnergy
                     && item.kind != ObservationKind::TransferGibbsEnergy && item.kind != ObservationKind::BulkRelativePermittivity
                     && item.kind != ObservationKind::FeedEnthalpy && item.kind != ObservationKind::SystemEnthalpy

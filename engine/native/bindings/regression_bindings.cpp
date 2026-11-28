@@ -114,19 +114,22 @@ m._serve_fit(channel)
         EPCSAFT_VALUES(ObservationKind, MeanIonicActivityCoefficient, OsmoticCoefficient, MixtureOsmoticCoefficient, SolvationGibbsEnergy,
             TransferGibbsEnergy, BulkRelativePermittivity, IsobaricHeatCapacity, EquilibriumIsobaricHeatCapacity,
             LogEquilibriumConstant, Density, PhaseDensity, EquilibriumPressure, EquilibriumTemperature,
-            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability, PhaseBulkRelativePermittivity, AssociationSiteFraction, PhaseSoluteActivity, PhaseConcentration, LogLinear);
+            PhaseMoleFraction, PhaseFraction, PartialPressure, PhaseAmountRatio, PhaseSolventActivity, AdditionEnthalpy, SaturationCappedAdditionEnthalpy, Stability, PhaseBulkRelativePermittivity, AssociationSiteFraction, PhaseSoluteActivity, PhaseConcentration, LogLinear, CountercurrentConcentration);
     nb::enum_<ResidualForm>(module, "ResidualForm")
         EPCSAFT_VALUES(ResidualForm, Difference, LogRatio);
     nb::enum_<ObservationStatus>(module, "ObservationStatus")
         EPCSAFT_VALUES(ObservationStatus, NotEvaluated, ReferenceUnavailable, Available, ThermochemistryUnavailable,
             DensityUnavailable, CentralSolveUnavailable, TopologyEvent, MissingMolarMass, NonpositiveLogArgument,
             ActionUnavailable, Nonfinite, InadmissibleTrial, HeldSpecies);
+    nb::class_<Countercurrent>(module, "_Countercurrent")
+        .def(nb::init<>())
+        EPCSAFT_READWRITE(Countercurrent, stages, fixed_feeds, aqueous_transfer, organic_transfer, volume_m3, link_tolerance, max_sweeps);
     nb::class_<Observation>(module, "Observation")
         .def(nb::init<>())
         EPCSAFT_READWRITE(Observation, kind, temperature, pressure, composition, ion_indices, stoichiometry, molality, analytical_solute_molality, finite_solute_molalities,
             reference_composition, branch, problem, final_problem, feed_amount, basis_amount, loading_cap, loading_bounds, loading_grid, reaction, phase, species,
             denominator_phase, denominator_species, mass_basis, observed, form, scale, stability_options, pressure_reference, pressure_ratio, site, solvent, negative_log10)
-        EPCSAFT_COPIED(Observation, log_terms);
+        EPCSAFT_COPIED(Observation, log_terms, countercurrent);
     nb::enum_<CheckMetric>(module, "CheckMetric")
         EPCSAFT_VALUES(CheckMetric, AbsoluteDifference, AbsoluteLog10Ratio);
     nb::class_<HydrationHold>(module, "HydrationHold")
@@ -166,9 +169,12 @@ m._serve_fit(channel)
     nb::class_<Prediction>(module, "Prediction")
         EPCSAFT_SOLVER_OPTIONS(Prediction, PROPERTY_SCOPE)
         EPCSAFT_READONLY(Prediction, analytical_osmotic_coefficient, analytical_osmotic_cause, value, unit, status, message, residual, convergence, branch, stable_root_count,
-            requested_tolerance_met, first_numerical_failure, stability, supplied_stability, supplied_available, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, solved, final_solved, component_ids, refusal_convergence, refused_operation);
+            requested_tolerance_met, first_numerical_failure, stability, supplied_stability, supplied_available, pressure_reference, stability_raw_gradient, saturation, saturation_loading, endpoint_loading, added_amount, cap_branch, solved, final_solved, component_ids, refusal_convergence, refused_operation)
+        .def_prop_ro("countercurrent_stages", [](const Prediction& p) {
+            return p.countercurrent ? p.countercurrent->solved : std::vector<std::optional<equilibrium::EquilibriumResult>>{};
+        });
     nb::class_<PredictionGradient>(module, "PredictionGradient")
-        EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, central_value);
+        EPCSAFT_READONLY(PredictionGradient, value, raw_minimum, status, message, parameter_actions, first_numerical_failure, refusal_convergence, central_value);
     nb::enum_<ReactionCoefficient>(module, "ReactionCoefficient")
         EPCSAFT_VALUES(ReactionCoefficient, A, B, C, D, EnthalpyShift, LogShift);
     nb::class_<ReactionCoordinate>(module, "ReactionCoordinate")

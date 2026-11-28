@@ -215,6 +215,8 @@ struct ObservationEvaluator::Impl final {
             for (auto& o : request.observations) {
                 o.problem.solver_options = o.problem.solver_options.resolved(request.controls.solver_options);
                 o.final_problem.solver_options = o.final_problem.solver_options.resolved(request.controls.solver_options);
+                if (o.countercurrent) for (auto& stage : o.countercurrent->stages)
+                    stage.solver_options = stage.solver_options.resolved(request.controls.solver_options);
             } return request; }()), result_(result), measurement_(measurement ? std::move(*measurement) : MeasurementChart(request_)),
           groups_(state_groups(request_.observations, request_.uncertainty ? &measurement_.membership : nullptr)), sqrt_weights_(sqrt_weights),
           starts_(request_.observations.size()), owner_(request_.observations.size(), 0) {

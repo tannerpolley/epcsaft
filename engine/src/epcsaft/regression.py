@@ -68,7 +68,7 @@ _KINDS = {
 __all__ = ("stability", "MinimaxRequest", "MinimaxResult", "MinimaxRow", "ObservationEvaluation", "CoordinateTarget", "Coordinate", "CoordinateSet", "FitControls", "FitCovariance", "FitResult", "PredictionUncertainty", "Observation", "ObservationKind",
            "ObservationStatus", "Prediction", "PredictionGradient", "RefusedOperation", "ResidualForm", "TrialFailure", "addition_enthalpy", "saturation_capped_addition_enthalpy",
            "active_parameter", "coordinate", "density", "isobaric_heat_capacity", "differentiate", "fit", "fitted_parameters", "observation",
-           "predict", "log_linear", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
+           "predict", "log_linear", "countercurrent_concentration", "reaction_coordinate", "reaction_log_shift", "reaction_enthalpy_shift", "reaction_log10_reciprocal", "HydrationHold", "HoldResult", "EvaluatedCoordinates", "CheckMetric",
            "CheckGroup", "CheckResult", "electrolyte", "mixture_osmotic_coefficient", "hydration_hold", "evaluate_coordinates", "evaluate_checks",
            "MeasuredInputKind", "MeasuredInput", "MeasurementGroup", "MeasurementUncertainty", "InputReconciliation",
            "measured_input", "measurement_group", "saturation_pressure_observation")
@@ -623,6 +623,47 @@ def log_linear(terms: Sequence[tuple[float, Observation]], *, observed: float,
         raise ParameterError("log-linear observation needs terms")
     result = Observation()
     result.kind, result.problem, result.log_terms = ObservationKind.LogLinear, terms[0][1].problem, list(terms)
+    return _finish(result, observed, form, scale, False)
+
+
+def countercurrent_concentration(
+    parameters: Parameters, stages: Sequence[Problem], *, fixed_feeds: Sequence[Mapping[str, float]],
+    aqueous_transfer: Mapping[str, Mapping[str, float]], organic_transfer: Mapping[str, Mapping[str, float]],
+    species: str, volume_m3: float, link_tolerance: float, max_sweeps: int, observed: float,
+    form: str, scale: float | None = None,
+) -> Observation:
+    """Declare a terminal aqueous concentration in mol/m³ through linked stage balances.
+
+    Supply fixed-T/P stages in aqueous-flow order with aqueous then organic
+    phase, explicit supports, and physical initial feeds and phase guesses.
+    Each stage feed is its signed fixed offset in mol plus the prior aqueous and next
+    organic transfers. Each transfer maps an outlet species to feed species
+    coefficients in mol/mol. Omitted coefficients are zero. The terminal
+    species amount is divided by the declared terminal aqueous volume.
+    Link tolerance is the maximum inlet and outlet discrepancy in mol.
+    Named reaction coordinates apply to each stage declaring the reaction.
+    """
+    ids = parameters.component_ids
+
+    def amounts(mapping: Mapping[str, float]) -> list[float]:
+        row = [0.0] * len(ids)
+        for name, value in mapping.items():
+            row[_index(ids, name, "feed component")] = value
+        return row
+
+    def columns(mapping: Mapping[str, Mapping[str, float]]) -> list[list[float]]:
+        transfer = [[0.0] * len(ids) for _ in ids]
+        for name, column in mapping.items():
+            transfer[_index(ids, name, "outlet component")] = amounts(column)
+        return transfer
+
+    linked = _core._Countercurrent()
+    linked.stages, linked.fixed_feeds = [stage._native(parameters) for stage in stages], [amounts(feed) for feed in fixed_feeds]
+    linked.aqueous_transfer, linked.organic_transfer = columns(aqueous_transfer), columns(organic_transfer)
+    linked.volume_m3, linked.link_tolerance, linked.max_sweeps = volume_m3, link_tolerance, max_sweeps
+    result = Observation()
+    result.kind, result.countercurrent = ObservationKind.CountercurrentConcentration, linked
+    result.species = [_index(ids, species, "terminal aqueous component")]
     return _finish(result, observed, form, scale, False)
 
 
