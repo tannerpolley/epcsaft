@@ -340,6 +340,12 @@ std::vector<std::vector<double>> action_coefficients(
     return result;
 }
 
+struct TaylorPath {
+    std::vector<std::vector<double>> outputs;
+    double residual = 0.0;
+};
+using TaylorPaths = std::map<std::string, TaylorPath>;
+
 struct ActionContext final {
     detail::HelmholtzTape& tape;
     const std::vector<double>& point;
@@ -358,6 +364,7 @@ struct ActionContext final {
     double coefficient_residual = 0.0;
     std::vector<double> planned_output = std::vector<double>(tape.function.Range());
     const AssociationAction* association = nullptr;
+    TaylorPaths* shared_paths = nullptr;
 
     void run() {
         for (auto& [key, entry] : paths) {
@@ -366,11 +373,18 @@ struct ActionContext final {
             std::vector<ActionDirection> selected;
             for (std::size_t i = 0; i < directions.size(); ++i)
                 if (mask & (std::size_t(1) << i)) selected.push_back(directions[i]);
-            tape.implicit_taylor(
-                action_coefficients(point, molar_density,
-                    selected, temperature, volume, entry.order),
-                entry.order, factorization, &solves, &forward_sweeps,
-                &coefficient_residual, &entry.outputs, nullptr, nullptr, association);
+            const auto coefficients = action_coefficients(point, molar_density, selected, temperature, volume, entry.order);
+            std::string bits;
+            // The coefficient bytes include the order and distinguish signed zeros.
+            if (shared_paths) for (const auto& row : coefficients)
+                bits.append(reinterpret_cast<const char*>(row.data()), row.size() * sizeof(double));
+            TaylorPath local;
+            auto& path = shared_paths ? (*shared_paths)[std::move(bits)] : local;
+            if (path.outputs.empty())
+                tape.implicit_taylor(coefficients, entry.order, factorization, &solves, &forward_sweeps,
+                    &path.residual, &path.outputs, nullptr, nullptr, association);
+            coefficient_residual = std::max(coefficient_residual, path.residual);
+            entry.outputs = shared_paths ? path.outputs : std::move(local.outputs);
         }
         planning = false;
     }
@@ -2181,11 +2195,21 @@ bool HelmholtzModel::ensure_tape(const std::vector<double>& point, const std::ve
     return true;
 }
 
+struct HelmholtzModel::PressureActionCenter {
+    double density = 0.0;
+    PropertyActionStatus status = PropertyActionStatus::Available;
+    std::optional<core::Convergence> refusal;
+    std::optional<AssociationAction> association;
+    std::unique_ptr<AssociationJacobian> factorization;
+    PropertyActionDiagnostics diagnostics;
+    TaylorPaths paths;
+};
+
 PropertyActionBatch HelmholtzModel::directional_actions(
     double temperature, double molar_density, const std::vector<double>& mole_fractions,
     const std::vector<PropertyObservable>& observables,
     const std::vector<DensityActionDirection>& directions,
-    const DensityRoot* root, const std::vector<double>& pressure_directions, double pressure
+    const DensityRoot* root, const std::vector<double>& pressure_directions, double pressure, PressureActionCenter* shared
 ) const {
     ActionPlan plan;
     for (const auto observable : observables) {
@@ -2236,39 +2260,52 @@ PropertyActionBatch HelmholtzModel::directional_actions(
         : !record_missing ? PropertyActionStatus::OutsideInterval
         : PropertyActionStatus::MissingThermochemistry;
     core::AssociationObservations observations(true);
-    PropertyActionBatch result;
-    std::optional<core::Convergence> first;
-    std::optional<core::Convergence> association_refusal;
-    PropertyActionStatus association_status = PropertyActionStatus::Available;
-    std::vector<double> sites, strength;
-    std::optional<AssociationAction> association;
-    const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
-    (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, geometry.diameter);  // ideal-only actions too
-    if (need_residual) {
-        require_law_domain(temperature, parameters_);
-        strength = central_strength(parameters_, temperature, molar_density, mole_fractions, geometry);
-        try {
-            sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, geometry.sigma,
-                geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first, nullptr, nullptr, &association, &association_plan_);
-        } catch (const core::ConvergenceFailure& error) {
-            retain_density_failure(first, error, "density action association");
-            association_refusal = error.record;
-            need_residual = false;
-            association_status = PropertyActionStatus::CentralPropertyUnavailable;
+    PressureActionCenter local;
+    auto& center = shared ? *shared : local;
+    auto& [density, association_status, association_refusal, association, factorization, central, paths] = center;
+    // The anchored solve can return a bitwise different density from the cold selection.
+    const bool fresh = !core::bitwise_equal(density, molar_density);
+    if (fresh) {
+        center = {};
+        density = molar_density;
+        std::optional<core::Convergence> first;
+        std::vector<double> sites, strength;
+        const auto geometry = detail::admitted_segment_geometry(temperature, parameters_);
+        (void)packing_fraction_from_geometry(molar_density, mole_fractions, parameters_, geometry.diameter);  // ideal-only actions too
+        if (need_residual) {
+            require_law_domain(temperature, parameters_);
+            strength = central_strength(parameters_, temperature, molar_density, mole_fractions, geometry);
+            try {
+                sites = solve_site_fractions(temperature, molar_density, mole_fractions, parameters_, geometry.sigma,
+                    geometry.diameter, nullptr, nullptr, strength.empty() ? nullptr : &strength, false, solver_options_, &first, nullptr, nullptr, &association, &association_plan_);
+            } catch (const core::ConvergenceFailure& error) {
+                retain_density_failure(first, error, "density action association");
+                association_refusal = error.record;
+                need_residual = false;
+                association_status = PropertyActionStatus::CentralPropertyUnavailable;
+            }
         }
+        const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
+        core::retain_first(central.first_numerical_failure, first);
+        central.recordings = ensure_tape(point, sites, signature,
+            ideal_available ? correlations : std::vector<IdealCorrelation>{},
+            ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
+        tape_->site_values = sites;
+        observations.drain(central.site_conditioning);
+        factorization = need_residual ? association_factorization(parameters_, molar_density,
+            tape_->site_values, strength, mole_fractions, association_status, central, solver_options_) : nullptr;
     }
-    const auto signature = predicate_signature(temperature, mole_fractions, ideal_available);
-    core::retain_first(result.diagnostics.first_numerical_failure, first);
-    result.diagnostics.recordings = ensure_tape(point, sites, signature,
-        ideal_available ? correlations : std::vector<IdealCorrelation>{},
-        ideal_available ? thermochemistry_->standard_pressure : 0.0, need_residual) ? 1 : 0;
-    tape_->site_values = sites;
-    observations.drain(result.diagnostics.site_conditioning);
-    const auto factorization = need_residual ? association_factorization(parameters_, molar_density,
-        tape_->site_values, strength, mole_fractions, association_status, result.diagnostics, solver_options_) : nullptr;
+    PropertyActionBatch result;
+    result.diagnostics = central;
+    if (!fresh) {  // shared setup work is charged once, to the action that did it; rank and conditioning carry over
+        auto& d = result.diagnostics;
+        d.site_factorizations = d.site_solves = d.pressure_factorizations = d.pressure_solves = 0;
+        d.thermal_evaluations = d.recordings = d.directional_paths = d.forward_sweeps = 0;
+    }
     ActionContext context{*tape_, point, molar_density, all,
         association_status == PropertyActionStatus::Available ? factorization.get() : nullptr};
     context.association = association ? &*association : nullptr;
+    if (shared) context.shared_paths = &paths;
     context.maximum_order = directions.size()
         + (plan.residual[3] || plan.residual[4] ? 2 : 1);
     const auto result_support = support_status(*this, mole_fractions, all);
@@ -2296,7 +2333,7 @@ PropertyActionBatch HelmholtzModel::directional_actions(
             root != nullptr, root != nullptr ? root->pressure_density_derivative : 0.0);
         if (pressure_chain) {
             result.density_status = association_status;
-            result.density_convergence = std::move(association_refusal);
+            result.density_convergence = association_refusal;
         }
     } else {
         const double inverse_pressure_slope = 1.0 / root->pressure_density_derivative;
@@ -2541,7 +2578,31 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     double temperature, double pressure, const std::vector<double>& mole_fractions,
     DensityBranch branch, const std::vector<PropertyObservable>& observables,
     const std::vector<PressureActionDirection>& directions,
-    std::optional<double> anchor_density
+    std::optional<double> anchor_density, std::optional<DensityRoot>* cold_root
+) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return pressure_action(temperature, pressure, mole_fractions, branch, observables, directions, anchor_density, cold_root, nullptr);
+}
+
+void HelmholtzModel::pressure_actions(double T, double P, const std::vector<double>& x, DensityBranch branch,
+    const std::vector<PropertyObservable>& observables, std::optional<double> anchor, std::optional<DensityRoot>* cold_root,
+    const std::function<void(const PressureAction&)>& apply) const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    PressureActionCenter center;
+    std::optional<DensityRoot> anchored_root;
+    apply([&](const auto& directions) {
+        // Retain the first action's branch selection and the subsequent anchored closure separately.
+        auto batch = pressure_action(T, P, x, branch, observables, directions, anchor, anchor ? &anchored_root : cold_root, &center);
+        if (!anchor) anchor = batch.molar_density;
+        return batch;
+    });
+}
+
+PropertyActionBatch HelmholtzModel::pressure_action(
+    double temperature, double pressure, const std::vector<double>& mole_fractions,
+    DensityBranch branch, const std::vector<PropertyObservable>& observables,
+    const std::vector<PressureActionDirection>& directions,
+    std::optional<double> anchor_density, std::optional<DensityRoot>* retained_root, PressureActionCenter* center
 ) const {
     require(std::isfinite(temperature) && temperature > 0.0, "temperature");
     require(std::isfinite(pressure) && pressure > 0.0, "pressure");
@@ -2572,7 +2633,9 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     };
     DensityRoot root;
     try {
-        root = solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
+        root = retained_root && *retained_root ? **retained_root
+            : solve_density(*this, temperature, pressure, mole_fractions, branch, anchor_density);
+        if (retained_root && !*retained_root) *retained_root = root;
     } catch (const DensityStructureError& error) {
         auto batch = unavailable(error);
         batch.density_convergence = error.first_numerical_failure;
@@ -2585,9 +2648,8 @@ PropertyActionBatch HelmholtzModel::pressure_actions(
     } catch (const std::runtime_error& error) {
         return unavailable(error);
     }
-    std::lock_guard<std::mutex> lock(mutex_);
     return directional_actions(temperature, root.molar_density, mole_fractions,
-        observables, validation, &root, pressure_directions, pressure);
+        observables, validation, &root, pressure_directions, pressure, center);
 }
 
 NeutralPropertyDerivatives HelmholtzModel::neutral_property(

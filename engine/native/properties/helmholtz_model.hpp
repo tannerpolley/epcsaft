@@ -562,12 +562,19 @@ public:
         const std::vector<PropertyObservable>&,
         const std::vector<DensityActionDirection>&
     ) const;
+    // A cold root can be retained and reused only on the same model, T, P, composition and branch.
     EPC_API PropertyActionBatch pressure_actions(
         double, double, const std::vector<double>&, DensityBranch,
         const std::vector<PropertyObservable>&,
         const std::vector<PressureActionDirection>&,
-        std::optional<double> = std::nullopt
+        std::optional<double> = std::nullopt,
+        std::optional<DensityRoot>* cold_root = nullptr
     ) const;
+    // Consume the requested directions in order, using one locked workspace for this state.
+    using PressureAction = std::function<PropertyActionBatch(const std::vector<PressureActionDirection>&)>;
+    EPC_API void pressure_actions(double, double, const std::vector<double>&, DensityBranch,
+        const std::vector<PropertyObservable>&, std::optional<double>, std::optional<DensityRoot>*,
+        const std::function<void(const PressureAction&)>&) const;
     // Each first-order pressure_actions result along `direction` against central differences of its value at +-step
     // on the anchored central root (verification only). Supported: T, P and a zero-sum composition direction.
     EPC_API std::vector<core::DifferenceCheck> pressure_action_difference(double temperature, double pressure,
@@ -627,7 +634,11 @@ private:
     detail::PredicateSignature predicate_signature(
         double temperature, const std::vector<double>& composition, bool ideal = false, detail::PredicateSignature result = {}
     ) const;
-    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0) const;
+    struct PressureActionCenter;
+    PropertyActionBatch pressure_action(double, double, const std::vector<double>&, DensityBranch,
+        const std::vector<PropertyObservable>&, const std::vector<PressureActionDirection>&,
+        std::optional<double>, std::optional<DensityRoot>*, PressureActionCenter*) const;
+    PropertyActionBatch directional_actions(double, double, const std::vector<double>&, const std::vector<PropertyObservable>&, const std::vector<DensityActionDirection>&, const DensityRoot* = nullptr, const std::vector<double>& = {}, double = 0.0, PressureActionCenter* = nullptr) const;
     bool ensure_tape(const std::vector<double>&, const std::vector<double>&, const detail::PredicateSignature&, const std::vector<IdealCorrelation>&, double, bool) const;
     HelmholtzDerivatives pure_state_derivatives(double temperature, double volume) const;
     HelmholtzDerivatives state_derivatives(double, double, const std::vector<double>&, bool, bool,
