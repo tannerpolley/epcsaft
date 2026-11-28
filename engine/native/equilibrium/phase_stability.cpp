@@ -2278,6 +2278,11 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
     }
     constexpr auto tie = "distinct stationary minima have overlapping value intervals";
     constexpr auto stationarity = "stationarity unavailable at reconstructed trial minimum";
+    if (out.report.no_descent_in_trial_set) {
+        out.value = 0.0;
+        out.available = true;
+    }
+    auto& rank_refusal = out.available ? out.event : out.cause;
     if (out.coincident_supports) {
         for (auto j : out.minima) {
             auto& t = out.report.trials[j];
@@ -2288,13 +2293,10 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
                 || core::classify(row->second, *stop.criterion, {}, {}, false) != core::Stop::converged
                 || !(std::abs(q.at("charge_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value
                     && std::abs(q.at("normalization_residual")) <= policy::COMPOSITION_SUM_TOLERANCE.value)) {
-                out.cause = stationarity; return out;
+                rank_refusal = stationarity; return out;
             }
             if (!(std::abs(q.at("trial_identity_defect_over_rt")) <= numerical(j))) {
-                out.cause = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
-            }
-            if (q.at("root_density_side") == static_cast<double>(DensityBranch::Unspecified)) {
-                out.cause = density_refusal; return out;
+                rank_refusal = "trial primal-dual defect exceeds tangent-plane value resolution"; return out;
             }
             q["numerical_plane_value_error_over_rt"] = numerical(j);
         }
@@ -2303,23 +2305,24 @@ StabilityMeasure measure_value(const CompiledSystem& c, const EquilibriumResult&
             const auto& b = out.report.trials[j];
             const auto& low = a.phase.support, &high = b.phase.support;
             if (low.size() > high.size() || (low.size() == high.size() && j <= i)) continue;
+            // An unspecified anchored side comes from the sole stable root in the finite search.
             if (a.quantities.at("root_density_side") != b.quantities.at("root_density_side") || !coincident_trial_point(a, b)
                 || std::abs(a.quantities.at("tpd_over_rt") - b.quantities.at("tpd_over_rt")) > error(i) + error(j)
                 || !std::includes(high.begin(), high.end(), low.begin(), low.end())) {
-                out.cause = out.event = tie; return out;
+                rank_refusal = out.event = tie; return out;
             }
             if (const auto cause = low == high ? nullptr : omitted_species_cause(c, out.report, a, b, rows, numerical(i) + numerical(j))) {
-                out.cause = out.event = cause; return out;
+                rank_refusal = out.event = cause; return out;
             }
         }
     } else for (auto j : out.minima) if (!same_stationary_trial(out.report.trials[j], out.report.trials[best], false)) {
-        out.cause = out.event = tie; return out;
+        rank_refusal = out.event = tie; return out;
     }
     if (std::any_of(out.minima.begin(), out.minima.end(), [&](auto j) { return out.report.trials[j].pivot_only; })) {
-        out.cause = stationarity;
+        rank_refusal = stationarity;
         return out;
     }
-    out.value = out.report.no_descent_in_trial_set ? 0.0 : *out.raw_minimum;
+    if (!out.value) out.value = out.raw_minimum;
     out.available = true;
     return out;
 }

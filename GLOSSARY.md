@@ -67,7 +67,7 @@ Positive-donor, inventory-conserving split with a finite Gibbs decrease exceedin
 Source: equilibrium formulation; #223 adopted D9
 
 **Stability requirement**:
-A declared finite-search condition on a candidate parameter set: a resolved descending trial violates it; a completed search without a witness supplies bounded numerical evidence only. The fitted scalar requires sufficient trial, identity and rank evidence. Final fit acceptance uses any resolved witness even when the scalar is unavailable.
+A declared finite-search condition on a candidate parameter set: a resolved descending trial violates it; a completed search without a witness supplies bounded numerical evidence only. A descending scalar requires sufficient trial, identity and rank evidence. An otherwise qualified search without a witness supplies a zero scalar and zero local action independently of rank. Final fit acceptance uses any resolved witness even when the scalar is unavailable.
 Source: EqID `tangent_plane_distance`; ALG-STABILITY; ALG-FIT
 
 **Finite-search descent conclusion**:
