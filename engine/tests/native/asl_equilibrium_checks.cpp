@@ -43,7 +43,7 @@ struct Callback final {
     std::array<double, 5> q{298.15, 1.0e5, 0.05, 0.475, 0.475};
     std::array<double, 5> gradient{};
     std::array<double, 15> hessian{};
-    std::array<char, 5> fixed{1, 1, 0, 0, 0};
+    std::array<char, 5> fixed{0, 1, 0, 0, 0};  // live T: at fixed T and P the reactive LLE has no degree of freedom, so the feed Hessian is zero
 
     double operator()(int order, int row = 0) {
         int map[]{0, 1, 2, 3, 4, -1, -2, -3};
@@ -74,14 +74,21 @@ void check_interleaved_cache() {
     CHECK(callback(2) == value);
     CHECK(callback.gradient == gradient);
     CHECK(std::isfinite(callback.hessian[5]));
+    const auto hessian = callback.hessian;
+    const auto nonzero = [](const auto& values) { return std::any_of(values.begin(), values.end(), [](double v) { return v != 0.0; }); };
+    CHECK(nonzero(gradient) && nonzero(hessian));
     const double initial_feed = callback.q[2];
     for (int i = 1; i <= 4; ++i) {
         callback.q[2] = initial_feed + 0.001 * i;
         callback(0);
     }
     callback.q[2] = initial_feed;
+    callback.gradient.fill(0.0);  // the hit must rewrite every live derivative
+    callback.hessian.fill(0.0);
     epcsaft::core::Capture trace(true);
     CHECK(callback(2) == value);
+    CHECK(callback.gradient == gradient);
+    CHECK(callback.hessian == hessian);
     CHECK(spans(trace, "solve_equilibrium") == 0);
     CHECK(spans(trace, "solved_state_actions") == 0);
 }
