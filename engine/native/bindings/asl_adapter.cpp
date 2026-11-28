@@ -185,7 +185,7 @@ struct EquilibriumContext final {
         eq::EquilibriumResult central;
         std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
         std::optional<double> enthalpy_value;
-        bool action_refused = false;
+        bool action_refused = false;  // Disqualify the seed until eviction, even if another read succeeds.
         struct Rows final {
             std::vector<double> values;
             std::vector<std::vector<double>> gradients, hessians;
@@ -491,8 +491,10 @@ double equilibrium_observable(arglist* arguments, int kind, EquilibriumOrder ord
             if (rows.filled[0]) return rows.values[row];
             const auto& central = state.central;
             if (central.requested_tolerance_met.value_or(false)
-                && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value)
+                && eq::maximum_abs(central.classified_residuals) > epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value) {
+                if (context.map.warm_start) state.action_refused = true;
                 throw EquilibriumFailure(ActionStatus::DefiningEquationsNotSatisfied, observable);
+            }
             if (kind == 0) {
                 // Match the action's composition normalization before multiplying by the phase amount.
                 const auto& x = central.prepared_endpoint->composition[p];

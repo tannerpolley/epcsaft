@@ -3,7 +3,7 @@
 
 namespace {
 
-std::string reactive_record(bool warm_start = false) {
+std::string reactive_record(bool warm_start = false, std::optional<double> row_tolerance = {}) {
     // The same manufactured reactive LLE as e5-3, expressed in the ASL record's declared coordinates.
     const auto p = equilibrium_support::synthetic_reactive_ternary();
     epcsaft::ParameterDocument doc;
@@ -30,6 +30,7 @@ std::string reactive_record(bool warm_start = false) {
         entry("association_volume", {k, k + 1}, p.association_volume[5 * k + 1], "dimensionless");
     }
     auto problem = equilibrium_support::synthetic_reactive_problem();
+    problem.solver_options.values[epcsaft::policy::row] = row_tolerance;
     problem.topology_declared = true;
     for (auto& phase : problem.phases) {
         phase.support = {0, 1, 2};
@@ -208,6 +209,36 @@ void check_value_order() {
     }
 }
 
+void check_refused_value_seed() {
+    const double limit = epcsaft::policy::EQUILIBRIUM_ROW_RESIDUAL.value;
+    Callback warm{reactive_record(true, 4 * limit)};
+    warm.q[2] += 0.001;
+    constexpr auto row = "phase[0].amount[0]";
+    auto& context = equilibrium_contexts.find(warm.record, "equilibrium", [&] { return prepare_equilibrium(warm.record.c_str(), row); });
+    auto& central = select_state(context, {warm.q.begin(), warm.q.end()}, row).central;
+    CHECK(central.requested_tolerance_met.value_or(false) && central.optimizer_state);
+    auto& residuals = central.classified_residuals;
+    CHECK(!residuals.empty() && eq::maximum_abs(residuals) <= limit);
+    // Exercise the gap between the requested solve tolerance and the ASL value limit.
+    const double retained = std::exchange(residuals.front(), 2 * limit);
+    CHECK(eq::maximum_abs(residuals) < context.anchor.solver_options.value(epcsaft::policy::row));
+    const auto [refused, error] = warm.call(0, EquilibriumOrder::Value);
+    CHECK(std::isnan(refused) && error.find("defining_equations_not_satisfied") != std::string::npos);
+    residuals.front() = retained;
+    {
+        epcsaft::core::Capture trace(true);
+        const auto [value, hit_error] = warm.call(0, EquilibriumOrder::Value);
+        CHECK(std::isfinite(value) && hit_error.empty());
+        CHECK(spans(trace, "solve_equilibrium") == 0);
+    }
+    warm.q[2] += 0.001;
+    epcsaft::core::Capture trace(true);
+    const auto [value, miss_error] = warm.call(0, EquilibriumOrder::Value);
+    CHECK(std::isfinite(value) && miss_error.empty());
+    CHECK(spans(trace, "solve_equilibrium") == 1);
+    CHECK(spans(trace, "equilibrium_warm_attempt") == 0);
+}
+
 void check_legacy_rank_refusal() {
     Callback callback;
     callback.q[2] += 0.0053;
@@ -238,6 +269,7 @@ int main(int argc, char** argv) {
         {{"native.regression.asl-reactive-lle-cold-fallback", "ASLReactiveLLEColdFallback"}, check_cold_fallback},
         {{"native.regression.asl-reactive-lle-refused-action-seed", "ASLReactiveLLERefusedActionSeed"}, check_refused_action_seed},
         {{"native.regression.asl-equilibrium-value-order", "ASLEquilibriumValueOrder"}, check_value_order},
+        {{"native.regression.asl-reactive-lle-refused-value-seed", "ASLReactiveLLERefusedValueSeed"}, check_refused_value_seed},
         {{"native.regression.asl-equilibrium-legacy-rank-refusal", "ASLEquilibriumLegacyRankRefusal"}, check_legacy_rank_refusal},
     });
 }
