@@ -462,6 +462,35 @@ def test_native_held_electrolyte_recovery_checks_and_columns() -> None:
     assert all(candidate.final_cost <= 1e-24 for candidate in sequence)
 
 
+def test_mixed_salt_mean_ionic_activity_coefficient() -> None:
+    from tests.packets import parameters_json
+
+    water, hydrogen, sodium, chloride = "water", "hydronium-cation", "sodium-cation", "chloride-anion"
+    names = (water, hydrogen, sodium, chloride)
+    p = Parameters.from_json(parameters_json("figiel-2025-chloride-mixture-refit", 4), components=names)
+    theta = regression.active_parameter(p, "cation_pair_mixing", (hydrogen, sodium))
+    model = Mixture(p, active_parameters=[theta])
+    t, pressure = 298.15, 1e5
+    ions = (hydrogen, chloride)
+    reference = model.reference(t, pressure, solvent_fractions=(1, 0, 0, 0), ions=ions, stoichiometry=(1, 1))
+    for nacl in (0.0, 4.5):
+        molalities = {chloride: 0.5 + nacl, sodium: nacl, hydrogen: 0.5}
+        row = regression.electrolyte(p, "mean_ionic_activity_coefficient", t, pressure, {water: 1},
+                                     ions=ions, stoichiometry=(1, 1), molality=0.5, solute_molalities=molalities,
+                                     observed=1, form="log_ratio")
+        finite = [molalities.get(name, 0.0) for name in names] if nacl else None
+        expected = reference.activity(0.5, solute_molalities=finite)
+        prediction = regression.predict(model, row)
+        derivative = regression.differentiate(model, row)
+        assert prediction.status == derivative.status == regression.ObservationStatus.Available
+        assert prediction.value == pytest.approx(expected.mean_ionic_molality_scale, rel=1e-12)
+        assert prediction.residual == pytest.approx(expected.mean_ionic_log_molality_scale, abs=1e-12)
+        assert derivative.value == pytest.approx([expected.mean_ionic_parameter_derivative[0].action], rel=1e-10, abs=1e-14)
+        if nacl == 0.0:
+            row.finite_solute_molalities = None
+            assert regression.predict(model, row).value == pytest.approx(prediction.value, rel=1e-12)
+
+
 def test_mixture_osmotic_coefficient_matches_one_salt_and_solvent_activity() -> None:
     """#575: the full-composition osmotic row equals the one-salt row and the direct solvent activity, value and column."""
     from tests.packets import parameters_json
