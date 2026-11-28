@@ -1752,7 +1752,7 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
                 if (normalized[i] == normalized[j] && normalized[3 - i - j] != normalized[i])
                     repeated = {{3 - i - j, i}};
     }
-    double coefficient = 0.0;
+    double coefficient = 0.0, unscaled_coefficient = 0.0, s = 1.0;
     if (coordinates) {
         // EqID: repeated_direction_energy_gradient
         // D3F[v,v,.] = 2 dL/dp on the order-two path along v, L = a2 - l2.g2 - l1.g1 - l0.g0, each multiplier making L
@@ -1790,16 +1790,11 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
         // from an otherwise regular mixed response at dilute ionic states. Their difference still
         // carries D5F[v^5]/120 in each coefficient; scale v by a power of two s with s|v_i| <= n_i for
         // every present ion, keeping the path inside the radius of DH (sum n_i z_i^2)^(3/2).
-        double s = 1.0;
         for (std::size_t i = 0; i < components; ++i) {
             const double v = std::abs(normalized[repeated->second][2 + i]);
             if (parameters_.charge_number[i] != 0 && amounts[i] > 0.0 && s * v > amounts[i])
                 s = std::ldexp(1.0, std::ilogb(amounts[i] / v));
         }
-        // Preserve the coefficient scaling order unless the squared scale underflows.
-        const bool scale_underflows = !std::isnormal(s * s);
-        for (std::size_t i = 0; i < order; ++i)
-            if (scale_underflows && i != repeated->first) norms[i] /= s;
         for (const double sign : {1.0, -1.0}) {
             std::vector<std::vector<double>> series(6, std::vector<double>(width, 0.0));
             series[0] = point;
@@ -1809,7 +1804,8 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
             const double path_coefficient = tape_->implicit_taylor(series, 5, factorization.get(),
                 &result.diagnostics.site_solves, &result.diagnostics.forward_sweeps,
                 &result.diagnostics.association_residual, nullptr, nullptr, nullptr, nullptr, sign < 0 ? 3 : 0).front();
-            coefficient += sign * path_coefficient / (scale_underflows ? 1.0 : s * s);
+            coefficient += sign * path_coefficient / (s * s);
+            unscaled_coefficient += sign * path_coefficient;
             ++result.diagnostics.directional_paths;
         }
     } else if (shared && order == 3) {
@@ -1843,6 +1839,11 @@ ResidualEnergyAction HelmholtzModel::energy_action_locked(double temperature, do
     double action = repeated.has_value() ? coefficient
         : coefficient / static_cast<double>(std::size_t(1) << (order - 1));
     for (const double norm : norms) action *= norm;
+    if (repeated && !std::isfinite(action)) {
+        // Restore each repeated direction's norm without forming the squared scale.
+        action = unscaled_coefficient;
+        for (std::size_t i = 0; i < order; ++i) action *= i == repeated->first ? norms[i] : norms[i] / s;
+    }
     if (result.diagnostics.association_residual > policy::ASSOCIATION_ACTION_RESIDUAL.value) result.status = PropertyActionStatus::AssociationResidual;
     else if (gradient ? !all_finite(*gradient) : !std::isfinite(action)) result.status = PropertyActionStatus::Nonfinite;
     else result.action = action;
