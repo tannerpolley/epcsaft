@@ -5,6 +5,7 @@
 #include "surface/parameter_builder.hpp"
 
 #include <cstring>
+#include <numeric>
 #include <tuple>
 
 namespace properties_checks {
@@ -967,6 +968,153 @@ void born_parameter_columns() {
                 recording_support::fields({recording_support::field("epsilon", epsilon), recording_support::field("c", c)}));
         }
     }
+}
+
+void born_solvation_subset() {
+    using namespace epcsaft;
+    using namespace epcsaft::equilibrium;
+#include "fixtures/mea-nominally-unloaded.inc"
+    constexpr double temperature = 318.15, volume = 1.0 / 40000.0;
+    // CO2, MEA, water, MEAH+, MEACOO-, HCO3-, then the three absent ions.
+    const std::vector<double> n{0.025, 0.080, 0.815, 0.040, 0.030, 0.010, 0., 0., 0.};
+    const std::size_t width = n.size() + 2;
+    auto inputs = recording_support::fields({recording_support::field("T_K", temperature),
+        recording_support::field("V_m3", volume), recording_support::field("n_mol", n)});
+    const auto compare = [&](const std::string& id, double actual, double expected, double tolerance, const char* source) {
+        recording_support::compare("born-solvation/" + id, "reduced Born energy or derivative", "coordinate basis",
+            actual, expected, recording_support::Rule::ReferenceOrOne, 0.0, tolerance, source, inputs);
+    };
+    const auto evaluate = [&](const HelmholtzModel& eos) {
+        return eos.evaluate(temperature, volume, n, DerivativeOrder::Hessian);
+    };
+    const auto check_identical = [&](const std::string& id, const HelmholtzDerivatives& a, const HelmholtzDerivatives& b) {
+        double gradient_error = 0.0, hessian_error = 0.0;
+        for (std::size_t i = 0; i < width; ++i)
+            gradient_error = std::max(gradient_error, std::abs(a.gradient.at(i) - b.gradient.at(i)));
+        for (std::size_t i = 0; i < width * width; ++i)
+            hessian_error = std::max(hessian_error, std::abs(a.hessian.at(i) - b.hessian.at(i)));
+        compare(id + "/energy", a.value, b.value, 0.0, "same state");
+        compare(id + "/gradient-error", gradient_error, 0.0, 0.0, "same state");
+        compare(id + "/hessian-error", hessian_error, 0.0, 0.0, "same state");
+        CHECK(a.gradient == b.gradient && a.hessian == b.hessian);
+    };
+    // Declare all neutrals as solvents; the ions need no entries.
+    for (std::size_t i : {1, 2, 0})
+        parameters.entries.push_back({{}, "born_solvent", {i}, 1.0, "dimensionless"});
+    const HelmholtzModel all_solvents(build_parameters(parameters));
+    check_identical("all-components", evaluate(all_solvents), evaluate(model));
+
+    auto nonunit_ion = parameters;
+    for (auto& entry : nonunit_ion.entries)
+        if (entry.identity == "component/protonated-monoethanolamine/solvation_factor") entry.magnitude = 1.5;
+    std::string refusal;
+    try {
+        (void)build_parameters(nonunit_ion);
+    } catch (const std::invalid_argument& error) {
+        refusal = error.what();
+    }
+    CHECK(refusal == "component/protonated-monoethanolamine/solvation_factor must equal 1 when born_solvent is declared");
+    nonunit_ion.entries.erase(std::remove_if(nonunit_ion.entries.begin(), nonunit_ion.entries.end(),
+        [](const auto& entry) { return entry.field == "born_solvent"; }), nonunit_ion.entries.end());
+    CHECK(build_parameters(nonunit_ion).solvation_factor[3] == 1.5);
+
+    parameters.entries.pop_back();
+    const auto p = build_parameters(parameters);
+    const HelmholtzModel subset(p);
+    auto changed = parameters;
+    for (auto& entry : changed.entries)
+        if (entry.field == "solvation_factor" && entry.index == std::vector<std::size_t>{0}) entry.magnitude = 1.5;
+    const HelmholtzModel changed_co2(build_parameters(changed));
+    const auto exact = evaluate(subset);
+    check_identical("excluded-co2-1-to-1.5", evaluate(changed_co2), exact);
+    std::vector<double> direction(width, 0.0);
+    direction[0] = 1.0;
+    direction[2] = 0.01;
+    direction[4] = -0.01;
+    for (std::size_t order : {3, 4, 5}) {
+        const std::vector<std::vector<double>> directions(order, direction);
+        const auto original = subset.residual_energy_action(temperature, volume, n, directions);
+        const auto altered = changed_co2.residual_energy_action(temperature, volume, n, directions);
+        CHECK(original.action && altered.action);
+        compare("excluded-co2-1-to-1.5/order-" + std::to_string(order), *altered.action, *original.action,
+            0.0, "same state and direction");
+    }
+
+    auto no_born = p;
+    no_born.electrolyte_form = ElectrolyteForm::DebyeHuckel;
+    const HelmholtzModel screening_only(no_born);
+    const auto other = evaluate(screening_only);
+    const auto born = [&](double t, double v, const std::vector<double>& amounts) {
+        const double total = std::accumulate(amounts.begin(), amounts.end(), 0.0);
+        auto x = amounts;
+        for (auto& fraction : x) fraction /= total;
+        const double bulk = bulk_relative_permittivity(t, total / v, x, p);
+        // The Eq. (9) oracle excludes CO2 explicitly, independent of the compiled membership.
+        double weighted = 0.0, included = 0.0;
+        for (std::size_t i = 1; i < n.size(); ++i) {
+            weighted += x[i] * p.solvation_factor[i];
+            included += x[i];
+        }
+        double work = 0.0;
+        for (std::size_t i = 3; i < n.size(); ++i)
+            work += x[i] * born_radial_charging_work(i, p, weighted / included, bulk);
+        return -work * ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+            / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * t);
+    };
+    const auto state = subset.state(temperature, 1.0 / volume, n);
+    compare("a", state.born, born(temperature, volume, n), 1e-12, "Figiel Eq. 9 and Born radial work");
+    const auto changed_state = changed_co2.state(temperature, 1.0 / volume, n);
+    compare("excluded-co2-1-to-1.5/a", changed_state.born, state.born, 0.0, "same state");
+    compare("dA/dV", exact.gradient[1] - other.gradient[1], 0.0, 0.0, "density-independent permittivity");
+
+    // M4 uses central differences and a 1e-6 relative tolerance with a unit floor.
+    constexpr double tolerance = 1e-6;
+    for (std::size_t j : {0, 2, 3, 4, 5, 6, 7}) {
+        const double step = j == 0 ? temperature * 1e-5 : 1e-5;
+        auto plus = n, minus = n;
+        if (j >= 2) {
+            plus[j - 2] += step;
+            minus[j - 2] -= step;
+        }
+        const double tp = temperature + (j == 0 ? step : 0.0), tm = temperature - (j == 0 ? step : 0.0);
+        // Differentiate a = A/n_total at n_total = 1 mol, then check the extensive derivative separately.
+        const double ap = born(tp, volume, plus), am = born(tm, volume, minus);
+        const double dA = exact.gradient[j] - other.gradient[j];
+        const std::string column = std::to_string(j);
+        compare("da/" + column, dA - (j >= 2 ? state.born : 0.0), (ap - am) / (2 * step),
+            tolerance, "central difference of molar Born energy");
+        if (j >= 2)
+            compare("mu/" + column, dA, ((1 + step) * ap - (1 - step) * am) / (2 * step),
+                tolerance, "central difference of extensive Born energy");
+        const auto gp = subset.evaluate(tp, volume, plus, DerivativeOrder::Gradient).gradient;
+        const auto gm = subset.evaluate(tm, volume, minus, DerivativeOrder::Gradient).gradient;
+        const auto op = screening_only.evaluate(tp, volume, plus, DerivativeOrder::Gradient).gradient;
+        const auto om = screening_only.evaluate(tm, volume, minus, DerivativeOrder::Gradient).gradient;
+        for (std::size_t i : {0, 2, 3, 4, 5, 6, 7}) {
+            const auto k = i * width + j;
+            compare("d2A/" + std::to_string(i) + "/" + column, exact.hessian[k] - other.hessian[k],
+                ((gp[i] - op[i]) - (gm[i] - om[i])) / (2 * step), tolerance, "central difference of Born gradient");
+        }
+    }
+
+    // Evaluate an already recorded tape at a pure CO2 phase, including the MEAH+ insertion direction.
+    using AD = CppAD::AD<double>;
+    std::vector<AD> ax(n.begin(), n.end());
+    CppAD::Independent(ax);
+    constexpr double bulk = 2.0;
+    const auto& changed_p = changed_co2.parameters();
+    const std::vector<AD> outputs{born_contribution(AD(temperature), ax, changed_p, AD(bulk))};
+    CppAD::ADFun<double> tape(ax, outputs);
+    std::vector<double> vapor(n.size(), 0.0);
+    vapor[0] = 1.0;
+    inputs = recording_support::fields({recording_support::field("T_K", temperature),
+        recording_support::field("mole_fractions", vapor), recording_support::field("bulk_relative_permittivity", bulk)});
+    compare("pure-co2/direct", born_contribution(temperature, vapor, changed_p, bulk), 0.0, 0.0, "empty subset");
+    compare("pure-co2/tape", tape.Forward(0, vapor)[0], 0.0, 0.0, "empty subset");
+    const double insertion = -ELEMENTARY_CHARGE_C * ELEMENTARY_CHARGE_C
+        * born_radial_charging_work(3, changed_p, 1.0, bulk)
+        / (4.0 * PI * VACUUM_PERMITTIVITY_F_PER_M * BOLTZMANN_J_PER_K * temperature);
+    compare("pure-co2/ion-insertion", tape.Jacobian(vapor)[3], insertion, 1e-12, "unexpanded Born shell");
 }
 
 void density_correlated_ion_suppression() {

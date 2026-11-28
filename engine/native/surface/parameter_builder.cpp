@@ -373,6 +373,7 @@ Parameters build_parameters(const ParameterDocument& document) {
                  || entry.field == "born_c_shell"
                  || entry.field == "born_c_dielectric"
                  || entry.field == "born_diameter"
+                 || entry.field == "born_solvent"
                  || entry.field == "solvation_factor")
                 && !born_charging(result.electrolyte_form))) {
             reject("unconsumed " + where(entry));
@@ -447,6 +448,12 @@ Parameters build_parameters(const ParameterDocument& document) {
                 scalar_fields.insert(entry.field);
                 result.permittivity_solvent_normalized = value == 1.0;
             }
+        } else if (entry.field == "born_solvent") {
+            const auto i = component_index(entry, components);
+            const double value = entry.magnitude * unit_factor(entry, "dimensionless");
+            if (value != 0.0 && value != 1.0) reject("invalid " + where(entry));
+            result.born_solvation_membership.resize(components, 0);
+            result.born_solvation_membership[i] = static_cast<int>(value);
         } else if (entry.field == "charged_molecule_ion") {
             const auto i = component_index(entry, components);
             if (entry.magnitude * unit_factor(entry, "dimensionless") != 1.0) reject("charged_molecule_ion is not 1: " + where(entry));
@@ -583,6 +590,17 @@ Parameters build_parameters(const ParameterDocument& document) {
     if (sigma_amplitude != sigma_exponent || sigma_amplitude.size() != sigma_terms) reject("incomplete sigma term");
     if (permittivity_coefficients.size() != permittivity_terms) reject("incomplete permittivity term");
 
+    if (!result.born_solvation_membership.empty()) {
+        auto& membership = result.born_solvation_membership;
+        for (std::size_t i = 0; i < components; ++i) {
+            if (result.charge_number[i] == 0) continue;
+            if (result.solvation_factor[i] != 1.0)
+                reject("component/" + document.component_ids[i] + "/solvation_factor must equal 1 when born_solvent is declared");
+            membership[i] = 1;
+        }
+        if (std::all_of(membership.begin(), membership.end(), [](int member) { return member == 1; }))
+            membership.clear();
+    }
     const bool full_species = result.permittivity_form.is(PermittivityForm::FullSpeciesMoleWeighting);
     if (solvent_weighted_permittivity(result.permittivity_form) || full_species) {
         if (volume_weighted) {

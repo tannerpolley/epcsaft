@@ -50,6 +50,10 @@ def _array(value: object, name: str) -> Sequence[object]:
     return value
 
 
+def _has_born_solvent_declaration(records: Iterator[Mapping[str, object]]) -> bool:
+    return any(isinstance(fixed := record.get("fixed"), Mapping) and "born_solvent" in fixed for record in records)
+
+
 class _Entries(list[_core.ParameterEntry]):
     """Keep each parsed scalar beside its source value for inverse mapping."""
 
@@ -254,7 +258,10 @@ def parameter_document(root: str | Path, packets: Sequence[tuple[str, Sequence[s
         if merged["model_coefficients"] not in (None, coefficients):
             raise _core.ParameterError(f"model_coefficients of {packet} differ from those of {packets[0][0]}")
         merged["model_coefficients"] = coefficients
-        merged["components"] += [c for name in names for c in document["components"] if c["component_id"] == name]
+        retained = [c for name in names for c in document["components"] if c["component_id"] == name]
+        if retained and _has_born_solvent_declaration(iter(document["components"])) and not _has_born_solvent_declaration(iter(retained)):
+            retained[0].setdefault("fixed", {})["born_solvent"] = {"value": {"magnitude": 0, "unit": "dimensionless"}}
+        merged["components"] += retained
         topology = document.get("topology", {})
         for into, key, items in [(merged, "correlations", document), (merged, "pairs", document)] + [
                 (merged["topology"], key, topology) for key in ("sites", "edges", "no_cross_association")]:
@@ -501,7 +508,7 @@ class Parameters:
         for component_id in selected_ids:
             record = component_records[component_id]
             fixed = _mapping(record.get("fixed", {}), f"component/{component_id}/fixed")
-            for family in ("molar_mass", "charge_number", "charged_molecule_ion"):
+            for family in ("molar_mass", "charge_number", "charged_molecule_ion", "born_solvent"):
                 if family in fixed:
                     item = _mapping(fixed[family], f"component/{component_id}/{family}")
                     entries.add(item.get("identity", f"component/{component_id}/{family}"), family, (positions[component_id],), item["value"], f"component/{component_id}/{family}")
@@ -515,6 +522,11 @@ class Parameters:
                 if not isinstance(identity, str):
                     raise _core.ParameterError(f"component/{component_id}/coefficients has no identity")
                 entries.add(identity, renamed.get(family_value, family_value), (positions[component_id],), item["value"], identity)
+
+        # Keep the subset rule if selection drops every explicitly marked component.
+        if selected and _has_born_solvent_declaration(iter(component_records.values())) and not any(e.field == "born_solvent" for e in entries):
+            identity = f"component/{selected[0]}/born_solvent"
+            entries.add(identity, "born_solvent", (0,), {"magnitude": 0, "unit": "dimensionless"}, identity)
 
         raw_correlations = _array(document.get("correlations", ()), "correlations")
         sigma_term = 0

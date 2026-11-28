@@ -113,6 +113,7 @@ struct FixedParameters {
     std::vector<int> charge_number;
     std::vector<int> molecular_ion;  // 1: an ion keeping the neutral short-range terms (#641); empty means none
     std::vector<double> solvation_factor;
+    std::vector<int> born_solvation_membership;  // ions and declared solvents; empty means all components
     std::vector<std::array<int, 4>> cation_mixing;  // solvent, unordered cations, common anion
     double born_c_shell = 0.0;
     core::Declared<ElectrolyteForm> electrolyte_form;
@@ -146,6 +147,10 @@ struct FixedParameters {
         if (solvent_weighted_permittivity(permittivity_form)) {
             result.push_back(permittivity_solvent_normalized);
             result.insert(result.end(), permittivity_solvent.begin(), permittivity_solvent.end());
+        }
+        if (!born_solvation_membership.empty()) {
+            result.push_back(-1);
+            result.insert(result.end(), born_solvation_membership.begin(), born_solvation_membership.end());
         }
         return result;
     }
