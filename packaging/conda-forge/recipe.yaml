@@ -2,7 +2,7 @@ schema_version: 1
 
 context:
   version: 0.1.2
-  release_sha256: 52c198444c35740ed52bd2cc7aef4b1351388ed974e29b46f71056af43dd7d52
+  release_sha256: 084f0878948c5355f8aafa99d81e5530419ef0908d20f30a21d9a63350fdc98b
   source_sha256: ${{ release_sha256 }}
 
 recipe:
