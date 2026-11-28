@@ -64,9 +64,73 @@ std::size_t spans(const epcsaft::core::Capture& trace, std::string_view name) {
     return std::count_if(trace.trace().spans.begin(), trace.trace().spans.end(), [&](const auto& span) { return span.name == name; });
 }
 
+std::vector<double> phase_component_amounts(const eq::EquilibriumResult& result) {
+    auto amounts = result.mole_fractions;
+    const std::size_t components = amounts.size() / result.phase_count;
+    for (std::size_t i = 0; i < amounts.size(); ++i) amounts[i] *= result.amounts[i / components];
+    return amounts;
+}
+
+void compare_amounts(const char* name, const EquilibriumContext& context, const eq::EquilibriumResult& warm,
+                     const eq::EquilibriumResult& cold) {
+    CHECK(warm.has_state() && cold.has_state());
+    const auto left = phase_component_amounts(warm), right = phase_component_amounts(cold);
+    const double tolerance = context.anchor.solver_options.value(epcsaft::policy::row)
+        * epcsaft::policy::EQUILIBRIUM_INNER_TOLERANCE_FACTOR.value;
+    CHECK(left.size() == right.size());
+    for (std::size_t i = 0; i < left.size(); ++i) {
+        recording_support::compare_custom(name + std::string("/") + std::to_string(i), "phase_component_amount", "mol",
+            left[i], right[i], "inner solver tolerance at a 1 mol feed", std::abs(left[i] - right[i]) <= tolerance, "reactive-liquid-liquid-equilibrium");
+        CHECK(std::abs(left[i] - right[i]) <= tolerance);
+    }
+}
+
+eq::EquilibriumResult& selected(EquilibriumContext& context, const std::vector<double>& q) {
+    return *select_state(context, q, "phase_component_amount").central;
+}
+
+void check_warm_start() {
+    Callback callback;
+    const auto context = prepare_equilibrium(callback.record.c_str(), "phase_component_amount");
+    auto cold = prepare_equilibrium(callback.record.c_str(), "phase_component_amount");
+    auto q = std::vector<double>(callback.q.begin(), callback.q.end());
+    q[2] += 0.001;
+    auto& first = selected(*context, q);
+    CHECK(first.optimizer_state);
+    q[2] += 0.001;
+    const auto& warm = selected(*context, q);
+    const auto& reference = selected(*cold, q);
+    CHECK(warm.attempt == eq::Attempt::Warm);
+    compare_amounts("reactive-lle/warm", *context, warm, reference);
+}
+
+void check_cold_fallback() {
+    Callback callback;
+    const auto context = prepare_equilibrium(callback.record.c_str(), "phase_component_amount");
+    auto cold = prepare_equilibrium(callback.record.c_str(), "phase_component_amount");
+    auto q = std::vector<double>(callback.q.begin(), callback.q.end());
+    q[2] += 0.003;
+    auto& first = selected(*context, q);
+    CHECK(first.optimizer_state);
+    auto one_liquid = context->anchor;
+    one_liquid.phases.resize(1);
+    const auto incompatible = eq::solve_equilibrium(*context->model, one_liquid);
+    CHECK(incompatible.optimizer_state);
+    first.optimizer_state = incompatible.optimizer_state;  // force the native dual-layout check to refuse
+    q[2] += 0.001;
+    const auto& reference = selected(*cold, q);
+    epcsaft::core::Capture trace(true);
+    const auto& result = selected(*context, q);
+    CHECK(std::any_of(trace.trace().events.begin(), trace.trace().events.end(), [](const auto& event) {
+        return std::string_view(event.name) == "warm_ineligible" && event.reason == "layout changed";
+    }));
+    CHECK(spans(trace, "solve_equilibrium") == 2);
+    CHECK(result.attempt == eq::Attempt::Cold);
+    compare_amounts("reactive-lle/cold-fallback", *context, result, reference);
+}
+
 void check_interleaved_cache() {
     Callback callback;
-    callback.q[2] += 0.001;
     const double value = callback(0);
     CHECK(callback(1) == value);
     CHECK(std::isfinite(callback.gradient[2]));
@@ -90,6 +154,8 @@ void check_interleaved_cache() {
 
 int main(int argc, char** argv) {
     return recording_support::run(argc, argv, {
+        {{"native.regression.asl-reactive-lle-warm", "ASLReactiveLLEWarm"}, check_warm_start},
+        {{"native.regression.asl-reactive-lle-cold-fallback", "ASLReactiveLLEColdFallback"}, check_cold_fallback},
         {{"native.regression.asl-reactive-lle-interleaved-cache", "ASLReactiveLLEInterleavedCache"}, check_interleaved_cache},
     });
 }

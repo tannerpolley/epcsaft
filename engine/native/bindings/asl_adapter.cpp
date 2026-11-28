@@ -173,7 +173,7 @@ private:
 
 struct EquilibriumContext final {
     std::string record;
-    std::shared_ptr<const HelmholtzModel> model;
+    std::shared_ptr<const HelmholtzModel> model, shifted;
     eq::EquilibriumProblem anchor;
     eq::ContinuationOptions options;
     eq::AslFeedMap map;
@@ -182,7 +182,7 @@ struct EquilibriumContext final {
         std::vector<double> q;
         std::shared_ptr<const HelmholtzModel> model;  // owns the model used by compiled and central
         std::optional<eq::CompiledSystem> compiled;
-        eq::EquilibriumResult central;
+        std::optional<eq::EquilibriumResult> central;
         std::shared_ptr<eq::SolvedStateActionWorkspace> action_workspace;
         struct Rows final {
             std::vector<double> values;
@@ -284,7 +284,32 @@ eq::EquilibriumResult continuation_leg(const EquilibriumContext& context, const 
     return result.states.back();
 }
 
-// q = (T, P, feed controls, theta). Keep each solved state with the model that owns its compiled system.
+// Reuse a converged primal and dual tuple for the nearest molar feed at the same T, P and model.
+const std::optional<eq::EquilibriumResult>& nearest_start(const EquilibriumContext& context,
+    const EquilibriumContext::State& state, const eq::EquilibriumProblem& target) {
+    static const std::optional<eq::EquilibriumResult> cold;
+    if (!target.solids.empty() || target.reactions.empty() || target.phases.size() != 2
+        || target.phases[0].kind != eq::PhaseKind::Liquid || target.phases[1].kind != eq::PhaseKind::Liquid)
+        return cold;
+    const auto* nearest = &cold;
+    double distance = INFINITY;
+    for (const auto& previous : context.states) {
+        const auto& start = *previous.central;
+        if (previous.model != state.model || !bitwise_equal(previous.q[0], state.q[0]) || !bitwise_equal(previous.q[1], state.q[1])
+            || !start.requested_tolerance_met.value_or(false) || !start.optimizer_state) continue;
+        const auto& amounts = previous.compiled->n_feed;
+        const double delta = std::inner_product(amounts.begin(), amounts.end(), target.feed.values.begin(), 0.0,
+            std::plus<>(), [](double a, double b) { return std::abs(a - b); });
+        if (delta < distance) {
+            distance = delta;
+            nearest = &previous.central;
+        }
+    }
+    return *nearest;
+}
+
+// q = (T, P, feed controls, theta). A warm refusal repeats the declared cold start before the existing
+// parameter and feed continuation fallback. Solids retain their direct solve and refusal.
 EquilibriumContext::State solve_state(EquilibriumContext& context, const std::vector<double>& q, const std::string& observable) {
     const auto controls = context.map.anchor.size();
     const std::vector<double> feed(q.begin() + 2, q.begin() + 2 + controls), theta(q.begin() + 2 + controls, q.end());
@@ -292,11 +317,14 @@ EquilibriumContext::State solve_state(EquilibriumContext& context, const std::ve
     state.q = q;
     if (bitwise_equal(theta, context.model->active_parameter_values())) state.model = context.model;
     else try {
-        const auto same_parameters = std::find_if(context.states.begin(), context.states.end(), [&](const auto& previous) {
-            return bitwise_equal(theta, previous.model->active_parameter_values());
-        });
-        if (same_parameters != context.states.end()) state.model = same_parameters->model;
-        else state.model = model_at(*context.model, theta);
+        if (!context.shifted || !bitwise_equal(theta, context.shifted->active_parameter_values())) {
+            const auto same_parameters = std::find_if(context.states.begin(), context.states.end(), [&](const auto& previous) {
+                return bitwise_equal(theta, previous.model->active_parameter_values());
+            });
+            if (same_parameters != context.states.end()) context.shifted = same_parameters->model;
+            else context.shifted = model_at(*context.model, theta);
+        }
+        state.model = context.shifted;
     } catch (const std::invalid_argument& error) { throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, error.what()); }
     const auto& model = *state.model;
     auto target = context.anchor;
@@ -310,32 +338,43 @@ EquilibriumContext::State solve_state(EquilibriumContext& context, const std::ve
     const bool shifted = state.model != context.model;
     if (!moved && !shifted) central = context.anchor_result;
     else {
-        std::optional<EquilibriumFailure> refused;
-        std::string direct;  // the direct solve's refusal; empty when it succeeds
-        try {
-            if (target.solids.empty()) central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
-            else central = eq::solve_equilibrium(model, target);
+        if (const auto& start = nearest_start(context, state, target); start) {
+            try {
+                auto warm = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled, start);
+                if (warm.attempt == eq::Attempt::Warm && warm.requested_tolerance_met.value_or(false)
+                    && !central_failure(context, warm, observable)) central = std::move(warm);
+            } catch (const std::bad_alloc&) { throw; }
+            catch (const std::exception&) { /* The declared cold start owns the refusal. */ }
+            if (!central) direct_compiled.reset();
         }
-        catch (const std::exception& error) { direct = error.what(); }
-        if (direct.empty() && (refused = central_failure(context, central, observable))) direct = refused->what();
-        if (!direct.empty()) {
-            direct_compiled.reset();
-            for (const auto& solid : context.anchor.solids)
-                if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
-                    throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + direct);
-            if (!context.anchor.solids.empty()) {
-                if (refused) throw *refused;
-                throw std::runtime_error(direct);
+        if (!central) {
+            std::optional<EquilibriumFailure> refused;
+            std::string direct;  // the direct solve's refusal; empty when it succeeds
+            try {
+                if (target.solids.empty()) central = eq::solve_equilibrium_retaining_compiled(model, target, direct_compiled);
+                else central = eq::solve_equilibrium(model, target);
             }
-            const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
-                central = continuation_leg(context, path, to, central, targets, direct, name, observable);
-            };
-            central = context.anchor_result;
-            if (shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
-            if (moved) leg(model, target, std::vector<double>{}, "continuation");
+            catch (const std::exception& error) { direct = error.what(); }
+            if (direct.empty() && (refused = central_failure(context, *central, observable))) direct = refused->what();
+            if (!direct.empty()) {
+                direct_compiled.reset();
+                for (const auto& solid : context.anchor.solids)
+                    if (q[0] < solid.correlation->temperature_min || q[0] > solid.correlation->temperature_max)
+                        throw EquilibriumFailure(ActionStatus::OutsideInterval, observable, "solid " + solid.name + ": " + direct);
+                if (!context.anchor.solids.empty()) {
+                    if (refused) throw *refused;
+                    throw std::runtime_error(direct);
+                }
+                const auto leg = [&](const auto& path, const auto& to, const auto& targets, const char* name) {
+                    central = continuation_leg(context, path, to, *central, targets, direct, name, observable);
+                };
+                central = context.anchor_result;
+                if (shifted) leg(*context.model, context.anchor, theta, "parameter continuation");
+                if (moved) leg(model, target, std::vector<double>{}, "continuation");
+            }
         }
     }
-    if (auto failure = central_failure(context, central, observable)) throw *failure;
+    if (auto failure = central_failure(context, *central, observable)) throw *failure;
     if (!direct_compiled) direct_compiled.emplace(eq::compile_problem(model, target));
     const std::size_t counts[2] = {target.phases.size() * model.parameters().component_count() + target.solids.size(), 1};
     const std::size_t n = 2 + controls + theta.size();
@@ -376,14 +415,14 @@ eq::SolvedStateActionBatch actions(const EquilibriumContext& context, Equilibriu
         const auto theta = e.begin() + 2 + controls;
         request.directions.push_back({e[0], e[1], context.map.amounts({e.begin() + 2, theta}, true), {theta, e.end()}});
     }
-    auto batch = eq::solved_state_actions_prepared(*state.compiled, state.central, request, state.action_workspace);
+    auto batch = eq::solved_state_actions_prepared(*state.compiled, *state.central, request, state.action_workspace);
     for (std::size_t row = 0; row < batch.results.size(); ++row) {
         const auto& item = batch.results[row];
         auto status = item.status;
         if (status == ActionStatus::Available && (!item.value || !item.action
             || !std::isfinite(*item.value) || !std::isfinite(*item.action))) status = ActionStatus::Nonfinite;
         const bool floor_value = coordinates.front() == -1 && status == ActionStatus::DefiningEquationsNotSatisfied
-            && !state.central.requested_tolerance_met.value_or(false) && item.value && std::isfinite(*item.value);
+            && !state.central->requested_tolerance_met.value_or(false) && item.value && std::isfinite(*item.value);
         if (status != ActionStatus::Available && !floor_value) {
             const auto& d = batch.diagnostics;
             throw EquilibriumFailure(status, eq::solved_state_observable_id(item.observable), item.diagnostic_message.value_or("")
